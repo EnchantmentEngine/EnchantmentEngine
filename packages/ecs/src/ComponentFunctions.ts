@@ -28,7 +28,7 @@ Infinite Reality Engine. All Rights Reserved.
  * @todo Write the `fileoverview` for `ComponentFunctions.ts`
  */
 import * as bitECS from 'bitecs'
-import React, { startTransition, use } from 'react'
+import React, { startTransition } from 'react'
 // tslint:disable:ordered-imports
 import type from 'react/experimental'
 
@@ -54,8 +54,10 @@ import { defineQuery } from './QueryFunctions'
 import { Kind, SerializedType, Static, Schema as TSchema } from './schemas/JSONSchemaTypes'
 import {
   CreateSchemaValue,
+  HasDeserializers,
   HasRequiredSchema,
   HasRequiredValues,
+  DeserializeValue,
   IsSingleValueSchema,
   SerializeSchema
 } from './schemas/JSONSchemaUtils'
@@ -288,7 +290,11 @@ export const defineComponent = <
     SOAComponent
   Component.isComponent = true
 
+  // Memoize as much tree walking as possible during component creation
+  const hasSchemaInitializers = schemaIsJSONSchema(def.schema) && HasDeserializers(def.schema)
   const hasRequiredSchema = schemaIsJSONSchema(def.schema) && HasRequiredSchema(def.schema)
+  const isSingleValueSchema = schemaIsJSONSchema(def.schema) && IsSingleValueSchema(def.schema)
+
   Component.onSet = (entity, component, json) => {
     if (schemaIsJSONSchema(def.schema) || def.onInit) {
       if (hasRequiredSchema) {
@@ -297,12 +303,16 @@ export const defineComponent = <
       }
 
       if (json === null || json === undefined) return
-      if (
-        Array.isArray(json) ||
-        typeof json !== 'object' ||
-        (schemaIsJSONSchema(def.schema) && IsSingleValueSchema(def.schema))
-      )
-        component.set(json as ComponentType)
+
+      if (hasSchemaInitializers) {
+        json = DeserializeValue(
+          def.schema as TSchema,
+          component.get(NO_PROXY_STEALTH) as ComponentType,
+          typeof json === 'object' ? ({ ...json } as ComponentType) : json
+        ) as SetJSON | undefined
+      }
+
+      if (Array.isArray(json) || typeof json !== 'object' || isSingleValueSchema) component.set(json as ComponentType)
       else component.merge(json as SetPartialStateAction<ComponentType>)
     }
   }
@@ -708,7 +718,7 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
   const componentState = component.stateMap[entity]!
   // use() will suspend the component (by throwing a promise) and resume when the promise is resolved
   if (componentState.promise) {
-    ;(use ?? _use)(componentState.promise)
+    ;(React.use ?? _use)(componentState.promise)
   }
   return useHookstate(componentState) as State<ComponentType<C>>
 }

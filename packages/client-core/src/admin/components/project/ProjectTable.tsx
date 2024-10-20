@@ -46,11 +46,11 @@ import { ProjectType, projectPath } from '@ir-engine/common/src/schema.type.modu
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import CopyText from '@ir-engine/ui/src/primitives/tailwind/CopyText'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
+import TruncatedText from '@ir-engine/ui/src/primitives/tailwind/TruncatedText'
 import DataTable from '../../common/Table'
 import { ProjectRowType, projectsColumns } from '../../common/constants/project'
 import { ProjectUpdateState } from '../../services/ProjectUpdateService'
@@ -113,7 +113,7 @@ export default function ProjectTable(props: { search: string }) {
       }).catch((err) => {
         NotificationService.dispatchNotify(err.message, { variant: 'error' })
       })
-      PopoverState.hidePopupover()
+      if (activeProjectId?.value === project.id) PopoverState.hidePopupover()
     }
 
     return (
@@ -123,11 +123,12 @@ export default function ProjectTable(props: { search: string }) {
           size="small"
           className="mr-2 h-min whitespace-pre bg-theme-blue-secondary text-[#214AA6] disabled:opacity-50 dark:text-white"
           disabled={project.name === 'ir-engine/default-project'}
-          onClick={() =>
+          onClick={() => {
+            activeProjectId.set(project.id)
             PopoverState.showPopupover(
               <AddEditProjectModal update={true} inputProject={project} onSubmit={handleProjectUpdate} />
             )
-          }
+          }}
         >
           {t('admin:components.project.actions.update')}
         </Button>
@@ -254,17 +255,18 @@ export default function ProjectTable(props: { search: string }) {
         ),
         visibility: <Toggle value={row.visibility === 'public'} onChange={() => handleVisibilityChange(row)} />,
         commitSHA: (
-          <span className="flex items-center justify-between">
-            <Tooltip content={row.commitSHA || ''}>
-              <>{row.commitSHA?.slice(0, 8)}</>
-            </Tooltip>{' '}
-            <CopyText text={row.commitSHA || ''} className="ml-1" />
-          </span>
+          <TruncatedText
+            variant="copy"
+            text={row.commitSHA || ''}
+            truncatorChar=" "
+            visibleChars={8}
+            truncatorPosition="end"
+          />
         ),
         commitDate: toDisplayDateTime(row.commitDate),
         actions: <RowActions project={row} />
       }
     })
 
-  return <DataTable query={projectQuery} columns={projectsColumns} rows={createRows(projectQuery.data)} />
+  return <DataTable size="xs" query={projectQuery} columns={projectsColumns} rows={createRows(projectQuery.data)} />
 }

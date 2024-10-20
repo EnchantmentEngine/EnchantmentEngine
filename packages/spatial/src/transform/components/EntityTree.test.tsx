@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import React, { useEffect } from 'react'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { EntityUUID, hasComponents, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -623,6 +624,21 @@ describe('getAncestorWithComponents', () => {
     assert.equal(child_2, result, `Case3: Did not return the correct entity. result = ${result}`)
 
     destroyEntityTree(rootEntity)
+  })
+
+  it('only returns the self entity if the includeSelf flag is set', async () => {
+    const entity1 = createEntity()
+    const entity2 = createEntity()
+
+    setComponent(entity1, EntityTreeComponent, { parentEntity: UndefinedEntity })
+    setComponent(entity2, EntityTreeComponent, { parentEntity: entity1 })
+
+    setComponent(entity1, NameComponent, '1')
+    setComponent(entity2, NameComponent, '2')
+
+    assert(getAncestorWithComponents(entity2, [NameComponent]) === entity2)
+    assert(getAncestorWithComponents(entity2, [NameComponent], false, false) === entity1)
+    assert(getAncestorWithComponents(entity2, [NameComponent], true, false) === entity1)
   })
 })
 

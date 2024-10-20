@@ -291,9 +291,12 @@ export function getAncestorWithComponents(
 ): Entity {
   let result = includeSelf && hasComponents(entity, components) ? entity : UndefinedEntity
   if (includeSelf && closest && result) return result
-  traverseEntityNodeParent(entity, (entity: Entity) => {
-    if (hasComponents(entity, components)) {
-      result = entity
+  else if (!includeSelf) result = UndefinedEntity
+
+  traverseEntityNodeParent(entity, (parentEntity: Entity) => {
+    if (parentEntity === entity && !includeSelf) return
+    if (hasComponents(parentEntity, components)) {
+      result = parentEntity
       if (closest) return true // stop traversal
     }
   })
@@ -404,7 +407,7 @@ export function useAncestorWithComponents(
   const componentsString = components.map((component) => component.name).join()
 
   // hook into reactive changes up the tree to trigger a re-render of the parent when necessary
-  useEffect(() => {
+  useImmediateEffect(() => {
     let unmounted = false
     const ParentSubReactor = React.memo((props: { entity: Entity }) => {
       const tree = useOptionalComponent(props.entity, EntityTreeComponent)
@@ -429,7 +432,7 @@ export function useAncestorWithComponents(
       unmounted = true
       root?.stop()
     }
-  }, [entity, componentsString, includeSelf, parentEntity])
+  }, [entity, componentsString, includeSelf, parentEntity?.value])
 
   return result
 }

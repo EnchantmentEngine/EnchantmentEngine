@@ -56,13 +56,18 @@ const locationTypeOptions = [
   { label: 'Showroom', value: 'showroom' }
 ]
 
-export default function AddEditLocationModal(props: { location?: LocationType; sceneID?: string | null }) {
+export default function AddEditLocationModal(props: {
+  action: string
+  location?: LocationType
+  sceneID?: string | null
+}) {
   const { t } = useTranslation()
 
   const locationID = useHookstate(props.location?.id || null)
 
   const params = {
     query: {
+      action: props.action,
       id: locationID.value
     }
   }
@@ -80,7 +85,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
   const errors = useHookstate(getDefaultErrors())
 
   const name = useHookstate(location?.name || '')
-  const maxUsers = useHookstate(location?.maxUsersPerInstance || 20)
+  const maxUsers = useHookstate(location?.maxUsersPerInstance || 10)
 
   const scene = useHookstate((location ? location.sceneId : props.sceneID) || '')
   const videoEnabled = useHookstate<boolean>(location?.locationSetting.videoEnabled || true)
@@ -116,6 +121,9 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
     }
     if (!maxUsers.value) {
       errors.maxUsers.set(t('admin:components.location.maxUserCantEmpty'))
+    }
+    if (maxUsers.value > 10) {
+      errors.maxUsers.set(t('admin:components.location.maxUserExceeded'))
     }
     if (!scene.value) {
       errors.scene.set(t('admin:components.location.sceneCantEmpty'))

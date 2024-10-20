@@ -35,28 +35,85 @@ export async function seed(knex: Knex): Promise<void> {
   const { testEnabled } = appConfig
   const { forceRefresh } = appConfig.db
 
-  const taskServerSeedData: EngineSettingType[] = await Promise.all(
+  const taskServerSeedData = await generateSeedData(
     [
-      // Task Server Settings:
+      { key: EngineSettings.TaskServer.Port, value: process.env.TASKSERVER_PORT || '3030' },
+      { key: EngineSettings.TaskServer.ProcessInterval, value: process.env.TASKSERVER_PROCESS_INTERVAL_SECONDS || '30' }
+    ],
+    'task-server'
+  )
+
+  const chargebeeSettingSeedData = await generateSeedData(
+    [
       {
-        key: EngineSettings.TaskServer.Port,
-        value: process.env.TASKSERVER_PORT || '3030'
+        key: EngineSettings.Chargebee.Url,
+        value: process.env.CHARGEBEE_SITE + '.chargebee.com' || 'dummy.not-chargebee.com'
+      },
+      { key: EngineSettings.Chargebee.ApiKey, value: process.env.CHARGEBEE_API_KEY || '' }
+    ],
+    'chargebee'
+  )
+  const zendeskSettingSeedData: EngineSettingType[] = await Promise.all(
+    [
+      {
+        key: EngineSettings.Zendesk.Name,
+        value: process.env.ZENDESK_KEY_NAME || ''
       },
       {
-        key: EngineSettings.TaskServer.ProcessInterval,
-        value: process.env.TASKSERVER_PROCESS_INTERVAL_SECONDS || '30'
+        key: EngineSettings.Zendesk.Secret,
+        value: process.env.ZENDESK_SECRET || ''
+      },
+      {
+        key: EngineSettings.Zendesk.Kid,
+        value: process.env.ZENDESK_KID || ''
       }
     ].map(async (item) => ({
       ...item,
       id: uuidv4(),
       type: 'private' as EngineSettingType['type'],
-      category: 'task-server' as EngineSettingType['category'],
+      category: 'zendesk' as EngineSettingType['category'],
       createdAt: await getDateTimeSql(),
       updatedAt: await getDateTimeSql()
     }))
   )
 
-  const seedData: EngineSettingType[] = [...taskServerSeedData]
+  const coilSeedData = await generateSeedData(
+    [
+      { key: EngineSettings.Coil.PaymentPointer, value: process.env.COIL_PAYMENT_POINTER || '' },
+      { key: EngineSettings.Coil.ClientId, value: process.env.COIL_API_CLIENT_ID || '' },
+      { key: EngineSettings.Coil.ClientSecret, value: process.env.COIL_API_CLIENT_SECRET || '' }
+    ],
+    'coil'
+  )
+
+  const redisSeedData = await generateSeedData(
+    [
+      {
+        key: EngineSettings.Redis.Address,
+        value: process.env.REDIS_ADDRESS || 'localhost'
+      },
+      {
+        key: EngineSettings.Redis.Password,
+        value: process.env.REDIS_PASSWORD || ''
+      },
+      {
+        key: EngineSettings.Redis.Port,
+        value: process.env.REDIS_PORT || '6379'
+      },
+      {
+        key: EngineSettings.Redis.Enabled,
+        value: process.env.REDIS_ENABLED || ''
+      }
+    ],
+    'redis'
+  )
+  const seedData: EngineSettingType[] = [
+    ...taskServerSeedData,
+    ...chargebeeSettingSeedData,
+    ...coilSeedData,
+    ...redisSeedData,
+    ...zendeskSettingSeedData
+  ]
 
   if (forceRefresh || testEnabled) {
     // Deletes ALL existing entries
@@ -73,4 +130,21 @@ export async function seed(knex: Knex): Promise<void> {
       }
     }
   }
+}
+
+async function generateSeedData(
+  items: { key: string; value: string }[],
+  category: EngineSettingType['category'],
+  type: EngineSettingType['type'] = 'private'
+): Promise<EngineSettingType[]> {
+  return Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      id: uuidv4(),
+      type: type,
+      category: category,
+      createdAt: await getDateTimeSql(),
+      updatedAt: await getDateTimeSql()
+    }))
+  )
 }

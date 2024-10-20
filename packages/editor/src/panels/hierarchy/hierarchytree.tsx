@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import ElementList from '@ir-engine/ui/src/components/editor/panels/Properties/elementList'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
@@ -34,6 +33,7 @@ import { HiOutlinePlusCircle } from 'react-icons/hi2'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
+import ElementList from '../properties/elementlist'
 import HierarchyTreeNode from './hierarchynode'
 import { useHierarchyNodes, useHierarchyTreeDrop, useHierarchyTreeHotkeys } from './hooks'
 
@@ -43,10 +43,15 @@ export function Topbar() {
   const isAddEntityMenuOpen = useHookstate(false)
 
   return (
-    <div className="flex items-center gap-2 bg-theme-surface-main">
+    <div className="flex h-8 items-center justify-between gap-2 bg-[#212226]" data-testid="hierarchy-panel-top-bar">
       <SearchBar
         search={search}
-        inputProps={{ containerClassName: 'bg-theme-primary text-[#A3A3A3]', className: 'm-1 rounded' }}
+        inputProps={{
+          className:
+            'text-[#A3A3A3] bg-[#141619] h-6 rounded-lg border border-theme-input px-2 py-0 text-xs text-[#A3A3A3] placeholder:text-xs placeholder:text-[#A3A3A3] focus-visible:ring-0',
+          containerClassName: 'flex h-auto w-full pl-2',
+          variant: 'underlined'
+        }}
       />
       <Popup
         keepInside
@@ -60,6 +65,7 @@ export function Topbar() {
             className="ml-auto w-32 text-nowrap bg-theme-highlight px-2 py-3 text-white"
             size="small"
             textContainerClassName="mx-0"
+            data-testid="hierarchy-panel-add-entity-button"
             onClick={() => isAddEntityMenuOpen.set(true)}
           >
             {t('editor:hierarchy.lbl-addEntity')}
@@ -105,7 +111,11 @@ export function Contents() {
   useHierarchyTreeHotkeys()
 
   return (
-    <div ref={ref} className={twMerge('h-5/6 overflow-hidden', isOver && canDrop && 'border border-dotted')}>
+    <div
+      ref={ref}
+      className={twMerge('h-5/6 overflow-hidden', isOver && canDrop && 'border border-dotted')}
+      data-testid="hierarchy-panel-scene-item-list"
+    >
       <FixedSizeList
         height={listDimensions.height.value}
         width={listDimensions.width.value}

@@ -35,6 +35,7 @@ import {
   UndefinedEntity,
   useOptionalComponent
 } from '@ir-engine/ecs'
+import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { GLTFAssetState, GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -48,7 +49,6 @@ import React, { createContext, ReactNode, useContext, useEffect, useMemo } from 
 import { DropTargetMonitor, useDrop } from 'react-dnd'
 import { useHotkeys } from 'react-hotkeys-hook'
 import useUpload from '../../components/assets/useUpload'
-import { gltfHierarchyTreeWalker, HierarchyTreeNodeType } from '../../components/hierarchy/HierarchyTreeWalker'
 import { DnDFileType, FileDataType, ItemTypes, SupportedFileTypes } from '../../constants/AssetTypes'
 import { addMediaNode } from '../../functions/addMediaNode'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
@@ -56,7 +56,15 @@ import { cmdOrCtrlString } from '../../functions/utils'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { SelectionState } from '../../services/SelectionServices'
-import { copyNodes, duplicateNode, groupNodes, pasteNodes, uploadOptions } from './helpers'
+import {
+  copyNodes,
+  duplicateNode,
+  gltfHierarchyTreeWalker,
+  groupNodes,
+  HierarchyTreeNodeType,
+  pasteNodes,
+  uploadOptions
+} from './helpers'
 
 type DragItemType = {
   type: (typeof ItemTypes)[keyof typeof ItemTypes]
@@ -99,6 +107,8 @@ export const HierarchyPanelProvider = ({ children }: { children?: ReactNode }) =
   const renamingEntity = useHookstate<Entity | null>(null)
   const contextMenu = useHookstate({ entity: UndefinedEntity, anchorEvent: undefined as React.MouseEvent | undefined })
   const snapshotIndex = GLTFSnapshotState.useSnapshotIndex(sourceId)
+  const modifiedState = useMutableState(GLTFModifiedState)
+
   if (snapshotIndex === undefined) return null
 
   const gltfSnapshot = gltfState[sourceId].snapshots[snapshotIndex.value]
@@ -133,7 +143,8 @@ export const HierarchyPanelProvider = ({ children }: { children?: ReactNode }) =
     gltfSnapshot,
     gltfState,
     selectionState.selectedEntities,
-    showModelChildren
+    showModelChildren,
+    modifiedState.keys
   ])
 
   useEffect(() => {
@@ -228,35 +239,44 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
   }
 
   const dropItem = (item: FileDataType | DnDFileType | DragItemType, monitor: DropTargetMonitor): void => {
-    let parentNode: Entity | undefined = undefined
-    let beforeNode: Entity | undefined = undefined
+    let parentNode: Entity | undefined
+    let beforeNode: Entity = UndefinedEntity
+    let afterNode: Entity = UndefinedEntity
 
     if (node) {
-      if (place === 'Before') {
-        const entityTreeComponent = getOptionalComponent(node.entity, EntityTreeComponent)
-        parentNode = entityTreeComponent?.parentEntity
-        beforeNode = node.entity
-      } else if (place === 'After') {
-        const entityTreeComponent = getOptionalComponent(node.entity, EntityTreeComponent)
-        parentNode = entityTreeComponent?.parentEntity
-        const parentTreeComponent = getOptionalComponent(entityTreeComponent?.parentEntity!, EntityTreeComponent)
-        if (
-          parentTreeComponent &&
-          !node.lastChild &&
-          parentNode &&
-          parentTreeComponent?.children.length > node.childIndex + 1
-        ) {
-          beforeNode = parentTreeComponent.children[node.childIndex + 1]
-        }
-      } else {
-        parentNode = node.entity
+      const entityTreeComponent = getOptionalComponent(node.entity, EntityTreeComponent)
+      parentNode = entityTreeComponent?.parentEntity
+      const parentTreeComponent = getOptionalComponent(entityTreeComponent?.parentEntity!, EntityTreeComponent)
+
+      switch (place) {
+        case 'Before': // we want to place before this node
+          beforeNode = node.entity
+          if (!parentTreeComponent || !parentNode) break
+          if (0 > node.childIndex - 1) break // nothing to place after it, as node index is the first child
+          afterNode = UndefinedEntity
+          break
+        case 'After': // we want to place after this node
+          afterNode = node.entity
+          if (!parentTreeComponent || !parentNode) break
+          if (node.lastChild) break // if it is last child, nothing to place before it
+          if (parentTreeComponent?.children.length < node.childIndex + 1) break //node index is last child
+          beforeNode = UndefinedEntity
+          break
+        default: //case 'on'
+          parentNode = node.entity
       }
+    }
+
+    if (!parentNode) {
+      console.warn('parent is not defined')
+      return
     }
 
     if ('files' in item) {
       const dndItem: any = monitor.getItem()
       const entries = Array.from(dndItem.items).map((item: any) => item.webkitGetAsEntry())
 
+      //uploading files then adding as media to the editor
       onUpload(entries).then((assets) => {
         if (!assets) return
         for (const asset of assets) {
@@ -285,7 +305,8 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
         ? ((item as DragItemType).value as Entity[])
         : [(item as DragItemType).value as Entity],
       beforeNode,
-      parentNode
+      afterNode,
+      parentNode === null ? undefined : parentNode
     )
   }
 

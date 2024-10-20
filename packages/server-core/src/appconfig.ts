@@ -25,9 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import appRootPath from 'app-root-path'
 import chargebeeInst from 'chargebee'
-import dotenv from 'dotenv-flow'
+import fs from 'fs'
 import path from 'path'
+import { register } from 'trace-unhandled'
 import url from 'url'
+
+// ensure logger is loaded first - it loads the dotenv config
+import multiLogger from './ServerLogger'
 
 import { oembedPath } from '@ir-engine/common/src/schemas/media/oembed.schema'
 import { allowedDomainsPath } from '@ir-engine/common/src/schemas/networking/allowed-domains.schema'
@@ -39,7 +43,7 @@ import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identit
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
 import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
-import multiLogger from './ServerLogger'
+import { createHash } from 'crypto'
 import {
   APPLE_SCOPES,
   DISCORD_SCOPES,
@@ -54,7 +58,6 @@ const kubernetesEnabled = process.env.KUBERNETES === 'true'
 const testEnabled = process.env.TEST === 'true'
 
 if (!testEnabled) {
-  const { register } = require('trace-unhandled')
   register()
 
   // ensure process fails properly
@@ -89,18 +92,10 @@ if (!testEnabled) {
   })
 }
 
-if (!kubernetesEnabled) {
-  dotenv.config({
-    path: appRootPath.path,
-    node_env: 'local'
-  })
-}
-
 if (process.env.APP_ENV === 'development' || process.env.LOCAL === 'true') {
   // Avoids DEPTH_ZERO_SELF_SIGNED_CERT error for self-signed certs - needed for local storage provider
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-  const fs = require('fs')
   if (!fs.existsSync(appRootPath.path + '/.env') && !fs.existsSync(appRootPath.path + '/.env.local')) {
     const fromEnvPath = appRootPath.path + '/.env.local.default'
     const toEnvPath = appRootPath.path + '/.env.local'
@@ -237,12 +232,12 @@ const email = {
   from: `${process.env.SMTP_FROM_NAME}` + ` <${process.env.SMTP_FROM_EMAIL}>`,
   subject: {
     // Subject of the Login Link email
-    'new-user': 'Signup',
-    location: 'Location invitation',
-    instance: 'Location invitation',
-    login: 'Login link',
-    friend: 'Friend request',
-    channel: 'Channel invitation'
+    'new-user': 'IR Engine Signup',
+    location: 'IR Engine Location invitation',
+    instance: 'IR Engine Location invitation',
+    login: 'IR Engine Login link',
+    friend: 'IR Engine Friend request',
+    channel: 'IR Engine Channel invitation'
   },
   smsNameCharacterLimit: 20
 }
@@ -349,6 +344,9 @@ const authentication = {
   }
 }
 
+if (authentication.jwtPublicKey && typeof authentication.jwtPublicKey === 'string')
+  (authentication.jwtOptions as any).keyid = createHash('sha3-256').update(authentication.jwtPublicKey).digest('hex')
+
 /**
  * AWS
  */
@@ -429,7 +427,8 @@ const mailchimp = {
   key: process.env.MAILCHIMP_KEY,
   server: process.env.MAILCHIMP_SERVER,
   audienceId: process.env.MAILCHIMP_AUDIENCE_ID,
-  defaultTags: process.env.MAILCHIMP_DEFAULT_TAGS
+  defaultTags: process.env.MAILCHIMP_DEFAULT_TAGS,
+  groupId: process.env.MAILCHIMP_GROUP_ID
 }
 
 /**

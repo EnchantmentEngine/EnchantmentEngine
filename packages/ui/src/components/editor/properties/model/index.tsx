@@ -37,6 +37,7 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import ErrorPopUp from '@ir-engine/editor/src/components/popup/ErrorPopUp'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
@@ -54,8 +55,6 @@ import InputGroup from '../../input/Group'
 import ModelInput from '../../input/Model'
 import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
-import NodeEditor from '../nodeEditor'
-import ModelTransformProperties from './transform'
 
 /**
  * ModelNodeEditor used to create editor view for the properties of ModelNode.
@@ -78,10 +77,7 @@ export const ModelNodeEditor: EditorComponentType = (props) => {
     return `${orgName}/${projectName}`
   })
 
-  const [dereferenceFeatureFlag, gltfTransformFeatureFlag] = useFeatureFlags([
-    FeatureFlags.Studio.Model.Dereference,
-    FeatureFlags.Studio.Model.GLTFTransform
-  ])
+  const [dereferenceFeatureFlag] = useFeatureFlags([FeatureFlags.Studio.Model.Dereference])
 
   const getRelativePath = useCallback(() => {
     const relativePath = STATIC_ASSET_REGEX.exec(modelComponent.src.value)?.[3]
@@ -137,7 +133,7 @@ export const ModelNodeEditor: EditorComponentType = (props) => {
     <NodeEditor
       name={t('editor:properties.model.title')}
       description={t('editor:properties.model.description')}
-      icon={<ModelNodeEditor.iconComponent />}
+      Icon={ModelNodeEditor.iconComponent}
       {...props}
     >
       <InputGroup name="Model Url" label={t('editor:properties.model.lbl-modelurl')}>
@@ -225,10 +221,6 @@ export const ModelNodeEditor: EditorComponentType = (props) => {
           <LoadingView fullSpace className="mb-2 flex h-[20%] w-[20%] justify-center" title=" Exporting..." />
         )}
       </Accordion>
-
-      {gltfTransformFeatureFlag && (
-        <ModelTransformProperties entity={entity} onChangeModel={commitProperty(ModelComponent, 'src')} />
-      )}
     </NodeEditor>
   )
 }

@@ -44,6 +44,7 @@ export interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
   labelClassname?: string
   errorBorder?: boolean
   maxLength?: number
+  autoComplete?: string
 }
 
 const variants = {
@@ -69,6 +70,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       variant = 'outlined',
       labelClassname,
       errorBorder,
+      autoComplete,
       ...props
     },
     ref
@@ -112,7 +114,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && <Label className={twMerge(`self-stretch ${labelClass}`, labelClassname)}>{label}</Label>}
         <div className={containerClass}>
           {startComponent && (
-            <div className="pointer-events-auto absolute inset-y-0 start-0 flex items-center ps-3.5">
+            <div className="pointer-events-auto absolute inset-y-0 left-0 start-0 ml-2 flex items-center ps-0">
               {startComponent}
             </div>
           )}
@@ -123,6 +125,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={twClassname}
             value={value}
             onChange={onChange}
+            autoComplete={autoComplete}
             {...props}
           />
 
@@ -130,9 +133,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <div className="pointer-events-auto absolute inset-y-0 end-0 flex items-center">{endComponent}</div>
           )}
         </div>
-        {description && <p className="self-stretch text-xs text-theme-secondary">{description}</p>}
+        {description && (
+          <p className="self-stretch text-xs text-theme-secondary" data-testid="input-description-text">
+            {description}
+          </p>
+        )}
         {error && (
-          <p className="inline-flex items-center gap-2.5 self-start text-sm text-theme-iconRed">
+          <p
+            className="inline-flex items-center gap-2.5 self-start text-sm text-theme-iconRed"
+            data-testid="input-error-text"
+          >
             <HiXCircle /> {error}
           </p>
         )}

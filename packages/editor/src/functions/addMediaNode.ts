@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Intersection, Material, Mesh, Raycaster, Vector2 } from 'three'
 
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { getContentType } from '@ir-engine/common/src/utils/getContentType'
 import { UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -67,6 +68,17 @@ export async function addMediaNode(
 ): Promise<EntityUUID | null> {
   const contentType = (await getContentType(url)) || ''
   const { hostname } = new URL(url)
+
+  const pathArray = url.split('/')
+  const lastIndex = pathArray.length - 1
+  const fileNameWithExt = pathArray[lastIndex]
+  const fileNameArray = fileNameWithExt.split('.')
+  let name: string | undefined = undefined
+  try {
+    name = decodeURI(fileNameArray[0])
+  } catch (err) {
+    NotificationService.dispatchNotify(err.message, { variant: 'error' })
+  }
 
   if (contentType.startsWith('model/')) {
     if (contentType.startsWith('model/material')) {
@@ -131,7 +143,8 @@ export async function addMediaNode(
       const { entityUUID, sceneID } = EditorControlFunctions.createObjectFromSceneElement(
         [{ name: ModelComponent.jsonID, props: { src: url } }, ...extraComponentJson],
         parent!,
-        before
+        before,
+        name
       )
       const reactor = startReactor(() => {
         const entity = UUIDComponent.useEntityByUUID(entityUUID)
@@ -139,6 +152,7 @@ export async function addMediaNode(
 
         useImmediateEffect(() => {
           if (!modelComponent) return
+
           modelComponent.dereference.set(true)
           reactor.stop()
         }, [modelComponent])
@@ -155,8 +169,10 @@ export async function addMediaNode(
           ...extraComponentJson
         ],
         parent!,
-        before
+        before,
+        name
       )
+
       return entityUUID
     }
   } else if (contentType.startsWith('video/') || hostname.includes('twitch.tv') || hostname.includes('youtube.com')) {
@@ -167,14 +183,16 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before
+      before,
+      name
     )
     return entityUUID
   } else if (contentType.startsWith('image/')) {
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
       [{ name: ImageComponent.jsonID, props: { source: url } }, ...extraComponentJson],
       parent!,
-      before
+      before,
+      name
     )
     return entityUUID
   } else if (contentType.startsWith('audio/')) {
@@ -185,7 +203,8 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before
+      before,
+      name
     )
     return entityUUID
   } else if (url.includes('.uvol')) {
@@ -196,7 +215,8 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before
+      before,
+      name
     )
     return entityUUID
   } else {

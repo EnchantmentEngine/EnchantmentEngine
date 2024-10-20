@@ -236,8 +236,9 @@ export class WebLayerManagerBase {
 
       const hashComponents = [...svgCSS.map((s) => s.hash), parentsHTML[0], layerHTML, parentsHTML[1]].join('\n')
 
-      // @ts-ignore
-      const stateHashBuffer = await crypto.subtle.digest('SHA-1', WebRenderer.textEncoder.encode(hashComponents))
+      const stateHashBuffer = isClient
+        ? await crypto.subtle.digest('SHA-1', WebRenderer.textEncoder.encode(hashComponents))
+        : new ArrayBuffer(0)
       const stateHash =
         bufferToHex(stateHashBuffer) +
         '?w=' +
