@@ -431,10 +431,14 @@ export const DocumentReactor = (props: { documentID: string; parentUUID: EntityU
 
     const obj3d = getComponent(rootEntity, Object3DComponent)
     obj3d.animations = animationState.get(NO_PROXY) as AnimationClip[]
-    setComponent(rootEntity, AnimationComponent, {
-      mixer: new AnimationMixer(obj3d),
-      animations: obj3d.animations
-    })
+    if (!hasComponent(rootEntity, AnimationComponent)) {
+      setComponent(rootEntity, AnimationComponent, {
+        mixer: new AnimationMixer(obj3d),
+        animations: obj3d.animations
+      })
+    } else {
+      getMutableComponent(rootEntity, AnimationComponent).animations.merge(obj3d.animations)
+    }
 
     return () => {
       if (entityExists(rootEntity)) {
