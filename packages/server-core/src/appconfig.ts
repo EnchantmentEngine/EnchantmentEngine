@@ -51,6 +51,7 @@ import {
   GOOGLE_SCOPES,
   LINKEDIN_SCOPES
 } from './setting/authentication-setting/authentication-setting.seed'
+import { instanceSignalingPath } from '@ir-engine/common/src/schema.type.module'
 
 const logger = multiLogger.child({ component: 'server-core:config' })
 
@@ -273,6 +274,7 @@ const authentication = {
     allowedDomainsPath,
     oembedPath,
     githubRepoAccessWebhookPath,
+    { path: instanceSignalingPath, methods: ['patch'] },
     { path: identityProviderPath, methods: ['create'] },
     { path: routePath, methods: ['find'] },
     { path: acceptInvitePath, methods: ['get'] },

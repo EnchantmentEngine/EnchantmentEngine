@@ -193,28 +193,31 @@ export default (app: Application): void => {
       const instanceId = data.instanceID
       const targetPeerID = data.targetPeerID
 
-      if (!peerID || !instanceId) throw new BadRequest('instanceID required')
+      if (!peerID) throw new BadRequest('peerID required')
+      if (!targetPeerID) throw new BadRequest('targetPeerID required')
+      if (!instanceId) throw new BadRequest('instanceID required')
 
-      const [instanceAttendance, instance, targetInstanceAttendance] = await Promise.all([
-        app.service(instanceAttendancePath).find({
-          query: {
-            instanceId,
-            peerId: peerID
-          }
-        }),
-        app.service(instancePath).get(instanceId),
-        app.service(instanceAttendancePath).find({
-          query: {
-            instanceId,
-            peerId: targetPeerID
-          }
-        })
-      ])
+      /** @todo see if we need to actually verify data */
+      // const [instanceAttendance, instance, targetInstanceAttendance] = await Promise.all([
+      //   app.service(instanceAttendancePath).find({
+      //     query: {
+      //       instanceId,
+      //       peerId: peerID
+      //     }
+      //   }),
+      //   app.service(instancePath).get(instanceId),
+      //   app.service(instanceAttendancePath).find({
+      //     query: {
+      //       instanceId,
+      //       peerId: targetPeerID
+      //     }
+      //   })
+      // ])
 
-      if (!instanceAttendance.data.length) throw new BadRequest(`Peer ${peerID} not in instance ${instanceId}`)
-      if (!instance.currentUsers) throw new BadRequest(`Instance not active ${instanceId}`, instance.currentUsers)
-      if (!targetInstanceAttendance.data.length)
-        throw new BadRequest(`Target peer ${targetPeerID} not in instance ${instanceId}`)
+      // if (!instanceAttendance.data.length) throw new BadRequest(`Peer ${peerID} not in instance ${instanceId}`)
+      // if (!instance.currentUsers) throw new BadRequest(`Instance not active ${instanceId}`, instance.currentUsers)
+      // if (!targetInstanceAttendance.data.length)
+      //   throw new BadRequest(`Target peer ${targetPeerID} not in instance ${instanceId}`)
 
       // from here, we can leverage feathers-sync to send the message to the target peer
       data.fromPeerID = peerID
