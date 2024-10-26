@@ -42,6 +42,7 @@ import { githubRepoAccessWebhookPath } from '@ir-engine/common/src/schemas/user/
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
+import { instanceSignalingPath } from '@ir-engine/common/src/schema.type.module'
 import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
 import { createHash } from 'crypto'
 import {
@@ -51,7 +52,6 @@ import {
   GOOGLE_SCOPES,
   LINKEDIN_SCOPES
 } from './setting/authentication-setting/authentication-setting.seed'
-import { instanceSignalingPath } from '@ir-engine/common/src/schema.type.module'
 
 const logger = multiLogger.child({ component: 'server-core:config' })
 
