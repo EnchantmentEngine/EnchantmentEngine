@@ -121,16 +121,17 @@ const Select = <T extends OptionValueType>({
     if (searchDisabled) {
       return
     }
-    const newOptions = options.filter((item) => item.label.toLowerCase().startsWith(e.target.value.toLowerCase()))
+
+    const newOptions = options.filter((item) => item.label.toLowerCase().indexOf(e.target.value.toLowerCase()) > -1)
     if (newOptions.length > 0) {
       filteredOptions.set(newOptions)
-      selectLabel.set(e.target.value)
-    }
 
-    const optionFound = options.find((item) => item.label === e.target.value)
-    if (optionFound) {
-      onChange(newOptions[0].value as T)
-    }
+      if (newOptions.length === 1 && newOptions[0].value.toLowerCase() === e.target.value.toLowerCase()) {
+        onChange(newOptions[0].value as T)
+      }
+    } else filteredOptions.set([])
+
+    selectLabel.set(e.target.value)
   }
 
   const handleOptionItem = (option: SelectOptionsType) => {
@@ -173,29 +174,31 @@ const Select = <T extends OptionValueType>({
         }
         containerClassName={inputContainerClassName}
       />
-      <div
-        className={`absolute z-30 mt-2 w-full rounded border border-theme-primary bg-theme-surface-main ${
-          showOptions.value ? 'visible' : 'hidden'
-        }`}
-        ref={menuRef}
-      >
-        <ul className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2', menuClassname)}>
-          {filteredOptions.value.map((option, index) => (
-            <li
-              key={index}
-              value={option.value}
-              className={twMerge(
-                'cursor-pointer px-4 py-2 text-theme-secondary',
-                option.disabled ? 'cursor-not-allowed' : 'hover:bg-theme-highlight hover:text-theme-highlight',
-                menuItemClassName
-              )}
-              onClick={() => handleOptionItem(option)}
-            >
-              {option.label}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {filteredOptions.value.length > 0 && (
+        <div
+          className={`absolute z-30 mt-2 w-full rounded border border-theme-primary bg-theme-surface-main ${
+            showOptions.value ? 'visible' : 'hidden'
+          }`}
+          ref={menuRef}
+        >
+          <ul className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2', menuClassname)}>
+            {filteredOptions.value.map((option, index) => (
+              <li
+                key={index}
+                value={option.value}
+                className={twMerge(
+                  'cursor-pointer px-4 py-2 text-theme-secondary',
+                  option.disabled ? 'cursor-not-allowed' : 'hover:bg-theme-highlight hover:text-theme-highlight',
+                  menuItemClassName
+                )}
+                onClick={() => handleOptionItem(option)}
+              >
+                {option.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
