@@ -40,13 +40,12 @@ import { CreateSchemaValue } from '@ir-engine/ecs/src/schemas/JSONSchemaUtils'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { State, getState, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { Vector3_One, Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { ArrayCamera, Box3, Matrix4, Quaternion, Vector3 } from 'three'
+import { ArrayCamera, Matrix4, Quaternion, Vector3 } from 'three'
 import { Transition } from '../classes/Transition'
 
 export enum SizeMode {
@@ -69,6 +68,11 @@ export const UnitNormalizedSchema = S.Object({
   pixels: S.Number(0),
   percent: S.Number(0)
 })
+
+export const LayoutSpace = {
+  World: 'World' as const,
+  NDC: 'NDC' as const
+}
 
 export const UnitSchema = S.Union([UnitNormalizedSchema, S.String(), S.Number()], 0)
 
@@ -214,7 +218,18 @@ export const LayoutComponent = defineComponent({
       contentFit: S.Enum(ContentFit, ContentFit.contain)
     }),
 
-    containerEntity: S.Entity()
+    containerEntity: S.Entity(),
+
+    computedLayoutBounds: S.NonSerialized(
+      S.Optional(
+        S.Object({
+          min: S.Vec3(),
+          max: S.Vec3(),
+          rotation: S.Quaternion(),
+          space: S.Enum(LayoutSpace)
+        })
+      )
+    )
   }),
 
   getRootContainerEntity(entity: Entity) {
@@ -249,6 +264,9 @@ export const LayoutComponent = defineComponent({
     const finalRotation = new Quaternion()
     const finalScale = new Vector3()
 
+    const containerWorldRotation = new Matrix4()
+    const containerWorldQuaternion = new Quaternion()
+
     useImmediateEffect(() => {
       setComponent(entity, ComputedTransformComponent, {
         referenceEntities: [containerEntity],
@@ -273,18 +291,54 @@ export const LayoutComponent = defineComponent({
           const size = l.sizeTransition.current
           const contentFitScale = l.contentFitTransition.current
 
-          // Compute the final position
-          const finalPosition = new Vector3()
-          let containerSize = Vector3_Zero
+          // Get the container details
+          const containerEntity = l.containerEntity
+          const rootContainerEntity = LayoutComponent.getRootContainerEntity(entity)
+          const camera = getOptionalComponent(rootContainerEntity, CameraComponent)
+          const renderer = getOptionalComponent(rootContainerEntity, RendererComponent)
+          const containerLayout = getOptionalComponent(containerEntity, LayoutComponent)
+          const containerTransform = getComponent(containerEntity, TransformComponent)
+          let containerComputedLayoutBounds = containerLayout?.computedLayoutBounds
 
-          if (containerCamera?.value && containerRenderer?.canvas.value) {
+          containerWorldQuaternion.setFromRotationMatrix(
+            containerTransform.matrixWorld.extractRotation(containerWorldRotation)
+          )
+
+          // if container doesn't have already have computed layout bounds, compute them
+          if (!containerComputedLayoutBounds && camera && renderer) {
+            // NDC bounds
+            containerComputedLayoutBounds = {
+              min: Vector3_Zero,
+              max: Vector3_One,
+              rotation: containerWorldQuaternion,
+              space: LayoutSpace.NDC
+            }
+          } else if (!containerComputedLayoutBounds) {
+            // layout bounds
+            containerComputedLayoutBounds = {
+              min: Vector3_Zero,
+              max: Vector3_Zero,
+              rotation: containerWorldQuaternion,
+              space: LayoutSpace.NDC
+            }
+            // containerComputedLayoutBounds = computeLayoutBounds(containerEntity)
+          }
+
+          if (containerComputedLayoutBounds.space === LayoutSpace.NDC && camera && renderer && renderer.canvas) {
+            const containerWidthNDC = Math.abs(
+              containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x
+            )
+            const containerHeightNDC = Math.abs(
+              containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y
+            )
+
             // Handle camera container
-            const canvas = containerRenderer.canvas.value
+            const canvas = renderer.canvas
             const rect = canvas.getBoundingClientRect()
 
             // Screen-space position in pixels
             const screenPosition = new Vector3(
-              position.x + positionOrigin.x * rect.width - alignmentOrigin.x * size.x,
+              position.x.pixels + position.x.percent * +origin.x.percent * rect.width - alignmentOrigin.x * size.x,
               position.y + positionOrigin.y * rect.height - alignmentOrigin.y * size.y,
               0 // We'll set the depth separately
             )
@@ -423,34 +477,40 @@ export const LayoutComponent = defineComponent({
   }
 })
 
-const _box = new Box3()
+// const _layoutBox = new Box3()
+// const _layoutWorldRotation = new Quaternion()
 
-function getOrientedContentBounds(entity: Entity): State<Vector3> {
-  const bounds = useHookstate(() => new Box3())
-  const layout = getComponent(entity, LayoutComponent)
-  const rotation = layout.rotation
-  const containerEntity = layout.containerEntity
+// function computeLayoutBounds(entity: Entity): Static<typeof LayoutComponent.schema.properties.computedLayoutBounds> {
+//   const transform = getComponent(entity, TransformComponent)
+//   const layout = getOptionalComponent(entity, LayoutComponent)
 
-  // reset entity transforms to calculate object-space bounding boxes
-  const transform = getComponent(entity, TransformComponent)
-  transform.position.setScalar(0)
-  transform.rotation.identity()
-  transform.scale.setScalar(1)
+//   const bounds = {
+//     min: _layoutBox.min,
+//     max: _layoutBox.max,
+//     rotation: layout?.rotation || layout?.defaults.rotation || transform.rotation,
+//     space: LayoutSpace.World
+//   }
 
-  iterateEntityNode(entity, (entity) => {
-    computeTransformMatrix(entity)
-    const mesh = getOptionalComponent(entity, MeshComponent)
-    const transform = getComponent(entity, TransformComponent)
-    if (!mesh.geometry) return
-    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
-    const geometryBox = _box.copy(mesh.geometry.boundingBox)
-    geometryBox.applyMatrix4(transform.matrix.value)
-    geometryBox.applyMatrix4(new Matrix4().makeRotationFromQuaternion(rotation))
-    bounds.union(geometryBox)
-  })
+//   const boundsBox = new Box3()
 
-  return bounds
-}
+//   // reset entity transforms to calculate object-space bounding boxes
+//   transform.position.setScalar(0)
+//   transform.rotation.identity()
+//   transform.scale.setScalar(1)
+
+//   iterateEntityNode(entity, (entity) => {
+//     const mesh = getOptionalComponent(entity, MeshComponent)
+//     const transform = getOptionalComponent(entity, TransformComponent)
+//     if (!mesh?.geometry || !transform) return
+//     if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
+//     const geometryBox = _layoutBox.copy(mesh.geometry.boundingBox!)
+//     geometryBox.applyMatrix4(transform.matrix)
+//     geometryBox.applyMatrix4(new Matrix4().makeRotationFromQuaternion(rotation))
+//     boundsBox.union(geometryBox)
+//   })
+
+//   return bounds
+// }
 
 function useEffectiveLayout(entity: Entity) {
   const layout = useComponent(entity, LayoutComponent)
