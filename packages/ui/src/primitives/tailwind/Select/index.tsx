@@ -163,8 +163,8 @@ const Select = <T extends OptionValueType>({
         onClick={toggleDropdown}
         onBlur={() => {
           if (
-            filteredOptions.value.length === 0 ||
-            filteredOptions.value.find((option) => option.label.toLowerCase() !== selectLabel.value.toLowerCase())
+            selectLabel.value.length > 0 &&
+            !filteredOptions.value.find((option) => option.label.toLowerCase() === selectLabel.value.toLowerCase())
           ) {
             invalidOption.set(true)
           }
