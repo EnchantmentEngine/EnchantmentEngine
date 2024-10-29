@@ -85,6 +85,7 @@ const Select = <T extends OptionValueType>({
   const showOptions = useHookstate(false)
   const filteredOptions = useHookstate(JSON.parse(JSON.stringify(options)) as SelectOptionsType[])
   const selectLabel = useHookstate('')
+  const invalidOption = useHookstate(false)
 
   useClickOutside(ref, () => showOptions.set(false))
 
@@ -132,6 +133,10 @@ const Select = <T extends OptionValueType>({
     } else filteredOptions.set([])
 
     selectLabel.set(e.target.value)
+
+    if (showOptions.value === false) {
+      showOptions.set(true)
+    }
   }
 
   const handleOptionItem = (option: SelectOptionsType) => {
@@ -150,12 +155,21 @@ const Select = <T extends OptionValueType>({
         variant={inputVariant}
         description={description}
         error={error}
-        errorBorder={errorBorder}
+        errorBorder={errorBorder || invalidOption.value}
         className={twMerge('cursor-pointer', inputClassName)}
         placeholder={placeholder || t('common:select.selectOption')}
         value={selectLabel.value}
         onChange={handleSearch}
         onClick={toggleDropdown}
+        onBlur={() => {
+          if (
+            filteredOptions.value.length === 0 ||
+            filteredOptions.value.find((option) => option.label.toLowerCase() !== selectLabel.value.toLowerCase())
+          ) {
+            invalidOption.set(true)
+          }
+        }}
+        onFocus={() => invalidOption.set(false)}
         onMouseDown={handleMouseDown}
         endComponent={
           endComponent ?? (
