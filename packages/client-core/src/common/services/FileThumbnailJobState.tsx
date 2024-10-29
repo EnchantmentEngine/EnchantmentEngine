@@ -168,7 +168,9 @@ export const FileThumbnailJobState = defineState({
 
         if (resource.type === 'thumbnail') {
           //set thumbnail's thumbnail as itself
-          API.instance.service(staticResourcePath).patch(resource.id, { thumbnailKey: resource.key })
+          API.instance
+            .service(staticResourcePath)
+            .patch(resource.id, { thumbnailKey: resource.key, project: resource.project })
           continue
         }
 
@@ -252,7 +254,7 @@ const ThumbnailJobReactor = () => {
     } catch (e) {
       console.error('failed to generate thumbnail for', src)
       console.error(e)
-      jobState.set(jobState.get(NO_PROXY).slice(1))
+      endJob()
     }
   }
 
@@ -279,6 +281,10 @@ const ThumbnailJobReactor = () => {
     }
   }
 
+  function endJob() {
+    jobState.set(jobState.get(NO_PROXY).slice(1))
+  }
+
   useEffect(() => {
     if (jobState.length > 0) {
       const newJob = jobState[0].get(NO_PROXY)
@@ -302,8 +308,7 @@ const ThumbnailJobReactor = () => {
           .decode()
           .then(() => drawToCanvas(image))
           .then(getCanvasBlob)
-          .then((blob) => tryCatch(() => uploadThumbnail(src, project, id, blob)))
-          .then(() => jobState.set(jobState.get(NO_PROXY).slice(1)))
+          .then((blob) => tryCatch(() => uploadThumbnail(src, project, id, blob).then(endJob)))
       )
     })
   }, [fileType, id])
@@ -321,9 +326,13 @@ const ThumbnailJobReactor = () => {
         seekVideo(video, 1)
           .then(() => drawToCanvas(video))
           .then(getCanvasBlob)
-          .then((blob) => tryCatch(() => uploadThumbnail(src, project, id, blob)))
-          .then(() => video.remove())
-          .then(() => jobState.set(jobState.get(NO_PROXY).slice(1)))
+          .then((blob) => {
+            tryCatch(() =>
+              uploadThumbnail(src, project, id, blob)
+                .then(() => video.remove())
+                .then(endJob)
+            )
+          })
       )
     })
   }, [fileType, id])
@@ -346,9 +355,13 @@ const ThumbnailJobReactor = () => {
           })
           .then(() => drawToCanvas(image))
           .then(getCanvasBlob)
-          .then((blob) => tryCatch(() => uploadThumbnail(src, project, id, blob)))
-          .then(() => image.remove())
-          .then(() => jobState.set(jobState.get(NO_PROXY).slice(1)))
+          .then((blob) =>
+            tryCatch(() =>
+              uploadThumbnail(src, project, id, blob)
+                .then(() => image.remove())
+                .then(endJob)
+            )
+          )
       )
     })
   }, [fileType, tex, id])
@@ -485,7 +498,7 @@ const ThumbnailJobReactor = () => {
   useEffect(() => {
     if (errorComponent?.keys.includes(ModelComponent.name)) {
       console.error('failed to load model for thumbnail', src)
-      jobState.set(jobState.get(NO_PROXY).slice(1))
+      endJob()
       return
     }
     if (src === '') return
@@ -524,7 +537,7 @@ const ThumbnailJobReactor = () => {
       scene.background = background
       render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent), 0, false)
       function cleanup() {
-        jobState.set(jobState.get(NO_PROXY).slice(1))
+        endJob()
         materialLoaded.set(false)
         skyboxLoaded.set(false)
       }
@@ -540,7 +553,7 @@ const ThumbnailJobReactor = () => {
     } catch (e) {
       console.error('failed to generate model thumbnail for', src)
       console.error(e)
-      jobState.set(jobState.get(NO_PROXY).slice(1))
+      endJob()
     }
   }, [
     state.cameraEntity,

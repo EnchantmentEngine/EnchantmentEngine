@@ -40,12 +40,11 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { State, none, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { Quaternion, Vector3 } from 'three'
+import { startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import React, { useEffect, useLayoutEffect } from 'react'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { TransformComponent, TransformComponentType } from './TransformComponent'
+import { TransformComponent } from './TransformComponent'
 
 type EntityTreeSetType = {
   parentEntity: Entity
@@ -289,7 +288,7 @@ export function getAncestorWithComponents(
   closest = true,
   includeSelf = true
 ): Entity {
-  let result = includeSelf && hasComponents(entity, components) ? entity : UndefinedEntity
+  let result = hasComponents(entity, components) ? entity : UndefinedEntity
   if (includeSelf && closest && result) return result
   else if (!includeSelf) result = UndefinedEntity
 
@@ -336,54 +335,6 @@ export function getNestedChildren(entity: Entity, predicate?: (e: Entity) => boo
     true
   )
   return children
-}
-
-/**
- *
- * @param entity
- * @returns
- */
-export function useTreeQuery(entity: Entity) {
-  const result = useHookstate({} as Record<Entity, boolean>)
-
-  /** @todo - maybe optimize this to a registry of some sort, deduplicate for useTreeQuery calls for the same entity? */
-  /** @todo - benchmark this... */
-  useLayoutEffect(() => {
-    let unmounted = false
-    const TreeSubReactor = (props: { entity: Entity }) => {
-      const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-
-      useLayoutEffect(() => {
-        if (!tree) return
-        result[props.entity].set(true)
-        return () => {
-          if (!unmounted)
-            // this is kind of a hack? we can put TreeSubReactor back in module scope if we can somehow detect that the useTreeQuery has unmounted and avoid hookstate 106
-            result[props.entity].set(none)
-        }
-      }, [tree])
-
-      if (!tree) return null
-
-      return (
-        <>
-          {tree.children.value.map((e) => (
-            <TreeSubReactor key={e} entity={e} />
-          ))}
-        </>
-      )
-    }
-
-    const root = startReactor(function useQueryReactor() {
-      return <TreeSubReactor entity={entity} />
-    })
-    return () => {
-      unmounted = true
-      root.stop()
-    }
-  }, [entity])
-
-  return result.keys.map(Number) as Entity[]
 }
 
 /**
@@ -438,6 +389,19 @@ export function useAncestorWithComponents(
 }
 
 /**
+ * internal
+ */
+const _useHasAllComponents = (entity: Entity, components: ComponentType<any>[]) => {
+  let result = true
+  for (const component of components) {
+    if (!useOptionalComponent(entity, component)) {
+      result = false
+    }
+  }
+  return result
+}
+
+/**
  * Returns the closest child of an entity that has a component
  * @param rootEntity
  * @param components
@@ -449,7 +413,7 @@ export function useChildWithComponents(rootEntity: Entity, components: Component
     let unmounted = false
     const ChildSubReactor = (props: { entity: Entity }) => {
       const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      const matchesQuery = components.every((component) => !!useOptionalComponent(props.entity, component))
+      const matchesQuery = _useHasAllComponents(props.entity, components)
 
       useLayoutEffect(() => {
         if (!matchesQuery) return
@@ -487,12 +451,11 @@ export function useChildWithComponents(rootEntity: Entity, components: Component
 export function useChildrenWithComponents(rootEntity: Entity, components: ComponentType<any>[]): Entity[] {
   const children = useHookstate([] as Entity[])
   const componentsString = components.map((component) => component.name).join()
-
   useLayoutEffect(() => {
     let unmounted = false
     const ChildSubReactor = (props: { entity: Entity }) => {
       const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      const matchesQuery = components.every((component) => !!useOptionalComponent(props.entity, component))
+      const matchesQuery = _useHasAllComponents(props.entity, components)
 
       useLayoutEffect(() => {
         if (!matchesQuery) return
@@ -548,11 +511,6 @@ export function getChildrenWithComponents(rootEntity: Entity, components: Compon
 
   return children
 }
-
-/** @todo make a query component for useTreeQuery */
-// export function TreeQueryReactor (props: { Components: QueryComponents; ChildEntityReactor: FC; props?: any }) {
-
-// }
 
 export function haveCommonAncestor(entity1: Entity, entity2: Entity): boolean {
   const entity1Ancestors: Entity[] = []
@@ -674,114 +632,4 @@ export const filterParentEntities = (
   traverseParentOnly(rootEntity)
 
   return parentEntityList
-}
-
-export function useRelativeTransform(
-  entity: Entity,
-  relativeEntity: Entity
-): State<null | Omit<TransformComponentType, 'matrixWorld'>> {
-  const result = useHookstate(null as null | Omit<TransformComponentType, 'matrixWorld'>)
-  const entityTransform = useComponent(entity, TransformComponent)
-  const relativeEntityTransform = useComponent(relativeEntity, TransformComponent)
-
-  const commonAncestor = useCommonAncestor(entity, relativeEntity)
-  const entityMatrix = useRelativeMatrix(entity, commonAncestor)
-  const relativeEntityMatrix = useRelativeMatrix(relativeEntity, commonAncestor)
-
-  useEffect(() => {
-    if (!entityTransform || !relativeEntityTransform || !commonAncestor || !entityMatrix || !relativeEntityMatrix) {
-      result.set(null)
-      return
-    }
-
-    const matrix = entityMatrix.clone().invert().multiply(relativeEntityMatrix)
-    const position = new Vector3()
-    const rotation = new Quaternion()
-    const scale = new Vector3()
-
-    matrix.decompose(position, rotation, scale)
-
-    result.set({
-      position,
-      rotation,
-      scale,
-      matrix
-    })
-  }, [entityTransform, relativeEntityTransform, commonAncestor, entityMatrix, relativeEntityMatrix])
-
-  return result
-}
-
-function useCommonAncestor(entity1: Entity, entity2: Entity): Entity | null {
-  const ancestors1 = useAncestors(entity1)
-  const ancestors2 = useAncestors(entity2)
-
-  const commonAncestor = useMemo(() => {
-    for (const ancestor of ancestors1) {
-      if (ancestors2.includes(ancestor)) {
-        return ancestor
-      }
-    }
-    return null
-  }, [ancestors1, ancestors2])
-
-  return commonAncestor
-}
-
-function useAncestors(entity: Entity, includeSelf = true): Entity[] {
-  const forceUpdate = useForceUpdate()
-
-  const ancestors = includeSelf ? [entity] : ([] as Entity[])
-  let current = entity
-
-  while (true) {
-    const parentEntity = getComponent(current, EntityTreeComponent).parentEntity
-    if (!parentEntity) break
-    ancestors.unshift(parentEntity)
-    current = parentEntity
-  }
-
-  useEffect(() => {
-    const root = startReactor(() => {
-      ancestors.forEach((ancestor) => {
-        useComponent(ancestor, EntityTreeComponent)
-      })
-      forceUpdate()
-      return null
-    })
-
-    return () => {
-      root.stop()
-    }
-  }, [ancestors])
-
-  return ancestors
-}
-
-function useRelativeMatrix(entity: Entity, stopAt: Entity | null): THREE.Matrix4 | null {
-  const [worldMatrix, setWorldMatrix] = useState<THREE.Matrix4 | null>(null)
-
-  useEffect(() => {
-    if (!stopAt) return
-
-    const matrices: THREE.Matrix4[] = []
-    let current = entity
-
-    while (current !== stopAt) {
-      const transform = useComponent(current, TransformComponent)
-      matrices.unshift(transform.matrix)
-      const parentEntity = useComponent(current, EntityTreeComponent).parentEntity
-      if (!parentEntity) break
-      current = parentEntity
-    }
-
-    const newWorldMatrix = new THREE.Matrix4()
-    for (const matrix of matrices) {
-      newWorldMatrix.multiply(matrix)
-    }
-
-    setWorldMatrix(newWorldMatrix)
-  }, [entity, stopAt])
-
-  return worldMatrix
 }
