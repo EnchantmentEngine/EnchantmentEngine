@@ -45,6 +45,7 @@ export interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
   errorBorder?: boolean
   maxLength?: number
   autoComplete?: string
+  pattern?: string
 }
 
 const variants = {
@@ -71,6 +72,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       labelClassname,
       errorBorder,
       autoComplete,
+      pattern,
       ...props
     },
     ref

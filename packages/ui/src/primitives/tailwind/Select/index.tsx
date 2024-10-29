@@ -36,7 +36,13 @@ import Input from '../Input'
 
 export type OptionValueType = string | number
 
-export type SelectOptionsType = { label: string; value: any; disabled?: boolean }
+export type SelectOptionsType = {
+  label: string
+  value: any
+  disabled?: boolean
+  selected?: boolean
+  metadata?: { [key: string]: string }
+}
 
 export interface SelectProps<T extends OptionValueType> {
   label?: string
@@ -57,6 +63,7 @@ export interface SelectProps<T extends OptionValueType> {
   searchDisabled?: boolean
   inputContainerClassName?: string
   endComponent?: JSX.Element
+  customMenuContent?: (SelectOptionsType) => JSX.Element
 }
 
 const Select = <T extends OptionValueType>({
@@ -77,7 +84,8 @@ const Select = <T extends OptionValueType>({
   errorBorder,
   searchDisabled,
   inputContainerClassName,
-  endComponent
+  endComponent,
+  customMenuContent
 }: SelectProps<T>) => {
   const ref = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -117,11 +125,12 @@ const Select = <T extends OptionValueType>({
     }
   }
 
+  // TODO (JC): LEVERAGE IMPROVEMENTS FROM MOIZ PR
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (searchDisabled) {
       return
     }
-    const newOptions = options.filter((item) => item.label.toLowerCase().startsWith(e.target.value.toLowerCase()))
+    const newOptions = options.filter((item) => item.value.toLowerCase().startsWith(e.target.value.toLowerCase()))
     if (newOptions.length > 0) {
       filteredOptions.set(newOptions)
       selectLabel.set(e.target.value)
@@ -181,7 +190,7 @@ const Select = <T extends OptionValueType>({
         ref={menuRef}
       >
         <ul
-          className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2', menuClassname)}
+          className={twMerge('max-h-40 overflow-auto bg-theme-surface-main [&>li]:px-4  [&>li]:py-2', menuClassname)}
           data-testid="select-input-list"
         >
           {filteredOptions.value.map((option, index) => (
@@ -196,7 +205,11 @@ const Select = <T extends OptionValueType>({
               data-testid="select-input-list-item"
               onClick={() => handleOptionItem(option)}
             >
-              {option.label}
+              {
+                /* TODO (JC): ADD FIGMA DESIGN ADJUSTMENTS */ customMenuContent
+                  ? customMenuContent(option)
+                  : option.label
+              }
             </li>
           ))}
         </ul>
