@@ -107,6 +107,8 @@ export class GithubStrategy extends CustomOAuthStrategy {
       { accessToken: params?.authentication?.accessToken },
       {}
     )
+    const isSignIn = params.query?.action === 'signin'
+
     if (!entity.userId) {
       const avatars = (await this.app
         .service(avatarPath)
@@ -126,12 +128,17 @@ export class GithubStrategy extends CustomOAuthStrategy {
         oauthRefreshToken: params.refresh_token,
         email: entity.email
       })
-    } else
+    } else {
+      if (isSignIn) {
+        // User does not exist in identityProvider, throw an error
+        throw new Error('User not found. Please sign up first.')
+      }
       await this.app.service(identityProviderPath)._patch(entity.id, {
         oauthToken: params.access_token,
         oauthRefreshToken: params.refresh_token,
         email: entity.email
       })
+    }
     const identityProvider = authResult[identityProviderPath]
     const user = await this.app.service(userPath).get(entity.userId)
     await makeInitialAdmin(this.app, user.id)
@@ -188,13 +195,18 @@ export class GithubStrategy extends CustomOAuthStrategy {
     } catch {
       redirectConfig = {}
     }
+    const isSignIn = params.query?.action === 'signin'
+
     let { domain: redirectDomain, path: redirectPath, instanceId: redirectInstanceId } = redirectConfig
 
     redirectDomain = redirectDomain ? `${redirectDomain}/auth/oauth/github` : config.authentication.callback.github
 
     if (data instanceof Error || Object.getPrototypeOf(data) === Error.prototype) {
-      const err = data.message as string
-      return redirectDomain + `?error=${err}`
+      const errorMessage = data.message as string
+      if (isSignIn && errorMessage == 'User not found. Please sign up first.') {
+        return `${redirectConfig.domain}${redirectConfig.path}?accountNotFound==${encodeURIComponent(errorMessage)}`
+      }
+      return redirectDomain + `?error=${errorMessage}`
     }
 
     const loginType = params.query?.userId ? 'connection' : 'login'
