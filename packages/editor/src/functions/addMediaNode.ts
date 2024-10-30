@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Intersection, Raycaster, Vector2 } from 'three'
 
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { getContentType } from '@ir-engine/common/src/utils/getContentType'
 import { generateEntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, getOptionalComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -42,6 +41,7 @@ import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComp
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
+import { createLoadingSpinner } from '@ir-engine/engine/src/scene/functions/spatialLoadingSpinner'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 import { getState, startReactor, useMutableState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -51,9 +51,14 @@ import { ObjectLayerComponents } from '@ir-engine/spatial/src/renderer/component
 import { ObjectLayerMasks, ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { assignMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { iterateEntityNode, useChildWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import {
+  iterateEntityNode,
+  removeEntityNodeRecursively,
+  useChildWithComponents
+} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { useEffect } from 'react'
 import { v4 } from 'uuid'
+import { EditorState } from '../services/EditorServices'
 import { EditorControlFunctions } from './EditorControlFunctions'
 import { getIntersectingNodeOnScreen } from './getIntersectingNode'
 
@@ -74,17 +79,6 @@ export async function addMediaNode(
   const contentType = (await getContentType(url)) || ''
   const { hostname } = new URL(url)
   console.log(contentType)
-
-  const pathArray = url.split('/')
-  const lastIndex = pathArray.length - 1
-  const fileNameWithExt = pathArray[lastIndex]
-  const fileNameArray = fileNameWithExt.split('.')
-  let name: string | undefined = undefined
-  try {
-    name = decodeURI(fileNameArray[0])
-  } catch (err) {
-    NotificationService.dispatchNotify(err.message, { variant: 'error' })
-  }
 
   if (contentType.startsWith('model/')) {
     if (contentType.startsWith('model/material')) {
@@ -141,15 +135,24 @@ export async function addMediaNode(
       })
     } else if (contentType.startsWith('model/lookdev')) {
       const gltfLoader = getState(AssetLoaderState).gltfLoader
-      gltfLoader.load(url, (gltf) => {
-        const componentJson = gltf.scene.children[0].userData.componentJson
-        EditorControlFunctions.overwriteLookdevObject(
-          [{ name: GLTFComponent.jsonID, props: { src: url } }, ...extraComponentJson],
-          componentJson,
-          parent!,
-          before
-        )
-      })
+      const spinnerEntity = createLoadingSpinner('lookdev loading spinner', getState(EditorState).rootEntity)
+      gltfLoader.load(
+        url,
+        (gltf) => {
+          const componentJson = gltf.scene.children[0].userData.componentJson
+          EditorControlFunctions.overwriteLookdevObject(
+            [{ name: GLTFComponent.jsonID, props: { src: url } }, ...extraComponentJson],
+            componentJson,
+            parent!,
+            before
+          )
+          removeEntityNodeRecursively(spinnerEntity)
+        },
+        null,
+        (error) => {
+          removeEntityNodeRecursively(spinnerEntity)
+        }
+      )
     } else if (contentType.startsWith('model/prefab')) {
       loadGltfFile(url, (gltf) => {
         if (gltf.nodes)
@@ -168,8 +171,7 @@ export async function addMediaNode(
           ...extraComponentJson
         ],
         parent!,
-        before,
-        name
+        before
       )
     }
   } else if (contentType.startsWith('video/') || hostname.includes('twitch.tv') || hostname.includes('youtube.com')) {
@@ -180,15 +182,13 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before,
-      name
+      before
     )
   } else if (contentType.startsWith('image/')) {
     EditorControlFunctions.createObjectFromSceneElement(
       [{ name: ImageComponent.jsonID, props: { source: url } }, ...extraComponentJson],
       parent!,
-      before,
-      name
+      before
     )
   } else if (contentType.startsWith('audio/')) {
     EditorControlFunctions.createObjectFromSceneElement(
@@ -198,8 +198,7 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before,
-      name
+      before
     )
   } else if (url.includes('.uvol')) {
     EditorControlFunctions.createObjectFromSceneElement(
@@ -209,8 +208,7 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before,
-      name
+      before
     )
   }
 }
