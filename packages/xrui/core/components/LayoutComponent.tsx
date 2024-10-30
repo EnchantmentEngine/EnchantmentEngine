@@ -45,7 +45,7 @@ import { Vector3_One, Vector3_Zero } from '@ir-engine/spatial/src/common/constan
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { ArrayCamera, Matrix4, Quaternion, Vector3 } from 'three'
+import { ArrayCamera, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Transition } from '../classes/Transition'
 
 export enum SizeMode {
@@ -81,6 +81,20 @@ export const Unit3NormalizedSchema = S.Object({
   y: UnitNormalizedSchema,
   z: UnitNormalizedSchema
 })
+
+const PIXELS_PER_MM = 1000
+
+function unitsToNDCSpace(
+  units: Static<typeof UnitNormalizedSchema>,
+  containerNDCSize: number,
+  containerPixelSize: number
+) {
+  return (units.pixels + units.millimeters / PIXELS_PER_MM) / containerPixelSize + units.percent * containerNDCSize
+}
+
+function unitsToWorldSpace(units: Static<typeof UnitNormalizedSchema>, containerMMSize: number) {
+  return units.pixels * PIXELS_PER_MM + units.millimeters + units.percent * containerMMSize
+}
 
 /**
  * Similar to CSS positioning, positive values correspond to right, down, and forward.
@@ -325,30 +339,27 @@ export const LayoutComponent = defineComponent({
           }
 
           if (containerComputedLayoutBounds.space === LayoutSpace.NDC && camera && renderer && renderer.canvas) {
-            const containerWidthNDC = Math.abs(
+            const fov = MathUtils.degToRad(camera.fov) // Vertical FOV in radians
+            const aspect = camera.aspect
+            const viewportHeight = renderer.canvas.clientHeight
+            const viewportWidth = renderer.canvas.clientWidth
+
+            const containerNDCWidth = Math.abs(
               containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x
             )
-            const containerHeightNDC = Math.abs(
+            const containerNDCHeight = Math.abs(
               containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y
             )
-
-            // Handle camera container
-            const canvas = renderer.canvas
-            const rect = canvas.getBoundingClientRect()
-
-            // Screen-space position in pixels
-            const screenPosition = new Vector3(
-              position.x.pixels + position.x.percent * +origin.x.percent * rect.width - alignmentOrigin.x * size.x,
-              position.y + positionOrigin.y * rect.height - alignmentOrigin.y * size.y,
-              0 // We'll set the depth separately
+            const containerNDCDepth = Math.abs(
+              containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z
             )
 
-            // Convert screen position to NDC (Normalized Device Coordinates)
-            const ndc = new Vector3(
-              (screenPosition.x / rect.width) * 2 - 1,
-              -(screenPosition.y / rect.height) * 2 + 1,
-              0 // NDC z-value (we'll set depth later)
-            )
+            computePixelsPerNDCUnitZ
+
+            // Screen-space position in pixels (this is the offset from the container's top-left-back corner)
+            const ndcPositionX = unitsToNDCSpace(position.x, containerNDCWidth, viewportWidth)
+            const ndcPositionY = -unitsToNDCSpace(position.y, containerNDCHeight, viewportHeight)
+            const ndcPositionZ = -unitsToNDCSpace(position.z, containerNDCDepth, viewportDepth)
 
             // Set depth (z-coordinate in NDC space)
             // Assuming you want to place the entity at a specific distance from the camera
@@ -566,4 +577,44 @@ function useUnit3Normalized(state: State<Static<ReturnType<typeof defineUnit3>>>
   useUnitNormalized(state.y, normalizedState.y)
   useUnitNormalized(state.z, normalizedState.z)
   return normalizedState
+}
+
+function computePixelsPerNDCUnitZ(
+  z_NDC: number,
+  camera: THREE.PerspectiveCamera,
+  renderer: THREE.WebGLRenderer
+): number {
+  // Ensure that z_NDC is within the valid range
+  if (z_NDC < -1 || z_NDC > 1) {
+    throw new Error('z_NDC must be between -1 and 1.')
+  }
+
+  // Step 1: Compute A and B from the camera's near and far planes
+  const near = camera.near
+  const far = camera.far
+
+  const A = -(far + near) / (far - near)
+  const B = -(2 * far * near) / (far - near)
+
+  // Step 2: Compute z_camera from z_NDC
+  const denominator = z_NDC + A
+  if (denominator === 0) {
+    throw new Error('Denominator in z_camera computation is zero.')
+  }
+
+  const z_camera = -B / denominator
+
+  // Step 3: Calculate pixels per unit at z_camera depth
+  const fov = MathUtils.degToRad(camera.fov) // Vertical FOV in radians
+  const viewportHeight = renderer.domElement.clientHeight
+
+  const tanFovOver2 = Math.tan(fov / 2)
+  if (tanFovOver2 === 0) {
+    throw new Error('Invalid camera field of view.')
+  }
+
+  const scaleFactor = viewportHeight / 2 / tanFovOver2 // Pixels per unit at z = 1
+  const pixelsPerUnit = scaleFactor / -z_camera // Negative z_camera because it's negative in front of the camera
+
+  return pixelsPerUnit
 }
