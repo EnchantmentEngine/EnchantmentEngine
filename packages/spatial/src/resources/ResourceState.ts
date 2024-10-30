@@ -118,15 +118,12 @@ type Resource = {
 export const ResourceState = defineState({
   name: 'ResourceManagerState',
 
-  initial: () => {
-    Cache.clear()
-    return {
-      resources: {} as Record<string, Resource>,
-      totalVertexCount: 0,
-      totalBufferCount: 0,
-      debug: false
-    }
-  },
+  initial: () => ({
+    resources: {} as Record<string, Resource>,
+    totalVertexCount: 0,
+    totalBufferCount: 0,
+    debug: false
+  }),
 
   debugLog: (...data: any[]) => {
     if (getState(ResourceState).debug) console.log(...data)
