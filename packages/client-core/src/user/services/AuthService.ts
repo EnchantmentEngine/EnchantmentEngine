@@ -48,6 +48,7 @@ import {
   UserSettingPatch,
   UserSettingType,
   UserType,
+  avatarPath,
   generateTokenPath,
   identityProviderPath,
   loginPath,
@@ -205,6 +206,7 @@ const getToken = async (): Promise<string> => {
       const accessToken = authState?.authUser?.accessToken?.value
       return Promise.resolve(accessToken?.length > 0 ? accessToken : '')
     } else {
+      iframe.style.display = 'block'
       iframe.style.visibility = 'visible'
       return new Promise((resolve) => {
         const clickResponseListener = async function (e) {
@@ -213,10 +215,12 @@ const getToken = async (): Promise<string> => {
             const data = e?.data?.data
             if (data.skipCrossOriginCookieCheck === true || data.storageAccessPermission === 'denied') {
               localStorage.setItem('skipCrossOriginCookieCheck', 'true')
+              iframe.style.display = 'none'
               iframe.style.visibility = 'hidden'
               resolve('')
             } else {
               const token = waitForToken(win, clientUrl)
+              iframe.style.display = 'none'
               iframe.style.visibility = 'hidden'
               resolve(token)
             }
@@ -383,9 +387,30 @@ export const AuthService = {
           user.userSetting = settingsRes.data[0]
         }
       }
+      if (!user.avatarId) {
+        const avatars = await client.service(avatarPath).find({
+          query: {
+            isPublic: true
+          }
+        })
+
+        if (avatars.data.length > 0) {
+          const randomReplacementAvatar = avatars.data[Math.floor(Math.random() * avatars.data.length)]
+
+          await client
+            .service(userAvatarPath)
+            .patch(null, { avatarId: randomReplacementAvatar.id }, { query: { userId: userId } })
+
+          user.avatarId = randomReplacementAvatar.id
+          user.avatar = randomReplacementAvatar
+        } else {
+          throw new Error('No avatars found in database')
+        }
+      }
       getMutableState(AuthState).merge({ isLoggedIn: true, user })
     } catch (err) {
       NotificationService.dispatchNotify(i18n.t('common:error.loading-error').toString(), { variant: 'error' })
+      console.error(err)
     }
   },
 
