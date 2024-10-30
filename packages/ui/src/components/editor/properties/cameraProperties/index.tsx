@@ -36,6 +36,7 @@ import {
   commitProperty,
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { HiOutlineCamera } from 'react-icons/hi'
@@ -45,7 +46,6 @@ import ComponentDropdown from '../../ComponentDropdown'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 
 /** Types copied from Camera Modes of engine. */
 const projectionTypeSelect = [
