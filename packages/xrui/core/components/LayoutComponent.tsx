@@ -71,7 +71,7 @@ export const UnitNormalizedSchema = S.Object({
 
 export const LayoutSpace = {
   World: 'World' as const,
-  NDC: 'NDC' as const
+  ViewingFrustum: 'ViewingFrustum' as const
 }
 
 export const UnitSchema = S.Union([UnitNormalizedSchema, S.String(), S.Number()], 0)
@@ -84,16 +84,16 @@ export const Unit3NormalizedSchema = S.Object({
 
 const PIXELS_PER_MM = 1000
 
-function unitsToNDCSpace(
+function unitsToViewingFrustumSpace(
   units: Static<typeof UnitNormalizedSchema>,
-  containerNDCSize: number,
-  containerPixelSize: number
+  containerUnitSize: number,
+  pixelsPerUnit: number
 ) {
-  return (units.pixels + units.millimeters / PIXELS_PER_MM) / containerPixelSize + units.percent * containerNDCSize
+  return (units.pixels + units.millimeters * PIXELS_PER_MM) * pixelsPerUnit + units.percent * containerUnitSize
 }
 
 function unitsToWorldSpace(units: Static<typeof UnitNormalizedSchema>, containerMMSize: number) {
-  return units.pixels * PIXELS_PER_MM + units.millimeters + units.percent * containerMMSize
+  return units.pixels / PIXELS_PER_MM + units.millimeters + units.percent * containerMMSize
 }
 
 /**
@@ -325,7 +325,7 @@ export const LayoutComponent = defineComponent({
               min: Vector3_Zero,
               max: Vector3_One,
               rotation: containerWorldQuaternion,
-              space: LayoutSpace.NDC
+              space: LayoutSpace.ViewingFrustum
             }
           } else if (!containerComputedLayoutBounds) {
             // layout bounds
@@ -333,16 +333,21 @@ export const LayoutComponent = defineComponent({
               min: Vector3_Zero,
               max: Vector3_Zero,
               rotation: containerWorldQuaternion,
-              space: LayoutSpace.NDC
+              space: LayoutSpace.ViewingFrustum
             }
             // containerComputedLayoutBounds = computeLayoutBounds(containerEntity)
           }
 
-          if (containerComputedLayoutBounds.space === LayoutSpace.NDC && camera && renderer && renderer.canvas) {
+          if (
+            containerComputedLayoutBounds.space === LayoutSpace.ViewingFrustum &&
+            camera &&
+            renderer?.renderer &&
+            renderer.canvas
+          ) {
             const fov = MathUtils.degToRad(camera.fov) // Vertical FOV in radians
             const aspect = camera.aspect
-            const viewportHeight = renderer.canvas.clientHeight
-            const viewportWidth = renderer.canvas.clientWidth
+            const viewportPixelHeight = renderer.canvas.clientHeight
+            const viewportPixelWidth = renderer.canvas.clientWidth
 
             const containerNDCWidth = Math.abs(
               containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x
@@ -354,16 +359,20 @@ export const LayoutComponent = defineComponent({
               containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z
             )
 
-            computePixelsPerNDCUnitZ
+            const viewportPixelDepth = computeViewportPixelDepth(
+              containerComputedLayoutBounds.min.z,
+              camera,
+              renderer.renderer!
+            )
 
             // Screen-space position in pixels (this is the offset from the container's top-left-back corner)
-            const ndcPositionX = unitsToNDCSpace(position.x, containerNDCWidth, viewportWidth)
-            const ndcPositionY = -unitsToNDCSpace(position.y, containerNDCHeight, viewportHeight)
-            const ndcPositionZ = -unitsToNDCSpace(position.z, containerNDCDepth, viewportDepth)
+            const positionX = unitsToViewingFrustumSpace(position.x, containerNDCWidth, viewportPixelWidth)
+            const positionY = unitsToViewingFrustumSpace(position.y, containerNDCHeight, viewportPixelHeight)
+            const positionZ = unitsToViewingFrustumSpace(position.z, containerNDCDepth, viewportPixelDepth)
 
             // Set depth (z-coordinate in NDC space)
             // Assuming you want to place the entity at a specific distance from the camera
-            // For example, at depth = -0.5 in NDC space corresponds to halfway between near and far planes
+            // For example, at depth = -0.5 in NDC space correspondsd to halfway between near and far planes
             const depth = position.z !== 0 ? position.z : -0.001 // Default depth
             ndc.z =
               -1 + 2 * ((depth - containerCamera.value.near) / (containerCamera.value.far - containerCamera.value.near))
@@ -579,7 +588,7 @@ function useUnit3Normalized(state: State<Static<ReturnType<typeof defineUnit3>>>
   return normalizedState
 }
 
-function computePixelsPerNDCUnitZ(
+function computeViewportPixelDepth(
   z_NDC: number,
   camera: THREE.PerspectiveCamera,
   renderer: THREE.WebGLRenderer
@@ -614,7 +623,7 @@ function computePixelsPerNDCUnitZ(
   }
 
   const scaleFactor = viewportHeight / 2 / tanFovOver2 // Pixels per unit at z = 1
-  const pixelsPerUnit = scaleFactor / -z_camera // Negative z_camera because it's negative in front of the camera
+  const pixelDepth = -z_camera / scaleFactor // Negative z_camera because it's negative in front of the camera
 
-  return pixelsPerUnit
+  return pixelDepth
 }
