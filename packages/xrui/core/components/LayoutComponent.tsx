@@ -365,10 +365,13 @@ export const LayoutComponent = defineComponent({
               renderer.renderer!
             )
 
-            // Screen-space position in pixels (this is the offset from the container's top-left-back corner)
+            // ViewportFrustum space is from top-left-back (0,0,0) corner to front-right-bottom corner of frustum (1,1,1)
             const positionX = unitsToViewingFrustumSpace(position.x, containerNDCWidth, viewportPixelWidth)
             const positionY = unitsToViewingFrustumSpace(position.y, containerNDCHeight, viewportPixelHeight)
             const positionZ = unitsToViewingFrustumSpace(position.z, containerNDCDepth, viewportPixelDepth)
+            const originX = unitsToViewingFrustumSpace(origin.x, containerNDCWidth, viewportPixelWidth)
+            const originY = unitsToViewingFrustumSpace(origin.y, containerNDCHeight, viewportPixelHeight)
+            const originZ = unitsToViewingFrustumSpace(origin.z, containerNDCDepth, viewportPixelDepth)
 
             // Set depth (z-coordinate in NDC space)
             // Assuming you want to place the entity at a specific distance from the camera
@@ -381,7 +384,7 @@ export const LayoutComponent = defineComponent({
             ndc.unproject(containerCamera.value as ArrayCamera)
 
             finalPosition.copy(ndc)
-          } else if (containerLayout?.ornull?.effectiveSize.value) {
+          } else if (containerComputedLayoutBounds.space === LayoutSpace.World) {
             // Handle container layout
             containerSize = containerLayout.effectiveSize.value
             finalPosition.set(
