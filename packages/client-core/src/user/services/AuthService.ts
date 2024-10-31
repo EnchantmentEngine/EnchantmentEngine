@@ -205,6 +205,7 @@ const getToken = async (): Promise<string> => {
       const accessToken = authState?.authUser?.accessToken?.value
       return Promise.resolve(accessToken?.length > 0 ? accessToken : '')
     } else {
+      iframe.style.display = 'block'
       iframe.style.visibility = 'visible'
       return new Promise((resolve) => {
         const clickResponseListener = async function (e) {
@@ -213,10 +214,12 @@ const getToken = async (): Promise<string> => {
             const data = e?.data?.data
             if (data.skipCrossOriginCookieCheck === true || data.storageAccessPermission === 'denied') {
               localStorage.setItem('skipCrossOriginCookieCheck', 'true')
+              iframe.style.display = 'none'
               iframe.style.visibility = 'hidden'
               resolve('')
             } else {
               const token = waitForToken(win, clientUrl)
+              iframe.style.display = 'none'
               iframe.style.visibility = 'hidden'
               resolve(token)
             }
