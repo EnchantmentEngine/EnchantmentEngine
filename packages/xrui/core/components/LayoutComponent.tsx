@@ -344,35 +344,29 @@ export const LayoutComponent = defineComponent({
             renderer?.renderer &&
             renderer.canvas
           ) {
-            const fov = MathUtils.degToRad(camera.fov) // Vertical FOV in radians
-            const aspect = camera.aspect
+            const containerSizeX = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
+            const containerSizeY = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
+            const containerSizeZ = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
+
             const viewportPixelHeight = renderer.canvas.clientHeight
             const viewportPixelWidth = renderer.canvas.clientWidth
-
-            const containerWidth = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
-            const containerHeight = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
-            const containerDepth = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
-
             const viewportPixelDepth = computeViewportPixelDepth(
               containerComputedLayoutBounds.min.z,
               camera,
               renderer.renderer!
             )
 
-            const sizezX = unitsToViewingFrustumSpace(size.x, containerWidth, viewportPixelWidth)
-            const sizeY = unitsToViewingFrustumSpace(size.y, containerHeight, viewportPixelHeight)
-            const sizeZ = unitsToViewingFrustumSpace(size.z, containerDepth, viewportPixelDepth)
+            const sizeX = unitsToViewingFrustumSpace(size.x, containerSizeX, viewportPixelWidth)
+            const sizeY = unitsToViewingFrustumSpace(size.y, containerSizeY, viewportPixelHeight)
+            const sizeZ = unitsToViewingFrustumSpace(size.z, containerSizeZ, viewportPixelDepth)
 
             // ViewportFrustum space is from top-left-back (0,0,0) corner to front-right-bottom corner of frustum (1,1,1)
-            const positionX = unitsToViewingFrustumSpace(position.x, containerWidth, viewportPixelWidth)
-            const positionY = unitsToViewingFrustumSpace(position.y, containerHeight, viewportPixelHeight)
-            const positionZ = unitsToViewingFrustumSpace(position.z, containerDepth, viewportPixelDepth)
-            const originX = unitsToViewingFrustumSpace(origin.x, containerWidth, viewportPixelWidth)
-            const originY = unitsToViewingFrustumSpace(origin.y, containerHeight, viewportPixelHeight)
-            const originZ = unitsToViewingFrustumSpace(origin.z, containerDepth, viewportPixelDepth)
-            const sizeX = unitsToViewingFrustumSpace(size.x, containerWidth, viewportPixelWidth)
-
-            finalPosition.copy(ndc)
+            const positionX = unitsToViewingFrustumSpace(position.x, containerSizeX, viewportPixelWidth)
+            const positionY = unitsToViewingFrustumSpace(position.y, containerSizeY, viewportPixelHeight)
+            const positionZ = unitsToViewingFrustumSpace(position.z, containerSizeZ, viewportPixelDepth)
+            const originX = unitsToViewingFrustumSpace(origin.x, sizeX, viewportPixelWidth)
+            const originY = unitsToViewingFrustumSpace(origin.y, sizeY, viewportPixelHeight)
+            const originZ = unitsToViewingFrustumSpace(origin.z, sizeZ, viewportPixelDepth)
           } else if (containerComputedLayoutBounds.space === LayoutSpace.World) {
             // Handle container layout
             containerSize = containerLayout.effectiveSize.value
