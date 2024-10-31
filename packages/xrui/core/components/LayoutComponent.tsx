@@ -45,7 +45,7 @@ import { Vector3_One, Vector3_Zero } from '@ir-engine/spatial/src/common/constan
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { ArrayCamera, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Transition } from '../classes/Transition'
 
 export enum SizeMode {
@@ -349,15 +349,9 @@ export const LayoutComponent = defineComponent({
             const viewportPixelHeight = renderer.canvas.clientHeight
             const viewportPixelWidth = renderer.canvas.clientWidth
 
-            const containerNDCWidth = Math.abs(
-              containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x
-            )
-            const containerNDCHeight = Math.abs(
-              containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y
-            )
-            const containerNDCDepth = Math.abs(
-              containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z
-            )
+            const containerWidth = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
+            const containerHeight = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
+            const containerDepth = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
 
             const viewportPixelDepth = computeViewportPixelDepth(
               containerComputedLayoutBounds.min.z,
@@ -365,23 +359,18 @@ export const LayoutComponent = defineComponent({
               renderer.renderer!
             )
 
+            const sizezX = unitsToViewingFrustumSpace(size.x, containerWidth, viewportPixelWidth)
+            const sizeY = unitsToViewingFrustumSpace(size.y, containerHeight, viewportPixelHeight)
+            const sizeZ = unitsToViewingFrustumSpace(size.z, containerDepth, viewportPixelDepth)
+
             // ViewportFrustum space is from top-left-back (0,0,0) corner to front-right-bottom corner of frustum (1,1,1)
-            const positionX = unitsToViewingFrustumSpace(position.x, containerNDCWidth, viewportPixelWidth)
-            const positionY = unitsToViewingFrustumSpace(position.y, containerNDCHeight, viewportPixelHeight)
-            const positionZ = unitsToViewingFrustumSpace(position.z, containerNDCDepth, viewportPixelDepth)
-            const originX = unitsToViewingFrustumSpace(origin.x, containerNDCWidth, viewportPixelWidth)
-            const originY = unitsToViewingFrustumSpace(origin.y, containerNDCHeight, viewportPixelHeight)
-            const originZ = unitsToViewingFrustumSpace(origin.z, containerNDCDepth, viewportPixelDepth)
-
-            // Set depth (z-coordinate in NDC space)
-            // Assuming you want to place the entity at a specific distance from the camera
-            // For example, at depth = -0.5 in NDC space correspondsd to halfway between near and far planes
-            const depth = position.z !== 0 ? position.z : -0.001 // Default depth
-            ndc.z =
-              -1 + 2 * ((depth - containerCamera.value.near) / (containerCamera.value.far - containerCamera.value.near))
-
-            // Unproject NDC to world space
-            ndc.unproject(containerCamera.value as ArrayCamera)
+            const positionX = unitsToViewingFrustumSpace(position.x, containerWidth, viewportPixelWidth)
+            const positionY = unitsToViewingFrustumSpace(position.y, containerHeight, viewportPixelHeight)
+            const positionZ = unitsToViewingFrustumSpace(position.z, containerDepth, viewportPixelDepth)
+            const originX = unitsToViewingFrustumSpace(origin.x, containerWidth, viewportPixelWidth)
+            const originY = unitsToViewingFrustumSpace(origin.y, containerHeight, viewportPixelHeight)
+            const originZ = unitsToViewingFrustumSpace(origin.z, containerDepth, viewportPixelDepth)
+            const sizeX = unitsToViewingFrustumSpace(size.x, containerWidth, viewportPixelWidth)
 
             finalPosition.copy(ndc)
           } else if (containerComputedLayoutBounds.space === LayoutSpace.World) {
