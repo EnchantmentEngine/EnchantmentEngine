@@ -114,9 +114,9 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
       !!consumerState.producerPaused.value
     const network = getState(NetworkState).networks[props.networkID]
     if (paused) {
-      MediasoupMediaProducerConsumerState.resumeConsumer(network, consumer.id)
-    } else {
       MediasoupMediaProducerConsumerState.pauseConsumer(network, consumer.id)
+    } else {
+      MediasoupMediaProducerConsumerState.resumeConsumer(network, consumer.id)
     }
   }, [
     isAudio ? peerMediaChannelState.audioStreamPaused.value : peerMediaChannelState.videoStreamPaused.value,
