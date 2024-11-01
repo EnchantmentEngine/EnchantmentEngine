@@ -102,7 +102,7 @@ describe('WebXR-emulator', () => {
   })
 
   /** @todo Why is this getting a null XRState.session, when the session is defined inside requestXRSession? */
-  it.skip('should be able to define and initialize a device', async () => {
+  it('should be able to define and initialize a device', async () => {
     WebXREventDispatcher.instance.dispatchEvent({
       type: POLYFILL_ACTIONS.DEVICE_INIT,
       detail: { stereoEffect: false, deviceDefinition }
