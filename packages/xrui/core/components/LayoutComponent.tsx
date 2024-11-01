@@ -272,12 +272,13 @@ export const LayoutComponent = defineComponent({
 
     // Reusable objects for calculations
     const finalPosition = new Vector3()
-    const rotationOriginOffset = new Vector3()
-    const matrix = new Matrix4()
-    const tempMatrix = new Matrix4()
+    const finalRotationOriginOffset = new Vector3()
     const finalRotation = new Quaternion()
     const finalScale = new Vector3()
+    const finalSize = new Vector3()
 
+    const matrix = new Matrix4()
+    const tempMatrix = new Matrix4()
     const containerWorldRotation = new Matrix4()
     const containerWorldQuaternion = new Quaternion()
 
@@ -338,16 +339,16 @@ export const LayoutComponent = defineComponent({
             // containerComputedLayoutBounds = computeLayoutBounds(containerEntity)
           }
 
+          const containerSizeX = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
+          const containerSizeY = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
+          const containerSizeZ = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
+
           if (
             containerComputedLayoutBounds.space === LayoutSpace.ViewingFrustum &&
             camera &&
             renderer?.renderer &&
             renderer.canvas
           ) {
-            const containerSizeX = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
-            const containerSizeY = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
-            const containerSizeZ = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
-
             const viewportPixelHeight = renderer.canvas.clientHeight
             const viewportPixelWidth = renderer.canvas.clientWidth
             const viewportPixelDepth = computeViewportPixelDepth(
@@ -367,37 +368,29 @@ export const LayoutComponent = defineComponent({
             const originX = unitsToViewingFrustumSpace(origin.x, sizeX, viewportPixelWidth)
             const originY = unitsToViewingFrustumSpace(origin.y, sizeY, viewportPixelHeight)
             const originZ = unitsToViewingFrustumSpace(origin.z, sizeZ, viewportPixelDepth)
+            const rotationOriginX = unitsToViewingFrustumSpace(rotationOrigin.x, sizeX, viewportPixelWidth)
+            const rotationOriginY = unitsToViewingFrustumSpace(rotationOrigin.y, sizeY, viewportPixelHeight)
+            const rotationOriginZ = unitsToViewingFrustumSpace(rotationOrigin.z, sizeZ, viewportPixelDepth)
+            finalPosition.set(positionX - originX, positionY - originY, positionZ - originZ)
+            finalRotationOriginOffset.set(rotationOriginX, rotationOriginY, rotationOriginZ)
+            finalSize.set(sizeX, sizeY, sizeZ)
           } else if (containerComputedLayoutBounds.space === LayoutSpace.World) {
-            // Handle container layout
-            containerSize = containerLayout.effectiveSize.value
-            finalPosition.set(
-              position.x + positionOrigin.x * containerSize.x - alignmentOrigin.x * size.x,
-              position.y + positionOrigin.y * containerSize.y - alignmentOrigin.y * size.y,
-              position.z + positionOrigin.z * containerSize.z - alignmentOrigin.z * size.z
-            )
-          } else if (containerBounds?.worldSpaceBox) {
-            // Handle bounding box container
-            containerSize = containerBounds.worldSpaceBox.value.getSize(_size)
-            finalPosition.set(
-              position.x + positionOrigin.x * containerSize.x - alignmentOrigin.x * size.x,
-              position.y + positionOrigin.y * containerSize.y - alignmentOrigin.y * size.y,
-              position.z + positionOrigin.z * containerSize.z - alignmentOrigin.z * size.z
-            )
-          } else {
-            // Default case
-            finalPosition.set(
-              position.x - alignmentOrigin.x * size.x,
-              position.y - alignmentOrigin.y * size.y,
-              position.z - alignmentOrigin.z * size.z
-            )
+            const sizeX = unitsToWorldSpace(size.x, containerSizeX)
+            const sizeY = unitsToWorldSpace(size.y, containerSizeY)
+            const sizeZ = unitsToWorldSpace(size.z, containerSizeZ)
+            const positionX = unitsToWorldSpace(position.x, containerSizeX)
+            const positionY = unitsToWorldSpace(position.y, containerSizeY)
+            const positionZ = unitsToWorldSpace(position.z, containerSizeZ)
+            const originX = unitsToWorldSpace(origin.x, sizeX)
+            const originY = unitsToWorldSpace(origin.y, sizeY)
+            const originZ = unitsToWorldSpace(origin.z, sizeZ)
+            const rotationOriginX = unitsToWorldSpace(rotationOrigin.x, containerSizeX)
+            const rotationOriginY = unitsToWorldSpace(rotationOrigin.y, containerSizeY)
+            const rotationOriginZ = unitsToWorldSpace(rotationOrigin.z, containerSizeZ)
+            finalPosition.set(positionX - originX, positionY - originY, positionZ - originZ)
+            finalRotationOriginOffset.set(rotationOriginX, rotationOriginY, rotationOriginZ)
+            finalSize.set(sizeX, sizeY, sizeZ)
           }
-
-          // Apply rotation origin offset
-          rotationOriginOffset.set(
-            (rotationOrigin.x - 0.5) * size.x,
-            (rotationOrigin.y - 0.5) * size.y,
-            (rotationOrigin.z - 0.5) * size.z
-          )
 
           // Create a matrix to combine rotation and position
           matrix.compose(finalPosition, rotation, Vector3_One)
