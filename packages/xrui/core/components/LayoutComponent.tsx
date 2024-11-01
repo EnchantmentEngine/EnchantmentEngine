@@ -354,12 +354,10 @@ export const LayoutComponent = defineComponent({
               camera,
               renderer.renderer!
             )
-
+            // ViewportFrustum space is from top-left-back (0,0,0) corner to front-right-bottom corner of frustum (1,1,1)
             const sizeX = unitsToViewingFrustumSpace(size.x, containerSizeX, viewportPixelWidth)
             const sizeY = unitsToViewingFrustumSpace(size.y, containerSizeY, viewportPixelHeight)
             const sizeZ = unitsToViewingFrustumSpace(size.z, containerSizeZ, viewportPixelDepth)
-
-            // ViewportFrustum space is from top-left-back (0,0,0) corner to front-right-bottom corner of frustum (1,1,1)
             const positionX = unitsToViewingFrustumSpace(position.x, containerSizeX, viewportPixelWidth)
             const positionY = unitsToViewingFrustumSpace(position.y, containerSizeY, viewportPixelHeight)
             const positionZ = unitsToViewingFrustumSpace(position.z, containerSizeZ, viewportPixelDepth)
@@ -373,6 +371,7 @@ export const LayoutComponent = defineComponent({
             finalRotationOriginOffset.set(rotationOriginX, rotationOriginY, rotationOriginZ)
             finalSize.set(sizeX, sizeY, sizeZ)
           } else if (containerComputedLayoutBounds.space === LayoutSpace.World) {
+            // World space is from the container's top-left-back to the front-right-bottom corner of the container
             const sizeX = unitsToWorldSpace(size.x, containerSizeX)
             const sizeY = unitsToWorldSpace(size.y, containerSizeY)
             const sizeZ = unitsToWorldSpace(size.z, containerSizeZ)
