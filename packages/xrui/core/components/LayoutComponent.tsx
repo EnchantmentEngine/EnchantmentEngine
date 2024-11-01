@@ -27,7 +27,6 @@ import {
   ECSState,
   Entity,
   Static,
-  UndefinedEntity,
   defineComponent,
   getComponent,
   getMutableComponent,
@@ -43,7 +42,6 @@ import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { Vector3_One, Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
-import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Transition } from '../classes/Transition'
@@ -396,11 +394,19 @@ export const LayoutComponent = defineComponent({
           matrix.compose(finalPosition, rotation, Vector3_One)
 
           // Apply rotation origin offset
-          tempMatrix.makeTranslation(rotationOriginOffset.x, rotationOriginOffset.y, rotationOriginOffset.z)
+          tempMatrix.makeTranslation(
+            finalRotationOriginOffset.x,
+            finalRotationOriginOffset.y,
+            finalRotationOriginOffset.z
+          )
           matrix.multiply(tempMatrix)
           tempMatrix.makeRotationFromQuaternion(rotation)
           matrix.multiply(tempMatrix)
-          tempMatrix.makeTranslation(-rotationOriginOffset.x, -rotationOriginOffset.y, -rotationOriginOffset.z)
+          tempMatrix.makeTranslation(
+            -finalRotationOriginOffset.x,
+            -finalRotationOriginOffset.y,
+            -finalRotationOriginOffset.z
+          )
           matrix.multiply(tempMatrix)
 
           // Extract final position and rotation from the matrix
@@ -413,59 +419,54 @@ export const LayoutComponent = defineComponent({
           transform.scale.value.copy(Vector3_One)
           transform.matrix.value.copy(matrix)
 
-          // Apply content-fit to contentEntity
-          if (layout.contentEntity.value !== UndefinedEntity) {
-            const contentTransform = getMutableComponent(layout.contentEntity.value, TransformComponent)
-            if (contentTransform) {
-              const contentBounds = getComponent(layout.contentEntity.value, BoundingBoxComponent)
+          // Apply content-fit to content
+          // const contentBounds = getComponent(layout.contentEntity.value, BoundingBoxComponent)
 
-              if (contentBounds) {
-                // Apply rotation to the content bounds
-                const rotatedBox = contentBounds.objectSpaceBox.clone()
-                rotatedBox.applyQuaternion(rotation)
-                const contentSize = rotatedBox.getSize(new Vector3())
-                const containerAspectRatio = size.x / size.y
-                const contentAspectRatio = contentSize.x / contentSize.y
+          // if (contentBounds) {
+          //   // Apply rotation to the content bounds
+          //   const rotatedBox = contentBounds.objectSpaceBox.clone()
+          //   rotatedBox.applyQuaternion(rotation)
+          //   const contentSize = rotatedBox.getSize(new Vector3())
+          //   const containerAspectRatio = size.x / size.y
+          //   const contentAspectRatio = contentSize.x / contentSize.y
 
-                let baseScaleX = 1
-                let baseScaleY = 1
+          //   let baseScaleX = 1
+          //   let baseScaleY = 1
 
-                switch (contentFit) {
-                  case ContentFit.contain:
-                    if (containerAspectRatio > contentAspectRatio) {
-                      baseScaleX = baseScaleY = size.y / contentSize.y
-                    } else {
-                      baseScaleX = baseScaleY = size.x / contentSize.x
-                    }
-                    break
-                  case ContentFit.cover:
-                    if (containerAspectRatio > contentAspectRatio) {
-                      baseScaleX = baseScaleY = size.x / contentSize.x
-                    } else {
-                      baseScaleX = baseScaleY = size.y / contentSize.y
-                    }
-                    break
-                  case ContentFit.fill:
-                    baseScaleX = size.x / contentSize.x
-                    baseScaleY = size.y / contentSize.y
-                    break
-                  case ContentFit.none:
-                    // No scaling
-                    break
-                  case ContentFit.scaleDown:
-                    baseScaleX = baseScaleY = Math.min(1, size.x / contentSize.x, size.y / contentSize.y)
-                    break
-                }
+          //   switch (contentFit) {
+          //     case ContentFit.contain:
+          //       if (containerAspectRatio > contentAspectRatio) {
+          //         baseScaleX = baseScaleY = size.y / contentSize.y
+          //       } else {
+          //         baseScaleX = baseScaleY = size.x / contentSize.x
+          //       }
+          //       break
+          //     case ContentFit.cover:
+          //       if (containerAspectRatio > contentAspectRatio) {
+          //         baseScaleX = baseScaleY = size.x / contentSize.x
+          //       } else {
+          //         baseScaleX = baseScaleY = size.y / contentSize.y
+          //       }
+          //       break
+          //     case ContentFit.fill:
+          //       baseScaleX = size.x / contentSize.x
+          //       baseScaleY = size.y / contentSize.y
+          //       break
+          //     case ContentFit.none:
+          //       // No scaling
+          //       break
+          //     case ContentFit.scaleDown:
+          //       baseScaleX = baseScaleY = Math.min(1, size.x / contentSize.x, size.y / contentSize.y)
+          //       break
+          //   }
 
-                // Apply the contentFitScale
-                contentTransform.scale.value.set(
-                  baseScaleX * contentFitScale.x,
-                  baseScaleY * contentFitScale.y,
-                  contentFitScale.z
-                )
-              }
-            }
-          }
+          //   // Apply the contentFitScale
+          //   contentTransform.scale.value.set(
+          //     baseScaleX * contentFitScale.x,
+          //     baseScaleY * contentFitScale.y,
+          //     contentFitScale.z
+          //   )
+          // }
 
           return false
         }
