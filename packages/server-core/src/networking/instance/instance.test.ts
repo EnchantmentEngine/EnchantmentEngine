@@ -29,7 +29,7 @@ import { Paginated } from '@feathersjs/feathers'
 import assert from 'assert'
 import { afterAll, beforeAll, describe, it } from 'vitest'
 
-import { InstanceID, instancePath, InstanceType } from '@ir-engine/common/src/schemas/networking/instance.schema'
+import { instancePath, InstanceType } from '@ir-engine/common/src/schemas/networking/instance.schema'
 import { LocationID, LocationType, RoomCode } from '@ir-engine/common/src/schemas/social/location.schema'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { createTestLocation } from '@ir-engine/server-core/tests/util/createTestLocation'
@@ -52,19 +52,7 @@ describe('instance.test', () => {
     await app.setup()
 
     testLocation = await createTestLocation(app, params)
-
-    testInstance = {
-      id: '' as InstanceID,
-      locationId: testLocation.id as LocationID,
-      projectId: testLocation.projectId,
-      roomCode: '' as RoomCode,
-      currentUsers: 0,
-      ended: false,
-      createdAt: '',
-      updatedAt: '',
-      location: testLocation
-    }
-  })
+  }, 60000)
 
   afterAll(async () => {
     config.instanceserver.p2pEnabled = p2pEnabled
@@ -75,10 +63,11 @@ describe('instance.test', () => {
   let testLocation: LocationType
   let testInstance: InstanceType
 
-  it('should create an instance', async () => {
+  it('should create a server instance', async () => {
     const instance = (await app.service(instancePath).create({
       locationId: testLocation.id as LocationID,
-      roomCode: testInstance.roomCode as RoomCode
+      ipAddress: '1.2.3.4:1234',
+      roomCode: '123456' as RoomCode
     })) as InstanceType
 
     assert.ok(instance)

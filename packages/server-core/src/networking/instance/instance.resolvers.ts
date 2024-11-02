@@ -42,7 +42,9 @@ import { channelPath } from '@ir-engine/common/src/schemas/social/channel.schema
 import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 import { fromDateTimeSql, getDateTimeSql, toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import type { HookContext } from '@ir-engine/server-core/declarations'
+import appConfig from '@ir-engine/server-core/src/appconfig'
 import _ from 'lodash'
+import { InstanceAttendanceParams } from '../instance-attendance/instance-attendance.class'
 
 export const instanceResolver = resolve<InstanceType, HookContext>({
   location: virtual(async (instance, context) => {
@@ -50,19 +52,21 @@ export const instanceResolver = resolve<InstanceType, HookContext>({
       return await context.app.service(locationPath).get(instance.locationId)
   }),
   currentUsers: virtual(async (instance, context) => {
-    const peers = (await context.app.service(instanceAttendancePath).find({
+    const query = {
       query: {
         instanceId: instance.id,
-        ended: false,
-        updatedAt: {
-          // Only consider instances that have been updated in the last 10 seconds
-          $gt: toDateTimeSql(new Date(new Date().getTime() - 10000))
-        }
+        ended: false
       },
       paginate: false
-    })) as InstanceAttendanceType[]
+    } as InstanceAttendanceParams
+    if (appConfig.instanceserver.p2pEnabled)
+      query.query!.updatedAt = {
+        // Only consider instances that have been updated in the last 10 seconds
+        $gt: toDateTimeSql(new Date(new Date().getTime() - 10000))
+      }
+    const peers = (await context.app.service(instanceAttendancePath).find(query)) as InstanceAttendanceType[]
     const users = _.uniq(peers.map((peer) => peer.userId))
-    const p2p = !!instance.ipAddress
+    const p2p = !instance.ipAddress
     // If not p2p, add one for the host
     return p2p ? users.length : users.length + 1
   }),
