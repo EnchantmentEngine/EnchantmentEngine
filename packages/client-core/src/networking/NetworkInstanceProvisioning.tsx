@@ -192,13 +192,9 @@ export const MediaInstanceProvisioning = () => {
 
   // Once we have the world server, provision the media server
   useEffect(() => {
-    if (mediaInstanceState.keys.length || !worldNetwork?.ready?.value || !channelState.channels.channels?.value.length)
-      return
+    if (mediaInstanceState.keys.length || !worldNetwork?.ready?.value) return
 
-    const currentChannel =
-      channelState.targetChannelId.value === ''
-        ? channelState.channels.channels.value.find((channel) => channel.instanceId === worldNetworkId)?.id
-        : channelState.targetChannelId.value
+    const currentChannel = channelState.targetChannelId.value
     if (!currentChannel) return
 
     MediaInstanceConnectionService.provisionServer(currentChannel, false)
@@ -213,12 +209,7 @@ export const MediaInstanceProvisioning = () => {
     //     mediaInstanceState[id].set(none)
     //   }
     // }
-  }, [
-    channelState.channels.channels?.length,
-    worldNetwork?.ready?.value,
-    mediaInstanceState.keys.length,
-    channelState.targetChannelId.value
-  ])
+  }, [worldNetwork?.ready?.value, mediaInstanceState.keys.length, channelState.targetChannelId.value])
 
   return (
     <>
