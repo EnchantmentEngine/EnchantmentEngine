@@ -25,14 +25,16 @@ Infinite Reality Engine. All Rights Reserved.
 
 import './patchNodeForWebXREmulator'
 
-import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
-
 import { Entity, getComponent, setComponent } from '@ir-engine/ecs'
 import { EffectComposer, Pass, RenderPass } from 'postprocessing'
-import { WebGLRenderTarget } from 'three'
+import { WebGLRenderTarget, WebGLRenderer } from 'three'
 import { RendererComponent } from '../../src/renderer/WebGLRendererSystem'
 import { createWebXRManager } from '../../src/xr/WebXRManager'
 import { MockEventListener } from './MockEventListener'
+
+const mockCanvas = new MockEventListener() as any
+mockCanvas.parentElement = new MockEventListener()
+mockCanvas.getContext = () => null! // null will tell the renderer to not initialize, allowing our mock to work
 
 const mockContext = {
   getExtension: () => {},
@@ -42,12 +44,8 @@ const mockContext = {
       xrCompatible: true
     }
   },
+  canvas: mockCanvas,
   viewport: () => {}
-}
-
-class MockCanvas extends MockEventListener {
-  parentElement = new MockEventListener()
-  getContext = () => null! // null will tell the renderer to not initialize, allowing our mock to work
 }
 
 class MockRenderer {
@@ -59,7 +57,7 @@ class MockRenderer {
     setAnimationLoop: () => {},
     setContext: () => {}
   }
-  domElement = new MockCanvas()
+  domElement = mockCanvas
   setPixelRatio = () => {}
   getRenderTarget = () => {}
   getSize = () => 0

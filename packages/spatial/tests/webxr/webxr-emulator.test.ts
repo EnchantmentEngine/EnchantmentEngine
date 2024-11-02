@@ -23,6 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { mockEngineRenderer } from '../../tests/util/MockEngineRenderer'
+
 import { ECSState, Timer, createEngine, destroyEngine, setComponent } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -36,7 +38,6 @@ import {
 import { RendererComponent } from '../../src/renderer/WebGLRendererSystem'
 import { requestXRSession } from '../../src/xr/XRSessionFunctions'
 import { XRState } from '../../src/xr/XRState'
-import { mockEngineRenderer } from '../../tests/util/MockEngineRenderer'
 import { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispatcher'
 import { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
 
