@@ -42,7 +42,7 @@ const params = { isInternal: true } as any
 
 const p2pEnabled = config.instanceserver.p2pEnabled
 
-describe.only('instance.test', () => {
+describe('instance.test', () => {
   let app: Application
 
   beforeAll(async () => {
