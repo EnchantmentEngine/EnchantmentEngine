@@ -178,6 +178,7 @@ export async function addMediaNode(
     EditorControlFunctions.createObjectFromSceneElement(
       [
         { name: VideoComponent.jsonID },
+        { name: PositionalAudioComponent.jsonID },
         { name: MediaComponent.jsonID, props: { resources: [url] } },
         ...extraComponentJson
       ],

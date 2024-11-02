@@ -26,13 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { VRM, VRMHumanBone, VRMHumanBoneList } from '@pixiv/three-vrm'
 import { AnimationClip, AnimationMixer, Matrix4, Vector3 } from 'three'
 
-import {
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  hasComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
@@ -85,19 +79,17 @@ export const setupAvatarProportions = (entity: Entity, vrm: VRM) => {
   rawRig.leftUpperLeg.node.getWorldPosition(leftUpperLegPos)
   rawRig.leftEye ? rawRig.leftEye?.node.getWorldPosition(eyePos) : eyePos.copy(headPos).setY(headPos.y + 0.1) // fallback to rough estimation if no eye bone is present
 
-  const avatarComponent = getMutableComponent(entity, AvatarComponent)
-  avatarComponent.avatarHeight.set(headPos.y - worldHeight + 0.25)
-  avatarComponent.torsoLength.set(Math.abs(headPos.y - hipsPos.y))
-  avatarComponent.upperLegLength.set(Math.abs(hipsPos.y - leftLowerLegPos.y))
-  avatarComponent.lowerLegLength.set(Math.abs(leftLowerLegPos.y - leftFootPos.y))
-  avatarComponent.hipsHeight.set(hipsPos.y - worldHeight)
-  avatarComponent.eyeHeight.set(eyePos.y - worldHeight)
-  avatarComponent.footHeight.set(leftFootPos.y)
-  avatarComponent.footGap.set(footGap.subVectors(leftFootPos, rightFootPos).length())
-  // angle from ankle to toes along YZ plane
-  rawRig.leftToes &&
-    avatarComponent.footAngle.set(Math.atan2(leftFootPos.z - leftToesPos.z, leftFootPos.y - leftToesPos.y))
-
+  setComponent(entity, AvatarComponent, {
+    avatarHeight: headPos.y - worldHeight + 0.25,
+    torsoLength: Math.abs(headPos.y - hipsPos.y),
+    upperLegLength: Math.abs(hipsPos.y - leftLowerLegPos.y),
+    lowerLegLength: Math.abs(leftLowerLegPos.y - leftFootPos.y),
+    hipsHeight: hipsPos.y,
+    eyeHeight: eyePos.y,
+    footHeight: leftFootPos.y,
+    footGap: footGap.subVectors(leftFootPos, rightFootPos).length(),
+    footAngle: rawRig.leftToes ? Math.atan2(leftFootPos.z - leftToesPos.z, leftFootPos.y - leftToesPos.y) : 0
+  })
   //set ik matrices for blending into normalized rig
   const rig = vrm.humanoid.normalizedHumanBones
   rig.hips.node.updateWorldMatrix(false, true)
