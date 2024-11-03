@@ -73,9 +73,10 @@ import {
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { KHRUnlitExtensionComponent } from '../../gltf/MaterialDefinitionComponent'
+import { UpdatableCallback, UpdatableComponent } from '../components/UpdatableComponent'
+
 import { ShadowComponent } from '../components/ShadowComponent'
 import { SourceComponent } from '../components/SourceComponent'
-import { UpdatableCallback, UpdatableComponent } from '../components/UpdatableComponent'
 
 const disposeMaterial = (material: Material) => {
   for (const [key, val] of Object.entries(material) as [string, Texture][]) {

@@ -64,6 +64,7 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
 
   useEffect(() => {
     if (loadingEntity.value) return
+    if (!gltfComponent.src.value) return
     createLoadingGeo()
   }, [gltfComponent.src.value])
 

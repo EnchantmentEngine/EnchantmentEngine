@@ -708,7 +708,7 @@ const NodeReactor = (props: { nodeIndex: number; childIndex: number; parentUUID:
   }, [])
 
   useLayoutEffect(() => {
-    if (!entity) return
+    if (!entity || !entityExists(entity)) return
 
     setComponent(entity, EntityTreeComponent, { parentEntity, childIndex: props.childIndex })
   }, [entity, parentEntity, props.childIndex])

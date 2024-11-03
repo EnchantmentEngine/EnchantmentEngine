@@ -56,7 +56,6 @@ export const ScenePreviewCameraComponent = defineComponent({
 
   reactor: function () {
     if (!isClient) return null
-
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
     const previewCamera = useComponent(entity, ScenePreviewCameraComponent)
