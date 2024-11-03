@@ -49,7 +49,7 @@ import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEdito
 import { Button } from '@mui/material'
 import { Scrubber } from 'react-scrubber'
 import 'react-scrubber/lib/scrubber.css'
-import Slider from '../../../../../primitives/tailwind/Slider'
+import { Slider } from '../../../../../../editor'
 import ArrayInputGroup from '../../../input/Array'
 import InputGroup from '../../../input/Group'
 import SelectInput from '../../../input/Select'
@@ -233,7 +233,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
 
-      <InputGroup name="Volume" label={t('editor:properties.media.lbl-volume')} className="w-auto">
+      <div className="w-auto">
         <Slider
           min={0}
           max={1}
@@ -241,8 +241,10 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
           value={volumetricComponent.volume.value}
           onChange={updateProperty(LegacyVolumetricComponent, 'volume')}
           onRelease={commitProperty(LegacyVolumetricComponent, 'volume')}
+          aria-label="Volume"
+          label={t('editor:properties.media.lbl-volume')}
         />
-      </InputGroup>
+      </div>
 
       <ArrayInputGroup
         name="Source Paths"
@@ -259,7 +261,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         <VolumetricCurrentTimeScrubber entity={props.entity} />
       )}
 
-      <InputGroup name="Playback Rate" label="Playback Rate" className="w-auto">
+      <div className="w-auto">
         <Slider
           value={volumetricComponent.currentTrackInfo.playbackRate.value}
           min={0.5}
@@ -269,8 +271,10 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
             volumetricComponent.currentTrackInfo.playbackRate.set(value)
           }}
           onRelease={() => {}}
+          aria-label="Playback Rate"
+          label="Playback Rate"
         />
-      </InputGroup>
+      </div>
 
       <InputGroup name="Play Mode" label={t('editor:properties.media.playmode')}>
         <SelectInput

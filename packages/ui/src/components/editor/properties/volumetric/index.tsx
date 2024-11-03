@@ -32,11 +32,12 @@ import { PlaylistComponent } from '@ir-engine/engine/src/scene/components/Playli
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
 import { TextureType } from '@ir-engine/engine/src/scene/constants/UVOLTypes'
 import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { Slider } from '@ir-engine/ui/editor'
 import { t } from 'i18next'
 import React, { useEffect } from 'react'
 import { MdVideocam } from 'react-icons/md'
 import { Scrubber } from 'react-scrubber'
-import Slider from '../../../../primitives/tailwind/Slider'
+import 'react-scrubber/lib/scrubber.css'
 import InputGroup from '../../input/Group'
 import SelectInput from '../../input/Select'
 
@@ -90,7 +91,7 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
       description={t('editor:properties.volumetric.description')}
       Icon={VolumetricNodeEditor.iconComponent}
     >
-      <InputGroup name="Volume" label={t('editor:properties.media.lbl-volume')} className="w-auto">
+      <div className="w-auto">
         <Slider
           min={0}
           max={1}
@@ -98,8 +99,10 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
           value={component.volume.value}
           onChange={updateProperty(VolumetricComponent, 'volume')}
           onRelease={commitProperty(VolumetricComponent, 'volume')}
+          aria-label="Volume"
+          label={t('editor:properties.media.lbl-volume')}
         />
-      </InputGroup>
+      </div>
 
       {component.geometry.targets.length > 0 && (
         <InputGroup name="Geometry Target" label="Geometry Target">
@@ -122,7 +125,6 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
           const userTarget = component.texture[textureType as TextureType].value?.userTarget ?? -1
           const currentTarget = component.texture[textureType as TextureType].value?.currentTarget ?? 0
           const value = userTarget === -1 ? currentTarget : userTarget
-
           return (
             <InputGroup key={props.entity} name={`${textureType} targets`} label={`${textureType} targets`}>
               <SelectInput
