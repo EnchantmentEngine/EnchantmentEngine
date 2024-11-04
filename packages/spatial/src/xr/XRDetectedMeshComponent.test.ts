@@ -23,17 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import assert from 'assert'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { XRDetectedMeshComponent } from './XRDetectedMeshComponent'
 
 describe('XRDetectedMeshComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRDetectedMeshComponent.name, 'XRDetectedMeshComponent')
+      expect(XRDetectedMeshComponent.name).toBe('XRDetectedMeshComponent')
     })
   }) //:: Fields
 
+  /** @todo */
   describe('reactor', () => {}) //:: reactor
   describe('createGeometryFromMesh', () => {}) //:: createGeometryFromMesh
   describe('updateMeshGeometry', () => {}) //:: updateMeshGeometry

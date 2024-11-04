@@ -23,30 +23,73 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { Color } from 'three'
+import { describe, expect, it } from 'vitest'
+import {
+  XRDetectedPlaneComponent,
+  occlusionMat,
+  placementHelperMaterial,
+  shadowMaterial
+} from './XRDetectedPlaneComponent'
 
 describe('placementHelperMaterial', () => {
-  // color: 'grey',
-  // wireframe: false,
-  // opacity: 0.5,
-  // transparent: true
+  it('should initialize Material.color with the expected value', () => {
+    expect(placementHelperMaterial.color.getHex()).toBe(new Color('grey').getHex())
+  })
+
+  it('should initialize Material.wireframe with the expected value', () => {
+    expect(placementHelperMaterial.wireframe).toBe(false)
+  })
+
+  it('should initialize Material.opacity with the expected value', () => {
+    expect(placementHelperMaterial.opacity).toBe(0.5)
+  })
+
+  it('should initialize Material.transparent with the expected value', () => {
+    expect(placementHelperMaterial.transparent).toBe(true)
+  })
 }) //:: placementHelperMaterial
 
 describe('shadowMaterial', () => {
-  // color: 0x0a0a0a,
-  // opacity: 0.5,
-  // polygonOffset = true
-  // polygonOffsetFactor = -0.01
+  it('should initialize Material.color with the expected value', () => {
+    expect(shadowMaterial.color.getHex()).toBe(0x0a0a0a)
+  })
+
+  it('should initialize Material.opacity with the expected value', () => {
+    expect(shadowMaterial.opacity).toBe(0.5)
+  })
+
+  it('should initialize Material.polygonOffset with the expected value', () => {
+    expect(shadowMaterial.polygonOffset).toBe(true)
+  })
+
+  it('should initialize Material.polygonOffsetFactor with the expected value', () => {
+    expect(shadowMaterial.polygonOffsetFactor).toBe(-0.01)
+  })
 }) //:: shadowMaterial
 
 describe('occlusionMat', () => {
-  // colorWrite: false
-  // polygonOffset = true
-  // polygonOffsetFactor = -0.01
+  it('should initialize Material.colorWrite with the expected value', () => {
+    expect(occlusionMat.colorWrite).toBe(false)
+  })
+
+  it('should initialize Material.polygonOffset with the expected value', () => {
+    expect(occlusionMat.polygonOffset).toBe(true)
+  })
+
+  it('should initialize Material.polygonOffsetFactor with the expected value', () => {
+    expect(occlusionMat.polygonOffsetFactor).toBe(-0.01)
+  })
 }) //:: occlusionMat
 
 describe('XRDetectedPlaneComponent', () => {
-  describe('name', () => {}) //:: name
+  describe('Fields', () => {
+    it('should initialize the *Component.name field with the expected value', () => {
+      expect(XRDetectedPlaneComponent.name).toBe('XRDetectedPlaneComponent')
+    })
+  }) //:: Fields
+
+  /** @todo */
   describe('reactor', () => {}) //:: reactor
   describe('createGeometryFromPolygon', () => {}) //:: createGeometryFromPolygon
   describe('updatePlaneGeometry', () => {}) //:: updatePlaneGeometry

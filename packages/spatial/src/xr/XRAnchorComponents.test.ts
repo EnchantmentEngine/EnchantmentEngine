@@ -23,34 +23,58 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import assert from 'assert'
-import { describe, it } from 'vitest'
-import { PersistentAnchorComponent } from './XRAnchorComponents'
+import { describe, expect, it } from 'vitest'
+import { PersistentAnchorActions, PersistentAnchorComponent } from './XRAnchorComponents'
 
 describe('PersistentAnchorComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(PersistentAnchorComponent.name, 'PersistentAnchorComponent')
+      expect(PersistentAnchorComponent.name).toBe('PersistentAnchorComponent')
     })
 
     it('should initialize the *Component.jsonID field with the expected value', () => {
-      assert.equal(PersistentAnchorComponent.jsonID, 'EE_persistent_anchor')
+      expect(PersistentAnchorComponent.jsonID).toBe('EE_persistent_anchor')
     })
   }) //:: Fields
 
+  /** @todo */
   describe('reactor', () => {}) //:: reactor
 }) //:: PersistentAnchorComponent
 
 describe('PersistentAnchorActions', () => {
   describe('anchorFound', () => {
-    /**
-    // @todo
-    it('should initialize the anchor*.name field with the expected value', () => {
-      assert.equal(PersistentAnchorActions.anchorFound.type, 'xre.anchor.anchorFound')
+    const anchor = PersistentAnchorActions.anchorFound
+
+    it('should initialize the anchor*.type field with the expected value', () => {
+      expect(anchor.type).toBe('xre.anchor.anchorFound')
     })
-    */
+
+    it('should initialize the anchor*.name field with a string', () => {
+      expect(typeof anchor.name).toBe('string')
+    })
   }) //:: anchorFound
 
-  describe('anchorUpdated', () => {}) //:: anchorUpdated
-  describe('anchorLost', () => {}) //:: anchorLost
+  describe('anchorUpdated', () => {
+    const anchor = PersistentAnchorActions.anchorUpdated
+
+    it('should initialize the anchor*.type field with the expected value', () => {
+      expect(anchor.type).toBe('xre.anchor.anchorUpdated')
+    })
+
+    it('should initialize the anchor*.name field with a string', () => {
+      expect(typeof anchor.name).toBe('string')
+    })
+  }) //:: anchorUpdated
+
+  describe('anchorLost', () => {
+    const anchor = PersistentAnchorActions.anchorLost
+
+    it('should initialize the anchor*.type field with the expected value', () => {
+      expect(anchor.type).toBe('xre.anchor.anchorLost')
+    })
+
+    it('should initialize the anchor*.name field with a string', () => {
+      expect(typeof anchor.name).toBe('string')
+    })
+  }) //:: anchorLost
 }) //:: PersistentAnchorActions

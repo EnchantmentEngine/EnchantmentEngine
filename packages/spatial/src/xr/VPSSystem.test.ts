@@ -28,24 +28,34 @@ import { describe } from 'vitest'
 describe.todo('VPSSystem', () => {
   /**
   // @todo
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+  })
+
+  afterEach(() => {
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   const System = SystemDefinitions.get(VPSSystem)!
 
   describe('Fields', () => {
     it('should initialize the *System.uuid field with the expected value', () => {
-      assert.equal(System.uuid, 'ee.engine.VPSSystem')
+      expect(System.uuid).toBe('ee.engine.VPSSystem')
     })
 
     it('should initialize the *System with the expected SystemUUID value', () => {
-      assert.equal(VPSSystem, 'ee.engine.VPSSystem' as SystemUUID)
+      expect(VPSSystem).toBe('ee.engine.VPSSystem' as SystemUUID)
     })
 
     it('should initialize the *System.insert field with the expected value', () => {
-      assert.notEqual(System.insert, undefined)
-      assert.notEqual(System.insert!.after, undefined)
-      assert.equal(System.insert!.after!, XRPersistentAnchorSystem)
+      expect(System.insert).not.toBe(undefined)
+      expect(System.insert!.after).not.toBe(undefined)
+      expect(System.insert!.after!).toBe(XRPersistentAnchorSystem)
     })
   }) //:: Fields
-  */
+   */
 
   describe('execute', () => {
     /**

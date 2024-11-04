@@ -23,8 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import assert from 'assert'
-import { describe, it } from 'vitest'
+import { UndefinedEntity, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { assertArrayEqual } from '../physics/components/RigidBodyComponent.test'
 import {
   XRAnchorComponent,
   XRHandComponent,
@@ -34,10 +35,20 @@ import {
   XRSpaceComponent
 } from './XRComponents'
 
+const XRHandRotationDefaults = [
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+]
+
+function assertXRHandComponentDefaults(data: any) {
+  assertArrayEqual([...data.rotations.values()], XRHandRotationDefaults)
+  expect(data.hand).toBeNull()
+}
+
 describe('XRHandComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRHandComponent.name, 'XRHandComponent')
+      expect(XRHandComponent.name).toBe('XRHandComponent')
     })
   }) //:: Fields
 }) //:: XRHandComponent
@@ -45,29 +56,59 @@ describe('XRHandComponent', () => {
 describe('XRLeftHandComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRLeftHandComponent.name, 'XRLeftHandComponent')
+      expect(XRLeftHandComponent.name).toBe('XRLeftHandComponent')
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('onInit', () => {}) //:: onInit
+  describe('onInit', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      destroyEngine()
+    })
+
+    it("should initialize the Component's data with the expected default values", () => {
+      const result = setComponent(testEntity, XRLeftHandComponent)
+      assertXRHandComponentDefaults(result)
+    })
+  }) //:: onInit
 }) //:: XRLeftHandComponent
 
 describe('XRRightHandComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRRightHandComponent.name, 'XRRightHandComponent')
+      expect(XRRightHandComponent.name).toBe('XRRightHandComponent')
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('onInit', () => {}) //:: onInit
+  describe('onInit', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      destroyEngine()
+    })
+
+    it("should initialize the Component's data with the expected default values", () => {
+      const result = setComponent(testEntity, XRLeftHandComponent)
+      assertXRHandComponentDefaults(result)
+    })
+  }) //:: onInit
 }) //:: XRRightHandComponent
 
 describe('XRHitTestComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRHitTestComponent.name, 'XRHitTestComponent')
+      expect(XRHitTestComponent.name).toBe('XRHitTestComponent')
     })
   }) //:: Fields
 
@@ -78,7 +119,7 @@ describe('XRHitTestComponent', () => {
 describe('XRAnchorComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRAnchorComponent.name, 'XRAnchorComponent')
+      expect(XRAnchorComponent.name).toBe('XRAnchorComponent')
     })
   }) //:: Fields
 
@@ -89,7 +130,7 @@ describe('XRAnchorComponent', () => {
 describe('XRSpaceComponent', () => {
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
-      assert.equal(XRSpaceComponent.name, 'XRSpaceComponent')
+      expect(XRSpaceComponent.name).toBe('XRSpaceComponent')
     })
   }) //:: Fields
 
