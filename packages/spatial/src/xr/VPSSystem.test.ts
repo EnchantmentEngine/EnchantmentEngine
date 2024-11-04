@@ -23,11 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
+import { destroySpatialEngine } from '../initializeEngine'
 
-describe.todo('VPSSystem', () => {
-  /**
-  // @todo
+describe('VPSSystem', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
@@ -38,24 +39,35 @@ describe.todo('VPSSystem', () => {
     destroyEngine()
   })
 
-  const System = SystemDefinitions.get(VPSSystem)!
+  /** @todo Uncommenting this line triggers a failure */
+  // const System = SystemDefinitions.get(VPSSystem)!
+
+  it.todo('debug fail', () => {
+    expect(true).toBe(false)
+  })
 
   describe('Fields', () => {
+    /**
+    // @todo
     it('should initialize the *System.uuid field with the expected value', () => {
       expect(System.uuid).toBe('ee.engine.VPSSystem')
     })
+    */
 
-    it('should initialize the *System with the expected SystemUUID value', () => {
-      expect(VPSSystem).toBe('ee.engine.VPSSystem' as SystemUUID)
+    it.todo('should initialize the *System with the expected SystemUUID value', () => {
+      /** @todo Uncommenting this line triggers a failure */
+      // expect(VPSSystem).toBe('ee.engine.VPSSystem' as SystemUUID)
     })
 
+    /**
+    // @todo
     it('should initialize the *System.insert field with the expected value', () => {
       expect(System.insert).not.toBe(undefined)
       expect(System.insert!.after).not.toBe(undefined)
       expect(System.insert!.after!).toBe(XRPersistentAnchorSystem)
     })
+    */
   }) //:: Fields
-   */
 
   describe('execute', () => {
     /**
