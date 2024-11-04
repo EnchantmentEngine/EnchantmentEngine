@@ -189,24 +189,24 @@ export class WebLayer3D extends Object3D {
       return t
     }
 
-    const textureHash = this._webLayer.currentDOMState?.texture?.hash
+    // const textureHash = this._webLayer.currentDOMState?.texture?.hash
 
-    if (textureHash) {
-      if (!this._textureMap.has(textureHash)) this._textureMap.set(textureHash, {})
-      const textures = manager.getTexture(textureHash)
-      const clonedTextures = this._textureMap.get(textureHash)!
-      if (textures.compressedTexture && !clonedTextures.compressedTexture) {
-        clonedTextures.canvasTexture?.dispose()
-        clonedTextures.canvasTexture = undefined
-        clonedTextures.compressedTexture = textures.compressedTexture.clone()
-        clonedTextures.compressedTexture.needsUpdate = true
-      }
-      if (textures.canvasTexture && !clonedTextures.canvasTexture) {
-        clonedTextures.canvasTexture = textures.canvasTexture.clone()
-        clonedTextures.canvasTexture.needsUpdate = true
-      }
-      return clonedTextures.compressedTexture ?? clonedTextures.canvasTexture
-    }
+    // if (textureHash) {
+    //   if (!this._textureMap.has(textureHash)) this._textureMap.set(textureHash, {})
+    //   const textures = manager.getTexture(textureHash)
+    //   const clonedTextures = this._textureMap.get(textureHash)!
+    //   if (textures.compressedTexture && !clonedTextures.compressedTexture) {
+    //     clonedTextures.canvasTexture?.dispose()
+    //     clonedTextures.canvasTexture = undefined
+    //     clonedTextures.compressedTexture = textures.compressedTexture.clone()
+    //     clonedTextures.compressedTexture.needsUpdate = true
+    //   }
+    //   if (textures.canvasTexture && !clonedTextures.canvasTexture) {
+    //     clonedTextures.canvasTexture = textures.canvasTexture.clone()
+    //     clonedTextures.canvasTexture.needsUpdate = true
+    //   }
+    //   return clonedTextures.compressedTexture ?? clonedTextures.canvasTexture
+    // }
 
     return undefined
   }
@@ -272,7 +272,7 @@ export class WebLayer3D extends Object3D {
    * Get the hover state
    */
   get pseudoStates() {
-    return this._webLayer.currentDOMState?.pseudo
+    return undefined // this._webLayer.currentDOMState?.pseudo
   }
 
   /**
@@ -473,7 +473,7 @@ export class WebLayer3D extends Object3D {
     }
 
     this._webLayer.update()
-    this.container.manager.scheduleTasksIfNeeded()
+    // this.container.manager.scheduleTasksIfNeeded()
   }
 
   get pixelRatio() {
@@ -550,7 +550,7 @@ export class WebLayer3D extends Object3D {
       const texture = this.texture!
       const computedStyle = getComputedStyle(this.element)
       const { objectFit } = computedStyle
-      const { width: viewWidth, height: viewHeight } = this.bounds.copy(domState.bounds)
+      const { width: viewWidth, height: viewHeight } = this.bounds //.copy(domState.bounds)
       const naturalWidth = isVideo ? media.videoWidth : media.naturalWidth
       const naturalHeight = isVideo ? media.videoHeight : media.naturalHeight
       const mediaRatio = naturalWidth / naturalHeight
@@ -590,7 +590,7 @@ export class WebLayer3D extends Object3D {
           texture.repeat.set(1, 1)
           break
       }
-      domState.bounds.copy(this.bounds)
+      // domState.bounds.copy(this.bounds)
     }
   }
 

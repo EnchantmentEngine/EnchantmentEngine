@@ -23,18 +23,14 @@ All portions of the code written by the Ethereal Engine team are Copyright © 20
 Ethereal Engine. All Rights Reserved.
 */
 
-import { compress } from 'fflate'
 // import { Packr, Unpackr } from 'msgpackr'
 import { Matrix4 } from 'three'
 
-import { getBorder, getBounds, getMargin, getPadding, parseCSSTransform } from './dom-utils'
-import { bufferToHex } from './hex-utils'
-import { getParentsHTML, serializeToString } from './serialization-utils'
-import { getAllEmbeddedStyles } from './serialization/getAllEmbeddedStyles'
-import { KTX2Encoder, UASTCFlags } from './textures/KTX2Encoder'
+import { getBorder, getBounds, getMargin, getPadding } from './dom-utils'
+import { KTX2Encoder } from './textures/KTX2Encoder'
 import { WebLayer } from './WebLayer'
 import { WebRenderer } from './WebRenderer'
-import { SnapshotHash, TextureHash, XRUIState } from './XRUIState'
+import { SnapshotHash, TextureHash } from './XRUIState'
 
 const scratchMatrix = new Matrix4()
 
@@ -93,80 +89,72 @@ export class WebLayerManagerBase {
   ktx2Encoder = new KTX2Encoder()
 
   async compressTexture(textureHash: TextureHash) {
-    const data = this._textureData.get(textureHash)
-    const canvas = data?.canvas
-    if (!canvas) throw new Error('Missing texture canvas')
-    if (this.ktx2Encoder.pool.limit === 0) return
-
-    const image = this.getImageData(canvas)
-    let ktx2Texture: ArrayBuffer
-    try {
-      ktx2Texture = await this.ktx2Encoder.encode(image, {
-        srgb: true,
-        // compressionLevel: 0,
-        // qualityLevel: 256
-        uastc: true,
-        uastcFlags: UASTCFlags.UASTCLevelFastest
-      })
-    } catch (error: any) {
-      console.error(`KTX2 encoding failed for image (${canvas.width}, ${canvas.height}) `, error)
-      this.ktx2Encoder.pool.dispose()
-      return
-    }
-
-    const textureData: TextureStoreData = this._unsavedTextureData.get(textureHash) || {
-      hash: textureHash,
-      timestamp: Date.now(),
-      texture: undefined
-    }
-    data.ktx2Url = URL.createObjectURL(new Blob([ktx2Texture], { type: 'image/ktx2' }))
-    const bufferData = await new Promise<Uint8Array>((resolve, reject) => {
-      compress(new Uint8Array(ktx2Texture), { consume: true }, (err, bufferData) => {
-        if (err) return reject(err)
-        resolve(bufferData)
-      })
-    })
-    textureData.texture = bufferData
-    this._unsavedTextureData.set(textureHash, textureData)
-  }
-
-  scheduleTasksIfNeeded() {
-    if (this.tasksPending || (this.serializeQueue.length === 0 && this.rasterizeQueue.length === 0)) return
-    this.tasksPending = true
-    setTimeout(this._runTasks, 1)
-  }
-
-  private _runTasks = () => {
-    const serializeQueue = this.serializeQueue
-    const rasterizeQueue = this.rasterizeQueue
-
-    // console.log("serialize task size", serializeQueue.length, serializeQueue)
-    // console.log("rasterize task size", rasterizeQueue.length, rasterizeQueue)
-
-    while (serializeQueue.length > 0 && this.serializePendingCount < this.MAX_SERIALIZE_TASK_COUNT) {
-      this.serializePendingCount++
-      const { layer, resolve } = serializeQueue.shift()!
-      this.serialize(layer).then((val) => {
-        this.serializePendingCount--
-        resolve(val)
-      })
-    }
-
-    while (rasterizeQueue.length > 0 && this.rasterizePendingCount < this.MAX_RASTERIZE_TASK_COUNT) {
-      this.rasterizePendingCount++
-      const { hash, svgUrl: url, resolve } = rasterizeQueue.shift()!
-      this.rasterize(hash, url).finally(() => {
-        this.rasterizePendingCount--
-        resolve(undefined)
-        if (this._autosaveTimer) clearTimeout(this._autosaveTimer)
-        if (this.autosave && this._unsavedTextureData.size)
-          this._autosaveTimer = setTimeout(() => {
-            XRUIState.saveStore()
-          }, this.autosaveDelay / this._unsavedTextureData.size)
-      })
-    }
-
-    this.tasksPending = false
+    //   const data = this._textureData.get(textureHash)
+    //   const canvas = data?.canvas
+    //   if (!canvas) throw new Error('Missing texture canvas')
+    //   if (this.ktx2Encoder.pool.limit === 0) return
+    //   const image = this.getImageData(canvas)
+    //   let ktx2Texture: ArrayBuffer
+    //   try {
+    //     ktx2Texture = await this.ktx2Encoder.encode(image, {
+    //       srgb: true,
+    //       // compressionLevel: 0,
+    //       // qualityLevel: 256
+    //       uastc: true,
+    //       uastcFlags: UASTCFlags.UASTCLevelFastest
+    //     })
+    //   } catch (error: any) {
+    //     console.error(`KTX2 encoding failed for image (${canvas.width}, ${canvas.height}) `, error)
+    //     this.ktx2Encoder.pool.dispose()
+    //     return
+    //   }
+    //   const textureData: TextureStoreData = this._unsavedTextureData.get(textureHash) || {
+    //     hash: textureHash,
+    //     timestamp: Date.now(),
+    //     texture: undefined
+    //   }
+    //   data.ktx2Url = URL.createObjectURL(new Blob([ktx2Texture], { type: 'image/ktx2' }))
+    //   const bufferData = await new Promise<Uint8Array>((resolve, reject) => {
+    //     compress(new Uint8Array(ktx2Texture), { consume: true }, (err, bufferData) => {
+    //       if (err) return reject(err)
+    //       resolve(bufferData)
+    //     })
+    //   })
+    //   textureData.texture = bufferData
+    //   this._unsavedTextureData.set(textureHash, textureData)
+    // }
+    // scheduleTasksIfNeeded() {
+    //   if (this.tasksPending || (this.serializeQueue.length === 0 && this.rasterizeQueue.length === 0)) return
+    //   this.tasksPending = true
+    //   setTimeout(this._runTasks, 1)
+    // }
+    // private _runTasks = () => {
+    //   const serializeQueue = this.serializeQueue
+    //   const rasterizeQueue = this.rasterizeQueue
+    //   // console.log("serialize task size", serializeQueue.length, serializeQueue)
+    //   // console.log("rasterize task size", rasterizeQueue.length, rasterizeQueue)
+    //   while (serializeQueue.length > 0 && this.serializePendingCount < this.MAX_SERIALIZE_TASK_COUNT) {
+    //     this.serializePendingCount++
+    //     const { layer, resolve } = serializeQueue.shift()!
+    //     this.serialize(layer).then((val) => {
+    //       this.serializePendingCount--
+    //       resolve(val)
+    //     })
+    //   }
+    //   while (rasterizeQueue.length > 0 && this.rasterizePendingCount < this.MAX_RASTERIZE_TASK_COUNT) {
+    //     this.rasterizePendingCount++
+    //     const { hash, svgUrl: url, resolve } = rasterizeQueue.shift()!
+    //     this.rasterize(hash, url).finally(() => {
+    //       this.rasterizePendingCount--
+    //       resolve(undefined)
+    //       if (this._autosaveTimer) clearTimeout(this._autosaveTimer)
+    //       if (this.autosave && this._unsavedTextureData.size)
+    //         this._autosaveTimer = setTimeout(() => {
+    //           XRUIState.saveStore()
+    //         }, this.autosaveDelay / this._unsavedTextureData.size)
+    //     })
+    //   }
+    //   this.tasksPending = false
   }
 
   addToSerializeQueue(layer: WebLayer): ReturnType<typeof WebLayerManagerBase.prototype.serialize> {
@@ -189,185 +177,154 @@ export class WebLayerManagerBase {
   }
 
   async serialize(layer: WebLayer) {
-    this.updateDOMMetrics(layer)
-    const layerElement = layer.element as HTMLElement
-    // if (element) layerElement.textContent = element.textContent
-    const metrics = layer.domMetrics
-
-    const { top, left, width, height } = metrics.bounds
-    const { top: marginTop, left: marginLeft, bottom: marginBottom, right: marginRight } = metrics.margin
-    // add margins
-    const fullWidth = width + Math.max(marginLeft, 0) + Math.max(marginRight, 0)
-    const fullHeight = height + Math.max(marginTop, 0) + Math.max(marginBottom, 0)
-
-    const pixelRatio = layer.computedPixelRatio
-    const textureWidth = Math.max(nextPowerOf2(fullWidth * pixelRatio), 32)
-    const textureHeight = Math.max(nextPowerOf2(fullHeight * pixelRatio), 32)
-
-    const result = {} as { stateKey: SnapshotHash | HTMLMediaElement; svgUrl?: string; needsRasterize: boolean }
-    let svgDoc!: string
-
-    const computedStyle = getComputedStyle(layerElement)
-
-    const transform = computedStyle.transform
-    let cssTransform = null as Matrix4 | null
-    if (transform && transform !== 'none') {
-      const pixelSize = 1 / this.pixelsPerMeter
-      cssTransform = parseCSSTransform(computedStyle, width, height, pixelSize, scratchMatrix)
-    }
-
-    if (layer.isMediaElement) {
-      result.stateKey = layerElement as HTMLMediaElement
-    } else {
-      // create svg markup
-      const layerAttribute = WebRenderer.attributeHTML(WebRenderer.LAYER_ATTRIBUTE, '')
-      const needsInlineBlock = computedStyle.display === 'inline'
-      WebRenderer.updateInputAttributes(layerElement)
-
-      const parentsHTML = getParentsHTML(layer, fullWidth, fullHeight, textureWidth, textureHeight)
-      const svgCSS = await getAllEmbeddedStyles(layerElement)
-      let layerHTML = await serializeToString(layerElement)
-      layerHTML = layerHTML.replace(
-        layerAttribute,
-        `${layerAttribute} ${WebRenderer.RENDERING_ATTRIBUTE}="" ` +
-          `${needsInlineBlock ? `${WebRenderer.RENDERING_INLINE_ATTRIBUTE}="" ` : ' '} ` +
-          WebRenderer.getPsuedoAttributes(layer.desiredPseudoState)
-      )
-
-      const hashComponents = [...svgCSS.map((s) => s.hash), parentsHTML[0], layerHTML, parentsHTML[1]].join('\n')
-
-      const stateHashBuffer = isClient
-        ? await crypto.subtle.digest('SHA-1', WebRenderer.textEncoder.encode(hashComponents))
-        : new ArrayBuffer(0)
-      const stateHash =
-        bufferToHex(stateHashBuffer) +
-        '?w=' +
-        fullWidth +
-        ';h=' +
-        fullHeight +
-        ';tw=' +
-        textureWidth +
-        ';th=' +
-        textureHeight
-      result.stateKey = stateHash
-
-      svgDoc =
-        '<svg width="' +
-        textureWidth +
-        '" height="' +
-        textureHeight +
-        '" xmlns="http://www.w3.org/2000/svg"><defs><style type="text/css"><![CDATA[\n' +
-        svgCSS.map((s) => s.serialized).join('\n') +
-        ']]></style></defs><foreignObject x="0" y="0" width="' +
-        textureWidth +
-        '" height="' +
-        textureHeight +
-        '">' +
-        parentsHTML[0] +
-        layerHTML +
-        parentsHTML[1] +
-        '</foreignObject></svg>'
-    }
-
-    // update the layer state data
-    const data = await XRUIState.requestStoredData(result.stateKey)
-    data.cssTransform = cssTransform?.clone()
-    data.bounds.left = left
-    data.bounds.top = top
-    data.bounds.width = width
-    data.bounds.height = height
-    data.margin.left = marginLeft
-    data.margin.top = marginTop
-    data.margin.right = marginRight
-    data.margin.bottom = marginBottom
-    data.fullWidth = fullWidth
-    data.fullHeight = fullHeight
-    data.pixelRatio = pixelRatio
-    data.textureWidth = textureWidth
-    data.textureHeight = textureHeight
-
-    layer.desiredDOMStateKey = result.stateKey
-    if (typeof result.stateKey === 'string') layer.allStateHashes.add(result.stateKey)
-
-    result.needsRasterize = !layer.isMediaElement && fullWidth * fullHeight > 0 && !data.texture?.hash
-    result.svgUrl =
-      result.needsRasterize && svgDoc ? 'data:image/svg+xml;utf8,' + encodeURIComponent(svgDoc) : undefined
-    layer.lastSVGUrl = result.svgUrl
-
-    return result
+    // this.updateDOMMetrics(layer)
+    // const layerElement = layer.element as HTMLElement
+    // // if (element) layerElement.textContent = element.textContent
+    // const metrics = layer.domMetrics
+    // const { top, left, width, height } = metrics.bounds
+    // const { top: marginTop, left: marginLeft, bottom: marginBottom, right: marginRight } = metrics.margin
+    // // add margins
+    // const fullWidth = width + Math.max(marginLeft, 0) + Math.max(marginRight, 0)
+    // const fullHeight = height + Math.max(marginTop, 0) + Math.max(marginBottom, 0)
+    // const pixelRatio = layer.computedPixelRatio
+    // const textureWidth = Math.max(nextPowerOf2(fullWidth * pixelRatio), 32)
+    // const textureHeight = Math.max(nextPowerOf2(fullHeight * pixelRatio), 32)
+    // const result = {} as { stateKey: SnapshotHash | HTMLMediaElement; svgUrl?: string; needsRasterize: boolean }
+    // let svgDoc!: string
+    // const computedStyle = getComputedStyle(layerElement)
+    // const transform = computedStyle.transform
+    // let cssTransform = null as Matrix4 | null
+    // if (transform && transform !== 'none') {
+    //   const pixelSize = 1 / this.pixelsPerMeter
+    //   cssTransform = parseCSSTransform(computedStyle, width, height, pixelSize, scratchMatrix)
+    // }
+    // if (layer.isMediaElement) {
+    //   result.stateKey = layerElement as HTMLMediaElement
+    // } else {
+    //   // create svg markup
+    //   const layerAttribute = WebRenderer.attributeHTML(WebRenderer.LAYER_ATTRIBUTE, '')
+    //   const needsInlineBlock = computedStyle.display === 'inline'
+    //   WebRenderer.updateInputAttributes(layerElement)
+    //   const parentsHTML = getParentsHTML(layer, fullWidth, fullHeight, textureWidth, textureHeight)
+    //   const svgCSS = await getAllEmbeddedStyles(layerElement)
+    //   let layerHTML = await serializeToString(layerElement)
+    //   layerHTML = layerHTML.replace(
+    //     layerAttribute,
+    //     `${layerAttribute} ${WebRenderer.RENDERING_ATTRIBUTE}="" ` +
+    //       `${needsInlineBlock ? `${WebRenderer.RENDERING_INLINE_ATTRIBUTE}="" ` : ' '} ` +
+    //       WebRenderer.getPsuedoAttributes(layer.desiredPseudoState)
+    //   )
+    //   const hashComponents = [...svgCSS.map((s) => s.hash), parentsHTML[0], layerHTML, parentsHTML[1]].join('\n')
+    //   const stateHashBuffer = isClient
+    //     ? await crypto.subtle.digest('SHA-1', WebRenderer.textEncoder.encode(hashComponents))
+    //     : new ArrayBuffer(0)
+    //   const stateHash =
+    //     bufferToHex(stateHashBuffer) +
+    //     '?w=' +
+    //     fullWidth +
+    //     ';h=' +
+    //     fullHeight +
+    //     ';tw=' +
+    //     textureWidth +
+    //     ';th=' +
+    //     textureHeight
+    //   result.stateKey = stateHash
+    //   svgDoc =
+    //     '<svg width="' +
+    //     textureWidth +
+    //     '" height="' +
+    //     textureHeight +
+    //     '" xmlns="http://www.w3.org/2000/svg"><defs><style type="text/css"><![CDATA[\n' +
+    //     svgCSS.map((s) => s.serialized).join('\n') +
+    //     ']]></style></defs><foreignObject x="0" y="0" width="' +
+    //     textureWidth +
+    //     '" height="' +
+    //     textureHeight +
+    //     '">' +
+    //     parentsHTML[0] +
+    //     layerHTML +
+    //     parentsHTML[1] +
+    //     '</foreignObject></svg>'
+    // }
+    // // update the layer state data
+    // const data = await XRUIState.requestStoredData(result.stateKey)
+    // data.cssTransform = cssTransform?.clone()
+    // data.bounds.left = left
+    // data.bounds.top = top
+    // data.bounds.width = width
+    // data.bounds.height = height
+    // data.margin.left = marginLeft
+    // data.margin.top = marginTop
+    // data.margin.right = marginRight
+    // data.margin.bottom = marginBottom
+    // data.fullWidth = fullWidth
+    // data.fullHeight = fullHeight
+    // data.pixelRatio = pixelRatio
+    // data.textureWidth = textureWidth
+    // data.textureHeight = textureHeight
+    // layer.desiredDOMStateKey = result.stateKey
+    // if (typeof result.stateKey === 'string') layer.allStateHashes.add(result.stateKey)
+    // result.needsRasterize = !layer.isMediaElement && fullWidth * fullHeight > 0 && !data.texture?.hash
+    // result.svgUrl =
+    //   result.needsRasterize && svgDoc ? 'data:image/svg+xml;utf8,' + encodeURIComponent(svgDoc) : undefined
+    // layer.lastSVGUrl = result.svgUrl
+    // return result
   }
 
-  async rasterize(stateHash: SnapshotHash, svgUrl: SVGUrl) {
-    const stateData = this.getLayerState(stateHash)
-    const svgImage = this._imagePool.pop() || new Image()
-
-    const { fullWidth, fullHeight, textureWidth, textureHeight, pixelRatio } = stateData
-
-    await new Promise<void>((resolve, reject) => {
-      svgImage.onload = () => {
-        resolve()
-      }
-
-      svgImage.onerror = (error) => {
-        reject(error)
-      }
-
-      svgImage.width = textureWidth
-      svgImage.height = textureHeight
-      svgImage.src = svgUrl
-    })
-
-    if (!svgImage.complete || svgImage.currentSrc !== svgUrl) {
-      throw new Error('Rasterization Failed')
-    }
-
-    await svgImage.decode()
-
-    const sourceWidth = fullWidth * pixelRatio
-    const sourceHeight = fullHeight * pixelRatio
-
-    const hashCanvas = await this.rasterizeToCanvas(svgImage, sourceWidth, sourceHeight, 30, 30)
-    const hashData = this.getImageData(hashCanvas)
-    const textureHashBuffer = await crypto.subtle.digest('SHA-1', hashData.data)
-    const textureHash = bufferToHex(textureHashBuffer) + '?w=' + textureWidth + ';h=' + textureHeight
-
-    const previousCanvasHash = stateData.texture?.hash
-    // stateData.texture.hash = textureHash
-
-    if (previousCanvasHash !== textureHash) {
-      stateData.renderAttempts = 0
-    }
-
-    stateData.renderAttempts++
-
-    stateData.texture = this.getTextureState(textureHash)
-    const hasTexture = stateData.texture.canvas || stateData.texture.ktx2Url
-    if (stateData.renderAttempts > this.MINIMUM_RENDER_ATTEMPTS && hasTexture) {
-      return
-    }
-
-    // if (layer && char) {
-    //   layer.prerasterizedImages.set(char, stateData.texture.hash)
+  async rasterize(stateHash: SnapshotHash, svgUrl: string) {
+    // const stateData = this.getLayerState(stateHash)
+    // const svgImage = this._imagePool.pop() || new Image()
+    // const { fullWidth, fullHeight, textureWidth, textureHeight, pixelRatio } = stateData
+    // await new Promise<void>((resolve, reject) => {
+    //   svgImage.onload = () => {
+    //     resolve()
+    //   }
+    //   svgImage.onerror = (error) => {
+    //     reject(error)
+    //   }
+    //   svgImage.width = textureWidth
+    //   svgImage.height = textureHeight
+    //   svgImage.src = svgUrl
+    // })
+    // if (!svgImage.complete || svgImage.currentSrc !== svgUrl) {
+    //   throw new Error('Rasterization Failed')
     // }
-
-    // in case the svg image wasn't finished loading, we should try again a few times
-    setTimeout(() => this.addToRasterizeQueue(stateHash, svgUrl), ((500 + 0.1 * 1000) * 2) ^ stateData.renderAttempts)
-
-    if (stateData.texture.canvas) return
-
-    stateData.texture.canvas = await this.rasterizeToCanvas(
-      svgImage,
-      sourceWidth,
-      sourceHeight,
-      textureWidth,
-      textureHeight
-    )
-
-    try {
-      await this.compressTexture(textureHash)
-    } finally {
-      this._imagePool.push(svgImage)
-    }
+    // await svgImage.decode()
+    // const sourceWidth = fullWidth * pixelRatio
+    // const sourceHeight = fullHeight * pixelRatio
+    // const hashCanvas = await this.rasterizeToCanvas(svgImage, sourceWidth, sourceHeight, 30, 30)
+    // const hashData = this.getImageData(hashCanvas)
+    // const textureHashBuffer = await crypto.subtle.digest('SHA-1', hashData.data)
+    // const textureHash = bufferToHex(textureHashBuffer) + '?w=' + textureWidth + ';h=' + textureHeight
+    // const previousCanvasHash = stateData.texture?.hash
+    // // stateData.texture.hash = textureHash
+    // if (previousCanvasHash !== textureHash) {
+    //   stateData.renderAttempts = 0
+    // }
+    // stateData.renderAttempts++
+    // stateData.texture = this.getTextureState(textureHash)
+    // const hasTexture = stateData.texture.canvas || stateData.texture.ktx2Url
+    // if (stateData.renderAttempts > this.MINIMUM_RENDER_ATTEMPTS && hasTexture) {
+    //   return
+    // }
+    // // if (layer && char) {
+    // //   layer.prerasterizedImages.set(char, stateData.texture.hash)
+    // // }
+    // // in case the svg image wasn't finished loading, we should try again a few times
+    // setTimeout(() => this.addToRasterizeQueue(stateHash, svgUrl), ((500 + 0.1 * 1000) * 2) ^ stateData.renderAttempts)
+    // if (stateData.texture.canvas) return
+    // stateData.texture.canvas = await this.rasterizeToCanvas(
+    //   svgImage,
+    //   sourceWidth,
+    //   sourceHeight,
+    //   textureWidth,
+    //   textureHeight
+    // )
+    // try {
+    //   await this.compressTexture(textureHash)
+    // } finally {
+    //   this._imagePool.push(svgImage)
+    // }
   }
 
   prerasterized = false
