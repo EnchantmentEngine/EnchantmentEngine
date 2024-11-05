@@ -50,6 +50,7 @@ export type StateDefinition<S, I, E, Receptors extends ReceptorMap> = {
   initial: SetInitialStateAction<S>
   extension?: ExtensionFactory<S, I, E>
   receptors?: Receptors
+  dependencies?: Array<StateDefinition<any, any, any, any>>
   receptorActionQueue?: ActionQueueHandle
   reactor?: any // why does React.FC break types?
   /** @deprecated use `extension` */

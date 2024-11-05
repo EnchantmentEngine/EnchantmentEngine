@@ -29,6 +29,7 @@ import { Quaternion, Vector3 } from 'three'
 import { EntityUUID, setComponent, UUIDComponent } from '@ir-engine/ecs'
 import { defineState, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
+import { EntityNetworkState } from '@ir-engine/network'
 import { TransformComponent } from './components/TransformComponent'
 import { SpawnObjectActions } from './SpawnObjectActions'
 
@@ -42,6 +43,8 @@ export const SpawnPoseState = defineState({
       spawnRotation: Quaternion
     }
   >,
+
+  dependencies: [EntityNetworkState],
 
   receptors: {
     onSpawnObject: SpawnObjectActions.spawnObject.receive((action) => {

@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect, useLayoutEffect } from 'react'
 
-import { EntityUUID, getOptionalComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EntityUUID, getOptionalComponent, setComponent, useOptionalComponent, UUIDComponent } from '@ir-engine/ecs'
 import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
 import { AvatarColliderComponent } from '@ir-engine/engine/src/avatar/components/AvatarControllerComponent'
 import { loadAvatarModelAsset, unloadAvatarForUser } from '@ir-engine/engine/src/avatar/functions/avatarFunctions'
@@ -33,6 +33,7 @@ import { spawnAvatarReceptor } from '@ir-engine/engine/src/avatar/functions/spaw
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { defineState, getMutableState, isClient, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { WorldNetworkAction } from '@ir-engine/network'
+import { SpawnPoseState, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 
 export const AvatarState = defineState({
@@ -45,6 +46,8 @@ export const AvatarState = defineState({
       name: string
     }
   >,
+
+  dependencies: [SpawnPoseState],
 
   receptors: {
     onSpawn: AvatarNetworkAction.spawn.receive((action) => {
@@ -76,11 +79,12 @@ export const AvatarState = defineState({
 const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
   const { avatarURL, name } = useHookstate(getMutableState(AvatarState)[entityUUID])
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
+  const hasTransformComponent = useOptionalComponent(entity, TransformComponent)
 
   useLayoutEffect(() => {
-    if (!entity) return
+    if (!entity || !hasTransformComponent) return
     spawnAvatarReceptor(entityUUID)
-  }, [entity])
+  }, [entity, hasTransformComponent])
 
   useEffect(() => {
     if (!isClient) return

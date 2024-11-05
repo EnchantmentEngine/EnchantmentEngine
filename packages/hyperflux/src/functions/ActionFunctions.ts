@@ -32,7 +32,7 @@ import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID } from '../types/Types'
 import { isDev } from './EnvironmentConstants'
 import { ReactorRoot } from './ReactorFunctions'
-import { setInitialState, StateDefinitions } from './StateFunctions'
+import { setInitialState, StateDefinition, StateDefinitions } from './StateFunctions'
 import { HyperFlux } from './StoreFunctions'
 
 const matchesPeerID = matches.string as Validator<unknown, PeerID>
@@ -404,57 +404,60 @@ const applyIncomingActionsToAllQueues = (action: Required<ResolvedActionType>) =
   }
 }
 
-const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
-  for (const definition of StateDefinitions.values()) {
-    if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
+export const createEventSourceQueues = <S>(definition: StateDefinition<S, any, any, any>) => {
+  if (!definition.receptors || HyperFlux.store.receptors[definition.name]) return
 
-    const matchedActions = Object.values(definition.receptors).map(
-      (r: ActionReceptor<ResolvedActionType>) => r.matchesAction
-    )
-    if (!matchedActions.some((m) => m.test(action))) continue
+  const matchedActions = Object.values(definition.receptors).map(
+    (r: ActionReceptor<ResolvedActionType>) => r.matchesAction
+  )
 
-    const receptorActionQueue = defineActionQueue(matchedActions)
-    definition.receptorActionQueue = receptorActionQueue
+  if (definition.dependencies) {
+    for (const def of definition.dependencies) {
+      createEventSourceQueues(def)
+    }
+  }
 
-    // set resync to true to ensure the queue exists immediately
-    receptorActionQueue.needsResync = true
+  const receptorActionQueue = defineActionQueue(matchedActions)
+  definition.receptorActionQueue = receptorActionQueue
 
-    if (!HyperFlux.store.stateMap[definition.name]) setInitialState(definition)
+  // set resync to true to ensure the queue exists immediately
+  receptorActionQueue.needsResync = true
 
-    const applyEventSourcing = () => {
-      // queue may need to be reset when actions are recieved out of order
-      // or when state needs to be rolled back
-      if (receptorActionQueue.needsResync) {
-        // reset the state to the initial value when the queue is reset
-        setInitialState(definition)
-        receptorActionQueue.resync()
-      }
+  if (!HyperFlux.store.stateMap[definition.name]) setInitialState(definition)
 
-      let hasNewActions = false
+  const applyEventSourcing = () => {
+    // queue may need to be reset when actions are recieved out of order
+    // or when state needs to be rolled back
+    if (receptorActionQueue.needsResync) {
+      // reset the state to the initial value when the queue is reset
+      setInitialState(definition)
+      receptorActionQueue.resync()
+    }
 
-      // apply each action to each matching receptor, in order
-      for (const action of receptorActionQueue()) {
-        for (const definitionReceptor of Object.values(definition.receptors!)) {
-          try {
-            const receptor = definitionReceptor as ActionReceptor<ResolvedActionType>
-            if (receptor.matchesAction.test(action)) {
-              receptor(action)
-              hasNewActions = true
-            }
-          } catch (e) {
-            HyperFlux.store.logger('hyperflux:action').error(e)
+    let hasNewActions = false
+
+    // apply each action to each matching receptor, in order
+    for (const action of receptorActionQueue()) {
+      for (const definitionReceptor of Object.values(definition.receptors!)) {
+        try {
+          const receptor = definitionReceptor as ActionReceptor<ResolvedActionType>
+          if (receptor.matchesAction.test(action)) {
+            receptor(action)
+            hasNewActions = true
           }
+        } catch (e) {
+          HyperFlux.store.logger('hyperflux:action').error(e)
         }
-      }
-
-      // if new actions were applied, synchronously run the reactor
-      if (hasNewActions && HyperFlux.store.stateReactors[definition.name]) {
-        HyperFlux.store.stateReactors[definition.name].run()
       }
     }
 
-    HyperFlux.store.receptors[definition.name] = applyEventSourcing
+    // if new actions were applied, synchronously run the reactor
+    if (hasNewActions && HyperFlux.store.stateReactors[definition.name]) {
+      HyperFlux.store.stateReactors[definition.name].run()
+    }
   }
+
+  HyperFlux.store.receptors[definition.name] = applyEventSourcing
 }
 
 const _applyIncomingAction = (action: Required<ResolvedActionType>) => {
@@ -475,8 +478,6 @@ const _applyIncomingAction = (action: Required<ResolvedActionType>) => {
   }
 
   _updateCachedActions(action)
-
-  createEventSourceQueues(action)
 
   applyIncomingActionsToAllQueues(action)
 
@@ -522,6 +523,10 @@ const applyEventSourcingToAllQueues = () => {
  * Process incoming actions
  */
 export const applyIncomingActions = () => {
+  for (const definition of StateDefinitions.values()) {
+    createEventSourceQueues(definition)
+  }
+
   const { incoming } = HyperFlux.store.actions
   const now = HyperFlux.store.getDispatchTime()
   for (const action of [...incoming]) {
