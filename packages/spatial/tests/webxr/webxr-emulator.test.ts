@@ -23,93 +23,32 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { mockEngineRenderer } from '../../tests/util/MockEngineRenderer'
-
-import { ECSState, Timer, createEngine, destroyEngine, setComponent } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { EngineState } from '../../src/EngineState'
-import {
-  destroySpatialEngine,
-  destroySpatialViewer,
-  initializeSpatialEngine,
-  initializeSpatialViewer
-} from '../../src/initializeEngine'
-import { RendererComponent } from '../../src/renderer/WebGLRendererSystem'
-import { requestXRSession } from '../../src/xr/XRSessionFunctions'
+import { destroySpatialEngine, destroySpatialViewer } from '../../src/initializeEngine'
 import { XRState } from '../../src/xr/XRState'
-import { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispatcher'
-import { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
-
-const deviceDefinition = {
-  id: 'Oculus Quest',
-  name: 'Oculus Quest',
-  modes: ['inline', 'immersive-vr'],
-  headset: {
-    hasPosition: true,
-    hasRotation: true
-  },
-  controllers: [
-    {
-      id: 'Oculus Touch (Right)',
-      buttonNum: 7,
-      primaryButtonIndex: 0,
-      primarySqueezeButtonIndex: 1,
-      hasPosition: true,
-      hasRotation: true,
-      hasSqueezeButton: true,
-      isComplex: true
-    },
-    {
-      id: 'Oculus Touch (Left)',
-      buttonNum: 7,
-      primaryButtonIndex: 0,
-      primarySqueezeButtonIndex: 1,
-      hasPosition: true,
-      hasRotation: true,
-      hasSqueezeButton: true,
-      isComplex: true
-    }
-  ]
-}
+import { mockSpatialEngine } from '../util/mockSpatialEngine'
+import { CustomWebXRPolyfill, requestEmulatedXRSession } from './emulator'
 
 describe('WebXR-emulator', () => {
-  beforeAll(async () => {
-    const { CustomWebXRPolyfill } = await import('../../tests/webxr/emulator/CustomWebXRPolyfill')
+  beforeAll(() => {
     new CustomWebXRPolyfill()
   })
 
   beforeEach(async () => {
     createEngine()
-    initializeSpatialEngine()
-    initializeSpatialViewer()
-
-    const timer = Timer((_time, xrFrame) => {
-      getMutableState(XRState).xrFrame.set(xrFrame)
-      // executeSystems(time)
-      getMutableState(XRState).xrFrame.set(null)
-    })
-    getMutableState(ECSState).timer.set(timer)
-
-    const { originEntity, localFloorEntity, viewerEntity } = getState(EngineState)
-    mockEngineRenderer(viewerEntity)
-    setComponent(viewerEntity, RendererComponent, { scenes: [originEntity, localFloorEntity, viewerEntity] })
+    mockSpatialEngine()
+    await requestEmulatedXRSession()
   })
 
-  afterEach(async () => {
+  afterEach(() => {
     destroySpatialViewer()
     destroySpatialEngine()
-    return destroyEngine()
+    destroyEngine()
   })
 
   it('should be able to define and initialize a device', async () => {
-    WebXREventDispatcher.instance.dispatchEvent({
-      type: POLYFILL_ACTIONS.DEVICE_INIT,
-      detail: { stereoEffect: false, deviceDefinition }
-    })
-
-    await requestXRSession()
-
     expect(getState(XRState).session).not.toBeNull()
     expect(getState(XRState).session).not.toBeUndefined()
   })
