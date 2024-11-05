@@ -47,12 +47,12 @@ const FeaturesTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
 
   useEffect(() => {
     if (featureFlagSettings.status === 'success') {
-      const defaultTypes = getAllStringValueNodes(FeatureFlags)
-      const missingTypes = defaultTypes.filter(
-        (type) =>
+      const defaultFlagNames = getAllStringValueNodes(FeatureFlags)
+      const missingFlagNames = defaultFlagNames.filter(
+        (flagName) =>
           !featureFlagSettings.data.find(
             (flag) =>
-              flag.flagName === type &&
+              flag.flagName === flagName &&
               !Object.keys(flag)
                 .filter((key) => !defaultProps.includes(key))
                 .some((item) => !item)
@@ -60,8 +60,8 @@ const FeaturesTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
       )
 
       const updatedFeatures: FeatureFlagSettingType[] = [
-        ...missingTypes.map((type) => ({
-          flagName: type,
+        ...missingFlagNames.map((flagName) => ({
+          flagName,
           flagValue: true,
           id: '',
           createdAt: '',
