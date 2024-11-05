@@ -123,7 +123,7 @@ export const HierarchyPanelProvider = ({ children }: { children?: ReactNode }) =
       })
       return searchedNodes
     }
-    return hierarchyNodes.value
+    return hierarchyNodes.value.filter((node) => node.isRendered)
   }, [hierarchyTreeState.search.query, hierarchyNodes])
 
   useEffect(() => {
