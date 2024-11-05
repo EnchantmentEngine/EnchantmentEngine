@@ -23,11 +23,54 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
+import { CustomWebXRPolyfill, getLastXRSessionData, requestEmulatedXRSession } from '../../tests/webxr/emulator'
+import { destroySpatialEngine, destroySpatialViewer } from '../initializeEngine'
+import { endXRSession, xrSessionChanged } from './XRSessionFunctions'
+import { XRState } from './XRState'
 
 describe('onSessionEnd', () => {}) //:: onSessionEnd
 describe('setupXRSession', () => {}) //:: setupXRSession
 describe('getReferenceSpaces', () => {}) //:: getReferenceSpaces
 describe('requestXRSession', () => {}) //:: requestXRSession
-describe('endXRSession', () => {}) //:: endXRSession
-describe('xrSessionChanged', () => {}) //:: xrSessionChanged
+
+describe('endXRSession', () => {
+  beforeAll(() => {
+    new CustomWebXRPolyfill()
+  })
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    await requestEmulatedXRSession()
+  })
+
+  afterEach(() => {
+    destroySpatialViewer()
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
+  it('should end the XRState.session, marking it as null', async () => {
+    // Sanity check before running
+    const before = getState(XRState).session
+    expect(before).not.toBe(undefined)
+    expect(before).not.toBe(null)
+    // Run and Check the result
+    await endXRSession()
+    const result = getState(XRState).session
+    expect(result).not.toBe(null)
+    expect(getLastXRSessionData(result).ended).toBe(true)
+  })
+}) //:: endXRSession
+
+describe('xrSessionChanged', () => {
+  it('does nothing, but does not fail to run either', () => {
+    // @ts-ignore Allow coercing undefined into the function parameter
+    const result = xrSessionChanged(undefined)
+    expect(result).toBe(undefined)
+  })
+}) //:: xrSessionChanged
