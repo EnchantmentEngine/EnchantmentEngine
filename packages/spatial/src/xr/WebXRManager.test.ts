@@ -23,18 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import assert from 'assert'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { XRRendererState } from './WebXRManager'
 
 describe('XRRendererState', () => {
   describe('Fields', () => {
     it('should initialize the *State.name field with the expected value', () => {
-      assert.equal(XRRendererState.name, 'XRRendererState')
+      expect(XRRendererState.name).toBe('XRRendererState')
     })
 
     it('should initialize the *State.initial field with the expected value', () => {
-      assert.deepEqual(XRRendererState.initial, {
+      expect(XRRendererState.initial).deep.equal({
         glBinding: null,
         glProjLayer: null,
         glBaseLayer: null,
