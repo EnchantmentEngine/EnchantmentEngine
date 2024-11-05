@@ -109,13 +109,13 @@ export function exportGLTFScene(entity: Entity, exportExtensionTypes: ExportExte
 
   for (const extension of exportExtensions) extension.before?.(entity, gltf)
 
-  const meta = {
+  const context = {
     extensionsUsed: new Set<string>(),
     exportExtensions
   }
-  const rootIndex = exportGLTFSceneNode(entity, gltf, meta)
+  const rootIndex = exportGLTFSceneNode(entity, gltf, context)
   gltf.scenes![0].nodes.push(rootIndex)
-  if (meta.extensionsUsed.size) gltf.extensionsUsed = [...meta.extensionsUsed]
+  if (context.extensionsUsed.size) gltf.extensionsUsed = [...context.extensionsUsed]
   cleanStorageProviderURLs(gltf)
 
   for (const extension of exportExtensions) extension.after?.(entity, gltf)
@@ -129,18 +129,18 @@ const _transformMatrix = new Matrix4()
 const exportGLTFSceneNode = (
   entity: Entity,
   gltf: GLTF.IGLTF,
-  meta: {
+  context: {
     extensionsUsed: Set<string>
     exportExtensions: GLTFSceneExportExtension[]
   }
 ): number => {
-  for (const extension of meta.exportExtensions) extension.beforeNode?.(entity)
+  for (const extension of context.exportExtensions) extension.beforeNode?.(entity)
 
   const children = getOptionalComponent(entity, EntityTreeComponent)?.children
   const childrenIndicies = [] as number[]
   if (children && children.length > 0) {
     for (const child of children) {
-      childrenIndicies.push(exportGLTFSceneNode(child, gltf, meta))
+      childrenIndicies.push(exportGLTFSceneNode(child, gltf, context))
     }
   }
 
@@ -154,7 +154,7 @@ const exportGLTFSceneNode = (
   const extensions = {} as Record<string, unknown>
   const components = getAllComponents(entity)
   for (const component of components) {
-    for (const extension of meta.exportExtensions) extension.beforeComponent?.(entity, component, node, index)
+    for (const extension of context.exportExtensions) extension.beforeComponent?.(entity, component, node, index)
 
     //skip components that don't have a jsonID
     if (!component.jsonID) continue
@@ -166,21 +166,24 @@ const exportGLTFSceneNode = (
         const parentTransform = getComponent(parent, TransformComponent)
         _diffMatrix.copy(parentTransform.matrix).invert().multiply(transform.matrix)
         node.matrix = _transformMatrix.copy(parentTransform.matrix).multiply(_diffMatrix).toArray()
-      } else node.matrix = _diffMatrix.identity().toArray()
+      } else {
+        // If no parent, position at identity, but keep scale
+        node.matrix = _diffMatrix.identity().scale(transform.scale).toArray()
+      }
     } else {
       const compData = serializeComponent(entity, component)
       // Do we not want to serialize tag components?
       if (!compData) continue
       extensions[component.jsonID] = compData
-      meta.extensionsUsed.add(component.jsonID)
+      context.extensionsUsed.add(component.jsonID)
     }
 
-    for (const extension of meta.exportExtensions) extension.afterComponent?.(entity, component, node, index)
+    for (const extension of context.exportExtensions) extension.afterComponent?.(entity, component, node, index)
   }
   if (Object.keys(extensions).length > 0) node.extensions = extensions
   node.children = childrenIndicies
 
-  for (const extension of meta.exportExtensions) extension.afterNode?.(entity, node, index)
+  for (const extension of context.exportExtensions) extension.afterNode?.(entity, node, index)
 
   return index
 }
