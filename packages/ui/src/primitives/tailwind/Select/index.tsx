@@ -40,7 +40,6 @@ export type SelectOptionsType = {
   label: string
   value: any
   disabled?: boolean
-  selected?: boolean
   metadata?: { [key: string]: string }
 }
 
@@ -125,7 +124,6 @@ const Select = <T extends OptionValueType>({
     }
   }
 
-  // TODO (JC): LEVERAGE IMPROVEMENTS FROM MOIZ PR
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (searchDisabled) {
       return
