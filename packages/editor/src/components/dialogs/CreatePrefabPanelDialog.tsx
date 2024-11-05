@@ -47,7 +47,7 @@ import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxCo
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { proxifyParentChildRelationships } from '@ir-engine/engine/src/scene/functions/loadGLTFModel'
 import { getMutableState, getState, startReactor, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
+import { DirectionalLightComponent, HemisphereLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
@@ -148,6 +148,10 @@ export default function CreatePrefabPanel({ entity, isExportLookDev }: { entity?
     const tags = [...prefabTag.value]
     await API.instance.service(staticResourcePath).patch(resource.id, { tags: tags, project: srcProject })
 
+    const transform = getComponent(entity, TransformComponent)
+    const position = transform.position.clone()
+    const rotation = transform.rotation.clone()
+
     EditorControlFunctions.removeObject([entity])
     const sceneID = getComponent(parentEntity, SourceComponent)
     const reactor = startReactor(() => {
@@ -157,7 +161,10 @@ export default function CreatePrefabPanel({ entity, isExportLookDev }: { entity?
       useEffect(() => {
         if (!entityExists(entity) && !entityUUIDState.value) {
           const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
-            [{ name: GLTFComponent.jsonID, props: { src: fileURL } }],
+            [
+              { name: GLTFComponent.jsonID, props: { src: fileURL } },
+              { name: TransformComponent.jsonID, props: { position, rotation } }
+            ],
             parentEntity
           )
           getMutableState(SelectionState).selectedEntities.set([entityUUID])
