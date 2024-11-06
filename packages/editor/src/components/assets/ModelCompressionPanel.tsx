@@ -36,6 +36,7 @@ import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 import { iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/spatial/src/transform/components/EntityTree'
@@ -94,7 +95,10 @@ const createLODVariants = async (
     const firstLODParams = lods[0].params
 
     const result = createSceneEntity('container')
+    setComponent(result, ModelComponent)
     const variant = createSceneEntity('LOD Variant', result)
+    const modelSrcPath = `${LoaderUtils.extractUrlBase(srcURL)}${firstLODParams.dst}.${firstLODParams.modelFormat}`
+    setComponent(variant, ModelComponent, { src: modelSrcPath })
     setComponent(variant, VariantComponent, {
       levels: lods.map((lod, lodIndex) => ({
         src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
@@ -198,19 +202,14 @@ export default function ModelCompressionPanel({
       })
     }
 
-    await createLODVariants(
-      srcURL,
-      fileLODs,
-      Heuristic.DISTANCE,
-      exportCombined,
-      (progress, status, numerator, denominator) => {
-        const caption = t(progressCaptions[status]!, {
-          numerator: numerator + 1,
-          denominator
-        })
-        compressionProgress.set({ progress, caption })
-      }
-    )
+    const heuristic = Heuristic.BUDGET
+    await createLODVariants(srcURL, fileLODs, heuristic, exportCombined, (progress, status, numerator, denominator) => {
+      const caption = t(progressCaptions[status]!, {
+        numerator: numerator + 1,
+        denominator
+      })
+      compressionProgress.set({ progress, caption })
+    })
   }
 
   const deletePreset = (event: React.MouseEvent, idx: number) => {

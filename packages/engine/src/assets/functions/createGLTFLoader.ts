@@ -86,9 +86,7 @@ export const createGLTFLoader = (keepMaterials = false) => {
     loadDRACODecoderNode()
     const dracoLoader = new NodeDRACOLoader()
     /* @ts-ignore */
-    dracoLoader.preload = () => {
-      return dracoLoader
-    }
+    dracoLoader.preload = () => {}
     /* @ts-ignore */
     loader.setDRACOLoader(dracoLoader)
   }

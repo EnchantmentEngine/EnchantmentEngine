@@ -23,22 +23,44 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEffect } from 'react'
+import React, { ReactElement, useEffect } from 'react'
 
-import { PresentationSystemGroup, UndefinedEntity } from '@ir-engine/ecs'
+import {
+  EntityUUID,
+  getComponent,
+  getOptionalComponent,
+  PresentationSystemGroup,
+  QueryReactor,
+  removeEntity,
+  setComponent,
+  UndefinedEntity,
+  useComponent,
+  useEntityContext,
+  useOptionalComponent
+} from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import {
   MaterialPrototypeDefinition,
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent
+  MaterialPrototypeDefinitions
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   createAndAssignMaterial,
-  createMaterialPrototype
+  createMaterialPrototype,
+  materialPrototypeMatches,
+  setMeshMaterial,
+  updateMaterialPrototype
 } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { MeshBasicMaterial } from 'three'
 
-const reactor = () => {
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import {
+  MaterialInstanceComponent,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { isArray } from 'lodash'
+import { Material, MeshBasicMaterial } from 'three'
+import { SourceComponent } from '../../components/SourceComponent'
+
+const reactor = (): ReactElement => {
   useEffect(() => {
     MaterialPrototypeDefinitions.map((prototype: MaterialPrototypeDefinition, uuid) =>
       createMaterialPrototype(prototype)
@@ -48,6 +70,68 @@ const reactor = () => {
     createAndAssignMaterial(UndefinedEntity, fallbackMaterial)
   }, [])
 
+  return (
+    <>
+      <QueryReactor Components={[MaterialInstanceComponent]} ChildEntityReactor={MaterialInstanceReactor} />
+      <QueryReactor Components={[MaterialStateComponent]} ChildEntityReactor={MaterialEntityReactor} />
+      <QueryReactor Components={[MeshComponent]} ChildEntityReactor={MeshReactor} />
+    </>
+  )
+}
+
+const MeshReactor = () => {
+  const entity = useEntityContext()
+  const materialComponent = useOptionalComponent(entity, MaterialInstanceComponent)
+  const meshComponent = useComponent(entity, MeshComponent)
+
+  const createAndSourceMaterial = (material: Material) => {
+    const materialEntity = createAndAssignMaterial(entity, material)
+    const source = getOptionalComponent(entity, SourceComponent)
+    if (source) setComponent(materialEntity, SourceComponent, source)
+  }
+
+  useEffect(() => {
+    if (materialComponent) return
+    const material = meshComponent.material.value as any as Material | Material[]
+    if (isArray(material)) for (const mat of material as Material[]) createAndSourceMaterial(mat)
+    else createAndSourceMaterial(material as Material)
+  }, [])
+  return null
+}
+
+const MaterialEntityReactor = () => {
+  const entity = useEntityContext()
+  const materialComponent = useComponent(entity, MaterialStateComponent)
+  useEffect(() => {
+    if (!materialComponent.instances.value!) return
+    for (const sourceEntity of materialComponent.instances.value) {
+      const sourceComponent = getOptionalComponent(sourceEntity, SourceComponent)
+      if (!sourceComponent || !SourceComponent.entitiesBySource[sourceComponent]) return
+      for (const entity of SourceComponent.entitiesBySource[getComponent(sourceEntity, SourceComponent)]) {
+        const uuid = getOptionalComponent(entity, MaterialInstanceComponent)?.uuid as EntityUUID[] | undefined
+        if (uuid) setMeshMaterial(entity, uuid)
+      }
+    }
+  }, [materialComponent.material])
+
+  useEffect(() => {
+    if (materialComponent.prototypeEntity.value && !materialPrototypeMatches(entity)) updateMaterialPrototype(entity)
+  }, [materialComponent.prototypeEntity])
+
+  useEffect(() => {
+    if (materialComponent.instances.value?.length === 0) removeEntity(entity)
+  }, [materialComponent.instances])
+
+  return null
+}
+
+const MaterialInstanceReactor = () => {
+  const entity = useEntityContext()
+  const materialComponent = useComponent(entity, MaterialInstanceComponent)
+  const uuid = materialComponent.uuid
+  useEffect(() => {
+    if (uuid.value) setMeshMaterial(entity, uuid.value as EntityUUID[])
+  }, [materialComponent.uuid])
   return null
 }
 

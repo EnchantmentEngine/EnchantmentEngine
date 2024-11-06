@@ -23,16 +23,33 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AnimationClip, AnimationMixer } from 'three'
+import { useEffect } from 'react'
 
-import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { ModelComponent } from '../../scene/components/ModelComponent'
 
-export const AnimationComponent = defineComponent({
-  name: 'AnimationComponent',
+export const AssetPreviewCameraComponent = defineComponent({
+  name: 'AssetPreviewCameraComponent',
 
   schema: S.Object({
-    mixer: S.Type<AnimationMixer>(),
-    animations: S.Array(S.Type<AnimationClip>())
-  })
+    targetModelEntity: S.Entity()
+  }),
+
+  reactor: () => {
+    const entity = useEntityContext()
+    const previewCameraComponent = useComponent(entity, AssetPreviewCameraComponent)
+    const modelComponent = useComponent(previewCameraComponent.targetModelEntity.value, ModelComponent)
+    const cameraOrbitComponent = useComponent(entity, CameraOrbitComponent)
+
+    useEffect(() => {
+      if (!modelComponent.scene.value) return
+      cameraOrbitComponent.focusedEntities.set([previewCameraComponent.targetModelEntity.value])
+      cameraOrbitComponent.refocus.set(true)
+    }, [modelComponent.scene, cameraOrbitComponent])
+
+    return null
+  }
 })

@@ -111,8 +111,8 @@ export const SkyboxComponent = defineComponent({
       if (skyboxState.backgroundType.value !== SkyTypeEnum.cubemap) return
       const onLoad = (texture: CubeTexture) => {
         texture.colorSpace = SRGBColorSpace
-        texture.mapping = CubeReflectionMapping
         cubemapTexture.set(texture)
+        texture.mapping = CubeReflectionMapping
         setComponent(entity, BackgroundComponent, texture)
         removeError(entity, SkyboxComponent, 'FILE_ERROR')
       }
@@ -129,9 +129,6 @@ export const SkyboxComponent = defineComponent({
       ]
       /** @todo replace this with useCubemap */
       loadCubeMapTexture(...loadArgs)
-      return () => {
-        removeComponent(entity, BackgroundComponent)
-      }
     }, [skyboxState.backgroundType, skyboxState.cubemapPath])
 
     useEffect(() => {

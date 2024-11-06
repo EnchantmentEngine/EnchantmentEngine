@@ -32,8 +32,8 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { createLoadingSpinner } from '@ir-engine/engine/src/scene/functions/spatialLoadingSpinner'
 import { getMutableState } from '@ir-engine/hyperflux'
@@ -46,13 +46,13 @@ import { EditorState } from '../services/EditorServices'
 
 const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const { entity } = props
-  const gltfComponent = useComponent(entity, GLTFComponent)
-  const errors = !!useOptionalComponent(entity, ErrorComponent)?.value?.[GLTFComponent.name]
+  const modelComponent = useComponent(entity, ModelComponent)
+  const errors = !!useOptionalComponent(entity, ErrorComponent)?.value?.[ModelComponent.name]
 
   const loadingEntity = useHookstate<Entity>(UndefinedEntity)
 
   const createLoadingGeo = () => {
-    const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
+    const spinnerEntity = createLoadingSpinner(`loading ${modelComponent.src.value}`, entity)
     loadingEntity.set(spinnerEntity)
   }
 
@@ -64,9 +64,9 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
 
   useEffect(() => {
     if (loadingEntity.value) return
-    if (!gltfComponent.src.value) return
+    if (!modelComponent.src.value) return
     createLoadingGeo()
-  }, [gltfComponent.src.value])
+  }, [modelComponent.src.value])
 
   useEffect(() => {
     if (!errors) return
@@ -74,16 +74,16 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   }, [errors])
 
   useEffect(() => {
-    if (gltfComponent.progress.value !== 100) return
+    if (!modelComponent.scene.value) return
     removeLoadingGeo()
-  }, [gltfComponent.progress.value])
+  }, [modelComponent.scene])
 
   return null
 }
 
 const reactor = () => {
   const studioSceneEntity = useHookstate(getMutableState(EditorState)).rootEntity.value
-  const entities = useChildrenWithComponents(studioSceneEntity, [GLTFComponent, SourceComponent])
+  const entities = useChildrenWithComponents(studioSceneEntity, [ModelComponent, SourceComponent])
   if (!studioSceneEntity) return null
   return (
     <>

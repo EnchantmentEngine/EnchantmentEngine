@@ -23,12 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { GLTF } from '@gltf-transform/core'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 
-export function nodeIsChild(index: number, nodes: GLTF.INode[]) {
-  for (const node of nodes) {
-    if (node.children && node.children.includes(index)) return true
-  }
+export const AvatarPendingComponent = defineComponent({
+  name: 'AvatarPendingComponent',
 
-  return false
-}
+  schema: S.Object({
+    url: S.String('')
+  })
+})

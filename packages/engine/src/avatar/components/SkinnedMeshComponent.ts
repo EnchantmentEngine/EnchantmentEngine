@@ -23,31 +23,18 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { SkinnedMesh } from 'three'
+
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useEffect } from 'react'
-import { MeshComponent } from '../../renderer/components/MeshComponent'
-import { useChildrenWithComponents } from '../../transform/components/EntityTree'
-import { CameraOrbitComponent } from './CameraOrbitComponent'
 
-export const AssetPreviewCameraComponent = defineComponent({
-  name: 'AssetPreviewCameraComponent',
+export const SkinnedMeshComponent = defineComponent({
+  name: 'SkinnedMeshComponent',
 
-  schema: S.Object({
-    targetModelEntity: S.Entity()
-  }),
+  schema: S.Type<SkinnedMesh>(),
 
-  reactor: () => {
-    const entity = useEntityContext()
-    const previewCameraComponent = useComponent(entity, AssetPreviewCameraComponent)
-    const childMeshes = useChildrenWithComponents(previewCameraComponent.targetModelEntity.value, [MeshComponent])
-    const cameraOrbitComponent = useComponent(entity, CameraOrbitComponent)
-
-    useEffect(() => {
-      cameraOrbitComponent.focusedEntities.set([previewCameraComponent.targetModelEntity.value])
-      cameraOrbitComponent.refocus.set(true)
-    }, [childMeshes, cameraOrbitComponent])
-
-    return null
+  onSet: (entity, component, mesh: SkinnedMesh) => {
+    if (!mesh || !mesh.isSkinnedMesh) throw new Error('SkinnedMeshComponent: Invalid skinned mesh')
+    component.set(mesh)
   }
 })

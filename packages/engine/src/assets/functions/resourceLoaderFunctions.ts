@@ -33,45 +33,8 @@ import {
   ResourceType
 } from '@ir-engine/spatial/src/resources/ResourceState'
 
-import { AssetLoader } from '../classes/AssetLoader'
-import { GLTF } from '../loaders/gltf/GLTFLoader'
-
-export const setGLTFResource = (url: string, entity: Entity, status: ResourceStatus) => {
-  const resourceType = ResourceType.GLTF
-  const resourceState = getMutableState(ResourceState)
-  const resources = resourceState.nested('resources')
-  if (!resources[url].value) {
-    resources.merge({
-      [url]: {
-        id: url,
-        status: ResourceStatus.Unloaded,
-        type: resourceType,
-        asset: {} as GLTF,
-        references: [entity],
-        metadata: {},
-        onLoads: {}
-      }
-    })
-  } else {
-    resources[url].references.merge([entity])
-  }
-
-  const callbacks = ResourceManager.resourceCallbacks[resourceType]
-  const resource = resources[url]
-  resource.status.set(status)
-
-  switch (resource.status.value) {
-    case ResourceStatus.Loading:
-      callbacks.onStart(resource)
-      break
-    case ResourceStatus.Loaded:
-      callbacks.onLoad({} as GLTF, resource, resourceState)
-      break
-    default:
-      console.error('resourceLoaderFunctions:setGLTFResource: Invalid resource status')
-      break
-  }
-}
+import { AssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { AssetLoader, getLoader } from '../classes/AssetLoader'
 
 interface Cloneable<T> {
   clone?: () => T
@@ -93,6 +56,16 @@ const cloneAsset = <T>(asset: Cloneable<T> | undefined, onLoad: (T) => void): bo
   return false
 }
 
+const getLoaderForResourceType = (resourceType: ResourceType) => {
+  switch (resourceType) {
+    case ResourceType.GLTF:
+      return getLoader(AssetExt.GLTF)
+    default:
+      break
+  }
+  return undefined
+}
+
 export const loadResource = <T extends ResourceAssetType>(
   url: string,
   resourceType: ResourceType,
@@ -101,7 +74,6 @@ export const loadResource = <T extends ResourceAssetType>(
   onProgress: (request: ProgressEvent) => void,
   onError: (event: ErrorEvent | Error) => void,
   signal: AbortSignal,
-  loader?: AssetLoader,
   uuid?: string
 ) => {
   const resourceState = getMutableState(ResourceState)
@@ -182,7 +154,7 @@ export const loadResource = <T extends ResourceAssetType>(
       ResourceManager.unload(url, entity, uuid)
     },
     signal,
-    loader
+    getLoaderForResourceType(resourceType)
   )
 }
 
@@ -222,7 +194,6 @@ const updateResource = (url: string) => {
         console.error('resourceLoaderFunctions:updateResource error updating resource for url: ' + url, error)
       },
       new AbortController().signal,
-      undefined,
       uuid
     )
   }

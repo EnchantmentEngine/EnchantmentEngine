@@ -49,9 +49,8 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { EditorControlFunctions } from '../functions/EditorControlFunctions'
 import { SelectionState } from '../services/SelectionServices'
@@ -254,7 +253,7 @@ export const ObjectGridSnapState = defineState({
 })
 
 const objectGridQuery = defineQuery([ObjectGridSnapComponent])
-const models = defineQuery([GLTFComponent, Not(SceneComponent), Not(AvatarRigComponent)])
+const models = defineQuery([ModelComponent, Not(AvatarRigComponent)])
 
 export const ObjectGridSnapSystem = defineSystem({
   uuid: 'ee.engine.scene.ObjectGridSnapSystem',

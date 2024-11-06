@@ -36,7 +36,7 @@ import {
   commitProperty,
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { HiOutlineCamera } from 'react-icons/hi'
@@ -59,7 +59,7 @@ const projectionTypeSelect = [
   }
 ]
 
-const modelQuery = defineQuery([GLTFComponent])
+const modelQuery = defineQuery([ModelComponent])
 const _box3 = new Box3()
 
 export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {

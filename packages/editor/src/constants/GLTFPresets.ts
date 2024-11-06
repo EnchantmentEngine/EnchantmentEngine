@@ -27,12 +27,11 @@ import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
-import { Devices, VariantMetadata } from '@ir-engine/engine/src/scene/components/VariantComponent'
 
 export type LODVariantDescriptor = {
   params: ModelTransformParameters
   suffix: string
-  variantMetadata: VariantMetadata
+  variantMetadata: Record<string, any>
 }
 
 export const LODList: LODVariantDescriptor[] = [
@@ -43,7 +42,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 1024
     },
     suffix: 'desktop-low',
-    variantMetadata: { device: Devices.DESKTOP }
+    variantMetadata: { device: 'DESKTOP' }
   },
   {
     params: {
@@ -52,7 +51,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 2048
     },
     suffix: 'desktop-medium',
-    variantMetadata: { device: Devices.DESKTOP }
+    variantMetadata: { device: 'DESKTOP' }
   },
   {
     params: {
@@ -61,7 +60,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 2048
     },
     suffix: 'desktop-high',
-    variantMetadata: { device: Devices.DESKTOP }
+    variantMetadata: { device: 'DESKTOP' }
   },
   {
     params: {
@@ -70,7 +69,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 512
     },
     suffix: 'mobile-low',
-    variantMetadata: { device: Devices.MOBILE }
+    variantMetadata: { device: 'MOBILE' }
   },
   {
     params: {
@@ -79,7 +78,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 512
     },
     suffix: 'mobile-high',
-    variantMetadata: { device: Devices.MOBILE }
+    variantMetadata: { device: 'MOBILE' }
   },
   {
     params: {
@@ -88,7 +87,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 1024
     },
     suffix: 'xr-low',
-    variantMetadata: { device: Devices.XR }
+    variantMetadata: { device: 'XR' }
   },
   {
     params: {
@@ -97,7 +96,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 1024
     },
     suffix: 'xr-medium',
-    variantMetadata: { device: Devices.XR }
+    variantMetadata: { device: 'XR' }
   },
   {
     params: {
@@ -106,7 +105,7 @@ export const LODList: LODVariantDescriptor[] = [
       maxTextureSize: 2048
     },
     suffix: 'xr-high',
-    variantMetadata: { device: Devices.XR }
+    variantMetadata: { device: 'XR' }
   }
 ]
 
@@ -118,10 +117,7 @@ export const defaultLODs: LODVariantDescriptor[] = [
       maxTextureSize: 2048
     },
     suffix: '-LOD0',
-    variantMetadata: {
-      minDistance: 0,
-      maxDistance: 10
-    }
+    variantMetadata: {}
   },
   {
     params: {
@@ -132,10 +128,7 @@ export const defaultLODs: LODVariantDescriptor[] = [
       simplifyErrorThreshold: 0.01
     },
     suffix: '-LOD1',
-    variantMetadata: {
-      minDistance: 10,
-      maxDistance: 20
-    }
+    variantMetadata: {}
   },
   {
     params: {
@@ -146,9 +139,6 @@ export const defaultLODs: LODVariantDescriptor[] = [
       simplifyErrorThreshold: 0.01
     },
     suffix: '-LOD2',
-    variantMetadata: {
-      minDistance: 20,
-      maxDistance: 30
-    }
+    variantMetadata: {}
   }
 ]

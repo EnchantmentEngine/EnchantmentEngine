@@ -27,10 +27,10 @@ import { GLTF } from '@gltf-transform/core'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { Entity, entityExists, EntityUUID, getComponent, hasComponent, UUIDComponent } from '@ir-engine/ecs'
 import { AllFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { nodeIsChild } from '@ir-engine/engine/src/gltf/gltfUtils'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { getModelSceneID } from '@ir-engine/engine/src/scene/functions/loaders/ModelFunctions'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { t } from 'i18next'
 import { CopyPasteFunctions } from '../../functions/CopyPasteFunctions'
@@ -107,6 +107,14 @@ export const pasteNodes = (entity?: Entity) => {
 
 /* HIERARCHY TREE WALKER */
 
+function isChild(index: number, nodes: GLTF.INode[]) {
+  for (const node of nodes) {
+    if (node.children && node.children.includes(index)) return true
+  }
+
+  return false
+}
+
 function buildHierarchyTree(
   depth: number,
   childIndex: number,
@@ -132,10 +140,10 @@ function buildHierarchyTree(
   }
   array.push(item)
 
-  if (hasComponent(entity, GLTFComponent) && showModelChildren) {
-    const scene = GLTFComponent.getInstanceID(entity)
+  if (hasComponent(entity, ModelComponent) && showModelChildren) {
+    const modelSceneID = getModelSceneID(entity)
     const snapshotState = getState(GLTFSnapshotState)
-    const snapshots = snapshotState[scene]
+    const snapshots = snapshotState[modelSceneID]
     if (snapshots) {
       const snapshotNodes = snapshots.snapshots[snapshots.index].nodes
       if (snapshotNodes && snapshotNodes.length > 0) {
@@ -171,7 +179,7 @@ function buildHierarchyTreeForNodes(
   showModelChildren: boolean
 ) {
   for (let i = 0; i < nodes.length; i++) {
-    if (nodeIsChild(i, nodes)) continue
+    if (isChild(i, nodes)) continue
     buildHierarchyTree(depth, i, nodes[i], nodes, outArray, false, sceneID, showModelChildren)
   }
   if (!outArray.length) return

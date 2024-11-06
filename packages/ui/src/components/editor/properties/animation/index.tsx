@@ -30,18 +30,18 @@ import {
   commitProperty,
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
-import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { getHips } from '@ir-engine/engine/src/avatar/AvatarBoneMatching'
 import { AnimationComponent } from '@ir-engine/engine/src/avatar/components/AnimationComponent'
-import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { getEntityErrors } from '@ir-engine/engine/src/scene/components/ErrorComponent'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { useState } from '@ir-engine/hyperflux'
 import { getCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
+import { FaStreetView } from 'react-icons/fa'
+
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { VRM } from '@pixiv/three-vrm'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaStreetView } from 'react-icons/fa'
 import { LoopOnce, LoopPingPong, LoopRepeat } from 'three'
 import { SelectOptionsType } from '../../../../primitives/tailwind/Select'
 import BooleanInput from '../../input/Boolean'
@@ -57,13 +57,10 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
   const animationOptions = useState([] as { label: string; value: number }[])
   const loopAnimationComponent = useComponent(entity, LoopAnimationComponent)
 
-  const gltfComponent = useOptionalComponent(entity, GLTFComponent)
-  const avatarRigComponent = useOptionalComponent(entity, AvatarRigComponent)
+  const modelComponent = useOptionalComponent(entity, ModelComponent)
   const animationComponent = useOptionalComponent(entity, AnimationComponent)
 
-  const errors = getEntityErrors(props.entity, GLTFComponent)
-
-  const canConvert = getHips(entity)
+  const errors = getEntityErrors(props.entity, ModelComponent)
 
   useEffect(() => {
     const animationComponent = getOptionalComponent(entity, AnimationComponent)
@@ -72,7 +69,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
       { label: 'None', value: -1 },
       ...animationComponent.animations.map((clip, index) => ({ label: clip.name, value: index }))
     ])
-  }, [gltfComponent?.progress, avatarRigComponent?.vrm, animationComponent?.animations])
+  }, [modelComponent?.asset, modelComponent?.convertToVRM, animationComponent?.animations])
 
   const onChangePlayingAnimation = (index) => {
     commitProperties(LoopAnimationComponent, {
@@ -97,7 +94,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
           onChange={onChangePlayingAnimation}
         />
       </InputGroup>
-      {avatarRigComponent != null && (
+      {modelComponent?.asset.value instanceof VRM && (
         <InputGroup name="Animation Pack" label={t('editor:properties.loopAnimation.lbl-animationPack')}>
           <ModelInput
             value={loopAnimationComponent.animationPack.value}
@@ -115,14 +112,6 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
           onRelease={commitProperty(LoopAnimationComponent, 'timeScale')}
         />
       </InputGroup>
-      {canConvert && (
-        <InputGroup name="Use VRM" label={t('editor:properties.loopAnimation.lbl-useVRM')}>
-          <BooleanInput
-            value={loopAnimationComponent.useVRM.value}
-            onChange={commitProperty(LoopAnimationComponent, 'useVRM')}
-          />
-        </InputGroup>
-      )}
       <InputGroup name="Paused" label={t('editor:properties.loopAnimation.lbl-paused')}>
         <BooleanInput
           value={loopAnimationComponent.paused.value}

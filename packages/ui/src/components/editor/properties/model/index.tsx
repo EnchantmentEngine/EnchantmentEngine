@@ -23,66 +23,82 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { VRM } from '@pixiv/three-vrm'
+import React, { useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { MdOutlineViewInAr } from 'react-icons/md'
+import { Object3D, Scene } from 'three'
+
 import { ProjectState } from '@ir-engine/client-core/src/common/services/ProjectService'
+import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import config from '@ir-engine/common/src/config'
-import { useComponent } from '@ir-engine/ecs'
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import ErrorPopUp from '@ir-engine/editor/src/components/popup/ErrorPopUp'
-import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
+import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
-import { getState, useHookstate } from '@ir-engine/hyperflux'
-import React, { useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import { ResourceLoaderManager } from '@ir-engine/engine/src/assets/functions/resourceLoaderFunctions'
+import { recursiveHipsLookup } from '@ir-engine/engine/src/avatar/AvatarBoneMatching'
+import { getEntityErrors } from '@ir-engine/engine/src/scene/components/ErrorComponent'
+import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
+import { getState, useState } from '@ir-engine/hyperflux'
 import { IoIosArrowBack, IoIosArrowDown } from 'react-icons/io'
-import { MdOutlineViewInAr } from 'react-icons/md'
-import Accordion from '../../../../../primitives/tailwind/Accordion'
-import Button from '../../../../../primitives/tailwind/Button'
-import LoadingView from '../../../../../primitives/tailwind/LoadingView'
-import BooleanInput from '../../../input/Boolean'
-import InputGroup from '../../../input/Group'
-import ModelInput from '../../../input/Model'
-import SelectInput from '../../../input/Select'
-import StringInput from '../../../input/String'
+import Accordion from '../../../../primitives/tailwind/Accordion'
+import Button from '../../../../primitives/tailwind/Button'
+import LoadingView from '../../../../primitives/tailwind/LoadingView'
+import BooleanInput from '../../input/Boolean'
+import InputGroup from '../../input/Group'
+import ModelInput from '../../input/Model'
+import SelectInput from '../../input/Select'
+import StringInput from '../../input/String'
 
-const GLTFNodeEditor: EditorComponentType = (props) => {
+/**
+ * ModelNodeEditor used to create editor view for the properties of ModelNode.
+ *
+ * @type {class component}
+ */
+export const ModelNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
-  const gltfComponent = useComponent(props.entity, GLTFComponent)
-  const exporting = useHookstate(false)
+  const entity = props.entity
+  const modelComponent = useComponent(entity, ModelComponent)
+  const exporting = useState(false)
+  const bonematchable = useState(false)
   const editorState = getState(EditorState)
   const projectState = getState(ProjectState)
-  const loadedProjects = useHookstate(() => projectState.projects.map((project) => project.name))
-
-  const errors = ErrorComponent.useComponentErrors(props.entity, GLTFComponent)?.value
-  const srcProject = useHookstate(() => {
-    const match = STATIC_ASSET_REGEX.exec(gltfComponent.src.value)
+  const loadedProjects = useState(() => projectState.projects.map((project) => project.name))
+  const srcProject = useState(() => {
+    const match = STATIC_ASSET_REGEX.exec(modelComponent.src.value)
     if (!match?.length) return editorState.projectName!
     const [_, orgName, projectName] = match
     return `${orgName}/${projectName}`
   })
 
+  const [dereferenceFeatureFlag] = useFeatureFlags([FeatureFlags.Studio.Model.Dereference])
+
   const getRelativePath = useCallback(() => {
-    const relativePath = STATIC_ASSET_REGEX.exec(gltfComponent.src.value)?.[3]
+    const relativePath = STATIC_ASSET_REGEX.exec(modelComponent.src.value)?.[3]
     if (!relativePath) {
       return 'assets/new-model'
     } else {
       //return relativePath without file extension
       return relativePath.replace(/\.[^.]*$/, '')
     }
-  }, [gltfComponent.src.value])
+  }, [modelComponent.src])
 
   const getExportExtension = useCallback(() => {
-    if (!gltfComponent.src.value) return 'gltf'
-    else return gltfComponent.src.value.endsWith('.gltf') ? 'gltf' : 'glb'
-  }, [gltfComponent.src.value])
+    if (!modelComponent.src.value) return 'gltf'
+    else return modelComponent.src.value.endsWith('.gltf') ? 'gltf' : 'glb'
+  }, [modelComponent.src])
 
-  const srcPath = useHookstate(getRelativePath())
+  const srcPath = useState(getRelativePath())
 
-  const exportType = useHookstate(getExportExtension())
+  const exportType = useState(getExportExtension())
+
+  const errors = getEntityErrors(props.entity, ModelComponent)
 
   const onExportModel = () => {
     if (exporting.value) {
@@ -91,37 +107,70 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
     }
     exporting.set(true)
     const fileName = `${srcPath.value}.${exportType.value}`
-    exportRelativeGLTF(props.entity, srcProject.value, fileName).then(() => {
+    exportRelativeGLTF(entity, srcProject.value, fileName).then(() => {
       const nuPath = pathJoin(config.client.fileServer, 'projects', srcProject.value, fileName)
-      commitProperty(GLTFComponent, 'src')(nuPath)
+      commitProperty(ModelComponent, 'src')(nuPath)
+      ResourceLoaderManager.updateResource(nuPath)
       exporting.set(false)
     })
   }
+
+  useEffect(() => {
+    srcPath.set(getRelativePath())
+    exportType.set(getExportExtension())
+  }, [modelComponent.src])
+
+  useEffect(() => {
+    if (!modelComponent.asset.value) return
+    bonematchable.set(
+      modelComponent.asset.value &&
+        (modelComponent.asset.value instanceof VRM ||
+          recursiveHipsLookup(modelComponent.asset.value.scene as Object3D | Scene))
+    )
+  }, [modelComponent.asset])
 
   return (
     <NodeEditor
       name={t('editor:properties.model.title')}
       description={t('editor:properties.model.description')}
-      Icon={GLTFNodeEditor.iconComponent}
+      Icon={ModelNodeEditor.iconComponent}
       {...props}
     >
       <InputGroup name="Model Url" label={t('editor:properties.model.lbl-modelurl')}>
         <ModelInput
-          value={gltfComponent.src.value}
+          value={modelComponent.src.value}
           onRelease={(src) => {
-            commitProperty(GLTFComponent, 'src')(src)
+            if (src !== modelComponent.src.value) commitProperty(ModelComponent, 'src')(src)
+            else ResourceLoaderManager.updateResource(src)
           }}
         />
         {errors?.LOADING_ERROR ||
           (errors?.INVALID_SOURCE && ErrorPopUp({ message: t('editor:properties.model.error-url') }))}
       </InputGroup>
-
+      {dereferenceFeatureFlag && (
+        <Button
+          className="self-end"
+          onClick={() => modelComponent.dereference.set(true)}
+          disabled={!modelComponent.src.value}
+        >
+          Dereference
+        </Button>
+      )}
       <InputGroup name="Camera Occlusion" label={t('editor:properties.model.lbl-cameraOcclusion')}>
         <BooleanInput
-          value={gltfComponent.cameraOcclusion.value}
-          onChange={commitProperty(GLTFComponent, 'cameraOcclusion')}
+          value={modelComponent.cameraOcclusion.value}
+          onChange={commitProperty(ModelComponent, 'cameraOcclusion')}
         />
       </InputGroup>
+      {bonematchable.value && (
+        <InputGroup name="Force VRM" label={t('editor:properties.model.lbl-convertToVRM')}>
+          <BooleanInput
+            value={modelComponent.convertToVRM.value}
+            onChange={commitProperty(ModelComponent, 'convertToVRM')}
+          />
+        </InputGroup>
+      )}
+
       <Accordion
         className="space-y-4 p-4"
         title={t('editor:properties.model.lbl-export')}
@@ -175,5 +224,7 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
     </NodeEditor>
   )
 }
-GLTFNodeEditor.iconComponent = MdOutlineViewInAr
-export default GLTFNodeEditor
+
+ModelNodeEditor.iconComponent = MdOutlineViewInAr
+
+export default ModelNodeEditor
