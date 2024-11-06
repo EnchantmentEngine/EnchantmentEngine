@@ -37,9 +37,7 @@ export const featureFlagSettingMethods = ['find', 'get', 'create', 'patch', 'rem
 // Main data model schema
 export const featureFlagSettingSchema = Type.Object(
   {
-    id: Type.String({
-      format: 'uuid'
-    }),
+    id: Type.String(),
     flagValue: Type.Boolean(),
     userId: Type.Optional(
       TypedString<UserID>({

@@ -29,7 +29,7 @@ import { featureFlagSettingPath } from '@ir-engine/common/src/schema.type.module
 const useFeatureFlags = (flagIDs: string[]): boolean[] => {
   const response = useFind(featureFlagSettingPath, {
     query: {
-      $or: flagIDs.map((flagID) => ({ flagID })),
+      $or: flagIDs.map((id) => ({ id })),
       paginate: false
     }
   })
@@ -38,8 +38,8 @@ const useFeatureFlags = (flagIDs: string[]): boolean[] => {
     return []
   }
 
-  return flagIDs.map((flagID) => {
-    const flag = response.data.find(({ id }) => id === flagID)
+  return flagIDs.map((id) => {
+    const flag = response.data.find((flag) => flag.id === id)
     return flag ? flag.flagValue : true
   })
 }

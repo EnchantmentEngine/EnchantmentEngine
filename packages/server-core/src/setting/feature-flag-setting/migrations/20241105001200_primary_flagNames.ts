@@ -49,6 +49,19 @@ export async function up(knex: Knex): Promise<void> {
 
   const oldRows = await knex.select<OldFeatureFlagSettingType[]>().from(featureFlagSettingPath)
 
+  console.log('Old rows:', oldRows)
+
+  const oldRowsByFlagName = new Map<string, OldFeatureFlagSettingType>()
+
+  for (const oldRow of oldRows) {
+    const flagName = oldRow.flagName
+    const existingUpdatedAt = oldRowsByFlagName.get(flagName)?.updatedAt
+    if (existingUpdatedAt != null && existingUpdatedAt > oldRow.updatedAt) {
+      continue
+    }
+    oldRowsByFlagName.set(flagName, oldRow)
+  }
+
   await knex.schema.dropTable(featureFlagSettingPath)
 
   await knex.schema.createTable(featureFlagSettingPath, (table) => {
@@ -58,16 +71,20 @@ export async function up(knex: Knex): Promise<void> {
     table.dateTime('updatedAt').notNullable()
   })
 
-  await knex
-    .insert(
-      oldRows.map((oldRow) => {
-        return {
-          ...oldRow,
-          id: oldRow.flagName
-        }
-      })
-    )
-    .into(featureFlagSettingPath)
+  const newRows = [...oldRowsByFlagName.values()].map((oldRow) => {
+    return {
+      ...oldRow,
+      id: oldRow.flagName
+    }
+  })
+
+  console.log('New rows:', newRows)
+
+  if (newRows.length === 0) {
+    return
+  }
+
+  await knex.insert(newRows).into(featureFlagSettingPath)
 }
 
 /**
@@ -84,6 +101,8 @@ export async function down(knex: Knex): Promise<void> {
 
   const newRows = await knex.select<FeatureFlagSettingType[]>().from(featureFlagSettingPath)
 
+  console.log('New rows:', newRows)
+
   await knex.schema.dropTable(featureFlagSettingPath)
 
   await knex.schema.createTable(featureFlagSettingPath, (table) => {
@@ -95,15 +114,19 @@ export async function down(knex: Knex): Promise<void> {
     table.dateTime('updatedAt').notNullable()
   })
 
-  await knex
-    .insert(
-      newRows.map((newRow) => {
-        return {
-          ...newRow,
-          flagName: newRow.id,
-          id: uuidv4()
-        }
-      })
-    )
-    .into(featureFlagSettingPath)
+  const oldRows = newRows.map((newRow) => {
+    return {
+      ...newRow,
+      flagName: newRow.id,
+      id: uuidv4()
+    }
+  })
+
+  console.log('Old rows:', oldRows)
+
+  if (oldRows.length === 0) {
+    return
+  }
+
+  await knex.insert(oldRows).into(featureFlagSettingPath)
 }
