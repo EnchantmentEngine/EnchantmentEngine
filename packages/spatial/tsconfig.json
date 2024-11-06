@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "./tests/webxr/emulator/**",
-    "./tests/webxr/devtool/**"
+    "./tests/webxr/devtool/**",
+    "./tests/webxr/emulator.ts"
   ]
 }
