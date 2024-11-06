@@ -46,12 +46,12 @@ import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComp
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getModelSceneID } from '@ir-engine/engine/src/scene/functions/loaders/ModelFunctions'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
-import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, none, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
@@ -300,8 +300,26 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
     const fullProjectName = `${orgName}/${projectName}`
     const parsedName = fileName.split('?')[0]
     exportRelativeGLTF(node.entity, fullProjectName, parsedName).then(() => {
-      ResourceLoaderManager.updateResource(modelComponent.src)
-      getMutableState(GLTFModifiedState)[getModelSceneID(entity)].set(none)
+      const nodesToDelete = iterateEntityNode(
+        node.entity,
+        (entity) => {
+          return entity
+        },
+        (entity) => entity !== node.entity
+      )
+      EditorControlFunctions.removeObject(nodesToDelete)
+      const uuidsToDelete = nodesToDelete.map((entity) => getComponent(entity, UUIDComponent))
+      const reactor = startReactor(() => {
+        useEffect(() => {
+          const allDeleted = uuidsToDelete.every((uuid) => !!UUIDComponent.entitiesByUUIDState[uuid].value)
+          if (allDeleted) {
+            ResourceLoaderManager.updateResource(modelComponent.src)
+            getMutableState(GLTFModifiedState)[getModelSceneID(entity)].set(none)
+            reactor.stop()
+          }
+        }, [UUIDComponent.entitiesByUUIDState])
+        return null
+      })
     })
   }
 
