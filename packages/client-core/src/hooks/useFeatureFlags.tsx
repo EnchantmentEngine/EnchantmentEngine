@@ -26,10 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { useFind } from '@ir-engine/common'
 import { featureFlagSettingPath } from '@ir-engine/common/src/schema.type.module'
 
-const useFeatureFlags = (flagNames: string[]): boolean[] => {
+const useFeatureFlags = (flagIDs: string[]): boolean[] => {
   const response = useFind(featureFlagSettingPath, {
     query: {
-      $or: flagNames.map((flagName) => ({ flagName })),
+      $or: flagIDs.map((flagID) => ({ flagID })),
       paginate: false
     }
   })
@@ -38,8 +38,8 @@ const useFeatureFlags = (flagNames: string[]): boolean[] => {
     return []
   }
 
-  return flagNames.map((flagName) => {
-    const flag = response.data.find(({ flagName: name }) => name === flagName)
+  return flagIDs.map((flagID) => {
+    const flag = response.data.find(({ id }) => id === flagID)
     return flag ? flag.flagValue : true
   })
 }
