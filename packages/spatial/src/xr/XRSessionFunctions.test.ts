@@ -25,23 +25,53 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { createEngine, destroyEngine } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
-import { CustomWebXRPolyfill, getLastXRSessionData, requestEmulatedXRSession } from '../../tests/webxr/emulator'
+import {
+  CustomWebXRPolyfill,
+  DeviceDefinitions,
+  POLYFILL_ACTIONS,
+  WebXREventDispatcher,
+  getLastXRSessionData,
+  requestEmulatedXRSession
+} from '../../tests/webxr/emulator'
 import { destroySpatialEngine, destroySpatialViewer } from '../initializeEngine'
-import { endXRSession, xrSessionChanged } from './XRSessionFunctions'
+import { endXRSession, requestXRSession, xrSessionChanged } from './XRSessionFunctions'
 import { XRState } from './XRState'
+
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
 
 describe('onSessionEnd', () => {}) //:: onSessionEnd
 describe('setupXRSession', () => {}) //:: setupXRSession
 describe('getReferenceSpaces', () => {}) //:: getReferenceSpaces
-describe('requestXRSession', () => {}) //:: requestXRSession
-
-describe('endXRSession', () => {
-  beforeAll(() => {
-    new CustomWebXRPolyfill()
+describe('requestXRSession', () => {
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    WebXREventDispatcher.instance.dispatchEvent({
+      type: POLYFILL_ACTIONS.DEVICE_INIT,
+      detail: { stereoEffect: false, device: DeviceDefinitions.Default }
+    })
   })
 
+  afterEach(async () => {
+    await endXRSession()
+    destroySpatialViewer()
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
+  it('should be able to request a session without failing', async () => {
+    const result = vi.fn(requestXRSession)
+    await result()
+    expect(result).toHaveResolved()
+  })
+}) //:: requestXRSession
+
+describe('endXRSession', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
@@ -55,22 +85,27 @@ describe('endXRSession', () => {
   })
 
   it('should end the XRState.session, marking it as null', async () => {
+    const Initial = false
+    const Expected = !Initial
     // Sanity check before running
     const before = getState(XRState).session
     expect(before).not.toBe(undefined)
     expect(before).not.toBe(null)
+    expect(getLastXRSessionData(before).ended).toBe(Initial)
     // Run and Check the result
     await endXRSession()
     const result = getState(XRState).session
+    expect(result).not.toBe(undefined)
     expect(result).not.toBe(null)
-    expect(getLastXRSessionData(result).ended).toBe(true)
+    expect(getLastXRSessionData(result).ended).toBe(Expected)
   })
 }) //:: endXRSession
 
 describe('xrSessionChanged', () => {
   it('does nothing, but does not fail to run either', () => {
+    const Expected = undefined
     // @ts-ignore Allow coercing undefined into the function parameter
     const result = xrSessionChanged(undefined)
-    expect(result).toBe(undefined)
+    expect(result).toBe(Expected)
   })
 }) //:: xrSessionChanged

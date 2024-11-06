@@ -31,11 +31,12 @@ import { XRState } from '../../src/xr/XRState'
 import { mockSpatialEngine } from '../util/mockSpatialEngine'
 import { CustomWebXRPolyfill, requestEmulatedXRSession } from './emulator'
 
-describe('WebXR-emulator', () => {
-  beforeAll(() => {
-    new CustomWebXRPolyfill()
-  })
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
 
+describe('WebXR-emulator', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()

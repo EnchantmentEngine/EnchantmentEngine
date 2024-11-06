@@ -36,6 +36,8 @@ import { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
 
 /* @section Forward Exports from the emulator module. */
 export { CustomWebXRPolyfill } from '../../tests/webxr/emulator/CustomWebXRPolyfill'
+export { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispatcher'
+export { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
 
 /**
  * @description Returns the data of the @param session XRSession passed in by accessing it with its Symbol() name
