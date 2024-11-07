@@ -42,18 +42,18 @@ export const onSessionEnd = () => {
   xrState.session.set(null)
   xrState.sceneScale.set(1)
 
-  getMutableState(XRState).xrFrame.set(null)
+  xrState.xrFrame.set(null)
 
   const renderer = getComponent(getState(EngineState).viewerEntity, RendererComponent)
   renderer.renderer!.domElement.style.display = ''
   renderer.needsResize = true
 
-  const originTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+  const originTransform = getComponent(getState(EngineState).originEntity, TransformComponent)
   originTransform.position.copy(Vector3_Zero)
   originTransform.rotation.identity()
   originTransform.scale.copy(Vector3_One)
 
-  const localFloorTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+  const localFloorTransform = getComponent(getState(EngineState).localFloorEntity, TransformComponent)
   localFloorTransform.position.copy(Vector3_Zero)
   localFloorTransform.rotation.identity()
   localFloorTransform.scale.copy(Vector3_One)
