@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import {
   CancelableUploadPromiseArrayReturnType,
   CancelableUploadPromiseReturnType,
@@ -30,14 +31,85 @@ import {
 } from '@ir-engine/client-core/src/util/upload'
 import { API } from '@ir-engine/common'
 import { assetLibraryPath, fileBrowserPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
-import { processFileName } from '@ir-engine/common/src/utils/processFileName'
+import { cleanFileNameFile, cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
+import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { modelResourcesPath } from '@ir-engine/engine/src/assets/functions/pathResolver'
 
-import { pathJoin } from '@ir-engine/common/src/utils/miscUtils'
+enum FileType {
+  THREE_D = '3D',
+  IMAGE = 'Image',
+  AUDIO = 'Audio',
+  VIDEO = 'Video',
+  UNKNOWN = 'Unknown'
+}
+
+const unsupportedFileMessage = {
+  [FileType.THREE_D]: 'Please upload either a .gltf or a .glb.',
+  [FileType.IMAGE]: 'Please upload a .png, .tiff, .jpg, .jpeg, .gif, or .ktx2.',
+  [FileType.AUDIO]: 'Please upload a .mp3, .mpeg, .m4a, or .wav.',
+  [FileType.VIDEO]: 'Please upload a .mp4, .mkv, or .avi.',
+  [FileType.UNKNOWN]: 'Please upload a valid 3D, Image, Audio, or Video file.'
+}
+
+const supportedFiles = {
+  [FileType.THREE_D]: new Set(['.gltf', '.glb', '.bin']),
+  [FileType.IMAGE]: new Set(['.png', '.tiff', '.jpg', '.jpeg', '.gif', '.ktx2']),
+  [FileType.AUDIO]: new Set(['.mp3', '.mpeg', '.m4a', '.wav']),
+  [FileType.VIDEO]: new Set(['.mp4', '.mkv', '.avi'])
+}
+
+function findMimeType(file): FileType {
+  let fileType = FileType.UNKNOWN
+  if (file.type.startsWith('image/')) {
+    fileType = FileType.IMAGE
+  } else if (file.type.startsWith('audio/')) {
+    fileType = FileType.AUDIO
+  } else if (file.type.startsWith('video/')) {
+    fileType = FileType.VIDEO
+  } else if (file.name.endsWith('.gltf') || file.name.endsWith('.glb')) {
+    fileType = FileType.THREE_D
+  }
+
+  return fileType
+}
+
+function isValidFileType(file): { isValid: boolean; errorMessage?: string } {
+  const mimeType: FileType = findMimeType(file)
+  const fileName = file.name
+  const extension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
+
+  for (const [type, extensions] of Object.entries(supportedFiles)) {
+    if (extensions.has(extension)) {
+      return {
+        isValid: true
+      }
+    }
+  }
+
+  return {
+    isValid: false,
+    errorMessage: unsupportedFileMessage[mimeType]
+  }
+}
+
+function sanitizeFiles(files) {
+  const newFiles: File[] = []
+  for (const file of files) {
+    const newFile = cleanFileNameFile(file)
+    const { isValid, errorMessage } = isValidFileType(newFile)
+    if (!isValid) {
+      NotificationService.dispatchNotify(`${file.name} is not supported. ${errorMessage}`, { variant: 'warning' })
+    }
+    newFiles.push(newFile)
+  }
+
+  return newFiles
+}
 
 export const handleUploadFiles = (projectName: string, directoryPath: string, files: FileList | File[]) => {
   return Promise.all(
     Array.from(files).map((file) => {
+      file = cleanFileNameFile(file)
       const fileDirectory = file.webkitRelativePath || file.name
       return uploadToFeathersService(fileBrowserUploadPath, [file], {
         args: [
@@ -78,8 +150,12 @@ export const inputFileWithAddToScene = ({
 
     el.onchange = async () => {
       try {
-        if (el.files?.length) await handleUploadFiles(projectName, directoryPath, el.files)
+        if (el.files?.length) {
+          const newFiles = sanitizeFiles(el.files)
+          await handleUploadFiles(projectName, directoryPath, newFiles)
+        }
         resolve(null)
+        API.instance.service(fileBrowserPath).emit('created')
       } catch (err) {
         reject(err)
       } finally {
@@ -119,7 +195,11 @@ export async function clearModelResources(projectName: string, modelName: string
   }
 }
 
-export const uploadProjectAssetsFromUpload = async (projectName: string, entries: FileSystemEntry[], onProgress?) => {
+export const uploadProjectAssetsFromUpload = async (
+  projectName: string,
+  entries: FileSystemEntry[],
+  onProgress = (...args: any[]) => {}
+) => {
   const promises: CancelableUploadPromiseReturnType<string>[] = []
 
   for (let i = 0; i < entries.length; i++) {
@@ -153,11 +233,16 @@ export const processEntry = async (
 
   if (item.isFile) {
     const file = await getFile(item)
-    const name = processFileName(file.name)
+    const name = cleanFileNameString(file.name)
     const path = `assets${directory}/` + name
 
     promises.push(
-      uploadToFeathersService(fileBrowserUploadPath, [file], { projectName, path, contentType: '' }, onProgress)
+      uploadToFeathersService(
+        fileBrowserUploadPath,
+        [file],
+        { args: [{ project: projectName, path, contentType: file.type }] },
+        onProgress
+      )
     )
   }
 }

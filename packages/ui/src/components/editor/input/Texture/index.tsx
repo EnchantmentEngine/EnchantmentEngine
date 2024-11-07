@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { Fragment, useEffect } from 'react'
 import { ColorSpace, DisplayP3ColorSpace, LinearSRGBColorSpace, SRGBColorSpace, Texture, Vector2 } from 'three'
 
-import { AssetType } from '@ir-engine/common/src/constants/AssetType'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
+import { AssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { ImageFileTypes, VideoFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
 import { useHookstate } from '@ir-engine/hyperflux'
 
@@ -35,7 +35,6 @@ import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import Button from '../../../../primitives/tailwind/Button'
 import FileBrowserInput from '../FileBrowser'
 import InputGroup from '../Group'
-import { ImageContainer } from '../Image/Preview'
 import SelectInput from '../Select'
 import { StringInputProps } from '../String'
 import { Vector2Input } from '../Vector2'
@@ -102,7 +101,7 @@ export default function TexturePreviewInput({
   }, [srcState])
 
   return (
-    <ImageContainer>
+    <div className="flex h-auto flex-col items-center justify-start gap-2">
       <div className="flex w-full flex-col items-start justify-start gap-1 rounded bg-neutral-800 p-1">
         {showPreview && (
           <div className="relative h-full max-h-[274px] w-full max-w-[305px]">
@@ -200,7 +199,7 @@ export default function TexturePreviewInput({
           </>
         )}
       </div>
-    </ImageContainer>
+    </div>
   )
 }
 

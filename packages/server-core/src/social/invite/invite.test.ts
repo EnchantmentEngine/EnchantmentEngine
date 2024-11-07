@@ -23,8 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '../../patchEngineNode'
+
 import assert from 'assert'
 import { v4 as uuidv4 } from 'uuid'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 
 import { inviteTypes } from '@ir-engine/common/src/schemas/social/invite-type.schema'
 import { invitePath, InviteType } from '@ir-engine/common/src/schemas/social/invite.schema'
@@ -35,7 +38,7 @@ import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 
 import { Application } from '../../../declarations'
 import { createTestLocation } from '../../../tests/util/createTestLocation'
-import { createFeathersKoaApp } from '../../createApp'
+import { createFeathersKoaApp, tearDownAPI } from '../../createApp'
 
 describe('invite.service', () => {
   let app: Application
@@ -43,12 +46,10 @@ describe('invite.service', () => {
   let testLocation: LocationType
   const invites: InviteType[] = []
 
-  before(async () => {
-    app = createFeathersKoaApp()
+  beforeAll(async () => {
+    app = await createFeathersKoaApp()
     await app.setup()
-  })
 
-  before(async () => {
     const name = ('test-invite-user-name-' + uuidv4()) as UserName
     const avatarName = 'test-invite-avatar-name-' + uuidv4()
 
@@ -58,17 +59,16 @@ describe('invite.service', () => {
 
     testUser = await app.service(userPath).create({
       name,
-      avatarId: avatar.id,
-      isGuest: false,
-      scopes: []
+      isGuest: false
     })
 
     testLocation = await createTestLocation(app)
   })
 
-  after(async () => {
+  afterAll(async () => {
     await app.service(userPath).remove(testUser.id)
-    await destroyEngine()
+    await tearDownAPI()
+    destroyEngine()
   })
 
   inviteTypes.forEach((inviteType) => {

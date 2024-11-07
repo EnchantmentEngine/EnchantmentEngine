@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Euler, Quaternion, Vector3 } from 'three'
+import { Quaternion, Vector3 } from 'three'
 
 import { getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
@@ -42,27 +42,25 @@ import {
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
 import { bakeEnvmapTexture, uploadCubemapBakeToServer } from '@ir-engine/editor/src/functions/uploadEnvMapBake'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { imageDataToBlob } from '@ir-engine/engine/src/scene/classes/ImageUtils'
 import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { BooleanInput } from '@ir-engine/ui/src/components/editor/input/Boolean'
+import { Checkbox } from '@ir-engine/ui'
+import { ImageLink } from '@ir-engine/ui/editor'
 import { GiPortal } from 'react-icons/gi'
 import Button from '../../../../primitives/tailwind/Button'
 import EulerInput from '../../input/Euler'
 import InputGroup from '../../input/Group'
-import ImagePreviewInput from '../../input/Image/Preview'
 import SelectInput from '../../input/Select'
 import StringInput, { ControlledStringInput } from '../../input/String'
 import Vector3Input from '../../input/Vector3'
-import NodeEditor from '../nodeEditor'
 
 type PortalOptions = {
   label: string
   value: string
 }
-
-const rotation = new Quaternion()
 
 /**
  * PortalNodeEditor provides the editor for properties of PortalNode.
@@ -117,10 +115,8 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
     commitProperties(PortalComponent, { previewImageURL: url }, [props.entity])
   }
 
-  const changeSpawnRotation = (value: Euler) => {
-    rotation.setFromEuler(value)
-
-    commitProperties(PortalComponent, { spawnRotation: rotation })
+  const changeSpawnRotation = (value: Quaternion) => {
+    commitProperties(PortalComponent, { spawnRotation: value })
   }
 
   const changePreviewType = (val) => {
@@ -132,7 +128,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
     <NodeEditor
       name={t('editor:properties.portal.name')}
       description={t('editor:properties.portal.description')}
-      icon={<PortalNodeEditor.iconComponent />}
+      Icon={PortalNodeEditor.iconComponent}
       {...props}
     >
       <InputGroup name="Location" label={t('editor:properties.portal.lbl-locationName')}>
@@ -151,7 +147,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
       <InputGroup name="Portal" label={t('editor:properties.portal.lbl-redirect')}>
-        <BooleanInput onChange={commitProperty(PortalComponent, 'redirect')} value={portalComponent.redirect.value} />
+        <Checkbox onChange={commitProperty(PortalComponent, 'redirect')} checked={portalComponent.redirect.value} />
       </InputGroup>
       <InputGroup name="Effect Type" label={t('editor:properties.portal.lbl-effectType')}>
         <SelectInput
@@ -202,10 +198,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           </div>
         </div>
       </InputGroup>
-      <ImagePreviewInput
-        previewOnly={true}
-        value={state.previewImageURL.value ?? portalComponent.previewImageURL.value}
-      />
+      <ImageLink src={state.previewImageURL.value ?? portalComponent.previewImageURL.value} />
       <InputGroup name="Spawn Position" label={t('editor:properties.portal.lbl-spawnPosition')} className="w-auto">
         <Vector3Input
           value={portalComponent.spawnPosition.value}

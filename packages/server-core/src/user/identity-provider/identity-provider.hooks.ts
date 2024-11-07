@@ -25,14 +25,11 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { BadRequest, Forbidden, MethodNotAllowed, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, iff, isProvider } from 'feathers-hooks-common'
-import { random } from 'lodash'
+import { disallow, iff, iffElse, isProvider } from 'feathers-hooks-common'
 
 import { isDev } from '@ir-engine/common/src/config'
-import { staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 import { scopeTypePath } from '@ir-engine/common/src/schemas/scope/scope-type.schema'
 import { scopePath, ScopeType } from '@ir-engine/common/src/schemas/scope/scope.schema'
-import { avatarPath } from '@ir-engine/common/src/schemas/user/avatar.schema'
 import {
   IdentityProviderData,
   identityProviderDataValidator,
@@ -42,7 +39,7 @@ import {
   IdentityProviderType
 } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { UserID, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
-import { checkScope } from '@ir-engine/spatial/src/common/functions/checkScope'
+import { checkScope } from '@ir-engine/common/src/utils/checkScope'
 
 import { Paginated } from '@feathersjs/feathers'
 import {
@@ -82,7 +79,7 @@ async function checkTokenAuth(context: HookContext<IdentityProviderService>, use
 
       if (key.data.length > 0) {
         const user = await context.app.service(userPath).get(key.data[0].userId)
-        if (userId !== user.id) throw new BadRequest('Cannot make identity-providers on other users')
+        if (userId && userId !== user.id) throw new BadRequest('Cannot make identity-providers on other users')
         else return true
       }
     }
@@ -170,7 +167,7 @@ async function validateAuthParams(context: HookContext<IdentityProviderService>)
         { accessToken: context.params.authentication.accessToken },
         {}
       )
-      if (userId !== authResult[appConfig.authentication.entity]?.userId)
+      if (userId !== '' && userId !== authResult[appConfig.authentication.entity]?.userId)
         throw new BadRequest('Cannot make identity-providers on other users')
     } else {
       if (userId && existingUser)
@@ -192,7 +189,7 @@ async function addIdentityProviderType(context: HookContext<IdentityProviderServ
     ;(context.actualData as IdentityProviderData).type = 'guest' //Non-password/magiclink create requests must always be for guests
   }
 
-  if ((context.data as IdentityProviderData).type === 'guest') {
+  if ((context.data as IdentityProviderData).type === 'guest' && (context.actualData as IdentityProviderData).userId) {
     const existingUser = await context.app.service(userPath).find({
       query: {
         id: (context.actualData as IdentityProviderData).userId
@@ -215,30 +212,8 @@ async function addIdentityProviderType(context: HookContext<IdentityProviderServ
 
 async function createNewUser(context: HookContext<IdentityProviderService>) {
   const isGuest = (context.actualData as IdentityProviderType).type === 'guest'
-  const avatars = await context.app
-    .service(avatarPath)
-    .find({ isInternal: true, query: { isPublic: true, skipUser: true, $limit: 1000 } })
-
-  let selectedAvatarId
-  while (selectedAvatarId == null) {
-    const randomId = random(avatars.data.length - 1)
-    const selectedAvatar = avatars.data[randomId]
-    try {
-      await Promise.all([
-        context.app.service(staticResourcePath).get(selectedAvatar.modelResourceId),
-        context.app.service(staticResourcePath).get(selectedAvatar.thumbnailResourceId)
-      ])
-      selectedAvatarId = selectedAvatar.id
-    } catch (err) {
-      console.log('error in getting resources')
-      avatars.data.splice(randomId, 1)
-      if (avatars.data.length < 1) throw new Error('All avatars are missing static resources')
-    }
-  }
-
   context.existingUser = await context.app.service(userPath).create({
-    isGuest,
-    avatarId: selectedAvatarId
+    isGuest
   })
 }
 
@@ -256,6 +231,8 @@ async function addScopes(context: HookContext<IdentityProviderService>) {
     })
 
     await context.app.service(scopePath).create(data)
+
+    await context.app.service(userPath).patch(context.existingUser!.id, { isGuest: false })
   }
 }
 
@@ -292,6 +269,16 @@ async function createAccessToken(context: HookContext<IdentityProviderService>) 
   }
 }
 
+const isSearchQuery = (context: HookContext) => {
+  const { query } = context.params
+  const queryLength = Object.keys(query).length
+  // we only need to allow search based on exact email in the query
+  if (queryLength === 2 && query.email && !query.email.$like && !query.email.$notlike) {
+    return true
+  }
+  return false
+}
+
 export default {
   around: {
     all: [
@@ -302,10 +289,10 @@ export default {
 
   before: {
     all: [
-      () => schemaHooks.validateQuery(identityProviderQueryValidator),
+      schemaHooks.validateQuery(identityProviderQueryValidator),
       schemaHooks.resolveQuery(identityProviderQueryResolver)
     ],
-    find: [iff(isProvider('external'), setLoggedinUserInQuery('userId'))],
+    find: [iff(isProvider('external'), iffElse(isSearchQuery, [], setLoggedinUserInQuery('userId')))],
     get: [iff(isProvider('external'), checkIdentityProvider)],
     create: [
       iff(
@@ -314,7 +301,7 @@ export default {
           throw new MethodNotAllowed('identity-provider create works only with singular entries')
         }
       ),
-      () => schemaHooks.validateData(identityProviderDataValidator),
+      schemaHooks.validateData(identityProviderDataValidator),
       schemaHooks.resolveData(identityProviderDataResolver),
       persistData,
       validateAuthParams,
@@ -326,7 +313,7 @@ export default {
     update: [disallow()],
     patch: [
       iff(isProvider('external'), checkIdentityProvider),
-      () => schemaHooks.validateData(identityProviderPatchValidator),
+      schemaHooks.validateData(identityProviderPatchValidator),
       schemaHooks.resolveData(identityProviderPatchResolver)
     ],
     remove: [iff(isProvider('external'), checkIdentityProvider, checkOnlyIdentityProvider)]

@@ -23,19 +23,20 @@ import { useTranslation } from 'react-i18next'
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { useFind, useMutation } from '@ir-engine/common'
 import {
   LocationData,
   LocationID,
-  locationPath,
+  LocationPatch,
   LocationType,
+  locationPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
 import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
-import { useFind, useMutation } from '@ir-engine/spatial/src/common/functions/FeathersHooks'
+import { Input } from '@ir-engine/ui'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { ModalHeader } from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Select from '@ir-engine/ui/src/primitives/tailwind/Select'
@@ -55,12 +56,23 @@ const locationTypeOptions = [
   { label: 'Showroom', value: 'showroom' }
 ]
 
-export default function AddEditLocationModal(props: { location?: LocationType; sceneID?: string | null }) {
+export default function AddEditLocationModal(props: {
+  action: string
+  location?: LocationType
+  sceneID?: string | null
+}) {
   const { t } = useTranslation()
 
   const locationID = useHookstate(props.location?.id || null)
 
-  const locationQuery = useFind(locationPath, { query: { id: locationID.value } })
+  const params = {
+    query: {
+      action: props.action,
+      id: locationID.value
+    }
+  }
+
+  const locationQuery = useFind(locationPath, locationID.value ? params : undefined)
   const location = locationID.value ? locationQuery.data[0] : undefined
 
   const locationMutation = useMutation(locationPath)
@@ -73,7 +85,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
   const errors = useHookstate(getDefaultErrors())
 
   const name = useHookstate(location?.name || '')
-  const maxUsers = useHookstate(location?.maxUsersPerInstance || 20)
+  const maxUsers = useHookstate(location?.maxUsersPerInstance || 10)
 
   const scene = useHookstate((location ? location.sceneId : props.sceneID) || '')
   const videoEnabled = useHookstate<boolean>(location?.locationSetting.videoEnabled || true)
@@ -110,6 +122,9 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
     if (!maxUsers.value) {
       errors.maxUsers.set(t('admin:components.location.maxUserCantEmpty'))
     }
+    if (maxUsers.value > 10) {
+      errors.maxUsers.set(t('admin:components.location.maxUserExceeded'))
+    }
     if (!scene.value) {
       errors.scene.set(t('admin:components.location.sceneCantEmpty'))
     }
@@ -135,19 +150,15 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
 
     const locationData: LocationData = {
       name: name.value,
-      slugifiedName: '',
       sceneId: scene.value,
       maxUsersPerInstance: maxUsers.value,
       locationSetting: {
-        id: '',
         locationId: '' as LocationID,
         locationType: locationType.value,
-        audioEnabled: audioEnabled.value,
-        screenSharingEnabled: screenSharingEnabled.value,
+        audioEnabled: Boolean(audioEnabled.value),
+        screenSharingEnabled: Boolean(screenSharingEnabled.value),
         faceStreamingEnabled: false,
-        videoEnabled: videoEnabled.value,
-        createdAt: '',
-        updatedAt: ''
+        videoEnabled: Boolean(videoEnabled.value)
       },
       isLobby: false,
       isFeatured: false
@@ -155,7 +166,9 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
 
     try {
       if (location?.id) {
-        await locationMutation.patch(location.id, locationData, { query: { projectId: location.projectId } })
+        await locationMutation.patch(location.id, locationData as LocationPatch, {
+          query: { projectId: location.projectId }
+        })
       } else {
         const response = await locationMutation.create(locationData)
         locationID.set(response.id)
@@ -182,7 +195,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
   }
 
   return (
-    <div className="relative z-50 max-h-[80vh] w-[50vw] bg-theme-surface-main">
+    <div className="relative z-50 w-[50vw] bg-theme-surface-main">
       <div className="relative rounded-lg shadow">
         <ModalHeader
           onClose={PopoverState.hidePopupover}
@@ -196,6 +209,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
                 size="medium"
                 variant="transparent"
                 className="w-full cursor-default text-left text-xs"
+                data-testid="publish-panel-copy-link-buttons-group"
                 endIcon={
                   <HiLink
                     className="z-10 h-4 w-4 cursor-pointer"
@@ -217,18 +231,28 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
               </Button>
             )}
             <Input
-              label={t('admin:components.location.lbl-name')}
+              labelProps={{
+                text: t('admin:components.location.lbl-name'),
+                position: 'top'
+              }}
               value={name.value}
+              data-testid="publish-panel-location-name"
               onChange={(event) => name.set(event.target.value)}
-              error={errors.name.value}
+              helperText={errors.name.value}
+              state={errors.name.value ? 'error' : undefined}
               disabled={isLoading}
             />
             <Input
               type="number"
-              label={t('admin:components.location.lbl-maxuser')}
+              labelProps={{
+                text: t('admin:components.location.lbl-maxuser'),
+                position: 'top'
+              }}
               value={maxUsers.value}
+              data-testid="publish-panel-location-max-users"
               onChange={(event) => maxUsers.set(Math.max(parseInt(event.target.value, 0), 0))}
-              error={errors.maxUsers.value}
+              helperText={errors.maxUsers.value}
+              state={errors.maxUsers.value ? 'error' : undefined}
               disabled={isLoading}
             />
             <Select
@@ -258,7 +282,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
               currentValue={locationType.value}
               onChange={(value) => locationType.set(value as 'private' | 'public' | 'showroom')}
               options={locationTypeOptions}
-              disabled={isLoading}
+              disabled={true}
             />
             <Toggle
               label={t('admin:components.location.lbl-ve')}
@@ -282,13 +306,18 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
         </div>
 
         <div className="grid grid-flow-col border-t border-t-theme-primary px-6 py-5">
-          <Button variant="outline" onClick={() => PopoverState.hidePopupover()}>
+          <Button
+            variant="outline"
+            data-testid="publish-panel-cancel-button"
+            onClick={() => PopoverState.hidePopupover()}
+          >
             {t('common:components.cancel')}
           </Button>
           <div className="ml-auto flex items-center gap-2">
             {location?.id && (
               <Button
                 className="bg-[#162546]"
+                data-testid="publish-panel-unpublish-button"
                 endIcon={unPublishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
                 disabled={isLoading}
                 onClick={unPublishLocation}
@@ -297,6 +326,7 @@ export default function AddEditLocationModal(props: { location?: LocationType; s
               </Button>
             )}
             <Button
+              data-testid="publish-panel-publish-or-update-button"
               endIcon={publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
               disabled={isLoading}
               onClick={handlePublish}

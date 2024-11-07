@@ -30,11 +30,12 @@ import { PointLightComponent } from '@ir-engine/spatial/src/renderer/components/
 
 import { useComponent } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { AiOutlineBulb } from 'react-icons/ai'
 import ColorInput from '../../../../../primitives/tailwind/Color'
 import InputGroup from '../../../input/Group'
 import NumericInput from '../../../input/Numeric'
-import NodeEditor from '../../nodeEditor'
+import LightShadowProperties from '../shadowProperties'
 
 export const PointLightNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
@@ -45,7 +46,7 @@ export const PointLightNodeEditor: EditorComponentType = (props) => {
       {...props}
       name={t('editor:properties.pointLight.name')}
       description={t('editor:properties.pointLight.description')}
-      icon={<PointLightNodeEditor.iconComponent />}
+      Icon={PointLightNodeEditor.iconComponent}
     >
       <InputGroup name="Color" label={t('editor:properties.pointLight.lbl-color')}>
         <ColorInput
@@ -89,7 +90,7 @@ export const PointLightNodeEditor: EditorComponentType = (props) => {
           onRelease={commitProperty(PointLightComponent, 'decay')}
         />
       </InputGroup>
-      {/* <LightShadowProperties entity={props.entity} component={PointLightComponent} /> */}
+      <LightShadowProperties entity={props.entity} component={PointLightComponent} />
     </NodeEditor>
   )
 }

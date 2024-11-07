@@ -27,9 +27,9 @@ import React, { createContext, useEffect, useMemo } from 'react'
 
 import { AppThemeState, getAppTheme, useAppThemeName } from '@ir-engine/client-core/src/common/services/AppThemeState'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
+import { useFind } from '@ir-engine/common'
 import { ClientThemeOptionsType, clientSettingPath } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { useFind } from '@ir-engine/spatial/src/common/functions/FeathersHooks'
 
 export interface ThemeContextProps {
   theme: string
@@ -51,7 +51,7 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
 
   const clientThemeSettings = useHookstate({} as Record<string, ClientThemeOptionsType>)
 
-  const currentThemeName = useAppThemeName()
+  const currentThemeName = useAppThemeName(clientSetting.themeModes)
 
   useEffect(() => {
     const html = document.querySelector('html')
@@ -59,7 +59,7 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
       html.dataset.theme = currentThemeName
       updateTheme()
     }
-  }, [selfUser?.userSetting?.value])
+  }, [clientSetting.themeModes, currentThemeName])
 
   useEffect(() => {
     if (clientSetting) {
@@ -72,7 +72,7 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
   }, [clientThemeSettings, appTheme.customTheme, appTheme.customThemeName])
 
   const updateTheme = () => {
-    const theme = getAppTheme()
+    const theme = getAppTheme(clientSetting.themeModes)
     if (theme)
       for (const variable of Object.keys(theme)) {
         ;(document.querySelector(`[data-theme=${currentThemeName}]`) as any)?.style.setProperty(

@@ -35,18 +35,18 @@ import {
 } from '@ir-engine/client-core/src/common/services/LocationInstanceConnectionService'
 import {
   MediaInstanceConnectionService,
-  MediaInstanceState,
-  useMediaInstance
+  MediaInstanceState
 } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
+import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { ChannelService, ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
-import useFeatureFlags from '@ir-engine/engine/src/useFeatureFlags'
+import { PresentationSystemGroup, defineSystem } from '@ir-engine/ecs'
 import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { FriendService } from '../social/services/FriendService'
-import { connectToInstance } from '../transports/SocketWebRTCClientFunctions'
+import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
 import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
 import FriendsMenu from '../user/components/UserMenu/menus/FriendsMenu'
 import MessagesMenu from '../user/components/UserMenu/menus/MessagesMenu'
@@ -183,7 +183,7 @@ export const MediaInstanceProvisioning = () => {
 
   MediaInstanceConnectionService.useAPIListeners()
   const mediaInstanceState = useHookstate(getMutableState(MediaInstanceState).instances)
-  const instance = useMediaInstance()
+  // const instance = useMediaInstance()
 
   // Once we have the world server, provision the media server
   useEffect(() => {
@@ -195,7 +195,7 @@ export const MediaInstanceProvisioning = () => {
         : channelState.targetChannelId.value
     if (!currentChannel) return
 
-    MediaInstanceConnectionService.provisionServer(currentChannel, true)
+    MediaInstanceConnectionService.provisionServer(currentChannel, false)
 
     /** @todo support multiple locations & cleanup properly */
     // return () => {
@@ -209,9 +209,9 @@ export const MediaInstanceProvisioning = () => {
     // }
   }, [
     channelState.channels.channels?.length,
-    worldNetwork?.ready,
+    worldNetwork?.ready?.value,
     mediaInstanceState.keys.length,
-    channelState.targetChannelId
+    channelState.targetChannelId.value
   ])
 
   return (
@@ -283,7 +283,7 @@ export const FriendMenus = () => {
   return <UseFriendsListeners />
 }
 
-export const InstanceProvisioning = () => {
+export const reactor = () => {
   const networkConfigState = useHookstate(getMutableState(NetworkState).config)
 
   return (
@@ -294,3 +294,9 @@ export const InstanceProvisioning = () => {
     </>
   )
 }
+
+export const InstanceProvisioningSystem = defineSystem({
+  uuid: 'ee.client.InstanceProvisioningSystem',
+  insert: { after: PresentationSystemGroup },
+  reactor
+})

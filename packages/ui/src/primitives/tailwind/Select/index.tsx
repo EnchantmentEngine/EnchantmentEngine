@@ -32,7 +32,7 @@ import { calculateAndApplyYOffset } from '@ir-engine/common/src/utils/offsets'
 import { useClickOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { useHookstate } from '@ir-engine/hyperflux'
 
-import Input from '../Input'
+import Input, { InputProps } from '../Input'
 
 export type OptionValueType = string | number
 
@@ -51,11 +51,12 @@ export interface SelectProps<T extends OptionValueType> {
   menuClassname?: string
   menuItemClassName?: string
   labelClassName?: string
-  inputVariant?: 'outlined' | 'underlined' | 'onboarding'
+  inputVariant?: InputProps['variantSize']
   inputClassName?: string
   errorBorder?: boolean
   searchDisabled?: boolean
   inputContainerClassName?: string
+  endComponent?: JSX.Element
 }
 
 const Select = <T extends OptionValueType>({
@@ -75,7 +76,8 @@ const Select = <T extends OptionValueType>({
   inputClassName,
   errorBorder,
   searchDisabled,
-  inputContainerClassName
+  inputContainerClassName,
+  endComponent
 }: SelectProps<T>) => {
   const ref = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -139,35 +141,35 @@ const Select = <T extends OptionValueType>({
   }
 
   return (
-    <div className={twMerge('relative w-full', className)} ref={ref}>
+    <div className={twMerge('relative w-full', className)} ref={ref} data-testid="select-input-container">
       <Input
+        data-testid="select-input"
         disabled={disabled}
-        label={label}
-        labelClassname={labelClassName}
-        variant={inputVariant}
-        description={description}
-        error={error}
-        errorBorder={errorBorder}
-        className={twMerge('cursor-pointer', inputClassName)}
+        labelProps={{
+          text: label || '',
+          position: 'top'
+        }}
+        variantSize={inputVariant}
         placeholder={placeholder || t('common:select.selectOption')}
         value={selectLabel.value}
         onChange={handleSearch}
         onClick={toggleDropdown}
         onMouseDown={handleMouseDown}
         endComponent={
-          <MdOutlineKeyboardArrowDown
-            size="1.5em"
-            className={`mr-2 transition-transform ${showOptions.value ? 'rotate-180' : ''} ${
-              disabled ? 'opacity-50' : ''
-            }`}
-            onClick={() => {
-              if (!disabled) {
-                toggleDropdown()
-              }
-            }}
-          />
+          endComponent ?? (
+            <MdOutlineKeyboardArrowDown
+              size="1.5em"
+              className={`mr-2 transition-transform ${showOptions.value ? 'rotate-180' : ''} ${
+                disabled ? 'opacity-50' : ''
+              }`}
+              onClick={() => {
+                if (!disabled) {
+                  toggleDropdown()
+                }
+              }}
+            />
+          )
         }
-        containerClassname={inputContainerClassName}
       />
       <div
         className={`absolute z-30 mt-2 w-full rounded border border-theme-primary bg-theme-surface-main ${
@@ -175,16 +177,20 @@ const Select = <T extends OptionValueType>({
         }`}
         ref={menuRef}
       >
-        <ul className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2', menuClassname)}>
-          {filteredOptions.value.map((option) => (
+        <ul
+          className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2', menuClassname)}
+          data-testid="select-input-list"
+        >
+          {filteredOptions.value.map((option, index) => (
             <li
-              key={option.label + option.value}
+              key={index}
               value={option.value}
               className={twMerge(
                 'cursor-pointer px-4 py-2 text-theme-secondary',
                 option.disabled ? 'cursor-not-allowed' : 'hover:bg-theme-highlight hover:text-theme-highlight',
                 menuItemClassName
               )}
+              data-testid="select-input-list-item"
               onClick={() => handleOptionItem(option)}
             >
               {option.label}

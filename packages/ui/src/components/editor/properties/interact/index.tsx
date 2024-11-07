@@ -27,9 +27,8 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdOutlinePanTool } from 'react-icons/md'
 
-import { getOptionalComponent, UUIDComponent } from '@ir-engine/ecs'
+import { getOptionalComponent, useQuery, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import {
   commitProperties,
   commitProperty,
@@ -37,19 +36,22 @@ import {
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
-import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
-import { useState } from '@ir-engine/hyperflux'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import {
+  InteractableComponent,
+  XRUIActivationType
+} from '@ir-engine/engine/src/interaction/components/InteractableComponent'
+import { useHookstate } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { Checkbox } from '@ir-engine/ui'
 import Button from '../../../../primitives/tailwind/Button'
-import BooleanInput from '../../input/Boolean'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
-import NodeEditor from '../nodeEditor'
 
 type OptionsType = Array<{
   callbacks: Array<{
@@ -60,13 +62,12 @@ type OptionsType = Array<{
   value: string
 }>
 
-const callbackQuery = defineQuery([CallbackComponent])
-
 export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
-  const targets = useState<OptionsType>([
+  const targets = useHookstate<OptionsType>([
     { label: 'Self', value: getComponent(props.entity, UUIDComponent), callbacks: [] }
   ])
+  const callbackQuery = useQuery([CallbackComponent])
 
   const interactableComponent = useComponent(props.entity, InteractableComponent)
 
@@ -93,7 +94,7 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
         callbacks: []
       })
     }
-    for (const entity of callbackQuery()) {
+    for (const entity of callbackQuery) {
       if (entity === props.entity || !hasComponent(entity, EntityTreeComponent)) continue
       const callbacks = getComponent(entity, CallbackComponent)
       options.push({
@@ -105,7 +106,7 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       })
     }
     targets.set(options)
-  }, [])
+  }, [JSON.stringify(callbackQuery)])
 
   const updateLabel = (value: string) => {
     commitProperty(InteractableComponent, 'label')(value)
@@ -137,7 +138,7 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       {...props}
       name={t('editor:properties.interactable.name')}
       description={t('editor:properties.interactable.description')}
-      icon={<InteractableComponentNodeEditor.iconComponent />}
+      Icon={InteractableComponentNodeEditor.iconComponent}
     >
       <InputGroup name="Label" label={t('editor:properties.interactable.lbl-label')}>
         <StringInput
@@ -146,23 +147,45 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
           onRelease={(value) => updateLabel(value)}
         />
       </InputGroup>
-      <InputGroup name="ActivationDistance" label={t('editor:properties.interactable.lbl-activationDistance')}>
-        <NumericInput
-          value={interactableComponent.activationDistance.value}
-          onChange={updateProperty(InteractableComponent, 'activationDistance')}
-          onRelease={commitProperty(InteractableComponent, 'activationDistance')}
+
+      <InputGroup name="activationType" label="Activation Type">
+        <SelectInput
+          key={props.entity}
+          value={interactableComponent.uiActivationType.value}
+          options={[
+            { label: 'Hover', value: XRUIActivationType.hover },
+            { label: 'Proximity', value: XRUIActivationType.proximity }
+          ]}
+          onChange={commitProperty(InteractableComponent, `uiActivationType`)}
         />
       </InputGroup>
-      <InputGroup
-        name="ClickInteract"
-        label={t('editor:properties.interactable.lbl-clickInteract')}
-        info={t('editor:properties.interactable.info-clickInteract')}
-      >
-        <BooleanInput
-          value={interactableComponent.clickInteract.value}
-          onChange={commitProperty(InteractableComponent, 'clickInteract')}
-        />
-      </InputGroup>
+
+      {interactableComponent.uiActivationType.value == XRUIActivationType.proximity && (
+        <InputGroup
+          name="ActivationDistance"
+          label={t('editor:properties.interactable.lbl-UIactivationDistance')}
+          info={t('editor:properties.interactable.info-UIactivationDistance')}
+        >
+          <NumericInput
+            value={interactableComponent.activationDistance.value}
+            onChange={updateProperty(InteractableComponent, 'activationDistance')}
+            onRelease={commitProperty(InteractableComponent, 'activationDistance')}
+          />
+        </InputGroup>
+      )}
+
+      {interactableComponent.uiActivationType.value == XRUIActivationType.proximity && (
+        <InputGroup
+          name="ClickInteract"
+          label={t('editor:properties.interactable.lbl-clickInteract')}
+          info={t('editor:properties.interactable.info-clickInteract')}
+        >
+          <Checkbox
+            checked={interactableComponent.clickInteract.value}
+            onChange={commitProperty(InteractableComponent, 'clickInteract')}
+          />
+        </InputGroup>
+      )}
 
       <Button className="self-end" onClick={addCallback}>
         {t('editor:properties.interactable.lbl-addcallback')}

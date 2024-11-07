@@ -36,6 +36,7 @@ import {
   AuthenticationSettingType
 } from '@ir-engine/common/src/schemas/setting/authentication-setting.schema'
 
+import { scopePath, ScopeType } from '@ir-engine/common/src/schema.type.module'
 import { HookContext } from '../../../declarations'
 import config from '../../appconfig'
 import refreshApiPods from '../../hooks/refresh-api-pods'
@@ -57,11 +58,15 @@ import {
  */
 const mapSettingsAdmin = async (context: HookContext<AuthenticationSettingService>) => {
   const loggedInUser = context.params!.user!
-  if (
-    context.result &&
-    !context.params!.isInternal &&
-    (!loggedInUser.scopes || !loggedInUser.scopes.find((scope) => scope.type === 'admin:admin'))
-  ) {
+  const scopes = loggedInUser
+    ? await context.app.service(scopePath).find({
+        query: {
+          userId: loggedInUser.id,
+          type: 'admin:admin' as ScopeType
+        }
+      })
+    : undefined
+  if (context.result && !context.params!.isInternal && (!scopes || scopes.total === 0)) {
     const auth: AuthenticationSettingType[] = context.result['data'] ? context.result['data'] : context.result
     const data = auth.map((el) => {
       return {
@@ -132,20 +137,20 @@ export default {
 
   before: {
     all: [
-      () => schemaHooks.validateQuery(authenticationSettingQueryValidator),
+      schemaHooks.validateQuery(authenticationSettingQueryValidator),
       schemaHooks.resolveQuery(authenticationSettingQueryResolver)
     ],
     find: [],
     get: [iff(isProvider('external'), verifyScope('admin', 'admin'), verifyScope('settings', 'read'))],
     create: [
       iff(isProvider('external'), verifyScope('admin', 'admin'), verifyScope('settings', 'write')),
-      () => schemaHooks.validateData(authenticationSettingDataValidator),
+      schemaHooks.validateData(authenticationSettingDataValidator),
       schemaHooks.resolveData(authenticationSettingDataResolver)
     ],
     update: [iff(isProvider('external'), verifyScope('admin', 'admin'), verifyScope('settings', 'write'))],
     patch: [
       iff(isProvider('external'), verifyScope('admin', 'admin'), verifyScope('settings', 'write')),
-      () => schemaHooks.validateData(authenticationSettingPatchValidator),
+      schemaHooks.validateData(authenticationSettingPatchValidator),
       schemaHooks.resolveData(authenticationSettingPatchResolver),
       ensureOAuth
     ],

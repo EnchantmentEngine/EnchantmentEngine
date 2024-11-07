@@ -27,13 +27,14 @@ import React from 'react'
 
 import { clamp } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
 
-import { toPrecision } from '@ir-engine/common/src/utils/miscUtils'
 import { getStepSize } from '@ir-engine/editor/src/functions/utils'
+import { toPrecision } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { twMerge } from 'tailwind-merge'
 import Text from '../../../../primitives/tailwind/Text'
 
 function toPrecisionString(value: number, precision?: number) {
+  if (value === 0) return '0.00'
   if (precision && precision <= 1) {
     const numDigits = Math.abs(Math.log10(precision))
     const minimumFractionDigits = Math.min(numDigits, 2)
@@ -55,6 +56,7 @@ export interface NumericInputProp extends Omit<React.HTMLAttributes<HTMLInputEle
   className?: string
   inputClassName?: string
   unit?: string
+  disabled?: boolean
   prefix?: React.ReactNode
   displayPrecision?: number
   precision?: number
@@ -67,6 +69,7 @@ export interface NumericInputProp extends Omit<React.HTMLAttributes<HTMLInputEle
 
 const NumericInput = ({
   className,
+  disabled,
   inputClassName,
   unit,
   prefix,
@@ -96,15 +99,7 @@ const NumericInput = ({
       onChange(roundedValue)
     }
 
-    tempValue.set(
-      Number(
-        roundedValue.toLocaleString('fullwide', {
-          useGrouping: false,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: Math.abs(Math.log10(precision || 0)) + 1
-        })
-      )
-    )
+    tempValue.set(Number(toPrecisionString(roundedValue, precision)))
     focused.set(focus)
   }
 
@@ -138,15 +133,7 @@ const NumericInput = ({
   }
 
   const handleFocus = () => {
-    tempValue.set(
-      Number(
-        value.toLocaleString('fullwide', {
-          useGrouping: false,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: Math.abs(Math.log10(precision || 0)) + 1
-        })
-      )
-    )
+    tempValue.set(Number(toPrecisionString(value, displayPrecision)))
     focused.set(true)
   }
 
@@ -170,10 +157,11 @@ const NumericInput = ({
       {prefix}
       <input
         className={twMerge(
-          'w-full bg-inherit text-xs font-normal leading-normal text-[#8B8B8D] focus:outline-none',
+          'w-full bg-inherit text-xs font-normal leading-normal text-[#8B8B8D] focus:outline-none disabled:text-[#6B6F78]',
           inputClassName
         )}
-        value={focused.value ? tempValue.value : toPrecisionString(value, displayPrecision)}
+        disabled={disabled ?? false}
+        value={focused.value ? tempValue.value : toPrecisionString(value ?? 0, displayPrecision)}
         onKeyDown={handleKeyPress}
         onFocus={handleFocus}
         onChange={handleChange}
@@ -182,7 +170,7 @@ const NumericInput = ({
         {...rest}
       />
       {unit && (
-        <Text fontSize="xs" className="text-right text-[#8B8B8D]">
+        <Text fontSize="xs" className={twMerge('text-right ', disabled ? 'text-[#6B6F78]' : 'text-[#8B8B8D]')}>
           {unit}
         </Text>
       )}

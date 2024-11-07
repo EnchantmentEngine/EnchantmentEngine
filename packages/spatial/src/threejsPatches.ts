@@ -24,13 +24,27 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import * as THREE from 'three'
-import { Euler, Matrix4, Object3D, Quaternion, Scene, SkinnedMesh, Vector2, Vector3, Vector4 } from 'three'
+import {
+  Euler,
+  Matrix4,
+  Object3D,
+  PropertyBinding,
+  Quaternion,
+  Scene,
+  SkinnedMesh,
+  Vector2,
+  Vector3,
+  Vector4
+} from 'three'
 
-import { isClient } from '@ir-engine/common/src/utils/getEnvironment'
-import { Object3DUtils } from '@ir-engine/common/src/utils/Object3DUtils'
-import { Entity } from '@ir-engine/ecs'
-
+import { Entity, getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs'
 import { overrideOnBeforeCompile } from './common/functions/OnBeforeCompilePlugin'
+import { BoneComponent } from './renderer/components/BoneComponent'
+import { MeshComponent } from './renderer/components/MeshComponent'
+import { Object3DComponent } from './renderer/components/Object3DComponent'
+import { SkinnedMeshComponent } from './renderer/components/SkinnedMeshComponent'
+import { Object3DUtils } from './transform/Object3DUtils'
+import { EntityTreeComponent } from './transform/components/EntityTree'
 
 //@ts-ignore
 Vector3.prototype.toJSON = function () {
@@ -214,85 +228,91 @@ SkinnedMesh.prototype.applyBoneTransform = function (index, vector) {
   return vector.applyMatrix4(this.bindMatrixInverse)
 }
 
+PropertyBinding.findNode = function (root: SkinnedMesh, nodeName: string | number) {
+  if (
+    nodeName === undefined ||
+    nodeName === '' ||
+    nodeName === '.' ||
+    nodeName === -1 ||
+    nodeName === root.name ||
+    nodeName === root.uuid
+  ) {
+    return root
+  }
+
+  // search into skeleton bones.
+  if (root.skeleton) {
+    const bone = root.skeleton.getBoneByName(nodeName as string)
+
+    if (bone !== undefined) {
+      return bone
+    }
+  }
+
+  const entity = root.entity
+  if (entity) {
+    if (!hasComponent(entity, EntityTreeComponent)) return null
+
+    const children = getComponent(entity, EntityTreeComponent).children
+
+    // search into node subtree.
+    const searchEntitySubtree = function (children: Entity[]) {
+      for (let i = 0; i < children.length; i++) {
+        const entity = children[i]
+        const childNode =
+          getOptionalComponent(entity, BoneComponent) ??
+          getOptionalComponent(entity, MeshComponent) ??
+          getOptionalComponent(entity, SkinnedMeshComponent) ??
+          getOptionalComponent(entity, Object3DComponent)!
+
+        if (childNode && (childNode.name === nodeName || childNode.uuid === nodeName)) {
+          return childNode
+        }
+
+        const result = searchEntitySubtree(getComponent(entity, EntityTreeComponent).children)
+
+        if (result) return result
+      }
+
+      return null
+    }
+
+    const subTreeNode = searchEntitySubtree(children)
+
+    if (subTreeNode) {
+      return subTreeNode
+    }
+  }
+
+  // fallback to three hierarchy for non-ecs hierarchy (normalize vrm rigs)
+  const searchNodeSubtree = function (children) {
+    for (let i = 0; i < children.length; i++) {
+      const childNode = children[i]
+
+      if (childNode.name === nodeName || childNode.uuid === nodeName) {
+        return childNode
+      }
+
+      const result = searchNodeSubtree(childNode.children)
+
+      if (result) return result
+    }
+
+    return null
+  }
+
+  const subTreeNode = searchNodeSubtree(root.children)
+
+  if (subTreeNode) {
+    return subTreeNode
+  }
+
+  return null
+}
+
 overrideOnBeforeCompile()
 
 globalThis.THREE = { ...THREE } as any
 
-if (!isClient) {
-  const { Blob } = require('buffer')
-  const fetch = require('node-fetch')
-
-  globalThis.fetch = fetch
-  globalThis.Request = fetch.Request
-  globalThis.Response = fetch.Response
-  globalThis.Headers = fetch.Headers
-  globalThis.self = globalThis as Window & typeof globalThis
-
-  // this will be added in node 19
-  if (!globalThis.URL.createObjectURL) globalThis.URL.createObjectURL = (blob) => null!
-  if (!globalThis.Blob) globalThis.Blob = Blob
-
-  const _localStorage = {}
-  if (!globalThis.localStorage)
-    globalThis.localStorage = {
-      setItem: (key, val) => {
-        _localStorage[key] = val
-      },
-      getItem: (key) => {
-        return _localStorage[key] ?? null
-      }
-    } as Storage
-
-  // patches for headless-gl - currently unused
-
-  //@ts-ignore
-  THREE.TextureLoader.prototype.load = function (url, onLoad, onProgress, onError) {}
-
-  // patch navigator
-  if (!globalThis.navigator)
-    (globalThis as any).navigator = {
-      product: 'NativeScript', // patch axios so it doesnt complain,
-      userAgent: 'node'
-    }
-  /*
-  
-  // todo: move this out of module scope
-  function addEventListener(event, func, bind_) {}
-  
-  // patch window prop for three
-  if (!globalThis.window) (globalThis as any).window = {}
-  Object.assign((globalThis as any).window, {
-    innerWidth: 1920,
-    innerHeight: 1080,
-    addEventListener,
-    URL
-  })
-  
-  class Image {}
-  
-  // patch three ImageLoader
-  if (!globalThis.document) (globalThis as any).document = {}
-  Object.assign((globalThis as any).document, {
-    createElement: (type, ...args) => {
-      switch (type) {
-        case 'div': // patch for sinon
-        default:
-          return
-      }
-    },
-    URL,
-    createElementNS: (ns, type) => {
-      if (type === 'img') {
-        const img = new Image() as any
-        img.addEventListener = (type, handler) => {
-          img['on' + type] = handler.bind(img)
-        }
-        img.removeEventListener = (type) => {
-          img['on' + type] = null
-        }
-        return img
-      }
-    }
-  })
-  */
-}
+// required to patch realism-effects
+if (!globalThis.URL.createObjectURL) globalThis.URL.createObjectURL = (blob) => null!

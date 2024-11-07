@@ -24,9 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { BackSide, Euler, Mesh, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three'
+import { BackSide, Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
 
-import { spawnPointPath } from '@ir-engine/common/src/schema.type.module'
 import { EntityUUID } from '@ir-engine/ecs'
 import {
   ComponentType,
@@ -38,11 +37,10 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { createEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { defineState, getMutableState, getState, matches, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { Vector3_Right } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { ArrowHelperComponent } from '@ir-engine/spatial/src/common/debug/ArrowHelperComponent'
-import { useGet } from '@ir-engine/spatial/src/common/functions/FeathersHooks'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -50,13 +48,12 @@ import { TriggerComponent } from '@ir-engine/spatial/src/physics/components/Trig
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { enableObjectLayer } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { useDisposable, useResource } from '@ir-engine/spatial/src/resources/resourceHooks'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 
 export const PortalPreviewTypeSimple = 'Simple' as const
@@ -83,62 +80,19 @@ export const PortalComponent = defineComponent({
   name: 'PortalComponent',
   jsonID: 'EE_portal',
 
-  onInit: (entity) => {
-    return {
-      linkedPortalId: '' as EntityUUID,
-      location: '',
-      effectType: 'None',
-      previewType: PortalPreviewTypeSimple as string,
-      previewImageURL: '',
-      redirect: false,
-      spawnPosition: new Vector3(),
-      spawnRotation: new Quaternion(),
-      remoteSpawnPosition: new Vector3(),
-      remoteSpawnRotation: new Quaternion(),
-      mesh: null as Mesh<SphereGeometry, MeshBasicMaterial> | null
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-    if (matches.string.test(json.linkedPortalId)) component.linkedPortalId.set(json.linkedPortalId)
-    if (matches.string.test(json.location)) component.location.set(json.location)
-    if (matches.string.test(json.effectType)) component.effectType.set(json.effectType)
-    if (matches.string.test(json.previewType)) component.previewType.set(json.previewType)
-    if (matches.string.test(json.previewImageURL)) component.previewImageURL.set(json.previewImageURL)
-    if (matches.boolean.test(json.redirect)) component.redirect.set(json.redirect)
-    if (matches.object.test(json.spawnPosition)) component.spawnPosition.value.copy(json.spawnPosition)
-    if (matches.object.test(json.spawnRotation)) {
-      if (json.spawnRotation.w) component.spawnRotation.value.copy(json.spawnRotation)
-      // backwards compat
-      else
-        component.spawnRotation.value.copy(
-          new Quaternion().setFromEuler(new Euler().setFromVector3(json.spawnRotation as any))
-        )
-    }
-  },
-
-  toJSON: (entity, component) => {
-    return {
-      location: component.location.value,
-      linkedPortalId: component.linkedPortalId.value,
-      redirect: component.redirect.value,
-      effectType: component.effectType.value,
-      previewType: component.previewType.value,
-      previewImageURL: component.previewImageURL.value,
-      spawnPosition: {
-        x: component.spawnPosition.value.x,
-        y: component.spawnPosition.value.y,
-        z: component.spawnPosition.value.z
-      } as Vector3,
-      spawnRotation: {
-        x: component.spawnRotation.value.x,
-        y: component.spawnRotation.value.y,
-        z: component.spawnRotation.value.z,
-        w: component.spawnRotation.value.w
-      } as Quaternion
-    }
-  },
+  schema: S.Object({
+    linkedPortalId: S.EntityUUID(),
+    location: S.String(''),
+    effectType: S.String('None'),
+    previewType: S.String(PortalPreviewTypeSimple),
+    previewImageURL: S.String(''),
+    redirect: S.Bool(false),
+    spawnPosition: S.Vec3(),
+    spawnRotation: S.Quaternion(),
+    remoteSpawnPosition: S.Vec3(),
+    remoteSpawnRotation: S.Quaternion(),
+    mesh: S.Nullable(S.Type<Mesh<SphereGeometry, MeshBasicMaterial>>())
+  }),
 
   reactor: function () {
     const entity = useEntityContext()
@@ -187,36 +141,41 @@ export const PortalComponent = defineComponent({
       }
     }, [debugEnabled])
 
+    const [portalGeometry] = useResource<SphereGeometry>(new SphereGeometry(1, 32, 32), entity)
+    const [portalMesh] = useDisposable(
+      Mesh<SphereGeometry, MeshBasicMaterial>,
+      entity,
+      portalGeometry.value as SphereGeometry,
+      new MeshBasicMaterial({ side: BackSide })
+    )
+
     useEffect(() => {
       if (portalComponent.previewType.value !== PortalPreviewTypeSpherical) return
-
-      const portalMesh = new Mesh(new SphereGeometry(1, 32, 32), new MeshBasicMaterial({ side: BackSide }))
-      enableObjectLayer(portalMesh, ObjectLayers.Camera, true)
       portalComponent.mesh.set(portalMesh)
       addObjectToGroup(entity, portalMesh)
-
       return () => {
         removeObjectFromGroup(entity, portalMesh)
       }
-    }, [portalComponent.previewType])
+    }, [portalComponent.previewType.value])
 
-    const portalDetails = useGet(spawnPointPath, portalComponent.linkedPortalId.value)
+    /** @todo - reimplement once spawn points are refactored */
+    // const portalDetails = useGet(spawnPointPath, portalComponent.linkedPortalId.value)
 
-    const [texture] = useTexture(portalDetails.data?.previewImageURL || '', entity)
+    // const [texture] = useTexture(portalDetails.data?.previewImageURL || '', entity)
 
-    useEffect(() => {
-      if (!texture || !portalComponent.mesh.value) return
+    // useEffect(() => {
+    //   if (!texture || !portalComponent.mesh.value) return
 
-      const material = portalComponent.mesh.value.material as MeshBasicMaterial
-      material.map = texture
-      material.needsUpdate = true
-    }, [texture, portalComponent.mesh])
+    //   const material = portalComponent.mesh.value.material as MeshBasicMaterial
+    //   material.map = texture
+    //   material.needsUpdate = true
+    // }, [texture, portalComponent.mesh])
 
-    useEffect(() => {
-      if (!portalDetails.data) return
-      portalComponent.remoteSpawnPosition.value.copy(portalDetails.data.position as Vector3)
-      portalComponent.remoteSpawnRotation.value.copy(portalDetails.data.rotation as Quaternion)
-    }, [portalDetails])
+    // useEffect(() => {
+    //   if (!portalDetails.data) return
+    //   portalComponent.remoteSpawnPosition.value.copy(portalDetails.data.position as Vector3)
+    //   portalComponent.remoteSpawnRotation.value.copy(portalDetails.data.rotation as Quaternion)
+    // }, [portalDetails])
 
     return null
   },

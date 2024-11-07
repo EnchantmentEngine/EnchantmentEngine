@@ -23,12 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '../../patchEngineNode'
+
 import assert from 'assert'
 import nock from 'nock'
-import { v4 as uuidv4 } from 'uuid'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 
 import { projectBranchesPath } from '@ir-engine/common/src/schemas/projects/project-branches.schema'
-import { ScopeType } from '@ir-engine/common/src/schemas/scope/scope.schema'
+import { ScopeType, scopePath } from '@ir-engine/common/src/schemas/scope/scope.schema'
 import { avatarPath } from '@ir-engine/common/src/schemas/user/avatar.schema'
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { UserApiKeyType, userApiKeyPath } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
@@ -37,7 +39,7 @@ import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { identityProviderDataResolver } from '../../user/identity-provider/identity-provider.resolvers'
 
 import { Application, HookContext } from '../../../declarations'
-import { createFeathersKoaApp } from '../../createApp'
+import { createFeathersKoaApp, tearDownAPI } from '../../createApp'
 
 describe('project-branches.test', () => {
   let app: Application
@@ -50,24 +52,21 @@ describe('project-branches.test', () => {
     }
   })
 
-  before(async () => {
-    app = createFeathersKoaApp()
+  beforeAll(async () => {
+    app = await createFeathersKoaApp()
     await app.setup()
-  })
 
-  before(async () => {
-    const name = ('test-project-branches-user-name-' + uuidv4()) as UserName
+    const name = ('test-project-branches-user-name-' + Math.random().toString().slice(2, 12)) as UserName
 
     const avatar = await app.service(avatarPath).create({
-      name: 'test-project-branches-avatar-name-' + uuidv4()
+      name: 'test-project-branches-avatar-name-' + Math.random().toString().slice(2, 12)
     })
 
     const testUser = await app.service(userPath).create({
       name,
-      avatarId: avatar.id,
-      isGuest: false,
-      scopes: [{ type: 'projects:read' as ScopeType }]
+      isGuest: false
     })
+    await app.service(scopePath).create({ userId: testUser.id, type: 'projects:read' as ScopeType })
 
     testUserApiKey = await app.service(userApiKeyPath).create({ userId: testUser.id })
 
@@ -84,7 +83,10 @@ describe('project-branches.test', () => {
     )
   })
 
-  after(() => destroyEngine())
+  afterAll(async () => {
+    await tearDownAPI()
+    destroyEngine()
+  })
 
   it('should get the project branches', async () => {
     nock('https://api.github.com')

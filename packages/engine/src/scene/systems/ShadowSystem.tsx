@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import {
   Box3,
+  Color,
   DirectionalLight,
   DoubleSide,
   Material,
@@ -38,8 +39,6 @@ import {
   Vector3
 } from 'three'
 
-import config from '@ir-engine/common/src/config'
-import { isClient } from '@ir-engine/common/src/utils/getEnvironment'
 import { AnimationSystemGroup, Engine, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
@@ -55,7 +54,7 @@ import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { defineState, getMutableState, getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, isClient, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {
   createPriorityQueue,
@@ -74,22 +73,20 @@ import { getShadowsEnabled, useShadowsEnabled } from '@ir-engine/spatial/src/ren
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
-import {
-  EntityTreeComponent,
-  iterateEntityNode,
-  useChildWithComponent
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
-import { TransformSystem } from '@ir-engine/spatial'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
+import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { createDisposable } from '@ir-engine/spatial/src/resources/resourceHooks'
+import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
+import { DomainConfigState } from '../../assets/state/DomainConfigState'
+import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
 import { DropShadowComponent } from '../components/DropShadowComponent'
-import { useHasModelOrIndependentMesh } from '../components/ModelComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
 import { ShadowComponent } from '../components/ShadowComponent'
 import { SceneObjectSystem } from './SceneObjectSystem'
@@ -145,7 +142,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
       if (!hasComponent(rendererEntity, RendererComponent)) return
       rendererComponent.csm.set(null)
     }
-  }, [directionalLight, directionalLightComponent?.castShadow])
+  }, [directionalLight, directionalLightComponent?.castShadow.value])
 
   /** Must run after scene object system to ensure source light is not lit */
   useExecute(
@@ -166,7 +163,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
     csm.shadowMapSize = shadowMapResolution.value
 
     for (const light of csm.lights) {
-      light.color.copy(directionalLightComponent.color.value)
+      light.color.set(new Color(directionalLightComponent.color.value))
       light.intensity = directionalLightComponent.intensity.value
       light.shadow.mapSize.setScalar(shadowMapResolution.value)
       light.shadow.radius = directionalLightComponent.shadowRadius.value
@@ -231,24 +228,19 @@ const EntityChildCSMReactor = (props: { rendererEntity: Entity }) => {
   return null
 }
 
-function _CSMReactor() {
-  const rendererEntity = useEntityContext()
-  const renderer = useComponent(rendererEntity, RendererComponent).value
-  /**
-   * @todo Currently this will just return the first entity with a RenderSettingsComponent found,
-   *   but we need some more advanced rule for determining which entity to use
-   *   considering multi-scene support and spatial volumes.
-   *   note: use index 0 (origin entity), index 1 is local floor entity,
-   */
-  const renderSettingsEntity = useChildWithComponent(renderer.scenes[0], RenderSettingsComponent)
-  const isEditor = useHookstate(getMutableState(EngineState).isEditor).value
+function RenderSettingsQueryReactor() {
+  const entity = useEntityContext()
+  const rendererEntity = useRendererEntity(entity)
   const renderMode = useHookstate(getMutableState(RendererState).renderMode).value
+  /**
+   * @todo Currently we only have support for CSM for the core renderer, since we need to add proper multi-scene support via spatial volumes.
+   */
+  const viewerEntity = useHookstate(getMutableState(EngineState).viewerEntity).value
 
-  if (!rendererEntity) return null
-  if (!renderSettingsEntity) return null
-  if ((isEditor && renderMode === RenderModes.UNLIT) || renderMode === RenderModes.LIT) return null
+  if (!rendererEntity || rendererEntity !== viewerEntity) return null
+  if (renderMode === RenderModes.UNLIT || renderMode === RenderModes.LIT) return null
 
-  return <CSMReactor rendererEntity={rendererEntity} renderSettingsEntity={renderSettingsEntity} />
+  return <CSMReactor rendererEntity={rendererEntity} renderSettingsEntity={entity} />
 }
 
 function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entity }) {
@@ -288,7 +280,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
     activeLightEntity.set(UndefinedEntity)
   }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight])
 
-  if (!renderSettingsComponent.csm.value || !activeLightEntity.value || !directionalLight) return null
+  if (!renderSettingsComponent.csm.value || !activeLightEntity.value || !directionalLight?.value) return null
 
   return (
     <EntityCSMReactor
@@ -448,7 +440,7 @@ const reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(
-    `${config.client.fileServer}/projects/ir-engine/default-project/assets/drop-shadow.png`
+    `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/drop-shadow.png`
   )
 
   useEffect(() => {
@@ -460,7 +452,7 @@ const reactor = () => {
   return (
     <>
       {useShadows ? (
-        <QueryReactor Components={[RendererComponent]} ChildEntityReactor={_CSMReactor} />
+        <QueryReactor Components={[RenderSettingsComponent]} ChildEntityReactor={RenderSettingsQueryReactor} />
       ) : shadowTexture ? (
         <QueryReactor Components={[VisibleComponent, ShadowComponent]} ChildEntityReactor={DropShadowReactor} />
       ) : null}

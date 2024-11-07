@@ -29,11 +29,10 @@ import { useTranslation } from 'react-i18next'
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { PlayMode } from '@ir-engine/engine/src/scene/constants/PlayMode'
 
-import { usePrevious } from '@ir-engine/common/src/utils/usePrevious'
 import { Entity } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperties, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { PlaylistComponent } from '@ir-engine/engine/src/scene/components/PlaylistComponent'
-import { NO_PROXY, State, none } from '@ir-engine/hyperflux'
+import { NO_PROXY, State, none, usePrevious } from '@ir-engine/hyperflux'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { IoMdAdd, IoMdPause, IoMdPlay, IoMdSkipBackward, IoMdSkipForward } from 'react-icons/io'
@@ -42,12 +41,12 @@ import { RiPlayList2Fill } from 'react-icons/ri'
 import 'react-scrubber/lib/scrubber.css'
 import { v4 as uuidv4 } from 'uuid'
 
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { Checkbox } from '@ir-engine/ui'
 import Button from '../../../../primitives/tailwind/Button'
-import BooleanInput from '../../input/Boolean'
 import InputGroup from '../../input/Group'
 import SelectInput from '../../input/Select'
 import { ControlledStringInput } from '../../input/String'
-import NodeEditor from '../nodeEditor'
 
 const PlayModeOptions = [
   {
@@ -95,7 +94,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
     commitProperties(
       PlaylistComponent,
       {
-        tracks: component.tracks.value
+        tracks: component.tracks.value as Track[]
       },
       [props.entity]
     )
@@ -127,7 +126,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
       commitProperties(
         PlaylistComponent,
         {
-          tracks: component.tracks.value
+          tracks: component.tracks.value as Track[]
         },
         [props.entity]
       )
@@ -141,11 +140,11 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
   }
 
   return (
-    <NodeEditor {...props} name="Playlist" icon={<PlaylistNodeEditor.iconComponent />}>
+    <NodeEditor {...props} name="Playlist" Icon={PlaylistNodeEditor.iconComponent}>
       <DndProvider backend={HTML5Backend}>
         <div ref={drop} className="w-full pl-4 pr-2">
           <InputGroup name="Autoplay" label="Autoplay">
-            <BooleanInput onChange={commitProperty(PlaylistComponent, 'autoplay')} value={component.autoplay.value} />
+            <Checkbox onChange={commitProperty(PlaylistComponent, 'autoplay')} checked={component.autoplay.value} />
           </InputGroup>
           {component.tracks.length > 0 ? (
             <>
@@ -165,7 +164,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
                         commitProperties(
                           PlaylistComponent,
                           {
-                            tracks: component.tracks.value
+                            tracks: component.tracks.value as Track[]
                           },
                           [props.entity]
                         )
@@ -281,7 +280,6 @@ const Track = ({
             onChange()
           }
         }}
-        className={`${active ? 'border-2 border-solid border-black' : ''}`}
       />
       <div ref={dragSourceRef} className="cursor-move text-2xl text-white">
         <MdDragIndicator />

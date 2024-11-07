@@ -61,13 +61,13 @@ import {
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
 import { UUIDComponent } from '@ir-engine/ecs'
-import { defineState, none, useHookstate } from '@ir-engine/hyperflux'
-import { NO_PROXY, getMutableState, getState } from '@ir-engine/hyperflux/functions/StateFunctions'
+import { NO_PROXY, defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
+import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '@ir-engine/network'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { getAncestorWithComponent, useAncestorWithComponent } from '../../transform/components/EntityTree'
+import { getAncestorWithComponents, useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { computeTransformMatrix } from '../../transform/systems/TransformSystem'
 import { ColliderComponent } from '../components/ColliderComponent'
@@ -97,6 +97,16 @@ export type PhysicsWorld = World & {
   collisionEventQueue: EventQueue
   drainCollisions: ReturnType<typeof Physics.drainCollisionEventQueue>
   drainContacts: ReturnType<typeof Physics.drainContactEventQueue>
+}
+
+declare module '@dimforge/rapier3d-compat' {
+  export interface Collider {
+    entity: Entity
+  }
+
+  export interface RigidBody {
+    entity: Entity
+  }
 }
 
 async function load() {
@@ -143,7 +153,7 @@ function destroyWorld(id: EntityUUID) {
 }
 
 function getWorld(entity: Entity) {
-  const sceneEntity = getAncestorWithComponent(entity, SceneComponent)
+  const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
   if (!sceneEntity) return
   const sceneUUID = getOptionalComponent(sceneEntity, UUIDComponent)
   if (!sceneUUID) return
@@ -151,7 +161,7 @@ function getWorld(entity: Entity) {
 }
 
 function useWorld(entity: Entity) {
-  const sceneEntity = useAncestorWithComponent(entity, SceneComponent)
+  const sceneEntity = useAncestorWithComponents(entity, [SceneComponent])
   const sceneUUID = useOptionalComponent(sceneEntity, UUIDComponent)?.value
   const worlds = useHookstate(getMutableState(RapierWorldState))
   return sceneUUID ? (worlds[sceneUUID].get(NO_PROXY) as PhysicsWorld) : undefined
@@ -255,9 +265,8 @@ function createRigidBody(world: PhysicsWorld, entity: Entity) {
   rigidBody.linearVelocity.copy(Vector3_Zero)
   rigidBody.angularVelocity.copy(Vector3_Zero)
 
-  // set entity in userdata for fast look up when required.
-  const rigidBodyUserdata = { entity: entity }
-  body.userData = rigidBodyUserdata
+  // set entity in rigidbody for fast look up when required.
+  body.entity = entity
 
   world.Rigidbodies.set(entity, body)
 }
@@ -265,6 +274,12 @@ function createRigidBody(world: PhysicsWorld, entity: Entity) {
 function isSleeping(world: PhysicsWorld, entity: Entity) {
   const rigidBody = world.Rigidbodies.get(entity)
   return !rigidBody || rigidBody.isSleeping()
+}
+
+function wakeUp(world: PhysicsWorld, entity: Entity) {
+  const rigidBody = world.Rigidbodies.get(entity)
+  if (!rigidBody) return
+  rigidBody.wakeUp()
 }
 
 const setRigidBodyType = (world: PhysicsWorld, entity: Entity, type: Body) => {
@@ -288,6 +303,10 @@ const setRigidBodyType = (world: PhysicsWorld, entity: Entity, type: Body) => {
   }
 
   rigidbody.setBodyType(typeEnum, false)
+
+  /** @todo turns out this is a react/rapier bug when it comes to changing the rigidbody type. This is the best workaround I could find*/
+  rigidbody.setEnabled(false)
+  rigidbody.setEnabled(true)
 }
 
 function setRigidbodyPose(
@@ -364,6 +383,7 @@ function updateRigidbodyPose(entities: Entity[]) {
     if (!world) continue
     const body = world.Rigidbodies.get(entity)
     if (!body) continue
+    if (hasComponent(entity, NetworkObjectComponent) && !hasComponent(entity, NetworkObjectAuthorityTag)) continue
     const translation = body.translation() as Vector3
     const rotation = body.rotation() as Quaternion
     const linvel = body.linvel() as Vector3
@@ -523,7 +543,10 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
   colliderDesc.setTranslation(positionRelativeToRoot.x, positionRelativeToRoot.y, positionRelativeToRoot.z)
   colliderDesc.setRotation(quaternionRelativeToRoot)
 
-  colliderDesc.setSensor(hasComponent(entity, TriggerComponent))
+  if (hasComponent(entity, TriggerComponent)) {
+    colliderDesc.setSensor(true)
+    colliderDesc.setCollisionGroups(getInteractionGroups(CollisionGroups.Trigger, collisionMask))
+  }
 
   // TODO expose these
   colliderDesc.setActiveCollisionTypes(ActiveCollisionTypes.ALL)
@@ -542,6 +565,7 @@ function attachCollider(
   const rigidBody = world.Rigidbodies.get(rigidBodyEntity) // guaranteed will exist
   if (!rigidBody) return console.error('Rigidbody not found for entity ' + rigidBodyEntity)
   const collider = world.createCollider(colliderDesc, rigidBody)
+  collider.entity = colliderEntity
   world.Colliders.set(colliderEntity, collider)
   return collider
 }
@@ -757,7 +781,7 @@ function castRay(world: PhysicsWorld, raycastQuery: RaycastArgs, filterPredicate
         position: ray.pointAt(hitWithNormal.toi),
         normal: hitWithNormal.normal,
         body,
-        entity: (body.userData as any)['entity']
+        entity: body.entity
       })
   }
 
@@ -830,7 +854,7 @@ function castShape(world: PhysicsWorld, shapecastQuery: ShapecastArgs) {
       normal: hitWithNormal.normal1,
       collider: hitWithNormal.collider,
       body: hitWithNormal.collider.parent() as RigidBody,
-      entity: (hitWithNormal.collider.parent()?.userData as any)['entity'] ?? UndefinedEntity
+      entity: hitWithNormal.collider.parent()?.entity ?? UndefinedEntity
     })
   }
 }
@@ -844,8 +868,8 @@ const drainCollisionEventQueue =
     const isTriggerEvent = collider1.isSensor() || collider2.isSensor()
     const rigidBody1 = collider1.parent()
     const rigidBody2 = collider2.parent()
-    const entity1 = (rigidBody1?.userData as any)['entity']
-    const entity2 = (rigidBody2?.userData as any)['entity']
+    const entity1 = rigidBody1!.entity
+    const entity2 = rigidBody2!.entity
 
     setComponent(entity1, CollisionComponent)
     setComponent(entity2, CollisionComponent)
@@ -884,10 +908,10 @@ const drainContactEventQueue = (physicsWorld: PhysicsWorld) => (event: TempConta
   const collider1 = physicsWorld.getCollider(event.collider1())
   const collider2 = physicsWorld.getCollider(event.collider2())
 
-  const rigidBody1 = collider1.parent()
-  const rigidBody2 = collider2.parent()
-  const entity1 = (rigidBody1?.userData as any)['entity']
-  const entity2 = (rigidBody2?.userData as any)['entity']
+  const rigidBody1 = collider1.parent()!
+  const rigidBody2 = collider2.parent()!
+  const entity1 = rigidBody1?.entity
+  const entity2 = rigidBody2?.entity
 
   const collisionComponent1 = getOptionalComponent(entity1, CollisionComponent)
   const collisionComponent2 = getOptionalComponent(entity2, CollisionComponent)
@@ -921,6 +945,7 @@ export const Physics = {
   createRigidBody,
   removeRigidbody,
   isSleeping,
+  wakeUp,
   setRigidBodyType,
   setRigidbodyPose,
   enabledCcd,

@@ -39,7 +39,7 @@ import {
 import { defineState, getMutableState, getState, Identifiable, State, useState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 
-import { SocketWebRTCClientNetwork } from '../../transports/SocketWebRTCClientFunctions'
+import { SocketWebRTCClientNetwork } from '../../transports/mediasoup/MediasoupClientFunctions'
 import { AuthState } from '../../user/services/AuthService'
 
 export type InstanceState = {
@@ -92,6 +92,14 @@ export const LocationInstanceConnectionService = {
       })) as Paginated<InstanceType>
       if (instance.total === 0) {
         instanceId = null!
+
+        const parsed = new URL(window.location.href)
+        const query = parsed.searchParams
+        query.delete('instanceId')
+        parsed.search = query.toString()
+        if (typeof history.pushState !== 'undefined') {
+          window.history.replaceState({}, '', parsed.toString())
+        }
       }
     }
     const provisionResult = await API.instance.service(instanceProvisionPath).find({

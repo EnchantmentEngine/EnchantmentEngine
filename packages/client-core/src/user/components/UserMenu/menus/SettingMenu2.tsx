@@ -26,32 +26,42 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { AuthService, AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
+import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
+import { API, useFind } from '@ir-engine/common'
 import { defaultThemeModes, defaultThemeSettings } from '@ir-engine/common/src/constants/DefaultThemeSettings'
-import { UserSettingPatch, clientSettingPath } from '@ir-engine/common/src/schema.type.module'
+import multiLogger from '@ir-engine/common/src/logger'
+import {
+  ScopeType,
+  UserSettingPatch,
+  clientSettingPath,
+  scopePath,
+  userSettingPath
+} from '@ir-engine/common/src/schema.type.module'
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
+import { Engine } from '@ir-engine/ecs'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import {
   AvatarAxesControlScheme,
   AvatarInputSettingsState
 } from '@ir-engine/engine/src/avatar/state/AvatarInputSettingsState'
 import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { useFind } from '@ir-engine/spatial/src/common/functions/FeathersHooks'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
-import BooleanInput from '@ir-engine/ui/src/components/editor/input/Boolean'
+import { Checkbox } from '@ir-engine/ui'
+import { Slider } from '@ir-engine/ui/editor'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
 import { SelectOptionsType } from '@ir-engine/ui/src/primitives/tailwind/Select'
-import Slider from '@ir-engine/ui/src/primitives/tailwind/Slider'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import Menu from '../../../../common/components/Menu'
+import { clientContextParams } from '../../../../util/ClientContextState'
 import { UserMenus } from '../../../UserUISystem'
-import { userHasAccess } from '../../../userHasAccess'
 import { PopupMenuServices } from '../PopupMenuService'
 import styles from '../index.module.scss'
+
+const logger = multiLogger.child({ component: 'system:settings-menu', modifier: clientContextParams })
 
 export const ShadowMapResolutionOptions: SelectOptionsType[] = [
   {
@@ -100,12 +110,26 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
   const handOptions = ['left', 'right']
   const selectedTab = useHookstate('general')
 
-  const clientSettingQuery = useFind(clientSettingPath)
-  const clientSettings = clientSettingQuery.data[0]
-  const userSettings = selfUser.userSetting.value
+  const clientSettings = useFind(clientSettingPath).data[0]
+  const userSettings = useFind(userSettingPath).data[0]
 
-  const hasAdminAccess = userHasAccess('admin:admin')
-  const hasEditorAccess = userHasAccess('editor:write')
+  const adminScopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.store.userID,
+      type: 'admin:admin' as ScopeType
+    }
+  })
+
+  const hasAdminAccess = adminScopeQuery.data.length > 0
+
+  const editorScopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.store.userID,
+      type: 'editor:write' as ScopeType
+    }
+  })
+
+  const hasEditorAccess = editorScopeQuery.data.length > 0
   const themeSettings = { ...defaultThemeSettings, ...clientSettings?.themeSettings }
   const themeModes = {
     client: userSettings?.themeModes?.client ?? defaultThemeModes.client,
@@ -117,7 +141,15 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
     if (!userSettings) return
 
     const settings: UserSettingPatch = { themeModes: { ...themeModes, [mode]: event } }
-    AuthService.updateUserSettings(userSettings.id, settings)
+    API.instance
+      .service(userSettingPath)
+      .patch(userSettings.id, settings)
+      .then(() =>
+        logger.info({
+          event_name: `change_${name}_theme`,
+          event_value: event
+        })
+      )
   }
 
   useLayoutEffect(() => {
@@ -170,21 +202,28 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
 
   const handleQualityLevelChange = (value) => {
     rendererState.qualityLevel.set(value)
+    logger.info({ event_name: `set_quality_preset`, event_value: value })
     rendererState.automatic.set(false)
+    logger.info({ event_name: `automatic_qp`, event_value: false })
   }
 
   const handlePostProcessingCheckbox = () => {
     rendererState.usePostProcessing.set(!rendererState.usePostProcessing.value)
+    logger.info({ event_name: `post_processing`, event_value: rendererState.usePostProcessing.value })
     rendererState.automatic.set(false)
+    logger.info({ event_name: `automatic_qp`, event_value: false })
   }
 
   const handleShadowCheckbox = () => {
     rendererState.useShadows.set(!rendererState.useShadows.value)
+    logger.info({ event_name: `shadows`, event_value: rendererState.useShadows.value })
     rendererState.automatic.set(false)
+    logger.info({ event_name: `automatic_qp`, event_value: false })
   }
 
   const handleAutomaticCheckbox = () => {
     rendererState.automatic.set(!rendererState.automatic.value)
+    logger.info({ event_name: `automatic_qp`, event_value: rendererState.automatic.value })
   }
 
   return (
@@ -218,7 +257,6 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
                     label={`${t(`user:usermenu.setting.${mode}`)} ${t('user:usermenu.setting.theme')}`}
                     value={mode === 'client' ? 'dark' : themeModes[mode]}
                     className="w-full"
-                    disabled={mode === 'client'}
                     inputClassName="rounded-lg overflow-hidden"
                     onChange={(val) => handleChangeUserThemeMode(mode, val)}
                     options={colorModesMenu}
@@ -338,15 +376,19 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
             </div>
           )}
 
-          <InputGroup name="Type" label={t('user:usermenu.setting.use-positional-media')} className="justify-start">
-            <BooleanInput
-              value={audioState.positionalMedia.value}
+          <div className="justify-start">
+            <Checkbox
+              variantTextPlacement="left"
+              label={t('user:usermenu.setting.use-positional-media')}
+              checked={audioState.positionalMedia.value}
               onChange={(value: boolean) => {
                 getMutableState(AudioState).positionalMedia.set(value)
+                logger.info({ event_name: `spatial_user_av`, event_value: value })
               }}
             />
-          </InputGroup>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-volume')} className="justify-start">
+          </div>
+
+          <div className="justify-start">
             <Slider
               max={1}
               min={0}
@@ -354,11 +396,13 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
               value={audioState.masterVolume.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).masterVolume.set(value)
+                logger.info({ event_name: `set_total_volume`, event_value: value })
               }}
               onRelease={() => {}}
+              label={t('user:usermenu.setting.lbl-volume')}
             />
-          </InputGroup>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-microphone')} className="justify-start">
+          </div>
+          <div className="justify-start">
             <Slider
               max={1}
               min={0}
@@ -366,23 +410,27 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
               value={audioState.microphoneGain.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).microphoneGain.set(value)
+                logger.info({ event_name: `set_microphone_volume`, event_value: value })
               }}
               onRelease={() => {}}
+              label={t('user:usermenu.setting.lbl-microphone')}
             />
-          </InputGroup>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-media-instance')} className="justify-start">
+          </div>
+          <div className="justify-start">
             <Slider
+              label={t('user:usermenu.setting.lbl-media-instance')}
               max={1}
               min={0}
               step={0.01}
               value={audioState.mediaStreamVolume.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).mediaStreamVolume.set(value)
+                logger.info({ event_name: `set_user_volume`, event_value: value })
               }}
               onRelease={() => {}}
             />
-          </InputGroup>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-notification')} className="justify-start">
+          </div>
+          <div className="justify-start">
             <Slider
               max={1}
               min={0}
@@ -390,45 +438,47 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
               value={audioState.notificationVolume.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).notificationVolume.set(value)
+                logger.info({ event_name: `set_notification_volume`, event_value: value })
               }}
               onRelease={() => {}}
+              label={t('user:usermenu.setting.lbl-notification')}
             />
-          </InputGroup>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-sound-effect')} className="justify-start">
+          </div>
+          <div className="justify-start">
             <Slider
+              label={t('user:usermenu.setting.lbl-sound-effect')}
               max={1}
               min={0}
               step={0.01}
               value={audioState.soundEffectsVolume.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).soundEffectsVolume.set(value)
+                logger.info({ event_name: `set_scene_volume`, event_value: value })
               }}
               onRelease={() => {}}
             />
-          </InputGroup>
-          <InputGroup
-            name="Type"
-            label={t('user:usermenu.setting.lbl-background-music-volume')}
-            className="justify-start"
-          >
+          </div>
+          <div className="justify-start">
             <Slider
+              label={t('user:usermenu.setting.lbl-background-music-volume')}
               max={1}
               min={0}
               step={0.01}
               value={audioState.backgroundMusicVolume.value}
               onChange={(value: number) => {
                 getMutableState(AudioState).backgroundMusicVolume.set(value)
+                logger.info({ event_name: `set_music_volume`, event_value: value })
               }}
               onRelease={() => {}}
             />
-          </InputGroup>
+          </div>
         </>
       )}
 
       {/* Graphics Settings */}
       {selectedTab.value === 'graphics' && (
         <>
-          <InputGroup name="Type" label={t('user:usermenu.setting.lbl-quality')} className="justify-start">
+          <div className="justify-start">
             <Slider
               max={5}
               min={0}
@@ -436,27 +486,28 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
               value={rendererState.qualityLevel.value}
               onChange={handleQualityLevelChange}
               onRelease={() => {}}
+              label={t('user:usermenu.setting.lbl-quality')}
             />
-          </InputGroup>
+          </div>
 
           <div className="grid py-4">
-            <div className="grid">
-              <InputGroup name="Type" label={t('user:usermenu.setting.lbl-pp')} className="justify-start">
-                <BooleanInput onChange={handlePostProcessingCheckbox} value={rendererState.usePostProcessing.value} />
-              </InputGroup>
-            </div>
+            <Checkbox
+              onChange={handlePostProcessingCheckbox}
+              checked={rendererState.usePostProcessing.value}
+              label={t('user:usermenu.setting.lbl-pp')}
+            />
 
-            <div className="grid">
-              <InputGroup name="Type" label={t('user:usermenu.setting.lbl-shadow')} className="justify-start">
-                <BooleanInput onChange={handleShadowCheckbox} value={rendererState.useShadows.value} />
-              </InputGroup>
-            </div>
+            <Checkbox
+              onChange={handleShadowCheckbox}
+              checked={rendererState.useShadows.value}
+              label={t('user:usermenu.setting.lbl-shadow')}
+            />
 
-            <div className="grid">
-              <InputGroup name="Type" label={t('user:usermenu.setting.lbl-automatic')} className="justify-start">
-                <BooleanInput onChange={handleAutomaticCheckbox} value={rendererState.automatic.value} />
-              </InputGroup>
-            </div>
+            <Checkbox
+              onChange={handleAutomaticCheckbox}
+              checked={rendererState.automatic.value}
+              label={t('user:usermenu.setting.lbl-automatic')}
+            />
           </div>
 
           {rendererState.useShadows.value && (
@@ -464,7 +515,13 @@ const SettingMenu2 = ({ isPopover }: Props): JSX.Element => {
               label={t('editor:properties.directionalLight.lbl-shadowmapResolution')}
               value={rendererState.shadowMapResolution.value}
               options={ShadowMapResolutionOptions}
-              onChange={(event) => rendererState.shadowMapResolution.set(ShadowMapResolutionOptions[event])}
+              onChange={(event) => {
+                rendererState.shadowMapResolution.set(Number(event))
+                logger.info({
+                  event_name: `change_shadow_map_resolution`,
+                  event_value: `${event}px`
+                })
+              }}
             />
           )}
         </>

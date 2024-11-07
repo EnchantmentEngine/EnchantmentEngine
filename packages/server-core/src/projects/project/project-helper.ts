@@ -43,8 +43,8 @@ import path from 'path'
 import semver from 'semver'
 import { promisify } from 'util'
 
-import { AssetType, FileToAssetType } from '@ir-engine/common/src/constants/AssetType'
 import { INSTALLATION_SIGNED_REGEX, PUBLIC_SIGNED_REGEX } from '@ir-engine/common/src/regex'
+import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 
 import { ManifestJson } from '@ir-engine/common/src/interfaces/ManifestJson'
 import { ProjectPackageJsonType } from '@ir-engine/common/src/interfaces/ProjectPackageJsonType'
@@ -61,13 +61,13 @@ import { projectPath, ProjectType } from '@ir-engine/common/src/schemas/projects
 import { helmSettingPath } from '@ir-engine/common/src/schemas/setting/helm-setting.schema'
 import { identityProviderPath, IdentityProviderType } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { userPath, UserType } from '@ir-engine/common/src/schemas/user/user.schema'
+import { cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
 import { getDateTimeSql, toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import {
   copyFolderRecursiveSync,
   deleteFolderRecursive,
   getFilesRecursive
 } from '@ir-engine/common/src/utils/fsHelperFunctions'
-import { processFileName } from '@ir-engine/common/src/utils/processFileName'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import { getState } from '@ir-engine/hyperflux'
 import { ProjectConfigInterface, ProjectEventHooks } from '@ir-engine/projects/ProjectConfigInterface'
@@ -300,7 +300,9 @@ export const onProjectEvent = async (
   eventType: keyof ProjectEventHooks,
   ...args
 ) => {
-  const hooks = require(path.resolve(projectsRootFolder, project.name, hookPath)).default
+  const hookFilePath = path.resolve(projectsRootFolder, project.name, hookPath)
+  if (!fs.existsSync(hookFilePath)) return logger.warn(`No hooks file found at ${hookFilePath}`)
+  const hooks = (await import(hookFilePath)).default
   if (typeof hooks[eventType] === 'function') {
     if (args && args.length > 0) {
       return await hooks[eventType](app, project, ...args)
@@ -309,16 +311,12 @@ export const onProjectEvent = async (
   }
 }
 
-export const getProjectConfig = (projectName: string) => {
+export const getProjectConfig = async (projectName: string) => {
   try {
-    return require(path.resolve(projectsRootFolder, projectName, 'xrengine.config.ts'))
-      .default as ProjectConfigInterface
+    const configFilePath = path.resolve(projectsRootFolder, projectName, 'xrengine.config.ts')
+    return (await import(configFilePath)).default as ProjectConfigInterface
   } catch (e) {
-    logger.error(
-      e,
-      '[Projects]: WARNING project with ' +
-        `name ${projectName} has no xrengine.config.ts file - this is not recommended.`
-    )
+    // asset only projects do not have a config file
   }
 }
 export const getProjectManifest = (projectName: string): ManifestJson => {
@@ -962,7 +960,6 @@ export async function getProjectUpdateJobBody(
 ): Promise<k8s.V1Job> {
   const command = [
     'npx',
-    'cross-env',
     'ts-node',
     '--swc',
     'scripts/update-project.ts',
@@ -1030,7 +1027,6 @@ export async function getProjectPushJobBody(
 ): Promise<k8s.V1Job> {
   const command = [
     'npx',
-    'cross-env',
     'ts-node',
     '--swc',
     'scripts/push-project.ts',
@@ -1104,15 +1100,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
                   name: `${process.env.RELEASE_NAME}-${project.name.toLowerCase()}-auto-update`,
                   image,
                   imagePullPolicy: 'IfNotPresent',
-                  command: [
-                    'npx',
-                    'cross-env',
-                    'ts-node',
-                    '--swc',
-                    'scripts/auto-update-project.ts',
-                    '--projectName',
-                    project.name
-                  ],
+                  command: ['npx', 'ts-node', '--swc', 'scripts/auto-update-project.ts', '--projectName', project.name],
                   env: Object.entries(process.env).map(([key, value]) => {
                     return { name: key, value: value }
                   })
@@ -1134,7 +1122,6 @@ export async function getDirectoryArchiveJobBody(
 ): Promise<k8s.V1Job> {
   const command = [
     'npx',
-    'cross-env',
     'ts-node',
     '--swc',
     'scripts/archive-directory.ts',
@@ -1261,7 +1248,7 @@ export const checkProjectAutoUpdate = async (app: Application, projectName: stri
 }
 
 export const copyDefaultProject = () => {
-  deleteFolderRecursive(path.join(projectsRootFolder, `default-project`))
+  deleteFolderRecursive(path.join(projectsRootFolder, `ir-engine/default-project`))
   copyFolderRecursiveSync(
     path.join(appRootPath.path, 'packages/projects/default-project'),
     path.join(projectsRootFolder, 'ir-engine')
@@ -1443,7 +1430,7 @@ export const updateProject = async (
 
   const { assetsOnly } = await uploadLocalProjectToProvider(app, projectName)
 
-  const projectConfig = getProjectConfig(projectName)
+  const projectConfig = await getProjectConfig(projectName)
 
   const enabled = getProjectEnabled(projectName)
 
@@ -1612,6 +1599,7 @@ const migrateResourcesJson = (projectName: string, resourceJsonPath: string) => 
             dependencies: item.dependencies,
             licensing: item.licensing,
             description: item.description,
+            name: item.name,
             attribution: item.attribution,
             thumbnailKey: (item as any).thumbnailURL, // old fields
             thumbnailMode: (item as any).thumbnailType // old fields
@@ -1626,7 +1614,7 @@ const migrateResourcesJson = (projectName: string, resourceJsonPath: string) => 
 const getResourceType = (key: string, resource?: ResourceType) => {
   // TODO: figure out a better way of handling thumbnails rather than by convention
   if (key.startsWith('public/thumbnails') || key.endsWith('.thumbnail.jpg')) return 'thumbnail'
-  if (key.startsWith('public/scenes') && key.endsWith('.gltf')) return 'scene'
+  if (key.startsWith('public/scenes') && (key.endsWith('.gltf') || key.endsWith('.scene.json'))) return 'scene'
   if (!resource) return 'file'
   if (staticResourceClasses.includes(FileToAssetType(key))) return 'asset'
   if (resource.type) return resource.type
@@ -1725,7 +1713,7 @@ export const uploadLocalProjectToProvider = async (
   for (const file of filteredFilesInProjectFolder) {
     try {
       const fileResult = fs.readFileSync(file)
-      const filePathRelative = processFileName(file.slice(projectRootPath.length + 1))
+      const filePathRelative = cleanFileNameString(file.slice(projectRootPath.length + 1), true)
       const key = `projects/${projectName}/${filePathRelative}`
 
       const contentType = getContentType(key)
@@ -1775,6 +1763,7 @@ export const uploadLocalProjectToProvider = async (
             dependencies: resourceInfo?.dependencies ?? undefined,
             licensing: resourceInfo?.licensing ?? undefined,
             description: resourceInfo?.description ?? undefined,
+            name: resourceInfo?.name ?? undefined,
             attribution: resourceInfo?.attribution ?? undefined,
             thumbnailKey,
             thumbnailMode: resourceInfo?.thumbnailMode ?? undefined
@@ -1795,6 +1784,7 @@ export const uploadLocalProjectToProvider = async (
             dependencies: resourceInfo?.dependencies ?? undefined,
             licensing: resourceInfo?.licensing ?? undefined,
             description: resourceInfo?.description ?? undefined,
+            name: resourceInfo?.name ?? undefined,
             attribution: resourceInfo?.attribution ?? undefined,
             thumbnailKey,
             thumbnailMode: resourceInfo?.thumbnailMode ?? undefined

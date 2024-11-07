@@ -56,18 +56,14 @@ export const identityProviderSchema = Type.Object(
     id: Type.String({
       format: 'uuid'
     }),
-    token: Type.String({
-      format: 'uuid'
-    }),
+    token: Type.String(),
     accountIdentifier: Type.Optional(Type.String()),
     oauthToken: Type.Optional(Type.String()),
     oauthRefreshToken: Type.Optional(Type.String()),
 
     // @ts-ignore
     type: StringEnum(identityProviderTypes),
-    userId: TypedString<UserID>({
-      format: 'uuid'
-    }),
+    userId: TypedString<UserID>(),
     accessToken: Type.Optional(Type.String()),
     email: Type.Optional(Type.String()),
     createdAt: Type.String({ format: 'date-time' }),
@@ -111,7 +107,8 @@ export const identityProviderQuerySchema = Type.Intersect(
         $like: Type.String()
       },
       email: {
-        $like: Type.String()
+        $like: Type.String(),
+        $notlike: Type.String()
       }
     }),
     // Add additional query properties here

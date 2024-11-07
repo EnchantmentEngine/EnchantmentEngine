@@ -49,7 +49,6 @@ const tieredSettings = {
       shadowMapResolution: 0,
       usePostProcessing: false,
       forceBasicMaterials: true,
-      updateCSMFrustums: false,
       renderScale: 0.75
     },
     render: { smaaPreset: SMAAPreset.LOW }
@@ -60,7 +59,6 @@ const tieredSettings = {
       shadowMapResolution: 0,
       usePostProcessing: false,
       forceBasicMaterials: false,
-      updateCSMFrustums: true,
       renderScale: 1
     },
     render: { smaaPreset: SMAAPreset.LOW }
@@ -71,7 +69,6 @@ const tieredSettings = {
       shadowMapResolution: 256,
       usePostProcessing: false,
       forceBasicMaterials: false,
-      updateCSMFrustums: true,
       renderScale: 1
     },
     render: { smaaPreset: SMAAPreset.LOW }
@@ -82,7 +79,6 @@ const tieredSettings = {
       shadowMapResolution: 512,
       usePostProcessing: false,
       forceBasicMaterials: false,
-      updateCSMFrustums: true,
       renderScale: 1
     },
     render: { smaaPreset: SMAAPreset.MEDIUM }
@@ -93,7 +89,6 @@ const tieredSettings = {
       shadowMapResolution: 1024,
       usePostProcessing: true,
       forceBasicMaterials: false,
-      updateCSMFrustums: true,
       renderScale: 1
     },
     render: { smaaPreset: SMAAPreset.HIGH }
@@ -104,7 +99,6 @@ const tieredSettings = {
       shadowMapResolution: 2048,
       usePostProcessing: true,
       forceBasicMaterials: false,
-      updateCSMFrustums: true,
       renderScale: 1
     },
     render: { smaaPreset: SMAAPreset.ULTRA }
@@ -145,7 +139,6 @@ export const PerformanceState = defineState({
     gpuTier: 3 as PerformanceTier,
     cpuTier: 3 as PerformanceTier,
 
-    supportWebGL2: true,
     targetFPS: 60 as TargetFPS,
 
     gpu: 'unknown',
@@ -294,8 +287,8 @@ const timeRenderFrameGPU = (callback: (number) => void = () => {}): (() => void)
     }
   }
 
-  const { renderContext, supportWebGL2 } = getState(PerformanceState)
-  if (renderContext && supportWebGL2) {
+  const { renderContext } = getState(PerformanceState)
+  if (renderContext) {
     const gl = renderContext
     const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2')
 
@@ -449,7 +442,6 @@ const buildPerformanceState = async (
     device: gpuTier.device || 'unknown',
     gpuTier: tier as PerformanceTier,
     targetFPS: gpuTier.isMobile ? 30 : 60,
-    supportWebGL2: renderer.supportWebGL2,
     renderContext: gl,
     maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
     max3DTextureSize: gl.getParameter(gl.MAX_3D_TEXTURE_SIZE),

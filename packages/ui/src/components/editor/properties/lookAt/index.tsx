@@ -32,11 +32,11 @@ import { FaRegFaceFlushed } from 'react-icons/fa6'
 
 import { EntityUUID } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { LookAtComponent } from '@ir-engine/spatial/src/transform/components/LookAtComponent'
-import BooleanInput from '../../input/Boolean'
+import { Checkbox } from '@ir-engine/ui'
 import InputGroup from '../../input/Group'
 import NodeInput from '../../input/Node'
-import NodeEditor from '../nodeEditor'
 
 /**
  * FacerNodeEditor component used to customize the facer element on the scene
@@ -50,9 +50,9 @@ export const LookAtNodeEditor: EditorComponentType = (props) => {
     <NodeEditor
       entity={props.entity}
       component={LookAtComponent}
-      name={t('editor:properties.facer.name')}
-      description={t('editor:properties.facer.description')}
-      icon={<LookAtNodeEditor.iconComponent />}
+      name={t('editor:properties.lookAt.name')}
+      description={t('editor:properties.lookAt.description')}
+      Icon={LookAtNodeEditor.iconComponent}
     >
       <InputGroup name="Target" label={t('editor:properties.lookAt.target')}>
         <NodeInput
@@ -62,10 +62,10 @@ export const LookAtNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
       <InputGroup name="X Axis" label={t('editor:properties.lookAt.xAxis')}>
-        <BooleanInput value={lookAtComponent.xAxis.value} onChange={commitProperty(LookAtComponent, 'xAxis')} />
+        <Checkbox checked={lookAtComponent.xAxis.value} onChange={commitProperty(LookAtComponent, 'xAxis')} />
       </InputGroup>
       <InputGroup name="Y Axis" label={t('editor:properties.lookAt.yAxis')}>
-        <BooleanInput value={lookAtComponent.yAxis.value} onChange={commitProperty(LookAtComponent, 'yAxis')} />
+        <Checkbox checked={lookAtComponent.yAxis.value} onChange={commitProperty(LookAtComponent, 'yAxis')} />
       </InputGroup>
     </NodeEditor>
   )

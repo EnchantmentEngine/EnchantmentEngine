@@ -26,9 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import { GLTF } from '@gltf-transform/core'
 import matches, { Validator } from 'ts-matches'
 
-import multiLogger from '@ir-engine/common/src/logger'
 import { Entity, EntityUUID, UUIDComponent, getComponent, useOptionalComponent } from '@ir-engine/ecs'
-import { State, defineAction, defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import {
+  HyperFlux,
+  State,
+  defineAction,
+  defineState,
+  getMutableState,
+  getState,
+  useHookstate
+} from '@ir-engine/hyperflux'
 import { SourceComponent } from '../scene/components/SourceComponent'
 
 export const GLTFDocumentState = defineState({
@@ -36,29 +43,27 @@ export const GLTFDocumentState = defineState({
   initial: {} as Record<string, GLTF.IGLTF>
 })
 
+export type GLTFNode = {
+  nodeIndex: number
+  childIndex: number
+  parentUUID: EntityUUID | null // store parent, if no parent, then it is a root node
+}
+
 export const GLTFNodeState = defineState({
   name: 'ee.engine.gltf.GLTFNodeState',
-  initial: {} as Record<
-    string,
-    Record<
-      string,
-      {
-        nodeIndex: number
-        childIndex: number
-        parentUUID: EntityUUID | null // store parent, if no parent, then it is a root node
-      }
-    >
-  >,
+  initial: {} as Record<string, Record<string, GLTFNode>>,
 
   getMutableNode(entity: Entity): State<GLTF.INode> {
     const source = getComponent(entity, SourceComponent)
     const uuid = getComponent(entity, UUIDComponent)
     if (!source || !uuid) {
-      multiLogger.error('GLTFNodeState.getMutableNode: entity does not have SourceComponent or UUIDComponent')
+      HyperFlux.store
+        .logger('GLTFNodeState.getMutableNode')
+        .error('entity does not have SourceComponent or UUIDComponent')
     }
     const nodeLookup = getState(GLTFNodeState)[source][uuid]
     if (!nodeLookup) {
-      multiLogger.error('GLTFNodeState.getMutableNode: node not found in lookup')
+      HyperFlux.store.logger('GLTFNodeState.getMutableNode').error('node not found in lookup')
     }
     const gltf = getMutableState(GLTFDocumentState)[source]
     return gltf.nodes![nodeLookup.nodeIndex]
@@ -100,18 +105,18 @@ export const GLTFNodeState = defineState({
     }
   },
 
-  convertGltfToNodeDictionary: (gltf: GLTF.IGLTF) => {
+  convertGltfToNodeDictionary: (gltf: GLTF.IGLTF, source: string) => {
     const nodes: Record<string, { nodeIndex: number; childIndex: number; parentUUID: EntityUUID | null }> = {}
 
     const addNode = (nodeIndex: number, childIndex: number, parentUUID: EntityUUID | null) => {
       const node = gltf.nodes![nodeIndex]
-      const uuid = node.extensions?.[UUIDComponent.jsonID] as any as EntityUUID
+      const uuid = (node.extensions?.[UUIDComponent.jsonID] as any as EntityUUID) ?? source + '-' + nodeIndex
       if (uuid) {
         nodes[uuid] = { nodeIndex, childIndex, parentUUID }
       } else {
         /** @todo generate a globally deterministic UUID here */
-        console.warn('Node does not have a UUID:', node)
-        return
+        // console.warn('Node does not have a UUID:', node)
+        // return
       }
       if (node.children) {
         for (let i = 0; i < node.children.length; i++) {
@@ -129,7 +134,7 @@ export const GLTFNodeState = defineState({
     for (let i = 0; i < gltf.scenes![0].nodes!.length; i++) {
       const nodeIndex = gltf.scenes![0].nodes![i]
       const node = gltf.nodes![nodeIndex]
-      const uuid = node.extensions?.[UUIDComponent.jsonID] as any as EntityUUID
+      const uuid = (node.extensions?.[UUIDComponent.jsonID] as any as EntityUUID) ?? source + '-' + nodeIndex
       if (uuid) {
         nodes[uuid] = {
           nodeIndex,

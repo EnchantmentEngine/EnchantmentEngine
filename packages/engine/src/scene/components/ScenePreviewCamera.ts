@@ -32,14 +32,17 @@ import {
   getComponent,
   removeComponent,
   setComponent,
-  useComponent
+  useComponent,
+  useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { getMutableState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { CameraHelperComponent } from '@ir-engine/spatial/src/common/debug/CameraHelperComponent'
-import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformDirtyCleanupSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
@@ -47,26 +50,22 @@ export const ScenePreviewCameraComponent = defineComponent({
   name: 'EE_scenePreviewCamera',
   jsonID: 'EE_scene_preview_camera',
 
-  onInit: (entity) => {
-    const camera = new PerspectiveCamera(80, 16 / 9, 0.2, 8000)
-
-    return {
-      camera
-    }
-  },
-
-  toJSON: () => {
-    return {} as any
-  },
+  schema: S.Object({
+    camera: S.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000))
+  }),
 
   reactor: function () {
+    if (!isClient) return null
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
     const previewCamera = useComponent(entity, ScenePreviewCameraComponent)
     const previewCameraTransform = useComponent(entity, TransformComponent)
-    const engineCameraTransform = useComponent(Engine.instance.cameraEntity, TransformComponent)
+    const engineCameraTransform = useOptionalComponent(Engine.instance.cameraEntity, TransformComponent)
+    const isEditing = useHookstate(getMutableState(EngineState).isEditing).value
 
     useLayoutEffect(() => {
+      if (!engineCameraTransform || isEditing) return
+
       const transform = getComponent(entity, TransformComponent)
       const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
       cameraTransform.position.copy(transform.position)
@@ -76,7 +75,7 @@ export const ScenePreviewCameraComponent = defineComponent({
       return () => {
         removeObjectFromGroup(entity, camera)
       }
-    }, [])
+    }, [engineCameraTransform])
 
     useExecute(
       () => {
@@ -88,6 +87,7 @@ export const ScenePreviewCameraComponent = defineComponent({
     )
 
     useLayoutEffect(() => {
+      if (!engineCameraTransform) return
       engineCameraTransform.position.value.copy(previewCameraTransform.position.value)
       engineCameraTransform.rotation.value.copy(previewCameraTransform.rotation.value)
     }, [previewCameraTransform])

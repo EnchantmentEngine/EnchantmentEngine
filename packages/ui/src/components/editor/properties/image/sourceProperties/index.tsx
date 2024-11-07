@@ -30,10 +30,11 @@ import { BackSide, DoubleSide, FrontSide } from 'three'
 import { ImageAlphaMode, ImageProjection } from '@ir-engine/engine/src/scene/classes/ImageUtils'
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
 
+import InputSlider from '@ir-engine/client-core/src/common/components/InputSlider'
 import { useComponent } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
+import { AssetExt, FileToAssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
 import InputGroup from '../../../input/Group'
-import NumericInput from '../../../input/Numeric'
 import SelectInput from '../../../input/Select'
 
 const mapValue = (v) => ({ label: v, value: v })
@@ -46,39 +47,49 @@ const ImageProjectionSideOptions = [
   { label: 'Both', value: DoubleSide }
 ]
 
+const supportsTransparency = (src: string) => {
+  const assetExt = FileToAssetExt(src)
+  return assetExt === AssetExt.PNG || assetExt === AssetExt.KTX2
+}
+
 export const ImageSourceProperties: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const imageComponent = useComponent(props.entity, ImageComponent)
+  const showTransparencyOptions = supportsTransparency(imageComponent.source.value)
 
   return (
     <>
-      <InputGroup name="Transparency" label={t('editor:properties.image.lbl-transparency')}>
-        <SelectInput
-          key={props.entity}
-          options={imageTransparencyOptions}
-          value={imageComponent.alphaMode.value}
-          onChange={commitProperty(ImageComponent, 'alphaMode')}
-        />
-      </InputGroup>
+      {showTransparencyOptions && (
+        <>
+          <InputGroup name="Transparency" label={t('editor:properties.image.lbl-transparency')}>
+            <SelectInput
+              key={props.entity}
+              options={imageTransparencyOptions}
+              value={imageComponent.alphaMode.value}
+              onChange={commitProperty(ImageComponent, 'alphaMode')}
+            />
+          </InputGroup>
 
-      {imageComponent.alphaMode.value === ImageAlphaMode.Mask && (
-        <InputGroup
-          name="Alpha Cutoff"
-          label={t('editor:properties.image.lbl-alphaCutoff')}
-          info={t('editor:properties.image.info-alphaCutoff')}
-        >
-          <NumericInput
-            min={0}
-            max={1}
-            smallStep={0.01}
-            mediumStep={0.1}
-            largeStep={0.25}
-            value={imageComponent.alphaCutoff.value}
-            onChange={updateProperty(ImageComponent, 'alphaCutoff')}
-            onRelease={commitProperty(ImageComponent, 'alphaCutoff')}
-          />
-        </InputGroup>
+          {imageComponent.alphaMode.value === ImageAlphaMode.Mask && (
+            <InputGroup
+              name="Alpha Cutoff"
+              label={t('editor:properties.image.lbl-alphaCutoff')}
+              info={t('editor:properties.image.info-alphaCutoff')}
+            >
+              <InputSlider
+                //icon={<Icon type={audioState.masterVolume.value == 0 ? 'VolumeOff' : 'VolumeUp'} />}
+                //label={t('user:usermenu.setting.lbl-volume')}
+                max={1}
+                min={0}
+                step={0.01}
+                value={imageComponent.alphaCutoff.value}
+                onChange={updateProperty(ImageComponent, 'alphaCutoff')}
+                onRelease={commitProperty(ImageComponent, 'alphaCutoff')}
+              />
+            </InputGroup>
+          )}
+        </>
       )}
 
       <InputGroup name="Projection" label={t('editor:properties.image.lbl-projection')}>

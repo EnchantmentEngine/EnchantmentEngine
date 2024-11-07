@@ -48,12 +48,13 @@ export const EditorHelperState = defineState({
     transformMode: TransformMode.translate as TransformModeType,
     transformModeOnCancel: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
-    transformPivot: TransformPivot.Selection as TransformPivotType,
+    transformPivot: TransformPivot.Center as TransformPivotType,
     gridSnap: SnapMode.Grid as SnapModeType,
     translationSnap: 0.5,
     rotationSnap: 10,
     scaleSnap: 0.1,
-    placementMode: PlacementMode.DRAG
+    placementMode: PlacementMode.DRAG,
+    gizmoEnabled: true
   }),
   extension: syncStateWithLocalStorage(['snapMode', 'translationSnap', 'rotationSnap', 'scaleSnap'])
 })

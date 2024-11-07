@@ -26,9 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { Vector3 } from 'three'
 
 export const TransformPivot = {
-  Selection: 'Selection' as const,
   Center: 'Center' as const,
-  Bottom: 'Bottom' as const,
+  FirstSelected: 'FirstSelected' as const,
+  BoundingBox: 'BoundingBox' as const,
+  BoundingBoxBottom: 'BoundingBoxBottom' as const,
   Origin: 'Origin' as const
 }
 export const TransformMode = {
@@ -46,7 +47,10 @@ export const TransformAxis = {
   XZ: 'XZ' as const,
   XYZ: 'XYZ' as const,
   XYZE: 'XYZE' as const,
-  E: 'E' as const
+  E: 'E' as const,
+  Xn: 'Xn' as const,
+  Yn: 'Yn' as const,
+  Zn: 'Zn' as const
 }
 export const TransformAxisConstraints = {
   X: new Vector3(1, 0, 0),

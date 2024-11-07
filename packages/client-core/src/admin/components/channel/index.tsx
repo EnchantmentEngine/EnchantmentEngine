@@ -28,12 +28,12 @@ import { useTranslation } from 'react-i18next'
 import { HiMagnifyingGlass, HiPlus, HiTrash } from 'react-icons/hi2'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { useMutation } from '@ir-engine/common'
 import { channelPath, ChannelType } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate } from '@ir-engine/hyperflux'
-import { useMutation } from '@ir-engine/spatial/src/common/functions/FeathersHooks'
+import { Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 import AddEditChannelModal from './AddEditChannelModal'
@@ -70,8 +70,6 @@ export default function Channels() {
                 search.query.set(event.target.value)
               }, 100)
             }}
-            className="bg-theme-surface-main"
-            containerClassname="w-1/5 block"
             startComponent={<HiMagnifyingGlass />}
           />
           <div className="flex gap-4">

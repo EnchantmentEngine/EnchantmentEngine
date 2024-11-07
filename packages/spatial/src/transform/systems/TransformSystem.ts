@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Camera, Frustum, Matrix4, Mesh, Vector3 } from 'three'
 
-import { insertionSort } from '@ir-engine/common/src/utils/insertionSort'
 import {
   AnimationSystemGroup,
   defineQuery,
@@ -38,17 +37,18 @@ import {
 } from '@ir-engine/ecs'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+
+import { GroupComponent } from '../../renderer/components/GroupComponent'
 
 import { CameraComponent } from '../../camera/components/CameraComponent'
+import { insertionSort } from '../../common/functions/insertionSort'
 import { EngineState } from '../../EngineState'
-import { RigidBodyComponent } from '../../physics/components/RigidBodyComponent'
-import { GroupComponent } from '../../renderer/components/GroupComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { XRState } from '../../xr/XRState'
 import { BoundingBoxComponent, updateBoundingBox } from '../components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '../components/ComputedTransformComponent'
 import { DistanceFromCameraComponent, FrustumCullCameraComponent } from '../components/DistanceComponents'
+import { EntityTreeComponent } from '../components/EntityTree'
 import { composeMatrix, TransformComponent } from '../components/TransformComponent'
 import { TransformSerialization } from '../TransformSerialization'
 
@@ -128,8 +128,6 @@ const compareReferenceDepth = (a: Entity, b: Entity) => {
   return aDepth - bDepth
 }
 
-const isDirtyNonRigidbody = (entity: Entity) =>
-  TransformComponent.dirtyTransforms[entity] && !hasComponent(entity, RigidBodyComponent)
 export const isDirty = (entity: Entity) => TransformComponent.dirtyTransforms[entity]
 
 const sortedTransformEntities = [] as Entity[]
@@ -175,7 +173,7 @@ const sortAndMakeDirtyEntities = () => {
 }
 
 const execute = () => {
-  const dirtySortedTransformEntities = sortedTransformEntities.filter(isDirtyNonRigidbody)
+  const dirtySortedTransformEntities = sortedTransformEntities.filter(isDirty)
   for (const entity of dirtySortedTransformEntities) computeTransformMatrix(entity)
 
   const dirtyGroupEntities = groupQuery().filter(isDirty)

@@ -26,22 +26,22 @@ Infinite Reality Engine. All Rights Reserved.
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 import packageRoot from 'app-root-path'
 import dotenv from 'dotenv'
-import fs from 'fs'
-import lodash from 'lodash'
+import fs, { readFileSync, writeFileSync } from 'fs'
+import { isArray, mergeWith } from 'lodash'
 import path from 'path'
-import { defineConfig, UserConfig } from 'vite'
-import viteCompression from 'vite-plugin-compression'
+import { UserConfig, defineConfig } from 'vite'
+import viteCompression from 'vite-plugin-compression2'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 
+import appRootPath from 'app-root-path'
+import { EngineSettings } from '../common/src/constants/EngineSettings'
 import manifest from './manifest.default.json'
 import packageJson from './package.json'
 import PWA from './pwa.config'
 import { getClientSetting } from './scripts/getClientSettings'
-import { getCoilSetting } from './scripts/getCoilSettings'
-
-const { isArray, mergeWith } = lodash
+import { getEngineSetting } from './scripts/getEngineSettings'
 
 const parseModuleName = (moduleName: string) => {
   // // chunk medisoup-client
@@ -115,13 +115,6 @@ const merge = (src, dest) =>
       return b.concat(a)
     }
   })
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import('ts-node').then((tsnode) => {
-  tsnode.register({
-    project: './tsconfig.json'
-  })
-})
 
 const getProjectConfigExtensions = async (config: UserConfig) => {
   const projects = fs.existsSync(path.resolve(__dirname, '../projects/projects'))
@@ -235,16 +228,35 @@ const resetSWFiles = () => {
   deleteDirFilesUsingPattern(/workbox-/, './public/')
 }
 
+const updateRootCookieAccessorDomain = (isDevOrLocal) => {
+  const localStorageAccessor = readFileSync(
+    path.join(appRootPath.path, 'packages', 'client', 'public', 'root-cookie-accessor-template.html')
+  ).toString()
+
+  const apiUrl =
+    isDevOrLocal && process.env.VITE_LOCAL_NGINX !== 'true'
+      ? `https://${process.env.VITE_SERVER_HOST}:${process.env.VITE_SERVER_PORT}`
+      : `https://${process.env.VITE_SERVER_HOST}`
+  const updated = localStorageAccessor.replace(/<API_URL>/g, apiUrl)
+
+  writeFileSync(
+    path.join(appRootPath.path, 'packages', 'client', 'public', 'root-cookie-accessor.html'),
+    Buffer.from(updated)
+  )
+}
+
 export default defineConfig(async () => {
   dotenv.config({
     path: packageRoot.path + '/.env.local'
   })
   const clientSetting = await getClientSetting()
-  const coilSetting = await getCoilSetting()
+  const coilSetting = await getEngineSetting('coil', [EngineSettings.Coil.PaymentPointer])
 
   resetSWFiles()
 
   const isDevOrLocal = process.env.APP_ENV === 'development' || process.env.VITE_LOCAL_BUILD === 'true'
+
+  updateRootCookieAccessorDomain(isDevOrLocal)
 
   let base = `https://${process.env['APP_HOST'] ? process.env['APP_HOST'] : process.env['VITE_APP_HOST']}/`
 
@@ -265,7 +277,7 @@ export default defineConfig(async () => {
     define: define,
     server: {
       proxy: {},
-      cors: isDevOrLocal ? false : true,
+      cors: !isDevOrLocal,
       hmr:
         process.env.VITE_HMR === 'true'
           ? {
@@ -278,6 +290,9 @@ export default defineConfig(async () => {
       port: process.env['VITE_APP_PORT'],
       headers: {
         'Origin-Agent-Cluster': '?1'
+      },
+      watch: {
+        ignored: ['**packages/server/upload/**']
       },
       ...(isDevOrLocal
         ? {
@@ -323,12 +338,18 @@ export default defineConfig(async () => {
               ? 'dev-sw.js?dev-sw'
               : 'service-worker.js'
             : '',
-        paymentPointer: coilSetting?.paymentPointer || ''
+        paymentPointer: coilSetting?.find((item) => item.key === EngineSettings.Coil.PaymentPointer)?.value || '',
+        rootCookieAccessor: `${clientSetting.url}/root-cookie-accessor.html`,
+        gtmId: clientSetting.gtmContainerId,
+        gtmEnvironent:
+          clientSetting.gtmAuth && clientSetting.gtmPreview
+            ? `&gtm_auth=${clientSetting.gtmAuth}&gtm_preview=${clientSetting.gtmPreview}&gtm_cookies_win=x`
+            : ''
       }),
       viteCompression({
-        filter: /\.(js|mjs|json|css)$/i,
+        include: /\.(js|mjs|json|css)$/i,
         algorithm: 'brotliCompress',
-        deleteOriginFile: true
+        deleteOriginalAssets: true
       }),
       viteCommonjs({
         include: ['use-sync-external-store']
@@ -341,7 +362,7 @@ export default defineConfig(async () => {
     },
     build: {
       target: 'esnext',
-      sourcemap: process.env.VITE_SOURCEMAPS === 'true' ? true : false,
+      sourcemap: process.env.VITE_SOURCEMAPS === 'true',
       minify: 'terser',
       terserOptions: {
         mangle: {
@@ -360,13 +381,13 @@ export default defineConfig(async () => {
           dir: 'dist',
           format: 'es', // 'commonjs' | 'esm' | 'module' | 'systemjs'
           // ignore files under 1mb
-          experimentalMinChunkSize: 1000000,
-          manualChunks: (id) => {
-            // chunk dependencies
-            if (id.includes('node_modules')) {
-              return parseModuleName(id)
-            }
-          }
+          experimentalMinChunkSize: 1000000
+          // manualChunks: (id) => {
+          //   // chunk dependencies
+          //   if (id.includes('node_modules')) {
+          //     return parseModuleName(id)
+          //   }
+          // }
         }
       }
     }

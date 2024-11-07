@@ -29,7 +29,8 @@ import React, { CSSProperties, Fragment, useEffect, useRef } from 'react'
 import multiLogger from '@ir-engine/common/src/logger'
 import { defineState, getState, useMutableState } from '@ir-engine/hyperflux'
 
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
+import { MdClose } from 'react-icons/md'
+import InviteSnackbarActions from '../../components/InviteToast/InviteSnackbarActions'
 
 const logger = multiLogger.child({ component: 'client-core:Notification' })
 
@@ -52,13 +53,24 @@ export const defaultAction = (key: SnackbarKey, content?: React.ReactNode) => {
   return (
     <Fragment>
       {content}
-      <Icon onClick={() => closeSnackbar(key)} type={'Close'} />
+      <button onClick={() => closeSnackbar(key)}>
+        <MdClose size="1.2rem" />
+      </button>
+    </Fragment>
+  )
+}
+export const inviteActions = (key: SnackbarKey, content?: React.ReactNode) => {
+  return (
+    <Fragment>
+      {content}
+      <InviteSnackbarActions closeSnackbar={() => closeSnackbar(key)} />
     </Fragment>
   )
 }
 
 export const NotificationActions = {
-  default: defaultAction
+  default: defaultAction,
+  invite: inviteActions
 }
 
 export const NotificationService = {

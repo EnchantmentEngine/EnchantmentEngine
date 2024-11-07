@@ -19,17 +19,22 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import appRootPath from 'app-root-path'
 import chargebeeInst from 'chargebee'
-import dotenv from 'dotenv-flow'
+import fs from 'fs'
 import path from 'path'
+import { register } from 'trace-unhandled'
 import url from 'url'
 
+// ensure logger is loaded first - it loads the dotenv config
+import multiLogger from './ServerLogger'
+
 import { oembedPath } from '@ir-engine/common/src/schemas/media/oembed.schema'
+import { allowedDomainsPath } from '@ir-engine/common/src/schemas/networking/allowed-domains.schema'
 import { routePath } from '@ir-engine/common/src/schemas/route/route.schema'
 import { acceptInvitePath } from '@ir-engine/common/src/schemas/user/accept-invite.schema'
 import { discordBotAuthPath } from '@ir-engine/common/src/schemas/user/discord-bot-auth.schema'
@@ -37,7 +42,8 @@ import { githubRepoAccessWebhookPath } from '@ir-engine/common/src/schemas/user/
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
-import multiLogger from './ServerLogger'
+import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
+import { createHash } from 'crypto'
 import {
   APPLE_SCOPES,
   DISCORD_SCOPES,
@@ -52,7 +58,6 @@ const kubernetesEnabled = process.env.KUBERNETES === 'true'
 const testEnabled = process.env.TEST === 'true'
 
 if (!testEnabled) {
-  const { register } = require('trace-unhandled')
   register()
 
   // ensure process fails properly
@@ -87,18 +92,10 @@ if (!testEnabled) {
   })
 }
 
-if (!kubernetesEnabled) {
-  dotenv.config({
-    path: appRootPath.path,
-    node_env: 'local'
-  })
-}
-
 if (process.env.APP_ENV === 'development' || process.env.LOCAL === 'true') {
   // Avoids DEPTH_ZERO_SELF_SIGNED_CERT error for self-signed certs - needed for local storage provider
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-  const fs = require('fs')
   if (!fs.existsSync(appRootPath.path + '/.env') && !fs.existsSync(appRootPath.path + '/.env.local')) {
     const fromEnvPath = appRootPath.path + '/.env.local.default'
     const toEnvPath = appRootPath.path + '/.env.local'
@@ -153,7 +150,6 @@ const server = {
   corsServerPort: process.env.CORS_SERVER_PORT!,
   storageProvider: process.env.STORAGE_PROVIDER!,
   storageProviderExternalEndpoint: process.env.STORAGE_PROVIDER_EXTERNAL_ENDPOINT!,
-  gaTrackingId: process.env.GOOGLE_ANALYTICS_TRACKING_ID!,
   hub: {
     endpoint: process.env.HUB_ENDPOINT!
   },
@@ -236,12 +232,12 @@ const email = {
   from: `${process.env.SMTP_FROM_NAME}` + ` <${process.env.SMTP_FROM_EMAIL}>`,
   subject: {
     // Subject of the Login Link email
-    'new-user': 'Signup',
-    location: 'Location invitation',
-    instance: 'Location invitation',
-    login: 'Login link',
-    friend: 'Friend request',
-    channel: 'Channel invitation'
+    'new-user': 'IR Engine Signup',
+    location: 'IR Engine Location invitation',
+    instance: 'IR Engine Location invitation',
+    login: 'IR Engine Login link',
+    friend: 'IR Engine Friend request',
+    channel: 'IR Engine Channel invitation'
   },
   smsNameCharacterLimit: 20
 }
@@ -257,9 +253,12 @@ type WhiteListItem = {
 const authentication = {
   service: identityProviderPath,
   entity: identityProviderPath,
-  secret: process.env.AUTH_SECRET!,
+  secret: process.env.AUTH_SECRET!.split(String.raw`\n`).join('\n'),
   authStrategies: ['jwt', 'apple', 'discord', 'facebook', 'github', 'google', 'linkedin', 'twitter', 'didWallet'],
+  jwtAlgorithm: process.env.JWT_ALGORITHM,
+  jwtPublicKey: process.env.JWT_PUBLIC_KEY?.split(String.raw`\n`).join('\n'),
   jwtOptions: {
+    algorithm: process.env.JWT_ALGORITHM || 'HS256',
     expiresIn: '30 days'
   },
   bearerToken: {
@@ -270,13 +269,15 @@ const authentication = {
     'oauth/:provider',
     'oauth/:provider/callback',
     'authentication',
+    allowedDomainsPath,
     oembedPath,
     githubRepoAccessWebhookPath,
     { path: identityProviderPath, methods: ['create'] },
     { path: routePath, methods: ['find'] },
     { path: acceptInvitePath, methods: ['get'] },
     { path: discordBotAuthPath, methods: ['find'] },
-    { path: loginPath, methods: ['get'] }
+    { path: loginPath, methods: ['get'] },
+    { path: jwtPublicKeyPath, methods: ['find'] }
   ] as (string | WhiteListItem)[],
   callback: {
     apple: process.env.APPLE_CALLBACK_URL || `${client.url}/auth/oauth/apple`,
@@ -323,7 +324,8 @@ const authentication = {
       appId: process.env.GITHUB_APP_ID!,
       key: process.env.GITHUB_CLIENT_ID!,
       secret: process.env.GITHUB_CLIENT_SECRET!,
-      scope: GITHUB_SCOPES
+      scope: GITHUB_SCOPES,
+      privateKey: process.env.GITHUB_PRIVATE_KEY?.split(String.raw`\n`).join('\n')
     },
     google: {
       key: process.env.GOOGLE_CLIENT_ID!,
@@ -341,6 +343,9 @@ const authentication = {
     }
   }
 }
+
+if (authentication.jwtPublicKey && typeof authentication.jwtPublicKey === 'string')
+  (authentication.jwtOptions as any).keyid = createHash('sha3-256').update(authentication.jwtPublicKey).digest('hex')
 
 /**
  * AWS
@@ -417,12 +422,12 @@ const zendesk = {
   secret: process.env.ZENDESK_SECRET,
   kid: process.env.ZENDESK_KID
 }
-
-const mailchimp = {
-  key: process.env.MAILCHIMP_KEY,
-  server: process.env.MAILCHIMP_SERVER,
-  audienceId: process.env.MAILCHIMP_AUDIENCE_ID,
-  defaultTags: process.env.MAILCHIMP_DEFAULT_TAGS
+const metabase = {
+  siteUrl: process.env.METABASE_SITE_URL,
+  secretKey: process.env.METABASE_SECRET_KEY,
+  crashDashboardId: process.env.METABASE_CRASH_DASHBOARD_ID,
+  expiration: process.env.METABASE_EXPIRATION,
+  environment: process.env.METABASE_ENVIRONMENT
 }
 
 /**
@@ -457,7 +462,7 @@ const config = {
     typeof process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'undefined' || process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'true',
   fsProjectSyncEnabled: process.env.FS_PROJECT_SYNC_ENABLED === 'false' ? false : true,
   zendesk,
-  mailchimp
+  metabase
 }
 
 chargebeeInst.configure({

@@ -42,10 +42,11 @@ import {
   projectPermissionPath,
   ProjectPermissionType
 } from '@ir-engine/common/src/schemas/projects/project-permission.schema'
+import { checkScope } from '@ir-engine/common/src/utils/checkScope'
 import isValidSceneName from '@ir-engine/common/src/utils/validateSceneName'
-import { checkScope } from '@ir-engine/spatial/src/common/functions/checkScope'
 
 import { BadRequest } from '@feathersjs/errors/lib'
+import { copyFolderRecursiveSync } from '@ir-engine/common/src/utils/fsHelperFunctions'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import { getContentType } from '../../util/fileUtils'
@@ -59,7 +60,7 @@ export const projectsRootFolder = path.join(appRootPath.path, 'packages/projects
 export interface FileBrowserParams extends KnexAdapterParams {}
 
 const ensureProjectsDirectory = (directory: string) => {
-  if (!directory.startsWith('projects')) throw new Error('Not allowed to access this directory')
+  if (!directory.startsWith('projects')) throw new Error(`Not allowed to access directory "${directory}"`)
 }
 
 /**
@@ -86,7 +87,8 @@ export class FileBrowserService
   async get(key: string, params?: FileBrowserParams) {
     if (!key) return false
     const storageProvider = getStorageProvider()
-    const [_, directory, file] = /(.*)\/([^\\\/]+$)/.exec(key)!
+    let [_, directory, file] = /(.*)\/([^\\\/]+$)/.exec(key)!
+    if (directory[0] === '/') directory = directory.slice(1)
 
     ensureProjectsDirectory(directory)
 
@@ -162,7 +164,7 @@ export class FileBrowserService
       if (resource) {
         file.url = resource.url
         file.thumbnailURL = resource.thumbnailURL
-      }
+      } else file.url = storageProvider.getCachedURL(file.key, params.isInternal)
     }
 
     return {
@@ -284,8 +286,13 @@ export class FileBrowserService
         fs.mkdirSync(dirname, { recursive: true })
       }
       // move or copy the file
-      if (data.isCopy) fs.copyFileSync(oldNamePath, newNamePath)
-      else fs.renameSync(oldNamePath, newNamePath)
+      if (data.isCopy) {
+        if (isDirectory) {
+          copyFolderRecursiveSync(oldNamePath, newNamePath)
+        } else {
+          fs.copyFileSync(oldNamePath, newNamePath)
+        }
+      } else fs.renameSync(oldNamePath, newNamePath)
     }
 
     if (config.server.edgeCachingEnabled) {
@@ -395,7 +402,20 @@ export class FileBrowserService
 
     if (staticResources?.length > 0) {
       await Promise.all(
-        staticResources.map(async (resource) => await this.app.service(staticResourcePath).remove(resource.id))
+        staticResources.map(async (resource) => {
+          await this.app.service(staticResourcePath).remove(resource.id)
+          if (resource.thumbnailKey) {
+            const thumbnail = (await this.app.service(staticResourcePath).find({
+              query: { key: { $like: `%${resource.thumbnailKey}%` }, type: 'thumbnail' },
+              paginate: false
+            })) as any as StaticResourceType[]
+
+            if (thumbnail.length > 0) {
+              await storageProvider.deleteResources([thumbnail[0].key])
+              await this.app.service(staticResourcePath).remove(thumbnail[0].id)
+            }
+          }
+        })
       )
     }
 

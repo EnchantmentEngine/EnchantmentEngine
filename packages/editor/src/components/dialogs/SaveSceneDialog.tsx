@@ -22,15 +22,16 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import isValidSceneName from '@ir-engine/common/src/utils/validateSceneName'
 import { getComponent } from '@ir-engine/ecs'
 import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
+import { Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -57,6 +58,7 @@ export const SaveSceneDialog = (props: { isExiting?: boolean; onConfirm?: () => 
     } else if (!sceneModified) {
       PopoverState.hidePopupover()
       if (props.onCancel) props.onCancel()
+      NotificationService.dispatchNotify(t('editor:dialog.saveScene.info-save-success'), { variant: 'success' })
       return
     }
 
@@ -64,6 +66,7 @@ export const SaveSceneDialog = (props: { isExiting?: boolean; onConfirm?: () => 
 
     try {
       await saveSceneGLTF(sceneAssetID!, projectName, sceneName, abortController.signal)
+      NotificationService.dispatchNotify(t('editor:dialog.saveScene.info-save-success'), { variant: 'success' })
       const sourceID = getComponent(rootEntity, SourceComponent)
       getMutableState(GLTFModifiedState)[sourceID].set(none)
 
@@ -148,9 +151,12 @@ export const SaveNewSceneDialog = (props: { onConfirm?: () => void; onCancel?: (
           inputError.set('')
           inputSceneName.set(event.target.value)
         }}
-        label={t('editor:dialog.saveNewScene.lbl-name')}
-        description={t('editor:dialog.saveNewScene.info-name')}
-        error={inputError.value}
+        labelProps={{
+          text: t('editor:dialog.saveNewScene.lbl-name'),
+          position: 'top'
+        }}
+        state={inputError.value ? 'error' : undefined}
+        helperText={inputError.value}
       />
     </Modal>
   )

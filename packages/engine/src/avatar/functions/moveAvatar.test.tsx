@@ -27,18 +27,16 @@ import { act, render } from '@testing-library/react'
 import { strictEqual } from 'assert'
 import React from 'react'
 import { Quaternion, Vector3 } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { API } from '@ir-engine/common'
-import { AvatarID, UserID } from '@ir-engine/common/src/schema.type.module'
 import { Entity, EntityUUID, SystemDefinitions, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { applyIncomingActions, dispatchAction, getMutableState } from '@ir-engine/hyperflux'
+import { UserID, applyIncomingActions, dispatchAction, getMutableState } from '@ir-engine/hyperflux'
 import { Network, NetworkPeerFunctions, NetworkState, NetworkWorldUserStateSystem } from '@ir-engine/network'
 import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
-import { EventDispatcher } from '@ir-engine/spatial/src/common/classes/EventDispatcher'
-import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
+import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { Physics, PhysicsWorld } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 
@@ -56,6 +54,7 @@ describe('moveAvatar function tests', () => {
   beforeEach(async () => {
     createEngine()
     initializeSpatialEngine()
+    initializeSpatialViewer()
     await Physics.load()
     Engine.instance.store.userID = 'userId' as UserID
     sceneEntity = loadEmptyScene()
@@ -64,20 +63,6 @@ describe('moveAvatar function tests', () => {
     physicsWorld.timestep = 1 / 60
 
     createMockNetwork()
-
-    const eventDispatcher = new EventDispatcher()
-    ;(API.instance as any) = {
-      service: () => {
-        return {
-          on: (serviceName, cb) => {
-            eventDispatcher.addEventListener(serviceName, cb)
-          },
-          off: (serviceName, cb) => {
-            eventDispatcher.removeEventListener(serviceName, cb)
-          }
-        }
-      }
-    }
   })
 
   afterEach(() => {
@@ -103,7 +88,7 @@ describe('moveAvatar function tests', () => {
         position: new Vector3(),
         rotation: new Quaternion(),
         entityUUID: Engine.instance.userID as string as EntityUUID,
-        avatarID: '' as AvatarID,
+        avatarURL: '',
         name: ''
       })
     )
@@ -144,7 +129,7 @@ describe('moveAvatar function tests', () => {
         position: new Vector3(),
         rotation: new Quaternion(),
         entityUUID: Engine.instance.userID as string as EntityUUID,
-        avatarID: '' as AvatarID,
+        avatarURL: '',
         name: ''
       })
     )
@@ -187,7 +172,7 @@ describe('moveAvatar function tests', () => {
         position: new Vector3(),
         rotation: new Quaternion(),
         entityUUID: Engine.instance.userID as string as EntityUUID,
-        avatarID: '' as AvatarID,
+        avatarURL: '',
         name: ''
       })
     )
@@ -227,7 +212,7 @@ describe('moveAvatar function tests', () => {
         position: new Vector3(),
         rotation: new Quaternion(),
         entityUUID: Engine.instance.userID as string as EntityUUID,
-        avatarID: '' as AvatarID,
+        avatarURL: '',
         name: ''
       })
     )
