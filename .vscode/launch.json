@@ -108,6 +108,12 @@
             "type": "node-terminal",
         },
         {
+            "command": "cd packages/spatial && npx vitest run --reporter=basic ${file}",
+            "name": "vitest run - spatial : Current File",
+            "request": "launch",
+            "type": "node-terminal",
+        },
+        {
             "command": "cd packages/ecs && npm run test",
             "name": "npm run test - ecs",
             "request": "launch",
