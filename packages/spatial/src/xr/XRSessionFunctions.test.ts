@@ -125,13 +125,15 @@ describe('onSessionEnd', () => {
   })
 
   it("should set EngineState.viewerEntity.RendererComponent.renderer.domElement.style.display to ''", async () => {
-    const Expected = null
+    const Expected = ''
     // Sanity check before running
-    const before = getState(XRState).xrFrame
-    expect(before).not.toBe(Expected)
+    const before = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer?.domElement.style
+      .display
+    expect(before).not.toBe(undefined)
     // Run and Check the result
     onSessionEnd()
-    const result = getState(XRState).xrFrame
+    const result = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer?.domElement.style
+      .display
     expect(result).toBe(Expected)
   })
 
