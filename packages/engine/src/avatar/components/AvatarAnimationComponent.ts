@@ -34,7 +34,6 @@ import {
 } from '@pixiv/three-vrm'
 import type * as V0VRM from '@pixiv/types-vrm-0.0'
 
-import { useEffect } from 'react'
 import { AnimationAction, Bone, Euler, Group, Matrix4, Vector3 } from 'three'
 
 import { GLTF } from '@gltf-transform/core'
@@ -44,9 +43,7 @@ import {
   getComponent,
   getOptionalComponent,
   hasComponent,
-  setComponent,
-  useComponent,
-  useOptionalComponent
+  setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
@@ -57,15 +54,11 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { Object3DComponent } from '@ir-engine/spatial/src/renderer/components/Object3DComponent'
-import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { GLTFDocumentState } from '../../gltf/GLTFDocumentState'
-import { addError, removeError } from '../../scene/functions/ErrorFunctions'
 import { proxifyParentChildRelationships } from '../../scene/functions/loadGLTFModel'
 import { hipsRegex, mixamoVRMRigMap } from '../AvatarBoneMatching'
-import { setAvatarAnimations, setupAvatarProportions } from '../functions/avatarFunctions'
 
 export const AvatarAnimationComponent = defineComponent({
   name: 'AvatarAnimationComponent',
@@ -107,28 +100,6 @@ export const AvatarRigComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-    const rigComponent = useComponent(entity, AvatarRigComponent)
-    const gltfComponent = useOptionalComponent(entity, GLTFComponent)
-
-    useEffect(() => {
-      if (gltfComponent?.progress?.value !== 100) return
-
-      try {
-        const vrm = createVRM(entity)
-        setObjectLayers(vrm.scene, ObjectLayers.Avatar)
-        setupAvatarProportions(entity, vrm)
-        rigComponent.vrm.set(vrm)
-        rigComponent.normalizedRig.set(vrm.humanoid.normalizedHumanBones)
-        rigComponent.rawRig.set(vrm.humanoid.rawHumanBones)
-        setAvatarAnimations(entity)
-      } catch (e) {
-        console.error('Failed to load avatar', e)
-        addError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
-        return () => {
-          removeError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
-        }
-      }
-    }, [gltfComponent?.progress?.value, gltfComponent?.src.value])
 
     return null
   },

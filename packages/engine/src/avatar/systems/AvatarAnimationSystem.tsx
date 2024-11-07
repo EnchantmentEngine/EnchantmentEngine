@@ -35,10 +35,12 @@ import {
   getComponent,
   getOptionalComponent,
   hasComponent,
+  setComponent,
+  useComponent,
   useOptionalComponent,
   useQuery
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent } from '@ir-engine/network'
 import {
   createPriorityQueue,
@@ -51,11 +53,13 @@ import { TransformSystem } from '@ir-engine/spatial/src/transform/TransformModul
 import { XRLeftHandComponent, XRRightHandComponent } from '@ir-engine/spatial/src/xr/XRComponents'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
+import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import React from 'react'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { addError, removeError } from '../../scene/functions/ErrorFunctions'
 import { applyHandRotationFK } from '../animation/applyHandRotationFK'
 import { updateAnimationGraph } from '../animation/AvatarAnimationGraph'
 import { getArmIKHint } from '../animation/getArmIKHint'
@@ -63,10 +67,10 @@ import { blendIKChain, solveTwoBoneIK } from '../animation/TwoBoneIKSolver'
 import { ikTargets, preloadedAnimations } from '../animation/Util'
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent, useLoadAnimationFromBatchGLTF } from '../components/AnimationComponent'
-import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
+import createVRM, { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 import { AvatarIKTargetComponent } from '../components/AvatarIKComponents'
-import { setAvatarSpeedFromRootMotion } from '../functions/avatarFunctions'
+import { setAvatarAnimations, setAvatarSpeedFromRootMotion, setupAvatarProportions } from '../functions/avatarFunctions'
 import { bindAnimationClipFromMixamo, retargetAnimationClip } from '../functions/retargetMixamoRig'
 import { updateVRMRetargeting } from '../functions/updateVRMRetargeting'
 import { AnimationSystem } from './AnimationSystem'
@@ -371,16 +375,49 @@ const AnimationReactor = () => {
   return null
 }
 
+const RigReactor = (props: { entity: Entity }) => {
+  const entity = props.entity
+  const rigComponent = useComponent(entity, AvatarRigComponent)
+  const gltfComponent = useOptionalComponent(entity, GLTFComponent)
+  console.log(entity)
+  useEffect(() => {
+    if (gltfComponent?.progress?.value !== 100) return
+    try {
+      const vrm = createVRM(entity)
+      setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Avatars)
+      setupAvatarProportions(entity, vrm)
+      rigComponent.vrm.set(vrm)
+      rigComponent.normalizedRig.set(vrm.humanoid.normalizedHumanBones)
+      rigComponent.rawRig.set(vrm.humanoid.rawHumanBones)
+      setAvatarAnimations(entity)
+    } catch (e) {
+      console.error('Failed to load avatar', e)
+      addError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
+      return () => {
+        removeError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
+      }
+    }
+  }, [gltfComponent?.progress?.value, gltfComponent?.src.value])
+
+  return null
+}
+
 export const AvatarAnimationSystem = defineSystem({
   uuid: 'ee.engine.AvatarAnimationSystem',
   insert: { after: AnimationSystem },
   execute,
   reactor: () => {
-    if (!isClient || !useQuery([RendererComponent]).length) return null
+    // if (!isClient || !useQuery([RendererComponent]).length) return null
+    const avatarEntities = useQuery([AvatarRigComponent])
     return (
       <>
         <Reactor />
         <AnimationReactor />
+        <>
+          {avatarEntities.map((entity: Entity) => (
+            <RigReactor entity={entity} key={entity} />
+          ))}
+        </>
       </>
     )
   }
