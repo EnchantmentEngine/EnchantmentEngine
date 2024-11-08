@@ -62,6 +62,7 @@ export const removeEntity = (entity: Entity) => {
   bitECS.removeEntity(HyperFlux.store, entity)
 
   const layer = EntityLayerState.getEntityLayer(entity)
+  if (!layer) return
   for (const layerID of Object.keys(layer.relations)) {
     const relation = layer.relations[layerID as LayerID]
     if (relation === 'propagate') {

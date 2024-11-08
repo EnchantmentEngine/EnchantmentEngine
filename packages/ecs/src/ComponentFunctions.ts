@@ -53,7 +53,7 @@ import {
 import { Entity, UndefinedEntity } from './Entity'
 import { createEntity, EntityContext, entityExists } from './EntityFunctions'
 import { defineQuery } from './QueryFunctions'
-import { Kind, Static, Schema as TSchema } from './schemas/JSONSchemaTypes'
+import { Kind, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
 import {
   CreateSchemaValue,
   HasDeserializers,
@@ -572,15 +572,19 @@ export const setComponent = <C extends Component>(
 
             //switch any target entities in the args to their corresponding linked entity in the destination layer
             if (component.schema) {
-              const componentSchema = component.schema
-              const frontier = [{ schema: componentSchema, setArgs: args }]
+              const componentSchema = component.schema as TTypedSchema<C>
+              const frontier = [{ schema: componentSchema, setArgs: args }] as { schema: any; setArgs: any }[]
               while (frontier.length > 0) {
                 const { schema, setArgs } = frontier.pop()!
                 if (typeof setArgs !== 'object') continue
                 for (const key in setArgs) {
-                  const valSchema = schema[key]
+                  const valSchema = schema.properties?.[key] as any
                   //check if the value is an entity
-                  //if so, we need to switch it to the linked entity in the destination layer
+                  if (valSchema && valSchema.options['$id'] === 'Entity') {
+                    //if so, we need to switch it to the linked entity in the destination layer
+                    const linkedEntity = EntityLayerState.getLinkedEntity(setArgs[key], dstLayerID as LayerID)
+                    setArgs[key] = linkedEntity
+                  }
                 }
               }
             }

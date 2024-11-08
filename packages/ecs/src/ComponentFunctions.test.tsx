@@ -29,6 +29,7 @@ import { Types } from 'bitecs'
 import React, { useEffect } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import sinon from 'sinon'
 import { DirectionalLight, Matrix4, Vector3 } from 'three'
 import {
@@ -46,6 +47,7 @@ import {
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, EntityUUID, UndefinedEntity } from './Entity'
 import { createEntity, removeEntity } from './EntityFunctions'
+import { EntityLayerState, LayerID } from './LayerState'
 import { UUIDComponent } from './UUIDComponent'
 import { ECSSchema } from './schemas/ECSSchemas'
 import { CheckSchemaValue, CreateSchemaValue } from './schemas/JSONSchemaUtils'
@@ -862,4 +864,19 @@ describe('ComponentFunctions Hooks', async () => {
 
   // TODO
   // describe('defineQuery', () => {})
+
+  describe('setComponent: Authoring Layer', async () => {
+    it('correctly changes target entity to destination layer', async () => {
+      const parentEntity = createEntity('authoring' as LayerID)
+      const childEntity = createEntity('authoring' as LayerID)
+
+      const simParent = EntityLayerState.getLinkedEntity(parentEntity, 'simulation' as LayerID)
+      const simChild = EntityLayerState.getLinkedEntity(childEntity, 'simulation' as LayerID)
+
+      setComponent(childEntity, EntityTreeComponent, { parentEntity })
+
+      const childETree = getComponent(simChild, EntityTreeComponent)
+      assert.equal(childETree.parentEntity, simParent)
+    })
+  })
 })

@@ -59,7 +59,9 @@ export const EntityLayerState = defineState({
   },
   getEntityLayer: (entity: Entity) => {
     const layerID = EntityLayerState.getLayerID(entity)
-    return getState(EntityLayerState).layers[layerID]
+    const layerState = getState(EntityLayerState)
+    const result = layerState.layers[layerID]
+    return result
   },
   useEntityLayer: (entity: Entity) => {
     const layerState = useMutableState(EntityLayerState)
