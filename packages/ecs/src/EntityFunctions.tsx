@@ -45,7 +45,7 @@ export const createEntity = (layerID: LayerID = 'simulation' as LayerID): Entity
   for (const dstLayerID in layer.relations) {
     //for each relation, create an entity in the corresponding layer
     const relationType = layer.relations[dstLayerID]
-    if (relationType === 'inherit') {
+    if (relationType === 'propagate') {
       const layerEntity = createEntity(dstLayerID as LayerID)
       linkedEntityObject[dstLayerID] = layerEntity
       layerState.linkedEntities[layerEntity].set(linkedEntityObject)
@@ -64,7 +64,7 @@ export const removeEntity = (entity: Entity) => {
   const layer = EntityLayerState.getEntityLayer(entity)
   for (const layerID of Object.keys(layer.relations)) {
     const relation = layer.relations[layerID as LayerID]
-    if (relation === 'inherit') {
+    if (relation === 'propagate') {
       const linkedEntity = EntityLayerState.getLinkedEntity(entity, layerID as LayerID)
       removeEntity(linkedEntity)
     }

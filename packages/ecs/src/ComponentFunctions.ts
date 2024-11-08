@@ -570,6 +570,21 @@ export const setComponent = <C extends Component>(
               }
             }
 
+            //switch any target entities in the args to their corresponding linked entity in the destination layer
+            if (component.schema) {
+              const componentSchema = component.schema
+              const frontier = [{ schema: componentSchema, setArgs: args }]
+              while (frontier.length > 0) {
+                const { schema, setArgs } = frontier.pop()!
+                if (typeof setArgs !== 'object') continue
+                for (const key in setArgs) {
+                  const valSchema = schema[key]
+                  //check if the value is an entity
+                  //if so, we need to switch it to the linked entity in the destination layer
+                }
+              }
+            }
+
             //set up reactive logic to propagate component changes to linked entity
             setComponent(dstEntity, component, component.stateMap[entity]!.get(NO_PROXY_STEALTH))
           }

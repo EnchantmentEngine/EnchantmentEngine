@@ -29,7 +29,7 @@ import { Entity } from './Entity'
 
 export type LayerID = OpaqueType<'LayerID'> & string
 
-export type LayerRelationType = 'inherit' //inherit: target layer receives same updates as source layer when they happen, but can still deviate values later
+export type LayerRelationType = 'propagate' //propagate: target layer receives same updates as source layer when they happen, but can still deviate values later
 
 export type Layer = {
   enabled: boolean
@@ -43,15 +43,23 @@ export const EntityLayerState = defineState({
       simulation: {
         enabled: true,
         relations: {}
+      },
+      authoring: {
+        enabled: true,
+        relations: {
+          simulation: 'propagate'
+        }
       }
     } as Record<LayerID, Layer>,
     entityLayerMap: {} as Record<Entity, LayerID>,
     linkedEntities: {} as Record<Entity, Record<LayerID, Entity>>
   },
+  getLayerID: (entity: Entity) => {
+    return getState(EntityLayerState).entityLayerMap[entity]
+  },
   getEntityLayer: (entity: Entity) => {
-    const layerState = getState(EntityLayerState)
-    const layerID = layerState.entityLayerMap[entity]
-    return layerState.layers[layerID]
+    const layerID = EntityLayerState.getLayerID(entity)
+    return getState(EntityLayerState).layers[layerID]
   },
   useEntityLayer: (entity: Entity) => {
     const layerState = useMutableState(EntityLayerState)
@@ -78,3 +86,10 @@ export const EntityLayerState = defineState({
     layerState.linkedEntities[dstEntity].set(srcLinkedEntities.get(NO_PROXY))
   }
 })
+
+export function getLayerContext(srcEntity: Entity) {
+  const layerContext = EntityLayerState.getLayerID(srcEntity)
+  return (dstEntity: Entity) => {
+    return EntityLayerState.getLinkedEntity(dstEntity, layerContext)
+  }
+}

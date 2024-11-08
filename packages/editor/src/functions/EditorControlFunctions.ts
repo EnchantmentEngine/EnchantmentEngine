@@ -33,7 +33,9 @@ import {
   ComponentJSONIDMap,
   getComponent,
   getOptionalComponent,
+  removeComponent,
   SerializedComponentType,
+  setComponent,
   updateComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -95,6 +97,9 @@ const hasComponentInAuthoringLayer = <C extends Component<any, any>>(entity: Ent
   return node?.extensions?.[componentJsonId] !== undefined
 }
 
+/**
+ *
+ */
 const appendToSnapshot = (toAppend: GLTF.IGLTF, parent = getState(EditorState).rootEntity) => {
   if (!toAppend.scenes || !toAppend.nodes) return
 
@@ -132,27 +137,34 @@ const addOrRemoveComponent = <C extends Component<any, any>>(
   add: boolean,
   args: SetComponentType<C> | undefined = undefined
 ) => {
-  const sceneComponentID = component.jsonID
-  if (!sceneComponentID) return
+  // const sceneComponentID = component.jsonID
+  // if (!sceneComponentID) return
 
-  const scenes = getSourcesForEntities(entities)
+  // const scenes = getSourcesForEntities(entities)
 
-  for (const [sceneID, entities] of Object.entries(scenes)) {
-    const gltf = GLTFSnapshotState.cloneCurrentSnapshot(sceneID)
-    for (const entity of entities) {
-      const entityUUID = getComponent(entity, UUIDComponent)
-      const node = getGLTFNodeByUUID(gltf.data, entityUUID)
-      if (!node) continue
-      if (add) {
-        node.extensions![sceneComponentID] = {
-          ...componentJsonDefaults(ComponentJSONIDMap.get(sceneComponentID)!),
-          ...args
-        }
-      } else {
-        delete node.extensions?.[sceneComponentID]
-      }
+  // for (const [sceneID, entities] of Object.entries(scenes)) {
+  //   const gltf = GLTFSnapshotState.cloneCurrentSnapshot(sceneID)
+  //   for (const entity of entities) {
+  //     const entityUUID = getComponent(entity, UUIDComponent)
+  //     const node = getGLTFNodeByUUID(gltf.data, entityUUID)
+  //     if (!node) continue
+  //     if (add) {
+  //       node.extensions![sceneComponentID] = {
+  //         ...componentJsonDefaults(ComponentJSONIDMap.get(sceneComponentID)!),
+  //         ...args
+  //       }
+  //     } else {
+  //       delete node.extensions?.[sceneComponentID]
+  //     }
+  //   }
+  //   dispatchAction(GLTFSnapshotAction.createSnapshot(gltf))
+  // }
+  for (const entity of entities) {
+    if (add) {
+      setComponent(entity, component, args)
+    } else {
+      removeComponent(entity, component)
     }
-    dispatchAction(GLTFSnapshotAction.createSnapshot(gltf))
   }
 }
 
