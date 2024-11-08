@@ -23,8 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 import { DepthDataTexture } from './DepthDataTexture'
 import { XRAction, XRState } from './XRState'
 
@@ -55,6 +59,11 @@ const XRStateDefaults = {
   xrFrame: null as XRFrame | null
 }
 
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
+
 describe('XRAction', () => {
   describe('sessionChanged', () => {
     it('should initialize the .name field with the expected value', () => {
@@ -83,11 +92,38 @@ describe('XRState', () => {
     })
   }) //:: XRState.initial
 
+  describe('getWorldScale', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should return the world scale of XRState by multiplying XRState.sceneScale by XRState.userHeightRatio', () => {
+      const SceneScale = 21
+      const UserHeightRatio = 2
+      const Expected = 42
+      // Set the data as expected
+      getMutableState(XRState).sceneScale.set(SceneScale)
+      getMutableState(XRState).userHeightRatio.set(UserHeightRatio)
+      // Sanity check before running
+      const before = getState(XRState)
+      expect(before.sceneScale).toBe(SceneScale)
+      expect(before.userHeightRatio).toBe(UserHeightRatio)
+      // Run and Check the result
+      const result = XRState.worldScale
+      expect(result).toBe(Expected)
+    })
+  }) //:: XRState.worldScale.get
+
   /** @todo */
-  describe('getWorldScale', () => {}) //:: XRState
-  describe('isMovementControlsEnabled', () => {}) //:: XRState
-  describe('useMovementControlsEnabled', () => {}) //:: XRState
-  describe('isCameraAttachedToAvatar', () => {}) //:: XRState
-  describe('useCameraAttachedToAvatar', () => {}) //:: XRState
-  describe('setTrackingSpace', () => {}) //:: XRState
+  describe('isMovementControlsEnabled', () => {}) //:: XRState.isMovementControlsEnabled
+  describe('useMovementControlsEnabled', () => {}) //:: XRState.useMovementControlsEnabled
+  describe('isCameraAttachedToAvatar', () => {}) //:: XRState.isCameraAttachedToAvatar
+  describe('useCameraAttachedToAvatar', () => {}) //:: XRState.useCameraAttachedToAvatar
+  describe('setTrackingSpace', () => {}) //:: XRState.setTrackingSpace
 }) //:: XRState
