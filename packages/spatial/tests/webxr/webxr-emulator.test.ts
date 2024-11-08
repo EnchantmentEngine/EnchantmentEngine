@@ -26,10 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { createEngine, destroyEngine } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { destroySpatialEngine, destroySpatialViewer } from '../../src/initializeEngine'
 import { XRState } from '../../src/xr/XRState'
-import { mockSpatialEngine } from '../util/mockSpatialEngine'
-import { CustomWebXRPolyfill, requestEmulatedXRSession } from './emulator'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from './emulator'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {
@@ -39,13 +38,11 @@ beforeAll(() => {
 describe('WebXR-emulator', () => {
   beforeEach(async () => {
     createEngine()
-    mockSpatialEngine()
-    await requestEmulatedXRSession()
+    await mockEmulatedXREngine()
   })
 
   afterEach(() => {
-    destroySpatialViewer()
-    destroySpatialEngine()
+    destroyEmulatedXREngine()
     destroyEngine()
   })
 
