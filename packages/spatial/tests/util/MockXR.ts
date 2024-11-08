@@ -64,6 +64,11 @@ export class MockXRFrame {
   getPose = (space, origin) => {
     return this.pose
   }
+
+  // https://developer.mozilla.org/en-US/docs/Web/API/XRFrame/getViewerPose
+  getViewerPose(_referenceSpace: XRReferenceSpace): XRViewerPose | undefined {
+    return {} as XRViewerPose
+  }
 }
 
 export class MockXRPose {
