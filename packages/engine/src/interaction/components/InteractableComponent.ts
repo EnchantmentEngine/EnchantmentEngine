@@ -120,19 +120,29 @@ export const updateInteractableUI = (entity: Entity) => {
   updateXrDistVec3(selfAvatarEntity)
 
   const hasVisibleComponent = hasComponent(interactable.uiEntity, VisibleComponent)
-  if (hasVisibleComponent && boundingBox) {
-    updateBoundingBox(entity)
+  if (hasVisibleComponent) {
+    if (boundingBox) updateBoundingBox(entity)
+    if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
+      const center = boundingBox.box.getCenter(_center)
+      const size = boundingBox.box.getSize(_size)
+      if (!size.y) size.y = 1
+      const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
+      xruiTransform.position.x = center.x
+      xruiTransform.position.z = center.z
+      xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, center.y + 0.7 * size.y, alpha)
 
-    const center = boundingBox.box.getCenter(_center)
-    const size = boundingBox.box.getSize(_size)
-    if (!size.y) size.y = 1
-    const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
-    xruiTransform.position.x = center.x
-    xruiTransform.position.z = center.z
-    xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, center.y + 0.7 * size.y, alpha)
+      const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+      xruiTransform.rotation.copy(cameraTransform.rotation)
+    } else {
+      TransformComponent.getWorldPosition(entity, _center)
+      const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
+      xruiTransform.position.x = _center.x
+      xruiTransform.position.z = _center.z
+      xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, _center.y + 0.5, alpha)
 
-    const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
-    xruiTransform.rotation.copy(cameraTransform.rotation)
+      const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+      xruiTransform.rotation.copy(cameraTransform.rotation)
+    }
   }
 
   const distance = xrDistVec3.distanceToSquared(xruiTransform.position)
@@ -208,9 +218,12 @@ const addInteractableUI = (entity: Entity) => {
 
   const uiTransform = getComponent(uiEntity, TransformComponent)
   const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
-  if (boundingBox) {
+  if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
     updateBoundingBox(entity)
     boundingBox.box.getCenter(uiTransform.position)
+  } else {
+    TransformComponent.getWorldPosition(entity, _center)
+    uiTransform.position.copy(_center)
   }
   getMutableComponent(entity, InteractableComponent).uiEntity.set(uiEntity)
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(EngineState).originEntity })
@@ -230,15 +243,15 @@ export const InteractableComponent = defineComponent({
   jsonID: 'EE_interactable',
 
   schema: S.Object({
-    canInteract: S.Bool(false),
-    uiInteractable: S.Bool(true),
-    uiEntity: S.Entity(),
+    canInteract: S.NonSerialized(S.Bool(false)),
+    uiInteractable: S.NonSerialized(S.Bool(true)),
+    uiEntity: S.NonSerialized(S.Entity()),
     label: S.String('E'),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, XRUIVisibilityOverride.none),
-    uiActivationType: S.Enum(XRUIActivationType, XRUIActivationType.proximity),
+    uiVisibilityOverride: S.NonSerialized(S.Enum(XRUIVisibilityOverride, XRUIVisibilityOverride.none)),
+    uiActivationType: S.NonSerialized(S.Enum(XRUIActivationType, XRUIActivationType.proximity)),
     activationDistance: S.Number(2),
     clickInteract: S.Bool(false),
-    highlighted: S.Bool(false),
+    highlighted: S.NonSerialized(S.Bool(false)),
     callbacks: S.Array(
       S.Object({
         /**
