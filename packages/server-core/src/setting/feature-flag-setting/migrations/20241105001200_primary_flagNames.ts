@@ -41,51 +41,54 @@ type OldFeatureFlagSettingType = FeatureFlagSettingType & {
 export async function up(knex: Knex): Promise<void> {
   // as in "upgrade"
 
-  const flagNameColumnExists = await knex.schema.hasColumn(featureFlagSettingPath, 'flagName')
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  if (!flagNameColumnExists) {
-    return
-  }
+  migrateUp: {
+    const flagNameColumnExists = await knex.schema.hasColumn(featureFlagSettingPath, 'flagName')
 
-  const oldRows = await knex.select<OldFeatureFlagSettingType[]>().from(featureFlagSettingPath)
-
-  console.log('Old rows:', oldRows)
-
-  const oldRowsByFlagName = new Map<string, OldFeatureFlagSettingType>()
-
-  for (const oldRow of oldRows) {
-    const flagName = oldRow.flagName
-    const existingUpdatedAt = oldRowsByFlagName.get(flagName)?.updatedAt
-    if (existingUpdatedAt != null && existingUpdatedAt > oldRow.updatedAt) {
-      continue
+    if (!flagNameColumnExists) {
+      break migrateUp
     }
-    oldRowsByFlagName.set(flagName, oldRow)
-  }
 
-  await knex.schema.dropTable(featureFlagSettingPath)
+    const oldRows = await knex.select<OldFeatureFlagSettingType[]>().from(featureFlagSettingPath)
+    const oldRowsByFlagName = new Map<string, OldFeatureFlagSettingType>()
 
-  await knex.schema.createTable(featureFlagSettingPath, (table) => {
-    table.string('id').primary()
-    table.uuid('userId').nullable()
-    table.boolean('flagValue').notNullable()
-    table.dateTime('createdAt').notNullable()
-    table.dateTime('updatedAt').notNullable()
-  })
+    for (const oldRow of oldRows) {
+      const flagName = oldRow.flagName
+      const existingUpdatedAt = oldRowsByFlagName.get(flagName)?.updatedAt
+      if (existingUpdatedAt != null && existingUpdatedAt > oldRow.updatedAt) {
+        continue
+      }
+      oldRowsByFlagName.set(flagName, oldRow)
+    }
 
-  const newRows = [...oldRowsByFlagName.values()].map((oldRow) => {
-    return {
+    await knex.schema.dropTable(featureFlagSettingPath)
+
+    await knex.schema.createTable(featureFlagSettingPath, (table) => {
+      table.string('id').primary()
+
+      //@ts-ignore
+      table.uuid('userId', 36).collate('utf8mb4_bin').nullable().index()
+      table.foreign('userId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+
+      table.boolean('flagValue').notNullable()
+      table.dateTime('createdAt').notNullable()
+      table.dateTime('updatedAt').notNullable()
+    })
+
+    const newRows = [...oldRowsByFlagName.values()].map((oldRow) => ({
       ...oldRow,
       id: oldRow.flagName
+    }))
+
+    if (newRows.length === 0) {
+      break migrateUp
     }
-  })
 
-  console.log('New rows:', newRows)
-
-  if (newRows.length === 0) {
-    return
+    await knex.insert(newRows).into(featureFlagSettingPath)
   }
 
-  await knex.insert(newRows).into(featureFlagSettingPath)
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }
 
 /**
@@ -95,40 +98,44 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   // as in "downgrade"
 
-  const flagNameColumnExists = await knex.schema.hasColumn(featureFlagSettingPath, 'flagName')
-  if (flagNameColumnExists) {
-    return
-  }
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  const newRows = await knex.select<FeatureFlagSettingType[]>().from(featureFlagSettingPath)
+  migrateDown: {
+    const flagNameColumnExists = await knex.schema.hasColumn(featureFlagSettingPath, 'flagName')
+    if (flagNameColumnExists) {
+      break migrateDown
+    }
 
-  console.log('New rows:', newRows)
+    const newRows = await knex.select<FeatureFlagSettingType[]>().from(featureFlagSettingPath)
 
-  await knex.schema.dropTable(featureFlagSettingPath)
+    await knex.schema.dropTable(featureFlagSettingPath)
 
-  await knex.schema.createTable(featureFlagSettingPath, (table) => {
-    //@ts-ignore
-    table.uuid('id').collate('utf8mb4_bin').primary()
-    table.string('flagName').notNullable()
-    table.uuid('userId').nullable()
-    table.boolean('flagValue').notNullable()
-    table.dateTime('createdAt').notNullable()
-    table.dateTime('updatedAt').notNullable()
-  })
+    await knex.schema.createTable(featureFlagSettingPath, (table) => {
+      //@ts-ignore
+      table.uuid('id').collate('utf8mb4_bin').primary()
+      table.string('flagName').notNullable()
 
-  const oldRows = newRows.map((newRow) => {
-    return {
+      //@ts-ignore
+      table.uuid('userId', 36).collate('utf8mb4_bin').nullable().index()
+      table.foreign('userId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+
+      table.boolean('flagValue').notNullable()
+      table.dateTime('createdAt').notNullable()
+      table.dateTime('updatedAt').notNullable()
+    })
+
+    const oldRows = newRows.map((newRow) => ({
       ...newRow,
       flagName: newRow.id,
       id: uuidv4()
+    }))
+
+    if (oldRows.length === 0) {
+      break migrateDown
     }
-  })
 
-  console.log('Old rows:', oldRows)
-
-  if (oldRows.length === 0) {
-    return
+    await knex.insert(oldRows).into(featureFlagSettingPath)
   }
 
-  await knex.insert(oldRows).into(featureFlagSettingPath)
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }
