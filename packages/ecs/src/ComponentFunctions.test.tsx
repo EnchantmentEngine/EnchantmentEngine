@@ -29,7 +29,9 @@ import { Types } from 'bitecs'
 import React, { useEffect } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { getState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import sinon from 'sinon'
 import { DirectionalLight, Matrix4, Vector3 } from 'three'
 import {
@@ -866,17 +868,61 @@ describe('ComponentFunctions Hooks', async () => {
   // describe('defineQuery', () => {})
 
   describe('setComponent: Authoring Layer', async () => {
-    it('correctly changes target entity to destination layer', async () => {
+    it('changes target entity to destination layer', async () => {
+      createEngine()
+
       const parentEntity = createEntity('authoring' as LayerID)
       const childEntity = createEntity('authoring' as LayerID)
-
+      const layerState = getState(EntityLayerState)
+      console.log(layerState)
       const simParent = EntityLayerState.getLinkedEntity(parentEntity, 'simulation' as LayerID)
       const simChild = EntityLayerState.getLinkedEntity(childEntity, 'simulation' as LayerID)
 
       setComponent(childEntity, EntityTreeComponent, { parentEntity })
 
-      const childETree = getComponent(simChild, EntityTreeComponent)
-      assert.equal(childETree.parentEntity, simParent)
+      const simChildETree = getComponent(simChild, EntityTreeComponent)
+      assert.equal(simChildETree.parentEntity, simParent)
+
+      const authChildETree = getComponent(childEntity, EntityTreeComponent)
+      assert.equal(authChildETree.parentEntity, parentEntity)
+
+      destroyEngine()
+    })
+    it('adds component to destination layer entity', async () => {
+      createEngine()
+
+      const entity = createEntity('authoring' as LayerID)
+      const simEntity = EntityLayerState.getLinkedEntity(entity, 'simulation' as LayerID)
+
+      setComponent(entity, UUIDComponent, 'AAAAAAAAAAAAHHHHHHHHHHHHHHHHH' as EntityUUID)
+
+      assert.equal(getComponent(simEntity, UUIDComponent), 'AAAAAAAAAAAAHHHHHHHHHHHHHHHHH')
+      assert.equal(getComponent(entity, UUIDComponent), getComponent(simEntity, UUIDComponent))
+
+      destroyEngine()
+    })
+    it('removes component from destination layer entity', async () => {
+      createEngine()
+
+      const entity = createEntity('authoring' as LayerID)
+      const simEntity = EntityLayerState.getLinkedEntity(entity, 'simulation' as LayerID)
+
+      setComponent(entity, TransformComponent, { position: new Vector3(1, 2, 3) })
+
+      assert.equal(getComponent(simEntity, TransformComponent).position.x, 1)
+
+      removeComponent(simEntity, TransformComponent)
+
+      assert.equal(hasComponent(simEntity, TransformComponent), false)
+      assert.equal(hasComponent(entity, TransformComponent), true)
+
+      setComponent(entity, TransformComponent, { position: new Vector3(4, 5, 6) })
+
+      assert.equal(getComponent(simEntity, TransformComponent).position.x, 4)
+      removeComponent(entity, TransformComponent)
+      assert.equal(hasComponent(simEntity, TransformComponent), false)
+
+      destroyEngine()
     })
   })
 })
