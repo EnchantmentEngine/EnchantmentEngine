@@ -76,10 +76,13 @@ export async function up(knex: Knex): Promise<void> {
       table.dateTime('updatedAt').notNullable()
     })
 
-    const newRows = [...oldRowsByFlagName.values()].map((oldRow) => ({
-      ...oldRow,
-      id: oldRow.flagName
-    }))
+    const newRows = [...oldRowsByFlagName.values()].map((oldRow) => {
+      const { flagName: id, ...properties } = oldRow
+      return {
+        ...properties,
+        id
+      }
+    })
 
     if (newRows.length === 0) {
       break migrateUp
