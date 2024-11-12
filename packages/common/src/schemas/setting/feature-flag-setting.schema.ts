@@ -58,9 +58,12 @@ export const featureFlagSettingDataSchema = Type.Pick(featureFlagSettingSchema, 
 export interface FeatureFlagSettingData extends Static<typeof featureFlagSettingDataSchema> {}
 
 // Schema for updating existing entries
-export const featureFlagSettingPatchSchema = Type.Partial(featureFlagSettingSchema, {
-  $id: 'FeatureFlagSettingPatch'
-})
+export const featureFlagSettingPatchSchema = Type.Partial(
+  Type.Pick(featureFlagSettingSchema, ['id', 'flagValue', 'userId']),
+  {
+    $id: 'FeatureFlagSettingPatch'
+  }
+)
 export interface FeatureFlagSettingPatch extends Static<typeof featureFlagSettingPatchSchema> {}
 
 // Schema for allowed query properties

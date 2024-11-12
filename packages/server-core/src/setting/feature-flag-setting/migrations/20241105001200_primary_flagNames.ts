@@ -66,6 +66,7 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable(featureFlagSettingPath, (table) => {
     table.string('id').primary()
+    table.uuid('userId').nullable()
     table.boolean('flagValue').notNullable()
     table.dateTime('createdAt').notNullable()
     table.dateTime('updatedAt').notNullable()
@@ -109,6 +110,7 @@ export async function down(knex: Knex): Promise<void> {
     //@ts-ignore
     table.uuid('id').collate('utf8mb4_bin').primary()
     table.string('flagName').notNullable()
+    table.uuid('userId').nullable()
     table.boolean('flagValue').notNullable()
     table.dateTime('createdAt').notNullable()
     table.dateTime('updatedAt').notNullable()

@@ -44,26 +44,27 @@ const FeaturesTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
   const displayedFeatures = useHookstate<FeatureFlagSettingType[]>([])
 
   const featureFlagSettings = useFind(featureFlagSettingPath, { query: { paginate: false } })
-
+  const missingFlagNames = useHookstate<string[]>([])
   useEffect(() => {
     if (featureFlagSettings.status === 'success') {
       const defaultFlagNames = getAllStringValueNodes(FeatureFlags)
-      const missingFlagNames = defaultFlagNames.filter(
-        (flagId) =>
-          !featureFlagSettings.data.find(
-            (flag) =>
-              flag.id === flagId &&
-              !Object.keys(flag)
-                .filter((key) => !defaultProps.includes(key))
-                .some((item) => !item)
-          )
+      missingFlagNames.set(
+        defaultFlagNames.filter(
+          (flagId) =>
+            !featureFlagSettings.data.find(
+              (flag) =>
+                flag.id === flagId &&
+                !Object.keys(flag)
+                  .filter((key) => !defaultProps.includes(key))
+                  .some((item) => !item)
+            )
+        )
       )
 
       const updatedFeatures: FeatureFlagSettingType[] = [
-        ...missingFlagNames.map((flagId) => ({
-          flagId,
+        ...missingFlagNames.value.map((id) => ({
+          id,
           flagValue: true,
-          id: '',
           createdAt: '',
           updatedAt: ''
         })),
@@ -87,21 +88,21 @@ const FeaturesTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
           .toSorted()
           .sort((a, b) => a.id.localeCompare(b.id))
           .map((feature) => (
-            <FeatureItem key={feature.id} feature={feature} />
+            <FeatureItem key={feature.id} feature={feature} exists={!missingFlagNames.value.includes(feature.id)} />
           ))}
       </div>
     </Accordion>
   )
 })
 
-const FeatureItem = ({ feature }: { feature: FeatureFlagSettingType }) => {
+const FeatureItem = ({ feature, exists }: { feature: FeatureFlagSettingType; exists: boolean }) => {
   const { t } = useTranslation()
 
   const featureFlagSettingMutation = useMutation(featureFlagSettingPath)
   const additionalProps = Object.keys(feature).filter((key) => !defaultProps.includes(key))
 
   const createOrUpdateFeatureFlag = async (feature: FeatureFlagSettingType, enabled: boolean) => {
-    if (feature.id) {
+    if (exists) {
       await featureFlagSettingMutation.patch(feature.id, { flagValue: enabled })
     } else {
       await featureFlagSettingMutation.create({
