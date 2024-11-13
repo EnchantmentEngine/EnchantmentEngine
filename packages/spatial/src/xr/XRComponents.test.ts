@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { UndefinedEntity, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { assertArrayEqual } from '../physics/components/RigidBodyComponent.test'
+import { assertArrayEqual } from '../../tests/util/mathAssertions'
 import {
   XRAnchorComponent,
   XRHandComponent,
