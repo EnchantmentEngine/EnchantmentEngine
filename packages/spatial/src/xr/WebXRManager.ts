@@ -40,11 +40,11 @@ import {
 } from 'three'
 
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
 
 import { createAnimationLoop, ECSState } from '@ir-engine/ecs'
 import { CameraComponent } from '../camera/components/CameraComponent'
+import { EngineState } from '../EngineState'
 import { XRState } from './XRState'
 
 // augment PerspectiveCamera
@@ -274,7 +274,7 @@ export function createWebXRManager(renderer: WebGLRenderer) {
   scope.updateCamera = function () {}
 
   scope.getCamera = function () {
-    return getComponent(Engine.instance.cameraEntity, CameraComponent)
+    return getComponent(getState(EngineState).viewerEntity, CameraComponent)
   }
 
   scope.getFoveation = function () {
@@ -293,7 +293,7 @@ export function createWebXRManager(renderer: WebGLRenderer) {
   }
 
   /** @todo put foveation in state and make a reactor to update it */
-  scope.setFoveation = function (foveation) {
+  scope.setFoveation = function (foveation: number) {
     const glBaseLayer = xrRendererState.glBaseLayer.value as XRWebGLLayer
     const glProjLayer = xrRendererState.glProjLayer.value as XRProjectionLayer
 
