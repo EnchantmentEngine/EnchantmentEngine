@@ -40,7 +40,7 @@ import {
 } from 'three'
 
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 
 import { createAnimationLoop, ECSState } from '@ir-engine/ecs'
 import { CameraComponent } from '../camera/components/CameraComponent'
@@ -294,8 +294,8 @@ export function createWebXRManager(renderer: WebGLRenderer) {
 
   /** @todo put foveation in state and make a reactor to update it */
   scope.setFoveation = function (foveation: number) {
-    const glBaseLayer = xrRendererState.glBaseLayer.value as XRWebGLLayer
-    const glProjLayer = xrRendererState.glProjLayer.value as XRProjectionLayer
+    const glBaseLayer = xrRendererState.glBaseLayer.get(NO_PROXY) as XRWebGLLayer
+    const glProjLayer = xrRendererState.glProjLayer.get(NO_PROXY) as XRProjectionLayer
 
     // 0 = no foveation = full resolution
     // 1 = maximum foveation = the edges render at lower resolution
