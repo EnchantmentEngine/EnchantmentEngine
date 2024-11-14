@@ -34,14 +34,14 @@ interface EasingType {
   inOut: EasingFunction
 }
 
-class EasingBuilder {
+class EasingBuilder<P extends string> {
   private constructor(
     private fn: (t: number) => number,
-    private path: string,
+    private path: P,
     private isFinal: boolean = false
   ) {}
 
-  static create(fn: (t: number) => number, path: string): EasingType {
+  static create<P extends string>(fn: (t: number) => number, path: P): EasingType {
     const builder = new EasingBuilder(fn, path)
     return {
       in: builder.createIn(),
@@ -92,8 +92,24 @@ export const Easing = {
     }
     const t2 = t - 2.625 / 2.75
     return 7.5625 * t2 * t2 + 0.984375
-  }, 'bounce')
+  }, 'bounce'),
+  fromPath: <P extends string>(path: P): EasingFunction => {
+    const [name, mode] = path.split('.')
+    const easing = Easing[name as keyof typeof Easing]
+    if (!easing) {
+      throw new Error(`Invalid easing function path: ${path}`)
+    }
+    return easing[mode as keyof EasingType]
+  }
 } as const
+
+// export all of the easing function paths as a strongly typed string array
+export const EasingFunctionPaths = Object.values(Easing).reduce<string[]>((acc, easing) => {
+  if (typeof easing === 'object') {
+    acc.push(easing.in.path, easing.out.path, easing.inOut.path)
+  }
+  return acc
+}, [])
 
 // Usage examples:
 // const linear = Easing.linear

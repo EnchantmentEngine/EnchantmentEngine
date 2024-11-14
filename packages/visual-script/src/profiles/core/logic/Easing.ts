@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EasingFunctions, EasingModes, makeFunctionNodeDefinition, NodeCategory } from '../../../VisualScriptModule'
+import { Easing as E, EasingFunctionPaths, makeFunctionNodeDefinition, NodeCategory } from '../../../VisualScriptModule'
 
 export const Easing = makeFunctionNodeDefinition({
   typeName: 'math/easing',
@@ -34,13 +34,7 @@ export const Easing = makeFunctionNodeDefinition({
       valueType: 'string',
       name: 'easingFunction',
       defaultValue: 'linear',
-      options: Object.keys(EasingFunctions)
-    },
-    easingMode: {
-      valueType: 'string',
-      name: 'easingMode',
-      defaultValue: 'inOut',
-      options: Object.keys(EasingModes)
+      options: EasingFunctionPaths
     },
     t: 'float'
   },
@@ -48,9 +42,7 @@ export const Easing = makeFunctionNodeDefinition({
     t: 'float'
   },
   exec: ({ read, write }) => {
-    const easingFunction = EasingFunctions[read('easingFunction') as string]
-    const easingMode = EasingModes[read('easingMode') as string]
-    const easing = easingMode(easingFunction)
+    const easing = E.fromPath(read('easingFunction') as string)
     const inputT = read('t') as number
 
     write('t', easing(inputT))
