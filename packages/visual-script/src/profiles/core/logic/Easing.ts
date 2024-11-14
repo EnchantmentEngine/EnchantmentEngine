@@ -33,7 +33,7 @@ export const Easing = makeFunctionNodeDefinition({
     easingFunction: {
       valueType: 'string',
       name: 'easingFunction',
-      defaultValue: 'linear',
+      defaultValue: 'linear.inOut',
       options: EasingFunctionPaths
     },
     t: 'float'
