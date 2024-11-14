@@ -41,7 +41,7 @@ import {
   Vector3
 } from 'three'
 
-import { EntityUUID, UUIDComponent, useQuery } from '@ir-engine/ecs'
+import { EntityUUID, Not, UUIDComponent, useQuery } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -77,21 +77,19 @@ import { SourceComponent } from './SourceComponent'
 
 const tempColor = new Color()
 
-const envMapSourceType = S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.None)
-
 export const EnvmapComponent = defineComponent({
   name: 'EnvmapComponent',
   jsonID: 'EE_envmap',
 
   schema: S.Object({
-    type: S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.None),
+    type: S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.Skybox),
     envMapTextureType: S.LiteralUnion(Object.values(EnvMapTextureType), EnvMapTextureType.Equirectangular),
     envMapSourceColor: S.Color(0xfff),
     envMapSourceURL: S.String(''),
     envMapSourceEntityUUID: S.EntityUUID(),
     envMapIntensity: S.Number(1),
     // internal
-    envmap: S.Nullable(S.Type<Texture>())
+    envmap: S.NonSerialized(S.Nullable(S.Type<Texture>()))
   }),
 
   reactor: function () {
@@ -102,7 +100,12 @@ export const EnvmapComponent = defineComponent({
     const textureSource =
       component.envMapTextureType.value === EnvMapTextureType.Equirectangular ? component.envMapSourceURL.value : ''
     const [envMapTexture, error] = useTexture(textureSource, entity)
-    const childrenMesh = useChildrenWithComponents(entity, [MeshComponent, VisibleComponent, SourceComponent])
+    const childrenMesh = useChildrenWithComponents(entity, [
+      MeshComponent,
+      VisibleComponent,
+      SourceComponent,
+      Not(EnvmapComponent)
+    ])
 
     const probeQuery = useQuery([ReflectionProbeComponent])
 
@@ -148,7 +151,6 @@ export const EnvmapComponent = defineComponent({
 
     useEffect(() => {
       if (!envMapTexture) return
-
       envMapTexture.mapping = EquirectangularReflectionMapping
       component.envmap.set(envMapTexture)
     }, [envMapTexture])
@@ -181,7 +183,7 @@ export const EnvmapComponent = defineComponent({
           }
         )
       }
-    }, [component.type.value, component.envMapSourceURL.value])
+    }, [component.type.value, component.envMapTextureType.value, component.envMapSourceURL.value])
 
     useEffect(() => {
       if (!component.envmap.value) return
@@ -202,7 +204,7 @@ export const EnvmapComponent = defineComponent({
         const childMesh = getComponent(childEntity, MeshComponent)
         updateEnvMapIntensity(childMesh, component.envMapIntensity.value)
       }
-    }, [childrenMesh, component.envMapIntensity.value])
+    }, [childrenMesh, component.envMapIntensity.value, component.envmap])
 
     useEffect(() => {
       const envmap = component.envmap.value
@@ -233,6 +235,7 @@ export const EnvmapComponent = defineComponent({
 const EnvBakeComponentReactor = (props: { envmapEntity: Entity; bakeEntity: Entity; childrenMesh: Entity[] }) => {
   const { envmapEntity, bakeEntity } = props
   const bakeComponent = useComponent(bakeEntity, EnvMapBakeComponent)
+
   const [envMaptexture, error] = useTexture(bakeComponent.envMapOrigin.value, envmapEntity)
 
   useEffect(() => {
@@ -279,9 +282,11 @@ export const updateEnvMapIntensity = (obj: Mesh<any, any> | null, intensity: num
   if (Array.isArray(obj.material)) {
     obj.material.forEach((m: MeshStandardMaterial) => {
       m.envMapIntensity = intensity
+      m.needsUpdate = true
     })
   } else {
     ;(obj.material as MeshStandardMaterial).envMapIntensity = intensity
+    ;(obj.material as MeshStandardMaterial).needsUpdate = true
   }
 }
 
