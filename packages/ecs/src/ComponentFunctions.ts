@@ -61,6 +61,7 @@ import {
   IsSingleValueSchema,
   SerializeSchema
 } from './schemas/JSONSchemaUtils'
+import { EasingFunction } from './Easing'
 
 /**
  * @description
@@ -234,6 +235,30 @@ const schemaIsECSSchema = (schema?: ComponentSchema): schema is bitECS.ISchema =
   return !!(schema && (schema as TSchema)[Kind] === undefined)
 }
 
+type Primitive = string | number | bigint | boolean | undefined | symbol
+export type ComponentPropertyPath<T, Prefix = ''> = {
+  [K in keyof T]: // eslint-disable-next-line @typescript-eslint/ban-types
+  T[K] extends Function
+    ? never
+    : T[K] extends Primitive | Array<any>
+    ? `${string & Prefix}${string & K}`
+    : `${string & Prefix}${string & K}` | ComponentPropertyPath<T[K], `${string & Prefix}${string & K}.`>
+}[keyof T]
+
+// get the component property type from a path
+export type ComponentPropertyFromPath<T, Path extends string> = T[Path extends keyof T
+  ? Path
+  : Path extends `${infer K}.${infer R}`
+  ? K extends keyof T
+    ? ComponentPropertyFromPath<T[K], R>
+    : never
+  : never]
+
+// function propertyStringPathFactory<T, R=string>(): (path: ComponentPropertyPath<T>) => R {
+//   // @ts-ignore
+//   return (path: ComponentPropertyPath<T>) => (path as unknown as R);
+// }
+
 /**
  * @description
  * Defines a new Component type.
@@ -287,7 +312,7 @@ export const defineComponent = <
   ) as Component<Schema, InitializationType, ComponentType, JSON, SetJSON, ErrorTypes> & {
     _TYPE: ComponentType
   } & ComponentExtras &
-    SOAComponent
+    SOAComponent & { setTransition: typeof setTransition }
   Component.isComponent = true
 
   // Memoize as much tree walking as possible during component creation
@@ -342,6 +367,22 @@ export const defineComponent = <
     )
   }
   ComponentMap.set(Component.name, Component)
+
+  function setTransition<P extends ComponentPropertyPath<ComponentType>>(
+    entity: Entity,
+    property: P,
+    { target, easing }: { target: ComponentPropertyFromPath<ComponentType, P>; easing: EasingFunction }
+  ) {
+    // const transition = getComponent(entity, TransitionComponent)
+    // const transitionData = transition.find((t) => t.property === property)
+    // if (transitionData) {
+    //   transitionData.target = target
+    // } else {
+    //   transition.push({ property, target })
+    // }
+  }
+
+  Component.setTransition = setTransition
 
   return Component
 

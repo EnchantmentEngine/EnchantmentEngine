@@ -68,12 +68,10 @@ import {
   DistanceFromLocalClientComponent
 } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { useXRUIState } from '@ir-engine/spatial/src/xrui/functions/useXRUIState'
 import { useEffect } from 'react'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { createUI } from '../functions/createUI'
 import { InteractableState, InteractableTransitions } from '../functions/interactableFunctions'
-import { InteractiveModalState } from '../ui/InteractiveModalView'
 
 /**
  * Visibility override for XRUI, none is default behavior, on or off forces that state
@@ -271,7 +269,6 @@ export const InteractableComponent = defineComponent({
     const entity = useEntityContext()
     const interactableComponent = useComponent(entity, InteractableComponent)
     const isEditing = useMutableState(EngineState).isEditing
-    const modalState = useXRUIState<InteractiveModalState>()
 
     useImmediateEffect(() => {
       setComponent(entity, DistanceFromCameraComponent)
@@ -315,10 +312,6 @@ export const InteractableComponent = defineComponent({
       }
     }, [isEditing.value])
 
-    useEffect(() => {
-      const msg = interactableComponent.label?.value ?? ''
-      modalState.interactMessage?.set(msg)
-    }, [interactableComponent.label]) //TODO just nuke the whole XRUI and recreate....
     return null
   }
 })

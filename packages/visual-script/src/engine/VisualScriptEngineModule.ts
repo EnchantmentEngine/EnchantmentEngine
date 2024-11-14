@@ -23,9 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+export * from '@ir-engine/ecs/src/Easing'
 export * from './Diagnostics/Assert'
 export * from './Diagnostics/Logger'
-export * from './Easing'
 export * from './Events/CustomEvent'
 export * from './Events/EventEmitter'
 export * from './Execution/Fiber'

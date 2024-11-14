@@ -43,7 +43,7 @@ import { CameraComponent } from '@ir-engine/spatial/src/camera/components/Camera
 import { Vector3_One, Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { Box3, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Transition } from '../classes/Transition'
 
 export enum SizeMode {
@@ -232,11 +232,10 @@ export const LayoutComponent = defineComponent({
 
     containerEntity: S.Entity(),
 
-    computedLayoutBounds: S.NonSerialized(
+    computedLayout: S.NonSerialized(
       S.Optional(
         S.Object({
-          min: S.Vec3(),
-          max: S.Vec3(),
+          box: S.Class(() => new Box3()),
           rotation: S.Quaternion(),
           space: S.Enum(LayoutSpace)
         })
@@ -311,7 +310,7 @@ export const LayoutComponent = defineComponent({
           const renderer = getOptionalComponent(rootContainerEntity, RendererComponent)
           const containerLayout = getOptionalComponent(containerEntity, LayoutComponent)
           const containerTransform = getComponent(containerEntity, TransformComponent)
-          let containerComputedLayoutBounds = containerLayout?.computedLayoutBounds
+          let containerComputedLayoutBounds = containerLayout?.computedLayout
 
           containerWorldQuaternion.setFromRotationMatrix(
             containerTransform.matrixWorld.extractRotation(containerWorldRotation)
@@ -321,25 +320,29 @@ export const LayoutComponent = defineComponent({
           if (!containerComputedLayoutBounds && camera && renderer) {
             // NDC bounds
             containerComputedLayoutBounds = {
-              min: Vector3_Zero,
-              max: Vector3_One,
+              box: new Box3(),
               rotation: containerWorldQuaternion,
               space: LayoutSpace.ViewingFrustum
             }
           } else if (!containerComputedLayoutBounds) {
             // layout bounds
             containerComputedLayoutBounds = {
-              min: Vector3_Zero,
-              max: Vector3_Zero,
+              box: new Box3(Vector3_Zero.clone(), Vector3_Zero.clone()),
               rotation: containerWorldQuaternion,
               space: LayoutSpace.ViewingFrustum
             }
             // containerComputedLayoutBounds = computeLayoutBounds(containerEntity)
           }
 
-          const containerSizeX = Math.abs(containerComputedLayoutBounds.max.x - containerComputedLayoutBounds.min.x)
-          const containerSizeY = Math.abs(containerComputedLayoutBounds.max.y - containerComputedLayoutBounds.min.y)
-          const containerSizeZ = Math.abs(containerComputedLayoutBounds.max.z - containerComputedLayoutBounds.min.z)
+          const containerSizeX = Math.abs(
+            containerComputedLayoutBounds.box.max.x - containerComputedLayoutBounds.box.min.x
+          )
+          const containerSizeY = Math.abs(
+            containerComputedLayoutBounds.box.max.y - containerComputedLayoutBounds.box.min.y
+          )
+          const containerSizeZ = Math.abs(
+            containerComputedLayoutBounds.box.max.z - containerComputedLayoutBounds.box.min.z
+          )
 
           if (
             containerComputedLayoutBounds.space === LayoutSpace.ViewingFrustum &&
@@ -350,7 +353,7 @@ export const LayoutComponent = defineComponent({
             const viewportPixelHeight = renderer.canvas.clientHeight
             const viewportPixelWidth = renderer.canvas.clientWidth
             const viewportPixelDepth = computeViewportPixelDepth(
-              containerComputedLayoutBounds.min.z,
+              containerComputedLayoutBounds.box.min.z,
               camera,
               renderer.renderer!
             )
