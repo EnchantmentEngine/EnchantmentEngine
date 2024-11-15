@@ -23,10 +23,48 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
+
+import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { XRPersistentAnchorSystem } from './XRPersistentAnchorSystem'
+import { XRSystem } from './XRSystem'
+
+/** @note Runs once on the `describe` implied by vitest for this file */
+// @todo
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
 
 describe('XRPersistentAnchorSystem', () => {
-  describe('uuid', () => {}) //:: uuid
-  describe('insert', () => {}) //:: insert
+  const System = SystemDefinitions.get(XRPersistentAnchorSystem)!
+
+  beforeEach(async () => {
+    createEngine()
+    await mockEmulatedXREngine()
+  })
+
+  afterEach(() => {
+    destroyEmulatedXREngine()
+    destroyEngine()
+  })
+
+  describe('Fields', () => {
+    it('should initialize the *System.uuid field with the expected value', () => {
+      expect(System.uuid).toBe('ee.engine.XRPersistentAnchorSystem')
+    })
+
+    it('should initialize the *System with the expected SystemUUID value', () => {
+      expect(XRPersistentAnchorSystem).toBe('ee.engine.XRPersistentAnchorSystem' as SystemUUID)
+    })
+
+    it('should initialize the *System.insert field with the expected value', () => {
+      expect(System.insert).not.toBe(undefined)
+      expect(System.insert!.with).not.toBe(undefined)
+      expect(System.insert!.with!).toBe(XRSystem)
+    })
+  }) //:: Fields
+
   describe('execute', () => {}) //:: execute
 }) //:: XRPersistentAnchorSystem
