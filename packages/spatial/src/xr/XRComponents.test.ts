@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { UndefinedEntity, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { assertArrayEqual } from '../../tests/util/mathAssertions'
+import { assertArray } from '../../tests/util/assert'
 import {
   XRAnchorComponent,
   XRHandComponent,
@@ -41,7 +41,7 @@ const XRHandRotationDefaults = [
 ]
 
 function assertXRHandComponentDefaults(data: any) {
-  assertArrayEqual([...data.rotations.values()], XRHandRotationDefaults)
+  assertArray.eq([...data.rotations.values()], XRHandRotationDefaults)
   expect(data.hand).toBeNull()
 }
 
