@@ -49,7 +49,7 @@ export class MockXRInputSource {
   }
 }
 
-export class MockXRSpace {}
+export class MockXRSpace extends EventTarget {}
 
 export class MockXRReferenceSpace extends MockEventListener {
   getOffsetReferenceSpace = (originOffset: XRRigidTransform) => {
@@ -91,3 +91,7 @@ export class MockXRPose {
 }
 
 export class MockXRSession extends EventTarget {}
+export class MockXRAnchor implements XRAnchor {
+  anchorSpace: MockXRSpace
+  delete(): void {}
+}
