@@ -63,7 +63,7 @@ const createPersistentAnchor = async (xrFrame: XRFrame, position: Vector3, rotat
     const anchor = await xrFrame.createAnchor?.(anchorPose, referenceSpace)!
     try {
       const handle = await anchor.requestPersistentHandle?.()
-      return [anchor, handle]
+      return [anchor, handle] as [XRAnchor, string | undefined]
     } catch (e) {
       anchor.delete()
       throw e
