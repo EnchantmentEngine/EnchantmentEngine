@@ -94,4 +94,5 @@ export class MockXRSession extends EventTarget {}
 export class MockXRAnchor implements XRAnchor {
   anchorSpace: MockXRSpace
   delete(): void {}
+  requestPersistentHandle?(): Promise<string>
 }
