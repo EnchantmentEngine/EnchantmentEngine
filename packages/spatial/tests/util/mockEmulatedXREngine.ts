@@ -32,10 +32,10 @@ import { MockXRFrame } from './MockXR'
 import { mockSpatialEngine } from './mockSpatialEngine'
 
 export async function mockEmulatedXREngine() {
-  mockSpatialEngine()
-  await requestEmulatedXRSession()
   // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
   getMutableState(XRState).xrFrame.set(new MockXRFrame())
+  mockSpatialEngine()
+  await requestEmulatedXRSession()
 }
 
 export async function destroyEmulatedXREngine() {
