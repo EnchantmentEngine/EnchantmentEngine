@@ -91,7 +91,7 @@ export const EnvmapComponent = defineComponent({
     envMapSourceEntityUUID: S.EntityUUID(),
     envMapIntensity: S.Number(1),
     // internal
-    envmap: S.Nullable(S.Type<Texture>())
+    envmap: S.NonSerialized(S.Nullable(S.Type<Texture>()))
   }),
 
   reactor: function () {
@@ -102,7 +102,11 @@ export const EnvmapComponent = defineComponent({
     const textureSource =
       component.envMapTextureType.value === EnvMapTextureType.Equirectangular ? component.envMapSourceURL.value : ''
     const [envMapTexture, error] = useTexture(textureSource, entity)
-    const childrenMesh = useChildrenWithComponents(entity, [MeshComponent, VisibleComponent, SourceComponent])
+    const childrenMesh = useChildrenWithComponents(
+      entity,
+      [MeshComponent, VisibleComponent, SourceComponent],
+      [EnvmapComponent]
+    )
 
     const probeQuery = useQuery([ReflectionProbeComponent])
 
@@ -181,7 +185,7 @@ export const EnvmapComponent = defineComponent({
           }
         )
       }
-    }, [component.type.value, component.envMapSourceURL.value])
+    }, [component.type.value, component.envMapTextureType.value, component.envMapSourceURL.value])
 
     useEffect(() => {
       if (!component.envmap.value) return
@@ -202,7 +206,7 @@ export const EnvmapComponent = defineComponent({
         const childMesh = getComponent(childEntity, MeshComponent)
         updateEnvMapIntensity(childMesh, component.envMapIntensity.value)
       }
-    }, [childrenMesh, component.envMapIntensity.value])
+    }, [childrenMesh, component.envMapIntensity.value, component.envmap])
 
     useEffect(() => {
       const envmap = component.envmap.value
@@ -279,9 +283,11 @@ export const updateEnvMapIntensity = (obj: Mesh<any, any> | null, intensity: num
   if (Array.isArray(obj.material)) {
     obj.material.forEach((m: MeshStandardMaterial) => {
       m.envMapIntensity = intensity
+      m.needsUpdate = true
     })
   } else {
     ;(obj.material as MeshStandardMaterial).envMapIntensity = intensity
+    ;(obj.material as MeshStandardMaterial).needsUpdate = true
   }
 }
 
