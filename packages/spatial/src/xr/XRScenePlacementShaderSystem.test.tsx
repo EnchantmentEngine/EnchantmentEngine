@@ -23,23 +23,28 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { PresentationSystemGroup, SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
-import { destroySpatialEngine } from '../initializeEngine'
 import { XRScenePlacementShaderSystem } from './XRScenePlacementShaderSystem'
+
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
 
 describe('XRScenePlacementShaderSystem', () => {
   const System = SystemDefinitions.get(XRScenePlacementShaderSystem)!
 
   beforeEach(async () => {
     createEngine()
-    mockSpatialEngine()
+    await mockEmulatedXREngine()
   })
 
   afterEach(() => {
-    destroySpatialEngine()
+    destroyEmulatedXREngine()
     destroyEngine()
   })
 

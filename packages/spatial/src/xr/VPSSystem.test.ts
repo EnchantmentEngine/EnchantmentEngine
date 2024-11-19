@@ -23,23 +23,29 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
+
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
-import { destroySpatialEngine } from '../initializeEngine'
 import { VPSSystem } from './VPSSystem'
 import { XRPersistentAnchorSystem } from './XRPersistentAnchorSystem'
+
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
 
 describe('VPSSystem', () => {
   const System = SystemDefinitions.get(VPSSystem)!
 
   beforeEach(async () => {
     createEngine()
-    mockSpatialEngine()
+    await mockEmulatedXREngine()
   })
 
   afterEach(() => {
-    destroySpatialEngine()
+    destroyEmulatedXREngine()
     destroyEngine()
   })
 
