@@ -23,8 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../../tests/webxr/emulator'
 
+import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { Quaternion, Vector3 } from 'three'
+import { assertVec } from '../../../tests/util/assert'
+import { PersistentAnchorActions } from '../XRAnchorComponents'
 import { XR8Pipeline } from './XR8Pipeline'
 import {
   WayspotFoundEvent,
@@ -37,6 +43,18 @@ import {
   WayspotUpdatedEventFn
 } from './XR8Types'
 
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
+
+function getIncomingAction(name: string) {
+  for (const action of Engine.instance.store.actions.incoming) {
+    if (action.type === name) return action
+  }
+  return undefined
+}
+
 describe('XR8Pipeline', () => {
   describe('name', () => {
     it('should return an object that has the expected *.name value', () => {
@@ -46,11 +64,21 @@ describe('XR8Pipeline', () => {
   }) //:: XR8Pipeline.name
 
   /** @todo */
-  describe('onAttach', () => {}) //:: onAttach
+  describe('onAttach', () => {}) //:: XR8Pipeline.onAttach
   describe('onDeviceOrientationChange', () => {}) //:: XR8Pipeline.onDeviceOrientationChange
   describe('onStart', () => {}) //:: XR8Pipeline.onStart
 
   describe('listeners', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should contain the expected list of events', () => {
       const Expected = [
         'reality.projectwayspotfound',
@@ -108,18 +136,29 @@ describe('XR8Pipeline', () => {
         }
       })
 
-      /** @todo How to check that an action has been dispatched? */
-      it.todo(
-        'should call dispatchAction(PersistentAnchorActions.anchorFound) with the detail.(name,position,rotation) of the `@param event`',
-        () => {
-          const Expected = { name: 'SomeTestingName' } as unknown as WayspotFoundEvent
-          // Sanity check before running
-          expect(onEvent).not.toBe(undefined)
-          expect(typeof onEvent).toBe('function')
-          // Run and Check the result
-          onEvent(Expected)
-        }
-      )
+      it('should call dispatchAction(PersistentAnchorActions.anchorFound) with the detail.(name,position,rotation) of the `@param event`', () => {
+        const Expected = {
+          detail: {
+            name: 'SomeTestingName',
+            position: new Vector3(42, 43, 44),
+            rotation: new Quaternion(1, 2, 3, 4).normalize()
+          }
+        } as unknown as WayspotFoundEvent
+        // Sanity check before running
+        expect(onEvent).not.toBe(undefined)
+        expect(typeof onEvent).toBe('function')
+        // Run and Check the result
+        onEvent(Expected)
+        const result = getIncomingAction(PersistentAnchorActions.anchorFound.type)
+        assert(result)
+        expect(typeof result).toBe('object')
+        // @ts-expect-error Silence error about the name property not existing
+        expect(result.name).toBe(Expected.detail.name)
+        // @ts-expect-error Silence error about the position property not existing
+        assertVec.approxEq(result.position, Expected.detail.position, 3)
+        // @ts-expect-error Silence error about the rotation property not existing
+        assertVec.approxEq(result.rotation, Expected.detail.rotation, 4)
+      })
     }) //:: XR8Pipeline.listeners.'reality.projectwayspotfound'
 
     describe("'reality.projectwayspotupdated' : onWayspotUpdate", () => {
@@ -135,18 +174,29 @@ describe('XR8Pipeline', () => {
         }
       })
 
-      /** @todo How to check that an action has been dispatched? */
-      it.todo(
-        'should call dispatchAction(PersistentAnchorActions.anchorUpdated) with the detail.(name,position,rotation) of the `@param event`',
-        () => {
-          const Expected = { name: 'SomeTestingName' } as unknown as WayspotUpdatedEvent
-          // Sanity check before running
-          expect(onEvent).not.toBe(undefined)
-          expect(typeof onEvent).toBe('function')
-          // Run and Check the result
-          onEvent(Expected)
-        }
-      )
+      it('should call dispatchAction(PersistentAnchorActions.anchorUpdated) with the detail.(name,position,rotation) of the `@param event`', () => {
+        const Expected = {
+          detail: {
+            name: 'SomeTestingName',
+            position: new Vector3(42, 43, 44),
+            rotation: new Quaternion(1, 2, 3, 4).normalize()
+          }
+        } as unknown as WayspotUpdatedEvent
+        // Sanity check before running
+        expect(onEvent).not.toBe(undefined)
+        expect(typeof onEvent).toBe('function')
+        // Run and Check the result
+        onEvent(Expected)
+        const result = getIncomingAction(PersistentAnchorActions.anchorUpdated.type)
+        assert(result)
+        expect(typeof result).toBe('object')
+        // @ts-expect-error Silence error about the name property not existing
+        expect(result.name).toBe(Expected.detail.name)
+        // @ts-expect-error Silence error about the position property not existing
+        assertVec.approxEq(result.position, Expected.detail.position, 3)
+        // @ts-expect-error Silence error about the rotation property not existing
+        assertVec.approxEq(result.rotation, Expected.detail.rotation, 4)
+      })
     }) //:: XR8Pipeline.listeners.'reality.projectwayspotupdated'
 
     describe("'reality.projectwayspotlost' : onWayspotLost", () => {
@@ -163,18 +213,21 @@ describe('XR8Pipeline', () => {
         }
       })
 
-      /** @todo How to check that an action has been dispatched? */
-      it.todo(
-        'should call dispatchAction(PersistentAnchorActions.anchorLost) with the detail.(name) of the `@param event`',
-        () => {
-          const Expected = { name: 'SomeTestingName' } as unknown as WayspotLostEvent
-          // Sanity check before running
-          expect(onEvent).not.toBe(undefined)
-          expect(typeof onEvent).toBe('function')
-          // Run and Check the result
-          onEvent(Expected)
-        }
-      )
+      it('should call dispatchAction(PersistentAnchorActions.anchorLost) with the detail.(name) of the `@param event`', () => {
+        const Expected = { detail: { name: 'SomeTestingName' } } as unknown as WayspotLostEvent
+        // Sanity check before running
+        expect(onEvent).not.toBe(undefined)
+        expect(typeof onEvent).toBe('function')
+        // Run and Check the result
+        onEvent(Expected)
+        // Run and Check the result
+        onEvent(Expected)
+        const result = getIncomingAction(PersistentAnchorActions.anchorLost.type)
+        assert(result)
+        expect(typeof result).toBe('object')
+        // @ts-expect-error Silence error about the name property not existing
+        expect(result.name).toBe(Expected.detail.name)
+      })
     }) //:: XR8Pipeline.listeners.'reality.projectwayspotlost'
   }) //:: XR8Pipeline.listeners
 }) //:: XR8Pipeline
