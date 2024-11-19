@@ -23,10 +23,42 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { PresentationSystemGroup, SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
+import { destroySpatialEngine } from '../initializeEngine'
+import { XRScenePlacementShaderSystem } from './XRScenePlacementShaderSystem'
 
 describe('XRScenePlacementShaderSystem', () => {
-  // uuid: 'ee.engine.XRScenePlacementShaderSystem',
-  // insert: { after: PresentationSystemGroup },
-  // reactor
+  const System = SystemDefinitions.get(XRScenePlacementShaderSystem)!
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+  })
+
+  afterEach(() => {
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
+  describe('Fields', () => {
+    it('should initialize the *System.uuid field with the expected value', () => {
+      expect(System.uuid).toBe('ee.engine.XRScenePlacementShaderSystem')
+    })
+
+    it('should initialize the *System with the expected SystemUUID value', () => {
+      expect(XRScenePlacementShaderSystem).toBe('ee.engine.XRScenePlacementShaderSystem' as SystemUUID)
+    })
+
+    it('should initialize the *System.insert field with the expected value', () => {
+      expect(System.insert).not.toBe(undefined)
+      expect(System.insert!.after).not.toBe(undefined)
+      expect(System.insert!.after!).toBe(PresentationSystemGroup)
+    })
+  }) //:: Fields
+
+  /** @todo */
+  describe('reactor', () => {}) //:: reactor
 }) //:: XRScenePlacementShaderSystem
