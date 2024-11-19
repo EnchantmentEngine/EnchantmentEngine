@@ -27,8 +27,9 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { XRLightProbeSystem } from './XRLightProbeSystem'
+import { SystemDefinitions, SystemUUID, UndefinedEntity, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { CubeTexture, LightProbe } from 'three'
+import { XRLightProbeState, XRLightProbeSystem } from './XRLightProbeSystem'
 import { XRSystem } from './XRSystem'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
@@ -71,7 +72,28 @@ describe('XRLightProbeSystem', () => {
 }) //:: XRLightProbeSystem
 
 describe('XRLightProbeState', () => {
-  /** @todo */
-  describe('name', () => {}) //:: name
-  describe('initial', () => {}) //:: initial
+  describe('Fields', () => {
+    it('should initialize the *State.name field with the expected value', () => {
+      expect(XRLightProbeState.name).toBe('ee.xr.LightProbe')
+    })
+
+    it('should initialize the *State with the expected initial values', () => {
+      const Expected = {
+        isEstimatingLight: false,
+        lightProbe: new LightProbe(),
+        probe: null as XRLightProbe | null,
+        directionalLightEntity: UndefinedEntity,
+        environment: null as CubeTexture | null,
+        xrWebGLBinding: null as XRWebGLBinding | null
+      }
+      const result = XRLightProbeState.initial()
+      expect(result['isEstimatingLight']).toEqual(Expected['isEstimatingLight'])
+      expect(result['lightProbe']['metadata']).toEqual(Expected['lightProbe']['metadata'])
+      expect(result['lightProbe']['object']).toEqual(Expected['lightProbe']['object'])
+      expect(result['probe']).toEqual(Expected['probe'])
+      expect(result['directionalLightEntity']).toEqual(Expected['directionalLightEntity'])
+      expect(result['environment']).toEqual(Expected['environment'])
+      expect(result['xrWebGLBinding']).toEqual(Expected['xrWebGLBinding'])
+    })
+  }) //:: Fields
 }) //:: XRLightProbeState
