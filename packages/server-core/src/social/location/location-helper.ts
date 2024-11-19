@@ -67,6 +67,7 @@ export const createLocations = async (app: Application, projectName: string, sce
         slugifiedName: cleanedLocationName,
         maxUsersPerInstance: 10,
         sceneId: scene.id,
+        sceneComplexity: 0,
         locationSetting,
         isLobby: false,
         isFeatured: false

@@ -35,11 +35,22 @@ import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 
 import { Engine } from '@ir-engine/ecs'
+import { SceneComplexity } from '@ir-engine/engine/src/scene/constants/SceneConstants'
+import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 import { locationColumns, LocationRowType } from '../../common/constants/location'
 import DataTable from '../../common/Table'
 import AddEditLocationModal from './AddEditLocationModal'
 
 const transformLink = (link: string) => link.toLowerCase().replace(' ', '-')
+
+export function getSceneComplexityLabel(complexity: number): string {
+  if (complexity === 0) return 'Uncalculated'
+  if (complexity < SceneComplexity.VeryLight.value) return SceneComplexity.VeryLight.label
+  if (complexity < SceneComplexity.Light.value) return SceneComplexity.Light.label
+  if (complexity < SceneComplexity.Medium.value) return SceneComplexity.Medium.label
+  if (complexity < SceneComplexity.Heavy.value) return SceneComplexity.Heavy.label
+  return SceneComplexity.VeryHeavy.label
+}
 
 export default function LocationTable({ search }: { search: string }) {
   const { t } = useTranslation()
@@ -100,6 +111,11 @@ export default function LocationTable({ search }: { search: string }) {
         >
           {row.sceneId}
         </a>
+      ),
+      sceneComplexity: (
+        <Tooltip content={row.sceneComplexity === 0 ? '' : row.sceneComplexity.toString()}>
+          <span>{getSceneComplexityLabel(row.sceneComplexity)}</span>
+        </Tooltip>
       ),
       maxUsersPerInstance: row.maxUsersPerInstance.toString(),
       scene: row.slugifiedName,

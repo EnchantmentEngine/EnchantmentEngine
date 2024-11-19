@@ -34,7 +34,8 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
-import { getState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { RenderInfoState } from '@ir-engine/spatial/src/renderer/RenderInfoSystem'
 import { Input } from '@ir-engine/ui'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
@@ -92,6 +93,7 @@ export default function AddEditLocationModal(props: {
   const audioEnabled = useHookstate<boolean>(location?.locationSetting.audioEnabled || true)
   const screenSharingEnabled = useHookstate<boolean>(location?.locationSetting.screenSharingEnabled || true)
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
+  const sceneComplexity = useHookstate(getMutableState(RenderInfoState))
 
   useEffect(() => {
     if (location) {
@@ -151,6 +153,7 @@ export default function AddEditLocationModal(props: {
     const locationData: LocationData = {
       name: name.value,
       sceneId: scene.value,
+      sceneComplexity: sceneComplexity.info.sceneComplexity.value,
       maxUsersPerInstance: maxUsers.value,
       locationSetting: {
         locationId: '' as LocationID,

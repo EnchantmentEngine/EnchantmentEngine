@@ -53,6 +53,7 @@ export const locationSchema = Type.Object(
     }),
     name: Type.String(),
     sceneId: Type.String(),
+    sceneComplexity: Type.Number(),
     projectId: Type.String({
       format: 'uuid'
     }),
@@ -88,6 +89,7 @@ export interface LocationDatabaseType
 export const locationDataProperties = Type.Pick(locationSchema, [
   'name',
   'sceneId',
+  'sceneComplexity',
   'isLobby',
   'isFeatured',
   'maxUsersPerInstance'
@@ -118,6 +120,7 @@ export const locationPatchProperties = Type.Pick(locationSchema, [
   'id',
   'name',
   'sceneId',
+  'sceneComplexity',
   'projectId',
   'slugifiedName',
   'isLobby',
@@ -145,6 +148,7 @@ export const locationQueryProperties = Type.Pick(locationSchema, [
   'id',
   'name',
   'sceneId',
+  'sceneComplexity',
   'projectId',
   'slugifiedName',
   'isLobby',

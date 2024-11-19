@@ -23,32 +23,31 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { t } from 'i18next'
+import { locationPath } from '@ir-engine/common/src/schema.type.module'
+import type { Knex } from 'knex'
 
-import { ITableHeadCell } from '../Table'
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-type IdType =
-  | 'sceneId'
-  | 'sceneComplexity'
-  | 'maxUsersPerInstance'
-  | 'scene'
-  | 'name'
-  | 'locationType'
-  | 'videoEnabled'
-  | 'action'
+  const updatedByColumnExists = await knex.schema.hasColumn(locationPath, 'sceneComplexity')
+  if (!updatedByColumnExists) {
+    await knex.schema.alterTable(locationPath, async (table) => {
+      table.integer('sceneComplexity').notNullable().defaultTo(0)
+    })
+  }
 
-export type LocationRowType = Record<IdType, string | JSX.Element | undefined>
-
-interface ILocationColumn extends ITableHeadCell {
-  id: IdType
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }
 
-export const locationColumns: ILocationColumn[] = [
-  { id: 'name', label: t('admin:components.location.columns.name') },
-  { id: 'sceneId', label: t('admin:components.location.columns.sceneId') },
-  { id: 'sceneComplexity', label: t('admin:components.location.columns.sceneComplexity') },
-  { id: 'maxUsersPerInstance', label: t('admin:components.location.columns.maxUsersPerInstance') },
-  { id: 'locationType', label: t('admin:components.location.columns.locationType') },
-  { id: 'videoEnabled', label: t('admin:components.location.columns.videoEnabled') },
-  { id: 'action', label: t('admin:components.location.columns.action') }
-]
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  const updatedByColumnExists = await knex.schema.hasColumn(locationPath, 'sceneComplexity')
+  if (updatedByColumnExists) {
+    await knex.schema.alterTable(locationPath, async (table) => {
+      table.dropColumn('sceneComplexity')
+    })
+  }
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}

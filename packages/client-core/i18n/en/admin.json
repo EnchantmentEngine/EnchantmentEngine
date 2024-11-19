@@ -4,6 +4,7 @@
       "columns": {
         "name": "Name",
         "sceneId": "Scene",
+        "sceneComplexity": "Scene Complexity",
         "maxUsersPerInstance": "Max Users Per Instance",
         "locationType": "Type",
         "tags": "Tags",
