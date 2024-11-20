@@ -23,19 +23,20 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getMutableState } from '@ir-engine/hyperflux'
-import { destroySpatialEngine, destroySpatialViewer } from '../../src/initializeEngine'
-import { endXRSession } from '../../src/xr/XRSessionFunctions'
-import { XRState } from '../../src/xr/XRState'
 import { requestEmulatedXRSession } from '../webxr/emulator'
 import { MockXRFrame } from './MockXR'
 import { mockSpatialEngine } from './mockSpatialEngine'
 
+import { getMutableState } from '@ir-engine/hyperflux'
+import { destroySpatialEngine, destroySpatialViewer } from '../../src/initializeEngine'
+import { endXRSession } from '../../src/xr/XRSessionFunctions'
+import { XRState } from '../../src/xr/XRState'
+
 export async function mockEmulatedXREngine() {
-  // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
-  getMutableState(XRState).xrFrame.set(new MockXRFrame())
   mockSpatialEngine()
   await requestEmulatedXRSession()
+  // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
+  getMutableState(XRState).xrFrame.set(new MockXRFrame())
 }
 
 export async function destroyEmulatedXREngine() {
