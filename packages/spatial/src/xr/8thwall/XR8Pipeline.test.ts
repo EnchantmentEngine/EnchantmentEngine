@@ -27,10 +27,12 @@ import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from '
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../../tests/webxr/emulator'
 
-import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { Engine, SystemDefinitions, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
+import { startReactor } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { assertVec } from '../../../tests/util/assert'
-import { PersistentAnchorActions } from '../XRAnchorComponents'
+import { PersistentAnchorActions, PersistentAnchorComponent } from '../XRAnchorComponents'
+import { XR8, XR8System } from './XR8'
 import { XR8Pipeline } from './XR8Pipeline'
 import {
   WayspotFoundEvent,
@@ -64,9 +66,33 @@ describe('XR8Pipeline', () => {
   }) //:: XR8Pipeline.name
 
   /** @todo */
+  describe('onStart', () => {
+    const System = SystemDefinitions.get(XR8System)!
+
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+      // initialize8thwall
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    /** @todo Running this reactor fails. Might need specific XR8 setup or mock data */
+    it.todo('...', () => {
+      setComponent(createEntity(), PersistentAnchorComponent)
+      const root = startReactor(System.reactor!)
+      root.run()
+      const arst = XR8.Threejs.xrScene()
+      console.log(arst)
+    })
+  }) //:: XR8Pipeline.onStart
+
+  /** @todo How to test that orientCameraFeed has run */
   describe('onAttach', () => {}) //:: XR8Pipeline.onAttach
   describe('onDeviceOrientationChange', () => {}) //:: XR8Pipeline.onDeviceOrientationChange
-  describe('onStart', () => {}) //:: XR8Pipeline.onStart
 
   describe('listeners', () => {
     beforeEach(async () => {
