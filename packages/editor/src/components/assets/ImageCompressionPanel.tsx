@@ -33,21 +33,20 @@ import {
   KTX2EncodeDefaultArguments
 } from '@ir-engine/engine/src/assets/constants/CompressionParms'
 import { ImmutableArray, useHookstate } from '@ir-engine/hyperflux'
-import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { Checkbox, Input } from '@ir-engine/ui'
 import { Slider } from '@ir-engine/ui/editor'
-import BooleanInput from '@ir-engine/ui/src/components/editor/input/Boolean'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Select from '@ir-engine/ui/src/primitives/tailwind/Select'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { useTranslation } from 'react-i18next'
 import { MdClose } from 'react-icons/md'
 import { FileDataType } from '../../constants/AssetTypes'
+import { compressImage } from '../../functions/assetFunctions'
 
 const UASTCFlagOptions = [
   { label: 'Fastest', value: 0 },
@@ -79,7 +78,7 @@ export default function ImageCompressionPanel({
     compressionLoading.set(true)
 
     for (const file of selectedFiles) {
-      await compressImage(file)
+      await uploadImage(file, await compressImage(compressProperties.value))
     }
     await refreshDirectory()
 
@@ -87,37 +86,8 @@ export default function ImageCompressionPanel({
     PopoverState.hidePopupover()
   }
 
-  const compressImage = async (props: FileDataType) => {
+  const uploadImage = async (props: FileDataType, data: ArrayBuffer) => {
     compressProperties.src.set(props.type === 'folder' ? `${props.url}/${props.key}` : props.url)
-
-    const ktx2Encoder = new KTX2Encoder()
-
-    const img = await new Promise<HTMLImageElement>((resolve) => {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = function () {
-        resolve(img)
-      }
-      img.src = compressProperties.src.value
-    })
-
-    const canvas = new OffscreenCanvas(img.width, img.height)
-    const ctx = canvas.getContext('2d')!
-    ctx.drawImage(img, 0, 0)
-
-    const imageData = ctx.getImageData(0, 0, img.width, img.height)
-
-    const data = await ktx2Encoder.encode(imageData, {
-      uastc: compressProperties.mode.value === 'UASTC',
-      qualityLevel: compressProperties.quality.value,
-      mipmaps: compressProperties.mipmaps.value,
-      compressionLevel: compressProperties.compressionLevel.value,
-      yFlip: compressProperties.flipY.value,
-      srgb: !compressProperties.srgb.value,
-      uastcFlags: compressProperties.uastcFlags.value,
-      normalMap: compressProperties.normalMap.value,
-      uastcZstandard: compressProperties.uastcZstandard.value
-    })
 
     const newFileName = props.key.replace(/.*\/(.*)\..*/, '$1') + '.ktx2'
     const path = props.key.replace(/(.*\/).*/, '$1')
@@ -167,7 +137,7 @@ export default function ImageCompressionPanel({
           name="mode"
           label={t('editor:properties.model.transform.dst')}
         >
-          <Input className="border-theme-input bg-[#2C2E33] px-2 py-1.5" value={title} disabled />
+          <Input value={title} disabled />
         </InputGroup>
         <div className="w-full border border-[#2B2C30]" />
         <InputGroup
@@ -193,57 +163,45 @@ export default function ImageCompressionPanel({
           containerClassName="w-full justify-start flex-nowrap"
           labelClassName="w-20 text-theme-gray3"
           infoClassName="text-theme-gray3"
+          className="w-min"
           name="flipY"
           label={t('editor:properties.model.transform.flipY')}
           info={t('editor:properties.model.transform.flipYTooltip')}
         >
-          <BooleanInput
-            className="bg-[#2C2E33]"
-            value={compressProperties.flipY.value}
-            onChange={compressProperties.flipY.set}
-          />
+          <Checkbox checked={compressProperties.flipY.value} onChange={compressProperties.flipY.set} />
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
           labelClassName="w-20 text-theme-gray3"
           infoClassName="text-theme-gray3"
+          className="w-min"
           name="linear"
           label={t('editor:properties.model.transform.srgb')}
           info={t('editor:properties.model.transform.srgbTooltip')}
         >
-          <BooleanInput
-            className="bg-[#2C2E33]"
-            value={compressProperties.srgb.value}
-            onChange={compressProperties.srgb.set}
-          />
+          <Checkbox checked={compressProperties.srgb.value} onChange={compressProperties.srgb.set} />
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
           labelClassName="w-20 text-theme-gray3"
           infoClassName="text-theme-gray3"
           name="mipmaps"
+          className="w-min"
           label={t('editor:properties.model.transform.mipmaps')}
           info={t('editor:properties.model.transform.mipmapsTooltip')}
         >
-          <BooleanInput
-            className="bg-[#2C2E33]"
-            value={compressProperties.mipmaps.value}
-            onChange={compressProperties.mipmaps.set}
-          />
+          <Checkbox checked={compressProperties.mipmaps.value} onChange={compressProperties.mipmaps.set} />
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
           labelClassName="w-20 text-theme-gray3"
           infoClassName="text-theme-gray3"
           name="normalMap"
+          className="w-min"
           label={t('editor:properties.model.transform.normalMap')}
           info={t('editor:properties.model.transform.normalMapTooltip')}
         >
-          <BooleanInput
-            className="bg-[#2C2E33]"
-            value={compressProperties.normalMap.value}
-            onChange={compressProperties.normalMap.set}
-          />
+          <Checkbox checked={compressProperties.normalMap.value} onChange={compressProperties.normalMap.set} />
         </InputGroup>
         {compressProperties.mode.value === 'ETC1S' && (
           <>
@@ -309,10 +267,10 @@ export default function ImageCompressionPanel({
               name="uastcZstandard"
               label={t('editor:properties.model.transform.uastcZstandard')}
               info={t('editor:properties.model.transform.uastcZstandardTooltip')}
+              className="w-min"
             >
-              <BooleanInput
-                className="bg-[#2C2E33]"
-                value={compressProperties.uastcZstandard.value}
+              <Checkbox
+                checked={compressProperties.uastcZstandard.value}
                 onChange={compressProperties.uastcZstandard.set}
               />
             </InputGroup>

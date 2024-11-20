@@ -32,7 +32,7 @@ import { calculateAndApplyYOffset } from '@ir-engine/common/src/utils/offsets'
 import { useClickOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { useHookstate } from '@ir-engine/hyperflux'
 
-import Input from '../Input'
+import Input, { InputProps } from '../Input'
 
 export type OptionValueType = string | number
 
@@ -51,7 +51,7 @@ export interface SelectProps<T extends OptionValueType> {
   menuClassname?: string
   menuItemClassName?: string
   labelClassName?: string
-  inputVariant?: 'outlined' | 'underlined' | 'onboarding'
+  inputVariant?: InputProps['variantSize']
   inputClassName?: string
   errorBorder?: boolean
   searchDisabled?: boolean
@@ -145,18 +145,17 @@ const Select = <T extends OptionValueType>({
       <Input
         data-testid="select-input"
         disabled={disabled}
-        label={label}
-        labelClassname={labelClassName}
-        variant={inputVariant}
-        description={description}
-        error={error}
-        errorBorder={errorBorder}
-        className={twMerge('cursor-pointer', inputClassName)}
+        labelProps={{
+          text: label || '',
+          position: 'top'
+        }}
+        variantSize={inputVariant}
         placeholder={placeholder || t('common:select.selectOption')}
         value={selectLabel.value}
         onChange={handleSearch}
         onClick={toggleDropdown}
         onMouseDown={handleMouseDown}
+        autoComplete="off"
         endComponent={
           endComponent ?? (
             <MdOutlineKeyboardArrowDown
@@ -172,7 +171,7 @@ const Select = <T extends OptionValueType>({
             />
           )
         }
-        containerClassName={inputContainerClassName}
+        fullWidth
       />
       <div
         className={`absolute z-30 mt-2 w-full rounded border border-theme-primary bg-theme-surface-main ${
