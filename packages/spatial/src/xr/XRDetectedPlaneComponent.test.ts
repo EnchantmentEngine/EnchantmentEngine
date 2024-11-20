@@ -90,9 +90,11 @@ describe('XRDetectedPlaneComponent', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('reactor', () => {}) //:: reactor
   describe('createGeometryFromPolygon', () => {}) //:: createGeometryFromPolygon
   describe('updatePlaneGeometry', () => {}) //:: updatePlaneGeometry
   describe('updatePlanePose', () => {}) //:: updatePlanePose
   describe('foundPlane', () => {}) //:: foundPlane
+
+  /** @todo */
+  describe('reactor', () => {}) //:: reactor
 }) //:: XRDetectedPlaneComponent

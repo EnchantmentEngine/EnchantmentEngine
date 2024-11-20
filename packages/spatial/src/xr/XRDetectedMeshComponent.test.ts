@@ -34,9 +34,11 @@ describe('XRDetectedMeshComponent', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('reactor', () => {}) //:: reactor
   describe('createGeometryFromMesh', () => {}) //:: createGeometryFromMesh
   describe('updateMeshGeometry', () => {}) //:: updateMeshGeometry
   describe('updateMeshPose', () => {}) //:: updateMeshPose
   describe('foundMesh', () => {}) //:: foundMesh
+
+  /** @todo */
+  describe('reactor', () => {}) //:: reactor
 }) //:: XRDetectedMeshComponent
