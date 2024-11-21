@@ -25,9 +25,10 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   ComponentType,
-  ECSState,
   PresentationSystemGroup,
+  S,
   defineComponent,
+  getComponent,
   hasComponent,
   setComponent,
   useComponent,
@@ -35,12 +36,12 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { State, getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { State, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
+import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import React from 'react'
 import {
   Color,
   DoubleSide,
@@ -71,39 +72,48 @@ export const PIXELS_TO_METERS = 0.001
 export const HTMLComponent = defineComponent({
   name: 'HTMLComponent',
 
-  onInit: (entity) => {
-    return {
-      element: null as HTMLElement | null,
+  schema: S.Object({
+    element: S.Optional(S.Type<HTMLElement>()),
 
-      stackGroup: new Group(),
-      backgroundMesh: null! as Mesh,
+    stackGroup: S.Class(() => new Group()),
+    backgroundMesh: S.Type<Mesh>(),
 
-      opacity: 1,
-      opacityTransition: Transition.defineScalarTransition(),
+    opacity: S.Number(1),
+    opacityTransition: Transition.defineScalarTransition(),
 
-      texture: null as Texture | null,
-      textureTransition: Transition.defineScalarTransition(),
+    texture: S.Optional(S.Type<Texture>()),
+    textureTransition: Transition.defineScalarTransition(),
 
-      borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 } as BorderRadius,
-      borderRadiusTransition: Transition.defineBorderRadiusTransition(),
+    borderRadius: S.Object({
+      topLeft: S.Number(0),
+      topRight: S.Number(0),
+      bottomLeft: S.Number(0),
+      bottomRight: S.Number(0)
+    }),
 
-      backgroundColor: new Color(0xffffff),
-      backgroundColorTransition: Transition.defineScalarTransition(),
+    borderRadiusTransition: Transition.defineBorderRadiusTransition(),
 
-      backgroundTranslucency: 0,
-      backgroundTranslucencyTransition: Transition.defineScalarTransition(),
+    backgroundColor: S.Color(0xffffff),
+    backgroundColorTransition: Transition.defineScalarTransition(),
 
-      ready: false,
+    backgroundTranslucency: S.Number(0),
+    backgroundTranslucencyTransition: Transition.defineScalarTransition(),
 
-      domRect: new Bounds(),
+    ready: S.Bool(false),
 
-      __internal: {
-        snapshotHash: '' as string,
-        layerBuffer: [] as TimestampedValue<Mesh>[],
-        currentBorderRadius: { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 } as BorderRadius
-      }
-    }
-  },
+    domRect: S.Class(() => new Bounds()),
+
+    __internal: S.Object({
+      snapshotHash: S.String(''),
+      layerBuffer: S.Array(S.Type<TimestampedValue<Mesh>>()),
+      currentBorderRadius: S.Object({
+        topLeft: S.Number(0),
+        topRight: S.Number(0),
+        bottomLeft: S.Number(0),
+        bottomRight: S.Number(0)
+      })
+    })
+  }),
 
   reactor: () => {
     const entity = useEntityContext()
@@ -118,10 +128,6 @@ export const HTMLComponent = defineComponent({
     const snapshotData = layerState.snapshots[layer.__internal.snapshotHash.value]
     const textureData = layerState.textures[snapshotData.textureHash.ornull?.value ?? '']
 
-    const geometry = React.useMemo(() => {
-      return createRoundedRectangleGeometry(layout?.size.value ?? new Vector3(), layer.borderRadius.value)
-    }, [layout, layer.borderRadius])
-
     // setup on mount
     useImmediateEffect(() => {
       if (!hasComponent(entity, VisibleComponent)) setComponent(entity, VisibleComponent)
@@ -129,9 +135,11 @@ export const HTMLComponent = defineComponent({
       if (!hasComponent(entity, LayoutComponent)) setComponent(entity, LayoutComponent)
       addObjectToGroup(entity, layer.stackGroup.value as Group)
       const mesh = new Mesh(
-        geometry,
+        undefined,
         new MeshBasicMaterial({
-          opacity: 0
+          opacity: 0,
+          color: 0xffffff,
+          transparent: true
         })
       )
       mesh.renderOrder = -1
@@ -157,19 +165,19 @@ export const HTMLComponent = defineComponent({
     }, [layer.backgroundTranslucency])
 
     // setup foreground layers
-    useImmediateEffect(() => {
-      const now = getState(ECSState).frameTime
-      const material = new MeshBasicMaterial({ map: layer.texture.value as Texture, transparent: true, opacity: 0 })
-      const mesh = new Mesh(geometry, material)
-      layer.__internal.layerBuffer.merge([
-        {
-          timestamp: now,
-          value: mesh
-        }
-      ])
-      addObjectToGroup(entity, mesh)
-      mesh.renderOrder = layer.__internal.layerBuffer.length - 1
-    }, [layer.texture, geometry])
+    // useImmediateEffect(() => {
+    //   const now = getState(ECSState).frameTime
+    //   const material = new MeshBasicMaterial({ map: layer.texture.value as Texture, transparent: true, opacity: 0 })
+    //   const mesh = new Mesh(geometry, material)
+    //   layer.__internal.layerBuffer.merge([
+    //     {
+    //       timestamp: now,
+    //       value: mesh
+    //     }
+    //   ])
+    //   addObjectToGroup(entity, mesh)
+    //   mesh.renderOrder = layer.__internal.layerBuffer.length - 1
+    // }, [layer.texture, geometry])
 
     // process changes to snapshot texture data
     // React.useEffect(() => {
@@ -189,11 +197,54 @@ export const HTMLComponent = defineComponent({
     // }, [layer.element, !!layout, parentLayer?.domRect, layer.autoUpdateLayout])
 
     // update layout
-    React.useEffect(() => {})
 
-    useExecute(() => {}, { with: PresentationSystemGroup })
+    let geometry: ShapeGeometry | null = null
+    let lastGeometryHash: string = ''
+    const layoutSize = new Vector3()
+    let lastTranslucency = useExecute(
+      () => {
+        const layout = getComponent(entity, LayoutComponent)
+        const html = getComponent(entity, HTMLComponent)
+
+        if (layout.computedLayout) layout.computedLayout.box.getSize(layoutSize)
+        else layoutSize.copy(Vector3_Zero)
+        const geometryHash = createRoundedRectangleGeometryHash(layoutSize, layer.borderRadius.value)
+
+        if (!geometry || geometryHash !== lastGeometryHash) {
+          // update geometry
+          geometry = createRoundedRectangleGeometry(layoutSize, layer.borderRadius.value)
+          lastGeometryHash = geometryHash
+        }
+
+        const backgroundColor = html.backgroundColorTransition.current
+        const backgroundOpacity = html.opacityTransition.current
+        const backgroundTranslucency = html.backgroundTranslucencyTransition.current
+        const backgroundMesh = html.backgroundMesh
+        if (backgroundTranslucency > 0) {
+          let mat = backgroundMesh.material as MeshPhysicalMaterial
+          if (mat.type !== 'MeshPhysicalMaterial') {
+            mat = new MeshPhysicalMaterial({
+              color: new Color('#B9B9B9'),
+              transmission: 0,
+              roughness: 0.5,
+              // opacity,
+              transparent: true,
+              side: DoubleSide
+            })
+          }
+          mat.opacity = backgroundOpacity
+          mat.transmission = backgroundTranslucency
+          // mat.color = backgroundColor
+        }
+      },
+      { with: PresentationSystemGroup }
+    )
   }
 })
+
+function createRoundedRectangleGeometryHash(size: Vector3, borderRadius: BorderRadius): string {
+  return `${size.x},${size.y},${borderRadius.topLeft},${borderRadius.topRight},${borderRadius.bottomRight},${borderRadius.bottomLeft}`
+}
 
 function createRoundedRectangleGeometry(size: Vector3, borderRadius: BorderRadius): THREE.ShapeGeometry {
   const shape = new Shape()
@@ -239,32 +290,32 @@ export function updateDefaultLayoutFromDOM(
   const widthRatio = rect.width / parentRect.width
   const heightRatio = rect.height / parentRect.height
 
-  layout.defaults.positionOrigin.value.setScalar(0)
-  layout.defaults.alignmentOrigin.value.setScalar(0)
+  // layout.defaults.positionOrigin.value.setScalar(0)
+  // layout.defaults.alignmentOrigin.value.setScalar(0)
 
-  if (widthRatio === 1) {
-    layout.defaults.sizeMode.x.set('proportional')
-    layout.defaults.size.x.set(1)
-  } else {
-    layout.defaults.sizeMode.x.set('literal')
-    layout.defaults.size.x.set(rect.width)
-  }
+  // if (widthRatio === 1) {
+  //   layout.defaults.sizeMode.x.set('proportional')
+  //   layout.defaults.size.x.set(1)
+  // } else {
+  //   layout.defaults.sizeMode.x.set('literal')
+  //   layout.defaults.size.x.set(rect.width)
+  // }
 
-  if (heightRatio === 1) {
-    layout.defaults.sizeMode.y.set('proportional')
-    layout.defaults.size.y.set(1)
-  } else {
-    layout.defaults.sizeMode.y.set('literal')
-    layout.defaults.size.y.set(rect.height)
-  }
+  // if (heightRatio === 1) {
+  //   layout.defaults.sizeMode.y.set('proportional')
+  //   layout.defaults.size.y.set(1)
+  // } else {
+  //   layout.defaults.sizeMode.y.set('literal')
+  //   layout.defaults.size.y.set(rect.height)
+  // }
 
   layout.defaults.size.z.set(0)
 
-  layout.defaults.position.value
-    .set(rect.left - (parentRect?.left ?? 0), rect.top - (parentRect?.top ?? 0), 0)
-    .multiplyScalar(PIXELS_TO_METERS)
-  layout.defaults.rotation.value.set(0, 0, 0, 1)
-  layout.defaults.rotationOrigin.value.set(0.5, 0.5, 0)
+  // layout.defaults.position.value
+  //   .set(rect.left - (parentRect?.left ?? 0), rect.top - (parentRect?.top ?? 0), 0)
+  //   .multiplyScalar(PIXELS_TO_METERS)
+  // layout.defaults.rotation.value.set(0, 0, 0, 1)
+  // layout.defaults.rotationOrigin.value.set(0.5, 0.5, 0)
 }
 
 const viewportBounds = new Bounds()
