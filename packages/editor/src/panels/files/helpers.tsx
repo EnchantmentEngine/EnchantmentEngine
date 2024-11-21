@@ -62,14 +62,17 @@ const FilesQueryContext = createContext({
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
   const filesState = useMutableState(FilesState)
+  const projectPath = '/projects/' + filesState.projectName.value
+  const directory =
+    filesState.selectedDirectory.value != ''
+      ? filesState.selectedDirectory.value
+      : projectPath + filesState.searchText.value
+  const searchDirectory = projectPath + '/**/*'
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
-      directory:
-        filesState.selectedDirectory.value != ''
-          ? filesState.selectedDirectory.value
-          : '/projects/' + filesState.projectName.value
+      directory: filesState.searchText.value ? searchDirectory : directory
     }
   })
 
