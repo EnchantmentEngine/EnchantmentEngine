@@ -32,11 +32,7 @@
       "@types/node"
     ]
   },
-  "include": [
-    "../../__global.d.ts",
-    "./src",
-    "./index.ts"
-  ],
+  "include": ["../../__global.d.ts", "./src", "./tests", "./index.ts"],
   "exclude": [
     "./tests/webxr/emulator/**",
     "./tests/webxr/devtool/**",
