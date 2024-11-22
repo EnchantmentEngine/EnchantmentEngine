@@ -22,11 +22,8 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-
-import { createEngine, destroyEngine, getComponent, getMutableComponent } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { Quaternion, Vector3 } from 'three'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getIncomingAction } from '../../tests/util/actionHelpers'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
 import {
@@ -36,13 +33,24 @@ import {
   WebXREventDispatcher,
   getLastXRSessionData
 } from '../../tests/webxr/emulator'
+
+import { createEngine, destroyEngine, getComponent, getMutableComponent } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { Quaternion, Vector3 } from 'three'
 import { EngineState } from '../EngineState'
 import { TransformComponent } from '../SpatialModule'
 import { Q_IDENTITY, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
 import { destroySpatialEngine, destroySpatialViewer } from '../initializeEngine'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
-import { endXRSession, onSessionEnd, requestXRSession, xrSessionChanged } from './XRSessionFunctions'
-import { ReferenceSpace, XRState } from './XRState'
+import {
+  endXRSession,
+  getReferenceSpaces,
+  onSessionEnd,
+  requestXRSession,
+  setupXRSession,
+  xrSessionChanged
+} from './XRSessionFunctions'
+import { ReferenceSpace, XRAction, XRState } from './XRState'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {
@@ -325,16 +333,155 @@ describe('onSessionEnd', () => {
     expect(result).toBe(Expected)
   })
 
-  /**
-  // @todo
-  it("should remove the 'end' listener from XRState.session", () => {})
-  it("should call `dispatchAction` with XRAction.sessionChanged{active:false}", () => {})
-  */
+  it('should call `dispatchAction` with XRAction.sessionChanged{active:false}', () => {
+    const Expected = false
+    // Run and Check the result
+    onSessionEnd()
+    const result = getIncomingAction(XRAction.sessionChanged.type)
+    assert(result)
+    expect(typeof result).toBe('object')
+    // expect(result.active).toBe(Expected)
+  })
 }) //:: onSessionEnd
 
-/** @todo */
-describe('setupXRSession', () => {}) //:: setupXRSession
-describe('getReferenceSpaces', () => {}) //:: getReferenceSpaces
+describe('getReferenceSpaces', () => {
+  beforeEach(async () => {
+    createEngine()
+    await mockEmulatedXREngine()
+  })
+
+  afterEach(() => {
+    destroyEmulatedXREngine()
+    destroyEngine()
+  })
+
+  it("should call `@param xrSession`.requestReferenceSpace with a value of `'local-floor'`", () => {
+    const Expected = 'local-floor'
+    // Setup the data as expected
+    const xrSession = getMutableState(XRState).session.value as XRSession
+    const requestReferenceSpaceSpy = vi.spyOn(xrSession, 'requestReferenceSpace')
+    // Run and Check the result
+    getReferenceSpaces(xrSession)
+    expect(requestReferenceSpaceSpy).toHaveBeenCalled()
+    expect(requestReferenceSpaceSpy).toHaveBeenCalledWith(Expected)
+  })
+
+  it("should call `@param xrSession`.requestReferenceSpace with a value of `'viewer'`", () => {
+    const Expected = 'viewer'
+    // Setup the data as expected
+    const xrSession = getMutableState(XRState).session.value as XRSession
+    const requestReferenceSpaceSpy = vi.spyOn(xrSession, 'requestReferenceSpace')
+    // Run and Check the result
+    getReferenceSpaces(xrSession)
+    expect(requestReferenceSpaceSpy).toHaveBeenCalled()
+    expect(requestReferenceSpaceSpy).toHaveBeenCalledWith(Expected)
+  })
+}) //:: getReferenceSpaces
+
+describe.only('setupXRSession', () => {
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    WebXREventDispatcher.instance.dispatchEvent({
+      type: POLYFILL_ACTIONS.DEVICE_INIT,
+      detail: { stereoEffect: false, device: DeviceDefinitions.Default }
+    })
+  })
+
+  afterEach(() => {
+    destroyEmulatedXREngine()
+    destroyEngine()
+  })
+
+  it('should request a session by calling navigator.xr!.requestSession', async () => {
+    // Set the data as expected
+    const requestSessionSpy = vi.spyOn(navigator.xr!, 'requestSession')
+    // Sanity check before running
+    expect(requestSessionSpy).not.toHaveBeenCalled()
+    // Run and Check the result
+    await setupXRSession()
+    expect(requestSessionSpy).toHaveBeenCalled()
+  })
+
+  /**
+  // @todo
+  it("should set XRSession.interactionMode to 'world-space' when navigator.userAgent.includes('OculusBrowser') is true", async () => {
+    const Expected = 'world-space'
+    // Set the data as expected
+    const OculusString = 'OculusBrowser'
+    // @-ts-expect-error Allow coercing new data into the userAgent readonly string
+    navigator.userAgent = navigator.userAgent + OculusString // Force the test userAgent to contain the desired string
+    console.log("........................................")
+    console.log(navigator.userAgent)
+    console.log(OculusString)
+    console.log("........................................")
+    // Sanity check before running
+    expect(navigator.userAgent.includes(OculusString)).toBe(true)
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    const result = session.interactionMode
+    expect(result).toBe(Expected)
+  })
+  */
+
+  it('should set XRState.sessionActive to true', async () => {
+    const Expected = true
+    // Sanity check before running
+    expect(getState(XRState).sessionActive).not.toBe(Expected)
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    const result = getState(XRState).sessionActive
+    expect(result).toBe(Expected)
+  })
+
+  it('should set XRState.sessionMode to `@param requestedMode` when it is passed', async () => {
+    const Expected = 'inline'
+    // Sanity check before running
+    expect(getState(XRState).sessionMode).not.toBe(Expected)
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    const result = getState(XRState).sessionMode
+    expect(result).toBe(Expected)
+  })
+
+  /**
+  // @todo
+  it("should set XRState.sessionMode to 'immersive-ar' when ... and `@param requestedMode` is not passed", async async () => {})
+  it("should set XRState.sessionMode to 'immersive-vr' when ... and `@param requestedMode` is not passed ", async () => {})
+  it("should set XRState.sessionMode to 'inline' when ... and `@param requestedMode` is not passed", async () => {})
+  */
+
+  /**
+  // @todo
+  it("should call EngineState.viewerEntity.RendererComponent.xrManager.setSession with a framebufferScaleFactor of 0.5 when ...", async () => {})
+  it("should call EngineState.viewerEntity.RendererComponent.xrManager.setSession with a framebufferScaleFactor of 1.2 when ...", async () => {})
+  */
+
+  /**
+  // @note Cannot be currently tested. The WebXR emulator has special behavior
+  it("should set EngineState.viewerEntity.RendererComponent.renderer!.domElement.style.display to 'none' when (typeof xrSession.visibilityState) is 'string'", async () => {
+    const Expected = 'none'
+    // Sanity check before running
+    const before = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer!.domElement.style.display
+    expect(before).not.toBe(Expected)
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    expect(typeof session.visibilityState).toBe('string')
+    const result = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer!.domElement.style.display
+    expect(result).toBe(Expected)
+  })
+  */
+
+  it('should return the newly requested session', async () => {
+    const result = await setupXRSession()
+    assert(result)
+    expect(typeof result).toBe('object')
+  })
+}) //:: setupXRSession
 
 describe('requestXRSession', () => {
   beforeEach(async () => {
@@ -412,12 +559,34 @@ describe('requestXRSession', () => {
     expect(result).toBe(Expected)
   })
 
-  /**
-  // @todo
-  it("should call `dispatchAction` with XRAction.sessionChanged", () => {})
-  it("should add an `end` event listener to the resulting XRSession", () => {})
-  it("should call `getReferenceSpaces` on the newly created XRSession", () => {})
+  it('should call `dispatchAction` with XRAction.sessionChanged', async () => {
+    // Sanity check before running
+    const before = getIncomingAction(XRAction.sessionChanged.type)
+    expect(before).toBe(undefined)
+    // Run and Check the result
+    await requestXRSession()
+    const result = getIncomingAction(XRAction.sessionChanged.type)
+    assert(result)
+    expect(typeof result).toBe('object')
+  })
+
+  /*
+  // @note Cannot be tested. The EventTarget symbol from webxr-polyfill is not exported
+  it("should add an `end` event listener to the resulting XRSession", async () => {
+    // Run and Check the result
+    await requestXRSession()
+    expect(getState(XRState).session).not.toBe(undefined)
+    for (const entry of Object.entries(getState(XRState).session!)){
+      console.log(entry)
+    }
+    console.log(getState(XRState).session)
+    // const result = getXRSessionEventTargetData(getState(XRState).session)
+    // console.log(result)
+  })
   */
+
+  // @note Cannot be tested. The session created inside the hooked function is never returned. So a vi.spyOn will never trigger.
+  // it("should call `getReferenceSpaces` on the newly created XRSession", async () => {})
 }) //:: requestXRSession
 
 describe('endXRSession', () => {
