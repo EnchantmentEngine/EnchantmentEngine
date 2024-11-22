@@ -24,13 +24,14 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { getIncomingAction } from '../../../tests/util/actionHelpers'
+import { assertVec } from '../../../tests/util/assert'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../../tests/webxr/emulator'
 
-import { Engine, SystemDefinitions, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
+import { SystemDefinitions, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
 import { startReactor } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
-import { assertVec } from '../../../tests/util/assert'
 import { PersistentAnchorActions, PersistentAnchorComponent } from '../XRAnchorComponents'
 import { XR8, XR8System } from './XR8'
 import { XR8Pipeline } from './XR8Pipeline'
@@ -49,13 +50,6 @@ import {
 beforeAll(() => {
   new CustomWebXRPolyfill()
 })
-
-function getIncomingAction(name: string) {
-  for (const action of Engine.instance.store.actions.incoming) {
-    if (action.type === name) return action
-  }
-  return undefined
-}
 
 describe('XR8Pipeline', () => {
   describe('name', () => {
