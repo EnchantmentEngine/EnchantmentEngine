@@ -47,7 +47,6 @@ import {
 } from '@ir-engine/ecs'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import {
-  dispatchAction,
   getMutableState,
   getState,
   NO_PROXY_STEALTH,
@@ -68,6 +67,7 @@ import {
   useAncestorWithComponents,
   useChildrenWithComponents
 } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { Texture } from 'three'
 import { useGLTFResource } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import {
@@ -80,8 +80,9 @@ import { SourceComponent } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
 import { migrateSceneJSONToGLTF } from './convertJsonToGLTF'
-import { GLTFDocumentState, GLTFSnapshotAction } from './GLTFDocumentState'
-import { GLTFSourceState } from './GLTFState'
+import { GLTFDocumentState } from './GLTFDocumentState'
+import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
+import { getParserOptions, GLTFSourceState } from './GLTFState'
 import { gltfReplaceUUIDReferences } from './gltfUtils'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 
@@ -160,6 +161,10 @@ export const GLTFComponent = defineComponent({
 
     // internals
     body: S.NonSerialized(S.Nullable(S.Type<ArrayBuffer>())),
+    document: S.NonSerialized(S.Nullable(S.Type<GLTF.IGLTF>())),
+    buffers: S.NonSerialized(S.Array(S.Type<ArrayBuffer>(), [])),
+    bufferViews: S.NonSerialized(S.Array(S.Type<ArrayBuffer>(), [])),
+    images: S.NonSerialized(S.Array(S.Type<Texture>(), [])),
     progress: S.NonSerialized(S.Number(0)),
     extensions: S.NonSerialized(S.Record(S.String(), S.Any(), {})),
     dependencies: S.NonSerialized(S.Optional(S.Type<ComponentDependencies>()))
@@ -217,9 +222,30 @@ export const GLTFComponent = defineComponent({
       }
     }, [gltfComponent.src])
 
+    useEffect(() => {
+      if (!gltfComponent.document.value) return
+      const document = gltfComponent.document.value
+      if (document.buffers && gltfComponent.buffers.length !== document.buffers.length) return
+      if (document.images && gltfComponent.images.length !== document.images.length) return
+      console.log('All external resources loaded for gltf document', sourceID)
+    }, [gltfComponent.document, gltfComponent.buffers, gltfComponent.images])
+
     const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
     return (
       <>
+        {gltfComponent.document.value && (
+          <>
+            {gltfComponent.document.value.buffers?.map((_, index) => (
+              <BufferReactor key={index} entity={entity} bufferIndex={index} />
+            ))}
+            {gltfComponent.document.value.images?.map((_, index) => (
+              <ImageReactor key={index} entity={entity} imageIndex={index} />
+            ))}
+            {gltfComponent.document.value.bufferViews?.map((_, index) => (
+              <BufferViewReactor key={index} entity={entity} bufferViewIndex={index} />
+            ))}
+          </>
+        )}
         <ResourceReactor documentID={sourceID} entity={entity} />
         {dependencies && !componentDependenciesLoaded(dependencies) ? (
           <DependencyReactor key={entity} gltfComponentEntity={entity} dependencies={dependencies} />
@@ -242,6 +268,57 @@ export const GLTFComponent = defineComponent({
     return `${uuid}-${src}`
   }
 })
+
+const BufferReactor = (props: { entity: Entity; bufferIndex: number }) => {
+  const { entity, bufferIndex } = props
+  const options = getParserOptions(entity)
+  const buffer = GLTFLoaderFunctions.useLoadBuffer(options, bufferIndex)
+
+  useEffect(() => {
+    if (!buffer) return
+    const gltfComponent = getMutableComponent(entity, GLTFComponent)
+    gltfComponent.buffers.set((prev) => {
+      prev![bufferIndex] = buffer
+      return prev
+    })
+  }, [buffer])
+
+  return null
+}
+
+const BufferViewReactor = (props: { entity: Entity; bufferViewIndex: number }) => {
+  const { entity, bufferViewIndex } = props
+  const options = getParserOptions(entity)
+  const bufferView = GLTFLoaderFunctions.useLoadBufferView(options, bufferViewIndex)
+
+  useEffect(() => {
+    if (!bufferView) return
+    const gltfComponent = getMutableComponent(entity, GLTFComponent)
+    gltfComponent.bufferViews.set((prev) => {
+      prev![bufferViewIndex] = bufferView
+      return prev
+    })
+  }, [bufferView])
+
+  return null
+}
+
+const ImageReactor = (props: { entity: Entity; imageIndex: number }) => {
+  const { entity, imageIndex } = props
+  const options = getParserOptions(entity)
+  const image = GLTFLoaderFunctions.useLoadImageSource(options, imageIndex)
+
+  useEffect(() => {
+    if (!image) return
+    const gltfComponent = getMutableComponent(entity, GLTFComponent)
+    gltfComponent.images.set((prev) => {
+      prev![imageIndex] = image
+      return prev
+    })
+  }, [image])
+
+  return null
+}
 
 const ResourceReactor = (props: { documentID: string; entity: Entity }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
@@ -466,12 +543,11 @@ const useGLTFDocument = (url: string, entity: Entity) => {
   const state = useComponent(entity, GLTFComponent)
   const source = GLTFComponent.getInstanceID(entity)
   useGLTFResource(url, entity)
-
-  useEffect(() => {
-    return () => {
-      dispatchAction(GLTFSnapshotAction.unload({ source }))
-    }
-  }, [])
+  // useEffect(() => {
+  //   return () => {
+  //     dispatchAction(GLTFSnapshotAction.unload({ source }))
+  //   }
+  // }, [])
 
   useEffect(() => {
     if (!url) {
@@ -490,7 +566,7 @@ const useGLTFDocument = (url: string, entity: Entity) => {
       url,
       (gltf, body) => {
         if (body) state.body.set(body)
-
+        state.document.set(gltf)
         if (gltf.nodes) {
           for (const node of gltf.nodes) {
             if (node.extensions && node.extensions[UUIDComponent.jsonID]) {
@@ -510,12 +586,12 @@ const useGLTFDocument = (url: string, entity: Entity) => {
 
         const dependencies = buildComponentDependencies(gltf)
         state.dependencies.set(dependencies)
-        dispatchAction(
-          GLTFSnapshotAction.createSnapshot({
-            source,
-            data: gltf
-          })
-        )
+        // dispatchAction(
+        //   GLTFSnapshotAction.createSnapshot({
+        //     source,
+        //     data: gltf
+        //   })
+        // )
       },
       onProgress,
       onError,

@@ -25,25 +25,39 @@ Ethereal Engine. All Rights Reserved.
 
 import { GLTF } from '@gltf-transform/core'
 import {
+  ComponentJSONIDMap,
   ComponentType,
+  Entity,
   EntityUUID,
   UUIDComponent,
   UndefinedEntity,
   getComponent,
   getOptionalComponent,
-  useOptionalComponent
+  hasComponent,
+  setComponent
 } from '@ir-engine/ecs'
-import { NO_PROXY, getState, isClient, startReactor, useHookstate } from '@ir-engine/hyperflux'
+import { NO_PROXY, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
+import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { MaterialPrototypeComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { Object3DComponent } from '@ir-engine/spatial/src/renderer/components/Object3DComponent'
+import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { proxifyParentChildRelationships } from '@ir-engine/spatial/src/renderer/functions/proxifyParentChildRelationships'
+import {
+  MaterialInstanceComponent,
+  MaterialPrototypeComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { ResourceManager, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { useReferencedResource } from '@ir-engine/spatial/src/resources/resourceHooks'
+import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { useEffect } from 'react'
 import {
   AnimationClip,
+  AnimationMixer,
   Bone,
   Box3,
   BufferAttribute,
@@ -62,14 +76,17 @@ import {
   LinearMipmapLinearFilter,
   LinearSRGBColorSpace,
   LoaderUtils,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   NumberKeyframeTrack,
   Object3D,
+  Quaternion,
   QuaternionKeyframeTrack,
   RepeatWrapping,
   SRGBColorSpace,
+  Skeleton,
   SkinnedMesh,
   Sphere,
   Texture,
@@ -101,14 +118,19 @@ import { GLTFParserOptions, GLTFRegistry, getImageURIMimeType } from '../assets/
 import { KTX2Loader } from '../assets/loaders/gltf/KTX2Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
+import { AnimationComponent } from '../avatar/components/AnimationComponent'
+import { SourceComponent } from '../scene/components/SourceComponent'
+import { GLTFComponent } from './GLTFComponent'
 import { KHR_DRACO_MESH_COMPRESSION, getBufferIndex } from './GLTFExtensions'
+import { defaultMaterial } from './GLTFState'
 import { KHRTextureTransformExtensionComponent, MaterialDefinitionComponent } from './MaterialDefinitionComponent'
 
 // todo make this a state
 const cache = new GLTFRegistry()
 
 const useLoadPrimitives = (options: GLTFParserOptions, nodeIndex: number) => {
-  const finalGeometry = useHookstate(null as BufferGeometry | null)
+  // const finalGeometry = useHookstate(null as BufferGeometry | null)
+  let finalGeometry: BufferGeometry | null = null
   const json = options.document
   const node = json.nodes![nodeIndex]
   const mesh = json.meshes![node.mesh!]
@@ -117,32 +139,33 @@ const useLoadPrimitives = (options: GLTFParserOptions, nodeIndex: number) => {
     (primitive, index) => GLTFLoaderFunctions.useLoadPrimitive(options, nodeIndex, index)!
   )
 
-  useEffect(() => {
-    if (geometries.some((geometry) => !geometry) || finalGeometry.value) return
-    if (geometries.length > 1) {
-      let needsTangentRecalculation = false
-      for (let i = 0; i < geometries.length; i++) {
-        geometries[i].deleteAttribute('tangent')
-        if (geometries[i].attributes.tangent) needsTangentRecalculation = true
-      }
-
-      const newGeometry = mergeBufferGeometries(geometries, true)
-      if (needsTangentRecalculation) newGeometry?.computeTangents()
-
-      for (let i = 0; i < mesh.primitives.length; i++)
-        newGeometry!.groups[i].materialIndex = mesh.primitives[i].material!
-
-      finalGeometry.set(newGeometry)
-    } else {
-      finalGeometry.set(geometries[0])
+  // useEffect(() => {
+  // if (geometries.some((geometry) => !geometry) || finalGeometry.value) return
+  if (geometries.length > 1) {
+    let needsTangentRecalculation = false
+    for (let i = 0; i < geometries.length; i++) {
+      geometries[i].deleteAttribute('tangent')
+      if (geometries[i].attributes.tangent) needsTangentRecalculation = true
     }
-  }, [geometries])
 
-  return finalGeometry.get(NO_PROXY) as BufferGeometry | null
+    const newGeometry = mergeBufferGeometries(geometries, true)
+    if (needsTangentRecalculation) newGeometry?.computeTangents()
+
+    for (let i = 0; i < mesh.primitives.length; i++) newGeometry!.groups[i].materialIndex = mesh.primitives[i].material!
+
+    finalGeometry = newGeometry
+  } else {
+    finalGeometry = geometries[0]
+  }
+  // }, [geometries])
+
+  // return finalGeometry.get(NO_PROXY) as BufferGeometry | null
+  return finalGeometry
 }
 
 const useLoadPrimitive = (options: GLTFParserOptions, nodeIndex: number, primitiveIndex: number) => {
-  const [result] = useReferencedResource(() => null as null | BufferGeometry, options.url)
+  // const [result] = useReferencedResource(() => null as null | BufferGeometry, options.url)
+  let result: BufferGeometry | null = null
 
   const json = options.document
   const node = json.nodes![nodeIndex]!
@@ -152,201 +175,200 @@ const useLoadPrimitive = (options: GLTFParserOptions, nodeIndex: number, primiti
 
   const hasDracoCompression = primitive.extensions && primitive.extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION]
 
-  useEffect(() => {
-    if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitive.attributes) {
-      console.warn(
-        `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${ColorManagement.workingColorSpace}" not supported.`
-      )
-    }
+  if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitive.attributes) {
+    console.warn(
+      `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${ColorManagement.workingColorSpace}" not supported.`
+    )
+  }
 
-    if (hasDracoCompression) {
-      KHR_DRACO_MESH_COMPRESSION.decodePrimitive(options, primitive).then((geom) => {
-        GLTFLoaderFunctions.computeBounds(json, geom, primitive)
-        assignExtrasToUserData(geom, primitive as GLTF.IMeshPrimitive)
-        result.set(geom)
-      })
-    } else {
-      const geometry = new BufferGeometry()
+  if (hasDracoCompression) {
+    KHR_DRACO_MESH_COMPRESSION.decodePrimitive(options, primitive).then((geom) => {
+      GLTFLoaderFunctions.computeBounds(json, geom, primitive)
+      assignExtrasToUserData(geom, primitive as GLTF.IMeshPrimitive)
+      result = geom
+    })
+  } else {
+    const geometry = new BufferGeometry()
 
-      /** @todo we need to figure out a better way of handling reactivity for both draco and regular buffers */
-      const reactor = startReactor(() => {
-        const attributes = primitive.attributes
-        const resourcesState = useHookstate(
-          () =>
-            ({
-              ...Object.fromEntries(Object.keys(attributes).map((key) => [key, false])),
-              index: false
-            }) as Record<string, boolean>
-        )
+    /** @todo we need to figure out a better way of handling reactivity for both draco and regular buffers */
 
-        for (const attributeName of Object.keys(attributes)) {
-          const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase()
-          const attribute = primitive.attributes[attributeName]
-          const accessor = GLTFLoaderFunctions.useLoadAccessor(options, attribute)
-          useEffect(() => {
-            if (!accessor) return
-            geometry.setAttribute(threeAttributeName, accessor)
-            resourcesState[attributeName].set(true)
-          }, [accessor])
-        }
+    const attributes = primitive.attributes
+    // const resourcesState = useHookstate(
+    //   () =>
+    //     ({
+    //       ...Object.fromEntries(Object.keys(attributes).map((key) => [key, false])),
+    //       index: false
+    //     }) as Record<string, boolean>
+    // )
 
-        const accessor = GLTFLoaderFunctions.useLoadAccessor(options, primitive.indices!)
-
-        useEffect(() => {
-          if (!accessor) return
-          geometry.setIndex(accessor)
-          resourcesState.index.set(true)
-        }, [accessor])
-
-        useEffect(() => {
-          const attributeCount = Object.keys(attributes).length
-          const resourcesLoaded = Object.values(resourcesState.get(NO_PROXY)).filter(Boolean).length
-          if (resourcesLoaded !== attributeCount + (typeof primitive.indices === 'number' ? 1 : 0)) return
-
-          GLTFLoaderFunctions.computeBounds(json, geometry, primitive)
-          assignExtrasToUserData(geometry, primitive as GLTF.IMeshPrimitive)
-          result.set(geometry)
-          reactor.stop()
-        }, [resourcesState])
-
-        return null
-      })
-      return () => {
-        reactor.stop()
+    for (const attributeName of Object.keys(attributes)) {
+      const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase()
+      const attribute = primitive.attributes[attributeName]
+      const accessor = GLTFLoaderFunctions.useLoadAccessor(options, attribute)
+      // useEffect(() => {
+      //   if (!accessor) return
+      if (accessor) {
+        geometry.setAttribute(threeAttributeName, accessor)
       }
+      //   resourcesState[attributeName].set(true)
+      // }, [accessor])
     }
-  }, [primitive.extensions])
 
-  return result.get(NO_PROXY) as BufferGeometry | null
+    const accessor = GLTFLoaderFunctions.useLoadAccessor(options, primitive.indices!)
+
+    // useEffect(() => {
+    //   if (!accessor) return
+    if (accessor) {
+      geometry.setIndex(accessor)
+    }
+    //   resourcesState.index.set(true)
+    // }, [accessor])
+
+    // useEffect(() => {
+    //const attributeCount = Object.keys(attributes).length
+    // const resourcesLoaded = Object.values(resourcesState.get(NO_PROXY)).filter(Boolean).length
+    // if (resourcesLoaded !== attributeCount + (typeof primitive.indices === 'number' ? 1 : 0)) return
+
+    GLTFLoaderFunctions.computeBounds(json, geometry, primitive)
+    assignExtrasToUserData(geometry, primitive as GLTF.IMeshPrimitive)
+    result = geometry
+    //   result.set(geometry)
+    //   reactor.stop()
+    // }, [resourcesState])
+
+    // return () => {
+    //   reactor.stop()
+    // }
+  }
+
+  return result
 }
 
 const useLoadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => {
   const json = options.document
 
-  const result = useHookstate<BufferAttribute | null>(null)
+  let result: BufferAttribute | null = null
 
   const accessorDef = typeof accessorIndex === 'number' ? json.accessors![accessorIndex] : null
 
-  const bufferView = GLTFLoaderFunctions.useLoadBufferView(options, accessorDef?.bufferView)
+  const gltfComponent = getComponent(options.entity, GLTFComponent)
 
-  const sparseBufferViewIndices = GLTFLoaderFunctions.useLoadBufferView(
-    options,
-    accessorDef?.sparse?.indices?.bufferView
-  )
-  const sparseBufferViewValues = GLTFLoaderFunctions.useLoadBufferView(options, accessorDef?.sparse?.values?.bufferView)
+  const bufferView = accessorDef?.bufferView ? gltfComponent.bufferViews[accessorDef.bufferView] : null
 
-  useEffect(() => {
-    if (!accessorDef || !bufferView) return
+  // const sparseBufferViewIndices = GLTFLoaderFunctions.useLoadBufferView(
+  //   options,
+  //   accessorDef?.sparse?.indices?.bufferView
+  // )
+  const sparseBufferViewIndices = accessorDef?.sparse?.indices?.bufferView
+    ? gltfComponent.bufferViews[accessorDef.sparse.indices.bufferView]
+    : null
+  const sparseBufferViewValues = accessorDef?.sparse?.values?.bufferView
+    ? gltfComponent.bufferViews[accessorDef.sparse.values.bufferView]
+    : null
 
-    if (accessorDef.bufferView === undefined && accessorDef.sparse === undefined) {
-      const itemSize = WEBGL_TYPE_SIZES[accessorDef.type]
-      const TypedArray = WEBGL_COMPONENT_TYPES[accessorDef.componentType]
-      const normalized = accessorDef.normalized === true
-
-      const array = new TypedArray(accessorDef.count * itemSize)
-      result.set(new BufferAttribute(array, itemSize, normalized))
-      return
-    }
-
-    if (typeof accessorDef.bufferView === 'number' && !bufferView) return
-    if (accessorDef.sparse && !sparseBufferViewIndices && !sparseBufferViewValues) return
-
+  // useEffect(() => {
+  //   if (!accessorDef || !bufferView) return
+  if (!accessorDef || !bufferView) return null
+  if (accessorDef.bufferView === undefined && accessorDef.sparse === undefined) {
     const itemSize = WEBGL_TYPE_SIZES[accessorDef.type]
     const TypedArray = WEBGL_COMPONENT_TYPES[accessorDef.componentType]
-
-    // For VEC3: itemSize is 3, elementBytes is 4, itemBytes is 12.
-    const elementBytes = TypedArray.BYTES_PER_ELEMENT
-    const itemBytes = elementBytes * itemSize
-    const byteOffset = accessorDef.byteOffset || 0
-    const byteStride =
-      accessorDef.bufferView !== undefined ? json.bufferViews![accessorDef.bufferView].byteStride : undefined
     const normalized = accessorDef.normalized === true
-    let array, bufferAttribute
 
-    // The buffer is not interleaved if the stride is the item size in bytes.
-    if (byteStride && byteStride !== itemBytes) {
-      // Each "slice" of the buffer, as defined by 'count' elements of 'byteStride' bytes, gets its own InterleavedBuffer
-      // This makes sure that IBA.count reflects accessor.count properly
-      const ibSlice = Math.floor(byteOffset / byteStride)
-      const ibCacheKey =
-        'InterleavedBuffer:' +
-        accessorDef.bufferView +
-        ':' +
-        accessorDef.componentType +
-        ':' +
-        ibSlice +
-        ':' +
-        accessorDef.count
-      let ib = cache.get(ibCacheKey)
+    const array = new TypedArray(accessorDef.count * itemSize)
+    result = new BufferAttribute(array, itemSize, normalized)
+    return
+  }
 
-      if (!ib) {
-        array = new TypedArray(bufferView!, ibSlice * byteStride, (accessorDef.count * byteStride) / elementBytes)
+  if (typeof accessorDef.bufferView === 'number' && !bufferView) return
+  if (accessorDef.sparse && !sparseBufferViewIndices && !sparseBufferViewValues) return
 
-        // Integer parameters to IB/IBA are in array elements, not bytes.
-        ib = new InterleavedBuffer(array, byteStride / elementBytes)
+  const itemSize = WEBGL_TYPE_SIZES[accessorDef.type]
+  const TypedArray = WEBGL_COMPONENT_TYPES[accessorDef.componentType]
 
-        cache.add(ibCacheKey, ib)
-      }
+  // For VEC3: itemSize is 3, elementBytes is 4, itemBytes is 12.
+  const elementBytes = TypedArray.BYTES_PER_ELEMENT
+  const itemBytes = elementBytes * itemSize
+  const byteOffset = accessorDef.byteOffset || 0
+  const byteStride =
+    accessorDef.bufferView !== undefined ? json.bufferViews![accessorDef.bufferView].byteStride : undefined
+  const normalized = accessorDef.normalized === true
+  let array, bufferAttribute
 
-      bufferAttribute = new InterleavedBufferAttribute(
-        ib,
-        itemSize,
-        (byteOffset % byteStride) / elementBytes,
-        normalized
-      )
+  // The buffer is not interleaved if the stride is the item size in bytes.
+  if (byteStride && byteStride !== itemBytes) {
+    // Each "slice" of the buffer, as defined by 'count' elements of 'byteStride' bytes, gets its own InterleavedBuffer
+    // This makes sure that IBA.count reflects accessor.count properly
+    const ibSlice = Math.floor(byteOffset / byteStride)
+    const ibCacheKey =
+      'InterleavedBuffer:' +
+      accessorDef.bufferView +
+      ':' +
+      accessorDef.componentType +
+      ':' +
+      ibSlice +
+      ':' +
+      accessorDef.count
+    let ib = cache.get(ibCacheKey)
+
+    if (!ib) {
+      array = new TypedArray(bufferView!, ibSlice * byteStride, (accessorDef.count * byteStride) / elementBytes)
+
+      // Integer parameters to IB/IBA are in array elements, not bytes.
+      ib = new InterleavedBuffer(array, byteStride / elementBytes)
+
+      cache.add(ibCacheKey, ib)
+    }
+
+    bufferAttribute = new InterleavedBufferAttribute(ib, itemSize, (byteOffset % byteStride) / elementBytes, normalized)
+  } else {
+    if (bufferView === null) {
+      array = new TypedArray(accessorDef.count * itemSize)
     } else {
-      if (bufferView === null) {
-        array = new TypedArray(accessorDef.count * itemSize)
-      } else {
-        array = new TypedArray(bufferView, byteOffset, accessorDef.count * itemSize)
-      }
-
-      bufferAttribute = new BufferAttribute(array, itemSize, normalized)
+      array = new TypedArray(bufferView, byteOffset, accessorDef.count * itemSize)
     }
 
-    // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#sparse-accessors
-    if (accessorDef.sparse !== undefined) {
-      const itemSizeIndices = WEBGL_TYPE_SIZES.SCALAR
-      const TypedArrayIndices = WEBGL_COMPONENT_TYPES[accessorDef.sparse.indices.componentType]
+    bufferAttribute = new BufferAttribute(array, itemSize, normalized)
+  }
 
-      const byteOffsetIndices = accessorDef.sparse.indices.byteOffset || 0
-      const byteOffsetValues = accessorDef.sparse.values.byteOffset || 0
+  // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#sparse-accessors
+  if (accessorDef.sparse !== undefined) {
+    const itemSizeIndices = WEBGL_TYPE_SIZES.SCALAR
+    const TypedArrayIndices = WEBGL_COMPONENT_TYPES[accessorDef.sparse.indices.componentType]
 
-      const sparseIndices = new TypedArrayIndices(
-        sparseBufferViewIndices!,
-        byteOffsetIndices,
-        accessorDef.sparse.count * itemSizeIndices
+    const byteOffsetIndices = accessorDef.sparse.indices.byteOffset || 0
+    const byteOffsetValues = accessorDef.sparse.values.byteOffset || 0
+
+    const sparseIndices = new TypedArrayIndices(
+      sparseBufferViewIndices!,
+      byteOffsetIndices,
+      accessorDef.sparse.count * itemSizeIndices
+    )
+    const sparseValues = new TypedArray(sparseBufferViewValues!, byteOffsetValues, accessorDef.sparse.count * itemSize)
+
+    if (bufferView !== null) {
+      // Avoid modifying the original ArrayBuffer, if the bufferView wasn't initialized with zeroes.
+      bufferAttribute = new BufferAttribute(
+        bufferAttribute.array.slice(),
+        bufferAttribute.itemSize,
+        bufferAttribute.normalized
       )
-      const sparseValues = new TypedArray(
-        sparseBufferViewValues!,
-        byteOffsetValues,
-        accessorDef.sparse.count * itemSize
-      )
-
-      if (bufferView !== null) {
-        // Avoid modifying the original ArrayBuffer, if the bufferView wasn't initialized with zeroes.
-        bufferAttribute = new BufferAttribute(
-          bufferAttribute.array.slice(),
-          bufferAttribute.itemSize,
-          bufferAttribute.normalized
-        )
-      }
-
-      for (let i = 0, il = sparseIndices.length; i < il; i++) {
-        const index = sparseIndices[i]
-
-        bufferAttribute.setX(index, sparseValues[i * itemSize])
-        if (itemSize >= 2) bufferAttribute.setY(index, sparseValues[i * itemSize + 1])
-        if (itemSize >= 3) bufferAttribute.setZ(index, sparseValues[i * itemSize + 2])
-        if (itemSize >= 4) bufferAttribute.setW(index, sparseValues[i * itemSize + 3])
-        if (itemSize >= 5) throw new Error('THREE.GLTFLoader: Unsupported itemSize in sparse BufferAttribute.')
-      }
     }
 
-    result.set(bufferAttribute)
-  }, [bufferView, sparseBufferViewIndices, sparseBufferViewValues])
+    for (let i = 0, il = sparseIndices.length; i < il; i++) {
+      const index = sparseIndices[i]
 
-  return result.get(NO_PROXY)
+      bufferAttribute.setX(index, sparseValues[i * itemSize])
+      if (itemSize >= 2) bufferAttribute.setY(index, sparseValues[i * itemSize + 1])
+      if (itemSize >= 3) bufferAttribute.setZ(index, sparseValues[i * itemSize + 2])
+      if (itemSize >= 4) bufferAttribute.setW(index, sparseValues[i * itemSize + 3])
+      if (itemSize >= 5) throw new Error('THREE.GLTFLoader: Unsupported itemSize in sparse BufferAttribute.')
+    }
+  }
+
+  result = bufferAttribute
+  // }, [bufferView, sparseBufferViewIndices, sparseBufferViewValues])
+
+  return result
 }
 
 const useLoadBufferView = (options: GLTFParserOptions, bufferViewIndex?: number) => {
@@ -660,96 +682,97 @@ const useMergeMorphTargets = (options: GLTFParserOptions, nodeIndex: number) => 
   const mesh = json.meshes![node.mesh!]
 
   const morphTargets = [] as (Record<string, BufferAttribute[]> | null)[]
-  const loadedMorphTargets = useHookstate(null! as Record<string, BufferAttribute[]> | null)
+  let loadedMorphTargets = null! as Record<string, BufferAttribute[]> | null
 
   mesh.primitives.map((primitive) => {
     if (primitive.targets) morphTargets.push(GLTFLoaderFunctions.useLoadMorphTargets(options, primitive.targets as any))
   })
 
-  useEffect(() => {
-    if (morphTargets.some((geometry) => !geometry) || loadedMorphTargets.value) return
-    const morphAttributes = {} as Record<string, BufferAttribute[]>
-    for (const morphTarget of morphTargets) {
-      for (const name in morphTarget) {
-        if (!morphAttributes[name]) morphAttributes[name] = []
-        morphTarget[name].forEach((target) => morphAttributes[name].push(target))
-      }
+  // useEffect(() => {
+  // if (morphTargets.some((geometry) => !geometry) || loadedMorphTargets.value) return
+  const morphAttributes = {} as Record<string, BufferAttribute[]>
+  for (const morphTarget of morphTargets) {
+    for (const name in morphTarget) {
+      if (!morphAttributes[name]) morphAttributes[name] = []
+      morphTarget[name].forEach((target) => morphAttributes[name].push(target))
     }
-    loadedMorphTargets.set(morphTargets[0])
-    for (const name in morphAttributes) {
-      const newAttributesLength = morphAttributes[name].length / morphTargets.length
-      for (let j = newAttributesLength; j < morphAttributes[name].length; j++) {
-        const mergeIntoIndex = j % newAttributesLength
-        // console.log(j + ' goes into ' + mergeIntoIndex)
-        const newArray = new Float32Array(
-          morphAttributes[name][j].array.length + morphAttributes[name][mergeIntoIndex].array.length
-        )
-        newArray.set([...morphAttributes[name][mergeIntoIndex].array, ...morphAttributes[name][j].array])
-        morphAttributes[name][mergeIntoIndex].array = newArray
-        const newAttribute = new BufferAttribute(
-          morphAttributes[name][mergeIntoIndex].array,
-          morphAttributes[name][mergeIntoIndex].itemSize
-        )
-        loadedMorphTargets[name][mergeIntoIndex].set(newAttribute)
-      }
+  }
+  loadedMorphTargets = morphTargets[0]
+  for (const name in morphAttributes) {
+    const newAttributesLength = morphAttributes[name].length / morphTargets.length
+    for (let j = newAttributesLength; j < morphAttributes[name].length; j++) {
+      const mergeIntoIndex = j % newAttributesLength
+      // console.log(j + ' goes into ' + mergeIntoIndex)
+      const newArray = new Float32Array(
+        morphAttributes[name][j].array.length + morphAttributes[name][mergeIntoIndex].array.length
+      )
+      newArray.set([...morphAttributes[name][mergeIntoIndex].array, ...morphAttributes[name][j].array])
+      morphAttributes[name][mergeIntoIndex].array = newArray
+      const newAttribute = new BufferAttribute(
+        morphAttributes[name][mergeIntoIndex].array,
+        morphAttributes[name][mergeIntoIndex].itemSize
+      )
+      loadedMorphTargets![name][mergeIntoIndex] = newAttribute
     }
-  }, [morphTargets])
+  }
+  // }, [morphTargets])
 
-  return loadedMorphTargets.get(NO_PROXY) as Record<string, BufferAttribute[]> | null
+  return loadedMorphTargets as Record<string, BufferAttribute[]> | null
 }
 
 const useLoadMorphTargets = (options: GLTFParserOptions, targetsList: Record<string, number>[]) => {
-  const result = useHookstate(null as null | Record<string, BufferAttribute[]>)
+  // const result = useHookstate(null as null | Record<string, BufferAttribute[]>)
+  let result = null as Record<string, BufferAttribute[]> | null
 
-  useEffect(() => {
-    /** @todo make individual targets individually reactive */
-    const reactor = startReactor(() => {
-      const targetState = useHookstate(
-        () =>
-          targetsList.map((target) => Object.fromEntries(Object.entries(target).map(([key]) => [key, null]))) as Record<
-            string,
-            BufferAttribute | null
-          >[]
-      )
+  // useEffect(() => {
+  /** @todo make individual targets individually reactive */
+  // const reactor = startReactor(() => {
+  // const targetState = useHookstate(
+  //   () =>
+  //     targetsList.map((target) => Object.fromEntries(Object.entries(target).map(([key]) => [key, null]))) as Record<
+  //       string,
+  //       BufferAttribute | null
+  //     >[]
+  // )
+  const targetState = targetsList.map((target) =>
+    Object.fromEntries(Object.entries(target).map(([key]) => [key, null]))
+  ) as Record<string, BufferAttribute | null>[]
 
-      for (let i = 0, il = targetsList.length; i < il; i++) {
-        const target = targetsList[i]
-        for (const [key, accessorIndex] of Object.entries(target)) {
-          const accessor = GLTFLoaderFunctions.useLoadAccessor(options, accessorIndex)
-          useEffect(() => {
-            if (!accessor) return
-            targetState[i][key].set(accessor)
-          }, [accessor])
-        }
-      }
-
-      useEffect(() => {
-        for (const target of targetState.value) {
-          if (Object.values(target).includes(null)) return
-        }
-        result.set(
-          targetState.get(NO_PROXY).reduce(
-            (acc, target: Record<string, BufferAttribute>) => {
-              for (const [key, value] of Object.entries(target)) {
-                if (!acc[key]) acc[key] = []
-                acc[key].push(value)
-              }
-              return acc
-            },
-            {} as Record<string, BufferAttribute[]>
-          )
-        )
-        reactor.stop()
-      }, [targetState])
-
-      return null
-    })
-    return () => {
-      reactor.stop()
+  for (let i = 0, il = targetsList.length; i < il; i++) {
+    const target = targetsList[i]
+    for (const [key, accessorIndex] of Object.entries(target)) {
+      const accessor = GLTFLoaderFunctions.useLoadAccessor(options, accessorIndex)
+      if (!accessor) continue
+      targetState[i][key] = accessor
     }
-  }, [targetsList])
+  }
 
-  return result.get(NO_PROXY) as Record<string, BufferAttribute[]> | null
+  // useEffect(() => {
+  //   for (const target of targetState.value) {
+  //     if (Object.values(target).includes(null)) return
+  //   }
+  result = targetState.reduce(
+    (acc, target: Record<string, BufferAttribute>) => {
+      for (const [key, value] of Object.entries(target)) {
+        if (!acc[key]) acc[key] = []
+        acc[key].push(value)
+      }
+      return acc
+    },
+    {} as Record<string, BufferAttribute[]>
+  )
+
+  // reactor.stop()
+  // }, [targetState])
+
+  //   return null
+  // })
+  // return () => {
+  //   reactor.stop()
+  // }
+  // }, [targetsList])
+
+  return result
 }
 
 /**
@@ -985,128 +1008,144 @@ const getNodeUUID = (node: GLTF.INode, documentID: string, nodeIndex: number) =>
   (node.extensions?.[UUIDComponent.jsonID] as EntityUUID) ?? (`${documentID}-${nodeIndex}` as EntityUUID)
 
 const useLoadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
-  const result = useHookstate(null as null | AnimationClip)
+  // const result = useHookstate(null as null | AnimationClip)
+  let result = null as null | AnimationClip
 
   const json = options.document
 
   const animationDef = typeof animationIndex === 'number' ? json.animations![animationIndex] : null
   const animationName = animationDef ? (animationDef.name ? animationDef.name : 'animation_' + animationIndex) : null
 
-  useEffect(() => {
-    if (!animationDef || !animationName) return
+  // useEffect(() => {
+  if (!animationDef || !animationName) return
 
-    const channels = animationDef.channels.filter((channel) => channel.target.node !== undefined)
+  const channels = animationDef.channels.filter((channel) => channel.target.node !== undefined)
 
-    const reactor = startReactor(() => {
-      const channelData = useHookstate(() =>
-        Object.fromEntries(
-          channels.map((channel, i) => [
-            i,
-            {
-              nodes: null as null | Mesh | Bone | Object3D,
-              inputAccessors: null as null | BufferAttribute,
-              outputAccessors: null as null | BufferAttribute,
-              samplers: animationDef.samplers[channel.sampler],
-              targets: channel.target
-            }
-          ])
-        )
-      )
+  // const reactor = startReactor(() => {
+  //   const channelData = useHookstate(() =>
+  //     Object.fromEntries(
+  //       channels.map((channel, i) => [
+  //         i,
+  //         {
+  //           nodes: null as null | Mesh | Bone | Object3D,
+  //           inputAccessors: null as null | BufferAttribute,
+  //           outputAccessors: null as null | BufferAttribute,
+  //           samplers: animationDef.samplers[channel.sampler],
+  //           targets: channel.target
+  //         }
+  //       ])
+  //     )
+  //   )
+  const channelData = Object.fromEntries(
+    channels.map((channel, i) => [
+      i,
+      {
+        nodes: null as null | Mesh | Bone | Object3D,
+        inputAccessors: null as null | BufferAttribute,
+        outputAccessors: null as null | BufferAttribute,
+        samplers: animationDef.samplers[channel.sampler],
+        targets: channel.target
+      }
+    ])
+  )
 
-      for (let i = 0, il = channels.length; i < il; i++) {
-        const channel = channels[i]
-        const sampler = animationDef.samplers[channel.sampler]
-        const target = channel.target
-        const nodeIndex = target.node!
-        const input = animationDef.parameters !== undefined ? animationDef.parameters[sampler.input] : sampler.input
-        const output = animationDef.parameters !== undefined ? animationDef.parameters[sampler.output] : sampler.output
-        const node = json.nodes![nodeIndex]
-        const mesh = typeof node.mesh === 'number' ? json.meshes?.[node.mesh!] : null
-        const meshHasWeights = mesh?.weights !== undefined && mesh.weights.length > 0
+  for (let i = 0, il = channels.length; i < il; i++) {
+    const channel = channels[i]
+    const sampler = animationDef.samplers[channel.sampler]
+    const target = channel.target
+    const nodeIndex = target.node!
+    const input = animationDef.parameters !== undefined ? animationDef.parameters[sampler.input] : sampler.input
+    const output = animationDef.parameters !== undefined ? animationDef.parameters[sampler.output] : sampler.output
+    const node = json.nodes![nodeIndex]
+    const mesh = typeof node.mesh === 'number' ? json.meshes?.[node.mesh!] : null
+    const meshHasWeights = mesh?.weights !== undefined && mesh.weights.length > 0
 
-        const targetNodeUUID = getNodeUUID(json.nodes![nodeIndex], options.documentID, nodeIndex)
-        const targetNodeEntity = UUIDComponent.useEntityByUUID(targetNodeUUID)
+    const targetNodeUUID = getNodeUUID(json.nodes![nodeIndex], options.documentID, nodeIndex)
+    const targetNodeEntity = UUIDComponent.getEntityByUUID(targetNodeUUID)
 
-        /** @todo we should probably jsut use GroupComponent or something here once we stop creating Object3Ds for all nodes */
-        const meshComponent = useOptionalComponent(targetNodeEntity, MeshComponent)
-        const boneComponent = useOptionalComponent(targetNodeEntity, BoneComponent)
-        useEffect(() => {
-          if (channelData[i].nodes.value) return
-          const meshWeightsLoaded = meshHasWeights
-            ? meshComponent?.get(NO_PROXY)?.morphTargetInfluences !== undefined
-            : true
-          if (!meshWeightsLoaded && !boneComponent) return
-          channelData[i].nodes.set(
-            getOptionalComponent(targetNodeEntity, MeshComponent) ??
-              getOptionalComponent(targetNodeEntity, BoneComponent)!
-          )
-        }, [meshComponent, boneComponent])
+    /** @todo we should probably jsut use GroupComponent or something here once we stop creating Object3Ds for all nodes */
+    const meshComponent = getOptionalComponent(targetNodeEntity, MeshComponent)
+    const boneComponent = getOptionalComponent(targetNodeEntity, BoneComponent)
+    // useEffect(() => {
+    if (!channelData[i].nodes) {
+      const meshWeightsLoaded = meshHasWeights ? meshComponent?.morphTargetInfluences !== undefined : true
+      if (meshWeightsLoaded || boneComponent) {
+        channelData[i].nodes =
+          getOptionalComponent(targetNodeEntity, MeshComponent) ??
+          getOptionalComponent(targetNodeEntity, BoneComponent)!
+      }
+    }
 
-        const inputAccessor = GLTFLoaderFunctions.useLoadAccessor(options, input)
+    // }, [meshComponent, boneComponent])
 
-        useEffect(() => {
-          if (!inputAccessor) return
-          channelData[i].inputAccessors.set(inputAccessor)
-        }, [inputAccessor])
+    const inputAccessor = GLTFLoaderFunctions.useLoadAccessor(options, input)
+    channelData[i].inputAccessors = inputAccessor ?? null
+    // useEffect(() => {
+    //   if (!inputAccessor) return
+    //   channelData[i].inputAccessors.set(inputAccessor)
+    // }, [inputAccessor])
 
-        const outputAccessor = GLTFLoaderFunctions.useLoadAccessor(options, output)
+    const outputAccessor = GLTFLoaderFunctions.useLoadAccessor(options, output)
 
-        useEffect(() => {
-          if (!outputAccessor) return
-          channelData[i].outputAccessors.set(outputAccessor)
-        }, [outputAccessor])
+    // useEffect(() => {
+    //   if (!outputAccessor) return
+    //   channelData[i].outputAccessors.set(outputAccessor)
+    // }, [outputAccessor])
+
+    channelData[i].outputAccessors = outputAccessor ?? null
+  }
+
+  // useEffect(() => {
+  const channelDataArray = Object.values(channelData)
+  if (!channelDataArray.some((data) => data.nodes)) return
+  if (
+    !(channelDataArray.length === 1 && channelDataArray[0].nodes === null) /**@todo reevaluate this check */ &&
+    !channelDataArray.some((data) => !data.outputAccessors || !data.inputAccessors)
+  ) {
+    const values = Object.values(channelData)
+    const nodes = values.map((data) => data.nodes)
+    const inputAccessors = values.map((data) => data.inputAccessors) as BufferAttribute[]
+    const outputAccessors = values.map((data) => data.outputAccessors) as BufferAttribute[]
+    const samplers = values.map((data) => data.samplers) as GLTF.IAnimationSampler[]
+    const targets = values.map((data) => data.targets) as GLTF.IAnimationChannelTarget[]
+
+    const tracks = [] as any[] // todo
+    if (animationName === 'Sphere') console.log(nodes)
+    for (let i = 0, il = nodes.length; i < il; i++) {
+      const node = nodes[i] as Mesh | SkinnedMesh
+      const inputAccessor = inputAccessors[i]
+      const outputAccessor = outputAccessors[i]
+      const sampler = samplers[i]
+      const target = targets[i]
+      if (!node || !outputAccessor || !inputAccessor) continue
+
+      if (node.updateMatrix) {
+        node.updateMatrix()
       }
 
-      useEffect(() => {
-        const channelDataArray = Object.values(channelData.get(NO_PROXY))
-        if (!channelDataArray.some((data) => data.nodes)) return
-        if (
-          (channelDataArray.length === 1 && channelDataArray[0].nodes === null) /**@todo reevaluate this check */ ||
-          channelDataArray.some((data) => !data.outputAccessors || !data.inputAccessors)
-        )
-          return
-        const values = Object.values(channelData.get(NO_PROXY))
-        const nodes = values.map((data) => data.nodes)
-        const inputAccessors = values.map((data) => data.inputAccessors) as BufferAttribute[]
-        const outputAccessors = values.map((data) => data.outputAccessors) as BufferAttribute[]
-        const samplers = values.map((data) => data.samplers) as GLTF.IAnimationSampler[]
-        const targets = values.map((data) => data.targets) as GLTF.IAnimationChannelTarget[]
+      const createdTracks = _createAnimationTracks(node, inputAccessor, outputAccessor, sampler, target)
 
-        const tracks = [] as any[] // todo
-        if (animationName === 'Sphere') console.log(nodes)
-        for (let i = 0, il = nodes.length; i < il; i++) {
-          const node = nodes[i] as Mesh | SkinnedMesh
-          const inputAccessor = inputAccessors[i]
-          const outputAccessor = outputAccessors[i]
-          const sampler = samplers[i]
-          const target = targets[i]
-          if (!node || !outputAccessor || !inputAccessor) continue
-
-          if (node.updateMatrix) {
-            node.updateMatrix()
-          }
-
-          const createdTracks = _createAnimationTracks(node, inputAccessor, outputAccessor, sampler, target)
-
-          if (createdTracks) {
-            for (let k = 0; k < createdTracks.length; k++) {
-              tracks.push(createdTracks[k])
-            }
-          }
+      if (createdTracks) {
+        for (let k = 0; k < createdTracks.length; k++) {
+          tracks.push(createdTracks[k])
         }
-
-        result.set(new AnimationClip(animationName, undefined, tracks))
-        reactor.stop()
-      }, [channelData])
-
-      return null
-    })
-    return () => {
-      reactor.stop()
+      }
     }
-  }, [animationDef])
 
-  return result.get(NO_PROXY) as AnimationClip | null
+    result = new AnimationClip(animationName, undefined, tracks)
+  }
+
+  //   reactor.stop()
+  // }, [channelData])
+
+  //     return null
+  //   })
+  //   return () => {
+  //     reactor.stop()
+  //   }
+  // }, [animationDef])
+
+  return result as AnimationClip | null
 }
 
 const _createAnimationTracks = (
@@ -1221,6 +1260,155 @@ const _createCubicSplineTrackInterpolant = (track: KeyframeTrack) => {
   track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true
 }
 
+const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuffer[], textures: Texture[]) => {
+  const { document } = options
+
+  //initialize materials
+  const materials = document.materials || []
+  for (let i = 0; i < materials.length; i++) {
+    const materialDef = materials[i]
+    const uuid = (options.documentID + '-material-' + i) as EntityUUID
+    const materialEntity = UUIDComponent.getOrCreateEntityByUUID(uuid)
+    setComponent(materialEntity, UUIDComponent, uuid)
+    setComponent(materialEntity, SourceComponent, options.documentID)
+    setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: i })
+    setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + i)
+
+    setComponent(materialEntity, MaterialDefinitionComponent, materialDef)
+
+    const extensions = Object.entries(materialDef.extensions || {})
+    for (const [extensionName, extension] of extensions) {
+      const Component = ComponentJSONIDMap.get(extensionName)
+      if (!Component) continue
+      setComponent(materialEntity, Component, extension)
+    }
+  }
+
+  //initialize each node as en entity
+  const nodes = document.nodes || []
+  const indexMap: Record<number, Entity> = {}
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+    const uuid = getNodeUUID(node, options.documentID, i)
+    const nodeEntity = UUIDComponent.getOrCreateEntityByUUID(uuid)
+    indexMap[i] = nodeEntity
+
+    setComponent(nodeEntity, NameComponent, node.name ?? 'Node-' + i)
+    setComponent(nodeEntity, TransformComponent)
+    if (node.matrix) {
+      const mat4 = new Matrix4().fromArray(node.matrix)
+      const position = new Vector3()
+      const rotation = new Quaternion()
+      const scale = new Vector3()
+      mat4.decompose(position, rotation, scale)
+      setComponent(entity, TransformComponent, { position, rotation, scale })
+    }
+
+    /** Always set visible extension if this is not an ECS node */
+    if (!node.extensions?.[UUIDComponent.jsonID]) setComponent(entity, VisibleComponent)
+
+    // add all extensions for synchronous mount
+    if (node.extensions) {
+      for (const extension in node.extensions) {
+        const Component = ComponentJSONIDMap.get(extension)
+        if (!Component) continue
+        setComponent(entity, Component, node.extensions[extension])
+      }
+    }
+
+    if (node.mesh !== undefined) {
+      if (!document.meshes) throw new Error('GLTFLoader: Referencing undefined mesh array')
+      const meshDef = document.meshes[node.mesh]
+
+      const isSinglePrimitive = meshDef.primitives.length === 1
+      const meshGeometry = GLTFLoaderFunctions.useLoadPrimitives(options, i)
+
+      const material = isSinglePrimitive ? defaultMaterial() : meshDef.primitives.map(defaultMaterial)
+      const mesh =
+        typeof node.skin !== 'undefined'
+          ? new SkinnedMesh(meshGeometry as BufferGeometry)
+          : new Mesh(meshGeometry as BufferGeometry)
+
+      mesh.material = material
+
+      if (typeof node.skin !== 'undefined') {
+        const skinnedMesh = mesh as SkinnedMesh
+        skinnedMesh.skeleton = new Skeleton()
+        skinnedMesh.normalizeSkinWeights()
+        setComponent(entity, SkinnedMeshComponent, skinnedMesh)
+      }
+
+      setComponent(entity, MeshComponent, mesh)
+      addObjectToGroup(entity, mesh)
+      proxifyParentChildRelationships(mesh)
+      mesh.name = node.name ?? 'Node-' + i
+
+      const url = options.url
+      ResourceManager.addReferencedAsset(url, mesh, ResourceType.Mesh)
+
+      for (let primIndex = 0; primIndex < meshDef.primitives.length; primIndex++) {
+        const primitive = meshDef.primitives[primIndex]
+        //handle material instances
+        const materialUUID = (options.documentID + '-material-' + primitive.material!) as EntityUUID
+        const materialEntity = UUIDComponent.getOrCreateEntityByUUID(materialUUID)
+
+        setComponent(entity, MaterialInstanceComponent)
+        const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
+        if (isSinglePrimitive) {
+          materialInstance.uuid.push(materialUUID)
+        } else {
+          materialInstance.uuid[primitive.material!] = materialUUID
+        }
+
+        //handle primitive extensions
+        const extensions = primitive.extensions || {}
+        for (const extensionName in extensions) {
+          const Component = ComponentJSONIDMap.get(extensionName)
+          if (!Component) continue
+          setComponent(entity, Component, extensions[extensionName])
+        }
+      }
+
+      //handle morph targets
+      const loadedMorphTargets = GLTFLoaderFunctions.useMergeMorphTargets(options, i)
+
+      if (loadedMorphTargets && mesh) {
+        if (loadedMorphTargets.POSITION) mesh.geometry.morphAttributes.position = loadedMorphTargets.POSITION
+        if (loadedMorphTargets.NORMAL) mesh.geometry.morphAttributes.normal = loadedMorphTargets.NORMAL
+        if (loadedMorphTargets.COLOR_0) mesh.geometry.morphAttributes.color = loadedMorphTargets.COLOR_0
+
+        mesh.geometry.morphTargetsRelative = true
+        mesh.updateMorphTargets()
+
+        if (meshDef.weights) {
+          for (let j = 0, jl = meshDef.weights.length; j < jl; j++) {
+            mesh.morphTargetInfluences![j] = meshDef.weights[j]
+          }
+        }
+      }
+    }
+  }
+
+  //initialize animations
+  const animations = document.animations || []
+  const animationClips = [] as AnimationClip[]
+  for (let i = 0; i < animations.length; i++) {
+    const animationTrack = GLTFLoaderFunctions.useLoadAnimation(options, i)
+    if (animationTrack) animationClips.push(animationTrack)
+  }
+  const obj3d = getComponent(entity, Object3DComponent)
+  obj3d.animations = animationClips
+  if (!hasComponent(entity, AnimationComponent)) {
+    setComponent(entity, AnimationComponent, {
+      mixer: new AnimationMixer(obj3d),
+      animations: obj3d.animations
+    })
+  } else {
+    const clips = getComponent(entity, AnimationComponent).animations
+    setComponent(entity, AnimationComponent, { animations: [...clips, ...animationClips] })
+  }
+}
+
 export const GLTFLoaderFunctions = {
   computeBounds,
   useLoadPrimitive,
@@ -1235,5 +1423,6 @@ export const GLTFLoaderFunctions = {
   useLoadTexture,
   useLoadImageSource,
   useLoadTextureImage,
-  useLoadAnimation
+  useLoadAnimation,
+  loadGLTF
 }

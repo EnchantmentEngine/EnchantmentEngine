@@ -982,7 +982,7 @@ const CameraReactor = (props: { nodeIndex: number; documentID: string; entity: E
   return null
 }
 
-const defaultMaterial = () =>
+export const defaultMaterial = () =>
   new MeshStandardMaterial({
     color: 0xffffff,
     emissive: 0x000000,
@@ -1219,9 +1219,10 @@ export const getParserOptions = (entity: Entity) => {
   const gltfEntity = getAncestorWithComponents(entity, [GLTFComponent])
   const documentID = GLTFComponent.getInstanceID(gltfEntity)
   const gltfComponent = getComponent(gltfEntity, GLTFComponent)
-  const document = getState(GLTFDocumentState)[documentID]
+  const document = gltfComponent.document
   const gltfLoader = getState(AssetLoaderState).gltfLoader
   return {
+    entity,
     document,
     documentID,
     url: gltfComponent.src,
