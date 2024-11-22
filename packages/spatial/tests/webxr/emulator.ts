@@ -30,6 +30,7 @@ Infinite Reality Engine. All Rights Reserved.
  * */
 
 import { PRIVATE as XRSESSION_SYMBOL } from 'webxr-polyfill/src/api/XRSession'
+import { PRIVATE as EVENTTARGET_SYMBOL } from 'webxr-polyfill/src/lib/EventTarget'
 import { requestXRSession } from '../../src/xr/XRSessionFunctions'
 import { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispatcher'
 import { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
@@ -40,7 +41,7 @@ export { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispa
 export { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
 
 /**
- * @description Returns the data of the @param session XRSession passed in by accessing it with its Symbol() name
+ * @description Returns the data of the `@param session` XRSession passed in by accessing it with its Symbol() name
  * @why Shorthand for getting the data of the session in an ergonomic way.
  * */
 export function getXRSessionData(session: XRSession | null) {
@@ -58,13 +59,29 @@ export function getLastXRSessionData(session: XRSession | null) {
 }
 
 /**
+ * @warning
+ * Cannot work until this symbol from webxr-polyfill is exported
+ * ```ts
+ * const PRIVATE = Symbol('@@webxr-polyfill/EventTarget');
+ * ```
+ * Link: [webxr-polyfill/EventTarget.js#L16](https://github.com/immersive-web/webxr-polyfill/blob/main/src/lib/EventTarget.js#L16)
+ *
+ * @description Returns the EventTarget data of the `@param session` XRSession passed in by accessing it with its Symbol() name
+ * @why Shorthand for getting the EventTarget data of the session in an ergonomic way.
+ * */
+export function __getXRSessionEventTargetData(session: XRSession | null) {
+  if (session === null) return null
+  return session[EVENTTARGET_SYMBOL]
+}
+
+/**
  * @description Requests an emulated XRSession.
  * @why Shorthand for initializing an emulated XRSession from unit tests
  * */
 export async function requestEmulatedXRSession(deviceDefinition = DeviceDefinitions.Default) {
   WebXREventDispatcher.instance.dispatchEvent({
     type: POLYFILL_ACTIONS.DEVICE_INIT,
-    detail: { stereoEffect: false, deviceDefinition }
+    detail: { stereoEffect: false, device: deviceDefinition }
   })
   return requestXRSession()
 }
