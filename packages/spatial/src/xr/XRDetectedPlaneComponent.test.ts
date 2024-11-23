@@ -23,14 +23,38 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Color } from 'three'
-import { describe, expect, it } from 'vitest'
+import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest'
+import { MockXRFrame } from '../../tests/util/MockXR'
+import { assertVec } from '../../tests/util/assert'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
+import { requestEmulatedXRSession } from '../../tests/webxr/emulator'
+
+import {
+  UndefinedEntity,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  getComponent,
+  getMutableComponent,
+  hasComponent,
+  removeEntity,
+  setComponent
+} from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { BufferGeometry, Color, Quaternion, Vector3 } from 'three'
+import { EngineState } from '../EngineState'
+import { TransformComponent } from '../SpatialModule'
+import { NameComponent } from '../common/NameComponent'
+import { VisibleComponent } from '../renderer/components/VisibleComponent'
+import { EntityTreeComponent } from '../transform/components/EntityTree'
 import {
   XRDetectedPlaneComponent,
   occlusionMat,
   placementHelperMaterial,
   shadowMaterial
 } from './XRDetectedPlaneComponent'
+import { ReferenceSpace, XRState } from './XRState'
 
 describe('placementHelperMaterial', () => {
   it('should initialize Material.color with the expected value', () => {
@@ -89,11 +113,304 @@ describe('XRDetectedPlaneComponent', () => {
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('createGeometryFromPolygon', () => {}) //:: createGeometryFromPolygon
-  describe('updatePlaneGeometry', () => {}) //:: updatePlaneGeometry
-  describe('updatePlanePose', () => {}) //:: updatePlanePose
-  describe('foundPlane', () => {}) //:: foundPlane
+  describe('createGeometryFromPolygon', () => {
+    it('should create a new BufferGeometry object and return it', () => {
+      // Set the data as expected
+      const plane = { polygon: [] as DOMPointReadOnly[] } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.isBufferGeometry).not.toBe(undefined)
+      expect(result.isBufferGeometry).toBe(true)
+    })
+
+    it("should add a 'position' Attribute to the BufferGeometry", () => {
+      // Set the data as expected
+      const plane = { polygon: [] as DOMPointReadOnly[] } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.hasAttribute('position')).toBe(true)
+    })
+
+    it("should add a 'uv' Attribute to the BufferGeometry", () => {
+      // Set the data as expected
+      const plane = { polygon: [] as DOMPointReadOnly[] } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.hasAttribute('uv')).toBe(true)
+    })
+
+    it('should add indices to the BufferGeometry', () => {
+      // Set the data as expected
+      const plane = {
+        polygon: [
+          { x: 40, y: 41, z: 42 },
+          { x: 43, y: 44, z: 45 },
+          { x: 46, y: 47, z: 48 }
+        ] as DOMPointReadOnly[]
+      } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.getIndex()?.array.length).not.toBe(0)
+    })
+
+    it('should call computeBoundingBox on the resulting BufferGeometry', () => {
+      // Set the data as expected
+      const plane = { polygon: [] as DOMPointReadOnly[] } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.boundingBox).not.toBe(null)
+    })
+
+    it('should call computeBoundingSphere on the resulting BufferGeometry', () => {
+      // Set the data as expected
+      const plane = { polygon: [] as DOMPointReadOnly[] } as XRPlane
+      // Run and Check the result
+      const result = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      assert(result)
+      expect(result.boundingSphere).not.toBe(null)
+    })
+  }) //:: createGeometryFromPolygon
+
+  describe('updatePlaneGeometry', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      mockEmulatedXREngine()
+      testEntity = createEntity()
+      setComponent(testEntity, XRDetectedPlaneComponent)
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should set XRDetectedPlaneComponent.planesLastChangedTimes for the plane to the value of `@param plane`.lastChangedTime', () => {
+      const Expected = 42
+      // Set the data as expected
+      const plane = { lastChangedTime: Expected, polygon: [] as DOMPointReadOnly[] } as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.updatePlaneGeometry(testEntity, plane)
+      const result = XRDetectedPlaneComponent.planesLastChangedTimes.get(plane)
+      expect(result).toBe(Expected)
+    })
+
+    it('should call createGeometryFromPolygon and assign the newly created geometry to `@param entity`.XRDetectedPlaneComponent.geometry', () => {
+      const Initial = new BufferGeometry()
+      getMutableComponent(testEntity, XRDetectedPlaneComponent).geometry.set(Initial)
+      // Set the data as expected
+      const plane = { lastChangedTime: 42, polygon: [] as DOMPointReadOnly[] } as XRPlane
+      const before = getComponent(testEntity, XRDetectedPlaneComponent).geometry
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDetectedPlaneComponent.updatePlaneGeometry(testEntity, plane)
+      const result = getComponent(testEntity, XRDetectedPlaneComponent).geometry
+      expect(result).not.toBe(Initial)
+    })
+  }) //:: updatePlaneGeometry
+
+  describe('updatePlanePose', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      mockSpatialEngine()
+      await requestEmulatedXRSession()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should update the TransformComponent.position of the `@param entity` with the value of PlanePose.transform.position', () => {
+      const Expected = new Vector3()
+      const Initial = new Vector3(1, 2, 3)
+      // Set the data as expected
+      // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
+      const xrFrame = new MockXRFrame() as XRFrame
+      // xrFrame.getPose = () => undefined
+      getMutableState(XRState).xrFrame.set(xrFrame)
+      setComponent(testEntity, TransformComponent, { position: Initial })
+      const plane = {} as XRPlane
+      // Sanity check before running
+      const before = getComponent(testEntity, TransformComponent).position.clone()
+      assertVec.approxEq(before, Initial, 3)
+      assertVec.anyApproxNotEq(before, Expected, 3)
+      // Run and Check the result
+      XRDetectedPlaneComponent.updatePlanePose(testEntity, plane)
+      const result = getComponent(testEntity, TransformComponent).position.clone()
+      assertVec.approxEq(result, Expected, 3)
+    })
+
+    it('should update the TransformComponent.rotation of the `@param entity` with the value of PlanePose.transform.rotation', () => {
+      const Expected = new Quaternion(0, 0, 0, 0)
+      const Initial = new Quaternion(1, 2, 3, 4).normalize()
+      // Set the data as expected
+      // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
+      const xrFrame = new MockXRFrame() as XRFrame
+      // xrFrame.getPose = () => undefined
+      getMutableState(XRState).xrFrame.set(xrFrame)
+      setComponent(testEntity, TransformComponent, { rotation: Initial })
+      const plane = {} as XRPlane
+      // Sanity check before running
+      const before = getComponent(testEntity, TransformComponent).rotation.clone()
+      assertVec.approxEq(before, Initial, 4)
+      assertVec.anyApproxNotEq(before, Expected, 4)
+      // Run and Check the result
+      XRDetectedPlaneComponent.updatePlanePose(testEntity, plane)
+      const result = getComponent(testEntity, TransformComponent).rotation.clone()
+      assertVec.approxEq(result, Expected, 4)
+    })
+
+    it('should not do anything when XRState.xrFrame.getPose(`@param plane`.planeSpace, ReferenceSpace.localFloor) is falsy', () => {
+      const Initial = new Vector3(1, 2, 3)
+      const ChangedValue = new Vector3()
+      // Set the data as expected
+      // @ts-expect-error Allow coercing the MockXRFrame type into the xrFrame property
+      const xrFrame = new MockXRFrame() as XRFrame
+      xrFrame.getPose = () => undefined
+      getMutableState(XRState).xrFrame.set(xrFrame)
+      setComponent(testEntity, TransformComponent, { position: Initial })
+      const plane = {} as XRPlane
+      getState(XRState).xrFrame!.getPose(plane.planeSpace, ReferenceSpace.localFloor!)!
+      // Sanity check before running
+      const planePose = getState(XRState).xrFrame!.getPose(plane.planeSpace, ReferenceSpace.localFloor!)!
+      expect(planePose).toBeFalsy()
+      const before = getComponent(testEntity, TransformComponent).position.clone()
+      assertVec.approxEq(before, Initial, 3)
+      assertVec.anyApproxNotEq(before, ChangedValue, 3)
+      // Run and Check the result
+      XRDetectedPlaneComponent.updatePlanePose(testEntity, plane)
+      const result = getComponent(testEntity, TransformComponent).position.clone()
+      assertVec.approxEq(result, Initial, 3)
+      assertVec.anyApproxNotEq(result, ChangedValue, 3)
+    })
+  }) //:: updatePlanePose
+
+  describe('foundPlane', () => {
+    beforeEach(async () => {
+      createEngine()
+      mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should set the XRDetectedPlaneComponent.detectedPlanesMap entry for the `@param plane` to have the newly created entity', () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+    })
+
+    it('should add an EntityTreeComponent to the new entity and set its parentEntity to EngineState.localFloorEntity', () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(result)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(hasComponent(result, EntityTreeComponent)).toBe(true)
+      expect(getComponent(result, EntityTreeComponent).parentEntity).toBe(getState(EngineState).localFloorEntity)
+    })
+
+    it('should add TransformComponent to the new entity', () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(result)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(hasComponent(result, TransformComponent)).toBe(true)
+    })
+
+    it('should add a VisibleComponent to the new entity', () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(result)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(hasComponent(result, VisibleComponent)).toBe(true)
+    })
+
+    it("should add a NameComponent to the new entity with a value of 'plane-'+planeId", () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(result)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(hasComponent(result, NameComponent)).toBe(true)
+      expect(getComponent(result, NameComponent).startsWith('plane-')).toBe(true)
+    })
+
+    it('should add a XRDetectedPlaneComponent to the new entity with `@param plane` as its XRDetectedPlaneComponent.plane property', () => {
+      // Set the data as expected
+      const plane = {} as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const result = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(result)
+      expect(result).not.toBe(undefined)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(hasComponent(result, XRDetectedPlaneComponent)).toBe(true)
+      expect(getComponent(result, XRDetectedPlaneComponent).plane).toBe(plane)
+    })
+
+    it('should set XRDetectedPlaneComponent.planesLastChangedTimes for the plane to the value of `@param plane`.lastChangedTime', () => {
+      const Expected = 42
+      // Set the data as expected
+      const plane = { lastChangedTime: Expected } as XRPlane
+      const before = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      expect(before).toBe(undefined)
+      // Run and Check the result
+      XRDetectedPlaneComponent.foundPlane(plane)
+      const entity = XRDetectedPlaneComponent.detectedPlanesMap.get(plane)
+      assert(entity)
+      expect(entity).not.toBe(undefined)
+      expect(entity).not.toBe(UndefinedEntity)
+      const result = XRDetectedPlaneComponent.planesLastChangedTimes.get(plane)
+      expect(result).toBe(Expected)
+    })
+  }) //:: foundPlane
 
   /** @todo */
   describe('reactor', () => {}) //:: reactor
