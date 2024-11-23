@@ -384,7 +384,7 @@ describe('setupXRSession', () => {
     mockSpatialEngine()
     WebXREventDispatcher.instance.dispatchEvent({
       type: POLYFILL_ACTIONS.DEVICE_INIT,
-      detail: { stereoEffect: false, device: DeviceDefinitions.Default }
+      detail: { stereoEffect: false, deviceDefinition: DeviceDefinitions.Default }
     })
   })
 
@@ -403,27 +403,28 @@ describe('setupXRSession', () => {
     expect(requestSessionSpy).toHaveBeenCalled()
   })
 
-  /**
-  // @todo
-  it("should set XRSession.interactionMode to 'world-space' when navigator.userAgent.includes('OculusBrowser') is true", async () => {
-    const Expected = 'world-space'
-    // Set the data as expected
-    const OculusString = 'OculusBrowser'
-    // @-ts-expect-error Allow coercing new data into the userAgent readonly string
-    navigator.userAgent = navigator.userAgent + OculusString // Force the test userAgent to contain the desired string
-    console.log("........................................")
-    console.log(navigator.userAgent)
-    console.log(OculusString)
-    console.log("........................................")
-    // Sanity check before running
-    expect(navigator.userAgent.includes(OculusString)).toBe(true)
-    // Run and Check the result
-    const session = await setupXRSession()
-    assert(session)
-    const result = session.interactionMode
-    expect(result).toBe(Expected)
-  })
-  */
+  /** @todo How to modify the value of navigator.userAgent ?? */
+  it.todo(
+    "should set XRSession.interactionMode to 'world-space' when navigator.userAgent.includes('OculusBrowser') is true",
+    async () => {
+      const Expected = 'world-space'
+      // Set the data as expected
+      const OculusString = 'OculusBrowser'
+      // @ts-expect-error Allow coercing new data into the userAgent readonly string
+      navigator.userAgent = navigator.userAgent + OculusString // Force the test userAgent to contain the desired string
+      console.log('........................................')
+      console.log(navigator.userAgent)
+      console.log(OculusString)
+      console.log('........................................')
+      // Sanity check before running
+      expect(navigator.userAgent.includes(OculusString)).toBe(true)
+      // Run and Check the result
+      const session = await setupXRSession()
+      assert(session)
+      const result = session.interactionMode
+      expect(result).toBe(Expected)
+    }
+  )
 
   it('should set XRState.sessionActive to true', async () => {
     const Expected = true
@@ -447,18 +448,115 @@ describe('setupXRSession', () => {
     expect(result).toBe(Expected)
   })
 
-  /**
-  // @todo
-  it("should set XRState.sessionMode to 'immersive-ar' when ... and `@param requestedMode` is not passed", async async () => {})
-  it("should set XRState.sessionMode to 'immersive-vr' when ... and `@param requestedMode` is not passed ", async () => {})
-  it("should set XRState.sessionMode to 'inline' when ... and `@param requestedMode` is not passed", async () => {})
-  */
+  /** @todo How to modify the 'immersive-ar' property without crashing ?? */
+  it.todo(
+    `should set XRState.sessionMode to 'immersive-ar'
+      when XRState.supportedSessionModes['immersive-ar'] is true
+      and @param requestedMode is not passed`,
+    async () => {
+      const Expected = "'immersive-ar'"
+      // Set the data as expected
+      assert(getMutableState(XRState).value)
+      expect(getState(XRState).supportedSessionModes).not.toBe(undefined)
+      expect(getState(XRState).supportedSessionModes[Expected]).not.toBe(undefined)
+      console.log(getState(XRState).supportedSessionModes)
+      getMutableState(XRState).supportedSessionModes[Expected].set(true)
+      // Sanity check before running
+      expect(getState(XRState).sessionMode).not.toBe(Expected)
+      const supported = getState(XRState).supportedSessionModes[Expected]
+      expect(supported).toBeTruthy()
+      // Run and Check the result
+      const session = await setupXRSession()
+      assert(session)
+      const result = getState(XRState).sessionMode
+      expect(result).toBe(Expected)
+    }
+  )
 
-  /**
-  // @todo
-  it("should call EngineState.viewerEntity.RendererComponent.xrManager.setSession with a framebufferScaleFactor of 0.5 when ...", async () => {})
-  it("should call EngineState.viewerEntity.RendererComponent.xrManager.setSession with a framebufferScaleFactor of 1.2 when ...", async () => {})
-  */
+  /** @todo How to modify the 'immersive-vr' property without crashing ?? */
+  it.todo(
+    `should set XRState.sessionMode to 'immersive-vr'
+      when XRState.supportedSessionModes['immersive-ar'] is false
+      XRState.supportedSessionModes['immersive-vr'] is true
+      and @param requestedMode is not passed`,
+    async () => {
+      const Expected = 'immersive-vr'
+      // Set the data as expected
+      assert(getMutableState(XRState).value)
+      expect(getState(XRState).supportedSessionModes).not.toBe(undefined)
+      expect(getState(XRState).supportedSessionModes[Expected]).not.toBe(undefined)
+      console.log(getState(XRState).supportedSessionModes)
+      getMutableState(XRState).supportedSessionModes[Expected].set(true)
+      // Sanity check before running
+      expect(getState(XRState).sessionMode).not.toBe(Expected)
+      const supported = getState(XRState).supportedSessionModes[Expected]
+      expect(supported).toBeTruthy()
+      // Run and Check the result
+      const session = await setupXRSession()
+      assert(session)
+      const result = getState(XRState).sessionMode
+      expect(result).toBe(Expected)
+    }
+  )
+
+  it(`should set XRState.sessionMode to 'inline'
+      when XRState.supportedSessionModes['immersive-ar'] is false
+      XRState.supportedSessionModes['immersive-vr'] is false
+      and @param requestedMode is not passed`, async () => {
+    const Expected = 'inline'
+    // Set the data as expected
+    assert(getMutableState(XRState).value)
+    expect(getState(XRState).supportedSessionModes).not.toBe(undefined)
+    expect(getState(XRState).supportedSessionModes[Expected]).not.toBe(undefined)
+    getMutableState(XRState).supportedSessionModes[Expected].set(true)
+    // Sanity check before running
+    expect(getState(XRState).supportedSessionModes['immersive-ar']).toBe(false)
+    expect(getState(XRState).supportedSessionModes['immersive-vr']).toBe(false)
+    expect(getState(XRState).sessionMode).not.toBe(Expected)
+    const supported = getState(XRState).supportedSessionModes[Expected]
+    expect(supported).toBeTruthy()
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    const result = getState(XRState).sessionMode
+    expect(result).toBe(Expected)
+  })
+
+  /** @todo How to set these conditions outside of the setupXRSession function ?? */
+  it.todo(
+    `should call EngineState.viewerEntity.RendererComponent.xrManager.setSession
+      with a framebufferScaleFactor of 0.5
+      when xrSession.interactionMode is 'screen-space'
+      and xrSession.domOverlayState?.type is 'screen'`,
+    async () => {
+      const Expected = 0.5
+      // Set the data as expected
+      const xrManager = getComponent(getState(EngineState).viewerEntity, RendererComponent).xrManager!
+      const setSessionSpy = vi.spyOn(xrManager, 'setSession')
+      // Run and Check the result
+      const session = await setupXRSession()
+      assert(session)
+      expect(session.interactionMode).toBe('screen-space')
+      expect(session.interactionMode).toBe('screen')
+      expect(setSessionSpy).toHaveBeenCalledWith(session, Expected)
+    }
+  )
+
+  it(`should call EngineState.viewerEntity.RendererComponent.xrManager.setSession
+      with a framebufferScaleFactor of 1.2
+      when xrSession.interactionMode is not 'screen-space'
+      and xrSession.domOverlayState?.type is not 'screen'`, async () => {
+    const Expected = 1.2
+    // Set the data as expected
+    const xrManager = getComponent(getState(EngineState).viewerEntity, RendererComponent).xrManager!
+    const setSessionSpy = vi.spyOn(xrManager, 'setSession')
+    // Run and Check the result
+    const session = await setupXRSession()
+    assert(session)
+    expect(session.interactionMode).not.toBe('screen-space')
+    expect(session.interactionMode).not.toBe('screen')
+    expect(setSessionSpy).toHaveBeenCalledWith(session, Expected)
+  })
 
   /**
   // @note Cannot be tested (currently). The WebXR emulator has special behavior
