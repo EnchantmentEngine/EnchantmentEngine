@@ -454,13 +454,14 @@ describe('setupXRSession', () => {
       when XRState.supportedSessionModes['immersive-ar'] is true
       and @param requestedMode is not passed`,
     async () => {
-      const Expected = "'immersive-ar'"
+      const Expected = 'immersive-ar'
       // Set the data as expected
       assert(getMutableState(XRState).value)
       expect(getState(XRState).supportedSessionModes).not.toBe(undefined)
       expect(getState(XRState).supportedSessionModes[Expected]).not.toBe(undefined)
-      console.log(getState(XRState).supportedSessionModes)
-      getMutableState(XRState).supportedSessionModes[Expected].set(true)
+      console.log(getState(XRState))
+      // console.log(getState(XRState).supportedSessionModes)
+      getMutableState(XRState).supportedSessionModes.merge({ [Expected]: true })
       // Sanity check before running
       expect(getState(XRState).sessionMode).not.toBe(Expected)
       const supported = getState(XRState).supportedSessionModes[Expected]
