@@ -378,7 +378,7 @@ describe('getReferenceSpaces', () => {
   })
 }) //:: getReferenceSpaces
 
-describe.only('setupXRSession', () => {
+describe('setupXRSession', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
@@ -461,7 +461,7 @@ describe.only('setupXRSession', () => {
   */
 
   /**
-  // @note Cannot be currently tested. The WebXR emulator has special behavior
+  // @note Cannot be tested (currently). The WebXR emulator has special behavior
   it("should set EngineState.viewerEntity.RendererComponent.renderer!.domElement.style.display to 'none' when (typeof xrSession.visibilityState) is 'string'", async () => {
     const Expected = 'none'
     // Sanity check before running
@@ -489,7 +489,7 @@ describe('requestXRSession', () => {
     mockSpatialEngine()
     WebXREventDispatcher.instance.dispatchEvent({
       type: POLYFILL_ACTIONS.DEVICE_INIT,
-      detail: { stereoEffect: false, device: DeviceDefinitions.Default }
+      detail: { stereoEffect: false, deviceDefininion: DeviceDefinitions.Default }
     })
   })
 

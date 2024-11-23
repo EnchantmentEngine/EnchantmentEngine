@@ -81,7 +81,7 @@ export function __getXRSessionEventTargetData(session: XRSession | null) {
 export async function requestEmulatedXRSession(deviceDefinition = DeviceDefinitions.Default) {
   WebXREventDispatcher.instance.dispatchEvent({
     type: POLYFILL_ACTIONS.DEVICE_INIT,
-    detail: { stereoEffect: false, device: deviceDefinition }
+    detail: { stereoEffect: false, deviceDefinition: deviceDefinition }
   })
   return requestXRSession()
 }
