@@ -67,7 +67,7 @@ import {
   useAncestorWithComponents,
   useChildrenWithComponents
 } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import { ImageLoader, Texture } from 'three'
+import { Texture } from 'three'
 import { useGLTFResource } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import {
@@ -75,6 +75,7 @@ import {
   BINARY_EXTENSION_HEADER_LENGTH,
   BINARY_EXTENSION_HEADER_MAGIC
 } from '../assets/loaders/gltf/GLTFExtensions'
+import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SourceComponent } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
@@ -332,7 +333,7 @@ const ImageReactor = (props: { entity: Entity; imageIndex: number }) => {
   const options = getParserOptions(entity)
 
   const imageDef = options.document.images![imageIndex]
-  const loader = imageDef.mimeType === 'image/ktx2' ? options.ktx2Loader : new ImageLoader()
+  const loader = imageDef.mimeType === 'image/ktx2' ? options.ktx2Loader : new TextureLoader()
   const image = GLTFLoaderFunctions.useLoadImageSource(options, imageIndex, loader)
 
   useEffect(() => {

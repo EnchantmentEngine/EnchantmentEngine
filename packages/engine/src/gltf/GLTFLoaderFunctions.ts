@@ -1385,15 +1385,14 @@ const loadGLTF = async (options: GLTFParserOptions) => {
         const primitive = meshDef.primitives[primIndex]
         //handle material instances
         const materialUUID = (options.documentID + '-material-' + primitive.material!) as EntityUUID
-        const materialEntity = UUIDComponent.getOrCreateEntityByUUID(materialUUID)
 
-        setComponent(nodeEntity, MaterialInstanceComponent)
         const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
         if (isSinglePrimitive) {
           materialInstance.uuid.push(materialUUID)
         } else {
           materialInstance.uuid[primitive.material!] = materialUUID
         }
+        setComponent(nodeEntity, MaterialInstanceComponent, materialInstance)
 
         //handle primitive extensions
         const extensions = primitive.extensions || {}
