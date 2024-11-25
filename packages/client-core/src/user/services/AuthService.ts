@@ -690,7 +690,7 @@ export const AuthService = {
         }
       })
 
-      return identityProviders.data.length > 0
+      return identityProviders.data.some((provider) => provider.email === email.toLowerCase())
     } catch (error) {
       return false
     }
