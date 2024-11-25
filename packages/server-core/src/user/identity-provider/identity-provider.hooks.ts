@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { BadRequest, Forbidden, MethodNotAllowed, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
+import { disallow, iff, iffElse, isProvider } from 'feathers-hooks-common'
 
 import { isDev } from '@ir-engine/common/src/config'
 import { scopeTypePath } from '@ir-engine/common/src/schemas/scope/scope-type.schema'
@@ -40,7 +40,6 @@ import {
 } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { UserID, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 import { checkScope as checkScopeMethod } from '@ir-engine/common/src/utils/checkScope'
-import checkScope from '../../hooks/check-scope'
 
 import { Paginated } from '@feathersjs/feathers'
 import {
@@ -52,7 +51,6 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import { HookContext } from '../../../declarations'
 import appConfig from '../../appconfig'
-import isAction from '../../hooks/is-action'
 import persistData from '../../hooks/persist-data'
 import setLoggedinUserInQuery from '../../hooks/set-loggedin-user-in-query'
 import { IdentityProviderService } from './identity-provider.class'
@@ -294,17 +292,7 @@ export default {
       schemaHooks.validateQuery(identityProviderQueryValidator),
       schemaHooks.resolveQuery(identityProviderQueryResolver)
     ],
-    find: [
-      iff(
-        isProvider('external'),
-        iffElse(
-          (ctx: HookContext) => (isAction('admin')(ctx) && checkScope('user', 'read')(ctx)) || isSearchQuery(ctx),
-          [],
-          [setLoggedinUserInQuery('userId')]
-        )
-      ),
-      discardQuery('action')
-    ],
+    find: [iff(isProvider('external'), iffElse(isSearchQuery, [], setLoggedinUserInQuery('userId')))],
     get: [iff(isProvider('external'), checkIdentityProvider)],
     create: [
       iff(
