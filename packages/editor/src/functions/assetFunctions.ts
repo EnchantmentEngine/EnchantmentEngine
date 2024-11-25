@@ -36,6 +36,10 @@ import {
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
+import {
+  ModelTransformStatus,
+  transformModel as clientSideTransformModel
+} from '@ir-engine/common/src/model/ModelTransformFunctions'
 import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
 import { cleanFileNameFile, cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
 import { KTX2EncodeArguments } from '@ir-engine/engine/src/assets/constants/CompressionParms'
@@ -45,6 +49,15 @@ import { getMutableState } from '@ir-engine/hyperflux'
 import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 import { showMultipleFileModal } from '../panels/files/toolbar'
 import { ImportSettingsState } from '../services/ImportSettingsState'
+import { setComponent } from '@ir-engine/ecs'
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
+import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
+import { iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { LoaderUtils } from 'three'
+import { LODVariantDescriptor } from '../constants/GLTFPresets'
+import exportGLTF from './exportGLTF'
 
 enum FileType {
   THREE_D = '3D',
@@ -386,4 +399,53 @@ export const downloadBlobAsZip = (blob: Blob, fileName: string) => {
     })
   )
   document.body.removeChild(anchorElement)
+}
+
+export const createLODVariants = async (
+  srcURL: string,
+  lods: LODVariantDescriptor[],
+  heuristic: Heuristic,
+  exportCombined = false,
+  onProgress: (
+    progress: number,
+    status: ModelTransformStatus,
+    numerator: number,
+    denominator: number
+  ) => void = () => {}
+) => {
+  const lodVariantParams: ModelTransformParameters[] = lods.map((lod) => ({
+    ...lod.params
+  }))
+
+  const transformMetadata: Record<string, any>[] = []
+  await clientSideTransformModel(
+    srcURL,
+    lodVariantParams,
+    (i, key, data) => {
+      if (!transformMetadata[i]) transformMetadata[i] = {}
+      transformMetadata[i][key] = data
+    },
+    onProgress
+  )
+
+  if (exportCombined) {
+    const firstLODParams = lods[0].params
+
+    const result = createSceneEntity('container')
+    const variant = createSceneEntity('LOD Variant', result)
+    setComponent(variant, VariantComponent, {
+      levels: lods.map((lod, lodIndex) => ({
+        src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
+        metadata: {
+          ...lod.variantMetadata,
+          ...transformMetadata[lodIndex]
+        }
+      })),
+      heuristic
+    })
+    const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
+    iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, destinationPath))
+    await exportGLTF(result, destinationPath)
+    removeEntityNodeRecursively(result)
+  }
 }

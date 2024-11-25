@@ -24,35 +24,27 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import React, { useEffect } from 'react'
-import { LoaderUtils } from 'three'
 
-import {
-  transformModel as clientSideTransformModel,
-  ModelTransformStatus
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
-import { iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/ecs'
-import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { ModelTransformStatus } from '@ir-engine/common/src/model/ModelTransformFunctions'
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
-import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
+import { Heuristic } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { useTranslation } from 'react-i18next'
 import { defaultLODs, LODList, LODVariantDescriptor } from '../../constants/GLTFPresets'
-import exportGLTF from '../../functions/exportGLTF'
 
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { Button } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { HiPlus, HiXMark } from 'react-icons/hi2'
 import { MdClose } from 'react-icons/md'
 import { FileDataType } from '../../constants/AssetTypes'
+import { createLODVariants } from '../../functions/assetFunctions'
 import GLTFTransformProperties from '../properties/GLTFTransformProperties'
 
 const progressCaptions: Record<ModelTransformStatus, string> = {
@@ -60,55 +52,6 @@ const progressCaptions: Record<ModelTransformStatus, string> = {
   [ModelTransformStatus.ProcessingTexture]: 'editor:properties.model.transform.status.processingtexture',
   [ModelTransformStatus.WritingFiles]: 'editor:properties.model.transform.status.writingfiles',
   [ModelTransformStatus.Complete]: 'editor:properties.model.transform.status.complete'
-}
-
-const createLODVariants = async (
-  srcURL: string,
-  lods: LODVariantDescriptor[],
-  heuristic: Heuristic,
-  exportCombined = false,
-  onProgress: (
-    progress: number,
-    status: ModelTransformStatus,
-    numerator: number,
-    denominator: number
-  ) => void = () => {}
-) => {
-  const lodVariantParams: ModelTransformParameters[] = lods.map((lod) => ({
-    ...lod.params
-  }))
-
-  const transformMetadata: Record<string, any>[] = []
-  await clientSideTransformModel(
-    srcURL,
-    lodVariantParams,
-    (i, key, data) => {
-      if (!transformMetadata[i]) transformMetadata[i] = {}
-      transformMetadata[i][key] = data
-    },
-    onProgress
-  )
-
-  if (exportCombined) {
-    const firstLODParams = lods[0].params
-
-    const result = createSceneEntity('container')
-    const variant = createSceneEntity('LOD Variant', result)
-    setComponent(variant, VariantComponent, {
-      levels: lods.map((lod, lodIndex) => ({
-        src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
-        metadata: {
-          ...lod.variantMetadata,
-          ...transformMetadata[lodIndex]
-        }
-      })),
-      heuristic
-    })
-    const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
-    iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, destinationPath))
-    await exportGLTF(result, destinationPath)
-    removeEntityNodeRecursively(result)
-  }
 }
 
 export default function ModelCompressionPanel({
