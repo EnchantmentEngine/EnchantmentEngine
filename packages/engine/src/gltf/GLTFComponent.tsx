@@ -67,7 +67,7 @@ import {
   useAncestorWithComponents,
   useChildrenWithComponents
 } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import { Texture } from 'three'
+import { ImageLoader, Texture } from 'three'
 import { useGLTFResource } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import {
@@ -165,6 +165,7 @@ export const GLTFComponent = defineComponent({
     buffers: S.NonSerialized(S.Array(S.Type<ArrayBuffer>(), [])),
     bufferViews: S.NonSerialized(S.Array(S.Type<ArrayBuffer>(), [])),
     images: S.NonSerialized(S.Array(S.Type<Texture>(), [])),
+    // meshes: S.NonSerialized(S.Array(S.Type<BufferGeometry>(), [])),
     progress: S.NonSerialized(S.Number(0)),
     extensions: S.NonSerialized(S.Record(S.String(), S.Any(), {})),
     dependencies: S.NonSerialized(S.Optional(S.Type<ComponentDependencies>()))
@@ -180,8 +181,9 @@ export const GLTFComponent = defineComponent({
   useSceneLoaded(entity: Entity) {
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     const instanceID = GLTFComponent.useInstanceID(entity)
-    const document = useMutableState(GLTFDocumentState)[instanceID].value
-    if (!gltfComponent || !document) return false
+    //const document = useMutableState(GLTFDocumentState)[instanceID].value
+    // if (!gltfComponent || !document) return false
+    if (!gltfComponent) return false
 
     const dependencies = gltfComponent.dependencies
     const progress = gltfComponent.progress.value
@@ -204,6 +206,7 @@ export const GLTFComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const gltfComponent = useComponent(entity, GLTFComponent)
+    const gltfLoaded = useHookstate(false)
 
     useEffect(() => {
       const occlusion = gltfComponent.cameraOcclusion.value
@@ -224,11 +227,29 @@ export const GLTFComponent = defineComponent({
 
     useEffect(() => {
       if (!gltfComponent.document.value) return
+      if (gltfLoaded.value) return
       const document = gltfComponent.document.value
       if (document.buffers && gltfComponent.buffers.length !== document.buffers.length) return
       if (document.images && gltfComponent.images.length !== document.images.length) return
+      if (document.bufferViews && gltfComponent.bufferViews.length !== document.bufferViews.length) return
       console.log('All external resources loaded for gltf document', sourceID)
-    }, [gltfComponent.document, gltfComponent.buffers, gltfComponent.images])
+      // buffersLoaded.set(true)
+      GLTFLoaderFunctions.loadGLTF(getParserOptions(entity)).then(() => {
+        gltfComponent.progress.set(100)
+        gltfLoaded.set(true)
+      })
+    }, [gltfComponent.document, gltfComponent.buffers, gltfComponent.images, gltfComponent.bufferViews])
+
+    // useEffect(() => {
+    //   if (gltfLoaded.value) return
+    //   if (!gltfComponent.document.value) return
+    //   if (!buffersLoaded.value) return
+    //   const document = gltfComponent.document.value
+    //   if (document.meshes && gltfComponent.meshes.length !== document.meshes.length) return
+    //   console.log('All meshes loaded for gltf document', sourceID)
+    //   GLTFLoaderFunctions.loadGLTF(getParserOptions(entity))
+    //   gltfLoaded.set(true)
+    // }, [buffersLoaded, gltfComponent.document, gltfComponent.meshes])
 
     const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
     return (
@@ -244,6 +265,9 @@ export const GLTFComponent = defineComponent({
             {gltfComponent.document.value.bufferViews?.map((_, index) => (
               <BufferViewReactor key={index} entity={entity} bufferViewIndex={index} />
             ))}
+            {/* {buffersLoaded.value && gltfComponent.document.value.meshes?.map((_, index) => (
+              <MeshReactor key={index} entity={entity} meshIndex={index} />
+            ))} */}
           </>
         )}
         <ResourceReactor documentID={sourceID} entity={entity} />
@@ -306,7 +330,10 @@ const BufferViewReactor = (props: { entity: Entity; bufferViewIndex: number }) =
 const ImageReactor = (props: { entity: Entity; imageIndex: number }) => {
   const { entity, imageIndex } = props
   const options = getParserOptions(entity)
-  const image = GLTFLoaderFunctions.useLoadImageSource(options, imageIndex)
+
+  const imageDef = options.document.images![imageIndex]
+  const loader = imageDef.mimeType === 'image/ktx2' ? options.ktx2Loader : new ImageLoader()
+  const image = GLTFLoaderFunctions.useLoadImageSource(options, imageIndex, loader)
 
   useEffect(() => {
     if (!image) return
@@ -320,6 +347,24 @@ const ImageReactor = (props: { entity: Entity; imageIndex: number }) => {
   return null
 }
 
+// const MeshReactor = (props: { entity: Entity; meshIndex: number }) => {
+//   const { entity, meshIndex } = props
+//   const options = getParserOptions(entity)
+
+//   const meshGeo = GLTFLoaderFunctions.useLoadPrimitives(options, meshIndex)
+
+//   useEffect(() => {
+//     if(!meshGeo) return
+//     const gltfComponent = getMutableComponent(entity, GLTFComponent)
+//     gltfComponent.meshes.set((prev) => {
+//       prev![meshIndex] = meshGeo
+//       return prev
+//     })
+//   }, [meshGeo])
+
+//   return null
+// }
+
 const ResourceReactor = (props: { documentID: string; entity: Entity }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
   const resourceQuery = useQuery([SourceComponent, ResourcePendingComponent])
@@ -328,7 +373,7 @@ const ResourceReactor = (props: { documentID: string; entity: Entity }) => {
 
   useEffect(() => {
     if (getComponent(props.entity, GLTFComponent).progress === 100) return
-    if (!getState(GLTFDocumentState)[props.documentID]) return
+    //if (!getState(GLTFDocumentState)[props.documentID]) return
     const entities = resourceQuery.filter((e) => getComponent(e, SourceComponent) === props.documentID)
     if (!entities.length) {
       if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)

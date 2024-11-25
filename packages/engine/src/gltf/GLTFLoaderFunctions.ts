@@ -128,24 +128,24 @@ import { KHRTextureTransformExtensionComponent, MaterialDefinitionComponent } fr
 // todo make this a state
 const cache = new GLTFRegistry()
 
-const useLoadPrimitives = (options: GLTFParserOptions, nodeIndex: number) => {
+const useLoadPrimitives = async (options: GLTFParserOptions, meshIndex: number) => {
   // const finalGeometry = useHookstate(null as BufferGeometry | null)
   let finalGeometry: BufferGeometry | null = null
   const json = options.document
-  const node = json.nodes![nodeIndex]
-  const mesh = json.meshes![node.mesh!]
+  const mesh = json.meshes![meshIndex]
 
-  const geometries = mesh.primitives.map(
-    (primitive, index) => GLTFLoaderFunctions.useLoadPrimitive(options, nodeIndex, index)!
+  const geometries = await Promise.all(
+    mesh.primitives.map((primitive, index) => GLTFLoaderFunctions.useLoadPrimitive(options, meshIndex, index)!)
   )
 
   // useEffect(() => {
   // if (geometries.some((geometry) => !geometry) || finalGeometry.value) return
+
   if (geometries.length > 1) {
     let needsTangentRecalculation = false
     for (let i = 0; i < geometries.length; i++) {
-      geometries[i].deleteAttribute('tangent')
-      if (geometries[i].attributes.tangent) needsTangentRecalculation = true
+      geometries[i]?.deleteAttribute('tangent')
+      if (geometries[i]?.attributes.tangent) needsTangentRecalculation = true
     }
 
     const newGeometry = mergeBufferGeometries(geometries, true)
@@ -154,8 +154,10 @@ const useLoadPrimitives = (options: GLTFParserOptions, nodeIndex: number) => {
     for (let i = 0; i < mesh.primitives.length; i++) newGeometry!.groups[i].materialIndex = mesh.primitives[i].material!
 
     finalGeometry = newGeometry
+    // finalGeometry.set(newGeometry)
   } else {
     finalGeometry = geometries[0]
+    // finalGeometry.set(geometries[0])
   }
   // }, [geometries])
 
@@ -163,85 +165,82 @@ const useLoadPrimitives = (options: GLTFParserOptions, nodeIndex: number) => {
   return finalGeometry
 }
 
-const useLoadPrimitive = (options: GLTFParserOptions, nodeIndex: number, primitiveIndex: number) => {
+const useLoadPrimitive = (options: GLTFParserOptions, meshIndex: number, primitiveIndex: number) => {
   // const [result] = useReferencedResource(() => null as null | BufferGeometry, options.url)
-  let result: BufferGeometry | null = null
+  return new Promise<BufferGeometry>((resolve, reject) => {
+    const json = options.document
+    const mesh = json.meshes![meshIndex]
 
-  const json = options.document
-  const node = json.nodes![nodeIndex]!
-  const mesh = json.meshes![node.mesh!]
+    const primitive = mesh.primitives[primitiveIndex]
 
-  const primitive = mesh.primitives[primitiveIndex]
+    const hasDracoCompression = primitive.extensions && primitive.extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION]
 
-  const hasDracoCompression = primitive.extensions && primitive.extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION]
+    if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitive.attributes) {
+      console.warn(
+        `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${ColorManagement.workingColorSpace}" not supported.`
+      )
+    }
 
-  if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitive.attributes) {
-    console.warn(
-      `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${ColorManagement.workingColorSpace}" not supported.`
-    )
-  }
+    if (hasDracoCompression) {
+      KHR_DRACO_MESH_COMPRESSION.decodePrimitive(options, primitive).then((geom) => {
+        GLTFLoaderFunctions.computeBounds(json, geom, primitive)
+        assignExtrasToUserData(geom, primitive as GLTF.IMeshPrimitive)
+        resolve(geom)
+      })
+    } else {
+      const geometry = new BufferGeometry()
 
-  if (hasDracoCompression) {
-    KHR_DRACO_MESH_COMPRESSION.decodePrimitive(options, primitive).then((geom) => {
-      GLTFLoaderFunctions.computeBounds(json, geom, primitive)
-      assignExtrasToUserData(geom, primitive as GLTF.IMeshPrimitive)
-      result = geom
-    })
-  } else {
-    const geometry = new BufferGeometry()
+      /** @todo we need to figure out a better way of handling reactivity for both draco and regular buffers */
 
-    /** @todo we need to figure out a better way of handling reactivity for both draco and regular buffers */
+      const attributes = primitive.attributes
+      // const resourcesState = useHookstate(
+      //   () =>
+      //     ({
+      //       ...Object.fromEntries(Object.keys(attributes).map((key) => [key, false])),
+      //       index: false
+      //     }) as Record<string, boolean>
+      // )
 
-    const attributes = primitive.attributes
-    // const resourcesState = useHookstate(
-    //   () =>
-    //     ({
-    //       ...Object.fromEntries(Object.keys(attributes).map((key) => [key, false])),
-    //       index: false
-    //     }) as Record<string, boolean>
-    // )
+      for (const attributeName of Object.keys(attributes)) {
+        const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase()
+        const attribute = primitive.attributes[attributeName]
+        const accessor = GLTFLoaderFunctions.useLoadAccessor(options, attribute)
+        // useEffect(() => {
+        //   if (!accessor) return
+        if (accessor) {
+          geometry.setAttribute(threeAttributeName, accessor)
+        }
+        //   resourcesState[attributeName].set(true)
+        // }, [accessor])
+      }
 
-    for (const attributeName of Object.keys(attributes)) {
-      const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase()
-      const attribute = primitive.attributes[attributeName]
-      const accessor = GLTFLoaderFunctions.useLoadAccessor(options, attribute)
+      const accessor = GLTFLoaderFunctions.useLoadAccessor(options, primitive.indices!)
+
       // useEffect(() => {
       //   if (!accessor) return
       if (accessor) {
-        geometry.setAttribute(threeAttributeName, accessor)
+        geometry.setIndex(accessor)
       }
-      //   resourcesState[attributeName].set(true)
+      //   resourcesState.index.set(true)
       // }, [accessor])
+
+      // useEffect(() => {
+      //const attributeCount = Object.keys(attributes).length
+      // const resourcesLoaded = Object.values(resourcesState.get(NO_PROXY)).filter(Boolean).length
+      // if (resourcesLoaded !== attributeCount + (typeof primitive.indices === 'number' ? 1 : 0)) return
+
+      GLTFLoaderFunctions.computeBounds(json, geometry, primitive)
+      assignExtrasToUserData(geometry, primitive as GLTF.IMeshPrimitive)
+      // result = geometry
+      resolve(geometry)
+      // reactor.stop()
+      // }, [resourcesState])
+
+      // return () => {
+      //   reactor.stop()
+      // }
     }
-
-    const accessor = GLTFLoaderFunctions.useLoadAccessor(options, primitive.indices!)
-
-    // useEffect(() => {
-    //   if (!accessor) return
-    if (accessor) {
-      geometry.setIndex(accessor)
-    }
-    //   resourcesState.index.set(true)
-    // }, [accessor])
-
-    // useEffect(() => {
-    //const attributeCount = Object.keys(attributes).length
-    // const resourcesLoaded = Object.values(resourcesState.get(NO_PROXY)).filter(Boolean).length
-    // if (resourcesLoaded !== attributeCount + (typeof primitive.indices === 'number' ? 1 : 0)) return
-
-    GLTFLoaderFunctions.computeBounds(json, geometry, primitive)
-    assignExtrasToUserData(geometry, primitive as GLTF.IMeshPrimitive)
-    result = geometry
-    //   result.set(geometry)
-    //   reactor.stop()
-    // }, [resourcesState])
-
-    // return () => {
-    //   reactor.stop()
-    // }
-  }
-
-  return result
+  })
 }
 
 const useLoadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => {
@@ -252,8 +251,8 @@ const useLoadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => 
   const accessorDef = typeof accessorIndex === 'number' ? json.accessors![accessorIndex] : null
 
   const gltfComponent = getComponent(options.entity, GLTFComponent)
-
-  const bufferView = accessorDef?.bufferView ? gltfComponent.bufferViews[accessorDef.bufferView] : null
+  const hasBufferView = accessorDef?.bufferView !== undefined
+  const bufferView = hasBufferView ? gltfComponent.bufferViews[accessorDef.bufferView!] : null
 
   // const sparseBufferViewIndices = GLTFLoaderFunctions.useLoadBufferView(
   //   options,
@@ -262,6 +261,7 @@ const useLoadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => 
   const sparseBufferViewIndices = accessorDef?.sparse?.indices?.bufferView
     ? gltfComponent.bufferViews[accessorDef.sparse.indices.bufferView]
     : null
+
   const sparseBufferViewValues = accessorDef?.sparse?.values?.bufferView
     ? gltfComponent.bufferViews[accessorDef.sparse.values.bufferView]
     : null
@@ -410,6 +410,16 @@ const useLoadBuffer = (options: GLTFParserOptions, bufferIndex) => {
     }
   }, [bufferDef?.type])
 
+  // if (bufferDef && bufferDef.uri === undefined) {
+  //   return options.body
+  //   let startByte = 0
+  //   for(let prevIndex = 0; prevIndex < bufferIndex; prevIndex++) {
+  //     startByte += json.buffers![prevIndex].byteLength
+  //   }
+  //   const thisBuffer = options.body?.slice(startByte, startByte + bufferDef.byteLength)
+  //   return thisBuffer
+  // } else return result
+  // if (bufferDef && bufferDef.uri === undefined && bufferIndex !== 0) return new ArrayBuffer(0)
   return bufferDef && bufferDef.uri === undefined && bufferIndex === 0 ? options.body : result
 }
 
@@ -1260,8 +1270,10 @@ const _createCubicSplineTrackInterpolant = (track: KeyframeTrack) => {
   track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true
 }
 
-const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuffer[], textures: Texture[]) => {
-  const { document } = options
+const loadGLTF = async (options: GLTFParserOptions) => {
+  const { entity, document } = options
+
+  const gltfComponent = getComponent(entity, GLTFComponent)
 
   //initialize materials
   const materials = document.materials || []
@@ -1286,6 +1298,7 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
 
   //initialize each node as en entity
   const nodes = document.nodes || []
+
   const indexMap: Record<number, Entity> = {}
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
@@ -1301,7 +1314,12 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
       const rotation = new Quaternion()
       const scale = new Vector3()
       mat4.decompose(position, rotation, scale)
-      setComponent(entity, TransformComponent, { position, rotation, scale })
+      setComponent(nodeEntity, TransformComponent, { position, rotation, scale })
+    } else if (node.translation || node.rotation || node.scale) {
+      const position = new Vector3().fromArray(node.translation || [0, 0, 0])
+      const rotation = new Quaternion().fromArray(node.rotation || [0, 0, 0, 1])
+      const scale = new Vector3().fromArray(node.scale || [1, 1, 1])
+      setComponent(nodeEntity, TransformComponent, { position, rotation, scale })
     }
 
     /** Always set visible extension if this is not an ECS node */
@@ -1312,7 +1330,24 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
       for (const extension in node.extensions) {
         const Component = ComponentJSONIDMap.get(extension)
         if (!Component) continue
-        setComponent(entity, Component, node.extensions[extension])
+        setComponent(nodeEntity, Component, node.extensions[extension])
+      }
+    }
+
+    setComponent(nodeEntity, EntityTreeComponent)
+  }
+
+  for (let i = 0; i < nodes.length; i++) {
+    const nodeEntity = indexMap[i]
+    const node = nodes[i]
+    if (node.children) {
+      for (let j = 0; j < node.children.length; j++) {
+        const childIndex = node.children[j]
+        const childEntity = indexMap[childIndex]
+        setComponent(childEntity, EntityTreeComponent, {
+          parentEntity: nodeEntity,
+          childIndex: j
+        })
       }
     }
 
@@ -1321,7 +1356,7 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
       const meshDef = document.meshes[node.mesh]
 
       const isSinglePrimitive = meshDef.primitives.length === 1
-      const meshGeometry = GLTFLoaderFunctions.useLoadPrimitives(options, i)
+      const meshGeometry = await GLTFLoaderFunctions.useLoadPrimitives(options, node.mesh)
 
       const material = isSinglePrimitive ? defaultMaterial() : meshDef.primitives.map(defaultMaterial)
       const mesh =
@@ -1335,10 +1370,10 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
         const skinnedMesh = mesh as SkinnedMesh
         skinnedMesh.skeleton = new Skeleton()
         skinnedMesh.normalizeSkinWeights()
-        setComponent(entity, SkinnedMeshComponent, skinnedMesh)
+        setComponent(nodeEntity, SkinnedMeshComponent, skinnedMesh)
       }
 
-      setComponent(entity, MeshComponent, mesh)
+      setComponent(nodeEntity, MeshComponent, mesh)
       addObjectToGroup(entity, mesh)
       proxifyParentChildRelationships(mesh)
       mesh.name = node.name ?? 'Node-' + i
@@ -1352,7 +1387,7 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
         const materialUUID = (options.documentID + '-material-' + primitive.material!) as EntityUUID
         const materialEntity = UUIDComponent.getOrCreateEntityByUUID(materialUUID)
 
-        setComponent(entity, MaterialInstanceComponent)
+        setComponent(nodeEntity, MaterialInstanceComponent)
         const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
         if (isSinglePrimitive) {
           materialInstance.uuid.push(materialUUID)
@@ -1365,7 +1400,7 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
         for (const extensionName in extensions) {
           const Component = ComponentJSONIDMap.get(extensionName)
           if (!Component) continue
-          setComponent(entity, Component, extensions[extensionName])
+          setComponent(nodeEntity, Component, extensions[extensionName])
         }
       }
 
@@ -1386,6 +1421,11 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
           }
         }
       }
+    } else {
+      const obj3d = new Object3D()
+      setComponent(nodeEntity, Object3DComponent, obj3d)
+      addObjectToGroup(entity, obj3d)
+      proxifyParentChildRelationships(obj3d)
     }
   }
 
@@ -1396,6 +1436,13 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
     const animationTrack = GLTFLoaderFunctions.useLoadAnimation(options, i)
     if (animationTrack) animationClips.push(animationTrack)
   }
+  if (!hasComponent(entity, Object3DComponent)) {
+    const obj3d = new Object3D()
+    setComponent(entity, Object3DComponent, obj3d)
+    addObjectToGroup(entity, obj3d)
+    proxifyParentChildRelationships(obj3d)
+  }
+
   const obj3d = getComponent(entity, Object3DComponent)
   obj3d.animations = animationClips
   if (!hasComponent(entity, AnimationComponent)) {
@@ -1406,6 +1453,13 @@ const loadGLTF = (entity: Entity, options: GLTFParserOptions, buffers: ArrayBuff
   } else {
     const clips = getComponent(entity, AnimationComponent).animations
     setComponent(entity, AnimationComponent, { animations: [...clips, ...animationClips] })
+  }
+
+  //parent root nodes to gltf entity
+  const roots = document.scenes![0].nodes
+  for (const rootIndex of roots) {
+    const rootEntity = indexMap[rootIndex]
+    setComponent(rootEntity, EntityTreeComponent, { parentEntity: entity, childIndex: rootIndex })
   }
 }
 

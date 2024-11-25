@@ -24,14 +24,14 @@ Ethereal Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { getState, startReactor } from '@ir-engine/hyperflux'
-import { useEffect } from 'react'
+import { getComponent } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
 import { BufferGeometry, NormalBufferAttributes } from 'three'
 import { ATTRIBUTES, WEBGL_COMPONENT_TYPES } from '../assets/loaders/gltf/GLTFConstants'
 import { EXTENSIONS } from '../assets/loaders/gltf/GLTFExtensions'
 import { GLTFParserOptions } from '../assets/loaders/gltf/GLTFParser'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
-import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
+import { GLTFComponent } from './GLTFComponent'
 
 export const KHR_DRACO_MESH_COMPRESSION = {
   decodePrimitive(options: GLTFParserOptions, primitive: GLTF.IMeshPrimitive) {
@@ -66,29 +66,31 @@ export const KHR_DRACO_MESH_COMPRESSION = {
        * Using an inline reactor here allows us to use reference counting & resource caching,
        * and release the uncompressed buffer as soon as it is no longer required
        */
-      const reactor = startReactor(() => {
-        const bufferView = GLTFLoaderFunctions.useLoadBufferView(options, bufferViewIndex)
-        useEffect(() => {
-          if (!bufferView) return
-          const dracoLoader = getState(AssetLoaderState).gltfLoader.dracoLoader!
-          dracoLoader.preload().decodeDracoFile(
-            bufferView,
-            function (geometry) {
-              for (const attributeName in geometry.attributes) {
-                const attribute = geometry.attributes[attributeName]
-                const normalized = attributeNormalizedMap[attributeName]
-                if (normalized !== undefined) attribute.normalized = normalized
-              }
-              resolve(geometry)
-              reactor.stop()
-            },
-            threeAttributeMap,
-            attributeTypeMap
-          )
-        }, [bufferView])
-        return null
-      })
+      // const reactor = startReactor(() => {
+      // const bufferView = GLTFLoaderFunctions.useLoadBufferView(options, bufferViewIndex)
+      const bufferView = getComponent(options.entity, GLTFComponent).bufferViews[bufferViewIndex]
+      // useEffect(() => {
+      // if (!bufferView) return
+      const dracoLoader = getState(AssetLoaderState).gltfLoader.dracoLoader!
+      dracoLoader.preload().decodeDracoFile(
+        bufferView,
+        function (geometry) {
+          for (const attributeName in geometry.attributes) {
+            const attribute = geometry.attributes[attributeName]
+            const normalized = attributeNormalizedMap[attributeName]
+            if (normalized !== undefined) attribute.normalized = normalized
+          }
+          resolve(geometry)
+          // resolve(geometry)
+          // reactor.stop()
+        },
+        threeAttributeMap,
+        attributeTypeMap
+      )
+      // }, [bufferView])
+      // return null
     })
+    // })
   }
 }
 
