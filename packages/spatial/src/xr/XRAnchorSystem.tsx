@@ -40,6 +40,7 @@ import {
   ComponentType,
   getComponent,
   getMutableComponent,
+  getOptionalComponent,
   removeComponent,
   setComponent,
   useOptionalComponent
@@ -93,7 +94,8 @@ export const updateHitTest = (entity: Entity) => {
 
 export const updateAnchor = (entity: Entity) => {
   const xrFrame = getState(XRState).xrFrame!
-  const anchor = getComponent(entity, XRAnchorComponent).anchor
+  const anchor = getOptionalComponent(entity, XRAnchorComponent)?.anchor
+  if (!anchor) return
   const pose = ReferenceSpace.localFloor && xrFrame.getPose(anchor.anchorSpace, ReferenceSpace.localFloor)
   if (!pose) return
   const transform = getComponent(entity, TransformComponent)
