@@ -45,7 +45,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery, useQuery } from '@ir-engine/ecs/src/QueryFunctions'
@@ -84,7 +83,7 @@ export const updateHitTest = (entity: Entity) => {
   const pose = hitTestResults[0].getPose(ReferenceSpace.localFloor!)
   if (!pose) return
 
-  const parentEntity = Engine.instance.localFloorEntity
+  const parentEntity = getState(EngineState).localFloorEntity
   setComponent(entity, EntityTreeComponent, { parentEntity })
 
   const transform = getComponent(entity, TransformComponent)
@@ -230,7 +229,7 @@ const Reactor = () => {
     setComponent(scenePlacementEntity, NameComponent, 'xr-scene-placement')
     setComponent(scenePlacementEntity, XRScenePlacementComponent)
     setComponent(scenePlacementEntity, TransformComponent)
-    setComponent(scenePlacementEntity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(scenePlacementEntity, EntityTreeComponent, { parentEntity: getState(EngineState).localFloorEntity })
     setComponent(scenePlacementEntity, VisibleComponent, true)
     setComponent(scenePlacementEntity, InputComponent, { highlight: false, grow: false })
 
@@ -252,7 +251,7 @@ const Reactor = () => {
     const originAnchorEntity = createEntity()
     setComponent(originAnchorEntity, NameComponent, 'xr-world-anchor')
     addObjectToGroup(originAnchorEntity, originAnchorMesh)
-    setComponent(originAnchorEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(originAnchorEntity, EntityTreeComponent, { parentEntity: getState(EngineState).originEntity })
 
     getMutableState(XRAnchorSystemState).set({ scenePlacementEntity, originAnchorEntity })
   }, [])
