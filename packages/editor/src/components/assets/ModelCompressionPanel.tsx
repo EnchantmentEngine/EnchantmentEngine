@@ -31,7 +31,7 @@ import {
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { Heuristic } from '@ir-engine/engine/src/scene/components/VariantComponent'
-import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +39,8 @@ import { defaultLODs, LODList, LODVariantDescriptor } from '../../constants/GLTF
 
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { Button } from '@ir-engine/ui'
+import { getProjectName } from '@ir-engine/engine/src/assets/functions/pathResolver'
+import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadRequestState'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { HiPlus, HiXMark } from 'react-icons/hi2'
@@ -140,7 +142,7 @@ export default function ModelCompressionPanel({
       })
     }
 
-    await createLODVariants(
+    const files = await createLODVariants(
       srcURL,
       fileLODs,
       Heuristic.DISTANCE,
@@ -153,6 +155,19 @@ export default function ModelCompressionPanel({
         compressionProgress.set({ progress, caption })
       }
     )
+
+    const projectName = getProjectName(file.url)
+
+    for (const file of files) {
+      const uploadRequestState = getMutableState(UploadRequestState)
+      const queue = uploadRequestState.queue.get(NO_PROXY)
+      let resolver
+      const promise = new Promise((resolve) => {
+        resolver = resolve
+      })
+      uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver }])
+      await promise
+    }
   }
 
   const deletePreset = (event: React.MouseEvent, idx: number) => {

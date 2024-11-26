@@ -69,7 +69,6 @@ import {
   ResourceTransforms
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { baseName, dropRoot, pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { getMutableState, NO_PROXY } from '@ir-engine/hyperflux'
 import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 
 import {
@@ -81,7 +80,6 @@ import {
   EEResourceID,
   EEResourceIDExtension
 } from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
-import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadRequestState'
 import ModelTransformLoader from './ModelTransformLoader'
 
 /**
@@ -391,18 +389,6 @@ const fileTypeToMime = (fileType) => {
 const loaderIO = ModelTransformLoader().then(({ io }) => io)
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer) => {
-  const file = new File([buffer], fileName)
-  const uploadRequestState = getMutableState(UploadRequestState)
-  const queue = uploadRequestState.queue.get(NO_PROXY)
-  let resolver
-  const promise = new Promise((resolve) => {
-    resolver = resolve
-  })
-  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver }])
-  await promise
-}
-
 const toProjectAndFileName = (fUploadPath: string, srcBaseURL: string): [string, string] => {
   const pathCheck = /projects\/([^/]+\/[^/]+)\/assets\/([\w\d\s\-|_./]*)$/
   // TODO: remove srcBaseURL if it's unnecessary
@@ -665,7 +651,7 @@ const writeFiles = async (
     resourceUri: string
     dst: string
   }
-): Promise<string> => {
+): Promise<File[]> => {
   const srcBaseURL = LoaderUtils.extractUrlBase(srcURL)
   const root = document.getRoot()
   const io = await loaderIO
@@ -678,9 +664,11 @@ const writeFiles = async (
     finalPath += `.${modelFormat}`
   }
 
+  const files: File[] = []
+
   if (['glb', 'vrm'].includes(modelFormat)) {
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data)
+    files.push(new File([data], toProjectAndFileName(finalPath, srcBaseURL)[1]))
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -759,18 +747,18 @@ const writeFiles = async (
     await Promise.all(
       Object.entries(resources).map(async ([uri, data]) => {
         const blob = new Blob([data as BlobPart], { type: fileTypeToMime(uri.split('.').pop()!)! })
-        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob)
+        files.push(new File([blob], toProjectAndFileName(uri, srcBaseURL)[1]))
       })
     )
-    await doUpload(
-      ...toProjectAndFileName(finalPath, srcBaseURL),
-      new Blob([JSON.stringify(json)], { type: 'application/json' })
+    files.push(
+      new File(
+        [new Blob([JSON.stringify(json)], { type: 'application/json' })],
+        toProjectAndFileName(finalPath, srcBaseURL)[1]
+      )
     )
   }
 
-  finalPath = pathJoin(srcBaseURL, finalPath)
-  console.log(`Wrote ${modelFormat} file: ${finalPath}`)
-  return finalPath
+  return files
 }
 
 export const transformModel = async (
@@ -778,7 +766,7 @@ export const transformModel = async (
   modelOperations: ModelTransformParameters[],
   onMetadata: (index: number, key: string, data: any) => void = (key, data) => {},
   onProgress?: (progress: number, status: Status, numerator?: number, denominator?: number) => void
-): Promise<string[]> => {
+): Promise<File[]> => {
   onProgress?.(0, Status.TransformingModels)
 
   const srcDocument = await (await loaderIO).read(srcURL)
@@ -898,11 +886,13 @@ export const transformModel = async (
     }
   }
 
+  const files: File[] = []
+
   for (let i = 0; i < numDocOperations; i++) {
     onProgress?.((i + 1 + numTextureOperations) / totalProgressSteps, Status.WritingFiles)
 
     const document = documents[i]
-    results.push(...(await writeFiles(srcURL, document, modelOperations[i])))
+    files.push(...(await writeFiles(srcURL, document, modelOperations[i])))
 
     const totalVertexCount = document
       .getRoot()
@@ -915,5 +905,5 @@ export const transformModel = async (
 
   onProgress?.(1, Status.Complete)
 
-  return results
+  return files
 }
