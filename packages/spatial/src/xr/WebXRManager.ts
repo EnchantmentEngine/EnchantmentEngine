@@ -140,129 +140,128 @@ export function createWebXRManager(renderer: WebGLRenderer) {
   }
 
   scope.setSession = async function (session: XRSession, framebufferScaleFactor = 1) {
-    if (session !== null) {
-      xrRendererState.initialRenderTarget.set(renderer.getRenderTarget())
+    if (session === null) return
+    xrRendererState.initialRenderTarget.set(renderer.getRenderTarget())
 
-      session.addEventListener('end', onSessionEnd)
+    session.addEventListener('end', onSessionEnd)
 
-      // wrap in try catch to avoid errors when calling updateTargetFrameRate on unsupported devices
-      try {
-        if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72)
-      } catch (e) {
-        console.warn(e)
+    // wrap in try catch to avoid errors when calling updateTargetFrameRate on unsupported devices
+    try {
+      if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72)
+    } catch (e) {
+      console.warn(e)
+    }
+
+    const gl = renderer.getContext() as WebGLRenderingContext
+    const attributes = gl.getContextAttributes()!
+    if (attributes.xrCompatible !== true) {
+      await gl.makeXRCompatible()
+    }
+
+    let newRenderTarget = null as WebGLRenderTarget | null
+
+    if (session.renderState.layers === undefined || renderer.capabilities.isWebGL2 === false) {
+      const layerInit = {
+        antialias: session.renderState.layers === undefined ? attributes.antialias : true,
+        alpha: attributes.alpha,
+        depth: attributes.depth,
+        stencil: attributes.stencil,
+        framebufferScaleFactor: framebufferScaleFactor
       }
 
-      const gl = renderer.getContext() as WebGLRenderingContext
-      const attributes = gl.getContextAttributes()!
-      if (attributes.xrCompatible !== true) {
-        await gl.makeXRCompatible()
-      }
+      const glBaseLayer = new XRWebGLLayer(session, gl, layerInit)
+      xrRendererState.glBaseLayer.set(glBaseLayer)
 
-      let newRenderTarget = null as WebGLRenderTarget | null
+      session.updateRenderState({ baseLayer: glBaseLayer })
 
-      if (session.renderState.layers === undefined || renderer.capabilities.isWebGL2 === false) {
-        const layerInit = {
-          antialias: session.renderState.layers === undefined ? attributes.antialias : true,
-          alpha: attributes.alpha,
-          depth: attributes.depth,
-          stencil: attributes.stencil,
-          framebufferScaleFactor: framebufferScaleFactor
-        }
+      newRenderTarget = new WebGLRenderTarget(glBaseLayer.framebufferWidth, glBaseLayer.framebufferHeight, {
+        format: RGBAFormat,
+        type: UnsignedByteType,
+        colorSpace: renderer.outputColorSpace,
+        stencilBuffer: attributes.stencil
+      })
+    } else {
+      let depthFormat: number | undefined
+      let depthType: TextureDataType | undefined
+      let glDepthFormat: number | undefined
 
-        const glBaseLayer = new XRWebGLLayer(session, gl, layerInit)
-        xrRendererState.glBaseLayer.set(glBaseLayer)
-
-        session.updateRenderState({ baseLayer: glBaseLayer })
-
-        newRenderTarget = new WebGLRenderTarget(glBaseLayer.framebufferWidth, glBaseLayer.framebufferHeight, {
-          format: RGBAFormat,
-          type: UnsignedByteType,
-          colorSpace: renderer.outputColorSpace,
-          stencilBuffer: attributes.stencil
-        })
-      } else {
-        let depthFormat: number | undefined
-        let depthType: TextureDataType | undefined
-        let glDepthFormat: number | undefined
-
-        if (attributes.depth) {
-          glDepthFormat = attributes.stencil ? gl.DEPTH24_STENCIL8 : gl.DEPTH_COMPONENT24
-          depthFormat = attributes.stencil ? DepthStencilFormat : DepthFormat
-          depthType = attributes.stencil ? UnsignedInt248Type : UnsignedIntType
-        }
-
-        // @ts-ignore
-        const extensions = renderer.extensions
-        scope.isMultiview = scope.useMultiview && extensions.has('OCULUS_multiview')
-
-        const projectionlayerInit = {
-          colorFormat: gl.RGBA8,
-          depthFormat: glDepthFormat,
-          scaleFactor: framebufferScaleFactor,
-          textureType: (scope.isMultiview ? 'texture-array' : 'texture') as XRTextureType
-          // quality: "graphics-optimized" /** @todo - this does not work yet, must be set directly on the layer */
-        }
-
-        const glBinding = new XRWebGLBinding(session, gl)
-        xrRendererState.glBinding.set(glBinding)
-
-        const glProjLayer = glBinding.createProjectionLayer(projectionlayerInit)
-        glProjLayer.quality = 'graphics-optimized'
-        xrRendererState.glProjLayer.set(glProjLayer)
-
-        session.updateRenderState({ layers: [glProjLayer] })
-
-        const rtOptions = {
-          format: RGBAFormat,
-          type: UnsignedByteType,
-          depthTexture: new DepthTexture(
-            glProjLayer.textureWidth,
-            glProjLayer.textureHeight,
-            depthType,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            // @ts-ignore	- DepthTexture typings are missing last constructor argument
-            depthFormat
-          ),
-          stencilBuffer: attributes.stencil,
-          colorSpace: renderer.outputColorSpace,
-          samples: attributes.antialias ? 4 : 0
-        }
-
-        if (scope.isMultiview) {
-          const extension = extensions.get('OCULUS_multiview')
-          this.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
-          newRenderTarget = new WebGLMultiviewRenderTarget(
-            glProjLayer.textureWidth,
-            glProjLayer.textureHeight,
-            2,
-            rtOptions
-          )
-        } else {
-          newRenderTarget = new WebGLRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, rtOptions)
-        }
-        const renderTargetProperties = renderer.properties.get(newRenderTarget)
-        renderTargetProperties.__ignoreDepthValues = glProjLayer.ignoreDepthValues
+      if (attributes.depth) {
+        glDepthFormat = attributes.stencil ? gl.DEPTH24_STENCIL8 : gl.DEPTH_COMPONENT24
+        depthFormat = attributes.stencil ? DepthStencilFormat : DepthFormat
+        depthType = attributes.stencil ? UnsignedInt248Type : UnsignedIntType
       }
 
       // @ts-ignore
-      newRenderTarget.isXRRenderTarget = true // TODO Remove scope when possible, see #23278
-      xrRendererState.newRenderTarget.set(newRenderTarget)
+      const extensions = renderer.extensions
+      scope.isMultiview = scope.useMultiview && extensions.has('OCULUS_multiview')
 
-      // Set foveation to maximum.
-      // scope.setFoveation(1.0)
-      scope.setFoveation(0)
+      const projectionlayerInit = {
+        colorFormat: gl.RGBA8,
+        depthFormat: glDepthFormat,
+        scaleFactor: framebufferScaleFactor,
+        textureType: (scope.isMultiview ? 'texture-array' : 'texture') as XRTextureType
+        // quality: "graphics-optimized" /** @todo - this does not work yet, must be set directly on the layer */
+      }
 
-      animation.setContext(session)
-      animation.stop()
-      animation.start()
+      const glBinding = new XRWebGLBinding(session, gl)
+      xrRendererState.glBinding.set(glBinding)
 
-      scope.isPresenting = true
+      const glProjLayer = glBinding.createProjectionLayer(projectionlayerInit)
+      glProjLayer.quality = 'graphics-optimized'
+      xrRendererState.glProjLayer.set(glProjLayer)
+
+      session.updateRenderState({ layers: [glProjLayer] })
+
+      const rtOptions = {
+        format: RGBAFormat,
+        type: UnsignedByteType,
+        depthTexture: new DepthTexture(
+          glProjLayer.textureWidth,
+          glProjLayer.textureHeight,
+          depthType,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          // @ts-ignore	- DepthTexture typings are missing last constructor argument
+          depthFormat
+        ),
+        stencilBuffer: attributes.stencil,
+        colorSpace: renderer.outputColorSpace,
+        samples: attributes.antialias ? 4 : 0
+      }
+
+      if (scope.isMultiview) {
+        const extension = extensions.get('OCULUS_multiview')
+        this.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
+        newRenderTarget = new WebGLMultiviewRenderTarget(
+          glProjLayer.textureWidth,
+          glProjLayer.textureHeight,
+          2,
+          rtOptions
+        )
+      } else {
+        newRenderTarget = new WebGLRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, rtOptions)
+      }
+      const renderTargetProperties = renderer.properties.get(newRenderTarget)
+      renderTargetProperties.__ignoreDepthValues = glProjLayer.ignoreDepthValues
     }
+
+    // @ts-expect-error @todo Remove scope when possible, see #23278
+    newRenderTarget.isXRRenderTarget = true
+    xrRendererState.newRenderTarget.set(newRenderTarget)
+
+    // Set foveation to maximum.
+    // scope.setFoveation(1.0)
+    scope.setFoveation(0)
+
+    animation.setContext(session)
+    animation.stop()
+    animation.start()
+
+    scope.isPresenting = true
   }
 
   scope.getEnvironmentBlendMode = function () {
