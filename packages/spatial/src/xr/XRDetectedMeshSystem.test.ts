@@ -71,7 +71,43 @@ describe('XRDetectedMeshSystem', () => {
 }) //:: XRDetectedMeshSystem
 
 describe('XRDetectedMeshSystem Functions', () => {
-  /** @todo */
-  describe('handleDetectedPlanes', () => {}) //:: handleDetectedPlanes
-  describe('handleDetectedMeshes', () => {}) //:: handleDetectedMeshes
-}) //:: XRCameraViewSystemFunctions Functions
+  describe('handleDetectedPlanes', () => {
+    /**
+    // @todo
+    it("should not do anything if frame.worldInformation?.detectedPlanes and frame.detectedPlanes are both falsy", () => {})
+    describe("for every entry in the XRDetectedPlaneComponent.detectedPlanesMap list", () => {
+      it(".. should not do anything if detectedPlanes contains the plane entry", () => {})
+      it(".. should call removeEntity for the entity of the entry", () => {})
+      it(".. should delete the entry's plane from the XRDetectedPlaneComponent.detectedPlanesMap list", () => {})
+      it(".. should delete the entry's plane from the XRDetectedPlaneComponent.planesLastChangedTimes list", () => {})
+    })
+    describe("for every plane in the detectedPlanes list", () => {
+      it(".. should call XRDetectedPlaneComponent.foundPlane with the plane if the XRDetectedPlaneComponent.detectedPlanesMap list doesn't contain the plane", () => {})
+      it(`.. should call XRDetectedPlaneComponent.updatePlaneGeometry
+          with the plane and the entity that is tied to it
+          if plane.lastChangedTime is bigger than the time found on the XRDetectedPlaneComponent.planesLastChangedTimes for that plane`, () => {})
+      it(".. should call XRDetectedPlaneComponent.updatePlanePose with the plane and the entity that is tied to it", () => {})
+    })
+    */
+  }) //:: handleDetectedPlanes
+
+  describe('handleDetectedMeshes', () => {
+    /**
+    // @todo
+    it("should not do anything if `@param frame`.detectedMeshes is falsy", () => {})
+    describe("for every entry in the XRDetectedMeshComponent.detectedMeshesMap list", () => {
+      it(".. should not do anything if frame.detectedMeshes contains the mesh", () => {})
+      it("should call removeEntity for the entity of the entry", () => {})
+      it(".. should delete the entry's mesh from the XRDetectedPlaneComponent.detectedMeshesMap list", () => {})
+      it(".. should delete the entry's mesh from the XRDetectedPlaneComponent.meshesLastChangedTimes list", () => {})
+    })
+    describe("for every entry in the XRDetectedMeshComponent.detectedMeshes list", () => {
+      it("should call XRDetectedMeshComponent.foundMesh with the entry's mesh if XRDetectedMeshComponent.detectedMeshesMap list doesn't contain the mesh", () => {})
+      it(`.. should call XRDetectedPlaneComponent.updateMeshGeometry
+          with the mesh and the entity that is tied to it
+          if mesh.lastChangedTime is bigger than the time found on the XRDetectedMeshComponent.meshesLastChangedTimes for that mesh`, () => {})
+      it(".. should call XRDetectedMeshComponent.updateMeshPose with the mesh and the entity that is tied to it", () => {})
+    })
+    */
+  }) //:: handleDetectedMeshes
+}) //:: XRDetectedMeshSystem Functions
