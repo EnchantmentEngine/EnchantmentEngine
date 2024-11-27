@@ -34,12 +34,14 @@ import {
   getComponent,
   getOptionalComponent,
   hasComponent,
+  removeComponent,
   setComponent
 } from '@ir-engine/ecs'
 import { NO_PROXY, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -66,6 +68,7 @@ import {
   ColorManagement,
   DoubleSide,
   FrontSide,
+  Group,
   ImageBitmapLoader,
   ImageLoader,
   InterleavedBuffer,
@@ -128,7 +131,7 @@ import { KHRTextureTransformExtensionComponent, MaterialDefinitionComponent } fr
 // todo make this a state
 const cache = new GLTFRegistry()
 
-const useLoadPrimitives = async (options: GLTFParserOptions, meshIndex: number) => {
+const loadPrimitives = async (options: GLTFParserOptions, meshIndex: number) => {
   // const finalGeometry = useHookstate(null as BufferGeometry | null)
   let finalGeometry: BufferGeometry | null = null
   const json = options.document
@@ -165,7 +168,7 @@ const useLoadPrimitives = async (options: GLTFParserOptions, meshIndex: number) 
   return finalGeometry
 }
 
-const useLoadPrimitive = (options: GLTFParserOptions, meshIndex: number, primitiveIndex: number) => {
+const loadPrimitive = (options: GLTFParserOptions, meshIndex: number, primitiveIndex: number) => {
   // const [result] = useReferencedResource(() => null as null | BufferGeometry, options.url)
   return new Promise<BufferGeometry>((resolve, reject) => {
     const json = options.document
@@ -243,7 +246,7 @@ const useLoadPrimitive = (options: GLTFParserOptions, meshIndex: number, primiti
   })
 }
 
-const useLoadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => {
+const loadAccessor = (options: GLTFParserOptions, accessorIndex?: number) => {
   const json = options.document
 
   let result: BufferAttribute | null = null
@@ -686,7 +689,7 @@ const useLoadMaterial = (
   return result.get(NO_PROXY) as MeshStandardMaterial | null
 }
 
-const useMergeMorphTargets = (options: GLTFParserOptions, nodeIndex: number) => {
+const mergeMorphTargets = (options: GLTFParserOptions, nodeIndex: number) => {
   const json = options.document
   const node = json.nodes![nodeIndex]!
   const mesh = json.meshes![node.mesh!]
@@ -730,7 +733,7 @@ const useMergeMorphTargets = (options: GLTFParserOptions, nodeIndex: number) => 
   return loadedMorphTargets as Record<string, BufferAttribute[]> | null
 }
 
-const useLoadMorphTargets = (options: GLTFParserOptions, targetsList: Record<string, number>[]) => {
+const loadMorphTargets = (options: GLTFParserOptions, targetsList: Record<string, number>[]) => {
   // const result = useHookstate(null as null | Record<string, BufferAttribute[]>)
   let result = null as Record<string, BufferAttribute[]> | null
 
@@ -1017,7 +1020,7 @@ const useLoadImageSource = (
 const getNodeUUID = (node: GLTF.INode, documentID: string, nodeIndex: number) =>
   (node.extensions?.[UUIDComponent.jsonID] as EntityUUID) ?? (`${documentID}-${nodeIndex}` as EntityUUID)
 
-const useLoadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
+const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
   // const result = useHookstate(null as null | AnimationClip)
   let result = null as null | AnimationClip
 
@@ -1305,9 +1308,9 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     const uuid = getNodeUUID(node, options.documentID, i)
     const nodeEntity = UUIDComponent.getOrCreateEntityByUUID(uuid)
     indexMap[i] = nodeEntity
-
     setComponent(nodeEntity, NameComponent, node.name ?? 'Node-' + i)
     setComponent(nodeEntity, TransformComponent)
+    setComponent(nodeEntity, SourceComponent, options.documentID)
     if (node.matrix) {
       const mat4 = new Matrix4().fromArray(node.matrix)
       const position = new Vector3()
@@ -1334,7 +1337,24 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       }
     }
 
-    setComponent(nodeEntity, EntityTreeComponent)
+    //handle legacy ECS embedding
+    const extras = node.extras
+    if (extras) {
+      const data = [...Object.entries(extras)]
+      for (const [key, value] of data) {
+        const parts = key.split('.')
+        if (parts.length > 1) {
+          if (parts[0] === 'xrengine') {
+            if (ComponentJSONIDMap.has(parts[1])) {
+              const Component = ComponentJSONIDMap.get(parts[1])
+              if (!Component) return console.warn('no component found for extension', parts[1])
+              setComponent(nodeEntity, Component)
+              if (Component === ColliderComponent) removeComponent(nodeEntity, VisibleComponent)
+            }
+          }
+        }
+      }
+    }
   }
 
   for (let i = 0; i < nodes.length; i++) {
@@ -1353,6 +1373,9 @@ const loadGLTF = async (options: GLTFParserOptions) => {
 
     if (node.mesh !== undefined) {
       if (!document.meshes) throw new Error('GLTFLoader: Referencing undefined mesh array')
+
+      if (!hasComponent(nodeEntity, ColliderComponent)) setComponent(nodeEntity, VisibleComponent)
+
       const meshDef = document.meshes[node.mesh]
 
       const isSinglePrimitive = meshDef.primitives.length === 1
@@ -1374,7 +1397,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       }
 
       setComponent(nodeEntity, MeshComponent, mesh)
-      addObjectToGroup(entity, mesh)
+      addObjectToGroup(nodeEntity, mesh)
       proxifyParentChildRelationships(mesh)
       mesh.name = node.name ?? 'Node-' + i
 
@@ -1421,9 +1444,9 @@ const loadGLTF = async (options: GLTFParserOptions) => {
         }
       }
     } else {
-      const obj3d = new Object3D()
+      const obj3d = new Group()
       setComponent(nodeEntity, Object3DComponent, obj3d)
-      addObjectToGroup(entity, obj3d)
+      addObjectToGroup(nodeEntity, obj3d)
       proxifyParentChildRelationships(obj3d)
     }
   }
@@ -1464,18 +1487,18 @@ const loadGLTF = async (options: GLTFParserOptions) => {
 
 export const GLTFLoaderFunctions = {
   computeBounds,
-  useLoadPrimitive,
-  useLoadPrimitives,
-  useLoadAccessor,
+  useLoadPrimitive: loadPrimitive,
+  useLoadPrimitives: loadPrimitives,
+  useLoadAccessor: loadAccessor,
   useLoadBufferView,
   useLoadBuffer,
   useLoadMaterial,
-  useLoadMorphTargets,
-  useMergeMorphTargets,
+  useLoadMorphTargets: loadMorphTargets,
+  useMergeMorphTargets: mergeMorphTargets,
   useAssignTexture,
   useLoadTexture,
   useLoadImageSource,
   useLoadTextureImage,
-  useLoadAnimation,
+  useLoadAnimation: loadAnimation,
   loadGLTF
 }
