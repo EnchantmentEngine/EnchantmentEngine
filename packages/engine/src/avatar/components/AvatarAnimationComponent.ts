@@ -51,7 +51,6 @@ import {
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -62,7 +61,7 @@ import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLa
 import { proxifyParentChildRelationships } from '@ir-engine/spatial/src/renderer/functions/proxifyParentChildRelationships'
 import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { GLTFDocumentState } from '../../gltf/GLTFDocumentState'
+// import { GLTFDocumentState } from '../../gltf/GLTFDocumentState'
 import { addError, removeError } from '../../scene/functions/ErrorFunctions'
 import { hipsRegex, mixamoVRMRigMap } from '../AvatarBoneMatching'
 import { setAvatarAnimations, setupAvatarProportions } from '../functions/avatarFunctions'
@@ -141,7 +140,8 @@ const _rightHandPos = new Vector3(),
 
 export default function createVRM(rootEntity: Entity) {
   const documentID = GLTFComponent.getInstanceID(rootEntity)
-  const gltf = getState(GLTFDocumentState)[documentID]
+  // const gltf = getState(GLTFDocumentState)[documentID]
+  const gltf = getComponent(rootEntity, GLTFComponent).document!
 
   //formats an object of human bones to be used in the VRM constructor
   const formatHumanBones = (humanBones: { [key: string]: { node: number } }) => {

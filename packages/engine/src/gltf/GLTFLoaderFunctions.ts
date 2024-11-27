@@ -1273,6 +1273,17 @@ const _createCubicSplineTrackInterpolant = (track: KeyframeTrack) => {
   track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true
 }
 
+const isBoneNode = (json: GLTF.IGLTF, nodeIndex: number) => {
+  const skinDefs = json.skins || []
+  for (let skinIndex = 0, skinLength = skinDefs.length; skinIndex < skinLength; skinIndex++) {
+    const joints = skinDefs[skinIndex].joints
+    for (let i = 0, il = joints.length; i < il; i++) {
+      if (joints[i] === nodeIndex) return true
+    }
+  }
+  return false
+}
+
 const loadGLTF = async (options: GLTFParserOptions) => {
   const { entity, document } = options
 
@@ -1443,6 +1454,13 @@ const loadGLTF = async (options: GLTFParserOptions) => {
           }
         }
       }
+    } else if (isBoneNode(gltfComponent.document!, i)) {
+      const bone = new Bone()
+      bone.name = node.name ?? 'Bone-' + i
+      setComponent(nodeEntity, BoneComponent, bone)
+      addObjectToGroup(nodeEntity, bone)
+      proxifyParentChildRelationships(bone)
+      setComponent(nodeEntity, Object3DComponent, bone)
     } else {
       const obj3d = new Group()
       setComponent(nodeEntity, Object3DComponent, obj3d)
@@ -1475,6 +1493,51 @@ const loadGLTF = async (options: GLTFParserOptions) => {
   } else {
     const clips = getComponent(entity, AnimationComponent).animations
     setComponent(entity, AnimationComponent, { animations: [...clips, ...animationClips] })
+  }
+
+  //initialize skins
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+
+    if (node.skin === undefined) continue
+
+    const nodeEntity = indexMap[i]
+    const skinnedMeshComponent = getComponent(nodeEntity, SkinnedMeshComponent)
+    const skin = document.skins![node.skin!]!
+
+    const inverseBindMatrices = GLTFLoaderFunctions.useLoadAccessor(options, skin.inverseBindMatrices)
+    if (!inverseBindMatrices) throw new Error('GLTFLoader: Inverse bind matrices not found')
+    const jointNodeUUIDs = skin.joints.map((joint) =>
+      getNodeUUID(nodes[joint], options.documentID, joint)
+    ) as EntityUUID[]
+    const jointEntities = jointNodeUUIDs.map((uuid) => UUIDComponent.getEntityByUUID(uuid))
+    const jointBones = jointEntities.map((entity) => getComponent(entity, BoneComponent))
+
+    const bones: Bone[] = []
+    const boneInverses: Matrix4[] = []
+    for (let i = 0, il = jointBones.length; i < il; i++) {
+      const jointNode = jointBones[i]
+
+      if (jointNode) {
+        bones.push(jointNode)
+
+        const mat = new Matrix4()
+
+        if (inverseBindMatrices !== null) {
+          mat.fromArray(inverseBindMatrices.array, i * 16)
+        }
+
+        boneInverses.push(mat)
+      } else {
+        // console.warn('THREE.GLTFLoader: Joint "%s" could not be found.', skinDef.joints[i])
+      }
+    }
+
+    const skeleton = new Skeleton(bones, boneInverses)
+    skinnedMeshComponent.skeleton = skeleton
+
+    const url = options.url
+    ResourceManager.addReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
   }
 
   //parent root nodes to gltf entity

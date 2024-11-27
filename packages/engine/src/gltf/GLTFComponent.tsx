@@ -230,7 +230,18 @@ export const GLTFComponent = defineComponent({
       if (!gltfComponent.document.value) return
       if (gltfLoaded.value) return
       const document = gltfComponent.document.value
-      if (document.buffers && gltfComponent.buffers.length !== document.buffers.length) return
+
+      let actualBuffersUsed: Set<number> = new Set()
+      for (const bufferView of document.bufferViews ?? []) {
+        const meshoptExt = bufferView.extensions?.['EXT_meshopt_compression'] ?? (null as any)
+        if (meshoptExt) {
+          actualBuffersUsed.add(meshoptExt.buffer)
+        } else {
+          actualBuffersUsed.add(bufferView.buffer)
+        }
+      }
+
+      if (document.buffers && gltfComponent.buffers.length !== actualBuffersUsed.size) return
       if (document.images && gltfComponent.images.length !== document.images.length) return
       if (document.bufferViews && gltfComponent.bufferViews.length !== document.bufferViews.length) return
       console.log('All external resources loaded for gltf document', sourceID)
@@ -304,6 +315,7 @@ const BufferReactor = (props: { entity: Entity; bufferIndex: number }) => {
     const gltfComponent = getMutableComponent(entity, GLTFComponent)
     gltfComponent.buffers.set((prev) => {
       prev![bufferIndex] = buffer
+      console.log('setting buffer', bufferIndex, 'for entity', entity)
       return prev
     })
   }, [buffer])
