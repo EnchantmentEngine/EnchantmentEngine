@@ -384,7 +384,45 @@ describe('XRState', () => {
     })
   }) //:: XRState.setTrackingSpace
 
-  /** @todo */
-  describe('useMovementControlsEnabled', () => {}) //:: XRState.useMovementControlsEnabled
-  describe('useCameraAttachedToAvatar', () => {}) //:: XRState.useCameraAttachedToAvatar
+  describe('useMovementControlsEnabled', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    /**
+    // @todo
+    it("should return true if XRState.sessionMode is not 'immersive-ar' and XRState.sessionActive is true", () => {})
+    it('should always return true when XRState.sessionActive is false', async () => {})
+    it("should return true if XRState.sceneScale is not 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", () => {})
+    it("should return false if XRState.sceneScale is 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", () => {})
+    */
+  }) //:: XRState.useMovementControlsEnabled
+
+  describe('useCameraAttachedToAvatar', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    /**
+    // @todo
+    it('should return false when XRState.session is falsy', async () => {})
+    it("should return false when XRState.scenePlacementMode is 'placing'", () => {})
+    it("should return true when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is 1", () => {})
+    it("should return false when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is not 1", () => {})
+    it("should return true when XRState.avatarCameraMode is 'attached'", () => {})
+    it("should return false when XRState.avatarCameraMode is not 'attached'", () => {})
+    */
+  }) //:: XRState.useCameraAttachedToAvatar
 }) //:: XRState
