@@ -40,6 +40,7 @@ import { GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { nodeIsChild } from '@ir-engine/engine/src/gltf/gltfUtils'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { t } from 'i18next'
 import { CopyPasteFunctions } from '../../functions/CopyPasteFunctions'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
@@ -236,4 +237,30 @@ export function gltfHierarchyTreeWalker(
   flattenTree(outArray, tree)
 
   return tree
+}
+
+type WalkerEntry = {
+  entity: Entity
+  depth: number
+  lastChild: boolean
+}
+
+export function ECSHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeType[] {
+  const result: HierarchyTreeNodeType[] = []
+  const frontier: WalkerEntry[] = [{ entity: rootEntity, depth: 0, lastChild: true }]
+  while (frontier.length > 0) {
+    const { entity, depth, lastChild } = frontier.pop()!
+    const eTree = getComponent(entity, EntityTreeComponent)
+    if (!eTree) continue
+    const childIndex = eTree.childIndex ?? 0
+    const children = eTree.children
+    const isLeaf = !children || children.length === 0
+    result.push({ entity, depth, childIndex, lastChild, isLeaf, isRendered: true })
+    if (children) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        frontier.push({ entity: children[i], depth: depth + 1, lastChild: i === 0 })
+      }
+    }
+  }
+  return result
 }

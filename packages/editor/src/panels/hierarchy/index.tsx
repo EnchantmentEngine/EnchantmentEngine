@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
-import { GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
@@ -65,8 +64,8 @@ function HierarchyPanelWrapper() {
 }
 
 function HierarchyPanel({ sourceId }: { sourceId: string }) {
-  const index = GLTFSnapshotState.useSnapshotIndex(sourceId)
-  if (index === undefined) return null
+  // const index = GLTFSnapshotState.useSnapshotIndex(sourceId)
+  // if (index === undefined) return null
 
   return (
     <HierarchyPanelProvider>
