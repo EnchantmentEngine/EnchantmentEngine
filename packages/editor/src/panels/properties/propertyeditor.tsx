@@ -25,11 +25,10 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { calculateAndApplyYOffset } from '@ir-engine/common/src/utils/offsets'
 import { Entity, EntityUUID, UUIDComponent } from '@ir-engine/ecs'
-import { Component, ComponentJSONIDMap, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Component, getAllComponents, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentEditors'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
-import { GLTFNodeState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { NO_PROXY, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
@@ -64,11 +63,16 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
 
   const entity = UUIDComponent.getEntityByUUID(entityUUID)
   const componentEditors = useHookstate(getMutableState(ComponentEditorsState)).get(NO_PROXY)
-  const node = useHookstate(GLTFNodeState.getMutableNode(entity))
+  // const node = useHookstate(GLTFNodeState.getMutableNode(entity))
   const components: Component[] = []
-  for (const jsonID of Object.keys(node.extensions.value!)) {
-    const component = ComponentJSONIDMap.get(jsonID)!
-    if (!componentEditors[component?.name]) continue
+  // for (const jsonID of Object.keys(node.extensions.value!)) {
+  //   const component = ComponentJSONIDMap.get(jsonID)!
+  //   if (!componentEditors[component?.name]) continue
+  //   components.push(component)
+  // }
+  const entityComponents = getAllComponents(entity)
+  for (const component of entityComponents) {
+    if (!componentEditors[component.name ?? '']) continue
     components.push(component)
   }
 
@@ -129,8 +133,8 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
 
 const NodeEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multiEdit: boolean }) => {
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
-  const node = GLTFNodeState.useMutableNode(entity)
-  if (!node) return null
+  // const node = GLTFNodeState.useMutableNode(entity)
+  // if (!node) return null
   return <EntityEditor entityUUID={entityUUID} multiEdit={multiEdit} />
 }
 
