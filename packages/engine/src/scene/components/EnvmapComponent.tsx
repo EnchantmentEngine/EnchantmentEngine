@@ -95,7 +95,6 @@ export const EnvmapComponent = defineComponent({
   reactor: function () {
     const entity = useEntityContext()
     if (!isClient) return null
-    return null
 
     const component = useComponent(entity, EnvmapComponent)
     const textureSource =
