@@ -1414,20 +1414,20 @@ const loadGLTF = async (options: GLTFParserOptions) => {
 
       const url = options.url
       ResourceManager.addReferencedAsset(url, mesh, ResourceType.Mesh)
-
+      const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
       for (let primIndex = 0; primIndex < meshDef.primitives.length; primIndex++) {
         const primitive = meshDef.primitives[primIndex]
         //handle material instances
         const materialUUID = (options.documentID + '-material-' + primitive.material!) as EntityUUID
 
-        const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
+        // const materialInstance: ComponentType<typeof MaterialInstanceComponent> =
+        //   getOptionalComponent(nodeEntity, MaterialInstanceComponent) ?? { uuid: [] }
+        //{ uuid: [] }
         if (isSinglePrimitive) {
-          materialInstance.uuid.push(materialUUID)
+          materialInstance.uuid = [materialUUID]
         } else {
           materialInstance.uuid[primitive.material!] = materialUUID
         }
-        setComponent(nodeEntity, MaterialInstanceComponent, materialInstance)
-
         //handle primitive extensions
         const extensions = primitive.extensions || {}
         for (const extensionName in extensions) {
@@ -1436,6 +1436,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
           setComponent(nodeEntity, Component, extensions[extensionName])
         }
       }
+      setComponent(nodeEntity, MaterialInstanceComponent, materialInstance)
 
       //handle morph targets
       const loadedMorphTargets = GLTFLoaderFunctions.useMergeMorphTargets(options, i)

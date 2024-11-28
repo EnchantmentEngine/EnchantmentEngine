@@ -58,7 +58,7 @@ import { SelectionState } from '../../services/SelectionServices'
 import {
   copyNodes,
   duplicateNode,
-  ECSHierarchyTreeWalker,
+  ecsHierarchyTreeWalker,
   groupNodes,
   HierarchyTreeNodeType,
   pasteNodes,
@@ -128,21 +128,21 @@ const HierarchySnapshotReactor = (props: {
   }, [hierarchyTreeState.search.query, hierarchyNodes])
 
   useEffect(() => {
-    if (!hierarchyTreeState.expandedNodes.value[sourceId]) {
-      hierarchyTreeState.expandedNodes.set({ [sourceId]: { [rootEntity]: true } })
-    }
+    // if (!hierarchyTreeState.expandedNodes.value[sourceId]) {
+    hierarchyTreeState.expandedNodes.set({ [sourceId]: { [rootEntity]: true } })
+    // }
   }, [sourceId])
 
   const sourceQuery = useQuery([SourceComponent])
   useEffect(() => {
     // const nodes = gltfHierarchyTreeWalker(rootEntity, gltfSnapshot.nodes.value as GLTF.INode[], showModelChildren)
-    const nodes = ECSHierarchyTreeWalker(rootEntity)
+    const nodes = ecsHierarchyTreeWalker(rootEntity)
 
     if (didHierarchyChange(hierarchyNodes.value as HierarchyTreeNodeType[], nodes)) {
-      hierarchyNodes.set(nodes.filter((node) => entityExists(node.entity)))
+      hierarchyNodes.set(nodes) //.filter((node) => entityExists(node.entity)))
     }
   }, [
-    hierarchyTreeState.expandedNodes.value[sourceId], // extra dep for rebuilding tree for expanded/collapsed nodes
+    hierarchyTreeState.expandedNodes[sourceId], // extra dep for rebuilding tree for expanded/collapsed nodes
     // snapshotIndex,
     // gltfState,
     // gltfSnapshot,

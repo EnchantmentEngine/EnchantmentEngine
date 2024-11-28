@@ -243,22 +243,34 @@ type WalkerEntry = {
   entity: Entity
   depth: number
   lastChild: boolean
+  isRendered: boolean
 }
 
-export function ECSHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeType[] {
+export function ecsHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeType[] {
   const result: HierarchyTreeNodeType[] = []
-  const frontier: WalkerEntry[] = [{ entity: rootEntity, depth: 0, lastChild: true }]
+  const frontier: WalkerEntry[] = [{ entity: rootEntity, depth: 0, lastChild: true, isRendered: true }]
   while (frontier.length > 0) {
-    const { entity, depth, lastChild } = frontier.pop()!
+    const { entity, depth, lastChild, isRendered: originalIsRendered } = frontier.pop()!
     const eTree = getComponent(entity, EntityTreeComponent)
     if (!eTree) continue
     const childIndex = eTree.childIndex ?? 0
     const children = eTree.children
     const isLeaf = !children || children.length === 0
-    result.push({ entity, depth, childIndex, lastChild, isLeaf, isRendered: true })
+    const sceneID = getComponent(entity, SourceComponent)
+    const isCollapsed = !getState(HierarchyTreeState).expandedNodes[sceneID]?.[entity]
+    const isRendered = originalIsRendered && !isCollapsed
+    result.push({
+      entity,
+      depth,
+      childIndex,
+      lastChild,
+      isLeaf,
+      isCollapsed,
+      isRendered: originalIsRendered
+    })
     if (children) {
       for (let i = children.length - 1; i >= 0; i--) {
-        frontier.push({ entity: children[i], depth: depth + 1, lastChild: i === 0 })
+        frontier.push({ entity: children[i], depth: depth + 1, lastChild: i === 0, isRendered })
       }
     }
   }
