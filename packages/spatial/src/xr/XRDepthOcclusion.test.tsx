@@ -23,11 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { Material, Matrix4, MeshBasicMaterial, Shader, Vector2 } from 'three'
+import { DepthDataTexture } from './DepthDataTexture'
 import { XRDepthOcclusion, XRDepthOcclusionSystem } from './XRDepthOcclusion'
 import { XRSystem } from './XRSystem'
 
@@ -45,28 +47,278 @@ describe('XRDepthOcclusion', () => {
   }) //:: XRDepthOcclusionMaterials
 
   describe('addDepthOBCPlugin,', () => {
-    /**
-    // @todo
-    it("should not do anything if `@param material` is falsy", () => {})
-    it("should set `@param material`.userData to an empty object if its falsy", () => {})
-    it("should exit early if `@param material`.userData.DepthOcclusionPlugin", () => {})
-    describe("`@param material`.userData.DepthOcclusionPlugin", () => {
-      it("should set .id to the expected default value", () => {})
-      it("should set .uniforms to the expected default value", () => {})
-      describe("compile", () => {
-        it("should not do anything if mat.userData.DepthOcclusionPlugin is falsy", () => {})
-        describe("for all uniforms of DepthOcclusionPlugin", () => {
-          it(".. should add all `@param material`.userData.DepthOcclusionPlugin.uniforms to `@param shader`.uniforms", () => {})
+    it('should not throw an error when accessing `@param material`.userData when its value is falsy (initializes it to an empty object)', () => {
+      const Initial = undefined
+      // Set the data as expected
+      const material = new MeshBasicMaterial()
+      material.userData = Initial
+      // Sanity check before running
+      expect(material.userData).toBeFalsy()
+      const before = material.userData
+      expect(before).toEqual(Initial)
+      // Run and Check the result
+      expect(() => XRDepthOcclusion.addDepthOBCPlugin(material, {} as DepthDataTexture)).not.toThrow()
+      const result = material.userData
+      expect(result).not.toEqual(Initial)
+    })
+
+    it('should not error if `@param material` is falsy', () => {
+      // Set the data as expected
+      const material = null as unknown as Material
+      // Sanity check before running
+      expect(material).toBeFalsy()
+      // Run and Check the result
+      expect(() => XRDepthOcclusion.addDepthOBCPlugin(material, {} as DepthDataTexture)).not.toThrow()
+    })
+
+    it('should exit early if `@param material`.userData.DepthOcclusionPlugin is truthy', () => {
+      const Initial = 'InitialID-ShouldNotChange'
+      // Set the data as expected
+      const material = { userData: { DepthOcclusionPlugin: { id: Initial } } } as Material
+      // Sanity check before running
+      expect(material).toBeTruthy()
+      expect(material.userData).toBeTruthy()
+      expect(material.userData.DepthOcclusionPlugin).toBeTruthy()
+      // Run and Check the result
+      XRDepthOcclusion.addDepthOBCPlugin(material, {} as DepthDataTexture)
+      const result = material.userData.DepthOcclusionPlugin.id
+      expect(result).toBe(Initial)
+    })
+
+    describe('`@param material`.userData.DepthOcclusionPlugin', () => {
+      it('should set .id to the expected default value', () => {
+        const Expected = 'DepthOcclusionPlugin'
+        // Set the data as expected
+        const material = { userData: {} } as Material
+        const depthMap = {} as DepthDataTexture
+        // Sanity check before running
+        expect(material).toBeTruthy()
+        expect(material.userData).toBeTruthy()
+        expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+        // Run and Check the result
+        XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+        const result = material.userData.DepthOcclusionPlugin.id
+        expect(result).toBe(Expected)
+      })
+
+      it('should set .uniforms to the expected default value', () => {
+        // Set the data as expected
+        const material = { userData: {} } as Material
+        const depthMap = {} as DepthDataTexture
+        const Expected = {
+          uDepthTexture: { value: depthMap },
+          uResolution: { value: new Vector2() },
+          uUvTransform: { value: new Matrix4() },
+          uOcclusionEnabled: { value: true },
+          uRawValueToMeters: { value: 0.0 }
+        }
+        // Sanity check before running
+        expect(material).toBeTruthy()
+        expect(material.userData).toBeTruthy()
+        expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+        // Run and Check the result
+        XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+        const result = material.userData.DepthOcclusionPlugin.uniforms
+        assert(result)
+        expect(result).toEqual(Expected)
+      })
+
+      describe('compile', () => {
+        it('should set `@param material`.shader to `@param shader`', () => {
+          // @ts-expect-error Coerce our mocked shader into the shape of a Threejs shader
+          const Expected = { uniforms: { someMockedUniform: 42 } } as Shader
+          const Initial = {} as Shader
+          // Set the data as expected
+          const material = { userData: {}, shader: Initial } as Material
+          const depthMap = {} as DepthDataTexture
+          const shader = Expected
+          // Sanity check before running
+          expect(material).toBeTruthy()
+          expect(material.userData).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+          expect(material.userData.DepthOcclusionPlugin?.compile).toBeFalsy()
+          const before = material.shader
+          expect(before).toEqual(Initial)
+          expect(before).not.toEqual(Expected)
+          // Run the pre-process and Sanity check its results
+          XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+          expect(material.userData.DepthOcclusionPlugin).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin.compile).toBeTruthy()
+          // Run and Check the result
+          material.userData.DepthOcclusionPlugin.compile(shader)
+          const result = material.shader
+          expect(result).not.toEqual(Initial)
+          expect(result).toEqual(Expected)
         })
-        it("should set `@param material`.shader to `@param shader`", () => {})
-        it("should set `@param shader`.fragmentShader to the expected value", () => {})
-        it("should set `@param shader`.vertexShader to the expected value", () => {})
+
+        // @note
+        // Checks for this line at the start
+        //   if (!mat.userData.DepthOcclusionPlugin) return
+        // The compile function is defined inside the very object that contains it
+        // This branch of the code can never be hit
+        it.skip('should not do anything if mat.userData.DepthOcclusionPlugin is falsy', () => {
+          // @ts-expect-error Coerce our mocked shader into the shape of a Threejs shader
+          const Incorrect = { uniforms: { someMockedUniform: 42 } } as Shader
+          const Initial = {} as Shader
+          // Set the data as expected
+          const material = { userData: {}, shader: Initial } as Material
+          const depthMap = {} as DepthDataTexture
+          const shader = Incorrect
+          // Sanity check before running
+          expect(material).toBeTruthy()
+          expect(material.userData).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+          expect(material.userData.DepthOcclusionPlugin?.compile).toBeFalsy()
+          const before = material.shader
+          expect(before).toEqual(Initial)
+          // Run the pre-process and Sanity check its results
+          XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+          expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+          expect(material.userData.DepthOcclusionPlugin.compile).toBeTruthy()
+          // Run and Check the result
+          material.userData.DepthOcclusionPlugin.compile(shader)
+          const result = material.shader
+          expect(result).toEqual(Initial)
+        })
+
+        it('should set `@param shader`.fragmentShader source code', () => {
+          const Initial = undefined
+          // Set the data as expected
+          const material = { userData: {}, shader: {} as Shader } as Material
+          const depthMap = {} as DepthDataTexture
+          // @ts-expect-error Coerce our mocked shader into the shape of a Threejs shader
+          const shader = { uniforms: { someMockedUniform: 42 } } as Shader
+          // Sanity check before running
+          expect(material).toBeTruthy()
+          expect(material.userData).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+          expect(material.userData.DepthOcclusionPlugin?.compile).toBeFalsy()
+          const before = material.shader.fragmentShader
+          expect(before).toBe(Initial)
+          // Run the pre-process and Sanity check its results
+          XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+          expect(material.userData.DepthOcclusionPlugin).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin.compile).toBeTruthy()
+          // Run and Check the result
+          material.userData.DepthOcclusionPlugin.compile(shader)
+          const result = material.shader.fragmentShader
+          expect(result).not.toEqual(Initial)
+        })
+
+        it('should set `@param shader`.vertexShader source code', () => {
+          const Initial = undefined
+          // Set the data as expected
+          const material = { userData: {}, shader: {} as Shader } as Material
+          const depthMap = {} as DepthDataTexture
+          // @ts-expect-error Coerce our mocked shader into the shape of a Threejs shader
+          const shader = { uniforms: { someMockedUniform: 42 } } as Shader
+          // Sanity check before running
+          expect(material).toBeTruthy()
+          expect(material.userData).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+          expect(material.userData.DepthOcclusionPlugin?.compile).toBeFalsy()
+          const before = material.shader.vertexShader
+          expect(before).toBe(Initial)
+          // Run the pre-process and Sanity check its results
+          XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+          expect(material.userData.DepthOcclusionPlugin).toBeTruthy()
+          expect(material.userData.DepthOcclusionPlugin.compile).toBeTruthy()
+          // Run and Check the result
+          material.userData.DepthOcclusionPlugin.compile(shader)
+          const result = material.shader.vertexShader
+          expect(result).not.toEqual(Initial)
+        })
+
+        describe('for all uniforms of DepthOcclusionPlugin', () => {
+          it('.. should add all `@param material`.userData.DepthOcclusionPlugin.uniforms to `@param shader`.uniforms', () => {
+            const Expected = 5
+            const Initial = undefined
+            // Set the data as expected
+            const material = { userData: {}, shader: {} as Shader } as Material
+            const depthMap = {} as DepthDataTexture
+            // @ts-expect-error Coerce our mocked shader into the shape of a Threejs shader
+            const shader = { uniforms: { someMockedUniform: 42 } } as Shader
+            // Sanity check before running
+            expect(material).toBeTruthy()
+            expect(material.userData).toBeTruthy()
+            expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+            expect(material.userData.DepthOcclusionPlugin?.compile).toBeFalsy()
+            const before = material.userData.DepthOcclusionPlugin?.uniforms
+            expect(before).toBe(Initial)
+            expect(before).not.toBe(Expected)
+            // Run the pre-process and Sanity check its results
+            XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+            expect(material.userData.DepthOcclusionPlugin).toBeTruthy()
+            expect(material.userData.DepthOcclusionPlugin.compile).toBeTruthy()
+            // Run and Check the result
+            material.userData.DepthOcclusionPlugin.compile(shader)
+            const result = Object.entries(material.userData.DepthOcclusionPlugin.uniforms).length
+            expect(result).not.toEqual(Initial)
+            expect(result).toEqual(Expected)
+          })
+        })
       }) //:: DepthOcclusionPlugin.compile
     }) //:: DepthOcclusionPlugin
-    it("should call addOBCPlugin with `@param material` and `@param material`.userData.DepthOcclusionPlugin", () => {})
-    it("should set `@param material`.needsUpdate to true", () => {})
-    it("should add the `@param material` to the XRDepthOcclusionMaterials list", () => {})
-    */
+
+    it('should call addOBCPlugin with `@param material` and `@param material`.userData.DepthOcclusionPlugin', () => {
+      const Initial = undefined
+      // Set the data as expected
+      const material = { userData: {} } as Material
+      const depthMap = {} as DepthDataTexture
+      // Sanity check before running
+      expect(material).toBeTruthy()
+      expect(material.userData).toBeTruthy()
+      expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+      const before = material.onBeforeCompile
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      const result = material.onBeforeCompile
+      expect(result).not.toBe(Initial)
+      expect(result).toEqual(material.userData.DepthOcclusionPlugin)
+    })
+
+    it('should set `@param material`.needsUpdate to true', () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      const material = { userData: {}, needsUpdate: Initial } as Material
+      const depthMap = {} as DepthDataTexture
+      // Sanity check before running
+      expect(material).toBeTruthy()
+      expect(material.userData).toBeTruthy()
+      expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+      const before = material.needsUpdate
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      const result = material.needsUpdate
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should add the `@param material` to the XRDepthOcclusionMaterials list', () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      const material = { userData: {} } as Material
+      const depthMap = {} as DepthDataTexture
+      // Sanity check before running
+      expect(material).toBeTruthy()
+      expect(material.userData).toBeTruthy()
+      expect(material.userData.DepthOcclusionPlugin).toBeFalsy()
+      // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+      const before = XRDepthOcclusion.XRDepthOcclusionMaterials.includes(material)
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+      const result = XRDepthOcclusion.XRDepthOcclusionMaterials.includes(material)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
   }) //:: addDepthOBCPlugin
 
   describe('removeDepthOBCPlugin,', () => {
