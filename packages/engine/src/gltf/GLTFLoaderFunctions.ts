@@ -55,7 +55,7 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { ResourceManager, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { useReferencedResource } from '@ir-engine/spatial/src/resources/resourceHooks'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { EntityTreeComponent, traverseEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { useEffect } from 'react'
 import {
   AnimationClip,
@@ -68,7 +68,6 @@ import {
   ColorManagement,
   DoubleSide,
   FrontSide,
-  Group,
   ImageBitmapLoader,
   ImageLoader,
   InterleavedBuffer,
@@ -1054,6 +1053,7 @@ const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
       i,
       {
         nodes: null as null | Mesh | Bone | Object3D,
+        entity: null as null | Entity,
         inputAccessors: null as null | BufferAttribute,
         outputAccessors: null as null | BufferAttribute,
         samplers: animationDef.samplers[channel.sampler],
@@ -1106,6 +1106,8 @@ const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
     // }, [outputAccessor])
 
     channelData[i].outputAccessors = outputAccessor ?? null
+
+    channelData[i].entity = targetNodeEntity
   }
 
   // useEffect(() => {
@@ -1121,22 +1123,24 @@ const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
     const outputAccessors = values.map((data) => data.outputAccessors) as BufferAttribute[]
     const samplers = values.map((data) => data.samplers) as GLTF.IAnimationSampler[]
     const targets = values.map((data) => data.targets) as GLTF.IAnimationChannelTarget[]
+    const entities = values.map((data) => data.entity) as Entity[]
 
     const tracks = [] as any[] // todo
-    if (animationName === 'Sphere') console.log(nodes)
     for (let i = 0, il = nodes.length; i < il; i++) {
       const node = nodes[i] as Mesh | SkinnedMesh
       const inputAccessor = inputAccessors[i]
       const outputAccessor = outputAccessors[i]
       const sampler = samplers[i]
       const target = targets[i]
-      if (!node || !outputAccessor || !inputAccessor) continue
+      const entity = entities[i]
+
+      if (!(node || entity) || !outputAccessor || !inputAccessor) continue
 
       if (node.updateMatrix) {
         node.updateMatrix()
       }
 
-      const createdTracks = _createAnimationTracks(node, inputAccessor, outputAccessor, sampler, target)
+      const createdTracks = _createAnimationTracks(entity, inputAccessor, outputAccessor, sampler, target)
 
       if (createdTracks) {
         for (let k = 0; k < createdTracks.length; k++) {
@@ -1162,7 +1166,7 @@ const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
 }
 
 const _createAnimationTracks = (
-  node: Mesh | SkinnedMesh,
+  node: Entity,
   inputAccessor: BufferAttribute,
   outputAccessor: BufferAttribute,
   sampler: GLTF.IAnimationSampler,
@@ -1170,15 +1174,16 @@ const _createAnimationTracks = (
 ) => {
   const tracks = [] as any[] // todo
 
-  const targetName = node.name
+  const targetName = getComponent(node, UUIDComponent)
   if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
 
   if (PATH_PROPERTIES[target.path] === PATH_PROPERTIES.weights) {
-    node.traverse(function (object: Mesh | SkinnedMesh) {
+    traverseEntityNode(node, (entity) => {
+      const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(object.name)
+        targetNames.push(getComponent(entity, UUIDComponent))
       }
     })
   } else {
@@ -1323,7 +1328,8 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     const nodeEntity = UUIDComponent.getOrCreateEntityByUUID(uuid)
     indexMap[i] = nodeEntity
     generatedEntities.push(nodeEntity)
-    setComponent(nodeEntity, NameComponent, node.name ?? 'Node-' + i)
+    const nodeName = node.name ?? 'Node-' + i
+    setComponent(entity, NameComponent, nodeName)
     setComponent(nodeEntity, TransformComponent)
     setComponent(nodeEntity, SourceComponent, options.documentID)
     if (node.matrix) {
@@ -1414,6 +1420,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       setComponent(nodeEntity, MeshComponent, mesh)
       addObjectToGroup(nodeEntity, mesh)
       proxifyParentChildRelationships(mesh)
+
       mesh.name = node.name ?? 'Node-' + i
 
       const url = options.url
@@ -1462,16 +1469,17 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       }
     } else if (isBoneNode(gltfComponent.document!, i)) {
       const bone = new Bone()
-      bone.name = node.name ?? 'Bone-' + i
+      bone.name = node.name ?? 'Node-' + i
       setComponent(nodeEntity, BoneComponent, bone)
       addObjectToGroup(nodeEntity, bone)
       proxifyParentChildRelationships(bone)
       setComponent(nodeEntity, Object3DComponent, bone)
     } else {
-      const obj3d = new Group()
-      setComponent(nodeEntity, Object3DComponent, obj3d)
+      const obj3d = new Object3D()
+      obj3d.name = node.name ?? 'Node-' + i
       addObjectToGroup(nodeEntity, obj3d)
       proxifyParentChildRelationships(obj3d)
+      setComponent(nodeEntity, Object3DComponent, obj3d)
     }
   }
 
