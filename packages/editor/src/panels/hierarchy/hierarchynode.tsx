@@ -49,7 +49,7 @@ import { getMutableState, getState, none, useHookstate, useMutableState, useStat
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
@@ -315,7 +315,7 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
     } else {
       EditorControlFunctions.addOrRemoveComponent([entity], VisibleComponent, true)
     }
-    setVisibleComponent(entity, !hasComponent(entity, VisibleComponent))
+    // setVisibleComponent(entity, !hasComponent(entity, VisibleComponent))
   }
   const isModelRoot = hasComponent(entity, GLTFComponent)
   const isModified = isModelRoot && !!getState(GLTFModifiedState)[GLTFComponent.getInstanceID(entity)]

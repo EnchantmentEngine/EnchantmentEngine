@@ -256,7 +256,7 @@ export function ecsHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeTyp
     const childIndex = eTree.childIndex ?? 0
     const children = eTree.children
     const isLeaf = !children || children.length === 0
-    const sceneID = getComponent(entity, SourceComponent)
+    const sceneID = getComponent(rootEntity, SourceComponent)
     const isCollapsed = !getState(HierarchyTreeState).expandedNodes[sceneID]?.[entity]
     const isRendered = originalIsRendered && !isCollapsed
     result.push({

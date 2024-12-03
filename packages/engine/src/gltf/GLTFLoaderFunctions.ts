@@ -1314,11 +1314,15 @@ const loadGLTF = async (options: GLTFParserOptions) => {
   const nodes = document.nodes || []
 
   const indexMap: Record<number, Entity> = {}
+
+  const generatedEntities: Entity[] = []
+
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
     const uuid = getNodeUUID(node, options.documentID, i)
     const nodeEntity = UUIDComponent.getOrCreateEntityByUUID(uuid)
     indexMap[i] = nodeEntity
+    generatedEntities.push(nodeEntity)
     setComponent(nodeEntity, NameComponent, node.name ?? 'Node-' + i)
     setComponent(nodeEntity, TransformComponent)
     setComponent(nodeEntity, SourceComponent, options.documentID)
@@ -1435,8 +1439,9 @@ const loadGLTF = async (options: GLTFParserOptions) => {
           if (!Component) continue
           setComponent(nodeEntity, Component, extensions[extensionName])
         }
+        //@todo: weird that this needs to be set repeatedly in the for loop for proper instantiation
+        setComponent(nodeEntity, MaterialInstanceComponent, materialInstance)
       }
-      setComponent(nodeEntity, MaterialInstanceComponent, materialInstance)
 
       //handle morph targets
       const loadedMorphTargets = GLTFLoaderFunctions.useMergeMorphTargets(options, i)
@@ -1547,6 +1552,8 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     const rootEntity = indexMap[rootIndex]
     setComponent(rootEntity, EntityTreeComponent, { parentEntity: entity, childIndex: rootIndex })
   }
+
+  return generatedEntities
 }
 
 export const GLTFLoaderFunctions = {

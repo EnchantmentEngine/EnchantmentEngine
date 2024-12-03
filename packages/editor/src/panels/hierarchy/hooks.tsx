@@ -289,10 +289,10 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
       }
     }
 
-    if (!parentNode) {
-      console.warn('parent is not defined')
-      return
-    }
+    // if (!parentNode) {
+    //   console.warn('parent is not defined')
+    //   return
+    // }
 
     if ('files' in item) {
       const dndItem: any = monitor.getItem()
