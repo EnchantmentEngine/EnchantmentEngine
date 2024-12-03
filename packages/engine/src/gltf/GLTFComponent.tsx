@@ -110,7 +110,7 @@ const loadDependencies = {
   ['EE_model']: [
     {
       key: 'dependencies',
-      eval: (dependencies) => componentDependenciesLoaded(dependencies as ComponentDependencies | undefined)
+      eval: (dependencies?: ComponentDependencies) => componentDependenciesLoaded(dependencies)
     }
   ]
 } as Record<string, DependencyEval[]>
@@ -602,17 +602,14 @@ const useGLTFDocument = (entity: Entity) => {
   const url = state.src.value
   const source = GLTFComponent.useInstanceID(entity)
   useGLTFResource(url, entity)
-  // useEffect(() => {
-  //   return () => {
-  //     dispatchAction(GLTFSnapshotAction.unload({ source }))
-  //   }
-  // }, [])
 
   useEffect(() => {
     if (!url) {
       addError(entity, GLTFComponent, 'INVALID_SOURCE', 'Invalid URL')
       return
     }
+
+    let loaded = false
 
     const abortController = new AbortController()
     const signal = abortController.signal
@@ -664,6 +661,7 @@ const useGLTFDocument = (entity: Entity) => {
     )
 
     return () => {
+      // if (loaded) dispatchAction(GLTFSnapshotAction.unload({ source }))
       abortController.abort()
       if (!hasComponent(entity, GLTFComponent)) return
       state.body.set(null)
