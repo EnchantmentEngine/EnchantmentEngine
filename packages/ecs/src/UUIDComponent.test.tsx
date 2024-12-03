@@ -115,14 +115,14 @@ describe('UUIDComponent', () => {
     it('should remove the component from the entity', () => {
       setComponent(entity1, UUIDComponent, TestUUID)
       removeComponent(entity1, UUIDComponent)
-      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(false, hasComponent(entity1, UUIDComponent))
       assert.equal(getOptionalComponent(entity1, UUIDComponent), undefined)
     })
 
     it('should do nothing if the entity does not have the component', () => {
       removeComponent(entity1, UUIDComponent)
-      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(getOptionalComponent(entity1, UUIDComponent), undefined)
     })
   })
@@ -131,7 +131,7 @@ describe('UUIDComponent', () => {
     it('should return the correct entity', () => {
       setComponent(entity1, UUIDComponent, TestUUID)
       const testEntity = UUIDComponent.getEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(testEntity, entity1)
     })
 
@@ -140,12 +140,12 @@ describe('UUIDComponent', () => {
       removeComponent(entity1, UUIDComponent)
       setComponent(entity1, UUIDComponent, TestUUID2)
       const testEntity = UUIDComponent.getEntityByUUID(TestUUID2)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID2].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID2].value)
     })
 
     it('should return UndefinedEntity when the UUID has not been added to any entity', () => {
       const testEntity = UUIDComponent.getEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(testEntity, UndefinedEntity)
     })
   })
@@ -154,14 +154,14 @@ describe('UUIDComponent', () => {
     it('should return the correct entity when it exists', () => {
       setComponent(entity1, UUIDComponent, TestUUID)
       const testEntity = UUIDComponent.getOrCreateEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(testEntity, entity1)
     })
 
     it("should create a new entity when the UUID hasn't been added to any entity", () => {
       setComponent(entity1, UUIDComponent, TestUUID)
       const testEntity = UUIDComponent.getOrCreateEntityByUUID(TestUUID2)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID2].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID2].value)
       assert.notEqual(testEntity, entity1)
     })
   })
@@ -248,7 +248,7 @@ describe('UUIDComponent Hooks', async () => {
       assert.equal(counter, 1, `The reactor has run an incorrect number of times: ${counter}`)
       assert.notEqual(result, undefined, "The result data didn't get assigned.")
       assert.equal(result, ExpectedValue, `Did not return the correct data. result = ${result}`)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
+      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState['simulation'][TestUUID].value)
       assert.equal(testEntity, ExpectedValue)
       unmount()
     })

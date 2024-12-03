@@ -30,6 +30,7 @@ import { hookstate, NO_PROXY_STEALTH, State, useHookstate } from '@ir-engine/hyp
 import { defineComponent, setComponent } from './ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from './Entity'
 import { createEntity } from './EntityFunctions'
+import { EntityLayerState, LayerID } from './LayerState'
 import { S } from './schemas/JSONSchemas'
 
 export const UUIDComponent = defineComponent({
@@ -43,8 +44,9 @@ export const UUIDComponent = defineComponent({
 
     if (component.value === uuid) return
 
+    const layer = EntityLayerState.getLayerID(entity)
     // throw error if uuid is already in use
-    const currentEntity = UUIDComponent.getEntityByUUID(uuid)
+    const currentEntity = UUIDComponent.getEntityByUUID(uuid, layer)
     if (currentEntity !== UndefinedEntity && currentEntity !== entity) {
       throw new Error(`UUID ${uuid} is already in use`)
     }
@@ -52,33 +54,34 @@ export const UUIDComponent = defineComponent({
     // remove old uuid
     if (component.value) {
       const currentUUID = component.value
-      _getUUIDState(currentUUID).set(UndefinedEntity)
+      _getUUIDState(currentUUID, layer).set(UndefinedEntity)
     }
 
     // set new uuid
     component.set(uuid)
-    _getUUIDState(uuid).set(entity)
+    _getUUIDState(uuid, layer).set(entity)
   },
 
   onRemove: (entity, component) => {
     const uuid = component.value
-    _getUUIDState(uuid).set(UndefinedEntity)
+    const layer = EntityLayerState.getLayerID(entity)
+    _getUUIDState(uuid, layer).set(UndefinedEntity)
   },
 
-  entitiesByUUIDState: {} as Record<EntityUUID, State<Entity>>,
+  entitiesByUUIDState: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>,
 
-  useEntityByUUID(uuid: EntityUUID) {
-    return useHookstate(_getUUIDState(uuid)).value
+  useEntityByUUID(uuid: EntityUUID, layer = 'simulation' as LayerID) {
+    return useHookstate(_getUUIDState(uuid, layer)).value
   },
 
-  getEntityByUUID(uuid: EntityUUID) {
-    return _getUUIDState(uuid).get(NO_PROXY_STEALTH)
+  getEntityByUUID(uuid: EntityUUID, layer = 'simulation' as LayerID) {
+    return _getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
-  getOrCreateEntityByUUID(uuid: EntityUUID) {
-    const state = _getUUIDState(uuid)
+  getOrCreateEntityByUUID(uuid: EntityUUID, layer = 'simulation' as LayerID) {
+    const state = _getUUIDState(uuid, layer)
     if (!state.value) {
-      const entity = createEntity()
+      const entity = createEntity(layer)
       setComponent(entity, UUIDComponent, uuid)
     }
     return state.value
@@ -89,11 +92,16 @@ export const UUIDComponent = defineComponent({
   }
 })
 
-function _getUUIDState(uuid: EntityUUID) {
-  let entityState = UUIDComponent.entitiesByUUIDState[uuid]
+function _getUUIDState(uuid: EntityUUID, layer = 'simulation' as LayerID) {
+  let layerState = UUIDComponent.entitiesByUUIDState[layer]
+  if (!layerState) {
+    layerState = {}
+    UUIDComponent.entitiesByUUIDState[layer] = layerState
+  }
+  let entityState = layerState[uuid]
   if (!entityState) {
     entityState = hookstate(UndefinedEntity)
-    UUIDComponent.entitiesByUUIDState[uuid] = entityState
+    layerState[uuid] = entityState
   }
   return entityState
 }
