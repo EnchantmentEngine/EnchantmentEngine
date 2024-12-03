@@ -85,22 +85,13 @@ import { migrateSceneJSONToGLTF } from './convertJsonToGLTF'
 import { GLTFDocumentState } from './GLTFDocumentState'
 import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
 import { getParserOptions, GLTFSourceState } from './GLTFState'
-import { gltfReplaceUUIDReferences } from './gltfUtils'
+import { gltfReplaceUUIDsReferences } from './gltfUtils'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 
 type DependencyEval = {
   key: string
   eval: (val: unknown) => boolean
 }
-
-const loadDependencies = {
-  ['EE_model']: [
-    {
-      key: 'progress',
-      eval: (progress) => progress === 100
-    }
-  ]
-} as Record<string, DependencyEval[]>
 
 type ComponentDependencies = {
   componentDependencies: Record<EntityUUID, Component[]>
@@ -114,6 +105,15 @@ const componentDependenciesLoaded = (dependencies?: ComponentDependencies) => {
     dependencies.childrenDependencies.size === 0
   )
 }
+
+const loadDependencies = {
+  ['EE_model']: [
+    {
+      key: 'dependencies',
+      eval: (dependencies) => componentDependenciesLoaded(dependencies as ComponentDependencies | undefined)
+    }
+  ]
+} as Record<string, DependencyEval[]>
 
 const buildComponentDependencies = (json: GLTF.IGLTF) => {
   const dependencies = {
@@ -217,7 +217,7 @@ export const GLTFComponent = defineComponent({
       else ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
     }, [gltfComponent.cameraOcclusion])
 
-    useGLTFDocument(gltfComponent.src.value, entity)
+    useGLTFDocument(entity)
 
     const sourceID = GLTFComponent.getInstanceID(entity)
 
@@ -482,11 +482,13 @@ const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: stri
 
 const ChildDependencyReactor = (props: { gltfComponentEntity: Entity; component: Component; count: number }) => {
   const { gltfComponentEntity, component, count } = props
-  const childrenCount = useChildrenWithComponents(gltfComponentEntity, [component]).length
+  const children = useChildrenWithComponents(gltfComponentEntity, [component])
+  const childrenCount = children.length
 
   useEffect(() => {
-    // Loading spinner meshes make this number higher than the mesh count on the GLTF
-    if (childrenCount >= count) {
+    const gltfSource = GLTFComponent.getInstanceID(gltfComponentEntity)
+    const gltfChildren = children.filter((child) => getOptionalComponent(child, SourceComponent) === gltfSource)
+    if (gltfChildren.length === count) {
       const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
       ;(gltfComponent.dependencies as State<ComponentDependencies>).childrenDependencies.set((prev) => {
         prev.delete(component)
@@ -543,7 +545,7 @@ const onProgress: (event: ProgressEvent) => void = (event) => {
   // console.log(event)
 }
 
-export const loadGltfFile = (
+export const loadGLTFFile = (
   url: string,
   onLoad: (gltf: GLTF.IGLTF, body: ArrayBuffer | null) => void,
   onProgress?: (event: ProgressEvent) => void,
@@ -595,9 +597,10 @@ export const loadGltfFile = (
   loader.load(url, onSuccess, onProgress, onError, signal)
 }
 
-const useGLTFDocument = (url: string, entity: Entity) => {
+const useGLTFDocument = (entity: Entity) => {
   const state = useComponent(entity, GLTFComponent)
-  const source = GLTFComponent.getInstanceID(entity)
+  const url = state.src.value
+  const source = GLTFComponent.useInstanceID(entity)
   useGLTFResource(url, entity)
   // useEffect(() => {
   //   return () => {
@@ -618,7 +621,7 @@ const useGLTFDocument = (url: string, entity: Entity) => {
       addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model')
     }
 
-    loadGltfFile(
+    loadGLTFFile(
       url,
       (gltf, body) => {
         if (body) state.body.set(body)
@@ -627,6 +630,7 @@ const useGLTFDocument = (url: string, entity: Entity) => {
         state.images.set([])
         state.document.set(gltf)
         if (gltf.nodes) {
+          const uuidReplacements = [] as [EntityUUID, EntityUUID][]
           for (const node of gltf.nodes) {
             if (node.extensions && node.extensions[UUIDComponent.jsonID]) {
               let uuid = node.extensions[UUIDComponent.jsonID] as EntityUUID
@@ -636,11 +640,13 @@ const useGLTFDocument = (url: string, entity: Entity) => {
                 const prevUUID = uuid
                 uuid = generateEntityUUID()
                 node.extensions[UUIDComponent.jsonID] = uuid
-                gltfReplaceUUIDReferences(gltf, prevUUID, uuid)
+                uuidReplacements.push([prevUUID, uuid])
               }
               UUIDComponent.getOrCreateEntityByUUID(uuid)
             }
           }
+          // Replace references in the GLTF of replaced uuids
+          gltfReplaceUUIDsReferences(gltf, uuidReplacements)
         }
 
         const dependencies = buildComponentDependencies(gltf)
