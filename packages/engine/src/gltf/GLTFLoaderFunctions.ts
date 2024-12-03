@@ -1136,7 +1136,7 @@ const loadAnimation = (options: GLTFParserOptions, animationIndex?: number) => {
 
       if (!(node || entity) || !outputAccessor || !inputAccessor) continue
 
-      if (node.updateMatrix) {
+      if (node?.updateMatrix) {
         node.updateMatrix()
       }
 
@@ -1327,7 +1327,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     indexMap[i] = nodeEntity
     generatedEntities.push(nodeEntity)
     const nodeName = node.name ?? 'Node-' + i
-    setComponent(entity, NameComponent, nodeName)
+    setComponent(nodeEntity, NameComponent, nodeName)
     setComponent(nodeEntity, TransformComponent)
     setComponent(nodeEntity, SourceComponent, options.documentID)
     if (node.matrix) {
