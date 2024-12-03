@@ -46,7 +46,9 @@ import {
   isTest,
   none,
   startReactor,
-  useHookstate
+  useHookstate,
+  resolveObject,
+  dispatchAction
 } from '@ir-engine/hyperflux'
 import { Entity, UndefinedEntity } from './Entity'
 import { EntityContext } from './EntityFunctions'
@@ -61,7 +63,11 @@ import {
   IsSingleValueSchema,
   SerializeSchema
 } from './schemas/JSONSchemaUtils'
-import { EasingFunction } from './Easing'
+import { EasingFunction } from './EasingFunctions'
+import { schema } from '@feathersjs/schema'
+import { getTransitionableKeyForType, Transitionable, TransitionableTypes } from './Transitionable'
+import { TransitionActions } from './TransitionSystem'
+import { UUIDComponent } from './UUIDComponent'
 
 /**
  * @description
@@ -237,8 +243,7 @@ const schemaIsECSSchema = (schema?: ComponentSchema): schema is bitECS.ISchema =
 
 type Primitive = string | number | bigint | boolean | undefined | symbol
 export type ComponentPropertyPath<T, Prefix = ''> = {
-  [K in keyof T]: // eslint-disable-next-line @typescript-eslint/ban-types
-  T[K] extends Function
+  [K in keyof T]: T[K] extends Function // eslint-disable-next-line @typescript-eslint/ban-types
     ? never
     : T[K] extends Primitive | Array<any>
     ? `${string & Prefix}${string & K}`
@@ -366,16 +371,31 @@ export const defineComponent = <
 
   function setTransition<P extends ComponentPropertyPath<ComponentType>>(
     entity: Entity,
-    property: P,
-    { target, easing }: { target: ComponentPropertyFromPath<ComponentType, P>; easing: EasingFunction }
+    propertyPath: P,
+    target: ComponentPropertyFromPath<ComponentType, P> & TransitionableTypes,
+    options: {
+      duration?: number
+      easing?: EasingFunction
+      type?: keyof typeof Transitionable
+    }
   ) {
-    // const transition = getComponent(entity, TransitionComponent)
-    // const transitionData = transition.find((t) => t.property === property)
-    // if (transitionData) {
-    //   transitionData.target = target
-    // } else {
-    //   transition.push({ property, target })
-    // }
+    const type = options.type ?? getTransitionableKeyForType(target)
+    if (!type) throw new Error(`[setTransition]: Unknown transitionable type for ${Component.jsonID} - ${propertyPath}`)
+    const isType = Transitionable[type].isType(target)
+    if (!isType)
+      throw new Error(`[setTransition]: Invalid transitionable type for ${Component.jsonID} - ${propertyPath}`)
+    const entityUUID = getComponent(entity, UUIDComponent)
+    dispatchAction(
+      TransitionActions.setTransition({
+        entityUUID,
+        componentJsonID: Component.jsonID!,
+        propertyPath,
+        target,
+        transitionableType: type,
+        duration: options.duration,
+        easing: options.easing?.name
+      })
+    )
   }
 
   Component.setTransition = setTransition
