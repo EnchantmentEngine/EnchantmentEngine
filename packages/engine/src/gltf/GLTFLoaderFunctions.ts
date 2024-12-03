@@ -1173,11 +1173,9 @@ const _createAnimationTracks = (
   target: GLTF.IAnimationChannelTarget
 ) => {
   const tracks = [] as any[] // todo
-
   const targetName = getComponent(node, UUIDComponent)
   if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
-
   if (PATH_PROPERTIES[target.path] === PATH_PROPERTIES.weights) {
     traverseEntityNode(node, (entity) => {
       const object = getComponent(entity, MeshComponent)
