@@ -547,63 +547,65 @@ export const setComponent = <C extends Component>(
 
   component.onSet(entity, component.stateMap[entity]!, args)
 
-  // if (!componentExists && !component.reactorMap.has(entity)) {
-  //   const root = startReactor(() => {
-  //     const layerState = useMutableState(EntityLayerState)
-  //     useImmediateEffect(() => {
-  const layer = EntityLayerState.getEntityLayer(entity)
-  for (const dstLayerID of Object.keys(layer.relations)) {
-    if (layer.relations[dstLayerID] === 'propagate') {
-      let dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
+  if (!componentExists && !component.reactorMap.has(entity)) {
+    const root = startReactor(() => {
+      const layerState = useMutableState(EntityLayerState)
+      useImmediateEffect(() => {
+        const layer = EntityLayerState.getEntityLayer(entity)
+        for (const dstLayerID of Object.keys(layer.relations)) {
+          if (layer.relations[dstLayerID] === 'propagate') {
+            let dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
 
-      if (!entityExists(dstEntity)) {
-        //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
-        dstEntity = createEntity(dstLayerID as LayerID)
-        EntityLayerState.linkEntity(entity, dstEntity)
-        for (const entityComponent of getAllComponents(entity)) {
-          if (entityComponent === component) continue //we're about to do this operation anyways
-          setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
-        }
-      }
-
-      //switch any target entities in the args to their corresponding linked entity in the destination layer
-      if (component.schema) {
-        const componentSchema = component.schema as TTypedSchema<C>
-        const frontier = [{ schema: componentSchema, setArgs: args }] as { schema: any; setArgs: any }[]
-        while (frontier.length > 0) {
-          const { schema, setArgs } = frontier.pop()!
-          if (typeof setArgs !== 'object') continue
-          for (const key in setArgs) {
-            const valSchema = schema.properties?.[key] as any
-            //check if the value is an entity
-            if (valSchema && valSchema.options['$id'] === 'Entity') {
-              //if so, we need to switch it to the linked entity in the destination layer
-              const linkedEntity = EntityLayerState.getLinkedEntity(setArgs[key], dstLayerID as LayerID)
-              setArgs[key] = linkedEntity
-            } else if (typeof setArgs[key] === 'object') {
-              frontier.push({ schema: valSchema, setArgs: setArgs[key] })
+            if (!entityExists(dstEntity)) {
+              //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
+              dstEntity = createEntity(dstLayerID as LayerID)
+              EntityLayerState.linkEntity(entity, dstEntity)
+              for (const entityComponent of getAllComponents(entity)) {
+                if (entityComponent === component) continue //we're about to do this operation anyways
+                setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
+              }
             }
+
+            //switch any target entities in the args to their corresponding linked entity in the destination layer
+            if (component.schema) {
+              const componentSchema = component.schema as TTypedSchema<C>
+              const frontier = [{ schema: componentSchema, setArgs: args }] as { schema: any; setArgs: any }[]
+              while (frontier.length > 0) {
+                const { schema, setArgs } = frontier.pop()!
+                if (!schema || typeof setArgs !== 'object') continue
+                for (const key in setArgs) {
+                  const valSchema = schema.properties?.[key] as any
+                  //check if the value is an entity
+                  if (valSchema && valSchema.options['$id'] === 'Entity') {
+                    //if so, we need to switch it to the linked entity in the destination layer
+                    const linkedEntity = EntityLayerState.getLinkedEntity(setArgs[key], dstLayerID as LayerID)
+                    setArgs[key] = linkedEntity
+                  } else if (typeof setArgs[key] === 'object') {
+                    frontier.push({ schema: valSchema, setArgs: setArgs[key] })
+                  }
+                }
+              }
+            }
+
+            //set up reactive logic to propagate component changes to linked entity
+            setComponent(dstEntity, component, args)
           }
         }
-      }
-
-      //set up reactive logic to propagate component changes to linked entity
-      setComponent(dstEntity, component, args)
-    }
+      }, [component.stateMap[entity], layerState.layers])
+      return component.reactor
+        ? React.createElement(EntityContext.Provider, { value: entity }, React.createElement(component.reactor, {}))
+        : null
+    }) as ReactorRoot
+    root['entity'] = entity
+    root['component'] = component.name
+    component.reactorMap.set(entity, root)
+    // component.onSet(entity, component.stateMap[entity]!, args)
+    root.run()
+    return getComponent(entity, component)
   }
-  //     }, [component.stateMap[entity], layerState.layers])
-  //     return component.reactor
-  //       ? React.createElement(EntityContext.Provider, { value: entity }, React.createElement(component.reactor, {}))
-  //       : null
-  //   }) as ReactorRoot
-  //   root['entity'] = entity
-  //   root['component'] = component.name
-  //   component.reactorMap.set(entity, root)
-  //   root.run()
-  //   return getComponent(entity, component)
-  // }
 
   const root = component.reactorMap.get(entity)
+  // component.onSet(entity, component.stateMap[entity]!, args)
   root?.run()
   return getComponent(entity, component)
 }
