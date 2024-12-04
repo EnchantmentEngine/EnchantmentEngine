@@ -23,41 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { identityProviderPath, IdentityProviderType } from '@ir-engine/common/src/schema.type.module'
-import { UserID } from '@ir-engine/hyperflux'
+import { defineComponent, S } from '@ir-engine/ecs'
+import { Bone } from 'three'
 
-export interface AuthUser {
-  accessToken: string
-  authentication: {
-    strategy: string
-  }
-  identityProvider: IdentityProviderType
-}
+export const NormalizedBoneComponent = defineComponent({
+  name: 'NormalizedBoneComponent',
 
-export const IdentityProviderSeed: IdentityProviderType = {
-  id: '',
-  token: '',
-  accountIdentifier: '',
-  oauthToken: '',
-  oauthRefreshToken: '',
-  type: 'guest',
-  userId: '' as UserID,
-  createdAt: '',
-  updatedAt: ''
-}
-
-export const AuthUserSeed: AuthUser = {
-  accessToken: '',
-  authentication: {
-    strategy: ''
-  },
-  identityProvider: IdentityProviderSeed
-}
-
-export function resolveAuthUser(res: any): AuthUser {
-  return {
-    accessToken: res.accessToken,
-    authentication: res.authentication,
-    identityProvider: res[identityProviderPath]
-  }
-}
+  schema: S.Required(S.Type<Bone>())
+})
