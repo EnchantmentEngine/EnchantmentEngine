@@ -23,16 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
+import { getMutableState } from '@ir-engine/hyperflux'
 import { IUniform, Material, Matrix4, MeshBasicMaterial, Quaternion, Shader, Vector2, Vector3 } from 'three'
 import { Vector3_One } from '../common/constants/MathConstants'
 import { PluginType } from '../common/functions/OnBeforeCompilePlugin'
+import { DepthCanvasTexture } from './DepthCanvasTexture'
 import { DepthDataTexture } from './DepthDataTexture'
 import { XRDepthOcclusion, XRDepthOcclusionSystem } from './XRDepthOcclusion'
+import { XRState } from './XRState'
 import { XRSystem } from './XRSystem'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
@@ -397,18 +400,226 @@ describe('XRDepthOcclusion', () => {
   }) //:: removeDepthOBCPlugin
 
   describe('updateDepthMaterials,', () => {
-    /**
-    // @todo
-    it("should not do anything if either `@param frame` or `@param referenceSpace` are falsy", () => {})
-    it("should not do anything if `@param frame`.getViewerPose(`@param referenceSpace`) is falsy", () => {})
-    describe("for every viewerPose in `@param frame`.getViewerPose(`@param referenceSpace`)", () => {
-      it(".. should not do anything for the view if frame.getDepthInformation(view) is falsy", () => {})
-      it(".. should set XRState.depthDataTexture to a new DepthDataTexture created with (depthInfo.width, depthInfo.height) if its value is falsy", () => {})
-      it(".. should call XRState.depthDataTexture.updateDepth with the value of frame.getDepthInformation(view)", () => {})
-      it(".. should call XRDepthOcclusion.updateUniforms with XRDepthOcclusionMaterials and the value of frame.getDepthInformation(view)", () => {})
-      it(".. should call `@param depthTexture`.updateDepth with the value of frame.getDepthInformation(view)", () => {})
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
     })
-    */
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    describe('for every viewerPose in `@param frame`.getViewerPose(`@param referenceSpace`)', () => {
+      it('.. should set XRState.depthDataTexture to a new DepthDataTexture created with (depthInfo.width, depthInfo.height) if its value is falsy', () => {
+        const Initial = null
+        // Set the data as expected
+        getMutableState(XRState).depthDataTexture.set(Initial)
+        const viewerPose = {}
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        const frame = {
+          getViewerPose() {
+            return { views: [viewerPose] }
+          },
+          getDepthInformation(_val: any) {
+            return depthInfo
+          }
+        } as XRFrame & any // @note getDepthInformationType is not exported
+        const referenceSpace = {} as XRReferenceSpace
+        const depthTexture = { updateDepth() {} } as unknown as DepthCanvasTexture
+        // Sanity check before running
+        expect(frame).toBeTruthy()
+        expect(referenceSpace).toBeTruthy()
+        expect(frame.getDepthInformation({})).toBeTruthy()
+        const before = getMutableState(XRState).depthDataTexture.value
+        expect(before).toBe(Initial)
+        // Run and Check the result
+        XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+        const result = getMutableState(XRState).depthDataTexture.value
+        expect(result).not.toBe(Initial)
+      })
+
+      it('.. should call XRState.depthDataTexture.updateDepth with the value of frame.getDepthInformation(view)', () => {
+        // Set the data as expected
+        const viewerPose = {}
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        const frame = {
+          getViewerPose() {
+            return { views: [viewerPose] }
+          },
+          getDepthInformation(_val: any) {
+            return depthInfo
+          }
+        } as XRFrame & any // @note getDepthInformationType is not exported
+        const referenceSpace = {} as XRReferenceSpace
+        const result = vi.fn()
+        const depthDataTexture = new DepthDataTexture(42, 42)
+        depthDataTexture.updateDepth = result
+        getMutableState(XRState).depthDataTexture.set(depthDataTexture)
+        const depthTexture = { updateDepth: vi.fn() } as unknown as DepthCanvasTexture
+        // Sanity check before running
+        expect(frame).toBeTruthy()
+        expect(referenceSpace).toBeTruthy()
+        expect(frame.getDepthInformation({})).toBeTruthy()
+        expect(result).not.toHaveBeenCalled()
+        // Run and Check the result
+        XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+        expect(result).toHaveBeenCalled()
+        expect(result).toHaveBeenCalledWith(frame.getDepthInformation({}))
+      })
+
+      it('.. should call XRDepthOcclusion.updateUniforms with XRDepthOcclusionMaterials and the value of frame.getDepthInformation(view)', () => {
+        // Set the data as expected
+        const viewerPose = {}
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        const frame = {
+          getViewerPose() {
+            return { views: [viewerPose] }
+          },
+          getDepthInformation(_val: any) {
+            return depthInfo
+          }
+        } as XRFrame & any // @note getDepthInformationType is not exported
+        const referenceSpace = {} as XRReferenceSpace
+        const result = vi.spyOn(XRDepthOcclusion, 'updateUniforms')
+        getMutableState(XRState).depthDataTexture.set(new DepthDataTexture(42, 42))
+        const depthTexture = { updateDepth: vi.fn() } as unknown as DepthCanvasTexture
+        // Sanity check before running
+        expect(frame).toBeTruthy()
+        expect(referenceSpace).toBeTruthy()
+        expect(frame.getDepthInformation({})).toBeTruthy()
+        expect(result).not.toHaveBeenCalled()
+        // Run and Check the result
+        XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+        expect(result).toHaveBeenCalled()
+        expect(result).toHaveBeenCalledWith(XRDepthOcclusion.XRDepthOcclusionMaterials, frame.getDepthInformation({}))
+      })
+
+      it('.. should call `@param depthTexture`.updateDepth with the value of frame.getDepthInformation(view)', () => {
+        // Set the data as expected
+        const viewerPose = {}
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        const frame = {
+          getViewerPose() {
+            return { views: [viewerPose] }
+          },
+          getDepthInformation(_val: any) {
+            return depthInfo
+          }
+        } as XRFrame & any // @note getDepthInformationType is not exported
+        const referenceSpace = {} as XRReferenceSpace
+        const result = vi.fn()
+        const depthTexture = { updateDepth: result } as unknown as DepthCanvasTexture
+        // Sanity check before running
+        expect(frame).toBeTruthy()
+        expect(referenceSpace).toBeTruthy()
+        expect(frame.getDepthInformation({})).toBeTruthy()
+        expect(result).not.toHaveBeenCalled()
+        // Run and Check the result
+        XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+        expect(result).toHaveBeenCalled()
+        expect(result).toHaveBeenCalledWith(depthInfo)
+      })
+
+      it('.. should not do anything for the view if frame.getDepthInformation(view) is falsy', () => {
+        const Initial = null
+        // Set the data as expected
+        getMutableState(XRState).depthDataTexture.set(Initial)
+        const viewerPose = {}
+        const depthInfo = undefined
+        const frame = {
+          getViewerPose() {
+            return { views: [viewerPose] }
+          },
+          getDepthInformation(_val: any) {
+            return depthInfo
+          }
+        } as XRFrame & any // @note getDepthInformationType is not exported
+        const referenceSpace = {} as XRReferenceSpace
+        const depthTexture = { updateDepth() {} } as unknown as DepthCanvasTexture
+        // Sanity check before running
+        expect(frame).toBeTruthy()
+        expect(referenceSpace).toBeTruthy()
+        expect(frame.getDepthInformation({})).toBeFalsy()
+        const before = getMutableState(XRState).depthDataTexture.value
+        expect(before).toBe(Initial)
+        // Run and Check the result
+        XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+        const result = getMutableState(XRState).depthDataTexture.value
+        expect(result).toBe(Initial)
+      })
+    })
+
+    it('should not do anything if `@param frame`.getViewerPose(`@param referenceSpace`) is falsy', () => {
+      const Initial = null
+      // Set the data as expected
+      getMutableState(XRState).depthDataTexture.set(Initial)
+      const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+      const frame = {
+        getViewerPose() {
+          return null
+        },
+        getDepthInformation(_val: any) {
+          return depthInfo
+        }
+      } as XRFrame & any // @note getDepthInformationType is not exported
+      const referenceSpace = {} as XRReferenceSpace
+      const depthTexture = { updateDepth() {} } as unknown as DepthCanvasTexture
+      // Sanity check before running
+      expect(frame).toBeTruthy()
+      expect(referenceSpace).toBeTruthy()
+      expect(frame.getViewerPose({})).toBeFalsy()
+      const before = getMutableState(XRState).depthDataTexture.value
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+      const result = getMutableState(XRState).depthDataTexture.value
+      expect(result).toBe(Initial)
+    })
+
+    it('should not do anything if `@param frame` is falsy', () => {
+      const Initial = null
+      // Set the data as expected
+      getMutableState(XRState).depthDataTexture.set(Initial)
+      const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+      const frame = {
+        getViewerPose() {
+          return null
+        },
+        getDepthInformation(_val: any) {
+          return depthInfo
+        }
+      } as XRFrame & any // @note getDepthInformationType is not exported
+      const referenceSpace = null as unknown as XRReferenceSpace
+      const depthTexture = { updateDepth() {} } as unknown as DepthCanvasTexture
+      // Sanity check before running
+      expect(frame).toBeTruthy()
+      expect(referenceSpace).toBeFalsy()
+      const before = getMutableState(XRState).depthDataTexture.value
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+      const result = getMutableState(XRState).depthDataTexture.value
+      expect(result).toBe(Initial)
+    })
+
+    it('should not do anything if `@param referenceSpace` is falsy', () => {
+      const Initial = null
+      // Set the data as expected
+      getMutableState(XRState).depthDataTexture.set(Initial)
+      const frame = null as XRFrame & any // @note getDepthInformationType is not exported
+      const referenceSpace = {} as XRReferenceSpace
+      const depthTexture = { updateDepth() {} } as unknown as DepthCanvasTexture
+      // Sanity check before running
+      expect(frame).toBeFalsy()
+      expect(referenceSpace).toBeTruthy()
+      const before = getMutableState(XRState).depthDataTexture.value
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDepthOcclusion.updateDepthMaterials(frame, referenceSpace, depthTexture)
+      const result = getMutableState(XRState).depthDataTexture.value
+      expect(result).toBe(Initial)
+    })
   }) //:: updateDepthMaterials
 
   describe('updateUniforms', () => {
