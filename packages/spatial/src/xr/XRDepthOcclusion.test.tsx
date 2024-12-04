@@ -28,7 +28,9 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { Material, Matrix4, MeshBasicMaterial, Shader, Vector2 } from 'three'
+import { IUniform, Material, Matrix4, MeshBasicMaterial, Quaternion, Shader, Vector2, Vector3 } from 'three'
+import { Vector3_One } from '../common/constants/MathConstants'
+import { PluginType } from '../common/functions/OnBeforeCompilePlugin'
 import { DepthDataTexture } from './DepthDataTexture'
 import { XRDepthOcclusion, XRDepthOcclusionSystem } from './XRDepthOcclusion'
 import { XRSystem } from './XRSystem'
@@ -322,14 +324,76 @@ describe('XRDepthOcclusion', () => {
   }) //:: addDepthOBCPlugin
 
   describe('removeDepthOBCPlugin,', () => {
-    /**
-    // @todo
-    it("should not do anything if `@param material`.userData.DepthOcclusionPlugin is falsy", () => {})
-    it("should call removeOBCPlugin with `@param material` and `@param material`.userData.DepthOcclusionPlugin", () => {})
-    it("should remove the DepthOcclusionPlugin field from `@param material`.userData", () => {})
-    it("should remove the `@param material` from the XRDepthOcclusionMaterials list", () => {})
-    it("should set `@param material`.needsUpdate to true", () => {})
-    */
+    it('should remove the DepthOcclusionPlugin field from `@param material`.userData', () => {
+      const Expected = undefined
+      // Set the data as expected
+      const material = { userData: {} } as Material
+      const depthMap = {} as DepthDataTexture
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      // Sanity check before running
+      expect(material.userData.DepthOcclusionPlugin).not.toBe(Expected)
+      // Run and Check the result
+      XRDepthOcclusion.removeDepthOBCPlugin(material)
+      const result = material.userData.DepthOcclusionPlugin
+      expect(result).toBe(Expected)
+    })
+
+    it('should remove the `@param material` from the XRDepthOcclusionMaterials list', () => {
+      const Expected = false
+      const Initial = !Expected
+      // Set the data as expected
+      const material = { userData: {} } as Material
+      const depthMap = {} as DepthDataTexture
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      // Sanity check before running
+      // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+      const before = XRDepthOcclusion.XRDepthOcclusionMaterials.includes(material)
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      XRDepthOcclusion.removeDepthOBCPlugin(material)
+      // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+      const result = XRDepthOcclusion.XRDepthOcclusionMaterials.includes(material)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should call removeOBCPlugin with `@param material` and `@param material`.userData.DepthOcclusionPlugin', () => {
+      const Initial = 1
+      const Expected = Initial - 1
+      // Set the data as expected
+      const material = { userData: {}, plugins: [] as PluginType[] } as Material
+      const depthMap = {} as DepthDataTexture
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      material.plugins?.push(material.userData.DepthOcclusionPlugin)
+      console.log(material.plugins)
+      // Sanity check before running
+      const before = material.plugins?.length
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      XRDepthOcclusion.removeDepthOBCPlugin(material)
+      const result = material.plugins?.length
+      expect(result).toBe(Expected)
+    })
+
+    it('should set `@param material`.needsUpdate to true', () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      const material = { userData: {}, needsUpdate: Initial } as Material
+      const depthMap = {} as DepthDataTexture
+      XRDepthOcclusion.addDepthOBCPlugin(material, depthMap)
+      material.needsUpdate = false
+      // Sanity check before running
+      const before = material.needsUpdate
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      XRDepthOcclusion.removeDepthOBCPlugin(material)
+      const result = material.needsUpdate
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
   }) //:: removeDepthOBCPlugin
 
   describe('updateDepthMaterials,', () => {
@@ -348,14 +412,165 @@ describe('XRDepthOcclusion', () => {
   }) //:: updateDepthMaterials
 
   describe('updateUniforms', () => {
-    /**
-    // @todo
-    it("should not do anything for a material if mat.userData.DepthOcclusionPlugin is falsy", () => {})
-    it("should not do anything for a material if material.shader is falsy", () => {})
-    it("should set the uResolution uniform of the mat.shader to the expected (width, height) for the window.devicePixelRatio", () => {})
-    it("should set the uUvTransform uniform of the mat.shader to the inverse of `@param depthInfo`.normTextureFromNormViewMatrix.matrix", () => {})
-    it("should set the uRawValueToMeters uniform of the mat.shader to `@param depthInfo`.rawValueToMeters", () => {})
-    */
+    describe('for every material in the `@param materials` list ..', () => {
+      it('.. should set the uResolution uniform of the mat.shader to the expected (width, height) for the window.devicePixelRatio', () => {
+        const Expected = 1024
+        const Initial = 42
+        // Set the data as expected
+        const uniform = {
+          value: {
+            data: Initial,
+            set: (value: any) => (uniform.value.data = value),
+            get: () => uniform.value.data
+          }
+        } as IUniform
+        const shader = {
+          uniforms: {
+            uResolution: uniform,
+            uUvTransform: { value: new Matrix4() } as IUniform,
+            uRawValueToMeters: { value: 0.0 } as IUniform
+          }
+        }
+        const materials = [
+          {
+            userData: {},
+            shader: shader
+          } as unknown as Material
+        ]
+        const depthMap = {} as DepthDataTexture
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        XRDepthOcclusion.addDepthOBCPlugin(materials[0], depthMap)
+        // Sanity check before running
+        expect(materials[0].userData.DepthOcclusionPlugin).toBeTruthy()
+        expect(materials[0].shader).toBeTruthy()
+        // Run and Check the result
+        // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+        XRDepthOcclusion.updateUniforms(materials, depthInfo)
+        const result = materials[0].shader.uniforms.uResolution.value.get()
+        expect(result).toBe(Expected)
+      })
+
+      it('.. should set the uUvTransform uniform of the mat.shader to the inverse of `@param depthInfo`.normTextureFromNormViewMatrix.matrix', () => {
+        const Expected = 42
+        const Initial = -Expected
+        // Set the data as expected
+        const uniform = { value: new Matrix4() } as IUniform
+        const shader = {
+          uniforms: {
+            uResolution: {
+              value: {
+                data: 1234,
+                set: (value: any) => (shader.uniforms.uResolution.value.data = value),
+                get: () => shader.uniforms.uResolution.value.data
+              }
+            } as IUniform,
+            uUvTransform: uniform,
+            uRawValueToMeters: { value: 0.0 } as IUniform
+          }
+        }
+        const materials = [
+          {
+            userData: {},
+            shader: shader
+          } as unknown as Material
+        ]
+        const depthMap = {} as DepthDataTexture
+        const depthInfo = {
+          normDepthBufferFromNormView: {
+            matrix: new Matrix4().compose(new Vector3(Initial), new Quaternion(), Vector3_One.clone()).toArray()
+          }
+        }
+        XRDepthOcclusion.addDepthOBCPlugin(materials[0], depthMap)
+        // Sanity check before running
+        expect(materials[0].userData.DepthOcclusionPlugin).toBeTruthy()
+        expect(materials[0].shader).toBeTruthy()
+        // Run and Check the result
+        // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+        XRDepthOcclusion.updateUniforms(materials, depthInfo)
+        const uniformAfter = materials[0].shader.uniforms.uUvTransform.value as Matrix4
+        const uniformAfterPosition = new Vector3()
+        uniformAfter.decompose(uniformAfterPosition, new Quaternion(), Vector3_One.clone())
+        const result = uniformAfterPosition.x
+        expect(result).toEqual(Expected)
+      })
+
+      it('.. should set the uRawValueToMeters uniform of the mat.shader to `@param depthInfo`.rawValueToMeters', () => {
+        const Expected = 42
+        const Initial = 21
+        // Set the data as expected
+        const uniform = { value: Initial } as IUniform
+        const shader = {
+          uniforms: {
+            uResolution: {
+              value: {
+                data: 1234,
+                set: (value: any) => (shader.uniforms.uResolution.value.data = value),
+                get: () => shader.uniforms.uResolution.value.data
+              }
+            } as IUniform,
+            uUvTransform: { value: new Matrix4() } as IUniform,
+            uRawValueToMeters: uniform
+          }
+        }
+        const materials = [
+          {
+            userData: {},
+            shader: shader
+          } as unknown as Material
+        ]
+        const depthMap = {} as DepthDataTexture
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() }, rawValueToMeters: Expected }
+        XRDepthOcclusion.addDepthOBCPlugin(materials[0], depthMap)
+        // Sanity check before running
+        expect(materials[0].userData.DepthOcclusionPlugin).toBeTruthy()
+        expect(materials[0].shader).toBeTruthy()
+        const before = materials[0].shader.uniforms.uRawValueToMeters.value
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+        XRDepthOcclusion.updateUniforms(materials, depthInfo)
+        const result = materials[0].shader.uniforms.uRawValueToMeters.value
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+
+      it('.. should not do anything for a material if mat.userData.DepthOcclusionPlugin is falsy', () => {
+        const Initial = 42
+        // Set the data as expected
+        const uniform = {
+          value: {
+            data: Initial,
+            set: (value: any) => (uniform.value.data = value),
+            get: () => uniform.value.data
+          }
+        } as IUniform
+        const shader = {
+          uniforms: {
+            uResolution: uniform,
+            uUvTransform: { value: new Matrix4() } as IUniform,
+            uRawValueToMeters: { value: 0.0 } as IUniform
+          }
+        }
+        const materials = [
+          {
+            userData: {},
+            shader: shader
+          } as unknown as Material
+        ]
+        const depthMap = {} as DepthDataTexture
+        const depthInfo = { normDepthBufferFromNormView: { matrix: new Matrix4() } }
+        // XRDepthOcclusion.addDepthOBCPlugin(materials[0], depthMap)
+        // Sanity check before running
+        expect(materials[0].userData.DepthOcclusionPlugin).toBeFalsy()
+        expect(materials[0].shader).toBeTruthy()
+        // Run and Check the result
+        // @ts-expect-error The XRDepthOcclusionMaterialType is not exported from the file
+        XRDepthOcclusion.updateUniforms(materials, depthInfo)
+        const result = materials[0].shader.uniforms.uResolution.value.get()
+        expect(result).toBe(Initial)
+      })
+    })
   }) //:: updateUniforms
 }) //:: XRDepthOcclusion
 
