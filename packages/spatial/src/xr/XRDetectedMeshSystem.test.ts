@@ -23,12 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { XRDetectedMeshSystem } from './XRDetectedMeshSystem'
+import ECS, {
+  SystemDefinitions,
+  SystemUUID,
+  UndefinedEntity,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  entityExists,
+  removeEntity
+} from '@ir-engine/ecs'
+import { XRDetectedMeshSystem, XRDetectedMeshSystemFunctions } from './XRDetectedMeshSystem'
+import { XRDetectedPlaneComponent } from './XRDetectedPlaneComponent'
 import { XRSystem } from './XRSystem'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
@@ -72,23 +82,68 @@ describe('XRDetectedMeshSystem', () => {
 
 describe('XRDetectedMeshSystem Functions', () => {
   describe('handleDetectedPlanes', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     /**
     // @todo
     it("should not do anything if frame.worldInformation?.detectedPlanes and frame.detectedPlanes are both falsy", () => {})
-    describe("for every entry in the XRDetectedPlaneComponent.detectedPlanesMap list", () => {
-      it(".. should not do anything if detectedPlanes contains the plane entry", () => {})
-      it(".. should call removeEntity for the entity of the entry", () => {})
-      it(".. should delete the entry's plane from the XRDetectedPlaneComponent.detectedPlanesMap list", () => {})
-      it(".. should delete the entry's plane from the XRDetectedPlaneComponent.planesLastChangedTimes list", () => {})
+    */
+
+    describe('for every entry in the XRDetectedPlaneComponent.detectedPlanesMap list', () => {
+      // it(".. should not do anything if detectedPlanes contains the plane entry", () => {})
+
+      describe('when detectedPlanes does not contain the plane entry ..', () => {
+        it('.. should call removeEntity for the entity of the entry', () => {
+          const Expected = false
+          // Set the data as expected
+          const plane = { lastChangedTime: 42 } as XRPlane
+          XRDetectedPlaneComponent.detectedPlanesMap.set(plane, testEntity)
+          const detectedPlanes = new Set<XRPlane>()
+          const frame = { detectedPlanes: detectedPlanes } as XRFrame
+          const removeEntitySpy = vi.spyOn(ECS, 'removeEntity')
+          // Sanity check before running
+          expect(detectedPlanes).not.toContain(plane)
+          expect(Array.from(XRDetectedPlaneComponent.detectedPlanesMap.keys())).toContain(plane)
+          const before = entityExists(testEntity)
+          expect(before).not.toBe(Expected)
+          expect(removeEntitySpy).not.toHaveBeenCalled()
+          // Run and Check the result
+          XRDetectedMeshSystemFunctions.handleDetectedPlanes(frame)
+          expect(removeEntitySpy).toHaveBeenCalled()
+          const result = entityExists(testEntity)
+          expect(result).toBe(Expected)
+        })
+
+        /**
+        // @todo
+        it(".. should delete the entry's plane from the XRDetectedPlaneComponent.detectedPlanesMap list", () => {})
+        it(".. should delete the entry's plane from the XRDetectedPlaneComponent.planesLastChangedTimes list", () => {})
+        */
+      })
     })
-    describe("for every plane in the detectedPlanes list", () => {
+
+    describe('for every plane in the detectedPlanes list', () => {
+      /**
+      // @todo
       it(".. should call XRDetectedPlaneComponent.foundPlane with the plane if the XRDetectedPlaneComponent.detectedPlanesMap list doesn't contain the plane", () => {})
       it(`.. should call XRDetectedPlaneComponent.updatePlaneGeometry
           with the plane and the entity that is tied to it
           if plane.lastChangedTime is bigger than the time found on the XRDetectedPlaneComponent.planesLastChangedTimes for that plane`, () => {})
       it(".. should call XRDetectedPlaneComponent.updatePlanePose with the plane and the entity that is tied to it", () => {})
+      */
     })
-    */
   }) //:: handleDetectedPlanes
 
   describe('handleDetectedMeshes', () => {
