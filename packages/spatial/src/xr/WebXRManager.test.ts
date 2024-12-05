@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { createEngine, destroyEngine, getComponent } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { WebGLRenderer } from 'three'
+import { Texture, WebGLRenderTarget, WebGLRenderer } from 'three'
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
@@ -66,6 +66,7 @@ describe('XRRendererState', () => {
 
 describe('createWebXRManager', () => {
   let renderer: WebGLRenderer | null = null
+
   beforeEach(async () => {
     createEngine()
     await mockEmulatedXREngine()
@@ -180,10 +181,71 @@ describe('createWebXRManager', () => {
       expect(typeof result).toBe(FunctionTypeName)
     })
 
+    it('should not do anything if `@param session` is null', () => {
+      const Initial = false
+      // Set the data as expected
+      getMutableState(XRState).session.set(null)
+      assert(renderer)
+      const scope = createWebXRManager(renderer)
+      scope.isPresenting = Initial
+      // Sanity check before running
+      expect(getState(XRState).session).toBe(null)
+      const setSession = scope.setSession
+      expect(() => setSession(getState(XRState).session!)).does.not.throw()
+      expect(typeof setSession).toBe(FunctionTypeName)
+      expect(scope.isPresenting).toBe(Initial)
+      // Run and Check the result
+      const result = setSession(getState(XRState).session!)
+      expect(result).resolves.toEqual(undefined)
+      expect(scope.isPresenting).toBe(Initial)
+    })
+
+    it('should set result.isPresenting to true', () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      assert(renderer)
+      const scope = createWebXRManager(renderer)
+      scope.isPresenting = Initial
+      // Sanity check before running
+      expect(getState(XRState).session).not.toBe(null)
+      const setSession = scope.setSession
+      expect(typeof setSession).toBe(FunctionTypeName)
+      expect(scope.isPresenting).toBe(Initial)
+      expect(scope.isPresenting).not.toBe(Expected)
+      // Run and Check the result
+      const result = setSession(getState(XRState).session!)
+      expect(result).resolves.toEqual(undefined)
+      expect(scope.isPresenting).not.toBe(Initial)
+      expect(scope.isPresenting).toBe(Expected)
+    })
+
+    it.todo('should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget', () => {
+      const renderTarget = {} as WebGLRenderTarget<Texture>
+      const Expected = renderTarget
+      const Initial = undefined
+      // Set the data as expected
+      assert(renderer)
+      renderer!.getRenderTarget = (): WebGLRenderTarget<Texture> | null => {
+        return renderTarget
+      }
+      // Sanity check before running
+      expect(getState(XRState).session).not.toBe(null)
+      const setSession = createWebXRManager(renderer).setSession
+      expect(typeof setSession).toBe(FunctionTypeName)
+      const before = getMutableState(XRRendererState).initialRenderTarget.value
+      expect(before).toBe(Initial)
+      expect(before).not.toEqual(Expected)
+      // Run and Check the result
+      const promise = setSession(getState(XRState).session!)
+      expect(promise).resolves.toEqual(undefined)
+      const result = getMutableState(XRRendererState).initialRenderTarget.value
+      expect(result).toEqual(Initial)
+      expect(result).not.toEqual(Expected)
+    })
+
     /**
     // @todo
-    it("should not do anything if `@param session` is null", () => {})
-    it("should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget", () => {})
     it("should add an `'end'` event listener with the onSessionEnd function", () => {})
     it("should call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is a function", () => {})
     it("should not call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is not a function", () => {})
@@ -192,9 +254,9 @@ describe('createWebXRManager', () => {
     // !!! @todo Find all of the ifCase/elseCase test cases  (two big separate functions)
     describe("should run ifCase() if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false", () => {})
     describe("should run elseCase() if `@param session`.renderState.layers is not undefined", () => {})
+    it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
     // !!!
 
-    it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
     it("should set newRenderTarget.isXRRenderTarget to true", () => {})
     it("should set xrRendererState.newRenderTarget to the newRenderTarget generated by the ifCase/elseCase process", () => {})
     it("should call result.setFoveation with a value of 0", () => {})
