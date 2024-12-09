@@ -77,7 +77,7 @@ export default function SelectionBox({
     const toolbarRect = toolbarRef.current!.getBoundingClientRect()
     if (!isDragging) return
     width.set(Math.min(e.clientX - startX, viewportRect.width - startX))
-    height.set(Math.min(e.clientY - startY, viewportRect.height + toolbarRect.height - startY))
+    height.set(Math.min(e.clientY - startY, viewportRect.height + 2 * toolbarRect.height - startY))
   }
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!getMutableState(SelectionBoxState).selectionBoxEnabled.value) return
