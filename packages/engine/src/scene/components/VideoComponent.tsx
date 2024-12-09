@@ -41,7 +41,7 @@ import {
   VideoTexture
 } from 'three'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { createEntity, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getOptionalComponent,
@@ -50,7 +50,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineState, NO_PROXY, useHookstate, useState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { createPriorityQueue } from '@ir-engine/spatial/src/common/functions/PriorityQueue'

@@ -39,7 +39,14 @@ import {
   Vector3
 } from 'three'
 
-import { AnimationSystemGroup, Engine, UUIDComponent } from '@ir-engine/ecs'
+import {
+  AnimationSystemGroup,
+  createEntity,
+  Engine,
+  removeEntity,
+  useEntityContext,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   getComponent,
   getOptionalComponent,
@@ -51,7 +58,6 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, isClient, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'

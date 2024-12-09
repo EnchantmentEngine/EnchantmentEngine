@@ -29,7 +29,6 @@ import {
   AnimationClip,
   AnimationMixer,
   Bone,
-  BufferGeometry,
   FrontSide,
   Group,
   LoaderUtils,
@@ -63,6 +62,7 @@ import {
   UUIDComponent,
   validateComponentSchema
 } from '@ir-engine/ecs'
+import { LayerID } from '@ir-engine/ecs/src/LayerState'
 import {
   defineState,
   dispatchAction,
@@ -132,7 +132,7 @@ export const GLTFSourceState = defineState({
    * @returns
    */
   load: (source: string, uuid = MathUtils.generateUUID() as EntityUUID, parentEntity = UndefinedEntity) => {
-    const entity = createEntity()
+    const entity = createEntity('authoring' as LayerID)
     setComponent(entity, UUIDComponent, uuid)
     setComponent(entity, NameComponent, source.split('/').pop()!)
     setComponent(entity, VisibleComponent, true)
@@ -1023,7 +1023,7 @@ const PrimitiveReactor = (props: {
 
   const meshDef = documentState.meshes.get(NO_PROXY)![node.mesh!]
   const options = getParserOptions(props.entity)
-  const finalGeometry = GLTFLoaderFunctions.useLoadPrimitives(options, props.nodeIndex!)
+  // const finalGeometry = GLTFLoaderFunctions.useLoadPrimitives(options, props.nodeIndex!)
 
   useEffect(() => {
     return () => {
@@ -1032,7 +1032,7 @@ const PrimitiveReactor = (props: {
   }, [])
 
   useLayoutEffect(() => {
-    if (!finalGeometry) return
+    // if (!finalGeometry) return
 
     //For debug visualization of material indices
     // setComponent(props.entity, MaterialInstanceComponent)
@@ -1043,10 +1043,10 @@ const PrimitiveReactor = (props: {
     // })
 
     const material = props.isSinglePrimitive ? defaultMaterial() : meshDef.primitives.map(() => defaultMaterial())
-    const mesh =
-      typeof node.skin !== 'undefined'
-        ? new SkinnedMesh(finalGeometry as BufferGeometry)
-        : new Mesh(finalGeometry as BufferGeometry)
+    const mesh = new Mesh()
+    // typeof node.skin !== 'undefined'
+    // ? new SkinnedMesh(finalGeometry as BufferGeometry)
+    // : new Mesh(finalGeometry as BufferGeometry)
 
     mesh.material = material
 
@@ -1071,7 +1071,7 @@ const PrimitiveReactor = (props: {
         removeObjectFromGroup(props.entity, mesh)
       }
     }
-  }, [node.skin, finalGeometry])
+  }, [node.skin]) //, finalGeometry])
 
   return (
     <>
@@ -1240,7 +1240,7 @@ export const getParserOptions = (entity: Entity) => {
   const document = gltfComponent.document
   const gltfLoader = getState(AssetLoaderState).gltfLoader
   return {
-    entity,
+    entity: gltfEntity,
     document,
     documentID,
     url: gltfComponent.src,

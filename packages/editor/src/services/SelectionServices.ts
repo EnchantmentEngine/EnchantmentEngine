@@ -25,9 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useEffect } from 'react'
 
-import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { EntityUUID, UUIDComponent, entityExists } from '@ir-engine/ecs'
 import { removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
+import { LayerID } from '@ir-engine/ecs/src/LayerState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { SelectTagComponent } from '@ir-engine/engine/src/scene/components/SelectTagComponent'
@@ -45,13 +45,13 @@ export const SelectionState = defineState({
       selectedEntities: selectedEntities
     })
   },
-  getSelectedEntities: () => {
-    return getState(SelectionState).selectedEntities.map((entity) => UUIDComponent.getEntityByUUID(entity))
+  getSelectedEntities: (layer: LayerID = 'authoring' as LayerID) => {
+    return getState(SelectionState).selectedEntities.map((entity) => UUIDComponent.getEntityByUUID(entity, layer))
   },
 
-  useSelectedEntities: () => {
+  useSelectedEntities: (layer: LayerID = 'authoring' as LayerID) => {
     return useHookstate(getMutableState(SelectionState).selectedEntities).value.map((entity) =>
-      UUIDComponent.getEntityByUUID(entity)
+      UUIDComponent.getEntityByUUID(entity, layer)
     )
   }
 })
@@ -60,7 +60,9 @@ const reactor = () => {
   const selectedEntities = useHookstate(getMutableState(SelectionState).selectedEntities)
 
   useEffect(() => {
-    const entities = [...selectedEntities.value].map((entity) => UUIDComponent.getEntityByUUID(entity))
+    const entities = [...selectedEntities.value].map((entity) =>
+      UUIDComponent.getEntityByUUID(entity, 'authoring' as LayerID)
+    )
     for (const entity of entities) {
       if (!entityExists(entity)) continue
       setComponent(entity, SelectTagComponent)

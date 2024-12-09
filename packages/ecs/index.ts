@@ -45,10 +45,12 @@ import {
   useComponent,
   useOptionalComponent
 } from './src/ComponentFunctions'
+import { createEntity } from './src/createEntity'
 import { executeFixedSystem, executeSystems, getDAG } from './src/EngineFunctions'
 import { UndefinedEntity } from './src/Entity'
-import { createEntity, entityExists, removeEntity, useEntityContext } from './src/EntityFunctions'
+import { entityExists, removeEntity, useEntityContext } from './src/EntityFunctions'
 import { defineQuery, QueryReactor, removeQuery, useQuery } from './src/QueryFunctions'
+import { SimulationLayerTagComponent } from './src/SimulationLayerTagComponent'
 import { defineSystem, destroySystem, executeSystem, useExecute } from './src/SystemFunctions'
 import { UUIDComponent } from './src/UUIDComponent'
 
@@ -70,6 +72,7 @@ const ECS = {
   useComponent,
   useOptionalComponent,
   UUIDComponent,
+  SimulationLayerTagComponent,
   /** Entity API */
   createEntity,
   removeEntity,
@@ -102,6 +105,7 @@ export default ECS
 
 export { Not } from 'bitecs'
 export * from './src/ComponentFunctions'
+export * from './src/createEntity'
 export * from './src/ECSState'
 export * from './src/Engine'
 export * from './src/EngineFunctions'

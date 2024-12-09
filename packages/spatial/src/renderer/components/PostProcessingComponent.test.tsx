@@ -33,13 +33,14 @@ import {
   EntityUUID,
   UUIDComponent,
   UndefinedEntity,
+  createEntity,
   getComponent,
   getMutableComponent,
+  removeEntity,
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { noiseAddToEffectRegistry } from '@ir-engine/engine/src/postprocessing/NoiseEffect'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'

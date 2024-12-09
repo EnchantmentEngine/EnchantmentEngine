@@ -27,7 +27,7 @@ import { Types } from 'bitecs'
 import { useEffect } from 'react'
 import { Quaternion, Vector3 } from 'three'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -36,7 +36,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { UserID, getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent } from '@ir-engine/network'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'

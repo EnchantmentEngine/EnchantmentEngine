@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useHookstate } from '@hookstate/core'
 import { EntityUUID, getComponent, getOptionalComponent, hasComponent, useQuery, UUIDComponent } from '@ir-engine/ecs'
+import { EntityLayerState, LayerID } from '@ir-engine/ecs/src/LayerState'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getMaterialsFromScene } from '@ir-engine/engine/src/scene/materials/functions/materialSourcingFunctions'
 import { getMutableState } from '@ir-engine/hyperflux'
@@ -70,18 +71,22 @@ function MaterialsLibrary() {
   const selectedEntities = useHookstate(getMutableState(SelectionState).selectedEntities)
   const showLayers = useHookstate(false)
 
+  const layer = useHookstate('authoring' as LayerID)
+
   useEffect(() => {
     const materials =
       selectedEntities.value.length && showLayers.value
-        ? getMaterialsFromScene(UUIDComponent.getEntityByUUID(selectedEntities.value[0]))
+        ? getMaterialsFromScene(UUIDComponent.getEntityByUUID(selectedEntities.value[0], layer.value))
         : materialQuery
+            .filter((entity) => EntityLayerState.getLayerID(entity) === layer.value)
             .map((entity) => getComponent(entity, UUIDComponent))
             .filter((uuid) => uuid !== MaterialStateComponent.fallbackMaterial)
 
     const materialsBySource = {} as Record<string, string[]>
     for (const uuid of materials) {
-      const source = getOptionalComponent(UUIDComponent.getEntityByUUID(uuid as EntityUUID), SourceComponent) ?? ''
-      if (!hasComponent(UUIDComponent.getEntityByUUID(uuid as EntityUUID), MaterialStateComponent)) continue
+      const materialEntity = UUIDComponent.getEntityByUUID(uuid as EntityUUID, layer.value)
+      const source = getOptionalComponent(materialEntity, SourceComponent) ?? ''
+      if (!hasComponent(materialEntity, MaterialStateComponent)) continue
       materialsBySource[source] = materialsBySource[source] ? [...materialsBySource[source], uuid] : [uuid]
     }
     const materialsBySourceArray = Object.entries(materialsBySource)
@@ -90,7 +95,7 @@ function MaterialsLibrary() {
       []
     ) as EntityUUID[]
     nodes.set(flattenedMaterials)
-  }, [materialQuery.length, selectedEntities, showLayers])
+  }, [materialQuery.length, selectedEntities, showLayers, layer])
 
   return (
     <div className="h-full overflow-scroll">
@@ -106,6 +111,13 @@ function MaterialsLibrary() {
             onClick={() => saveMaterial(srcPath.value)}
           >
             {t('common:components.save')}
+          </Button>
+          <Button
+            onClick={() => {
+              layer.set((prevValue) => (prevValue === 'authoring' ? 'simulation' : 'authoring') as LayerID)
+            }}
+          >
+            {layer.value}
           </Button>
           <div className="mx-2 h-full border-l" />
           <Button

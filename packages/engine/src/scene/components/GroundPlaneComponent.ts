@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { useLayoutEffect } from 'react'
 import { ColorRepresentation, Mesh, MeshLambertMaterial, PlaneGeometry, ShadowMaterial } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { matches } from '@ir-engine/hyperflux'
 import { matchesColor } from '@ir-engine/spatial/src/common/functions/MatchesUtils'

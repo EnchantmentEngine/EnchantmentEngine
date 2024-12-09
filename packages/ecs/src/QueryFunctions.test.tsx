@@ -28,11 +28,11 @@ import assert from 'assert'
 import React, { useEffect } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity, removeEntity } from '@ir-engine/ecs'
 import { startReactor } from '@ir-engine/hyperflux'
 import { ComponentMap, defineComponent, hasComponent, removeComponent, setComponent } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
-import { createEntity, removeEntity } from './EntityFunctions'
 import { Query, ReactiveQuerySystem, defineQuery, useQuery } from './QueryFunctions'
 import { SystemDefinitions } from './SystemFunctions'
 

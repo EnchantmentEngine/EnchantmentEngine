@@ -27,8 +27,8 @@ import { NormalizedLandmark } from '@mediapipe/tasks-vision'
 import { VRMHumanBoneList, VRMHumanBoneName } from '@pixiv/three-vrm'
 import { useEffect } from 'react'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { ECSSchema } from '@ir-engine/ecs/src/schemas/ECSSchemas'
 
 export const MotionCaptureRigComponent = defineComponent({

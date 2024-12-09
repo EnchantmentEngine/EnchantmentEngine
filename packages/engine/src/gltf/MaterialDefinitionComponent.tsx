@@ -33,11 +33,12 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
+import { hasAuthoringCounterpart } from '@ir-engine/ecs/src/LayerState'
 import { NO_PROXY, startReactor, useImmediateEffect } from '@ir-engine/hyperflux'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { getPrototypeEntityFromName } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { useEffect, useLayoutEffect } from 'react'
+import React, { useEffect, useLayoutEffect } from 'react'
 import {
   CanvasTexture,
   Color,
@@ -111,24 +112,32 @@ export const MaterialDefinitionComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const component = useComponent(entity, MaterialDefinitionComponent)
-    const material = GLTFLoaderFunctions.useLoadMaterial(
-      getParserOptions(entity),
-      component.get(NO_PROXY) as ComponentType<typeof MaterialDefinitionComponent>
-    )
-    useLayoutEffect(() => {
-      if (!entity || !material) return
-      const uuid = getComponent(entity, UUIDComponent)
-      material.uuid = uuid
-      setComponent(entity, MaterialStateComponent, {
-        material,
-        prototypeEntity: getPrototypeEntityFromName(material.type)
-      })
-    }, [material])
-
-    return null
+    if (hasAuthoringCounterpart(entity)) return null
+    return <MaterialDefinitionReactor />
   }
 })
+
+const MaterialDefinitionReactor = () => {
+  const entity = useEntityContext()
+  const component = useComponent(entity, MaterialDefinitionComponent)
+  const options = getParserOptions(entity)
+  const material = GLTFLoaderFunctions.useLoadMaterial(
+    options,
+    component.get(NO_PROXY) as ComponentType<typeof MaterialDefinitionComponent>
+  )
+  useLayoutEffect(() => {
+    if (!entity || !material) return
+    const uuid = getComponent(entity, UUIDComponent)
+    material.uuid = uuid
+    setComponent(entity, MaterialStateComponent, {
+      material,
+      prototypeEntity: getPrototypeEntityFromName(material.type)
+    })
+  }, [material])
+  // }, [])
+
+  return null
+}
 
 declare module 'three/src/materials/MeshPhysicalMaterial' {
   export interface MeshPhysicalMaterial {

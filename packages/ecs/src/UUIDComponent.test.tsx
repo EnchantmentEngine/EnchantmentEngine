@@ -28,6 +28,7 @@ import assert from 'assert'
 import React, { useEffect } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity, removeEntity } from '@ir-engine/ecs'
 import {
   ComponentMap,
   getComponent,
@@ -39,7 +40,6 @@ import {
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, EntityUUID, UndefinedEntity } from './Entity'
-import { createEntity, removeEntity } from './EntityFunctions'
 import { UUIDComponent } from './UUIDComponent'
 
 describe('UUIDComponent', () => {

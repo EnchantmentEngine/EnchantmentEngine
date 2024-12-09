@@ -58,6 +58,7 @@ import {
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
+import { LayerID } from '@ir-engine/ecs/src/LayerState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { EditorHelperState } from '../services/EditorHelperState'
@@ -339,7 +340,7 @@ const createObjectFromSceneElement = (
   //   } as GLTF.INode
 
   //   gltf.data.nodes!.push(node)
-  const entity = UUIDComponent.getOrCreateEntityByUUID(entityUUID)
+  const entity = UUIDComponent.getOrCreateEntityByUUID(entityUUID, 'authoring' as LayerID)
 
   setComponent(entity, NameComponent, name)
 

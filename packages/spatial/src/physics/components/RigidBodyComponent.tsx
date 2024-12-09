@@ -32,11 +32,14 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 
+import { EntityLayerState } from '@ir-engine/ecs/src/LayerState'
 import { ECSSchema } from '@ir-engine/ecs/src/schemas/ECSSchemas'
 import { useEffect } from 'react'
 import { QuaternionProxy, Vec3Proxy } from '../../common/proxies/createThreejsProxy'
 import { Physics } from '../classes/Physics'
 import { Body, BodyTypes } from '../types/PhysicsTypes'
+
+import React from 'react'
 
 const SCHEMA = {
   previousPosition: ECSSchema.Vec3,
@@ -109,54 +112,61 @@ export const RigidBodyComponent = defineComponent({
     }
   },
 
-  reactor: function () {
+  reactor: () => {
     const entity = useEntityContext()
-    const component = useComponent(entity, RigidBodyComponent)
-    const physicsWorld = Physics.useWorld(entity)!
-
-    useEffect(() => {
-      if (!physicsWorld) return
-      Physics.createRigidBody(physicsWorld, entity)
-      component.initialized.set(true)
-      return () => {
-        Physics.removeRigidbody(physicsWorld, entity)
-        if (!hasComponent(entity, RigidBodyComponent)) return
-        component.initialized.set(false)
-      }
-    }, [physicsWorld])
-
-    useEffect(() => {
-      if (!physicsWorld) return
-      const type = component.type.value
-      setComponent(entity, getTagComponentForRigidBody(type))
-      Physics.setRigidBodyType(physicsWorld, entity, type)
-      return () => {
-        removeComponent(entity, getTagComponentForRigidBody(type))
-      }
-    }, [physicsWorld, component.type])
-
-    useEffect(() => {
-      if (!physicsWorld) return
-      Physics.enabledCcd(physicsWorld, entity, component.ccd.value)
-    }, [physicsWorld, component.ccd])
-
-    useEffect(() => {
-      if (!physicsWorld) return
-      const value = component.allowRolling.value
-      /**
-       * @todo Change this back to `Physics.lockRotations( entity, !value )` when we update to Rapier >= 0.12.0
-       * https://github.com/dimforge/rapier.js/issues/282  */
-      Physics.setEnabledRotations(physicsWorld, entity, [value, value, value])
-    }, [component.allowRolling.value])
-
-    useEffect(() => {
-      if (!physicsWorld) return
-      Physics.setEnabledRotations(physicsWorld, entity, component.enabledRotations.value as [boolean, boolean, boolean])
-    }, [component.enabledRotations[0].value, component.enabledRotations[1].value, component.enabledRotations[2].value])
-
-    return null
+    const layerID = EntityLayerState.getLayerID(entity)
+    if (layerID !== 'simulation') return null
+    return <RigidBodyReactor />
   }
 })
+
+const RigidBodyReactor = () => {
+  const entity = useEntityContext()
+  const component = useComponent(entity, RigidBodyComponent)
+  const physicsWorld = Physics.useWorld(entity)!
+
+  useEffect(() => {
+    if (!physicsWorld) return
+    Physics.createRigidBody(physicsWorld, entity)
+    component.initialized.set(true)
+    return () => {
+      Physics.removeRigidbody(physicsWorld, entity)
+      if (!hasComponent(entity, RigidBodyComponent)) return
+      component.initialized.set(false)
+    }
+  }, [physicsWorld])
+
+  useEffect(() => {
+    if (!physicsWorld) return
+    const type = component.type.value
+    setComponent(entity, getTagComponentForRigidBody(type))
+    Physics.setRigidBodyType(physicsWorld, entity, type)
+    return () => {
+      removeComponent(entity, getTagComponentForRigidBody(type))
+    }
+  }, [physicsWorld, component.type])
+
+  useEffect(() => {
+    if (!physicsWorld) return
+    Physics.enabledCcd(physicsWorld, entity, component.ccd.value)
+  }, [physicsWorld, component.ccd])
+
+  useEffect(() => {
+    if (!physicsWorld) return
+    const value = component.allowRolling.value
+    /**
+     * @todo Change this back to `Physics.lockRotations( entity, !value )` when we update to Rapier >= 0.12.0
+     * https://github.com/dimforge/rapier.js/issues/282  */
+    Physics.setEnabledRotations(physicsWorld, entity, [value, value, value])
+  }, [component.allowRolling.value])
+
+  useEffect(() => {
+    if (!physicsWorld) return
+    Physics.setEnabledRotations(physicsWorld, entity, component.enabledRotations.value as [boolean, boolean, boolean])
+  }, [component.enabledRotations[0].value, component.enabledRotations[1].value, component.enabledRotations[2].value])
+
+  return null
+}
 
 export const RigidBodyDynamicTagComponent = defineComponent({ name: 'RigidBodyDynamicTagComponent' })
 export const RigidBodyFixedTagComponent = defineComponent({ name: 'RigidBodyFixedTagComponent' })

@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useEffect } from 'react'
 
-import { Entity, EntityUUID, Static, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, EntityUUID, Static, UUIDComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -34,7 +34,6 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'

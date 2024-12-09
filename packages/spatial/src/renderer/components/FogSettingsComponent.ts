@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Fog, FogExp2 } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getOptionalComponent,
@@ -34,7 +35,6 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { FogComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'

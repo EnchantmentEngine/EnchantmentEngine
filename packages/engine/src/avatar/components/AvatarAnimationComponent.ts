@@ -58,6 +58,7 @@ import { proxifyParentChildRelationships } from '@ir-engine/spatial/src/renderer
 import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 // import { GLTFDocumentState } from '../../gltf/GLTFDocumentState'
+import { EntityLayerState } from '@ir-engine/ecs/src/LayerState'
 import { hipsRegex, mixamoVRMRigMap } from '../AvatarBoneMatching'
 import { NormalizedBoneComponent } from './NormalizedBoneComponent'
 
@@ -127,6 +128,8 @@ const linkNormalizedBones = (vrm: VRM) => {
 }
 
 export function createVRM(rootEntity: Entity) {
+  const layerID = EntityLayerState.getLayerID(rootEntity)
+
   const documentID = GLTFComponent.getInstanceID(rootEntity)
   // const gltf = getState(GLTFDocumentState)[documentID]
   const gltf = getComponent(rootEntity, GLTFComponent).document!
@@ -154,7 +157,7 @@ export function createVRM(rootEntity: Entity) {
       : formatHumanBones(vrmExtensionDefinition.humanoid!.humanBones as any)
     const bones = humanBonesArray.reduce((bones, bone) => {
       const nodeID = `${documentID}-${bone.node}` as EntityUUID
-      const entity = UUIDComponent.getEntityByUUID(nodeID)
+      const entity = UUIDComponent.getEntityByUUID(nodeID, layerID)
       AvatarRigComponent.setBone(rootEntity, entity, bone.bone as VRMHumanBoneName)
       bones[bone.bone!] = { node: getComponent(entity, BoneComponent) }
       return bones

@@ -37,10 +37,9 @@ import {
   WebGLRenderTarget
 } from 'three'
 
-import { AnimationSystemGroup, defineSystem, ECSState, Entity } from '@ir-engine/ecs'
+import { AnimationSystemGroup, defineSystem, ECSState, Entity, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { SDFShader } from '@ir-engine/spatial/src/renderer/effects/sdf/SDFShader'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'

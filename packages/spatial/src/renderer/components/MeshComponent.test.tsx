@@ -31,15 +31,16 @@ import { BoxGeometry, Color, LineBasicMaterial, Material, Mesh, MeshBasicMateria
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import {
+  createEntity,
   getComponent,
   getMutableComponent,
   hasComponent,
   removeComponent,
+  removeEntity,
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { State } from '@ir-engine/hyperflux'
 
 import { createEngine } from '@ir-engine/ecs/src/Engine'

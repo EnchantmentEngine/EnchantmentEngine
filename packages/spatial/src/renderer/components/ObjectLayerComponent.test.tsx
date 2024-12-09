@@ -27,6 +27,7 @@ import assert from 'assert'
 import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity, removeEntity } from '@ir-engine/ecs'
 import {
   getComponent,
   hasComponent,
@@ -35,7 +36,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 
 import { UndefinedEntity } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'

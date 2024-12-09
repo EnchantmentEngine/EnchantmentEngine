@@ -34,6 +34,7 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
+import { LayerID } from '@ir-engine/ecs/src/LayerState'
 import { AllFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -129,7 +130,7 @@ function buildHierarchyTree(
   isRendered: boolean
 ) {
   const uuid = node.extensions && (node.extensions[UUIDComponent.jsonID] as EntityUUID)
-  const entity = UUIDComponent.getEntityByUUID(uuid!)
+  const entity = UUIDComponent.getEntityByUUID(uuid!, 'authoring' as LayerID)
   if (!entity || !entityExists(entity)) return
 
   const item = {

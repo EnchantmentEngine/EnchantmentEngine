@@ -33,6 +33,7 @@ import {
   removeComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
+import { EntityLayerState, LayerID } from '@ir-engine/ecs/src/LayerState'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NO_PROXY, State, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -73,21 +74,28 @@ export const useLoadAnimationFromBatchGLTF = (urls: string[], keepEntities = fal
 
 export const useLoadAnimationFromGLTF = (url: string, keepEntity = false) => {
   const assetEntity = useMutableState(GLTFAssetState)[url].value
+  const simEntity = EntityLayerState.useLinkedEntity(assetEntity, 'simulation' as LayerID)
   const animation = useHookstate(null as AnimationClip[] | null)
-  const animationComponent = useOptionalComponent(assetEntity, AnimationComponent)
-  const progress = useOptionalComponent(assetEntity, GLTFComponent)?.progress
+  const animationComponent = useOptionalComponent(simEntity?.value ?? UndefinedEntity, AnimationComponent)
+  const progress = useOptionalComponent(simEntity?.value ?? UndefinedEntity, GLTFComponent)?.progress
 
   useEffect(() => {
     if (animation.value) return
-    if (!assetEntity) {
+    if (!simEntity?.value) {
       GLTFAssetState.loadScene(url, v4())
       return
     }
   }, [progress])
 
   useEffect(() => {
-    if (!animationComponent?.animations || !animationComponent.animations.length || animation.value) return
-    iterateEntityNode(assetEntity, (entity) => {
+    if (
+      !simEntity?.value ||
+      !animationComponent?.animations ||
+      !animationComponent.animations.length ||
+      animation.value
+    )
+      return
+    iterateEntityNode(simEntity.value, (entity) => {
       removeComponent(entity, MeshComponent)
       removeComponent(entity, SkinnedMeshComponent)
       removeComponent(entity, MaterialStateComponent)
@@ -95,8 +103,8 @@ export const useLoadAnimationFromGLTF = (url: string, keepEntity = false) => {
     })
     animation.set(getComponent(assetEntity, AnimationComponent).animations)
     if (!keepEntity) removeEntity(assetEntity)
-  }, [animationComponent?.animations])
-  return [animation, keepEntity ? assetEntity : UndefinedEntity] as [State<AnimationClip[]>, Entity]
+  }, [animationComponent?.animations, simEntity])
+  return [animation, keepEntity ? simEntity?.value : UndefinedEntity] as [State<AnimationClip[]>, Entity]
 }
 
 PropertyBinding.parseTrackName = function (trackName) {

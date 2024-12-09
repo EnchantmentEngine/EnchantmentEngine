@@ -27,7 +27,7 @@ import type Hls from 'hls.js'
 import { useEffect, useLayoutEffect } from 'react'
 import { DoubleSide, MeshBasicMaterial, PlaneGeometry } from 'three'
 
-import { ComponentType } from '@ir-engine/ecs'
+import { ComponentType, entityExists, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -40,7 +40,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { State, getState, isClient, useMutableState } from '@ir-engine/hyperflux'
 import { DebugMeshComponent } from '@ir-engine/spatial/src/common/debug/DebugMeshComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'

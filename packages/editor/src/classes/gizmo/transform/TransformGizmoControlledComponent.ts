@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Box3, Vector3 } from 'three'
 
-import { Engine, Entity, UndefinedEntity } from '@ir-engine/ecs'
+import { Engine, Entity, UndefinedEntity, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -34,7 +34,6 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { TransformPivot } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'

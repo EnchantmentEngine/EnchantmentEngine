@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { CatmullRomCurve3, Quaternion, Vector3 } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'

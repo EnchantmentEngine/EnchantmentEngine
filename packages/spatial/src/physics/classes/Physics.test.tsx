@@ -29,6 +29,7 @@ import sinon from 'sinon'
 import { BoxGeometry, Mesh, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity } from '@ir-engine/ecs'
 import {
   getComponent,
   getMutableComponent,
@@ -38,7 +39,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { getState } from '@ir-engine/hyperflux'
 
 import { ObjectDirection, Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'

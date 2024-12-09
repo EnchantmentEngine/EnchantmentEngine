@@ -27,7 +27,7 @@ import { useEffect } from 'react'
 import { BufferGeometry, Mesh, MeshLambertMaterial, MeshStandardMaterial, Object3D, ShadowMaterial } from 'three'
 import matches from 'ts-matches'
 
-import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { EntityUUID, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -36,7 +36,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { State, defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 

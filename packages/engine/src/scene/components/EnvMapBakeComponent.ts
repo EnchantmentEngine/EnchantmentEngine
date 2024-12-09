@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { useLayoutEffect } from 'react'
 import { MeshPhysicalMaterial, SphereGeometry } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { DebugMeshComponent } from '@ir-engine/spatial/src/common/debug/DebugMeshComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'

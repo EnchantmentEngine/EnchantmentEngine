@@ -41,7 +41,7 @@ import {
   Vector3
 } from 'three'
 
-import { EntityUUID, UUIDComponent, useQuery } from '@ir-engine/ecs'
+import { EntityUUID, UUIDComponent, entityExists, useEntityContext, useQuery } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -51,7 +51,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { isClient } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { useResource } from '@ir-engine/spatial/src/resources/resourceHooks'

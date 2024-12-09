@@ -37,7 +37,7 @@ import {
   Vector3
 } from 'three'
 
-import { Engine } from '@ir-engine/ecs'
+import { Engine, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -49,7 +49,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { AnimationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState } from '@ir-engine/hyperflux'

@@ -36,6 +36,7 @@ import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperf
 import { NetworkState } from '@ir-engine/network'
 
 import { UUIDComponent, useEntityContext } from '@ir-engine/ecs'
+import { SimulationLayerTagComponent } from '@ir-engine/ecs/src/SimulationLayerTagComponent'
 import React from 'react'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -49,10 +50,19 @@ import {
 } from '../components/RigidBodyComponent'
 import { ColliderHitEvent, CollisionEvents } from '../types/PhysicsTypes'
 
-const nonFixedRigidbodyQuery = defineQuery([RigidBodyComponent, Not(RigidBodyFixedTagComponent)])
-const collisionQuery = defineQuery([CollisionComponent])
+const nonFixedRigidbodyQuery = defineQuery([
+  RigidBodyComponent,
+  Not(RigidBodyFixedTagComponent),
+  SimulationLayerTagComponent
+])
+const collisionQuery = defineQuery([CollisionComponent, SimulationLayerTagComponent])
 
-const kinematicQuery = defineQuery([RigidBodyComponent, RigidBodyKinematicTagComponent, TransformComponent])
+const kinematicQuery = defineQuery([
+  RigidBodyComponent,
+  RigidBodyKinematicTagComponent,
+  TransformComponent,
+  SimulationLayerTagComponent
+])
 
 const execute = () => {
   const existingColliderHits = [] as Array<{ entity: Entity; collisionEntity: Entity; hit: ColliderHitEvent }>
@@ -119,7 +129,7 @@ const PhysicsSceneReactor = () => {
 const reactor = () => {
   const physicsLoaded = useHookstate(false)
   const physicsLoadPending = useHookstate(false)
-  const physicsQuery = useQuery([SceneComponent])
+  const physicsQuery = useQuery([SceneComponent, SimulationLayerTagComponent])
 
   useEffect(() => {
     const networkState = getMutableState(NetworkState)
@@ -148,7 +158,10 @@ const reactor = () => {
 
   return (
     <>
-      <QueryReactor Components={[SceneComponent]} ChildEntityReactor={PhysicsSceneReactor} />
+      <QueryReactor
+        Components={[SceneComponent, SimulationLayerTagComponent]}
+        ChildEntityReactor={PhysicsSceneReactor}
+      />
     </>
   )
 }

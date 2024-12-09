@@ -28,7 +28,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { UUIDComponent, entityExists } from '@ir-engine/ecs'
 import {
   Component,
   ComponentMap,
@@ -38,7 +38,6 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery, removeQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'

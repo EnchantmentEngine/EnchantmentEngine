@@ -35,9 +35,8 @@ import {
   ShaderMaterial
 } from 'three'
 
-import { Entity } from '@ir-engine/ecs'
+import { Entity, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 

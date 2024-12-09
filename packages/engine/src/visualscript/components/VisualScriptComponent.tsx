@@ -26,9 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import matches, { Validator } from 'ts-matches'
 
-import { Entity } from '@ir-engine/ecs'
+import { Entity, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, hasComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import { useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { useAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'

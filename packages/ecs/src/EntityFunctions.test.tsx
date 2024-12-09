@@ -26,7 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { createEngine, destroyEngine } from './Engine'
-import { createEntity, entityExists } from './EntityFunctions'
+import { entityExists } from './EntityFunctions'
+import { createEntity } from './createEntity'
 
 describe('EntityFunctions', async () => {
   beforeEach(() => {

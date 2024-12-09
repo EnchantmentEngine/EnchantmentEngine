@@ -28,7 +28,7 @@ import { useLayoutEffect } from 'react'
 import { Mesh } from 'three'
 import matches from 'ts-matches'
 
-import { EntityUUID } from '@ir-engine/ecs'
+import { EntityUUID, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -39,7 +39,6 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ColliderComponent as NewColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'

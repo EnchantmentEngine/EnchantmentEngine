@@ -46,8 +46,8 @@ import {
   Vector2
 } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { useMeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'

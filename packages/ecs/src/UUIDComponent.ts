@@ -27,9 +27,9 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { hookstate, NO_PROXY_STEALTH, State, useHookstate } from '@ir-engine/hyperflux'
 
+import { createEntity } from '@ir-engine/ecs'
 import { defineComponent, setComponent } from './ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from './Entity'
-import { createEntity } from './EntityFunctions'
 import { EntityLayerState, LayerID } from './LayerState'
 import { S } from './schemas/JSONSchemas'
 

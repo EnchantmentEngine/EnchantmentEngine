@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   Component,
   ComponentType,
@@ -40,7 +41,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import React, { useEffect, useLayoutEffect } from 'react'
 

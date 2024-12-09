@@ -34,7 +34,7 @@ import {
   SRGBColorSpace
 } from 'three'
 
-import { Engine } from '@ir-engine/ecs'
+import { Engine, entityExists, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -43,7 +43,6 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { entityExists, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { isClient, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'

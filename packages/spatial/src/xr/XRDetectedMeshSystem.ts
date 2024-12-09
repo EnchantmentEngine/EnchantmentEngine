@@ -25,8 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useEffect } from 'react'
 
+import { removeEntity } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 

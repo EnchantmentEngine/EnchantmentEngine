@@ -42,16 +42,17 @@ import {
 } from 'three'
 
 import {
+  createEntity,
   Entity,
   getComponent,
   getMutableComponent,
   hasComponent,
   removeComponent,
+  removeEntity,
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 

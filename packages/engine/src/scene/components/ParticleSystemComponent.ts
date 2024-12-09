@@ -52,7 +52,7 @@ import {
 } from 'three.quarks'
 import matches from 'ts-matches'
 
-import { Entity, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, UUIDComponent, createEntity, generateEntityUUID, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -60,7 +60,6 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, generateEntityUUID, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { AssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import {

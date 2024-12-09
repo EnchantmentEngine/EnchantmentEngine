@@ -35,6 +35,7 @@ import {
   SphereGeometry
 } from 'three'
 
+import { createEntity, entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -43,7 +44,6 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { WebContainer3D } from '@ir-engine/xrui'
 

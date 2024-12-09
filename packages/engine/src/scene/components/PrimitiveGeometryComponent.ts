@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { useLayoutEffect } from 'react'
 import { MeshStandardMaterial } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Geometry } from '@ir-engine/spatial/src/common/constants/Geometry'
 import { useMeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'

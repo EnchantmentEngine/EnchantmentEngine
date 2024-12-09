@@ -95,3 +95,12 @@ export function getLayerContext(srcEntity: Entity) {
     return EntityLayerState.getLinkedEntity(dstEntity, layerContext)
   }
 }
+
+export function hasAuthoringCounterpart(entity: Entity) {
+  const layerID = EntityLayerState.getLayerID(entity)
+  //do not load gltf data for entities outside the simulation and authoring layers
+  if (!['simulation', 'authoring'].includes(layerID)) return true
+  //do not load gltf data for entity if it is in the simulation layer and has a linked entity in the authoring layer
+  if (layerID === 'simulation' && EntityLayerState.getLinkedEntity(entity, 'authoring' as LayerID)) return true
+  return false
+}

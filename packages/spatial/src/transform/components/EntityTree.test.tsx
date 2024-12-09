@@ -27,7 +27,7 @@ import { render } from '@testing-library/react'
 import React, { useEffect } from 'react'
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
-import { EntityUUID, hasComponents, UUIDComponent } from '@ir-engine/ecs'
+import { createEntity, entityExists, EntityUUID, hasComponents, removeEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   hasComponent,
@@ -37,7 +37,6 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, entityExists, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 
 import { NameComponent } from '../../common/NameComponent'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'

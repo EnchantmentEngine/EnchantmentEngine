@@ -53,6 +53,7 @@ import { TransformSystem } from '@ir-engine/spatial/src/transform/TransformModul
 import { XRLeftHandComponent, XRRightHandComponent } from '@ir-engine/spatial/src/xr/XRComponents'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
+import { SimulationLayerTagComponent } from '@ir-engine/ecs/src/SimulationLayerTagComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
@@ -98,9 +99,19 @@ export const AvatarAnimationState = defineState({
   }
 })
 
-const avatarAnimationQuery = defineQuery([AnimationComponent, AvatarAnimationComponent, AvatarRigComponent])
-const avatarComponentQuery = defineQuery([AvatarComponent, RigidBodyComponent, AvatarAnimationComponent])
-const avatarRigQuery = defineQuery([AvatarRigComponent])
+const avatarAnimationQuery = defineQuery([
+  AnimationComponent,
+  AvatarAnimationComponent,
+  AvatarRigComponent,
+  SimulationLayerTagComponent
+])
+const avatarComponentQuery = defineQuery([
+  AvatarComponent,
+  RigidBodyComponent,
+  AvatarAnimationComponent,
+  SimulationLayerTagComponent
+])
+const avatarRigQuery = defineQuery([AvatarRigComponent, SimulationLayerTagComponent])
 
 const _quat = new Quaternion()
 const _quat2 = new Quaternion()

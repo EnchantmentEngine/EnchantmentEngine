@@ -26,9 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import { SRGBColorSpace } from 'three'
 
+import { createEntity, useEntityContext } from '@ir-engine/ecs'
 import { getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { createEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'

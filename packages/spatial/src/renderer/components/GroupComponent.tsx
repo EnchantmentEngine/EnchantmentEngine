@@ -28,6 +28,7 @@ import '../../threejsPatches'
 import React, { FC, memo, useEffect, useLayoutEffect } from 'react'
 import { Camera, Object3D } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -38,7 +39,6 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { QueryComponents, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { NO_PROXY, none } from '@ir-engine/hyperflux'
 
