@@ -99,17 +99,11 @@ export const XRRendererState = defineState({
   }
 })
 
-/**
- * @description Member function of the {@link WebXRManager} class-like object
- * */
 function getSession() {
   return getState(XRState).session
 }
 
-/**
- * @description Factory function that creates the `onSessionEnd` member function of the {@link WebXRManager} class-like object
- * */
-function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
+function getFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
   const onSessionEnd = () => {
     const xrState = getState(XRState)
     const xrRendererState = getMutableState(XRRendererState)
@@ -136,25 +130,16 @@ function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
   return onSessionEnd
 }
 
-/**
- * @description Member function of the {@link WebXRManager} class-like object
- * */
 function getEnvironmentBlendMode() {
   const xrState = getState(XRState)
   if (xrState.session === null) return undefined
   return xrState.session.environmentBlendMode
 }
 
-/**
- * @description Member function of the {@link WebXRManager} class-like object
- * */
 function getCamera() {
   return getComponent(getState(EngineState).viewerEntity, CameraComponent)
 }
 
-/**
- * @description Member function of the {@link WebXRManager} class-like object
- * */
 function getFoveation() {
   const xrRendererState = getMutableState(XRRendererState)
   const glBaseLayer = xrRendererState.glBaseLayer.value
@@ -166,9 +151,6 @@ function getFoveation() {
   return undefined
 }
 
-/**
- * @description Member function of the {@link WebXRManager} class-like object
- * */
 function setFoveation(foveation: number) {
   const xrRendererState = getMutableState(XRRendererState)
   const glBaseLayer = xrRendererState.glBaseLayer.get(NO_PROXY) as XRWebGLLayer
@@ -186,10 +168,6 @@ function setFoveation(foveation: number) {
   }
 }
 
-/**
- * @description Creates a WebGL render target compatible with the {@link WebXRManager} (legacy mode/support)
- * @note Used when the {@link XRSession} has no `renderState.layers` or when WebGL2 is not supported.
- * */
 function createRenderTargetLegacy(
   session: XRSession,
   framebufferScaleFactor: number,
@@ -220,10 +198,6 @@ function createRenderTargetLegacy(
   })
 }
 
-/**
- * @description Creates a WebGL2 render target compatible with the {@link WebXRManager}
- * @note Requires WebGL2 support and a XRSession with valid renderState.layers.
- * */
 function createRenderTarget(
   session: XRSession,
   framebufferScaleFactor: number,
@@ -300,19 +274,30 @@ function createRenderTarget(
   return result
 }
 
-/**
- * @description Factory function that creates the `setSession` member function of the {@link WebXRManager} class-like object
- * */
-function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager) {
-  return async function (session: XRSession, framebufferScaleFactor = 1) {
-    if (session === null) return
-    const ecsState = getState(ECSState)
-    const { animation } = ecsState.timer
-    const xrRendererState = getMutableState(XRRendererState)
+export function createWebXRManager(renderer: WebGLRenderer) {
+  const ecsState = getState(ECSState)
+  const { animation } = ecsState.timer
 
+  const xrRendererState = getMutableState(XRRendererState)
+
+  const result = function () {}
+
+  result.cameraAutoUpdate = false
+  result.enabled = false
+  result.useMultiview = true
+
+  result.isPresenting = false
+  result.isMultiview = false
+
+  /** this is needed by WebGLBackground */
+  result.getSession = getSession
+  result.onSessionEnd = getFunctionOnSessionEnd(renderer, result)
+
+  result.setSession = async function (session: XRSession, framebufferScaleFactor = 1) {
+    if (session === null) return
     xrRendererState.initialRenderTarget.set(renderer.getRenderTarget())
 
-    session.addEventListener('end', manager.onSessionEnd)
+    session.addEventListener('end', result.onSessionEnd)
 
     // wrap in try catch to avoid errors when calling updateTargetFrameRate on unsupported devices
     try {
@@ -329,8 +314,8 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     const newRenderTarget =
       session.renderState.layers === undefined || renderer.capabilities.isWebGL2 === false
-        ? createRenderTargetLegacy(session, framebufferScaleFactor, gl, attributes, renderer, manager)
-        : createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, manager)
+        ? createRenderTargetLegacy(session, framebufferScaleFactor, gl, attributes, renderer, result)
+        : createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, result)
 
     // @ts-expect-error @todo Remove scope when possible, see #23278
     newRenderTarget.isXRRenderTarget = true
@@ -338,34 +323,14 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     // Set foveation to maximum.
     // scope.setFoveation(1.0)
-    manager.setFoveation(0)
+    result.setFoveation(0)
 
     animation.setContext(session)
     animation.stop()
     animation.start()
 
-    manager.isPresenting = true
+    result.isPresenting = true
   }
-}
-
-/**
- * @description Factory function that creates a {@link WebXRManager} class-like object
- * */
-export function createWebXRManager(renderer: WebGLRenderer) {
-  const result = function () {}
-
-  result.cameraAutoUpdate = false
-  result.enabled = false
-  result.useMultiview = true
-
-  result.isPresenting = false
-  result.isMultiview = false
-
-  /** this is needed by WebGLBackground */
-  result.getSession = getSession
-  result.onSessionEnd = createFunctionOnSessionEnd(renderer, result)
-
-  result.setSession = createFunctionSetSession(renderer, result)
 
   result.getEnvironmentBlendMode = getEnvironmentBlendMode
 
@@ -392,8 +357,7 @@ export type WebGLAnimation = ReturnType<typeof createAnimationLoop>
 
 export const WebXRManagerFunctions = {
   getSession,
-  createFunctionOnSessionEnd,
-  createFunctionSetSession,
+  getFunctionOnSessionEnd,
   getEnvironmentBlendMode,
   getCamera,
   getFoveation,
