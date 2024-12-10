@@ -51,8 +51,5 @@ export const createEntity = (layerID: LayerID = 'simulation' as LayerID): Entity
   if (layerID === 'simulation') {
     setComponent(result, SimulationLayerTagComponent)
   }
-  if (layerID === 'simulation') {
-    setComponent(result, SimulationLayerTagComponent)
-  }
   return result
 }
