@@ -63,6 +63,7 @@ class MockRenderer {
   domElement = mockCanvas
   setPixelRatio = () => {}
   getRenderTarget = () => {}
+  setRenderTarget = () => {}
   getSize = () => 0
   getContext = () => mockContext
   getPixelRatio = () => 1
