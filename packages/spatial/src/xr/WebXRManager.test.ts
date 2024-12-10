@@ -32,7 +32,7 @@ import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 import { EngineState } from '../EngineState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
-import { XRRendererState, createWebXRManager } from './WebXRManager'
+import { WebXRManager, WebXRManagerFunctions, XRRendererState, createWebXRManager } from './WebXRManager'
 import { XRState } from './XRState'
 
 const FunctionTypeName = 'function'
@@ -44,6 +44,456 @@ const TypeListenerFunctionString = 'function(type, listener) {\n  }'
 beforeAll(() => {
   new CustomWebXRPolyfill()
 })
+
+describe('WebXRManagerFunctions', () => {
+  beforeEach(async () => {
+    createEngine()
+    await mockEmulatedXREngine()
+  })
+
+  afterEach(() => {
+    destroyEmulatedXREngine()
+    destroyEngine()
+  })
+
+  describe('getSession', () => {
+    it('should return XRState.session when called', () => {
+      const Expected = getState(XRState).session
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getSession()
+      expect(result).toBe(Expected) // Check that the object returned is the exact same
+      expect(result).toEqual(Expected) // Check that the object returned contains the same values in its fields (deepEqual)
+    })
+  }) //:: WebXRManagerFunctions.getSession
+
+  /** @todo */
+  describe('createFunctionOnSessionEnd', () => {
+    let renderer: WebGLRenderer | null = null
+
+    beforeEach(async () => {
+      renderer = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer
+    })
+
+    it('should return a valid function', () => {
+      // Sanity check before running
+      assert(renderer)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+      expect(() => result()).does.not.throw()
+      expect(typeof result).toBe(FunctionTypeName)
+    })
+    /** @todo Find all other cases */
+  }) //:: WebXRManagerFunctions.createFunctionOnSessionEnd
+
+  /** @todo */
+  describe('createFunctionSetSession', () => {
+    let renderer: WebGLRenderer | null = null
+
+    beforeEach(async () => {
+      renderer = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer
+    })
+
+    it('should return a valid function', () => {
+      // Set the data as expected
+      const manager = {
+        onSessionEnd: () => {},
+        setFoveation: (_) => {}
+      } as WebXRManager
+      // Sanity check before running
+      assert(renderer)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+      result(getState(XRState).session!)
+      expect(() => result(getState(XRState).session!)).does.not.throw()
+      expect(typeof result).toBe(FunctionTypeName)
+    })
+
+    describe('result', () => {
+      it('should not do anything if `@param session` is null', () => {
+        const Initial = false
+        // Set the data as expected
+        getMutableState(XRState).session.set(null)
+        assert(renderer)
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.isPresenting = Initial
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).toBe(null)
+        const setSession = manager.setSession
+        expect(() => setSession(getState(XRState).session!)).does.not.throw()
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(manager.isPresenting).toBe(Initial)
+        // Run and Check the result
+        const result = setSession(getState(XRState).session!)
+        expect(result).resolves.toEqual(undefined)
+        expect(manager.isPresenting).toBe(Initial)
+      })
+
+      it('should set `@param manager`.isPresenting to true', () => {
+        const Expected = true
+        const Initial = !Expected
+        // Set the data as expected
+        assert(renderer)
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.isPresenting = Initial
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(manager.isPresenting).toBe(Initial)
+        expect(manager.isPresenting).not.toBe(Expected)
+        // Run and Check the result
+        const result = setSession(getState(XRState).session!)
+        expect(result).resolves.toEqual(undefined)
+        expect(manager.isPresenting).not.toBe(Initial)
+        expect(manager.isPresenting).toBe(Expected)
+      })
+
+      it('should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget', () => {
+        const renderTarget = { width: 41, height: 42 } as WebGLRenderTarget<Texture>
+        const Expected = renderTarget
+        const Initial = undefined
+        // Set the data as expected
+        assert(renderer)
+        renderer!.getRenderTarget = (): WebGLRenderTarget<Texture> | null => {
+          return renderTarget
+        }
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        const before = getMutableState(XRRendererState).initialRenderTarget.value
+        expect(before).toBe(Initial)
+        expect(before).not.toEqual(Expected)
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        const result = getMutableState(XRRendererState).initialRenderTarget.value
+        expect(result).not.toEqual(Initial)
+        expect(result).toEqual(Expected)
+      })
+
+      it("should add an `'end'` event listener with the onSessionEnd function", () => {
+        // Set the data as expected
+        assert(renderer)
+        const addEventListenerSpy = vi.fn()
+        getMutableState(XRState).session.merge({ addEventListener: addEventListenerSpy })
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(addEventListenerSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        expect(addEventListenerSpy).toHaveBeenCalledOnce()
+      })
+
+      it('should call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is a function', () => {
+        const Expected = 72
+        // Set the data as expected
+        assert(renderer)
+        const updateTargetFrameRateSpy = vi.fn()
+        getMutableState(XRState).session.merge({ updateTargetFrameRate: updateTargetFrameRateSpy })
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(updateTargetFrameRateSpy).not.toHaveBeenCalled()
+        expect(typeof getState(XRState).session?.updateTargetFrameRate).toBe('function')
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        expect(updateTargetFrameRateSpy).toHaveBeenCalledWith(Expected)
+      })
+
+      it('should call WebGLRenderingContext.makeXRCompatible when WebGLRenderingContext.getContextAttributes.xrCompatible is not true', () => {
+        // Set the data as expected
+        assert(renderer)
+        const makeXRCompatibleSpy = vi.fn()
+        const glContext = renderer.getContext()
+        glContext.makeXRCompatible = makeXRCompatibleSpy
+        glContext.getContextAttributes = () => ({ xrCompatible: false })
+        const glContextAttributes = glContext.getContextAttributes()
+        glContextAttributes!.xrCompatible = false
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(makeXRCompatibleSpy).not.toHaveBeenCalled()
+        expect(glContextAttributes?.xrCompatible).toBe(false)
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        expect(makeXRCompatibleSpy).toHaveBeenCalled()
+      })
+
+      //   /**
+      //   // !!! @todo Find all of the ifCase/elseCase test cases  (two big separate functions)
+      //   describe("should run ifCase() if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false", () => {})
+      //   describe("should run elseCase() if `@param session`.renderState.layers is not undefined", () => {})
+      //   it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
+      //   it("should set xrRendererState.newRenderTarget to the newRenderTarget generated by the ifCase/elseCase process", () => {})
+      //   // !!!
+      //   */
+
+      it('should set newRenderTarget.isXRRenderTarget to true', () => {
+        const Expected = true
+        const Initial = !Expected
+        // Set the data as expected
+        assert(renderer)
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        // @ts-expect-error The isXRRenderTarget property does not exist on the type, but it is created inside the function
+        getMutableState(XRRendererState).newRenderTarget.merge({ isXRRenderTarget: Initial })
+        // @ts-expect-error
+        const before = getState(XRRendererState).newRenderTarget!.isXRRenderTarget
+        expect(before).not.toBe(undefined)
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        // @ts-expect-error
+        const result = getState(XRRendererState).newRenderTarget!.isXRRenderTarget
+        expect(result).not.toBe(undefined)
+        expect(result).toBe(Initial)
+        expect(result).not.toBe(Expected)
+      })
+
+      /** @todo The closure is not allowing modification of setFoveation with a spy */
+      it.todo('should call result.setFoveation with a value of 0', () => {
+        const Expected = 0
+        // Set the data as expected
+        assert(renderer)
+        const resultSpy = vi.fn()
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setFoveation = resultSpy
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        const setSession = manager.setSession
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        expect(resultSpy).toHaveBeenCalledOnce()
+        expect(resultSpy).toHaveBeenCalledWith(Expected)
+      })
+
+      /** @todo The closure is not allowing modification of ECSState.timer.animation.setContext with a spy */
+      it.todo('should call ECSState.timer.animation.setContext with the `@param session`', () => {
+        const Expected = getState(XRState).session
+        // Set the data as expected
+        assert(renderer)
+        const resultSpy = vi.fn()
+        getMutableState(ECSState).timer.animation.merge({ setContext: resultSpy })
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        const setSession = manager.setSession
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        expect(typeof setSession).toBe(FunctionTypeName)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        expect(resultSpy).toHaveBeenCalledOnce()
+        expect(resultSpy).toHaveBeenCalledWith(Expected)
+      })
+
+      /**
+      // @todo
+      it("should call ECSState.timer.animation.stop", () => {})
+      it("should call ECSState.timer.animation.start", () => {})
+      */
+
+      /** @todo ?? The closure modifies result.isPresenting, but it is not reflected in our "instance"/"snapshot" of the data ?? */
+      it.todo('should set result.isPresenting to true', () => {
+        const Expected = true
+        const Initial = !Expected
+        // Set the data as expected
+        assert(renderer)
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        // Sanity check before running
+        expect(getState(XRState).session).not.toBe(null)
+        const setSession = manager.setSession
+        expect(typeof setSession).toBe(FunctionTypeName)
+        const before = manager.isPresenting
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        const result = manager.isPresenting
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+    }) //:: createFunctionSetSession.result
+  }) //:: WebXRManagerFunctions.createFunctionSetSession
+
+  describe('getEnvironmentBlendMode', () => {
+    it('should return XRState.session.environmentBlendMode when XRState.session is not null', () => {
+      const Expected = getState(XRState).session?.environmentBlendMode
+      // Sanity check before running
+      expect(getState(XRState).session).not.toBe(null)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getEnvironmentBlendMode()
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+    })
+
+    it('should return undefined when XRState.session is null', () => {
+      const Expected = undefined
+      // Set the data as expected
+      if (getState(XRState).session !== null) getMutableState(XRState).session.set(null)
+      // Sanity check before running
+      expect(getState(XRState).session).toBe(null)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getEnvironmentBlendMode()
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+    })
+  }) //:: WebXRManagerFunctions.getEnvironmentBlendMode
+
+  describe('getCamera', () => {
+    it('should return the CameraComponent of EngineState.viewerEntity', () => {
+      const Expected = getComponent(getState(EngineState).viewerEntity, CameraComponent)
+      // Sanity check before running
+      expect(() => WebXRManagerFunctions.getCamera()).does.not.throw()
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getCamera()
+      expect(result).toBe(Expected)
+    })
+  }) //:: WebXRManagerFunctions.getCamera
+
+  describe('getFoveation', () => {
+    it('should return XRRendererState.glBaseLayer.fixedFoveation from XRRendererState.glBaseLayer when XRRendererState.glProjLayer is null and XRRendererState.glBaseLayer is not null', () => {
+      const Expected = 42
+      // Set the data as expected
+      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
+      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
+      getMutableState(XRRendererState).glBaseLayer.merge({ fixedFoveation: Expected })
+      // Sanity check before running
+      expect(getState(XRRendererState).glProjLayer).toBe(null)
+      expect(getState(XRRendererState).glBaseLayer).not.toBe(null)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getFoveation()
+      expect(result).not.toBe(undefined)
+      expect(result).toBe(Expected)
+    })
+
+    it('should return XRRendererState.glProjLayer.fixedFoveation from XRRendererState.glProjLayer when XRRendererState.glProjLayer is not null', () => {
+      const Expected = 42
+      // Set the data as expected
+      // if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
+      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
+      getMutableState(XRRendererState).glProjLayer.merge({ fixedFoveation: Expected })
+      // Sanity check before running
+      expect(getState(XRRendererState).glProjLayer).not.toBe(null)
+      // expect(getState(XRRendererState).glBaseLayer).toBe(null)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getFoveation()
+      expect(result).not.toBe(undefined)
+      expect(result).toBe(Expected)
+    })
+
+    it('should return undefined when XRRendererState.glBaseLayer and XRRendererState.glProjLayer are both null', () => {
+      const Expected = undefined
+      // Set the data as expected
+      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
+      if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
+      // Sanity check before running
+      expect(getState(XRRendererState).glProjLayer).toBe(null)
+      expect(getState(XRRendererState).glBaseLayer).toBe(null)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.getFoveation()
+      expect(result).toBe(Expected)
+    })
+  }) //:: WebXRManagerFunctions.getFoveation
+
+  describe('setFoveation', () => {
+    it('should set XRRendererState.glProjLayer.fixedFoveation to `@param foveation` when XRRendererState.glProjLayer is not null', () => {
+      const Expected = 42
+      const Initial = 21
+      // Set the data as expected
+      // if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
+      if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
+      getMutableState(XRRendererState).glProjLayer.merge({ fixedFoveation: Initial })
+      // Sanity check before running
+      expect(getState(XRRendererState).glProjLayer).not.toBe(null)
+      expect(getState(XRRendererState).glBaseLayer).toBe(null)
+      // Run and Check the result
+      WebXRManagerFunctions.setFoveation(Expected)
+      const result = getState(XRRendererState).glProjLayer?.fixedFoveation
+      expect(result).toBe(Expected)
+    })
+
+    it('should set XRRendererState.glBaseLayer.fixedFoveation to `@param foveation` when XRRendererState.glBaseLayer is not null and XRRendererState.glBaseLayer.fixedFoveation it not undefined', () => {
+      const Expected = 42
+      const Initial = 21
+      // Set the data as expected
+      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
+      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
+      getMutableState(XRRendererState).glBaseLayer.merge({ fixedFoveation: Initial })
+      // Sanity check before running
+      expect(getState(XRRendererState).glProjLayer).toBe(null)
+      expect(getState(XRRendererState).glBaseLayer).not.toBe(null)
+      // Run and Check the result
+      WebXRManagerFunctions.setFoveation(Expected)
+      const result = getState(XRRendererState).glBaseLayer?.fixedFoveation
+      expect(result).toBe(Expected)
+    })
+  }) //:: WebXRManagerFunctions.setFoveation
+
+  describe('createRenderTargetLegacy', () => {}) //:: WebXRManagerFunctions.createRenderTargetLegacy
+  describe('createRenderTarget', () => {}) //:: WebXRManagerFunctions.createRenderTarget
+}) //:: WebXRManagerFunctions
 
 describe('XRRendererState', () => {
   describe('Fields', () => {
@@ -134,273 +584,17 @@ describe('createWebXRManager', () => {
     expect(result).toEqual(Expected) // Check that the object returned contains the same values in its fields (deepEqual)
   })
 
-  describe('result.getEnvironmentBlendMode', () => {
-    it('should be set to a valid function', () => {
-      // Sanity check before running
-      assert(renderer)
-      // Run and Check the result
-      const result = createWebXRManager(renderer).getEnvironmentBlendMode
-      expect(() => result()).does.not.throw()
-      expect(typeof result).toBe(FunctionTypeName)
-    })
+  it('should set result.getEnvironmentBlendMode to the expected function', () => {
+    const Expected = WebXRManagerFunctions.getEnvironmentBlendMode
+    // Sanity check before running
+    assert(renderer)
+    // Run and Check the result
+    const result = createWebXRManager(renderer).getEnvironmentBlendMode
+    expect(result).toBe(Expected)
+  })
 
-    it('should return XRState.session.environmentBlendMode when XRState.session is not null', () => {
-      const Expected = getState(XRState).session?.environmentBlendMode
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRState).session).not.toBe(null)
-      // Run and Check the result
-      const resultFn = createWebXRManager(renderer).getEnvironmentBlendMode
-      const result = resultFn()
-      expect(result).toBe(Expected)
-      expect(result).toEqual(Expected)
-    })
-
-    it('should return undefined when XRState.session is null', () => {
-      const Expected = undefined
-      // Set the data as expected
-      if (getState(XRState).session !== null) getMutableState(XRState).session.set(null)
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRState).session).toBe(null)
-      // Run and Check the result
-      const resultFn = createWebXRManager(renderer).getEnvironmentBlendMode
-      const result = resultFn()
-      expect(result).toBe(Expected)
-      expect(result).toEqual(Expected)
-    })
-  }) //:: createWebXRManager.result.getEnvironmentBlendMode
-
-  describe('result.setSession', () => {
-    it('should be set to a valid function', () => {
-      // Sanity check before running
-      assert(renderer)
-      // Run and Check the result
-      const result = createWebXRManager(renderer).setSession
-      expect(() => result(getState(XRState).session!)).does.not.throw()
-      expect(typeof result).toBe(FunctionTypeName)
-    })
-
-    it('should not do anything if `@param session` is null', () => {
-      const Initial = false
-      // Set the data as expected
-      getMutableState(XRState).session.set(null)
-      assert(renderer)
-      const scope = createWebXRManager(renderer)
-      scope.isPresenting = Initial
-      // Sanity check before running
-      expect(getState(XRState).session).toBe(null)
-      const setSession = scope.setSession
-      expect(() => setSession(getState(XRState).session!)).does.not.throw()
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(scope.isPresenting).toBe(Initial)
-      // Run and Check the result
-      const result = setSession(getState(XRState).session!)
-      expect(result).resolves.toEqual(undefined)
-      expect(scope.isPresenting).toBe(Initial)
-    })
-
-    it('should set result.isPresenting to true', () => {
-      const Expected = true
-      const Initial = !Expected
-      // Set the data as expected
-      assert(renderer)
-      const scope = createWebXRManager(renderer)
-      scope.isPresenting = Initial
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = scope.setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(scope.isPresenting).toBe(Initial)
-      expect(scope.isPresenting).not.toBe(Expected)
-      // Run and Check the result
-      const result = setSession(getState(XRState).session!)
-      expect(result).resolves.toEqual(undefined)
-      expect(scope.isPresenting).not.toBe(Initial)
-      expect(scope.isPresenting).toBe(Expected)
-    })
-
-    it('should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget', () => {
-      const renderTarget = { width: 41, height: 42 } as WebGLRenderTarget<Texture>
-      const Expected = renderTarget
-      const Initial = undefined
-      // Set the data as expected
-      assert(renderer)
-      renderer!.getRenderTarget = (): WebGLRenderTarget<Texture> | null => {
-        return renderTarget
-      }
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      const before = getMutableState(XRRendererState).initialRenderTarget.value
-      expect(before).toBe(Initial)
-      expect(before).not.toEqual(Expected)
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      const result = getMutableState(XRRendererState).initialRenderTarget.value
-      expect(result).not.toEqual(Initial)
-      expect(result).toEqual(Expected)
-    })
-
-    it("should add an `'end'` event listener with the onSessionEnd function", () => {
-      // Set the data as expected
-      assert(renderer)
-      const addEventListenerSpy = vi.fn()
-      getMutableState(XRState).session.merge({ addEventListener: addEventListenerSpy })
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(addEventListenerSpy).not.toHaveBeenCalled()
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      expect(addEventListenerSpy).toHaveBeenCalledOnce()
-    })
-
-    it('should call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is a function', () => {
-      const Expected = 72
-      // Set the data as expected
-      assert(renderer)
-      const updateTargetFrameRateSpy = vi.fn()
-      getMutableState(XRState).session.merge({ updateTargetFrameRate: updateTargetFrameRateSpy })
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(updateTargetFrameRateSpy).not.toHaveBeenCalled()
-      expect(typeof getState(XRState).session?.updateTargetFrameRate).toBe('function')
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      expect(updateTargetFrameRateSpy).toHaveBeenCalledWith(Expected)
-    })
-
-    it('should call WebGLRenderingContext.makeXRCompatible when WebGLRenderingContext.getContextAttributes.xrCompatible is not true', () => {
-      // Set the data as expected
-      assert(renderer)
-      const makeXRCompatibleSpy = vi.fn()
-      const glContext = renderer.getContext()
-      glContext.makeXRCompatible = makeXRCompatibleSpy
-      glContext.getContextAttributes = () => ({ xrCompatible: false })
-      const glContextAttributes = glContext.getContextAttributes()
-      glContextAttributes!.xrCompatible = false
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(makeXRCompatibleSpy).not.toHaveBeenCalled()
-      expect(glContextAttributes?.xrCompatible).toBe(false)
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      expect(makeXRCompatibleSpy).toHaveBeenCalled()
-    })
-
-    /**
-    // !!! @todo Find all of the ifCase/elseCase test cases  (two big separate functions)
-    describe("should run ifCase() if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false", () => {})
-    describe("should run elseCase() if `@param session`.renderState.layers is not undefined", () => {})
-    it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
-    it("should set xrRendererState.newRenderTarget to the newRenderTarget generated by the ifCase/elseCase process", () => {})
-    // !!!
-    */
-
-    it('should set newRenderTarget.isXRRenderTarget to true', () => {
-      const Expected = true
-      const Initial = !Expected
-      // Set the data as expected
-      assert(renderer)
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      // @ts-expect-error The isXRRenderTarget property does not exist on the type, but it is created inside the function
-      getMutableState(XRRendererState).newRenderTarget.merge({ isXRRenderTarget: Initial })
-      // @ts-expect-error
-      const before = getState(XRRendererState).newRenderTarget!.isXRRenderTarget
-      expect(before).not.toBe(undefined)
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      // @ts-expect-error
-      const result = getState(XRRendererState).newRenderTarget!.isXRRenderTarget
-      expect(result).not.toBe(undefined)
-      expect(result).toBe(Initial)
-      expect(result).not.toBe(Expected)
-    })
-
-    /** @todo The closure is not allowing modification of setFoveation with a spy */
-    it.todo('should call result.setFoveation with a value of 0', () => {
-      const Expected = 0
-      // Set the data as expected
-      assert(renderer)
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const resultSpy = vi.fn()
-      const manager = createWebXRManager(renderer)
-      manager.setFoveation = resultSpy
-      const setSession = manager.setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(resultSpy).not.toHaveBeenCalled()
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      expect(resultSpy).toHaveBeenCalledOnce()
-      expect(resultSpy).toHaveBeenCalledWith(Expected)
-    })
-
-    /** @todo The closure is not allowing modification of ECSState.timer.animation.setContext with a spy */
-    it.todo('should call ECSState.timer.animation.setContext with the `@param session`', () => {
-      const Expected = getState(XRState).session
-      // Set the data as expected
-      assert(renderer)
-      const resultSpy = vi.fn()
-      getMutableState(ECSState).timer.animation.merge({ setContext: resultSpy })
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const setSession = createWebXRManager(renderer).setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      expect(resultSpy).not.toHaveBeenCalled()
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      expect(resultSpy).toHaveBeenCalledOnce()
-      expect(resultSpy).toHaveBeenCalledWith(Expected)
-    })
-
-    /**
-    // @todo
-    it("should call ECSState.timer.animation.stop", () => {})
-    it("should call ECSState.timer.animation.start", () => {})
-    */
-
-    /** @todo ?? The closure modifies result.isPresenting, but it is not reflected in our "instance"/"snapshot" of the data ?? */
-    it.todo('should set result.isPresenting to true', () => {
-      const Expected = true
-      const Initial = !Expected
-      // Set the data as expected
-      assert(renderer)
-      // Sanity check before running
-      expect(getState(XRState).session).not.toBe(null)
-      const manager = createWebXRManager(renderer)
-      const setSession = manager.setSession
-      expect(typeof setSession).toBe(FunctionTypeName)
-      const before = manager.isPresenting
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // Run and Check the result
-      const promise = setSession(getState(XRState).session!)
-      expect(promise).resolves.toEqual(undefined)
-      const result = manager.isPresenting
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
-    })
-  }) //:: createWebXRManager.result.setSession
+  /** @todo */
+  it.todo('should call createFunctionOnSessionEnd and set result.setSession to the resulting function', () => {})
 
   it('should set result.updateCamera to an empty function', () => {
     const Expected = {
@@ -416,127 +610,32 @@ describe('createWebXRManager', () => {
     expect(result.toString()).toBe(Expected.codeString)
   })
 
-  it('should set result.getCamera to a function that returns the EngineState.viewerEntity.CameraComponent', () => {
-    const Expected = {
-      typeName: FunctionTypeName,
-      output: getComponent(getState(EngineState).viewerEntity, CameraComponent)
-    }
+  it('should set result.getCamera to the expected function', () => {
+    const Expected = WebXRManagerFunctions.getCamera
     // Sanity check before running
     assert(renderer)
     // Run and Check the result
     const result = createWebXRManager(renderer).getCamera
-    expect(() => result()).does.not.throw()
-    expect(typeof result).toBe(Expected.typeName)
-    const resultOutput = result()
-    expect(resultOutput).toBe(Expected.output)
+    expect(result).toBe(Expected)
   })
 
-  describe('result.getFoveation', () => {
-    it('should be set to a valid function', () => {
-      // Sanity check before running
-      assert(renderer)
-      // Run and Check the result
-      const result = createWebXRManager(renderer).getFoveation
-      expect(() => result()).does.not.throw()
-      expect(typeof result).toBe(FunctionTypeName)
-    })
+  it('should set result.getFoveation to the expected function', () => {
+    const Expected = WebXRManagerFunctions.getFoveation
+    // Sanity check before running
+    assert(renderer)
+    // Run and Check the result
+    const result = createWebXRManager(renderer).getFoveation
+    expect(result).toBe(Expected)
+  })
 
-    it('should return XRRendererState.glBaseLayer.fixedFoveation from XRRendererState.glBaseLayer when XRRendererState.glProjLayer is null and XRRendererState.glBaseLayer is not null', () => {
-      const Expected = 42
-      // Set the data as expected
-      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
-      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
-      getMutableState(XRRendererState).glBaseLayer.merge({ fixedFoveation: Expected })
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRRendererState).glProjLayer).toBe(null)
-      expect(getState(XRRendererState).glBaseLayer).not.toBe(null)
-      // Run and Check the result
-      const getFoveation = createWebXRManager(renderer).getFoveation
-      const result = getFoveation()
-      expect(result).not.toBe(undefined)
-      expect(result).toBe(Expected)
-    })
-
-    it('should return XRRendererState.glProjLayer.fixedFoveation from XRRendererState.glProjLayer when XRRendererState.glProjLayer is not null', () => {
-      const Expected = 42
-      // Set the data as expected
-      // if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
-      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
-      getMutableState(XRRendererState).glProjLayer.merge({ fixedFoveation: Expected })
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRRendererState).glProjLayer).not.toBe(null)
-      // expect(getState(XRRendererState).glBaseLayer).toBe(null)
-      // Run and Check the result
-      const getFoveation = createWebXRManager(renderer).getFoveation
-      const result = getFoveation()
-      expect(result).not.toBe(undefined)
-      expect(result).toBe(Expected)
-    })
-
-    it('should return undefined when XRRendererState.glBaseLayer and XRRendererState.glProjLayer are both null', () => {
-      const Expected = undefined
-      // Set the data as expected
-      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
-      if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRRendererState).glProjLayer).toBe(null)
-      expect(getState(XRRendererState).glBaseLayer).toBe(null)
-      // Run and Check the result
-      const getFoveation = createWebXRManager(renderer).getFoveation
-      const result = getFoveation()
-      expect(result).toBe(Expected)
-    })
-  }) //:: createWebXRManager.result.getFoveation
-
-  describe('result.setFoveation', () => {
-    it('should be set to a valid function', () => {
-      // Sanity check before running
-      assert(renderer)
-      // Run and Check the result
-      const result = createWebXRManager(renderer).setFoveation
-      expect(() => result(1234)).does.not.throw()
-      expect(typeof result).toBe(FunctionTypeName)
-    })
-
-    it('should set XRRendererState.glProjLayer.fixedFoveation to `@param foveation` when XRRendererState.glProjLayer is not null', () => {
-      const Expected = 42
-      const Initial = 21
-      // Set the data as expected
-      // if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
-      if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
-      getMutableState(XRRendererState).glProjLayer.merge({ fixedFoveation: Initial })
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRRendererState).glProjLayer).not.toBe(null)
-      expect(getState(XRRendererState).glBaseLayer).toBe(null)
-      // Run and Check the result
-      const setFoveation = createWebXRManager(renderer).setFoveation
-      setFoveation(Expected)
-      const result = getState(XRRendererState).glProjLayer?.fixedFoveation
-      expect(result).toBe(Expected)
-    })
-
-    it('should set XRRendererState.glBaseLayer.fixedFoveation to `@param foveation` when XRRendererState.glBaseLayer is not null and XRRendererState.glBaseLayer.fixedFoveation it not undefined', () => {
-      const Expected = 42
-      const Initial = 21
-      // Set the data as expected
-      if (getState(XRRendererState).glProjLayer !== null) getMutableState(XRRendererState).glProjLayer.set(null)
-      // if (getState(XRRendererState).glBaseLayer !== null) getMutableState(XRRendererState).glBaseLayer.set(null)
-      getMutableState(XRRendererState).glBaseLayer.merge({ fixedFoveation: Initial })
-      // Sanity check before running
-      assert(renderer)
-      expect(getState(XRRendererState).glProjLayer).toBe(null)
-      expect(getState(XRRendererState).glBaseLayer).not.toBe(null)
-      // Run and Check the result
-      const setFoveation = createWebXRManager(renderer).setFoveation
-      setFoveation(Expected)
-      const result = getState(XRRendererState).glBaseLayer?.fixedFoveation
-      expect(result).toBe(Expected)
-    })
-  }) //:: createWebXRManager.result.setFoveation
+  it('should set result.setFoveation to the expected function', () => {
+    const Expected = WebXRManagerFunctions.setFoveation
+    // Sanity check before running
+    assert(renderer)
+    // Run and Check the result
+    const result = createWebXRManager(renderer).setFoveation
+    expect(result).toBe(Expected)
+  })
 
   it('should set result.setAnimationLoop to an empty function', () => {
     const Expected = {
