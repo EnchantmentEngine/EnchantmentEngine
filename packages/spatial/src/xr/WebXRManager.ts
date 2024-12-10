@@ -328,8 +328,15 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     const newRenderTarget =
       session.renderState.layers === undefined || renderer.capabilities.isWebGL2 === false
-        ? createRenderTargetLegacy(session, framebufferScaleFactor, gl, attributes, renderer, manager)
-        : createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, manager)
+        ? WebXRManagerFunctions.createRenderTargetLegacy(
+            session,
+            framebufferScaleFactor,
+            gl,
+            attributes,
+            renderer,
+            manager
+          )
+        : WebXRManagerFunctions.createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, manager)
 
     // @ts-expect-error @todo Remove scope when possible, see #23278
     newRenderTarget.isXRRenderTarget = true
@@ -361,20 +368,20 @@ export function createWebXRManager(renderer: WebGLRenderer) {
   result.isMultiview = false
 
   /** this is needed by WebGLBackground */
-  result.getSession = getSession
-  result.onSessionEnd = createFunctionOnSessionEnd(renderer, result)
+  result.getSession = WebXRManagerFunctions.getSession
+  result.onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, result)
 
-  result.setSession = createFunctionSetSession(renderer, result)
+  result.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, result)
 
-  result.getEnvironmentBlendMode = getEnvironmentBlendMode
+  result.getEnvironmentBlendMode = WebXRManagerFunctions.getEnvironmentBlendMode
 
   result.updateCamera = function () {}
-  result.getCamera = getCamera
+  result.getCamera = WebXRManagerFunctions.getCamera
 
-  result.getFoveation = getFoveation
+  result.getFoveation = WebXRManagerFunctions.getFoveation
 
   /** @todo put foveation in state and make a reactor to update it */
-  result.setFoveation = setFoveation
+  result.setFoveation = WebXRManagerFunctions.setFoveation
 
   result.setAnimationLoop = function () {}
   result.dispose = function () {}
