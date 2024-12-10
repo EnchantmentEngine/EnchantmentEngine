@@ -45,18 +45,37 @@ beforeAll(() => {
   new CustomWebXRPolyfill()
 })
 
+describe('XRRendererState', () => {
+  describe('Fields', () => {
+    it('should initialize the *State.name field with the expected value', () => {
+      expect(XRRendererState.name).toBe('XRRendererState')
+    })
+
+    it('should initialize the *State.initial field with the expected value', () => {
+      expect(XRRendererState.initial).deep.equal({
+        glBinding: null,
+        glProjLayer: null,
+        glBaseLayer: null,
+        xrFrame: null,
+        initialRenderTarget: null,
+        newRenderTarget: null
+      })
+    })
+  }) //:: Fields
+}) //:: XRRendererState
+
 describe('WebXRManagerFunctions', () => {
-  beforeEach(async () => {
-    createEngine()
-    await mockEmulatedXREngine()
-  })
-
-  afterEach(() => {
-    destroyEmulatedXREngine()
-    destroyEngine()
-  })
-
   describe('getSession', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should return XRState.session when called', () => {
       const Expected = getState(XRState).session
       // Run and Check the result
@@ -70,7 +89,14 @@ describe('WebXRManagerFunctions', () => {
     let renderer: WebGLRenderer | null = null
 
     beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
       renderer = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
     })
 
     it('should return a valid function', () => {
@@ -243,7 +269,14 @@ describe('WebXRManagerFunctions', () => {
     let renderer: WebGLRenderer | null = null
 
     beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
       renderer = getComponent(getState(EngineState).viewerEntity, RendererComponent).renderer
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
     })
 
     it('should return a valid function', () => {
@@ -531,10 +564,20 @@ describe('WebXRManagerFunctions', () => {
         expect(result).not.toBe(Initial)
         expect(result).toBe(Expected)
       })
-    }) //:: createFunctionSetSession.result
+    }) //:: result
   }) //:: WebXRManagerFunctions.createFunctionSetSession
 
   describe('getEnvironmentBlendMode', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should return XRState.session.environmentBlendMode when XRState.session is not null', () => {
       const Expected = getState(XRState).session?.environmentBlendMode
       // Sanity check before running
@@ -559,6 +602,16 @@ describe('WebXRManagerFunctions', () => {
   }) //:: WebXRManagerFunctions.getEnvironmentBlendMode
 
   describe('getCamera', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should return the CameraComponent of EngineState.viewerEntity', () => {
       const Expected = getComponent(getState(EngineState).viewerEntity, CameraComponent)
       // Sanity check before running
@@ -570,6 +623,16 @@ describe('WebXRManagerFunctions', () => {
   }) //:: WebXRManagerFunctions.getCamera
 
   describe('getFoveation', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should return XRRendererState.glBaseLayer.fixedFoveation from XRRendererState.glBaseLayer when XRRendererState.glProjLayer is null and XRRendererState.glBaseLayer is not null', () => {
       const Expected = 42
       // Set the data as expected
@@ -615,6 +678,16 @@ describe('WebXRManagerFunctions', () => {
   }) //:: WebXRManagerFunctions.getFoveation
 
   describe('setFoveation', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     it('should set XRRendererState.glProjLayer.fixedFoveation to `@param foveation` when XRRendererState.glProjLayer is not null', () => {
       const Expected = 42
       const Initial = 21
@@ -648,28 +721,10 @@ describe('WebXRManagerFunctions', () => {
     })
   }) //:: WebXRManagerFunctions.setFoveation
 
+  /** @todo */
   describe('createRenderTargetLegacy', () => {}) //:: WebXRManagerFunctions.createRenderTargetLegacy
   describe('createRenderTarget', () => {}) //:: WebXRManagerFunctions.createRenderTarget
 }) //:: WebXRManagerFunctions
-
-describe('XRRendererState', () => {
-  describe('Fields', () => {
-    it('should initialize the *State.name field with the expected value', () => {
-      expect(XRRendererState.name).toBe('XRRendererState')
-    })
-
-    it('should initialize the *State.initial field with the expected value', () => {
-      expect(XRRendererState.initial).deep.equal({
-        glBinding: null,
-        glProjLayer: null,
-        glBaseLayer: null,
-        xrFrame: null,
-        initialRenderTarget: null,
-        newRenderTarget: null
-      })
-    })
-  }) //:: Fields
-}) //:: XRRendererState
 
 describe('createWebXRManager', () => {
   let renderer: WebGLRenderer | null = null
