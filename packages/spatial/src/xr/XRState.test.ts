@@ -545,7 +545,7 @@ describe('XRState', () => {
       // Sanity check before running
       expect(getState(XRState).session).toBeTruthy()
       expect(getState(XRState).scenePlacementMode).not.toBe('placing')
-      const earlyExit = !Boolean(getState(XRState).session) || getState(XRState).scenePlacementMode === 'placing'
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
       expect(earlyExit).toBeFalsy()
       expect(getState(XRState).avatarCameraMode).toBe('auto')
       expect(getState(XRState).sceneScale).toBe(1)
@@ -570,7 +570,7 @@ describe('XRState', () => {
       // Sanity check before running
       expect(getState(XRState).session).toBeTruthy()
       expect(getState(XRState).scenePlacementMode).not.toBe('placing')
-      const earlyExit = !Boolean(getState(XRState).session) || getState(XRState).scenePlacementMode === 'placing'
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
       expect(earlyExit).toBeFalsy()
       expect(getState(XRState).avatarCameraMode).toBe('auto')
       expect(getState(XRState).sceneScale).not.toBe(1)
@@ -594,7 +594,7 @@ describe('XRState', () => {
       // Sanity check before running
       expect(getState(XRState).session).toBeTruthy()
       expect(getState(XRState).scenePlacementMode).not.toBe('placing')
-      const earlyExit = !Boolean(getState(XRState).session) || getState(XRState).scenePlacementMode === 'placing'
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
       expect(earlyExit).toBeFalsy()
       expect(getState(XRState).avatarCameraMode).not.toBe('auto')
       expect(getState(XRState).avatarCameraMode).toBe('attached')
@@ -618,7 +618,7 @@ describe('XRState', () => {
       // Sanity check before running
       expect(getState(XRState).session).toBeTruthy()
       expect(getState(XRState).scenePlacementMode).not.toBe('placing')
-      const earlyExit = !Boolean(getState(XRState).session) || getState(XRState).scenePlacementMode === 'placing'
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
       expect(earlyExit).toBeFalsy()
       expect(getState(XRState).avatarCameraMode).not.toBe('attached')
       expect(reactorSpy).not.toHaveBeenCalled()
