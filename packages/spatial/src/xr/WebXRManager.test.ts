@@ -295,7 +295,7 @@ describe('WebXRManagerFunctions', () => {
     })
 
     describe('result', () => {
-      it('should not do anything if `@param session` is null', () => {
+      it('should not do anything if `@param session` is null', async () => {
         const Initial = false
         // Set the data as expected
         getMutableState(XRState).session.set(null)
@@ -313,12 +313,13 @@ describe('WebXRManagerFunctions', () => {
         expect(typeof setSession).toBe(FunctionTypeName)
         expect(manager.isPresenting).toBe(Initial)
         // Run and Check the result
-        const result = setSession(getState(XRState).session!)
-        expect(result).resolves.toEqual(undefined)
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(manager.isPresenting).toBe(Initial)
       })
 
-      it('should set `@param manager`.isPresenting to true', () => {
+      it('should set `@param manager`.isPresenting to true', async () => {
         const Expected = true
         const Initial = !Expected
         // Set the data as expected
@@ -336,13 +337,14 @@ describe('WebXRManagerFunctions', () => {
         expect(manager.isPresenting).toBe(Initial)
         expect(manager.isPresenting).not.toBe(Expected)
         // Run and Check the result
-        const result = setSession(getState(XRState).session!)
-        expect(result).resolves.toEqual(undefined)
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(manager.isPresenting).not.toBe(Initial)
         expect(manager.isPresenting).toBe(Expected)
       })
 
-      it('should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget', () => {
+      it('should set xrRendererState.initialRenderTarget to the value of `@param renderer`.getRenderTarget', async () => {
         const renderTarget = { width: 41, height: 42 } as WebGLRenderTarget<Texture>
         const Expected = renderTarget
         const Initial = undefined
@@ -366,12 +368,13 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         const result = getMutableState(XRRendererState).initialRenderTarget.value
         expect(result).not.toEqual(Initial)
         expect(result).toEqual(Expected)
       })
 
-      it("should add an `'end'` event listener with the onSessionEnd function", () => {
+      it("should add an `'end'` event listener with the onSessionEnd function", async () => {
         // Set the data as expected
         assert(renderer)
         const addEventListenerSpy = vi.fn()
@@ -389,10 +392,11 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(addEventListenerSpy).toHaveBeenCalledOnce()
       })
 
-      it('should call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is a function', () => {
+      it('should call session.updateTargetFrameRate with a value of 72 if session.updateTargetFrameRate is a function', async () => {
         const Expected = 72
         // Set the data as expected
         assert(renderer)
@@ -412,10 +416,11 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(updateTargetFrameRateSpy).toHaveBeenCalledWith(Expected)
       })
 
-      it('should call WebGLRenderingContext.makeXRCompatible when WebGLRenderingContext.getContextAttributes.xrCompatible is not true', () => {
+      it('should call WebGLRenderingContext.makeXRCompatible when WebGLRenderingContext.getContextAttributes.xrCompatible is not true', async () => {
         // Set the data as expected
         assert(renderer)
         const makeXRCompatibleSpy = vi.fn()
@@ -438,13 +443,14 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(makeXRCompatibleSpy).toHaveBeenCalled()
       })
 
       /** @todo How to change the value of renderState.layers? readonly with only a getter */
       it.todo(
         'should call WebXRManagerFunctions.createRenderTarget if `@param session`.renderState.layers is not undefined and `@param renderer`.capabilities.isWebGL2 is true',
-        () => {
+        async () => {
           // Set the data as expected
           assert(renderer)
           const resultSpy = vi.spyOn(WebXRManagerFunctions, 'createRenderTarget')
@@ -463,6 +469,7 @@ describe('WebXRManagerFunctions', () => {
           // Run and Check the result
           const promise = setSession(getState(XRState).session!)
           expect(promise).resolves.toEqual(undefined)
+          await promise
           expect(resultSpy).toHaveBeenCalledOnce()
         }
       )
@@ -474,7 +481,7 @@ describe('WebXRManagerFunctions', () => {
       it("should set XRRendererState.newRenderTarget to the newRenderTarget generated by the createRenderTarget process", () => {})
       */
 
-      it('should set newRenderTarget.isXRRenderTarget to true', () => {
+      it('should set newRenderTarget.isXRRenderTarget to true', async () => {
         const Expected = true
         const Initial = !Expected
         // Set the data as expected
@@ -498,15 +505,16 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         // @ts-expect-error
         const result = getState(XRRendererState).newRenderTarget!.isXRRenderTarget
         expect(result).not.toBe(undefined)
-        expect(result).toBe(Initial)
-        expect(result).not.toBe(Expected)
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
       })
 
       /** @todo works fine if .only is set on the test ?? */
-      it.todo('should call result.setFoveation with a value of 0', () => {
+      it('should call result.setFoveation with a value of 0', async () => {
         const Expected = 0
         // Set the data as expected
         assert(renderer)
@@ -525,12 +533,12 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(resultSpy).toHaveBeenCalledOnce()
         expect(resultSpy).toHaveBeenCalledWith(Expected)
       })
 
-      /** @todo works fine if .only is set on the test ?? */
-      it.todo('should call ECSState.timer.animation.setContext with the `@param session`', () => {
+      it('should call ECSState.timer.animation.setContext with the `@param session`', async () => {
         const Expected = getState(XRState).session
         // Set the data as expected
         assert(renderer)
@@ -549,12 +557,12 @@ describe('WebXRManagerFunctions', () => {
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         expect(resultSpy).toHaveBeenCalledOnce()
         expect(resultSpy).toHaveBeenCalledWith(Expected)
       })
 
-      /** @todo works fine if .only is set on the test ?? */
-      it.todo('should call ECSState.timer.animation.stop', () => {
+      it('should call ECSState.timer.animation.stop', async () => {
         // Set the data as expected
         assert(renderer)
         const resultSpy = vi.fn()
@@ -571,12 +579,12 @@ describe('WebXRManagerFunctions', () => {
         expect(resultSpy).not.toHaveBeenCalled()
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
+        await promise
         expect(promise).resolves.toEqual(undefined)
         expect(resultSpy).toHaveBeenCalledOnce()
       })
 
-      /** @todo works fine if .only is set on the test ?? */
-      it.todo('should call ECSState.timer.animation.start', () => {
+      it('should call ECSState.timer.animation.start', async () => {
         // Set the data as expected
         assert(renderer)
         const resultSpy = vi.fn()
@@ -593,12 +601,12 @@ describe('WebXRManagerFunctions', () => {
         expect(resultSpy).not.toHaveBeenCalled()
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
+        await promise
         expect(promise).resolves.toEqual(undefined)
         expect(resultSpy).toHaveBeenCalledOnce()
       })
 
-      /** @todo works fine if .only is set on the test ?? */
-      it.todo('should set result.isPresenting to true', () => {
+      it('should set result.isPresenting to true', async () => {
         const Expected = true
         const Initial = !Expected
         // Set the data as expected
@@ -614,14 +622,15 @@ describe('WebXRManagerFunctions', () => {
         const setSession = manager.setSession
         expect(typeof setSession).toBe(FunctionTypeName)
         const before = manager.isPresenting
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
+        expect(before).toBe(false)
+        expect(before).not.toBe(true)
         // Run and Check the result
         const promise = setSession(getState(XRState).session!)
         expect(promise).resolves.toEqual(undefined)
+        await promise
         const result = manager.isPresenting
-        expect(result).not.toBe(Initial)
-        expect(result).toBe(Expected)
+        expect(result).not.toBe(false)
+        expect(result).toBe(true)
       })
     }) //:: result
   }) //:: WebXRManagerFunctions.createFunctionSetSession
