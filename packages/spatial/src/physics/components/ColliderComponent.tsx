@@ -30,6 +30,7 @@ import { EntityLayerState } from '@ir-engine/ecs/src/LayerState'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import React, { useEffect, useLayoutEffect } from 'react'
 import { removeCallback, setCallback } from '../../common/CallbackComponent'
+import { T } from '../../schema/schemaFunctions'
 import { useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Physics } from '../classes/Physics'
@@ -45,7 +46,7 @@ export const ColliderComponent = defineComponent({
   schema: S.Object({
     shape: ShapeSchema('box'),
     mass: S.Number(1),
-    massCenter: S.Vec3(),
+    massCenter: T.Vec3(),
     friction: S.Number(0.5),
     restitution: S.Number(0.5),
     collisionLayer: S.Enum(CollisionGroups, CollisionGroups.Default),

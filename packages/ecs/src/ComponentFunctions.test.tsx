@@ -31,6 +31,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { removeEntity } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import sinon from 'sinon'
@@ -296,7 +297,7 @@ describe('ComponentFunctions', async () => {
 
       const Vec3Component = defineComponent({
         name: 'Vector3Component',
-        schema: S.Vec3()
+        schema: T.Vec3()
       })
 
       const entity = createEntity()

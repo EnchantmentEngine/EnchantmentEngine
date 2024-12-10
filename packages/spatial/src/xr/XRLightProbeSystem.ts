@@ -35,6 +35,7 @@ import { defineState, getMutableState, getState, useMutableState } from '@ir-eng
 import { Vector3_Zero } from '../common/constants/MathConstants'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
 import { addObjectToGroup } from '../renderer/components/GroupComponent'
+import { EnvironmentMapComponent } from '../renderer/components/SceneComponents'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { DirectionalLightComponent } from '../renderer/components/lights/DirectionalLightComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -237,6 +238,14 @@ const reactor = () => {
       })
     }
   }, [xrLightProbeState.probe])
+
+  useEffect(() => {
+    if (!xrLightProbeState.directionalLightEntity.value || !xrLightProbeState.environment.value) return
+    setComponent(xrLightProbeState.directionalLightEntity.value, EnvironmentMapComponent)
+    return () => {
+      removeComponent(xrLightProbeState.directionalLightEntity.value, EnvironmentMapComponent)
+    }
+  }, [xrLightProbeState.environment.value, xrLightProbeState.directionalLightEntity.value])
 
   return null
 }

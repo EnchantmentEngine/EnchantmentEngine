@@ -261,13 +261,13 @@ describe('PostProcessingComponent', async () => {
 
       const { rerender, unmount } = render(<></>)
 
-      await act(async () => rerender(PostProcessingComponent.reactor))
+      await act(() => rerender(null))
 
       const postProcessingComponent = getMutableComponent(testEntity, PostProcessingComponent)
       postProcessingComponent.effects[effectKey].isActive.set(true)
 
       setComponent(rootEntity, RendererComponent)
-      await act(async () => rerender(PostProcessingComponent.reactor))
+      await act(() => rerender(null))
 
       // @ts-ignore Allow access to the EffectPass.effects private field
       const before = getComponent(rootEntity, RendererComponent).effectComposer.EffectPass.effects
@@ -275,7 +275,7 @@ describe('PostProcessingComponent', async () => {
 
       postProcessingComponent.effects[effectKey].isActive.set(false)
 
-      await act(async () => rerender(PostProcessingComponent.reactor))
+      await act(() => rerender(null))
 
       // @ts-ignore Allow access to the EffectPass.effects private field
       const after = getComponent(rootEntity, RendererComponent).effectComposer.EffectPass.effects
