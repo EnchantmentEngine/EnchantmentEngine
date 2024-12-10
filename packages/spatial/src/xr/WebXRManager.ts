@@ -119,7 +119,6 @@ function createFunctionOnSessionEnd(renderer: WebGLRenderer, manager: WebXRManag
     xrState.session!.removeEventListener('end', onSessionEnd)
 
     // restore framebuffer/rendering state
-
     renderer.setRenderTarget(xrRendererState.initialRenderTarget.value as WebGLRenderTarget)
 
     xrRendererState.glBaseLayer.set(null)

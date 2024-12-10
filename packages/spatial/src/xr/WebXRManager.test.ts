@@ -66,7 +66,6 @@ describe('WebXRManagerFunctions', () => {
     })
   }) //:: WebXRManagerFunctions.getSession
 
-  /** @todo */
   describe('createFunctionOnSessionEnd', () => {
     let renderer: WebGLRenderer | null = null
 
@@ -82,10 +81,164 @@ describe('WebXRManagerFunctions', () => {
       expect(() => result()).does.not.throw()
       expect(typeof result).toBe(FunctionTypeName)
     })
-    /** @todo Find all other cases */
+
+    describe('result', () => {
+      it("should call XRState.session!.removeEventListener with 'end' as the first argument and itself as the second argument", () => {
+        // Set the data as expected
+        const resultSpy = vi.fn()
+        getMutableState(XRState).session.merge({ removeEventListener: resultSpy })
+        // Sanity check before running
+        assert(renderer)
+        // Run and Check the result
+        const result = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        result()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith('end', result)
+      })
+
+      it('should call renderer.setRenderTarget with XRRendererState.initialRenderTarget as an argument', () => {
+        const Expected = getState(XRRendererState).initialRenderTarget
+        // Set the data as expected
+        const resultSpy = vi.fn()
+        renderer!.setRenderTarget = resultSpy
+        // Sanity check before running
+        assert(renderer)
+        // Run and Check the result
+        const result = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        result()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith(Expected)
+      })
+
+      it('should set XRRendererState.glBaseLayer to null', () => {
+        const Expected = null
+        // Set the data as expected
+        assert(renderer)
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        // Sanity check before running
+        const before = getState(XRRendererState).glBaseLayer
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        onSessionEnd()
+        const result = getState(XRRendererState).glBaseLayer
+        expect(result).toBe(Expected)
+      })
+
+      it('should set XRRendererState.glProjLayer to null', () => {
+        const Expected = null
+        const Initial = {} as XRProjectionLayer
+        // Set the data as expected
+        assert(renderer)
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(XRRendererState).glProjLayer.set(Initial)
+        // Sanity check before running
+        const before = getState(XRRendererState).glProjLayer
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        onSessionEnd()
+        const result = getState(XRRendererState).glProjLayer
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+
+      it('should set XRRendererState.glBinding to null', () => {
+        const Expected = null
+        const Initial = {} as XRWebGLBinding
+        // Set the data as expected
+        assert(renderer)
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(XRRendererState).glBinding.set(Initial)
+        // Sanity check before running
+        const before = getState(XRRendererState).glBinding
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        onSessionEnd()
+        const result = getState(XRRendererState).glBinding
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+
+      it('should set XRRendererState.newRenderTarget to null', () => {
+        const Expected = null
+        const Initial = {} as WebGLRenderTarget<Texture>
+        // Set the data as expected
+        assert(renderer)
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(XRRendererState).newRenderTarget.set(Initial)
+        // Sanity check before running
+        const before = getState(XRRendererState).newRenderTarget
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        onSessionEnd()
+        const result = getState(XRRendererState).newRenderTarget
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+
+      it('should call ECSState.timer.animation.setContext with globalThis as an argument', () => {
+        // Set the data as expected
+        assert(renderer)
+        const resultSpy = vi.fn()
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(ECSState).timer.animation.merge({ setContext: resultSpy })
+        // Sanity check before running
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        onSessionEnd()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith(globalThis)
+      })
+
+      it('should call ECSState.timer.animation.stop', () => {
+        // Set the data as expected
+        assert(renderer)
+        const resultSpy = vi.fn()
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(ECSState).timer.animation.merge({ stop: resultSpy })
+        // Sanity check before running
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        onSessionEnd()
+        expect(resultSpy).toHaveBeenCalled()
+      })
+
+      it('should call ECSState.timer.animation.start', () => {
+        // Set the data as expected
+        assert(renderer)
+        const resultSpy = vi.fn()
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, {} as WebXRManager)
+        getMutableState(ECSState).timer.animation.merge({ start: resultSpy })
+        // Sanity check before running
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        onSessionEnd()
+        expect(resultSpy).toHaveBeenCalled()
+      })
+
+      it('should set manager.isPresenting to false', () => {
+        const Expected = false
+        const Initial = !Expected
+        // Set the data as expected
+        assert(renderer)
+        const manager = {} as WebXRManager
+        manager.isPresenting = Initial
+        const onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, manager)
+        // Sanity check before running
+        const before = manager.isPresenting
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        onSessionEnd()
+        const result = manager.isPresenting
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+    }) //:: result
   }) //:: WebXRManagerFunctions.createFunctionOnSessionEnd
 
-  /** @todo */
   describe('createFunctionSetSession', () => {
     let renderer: WebGLRenderer | null = null
 
@@ -255,14 +408,14 @@ describe('WebXRManagerFunctions', () => {
         expect(makeXRCompatibleSpy).toHaveBeenCalled()
       })
 
-      //   /**
-      //   // !!! @todo Find all of the ifCase/elseCase test cases  (two big separate functions)
-      //   describe("should run ifCase() if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false", () => {})
-      //   describe("should run elseCase() if `@param session`.renderState.layers is not undefined", () => {})
-      //   it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
-      //   it("should set xrRendererState.newRenderTarget to the newRenderTarget generated by the ifCase/elseCase process", () => {})
-      //   // !!!
-      //   */
+      /**
+      // !!! @todo Find all of the ifCase/elseCase test cases  (two big separate functions)
+      describe("should run ifCase() if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false", () => {})
+      describe("should run elseCase() if `@param session`.renderState.layers is not undefined", () => {})
+      it("should run elseCase() if `@param session`.renderState.layers is renderer.capabilities.isWebGL2 is true", () => {})
+      it("should set xrRendererState.newRenderTarget to the newRenderTarget generated by the ifCase/elseCase process", () => {})
+      // !!!
+      */
 
       it('should set newRenderTarget.isXRRenderTarget to true', () => {
         const Expected = true
@@ -295,7 +448,7 @@ describe('WebXRManagerFunctions', () => {
         expect(result).not.toBe(Expected)
       })
 
-      /** @todo The closure is not allowing modification of setFoveation with a spy */
+      /** @todo works fine if .only is set on the test ?? */
       it.todo('should call result.setFoveation with a value of 0', () => {
         const Expected = 0
         // Set the data as expected
@@ -319,7 +472,8 @@ describe('WebXRManagerFunctions', () => {
         expect(resultSpy).toHaveBeenCalledWith(Expected)
       })
 
-      /** @todo The closure is not allowing modification of ECSState.timer.animation.setContext with a spy */
+      /** @todo The closure is not allowing modification of ECSState.timer.animation.setContext with a spy
+       * ?? But it works fine if .only is set on the test ?? */
       it.todo('should call ECSState.timer.animation.setContext with the `@param session`', () => {
         const Expected = getState(XRState).session
         // Set the data as expected
@@ -349,7 +503,9 @@ describe('WebXRManagerFunctions', () => {
       it("should call ECSState.timer.animation.start", () => {})
       */
 
-      /** @todo ?? The closure modifies result.isPresenting, but it is not reflected in our "instance"/"snapshot" of the data ?? */
+      /** @todo
+       * ?? The closure modifies result.isPresenting, but it is not reflected in our "instance"/"snapshot" of the data ??
+       * ?? But it works fine if .only is set on the test ?? */
       it.todo('should set result.isPresenting to true', () => {
         const Expected = true
         const Initial = !Expected
@@ -357,7 +513,8 @@ describe('WebXRManagerFunctions', () => {
         assert(renderer)
         const manager = {
           onSessionEnd: () => {},
-          setFoveation: (_) => {}
+          setFoveation: (_) => {},
+          isPresenting: Initial
         } as WebXRManager
         manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
         // Sanity check before running
