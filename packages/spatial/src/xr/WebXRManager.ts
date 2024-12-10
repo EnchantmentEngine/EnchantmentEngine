@@ -197,17 +197,14 @@ function createRenderTargetLegacy(
   renderer: WebGLRenderer,
   _: WebXRManager
 ): WebGLRenderTarget {
-  const xrRendererState = getMutableState(XRRendererState)
-  const layerInit = {
+  const glBaseLayer = new XRWebGLLayer(session, gl, {
     antialias: session.renderState.layers === undefined ? attributes.antialias : true,
     alpha: attributes.alpha,
     depth: attributes.depth,
     stencil: attributes.stencil,
     framebufferScaleFactor: framebufferScaleFactor
-  }
-
-  const glBaseLayer = new XRWebGLLayer(session, gl, layerInit)
-  xrRendererState.glBaseLayer.set(glBaseLayer)
+  })
+  getMutableState(XRRendererState).glBaseLayer.set(glBaseLayer)
 
   session.updateRenderState({ baseLayer: glBaseLayer })
 
@@ -232,9 +229,9 @@ function createRenderTarget(
   manager: WebXRManager
 ): WebGLRenderTarget {
   let result = null as WebGLRenderTarget | null
+  let glDepthFormat: number | undefined
   let depthFormat: number | undefined
   let depthType: TextureDataType | undefined
-  let glDepthFormat: number | undefined
 
   const xrRendererState = getMutableState(XRRendererState)
 
@@ -244,7 +241,6 @@ function createRenderTarget(
     depthType = attributes.stencil ? UnsignedInt248Type : UnsignedIntType
   }
 
-  // @ts-ignore
   const extensions = renderer.extensions
   manager.isMultiview = manager.useMultiview && extensions.has('OCULUS_multiview')
 
