@@ -109,7 +109,7 @@ function getSession() {
 /**
  * @description Factory function that creates the `onSessionEnd` member function of the {@link WebXRManager} class-like object
  * */
-function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
+function createFunctionOnSessionEnd(renderer: WebGLRenderer, manager: WebXRManager) {
   const onSessionEnd = () => {
     const xrState = getState(XRState)
     const xrRendererState = getMutableState(XRRendererState)
@@ -131,7 +131,7 @@ function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
     animation.stop()
     animation.start()
 
-    scope.isPresenting = false
+    manager.isPresenting = false
   }
   return onSessionEnd
 }
@@ -337,7 +337,7 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
     xrRendererState.newRenderTarget.set(newRenderTarget)
 
     // Set foveation to maximum.
-    // scope.setFoveation(1.0)
+    // manager.setFoveation(1.0)
     manager.setFoveation(0)
 
     animation.setContext(session)
