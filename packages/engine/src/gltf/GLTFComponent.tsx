@@ -58,13 +58,12 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 
-import { hasAuthoringCounterpart } from '@ir-engine/ecs/src/LayerState'
+import { EntityLayerState, hasAuthoringCounterpart } from '@ir-engine/ecs/src/LayerState'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   getAncestorWithComponents,
   useAncestorWithComponents,
@@ -148,8 +147,8 @@ const buildComponentDependencies = (json: GLTF.IGLTF) => {
     }
   }
 
-  if (meshes.size) dependencies.childrenDependencies.set(MeshComponent, meshes.size)
-  if (materials.size) dependencies.childrenDependencies.set(MaterialStateComponent, materials.size)
+  // if (meshes.size) dependencies.childrenDependencies.set(MeshComponent, meshes.size)
+  // if (materials.size) dependencies.childrenDependencies.set(MaterialStateComponent, materials.size)
 
   return dependencies
 }
@@ -191,8 +190,8 @@ export const GLTFComponent = defineComponent({
 
     const dependencies = gltfComponent.dependencies
     const progress = gltfComponent.progress.value
-    return true
-    // return componentDependenciesLoaded(dependencies.value as ComponentDependencies | undefined) && progress === 100
+    // return true
+    return componentDependenciesLoaded(dependencies.value as ComponentDependencies | undefined) && progress === 100
   },
 
   isSceneLoaded(entity: Entity) {
@@ -291,6 +290,15 @@ const GLTFComponentReactor = () => {
     })
   }, [gltfComponent.document, gltfComponent.buffers, gltfComponent.images, gltfComponent.bufferViews])
 
+  const sceneLoaded = GLTFComponent.useSceneLoaded(entity)
+
+  useEffect(() => {
+    if (!sceneLoaded) return
+    const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+    if (!sceneEntity) return
+    setComponent(sceneEntity, SceneComponent, { active: true })
+  }, [sceneLoaded])
+
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
   return (
     <>
@@ -307,7 +315,7 @@ const GLTFComponentReactor = () => {
           ))}
         </>
       )}
-      <ResourceReactor documentID={sourceID} entity={entity} />
+      {/* <ResourceReactor documentID={sourceID} entity={entity} /> */}
       {dependencies && !componentDependenciesLoaded(dependencies) ? (
         <DependencyReactor key={entity} gltfComponentEntity={entity} dependencies={dependencies} />
       ) : null}
@@ -399,7 +407,7 @@ const ResourceReactor = (props: { documentID: string; entity: Entity }) => {
     //if (!getState(GLTFDocumentState)[props.documentID]) return
     const entities = resourceQuery.filter((e) => getComponent(e, SourceComponent) === props.documentID)
     if (!entities.length) {
-      if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)
+      // if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)
       return
     }
 
@@ -474,7 +482,8 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 
 const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: string; components: Component[] }) => {
   const { gltfComponentEntity, uuid, components } = props
-  const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID) as Entity | undefined
+  const layer = EntityLayerState.getLayerID(gltfComponentEntity)
+  const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID, layer) as Entity | undefined
   const hasComponents = useHasComponents(entity ?? UndefinedEntity, components)
   return entity && hasComponents ? (
     <>

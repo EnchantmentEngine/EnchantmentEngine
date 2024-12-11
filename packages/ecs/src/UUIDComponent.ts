@@ -57,11 +57,11 @@ export const UUIDComponent = defineComponent({
         // remove old uuid
         if (prev) {
           const currentUUID = prev
-          _getUUIDState(currentUUID).set(UndefinedEntity)
+          _getUUIDState(currentUUID, layer).set(UndefinedEntity)
         }
 
         // set new uuid
-        _getUUIDState(uuid).set(entity)
+        _getUUIDState(uuid, layer).set(entity)
         return true
       }
     })

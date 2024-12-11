@@ -103,7 +103,10 @@ export const useLoadAnimationFromGLTF = (url: string, keepEntity = false) => {
     animation.set(getComponent(simEntity.value, AnimationComponent).animations)
     if (!keepEntity) removeEntity(assetEntity.value)
   }, [animationComponent?.animations, simEntity?.value])
-  return [animation, keepEntity ? assetEntity.value : UndefinedEntity] as [State<AnimationClip[]>, Entity]
+  return [animation, keepEntity ? simEntity?.value ?? UndefinedEntity : UndefinedEntity] as [
+    State<AnimationClip[]>,
+    Entity
+  ]
 }
 
 PropertyBinding.parseTrackName = function (trackName) {

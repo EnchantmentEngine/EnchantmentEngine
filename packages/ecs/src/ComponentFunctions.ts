@@ -564,17 +564,17 @@ export const setComponent = <C extends Component>(
     const layer = EntityLayerState.getEntityLayer(entity)
     for (const dstLayerID of Object.keys(layer.relations)) {
       if (layer.relations[dstLayerID] === 'propagate') {
-        let dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
+        const dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
 
-        if (!entityExists(dstEntity)) {
-          //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
-          // dstEntity = createEntity(dstLayerID as LayerID)
-          // EntityLayerState.linkEntity(entity, dstEntity)
-          // for (const entityComponent of getAllComponents(entity)) {
-          //   if (entityComponent === component) continue //we're about to do this operation anyways
-          //   setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
-          // }
-        }
+        // if (!entityExists(dstEntity)) {
+        //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
+        // dstEntity = createEntity(dstLayerID as LayerID)
+        // EntityLayerState.linkEntity(entity, dstEntity)
+        // for (const entityComponent of getAllComponents(entity)) {
+        //   if (entityComponent === component) continue //we're about to do this operation anyways
+        //   setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
+        // }
+        // }
 
         //switch any target entities in the args to their corresponding linked entity in the destination layer
         if (component.schema) {
@@ -586,7 +586,11 @@ export const setComponent = <C extends Component>(
             for (const key in setArgs) {
               const valSchema = schema.properties?.[key] as any
               //check if the value is an entity
-              if (valSchema?.options && valSchema.options['$id'] === 'Entity' && setArgs[key] !== UndefinedEntity) {
+              if (
+                valSchema?.properties?.options &&
+                valSchema.properties.options['id'] === 'Entity' &&
+                setArgs[key] !== UndefinedEntity
+              ) {
                 //if so, we need to switch it to the linked entity in the destination layer
                 const linkedEntity = EntityLayerState.getLinkedEntity(setArgs[key], dstLayerID as LayerID)
                 setArgs[key] = linkedEntity
@@ -598,6 +602,7 @@ export const setComponent = <C extends Component>(
         }
 
         //set up reactive logic to propagate component changes to linked entity
+        // console.log(dstEntity)
         setComponent(dstEntity, component, args)
       }
     }
