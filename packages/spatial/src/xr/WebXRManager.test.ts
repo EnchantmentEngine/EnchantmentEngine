@@ -25,10 +25,10 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { ECSState, createEngine, destroyEngine, getComponent } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { Texture, WebGLRenderTarget, WebGLRenderer } from 'three'
+import { LinearSRGBColorSpace, RGBAFormat, Texture, UnsignedByteType, WebGLRenderTarget, WebGLRenderer } from 'three'
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
-import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
+import { CustomWebXRPolyfill, XREmulatorHelper } from '../../tests/webxr/emulator'
 import { EngineState } from '../EngineState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
@@ -789,53 +789,334 @@ describe('WebXRManagerFunctions', () => {
   }) //:: WebXRManagerFunctions.setFoveation
 
   describe('createRenderTargetLegacy', () => {
+    let glContext = {} as WebGLRenderingContext
+    let framebufferScaleFactor = 1
+    let glAttributes = {} as WebGLContextAttributes
+    let renderer = {} as WebGLRenderer
+    let manager = {} as WebXRManager
+
     beforeEach(async () => {
       createEngine()
       await mockEmulatedXREngine()
     })
 
     afterEach(() => {
+      glContext = {} as WebGLRenderingContext
+      framebufferScaleFactor = 1
+      glAttributes = {} as WebGLContextAttributes
+      renderer = {} as WebGLRenderer
+      manager = {} as WebXRManager
       destroyEmulatedXREngine()
       destroyEngine()
     })
 
-    it.skip('...............', () => {
+    it('should set XRRendererState.glBaseLayer to a new XRWebGLLayer', () => {
+      const Initial = {} as XRWebGLLayer
+      // Set the data as expected
+      getMutableState(XRRendererState).glBaseLayer.set(Initial)
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = getState(XRRendererState).glBaseLayer
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = getState(XRRendererState).glBaseLayer
+      expect(result).not.toBe(Initial)
+    })
+
+    it('should set XRRendererState.glBaseLayer.antialias to `@param attributes`.antialias when `@param session.renderState.layers` is === undefined', () => {
+      const Expected = false
+      const Initial = undefined
+      // Set the data as expected
+      glAttributes.antialias = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = getState(XRRendererState).glBaseLayer?.antialias
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = getState(XRRendererState).glBaseLayer?.antialias
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    /**
+    // @todo Needs a way to modify session.renderState.layers so its not undefined
+    it("should set XRRendererState.glBaseLayer.antialias to true when `@param session.renderState.layers` is !== undefined", () => {})
+    */
+
+    it('should set XRRendererState.glBaseLayer.config.alpha to `@param attributes`.alpha', () => {
+      const Expected = false
+      const Initial = undefined
+      // Set the data as expected
+      glAttributes.alpha = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config.alpha
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config.alpha
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set XRRendererState.glBaseLayer.config.depth to `@param attributes`.depth', () => {
+      const Expected = false
+      const Initial = undefined
+      // Set the data as expected
+      glAttributes.depth = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config.depth
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config.depth
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set XRRendererState.glBaseLayer.config.framebufferScaleFactor to `@param framebufferScaleFactor`', () => {
+      const Expected = 42
+      const Initial = 1.2
+      // Set the data as expected
+      framebufferScaleFactor = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config
+        .framebufferScaleFactor
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = XREmulatorHelper.getXRWebGLLayerData(getState(XRRendererState).glBaseLayer).config
+        .framebufferScaleFactor
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should call session.updateRenderState with the newly created XRWebGLLayer as {baseLayer: glBaseLayer}', () => {
+      // Set the data as expected
+      const resultSpy = vi.fn()
+      getMutableState(XRState).session.merge({ updateRenderState: resultSpy })
+      // Sanity check before running
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ baseLayer: getState(XRRendererState).glBaseLayer })
+    })
+
+    it('should set result.width to the newly created XRWebGLLayer.framebufferWidth', () => {
+      const Expected = 1
+      const Initial = undefined
+      // Set the data as expected
+      framebufferScaleFactor = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = getState(XRRendererState).glBaseLayer?.framebufferWidth
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
       const result = WebXRManagerFunctions.createRenderTargetLegacy(
         getState(XRState).session!,
-        1,
-        {} as WebGLRenderingContext,
-        {} as WebGLContextAttributes,
-        {} as WebGLRenderer,
-        {} as WebXRManager
-      )
-      console.log('result : ', result)
-      console.log('glBaseLayer : ', getMutableState(XRRendererState).glBaseLayer.get())
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).width
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.height to the newly created XRWebGLLayer.framebufferHeight', () => {
+      const Expected = 1
+      const Initial = undefined
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      const before = getState(XRRendererState).glBaseLayer?.framebufferHeight
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).height
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.texture.format to RGBAFormat', () => {
+      const Expected = RGBAFormat
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).texture.format
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.texture.type to UnsignedByteType', () => {
+      const Expected = UnsignedByteType
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).texture.type
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.texture.colorSpace to `@param renderer`.outputColorSpace', () => {
+      const Expected = LinearSRGBColorSpace
+      // Set the data as expected
+      renderer.outputColorSpace = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).texture.colorSpace
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.stencilBuffer to `@param attributes`.stencil', () => {
+      const Expected = true
+      // Set the data as expected
+      glAttributes.stencil = Expected
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).toBe(undefined)
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).stencilBuffer
+      expect(result).toBe(Expected)
+    })
+  }) //:: WebXRManagerFunctions.createRenderTargetLegacy
+
+  /**
+   * @todo XRWebGLBinding is not defined.
+   * The function crashes as soon as its called.
+   * */
+  describe.todo('createRenderTarget', () => {
+    let glContext = {} as WebGLRenderingContext
+    let framebufferScaleFactor = 1
+    let glAttributes = {} as WebGLContextAttributes
+    let renderer = {} as WebGLRenderer
+    let manager = {} as WebXRManager
+
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      glContext = {} as WebGLRenderingContext
+      framebufferScaleFactor = 1
+      glAttributes = {} as WebGLContextAttributes
+      renderer = {} as WebGLRenderer
+      manager = {} as WebXRManager
+      destroyEmulatedXREngine()
+      destroyEngine()
     })
 
     /**
     // @todo
-    it("should set XRRendererState.glBaseLayer to a new XRWebGLLayer created from `@param session`, `@param gl` and the expected configuration", () => {})
-    it("should set XRRendererState.glBaseLayer.antialias to `@param attributes`.antialias when `@param session.renderState.layers` is === undefined", () => {})
-    it("should set XRRendererState.glBaseLayer.antialias to true when `@param session.renderState.layers` is !== undefined", () => {})
-    it("should set XRRendererState.glBaseLayer.alpha to `@param attributes`.alpha", () => {})
-    it("should set XRRendererState.glBaseLayer.depth to `@param attributes`.depth", () => {})
-    it("should set XRRendererState.glBaseLayer.framebufferScaleFactor to `@param framebufferScaleFactor`", () => {})
-    it("should call session.updateRenderState with the newly created XRWebGLLayer as {baseLayer: glBaseLayer}", () => {})
-    it("should set result.width to the newly created XRWebGLLayer.framebufferWidth", () => {})
-    it("should set result.height to the newly created XRWebGLLayer.framebufferHeight", () => {})
-    it("should set result.format to RGBAFormat", () => {})
-    it("should set result.type to UnsignedByteType", () => {})
-    it("should set result.colorSpace to `@param renderer`.outputColorSpace", () => {})
-    it("should set result.stencilBuffer to `@param attributes`.stencil", () => {})
-    */
-  }) //:: WebXRManagerFunctions.createRenderTargetLegacy
-
-  describe('createRenderTarget', () => {
-    /**
-    // @todo
     it("should set `@param manager`.isMultiview to true if both manager.useMultiview and `@param renderer`.extensions.has('OCULUS_multiview') are true", () => {})
-    it("should set XRRendererState.glBinding to a new XRWebGLBinding instance created with `@param session` and `@param gl`", () => {})
     */
+
+    it('should set XRRendererState.glBinding to a new XRWebGLBinding instance', () => {
+      const Initial = {} as XRWebGLBinding
+      // Set the data as expected
+      getMutableState(XRRendererState).glBinding.set(Initial)
+      // Sanity check before running
+      const before = getState(XRRendererState).glBinding
+      expect(before).toBe(Initial)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = getState(XRRendererState).glBinding
+      expect(result).not.toBe(Initial)
+    })
+
     describe('properties of XRRendererState.glProjLayer ..', () => {
       /**
       // @todo
