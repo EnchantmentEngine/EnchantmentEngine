@@ -513,7 +513,6 @@ describe('WebXRManagerFunctions', () => {
         expect(result).toBe(Expected)
       })
 
-      /** @todo works fine if .only is set on the test ?? */
       it('should call result.setFoveation with a value of 0', async () => {
         const Expected = 0
         // Set the data as expected
@@ -789,9 +788,102 @@ describe('WebXRManagerFunctions', () => {
     })
   }) //:: WebXRManagerFunctions.setFoveation
 
-  /** @todo */
-  describe('createRenderTargetLegacy', () => {}) //:: WebXRManagerFunctions.createRenderTargetLegacy
-  describe('createRenderTarget', () => {}) //:: WebXRManagerFunctions.createRenderTarget
+  describe('createRenderTargetLegacy', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it.skip('...............', () => {
+      const result = WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        1,
+        {} as WebGLRenderingContext,
+        {} as WebGLContextAttributes,
+        {} as WebGLRenderer,
+        {} as WebXRManager
+      )
+      console.log('result : ', result)
+      console.log('glBaseLayer : ', getMutableState(XRRendererState).glBaseLayer.get())
+    })
+
+    /**
+    // @todo
+    it("should set XRRendererState.glBaseLayer to a new XRWebGLLayer created from `@param session`, `@param gl` and the expected configuration", () => {})
+    it("should set XRRendererState.glBaseLayer.antialias to `@param attributes`.antialias when `@param session.renderState.layers` is === undefined", () => {})
+    it("should set XRRendererState.glBaseLayer.antialias to true when `@param session.renderState.layers` is !== undefined", () => {})
+    it("should set XRRendererState.glBaseLayer.alpha to `@param attributes`.alpha", () => {})
+    it("should set XRRendererState.glBaseLayer.depth to `@param attributes`.depth", () => {})
+    it("should set XRRendererState.glBaseLayer.framebufferScaleFactor to `@param framebufferScaleFactor`", () => {})
+    it("should call session.updateRenderState with the newly created XRWebGLLayer as {baseLayer: glBaseLayer}", () => {})
+    it("should return a new WebGLRenderTarget instance with the same width as the newly created XRWebGLLayer.framebufferWidth", () => {})
+    it("should return a new WebGLRenderTarget instance with the same height as the newly created XRWebGLLayer.framebufferHeight", () => {})
+    it("should return a new WebGLRenderTarget instance with RGBAFormat as the value of its .format property", () => {})
+    it("should return a new WebGLRenderTarget instance with UnsignedByteType as the value of its .type property", () => {})
+    it("should return a new WebGLRenderTarget instance with `@param renderer`.outputColorSpace as the value of its .colorSpace property", () => {})
+    it("should return a new WebGLRenderTarget instance with `@param attributes.stencil` as the value of its .stencilBuffer property", () => {})
+    */
+  }) //:: WebXRManagerFunctions.createRenderTargetLegacy
+
+  describe('createRenderTarget', () => {
+    /**
+    // @todo
+    it("should set `@param manager`.isMultiview to true if both manager.useMultiview and `@param renderer`.extensions.has('OCULUS_multiview') are true", () => {})
+    it("should set XRRendererState.glBinding to a new XRWebGLBinding instance created with `@param session` and `@param gl`", () => {})
+    */
+    describe('properties of XRRendererState.glProjLayer ..', () => {
+      /**
+      // @todo
+      it(".. should set .colorFormat to gl.RGBA8", () => {})
+      it(".. should set .depthFormat to gl.DEPTH24_STENCIL8 if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
+      it(".. should set .depthFormat to gl.DEPTH_COMPONENT24 if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
+      it(".. should set .depthFormat to undefined if `@param attributes`.depth is falsy", () => {})
+      it(".. should set .scaleFactor to `@param framebufferScaleFactor`", () => {})
+      it(".. should set .textureType to 'texture-array' if `@param manager`.isMultiview is truthy", () => {})
+      it(".. should set .textureType to 'texture' if `@param manager`.isMultiview is falsy", () => {})
+      it(".. should set .quality to 'graphics-optimized'", () => {})
+      */
+    })
+
+    /**
+    // @todo
+    it("should call `@param session`.updateRenderState with the newly assigned XRRendererState.glProjLayer", () => {})
+    it("should set result.options.format to RGBAFormat", () => {})
+    it("should set result.options.type to UnsignedByteType", () => {})
+    it("should set result.options.depthTexture to glProjLayer.textureWidth", () => {})
+    it("should set result.options.depthTexture to glProjLayer.textureHeight", () => {})
+    it("should set result.options.depthTexture.type to UnsignedInt248Type if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.depthTexture.type to UnsignedIntType if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.depthTexture.type to undefined if `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.depthTexture.mapping to undefined", () => {})
+    it("should set result.options.depthTexture.wrapS to undefined", () => {})
+    it("should set result.options.depthTexture.wrapT to undefined", () => {})
+    it("should set result.options.depthTexture.magFilter to undefined", () => {})
+    it("should set result.options.depthTexture.minFilter to undefined", () => {})
+    it("should set result.options.depthTexture.anisotropy to undefined", () => {})
+    it("should set result.options.depthTexture.format to DepthStencilFormat if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.depthTexture.format to DepthFormat if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.depthTexture.format to undefined if `@param attributes`.depth is truthy", () => {})
+    it("should set result.options.stencilBuffer to `@param attributes`.stencil", () => {})
+    it("should set result.options.colorSpace to `@param renderer`.outputColorSpace", () => {})
+    it("should set result.options.samples to 4 if `@param attributes`.antialias is truthy", () => {})
+    it("should set result.options.samples to 0 if `@param attributes`.antialias is falsy", () => {})
+    it("should set `@param result`.width to XRRendererState.glProjLayer.textureWidth", () => {})
+    it("should set `@param result`.height to XRRendererState.glProjLayer.textureHeight", () => {})
+    */
+    describe('when `@param manager`.isMultiview is truthy ..', () => {
+      /**
+      // @todo
+      it(".. should set `@param manager`.maxNumViews to the result of gl.getParameter(renderer.extensions.get('OCULUS_multiview').MAX_VIEWS_OVR)", () => {})
+      it(".. should set `@param result`.numViews to XRRendererState.glProjLayer.textureHeight", () => {})
+      */
+    })
+  }) //:: WebXRManagerFunctions.createRenderTarget
 }) //:: WebXRManagerFunctions
 
 describe('createWebXRManager', () => {
