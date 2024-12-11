@@ -821,12 +821,12 @@ describe('WebXRManagerFunctions', () => {
     it("should set XRRendererState.glBaseLayer.depth to `@param attributes`.depth", () => {})
     it("should set XRRendererState.glBaseLayer.framebufferScaleFactor to `@param framebufferScaleFactor`", () => {})
     it("should call session.updateRenderState with the newly created XRWebGLLayer as {baseLayer: glBaseLayer}", () => {})
-    it("should return a new WebGLRenderTarget instance with the same width as the newly created XRWebGLLayer.framebufferWidth", () => {})
-    it("should return a new WebGLRenderTarget instance with the same height as the newly created XRWebGLLayer.framebufferHeight", () => {})
-    it("should return a new WebGLRenderTarget instance with RGBAFormat as the value of its .format property", () => {})
-    it("should return a new WebGLRenderTarget instance with UnsignedByteType as the value of its .type property", () => {})
-    it("should return a new WebGLRenderTarget instance with `@param renderer`.outputColorSpace as the value of its .colorSpace property", () => {})
-    it("should return a new WebGLRenderTarget instance with `@param attributes.stencil` as the value of its .stencilBuffer property", () => {})
+    it("should set result.width to the newly created XRWebGLLayer.framebufferWidth", () => {})
+    it("should set result.height to the newly created XRWebGLLayer.framebufferHeight", () => {})
+    it("should set result.format to RGBAFormat", () => {})
+    it("should set result.type to UnsignedByteType", () => {})
+    it("should set result.colorSpace to `@param renderer`.outputColorSpace", () => {})
+    it("should set result.stencilBuffer to `@param attributes`.stencil", () => {})
     */
   }) //:: WebXRManagerFunctions.createRenderTargetLegacy
 
