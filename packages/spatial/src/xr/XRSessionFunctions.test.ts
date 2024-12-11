@@ -31,7 +31,7 @@ import {
   DeviceDefinitions,
   POLYFILL_ACTIONS,
   WebXREventDispatcher,
-  getLastXRSessionData
+  XREmulatorHelper
 } from '../../tests/webxr/emulator'
 
 import { createEngine, destroyEngine, getComponent, getMutableComponent } from '@ir-engine/ecs'
@@ -333,6 +333,7 @@ describe('onSessionEnd', () => {
     expect(result).toBe(Expected)
   })
 
+  /** @todo Why was this expected line left commmented out ? */
   it('should call `dispatchAction` with XRAction.sessionChanged{active:false}', () => {
     const Expected = false
     // Run and Check the result
@@ -609,7 +610,7 @@ describe('requestXRSession', () => {
     const Expected = 'inline'
     // Run and Check the result
     await requestXRSession({ mode: Expected })
-    const result = getLastXRSessionData(getState(XRState).session).mode
+    const result = XREmulatorHelper.getLastXRSessionData(getState(XRState).session).mode
     expect(result).toBe(Expected)
   })
 
@@ -706,13 +707,13 @@ describe('endXRSession', () => {
     const before = getState(XRState).session
     expect(before).not.toBe(undefined)
     expect(before).not.toBe(null)
-    expect(getLastXRSessionData(before).ended).toBe(Initial)
+    expect(XREmulatorHelper.getLastXRSessionData(before).ended).toBe(Initial)
     // Run and Check the result
     await endXRSession()
     const result = getState(XRState).session
     expect(result).not.toBe(undefined)
     expect(result).not.toBe(null)
-    expect(getLastXRSessionData(result).ended).toBe(Expected)
+    expect(XREmulatorHelper.getLastXRSessionData(result).ended).toBe(Expected)
   })
 }) //:: endXRSession
 

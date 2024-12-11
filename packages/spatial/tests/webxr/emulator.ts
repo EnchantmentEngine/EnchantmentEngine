@@ -30,6 +30,7 @@ Infinite Reality Engine. All Rights Reserved.
  * */
 
 import { PRIVATE as XRSESSION_SYMBOL } from 'webxr-polyfill/src/api/XRSession'
+import { PRIVATE as XRWEBGLLAYER_SYMBOL } from 'webxr-polyfill/src/api/XRWebGLLayer'
 import { PRIVATE as EVENTTARGET_SYMBOL } from 'webxr-polyfill/src/lib/EventTarget'
 import { requestXRSession } from '../../src/xr/XRSessionFunctions'
 import { WebXREventDispatcher } from '../../tests/webxr/emulator/WebXREventDispatcher'
@@ -44,7 +45,7 @@ export { POLYFILL_ACTIONS } from '../../tests/webxr/emulator/actions'
  * @description Returns the data of the `@param session` XRSession passed in by accessing it with its Symbol() name
  * @why Shorthand for getting the data of the session in an ergonomic way.
  * */
-export function getXRSessionData(session: XRSession | null) {
+function getXRSessionData(session: XRSession | null) {
   if (session === null) return null
   return session[XRSESSION_SYMBOL]
 }
@@ -53,9 +54,18 @@ export function getXRSessionData(session: XRSession | null) {
  * @description Returns the data of the last session found at the `@param session` passed.
  * @why Shorthand for getting the last session data in an ergonomic way.
  * */
-export function getLastXRSessionData(session: XRSession | null) {
-  // @ts-ignore TEMP: Allow access to unknown. @todo Typecast into the correct type
+function getLastXRSessionData(session: XRSession | null) {
+  // @ts-expect-error TEMP: Allow access to unknown. @todo Typecast into the correct type
   return Array.from(getXRSessionData(session).device.sessions).at(-1).at(-1)
+}
+
+/**
+ * @description Returns the private data of the `@param layer` XRWebGLLayer passed in by accessing it with its Symbol() name
+ * @why Shorthand for getting the private data of the layer in an ergonomic way.
+ * */
+function getXRWebGLLayerData(layer: XRWebGLLayer | null) {
+  if (layer === null) return null
+  return layer[XRWEBGLLAYER_SYMBOL]
 }
 
 /**
@@ -69,7 +79,7 @@ export function getLastXRSessionData(session: XRSession | null) {
  * @description Returns the EventTarget data of the `@param session` XRSession passed in by accessing it with its Symbol() name
  * @why Shorthand for getting the EventTarget data of the session in an ergonomic way.
  * */
-export function __getXRSessionEventTargetData(session: XRSession | null) {
+function __getXRSessionEventTargetData(session: XRSession | null) {
   if (session === null) return null
   return session[EVENTTARGET_SYMBOL]
 }
@@ -121,4 +131,11 @@ export const OculusQuest = {
 export const DeviceDefinitions = {
   Default: OculusQuest,
   OculusQuest
+}
+
+export const XREmulatorHelper = {
+  getXRSessionData,
+  getLastXRSessionData,
+  getXRWebGLLayerData,
+  __getXRSessionEventTargetData
 }
