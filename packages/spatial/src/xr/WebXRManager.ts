@@ -284,7 +284,7 @@ function createRenderTarget(
 
   if (manager.isMultiview) {
     const extension = extensions.get('OCULUS_multiview')
-    this.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
+    manager.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
     result = new WebGLMultiviewRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, 2, rtOptions)
   } else {
     result = new WebGLRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, rtOptions)
@@ -362,6 +362,7 @@ export function createWebXRManager(renderer: WebGLRenderer) {
 
   result.isPresenting = false
   result.isMultiview = false
+  result.maxNumViews = 0
 
   /** this is needed by WebGLBackground */
   result.getSession = WebXRManagerFunctions.getSession
