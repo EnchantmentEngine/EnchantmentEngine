@@ -101,8 +101,12 @@ export class MockXRWebGLBinding implements XRWebGLBinding {
   readonly nativeProjectionScaleFactor: number
 
   constructor(_session: XRSession, _context: WebGLRenderingContext) {}
-  createProjectionLayer(_init?: XRProjectionLayerInit): XRProjectionLayer {
-    return {} as XRProjectionLayer
+
+  // @warning The process of this function is over-simplifed and only valid for mock testing.
+  createProjectionLayer(init?: XRProjectionLayerInit): XRProjectionLayer {
+    const result = {} as XRProjectionLayer
+    if (init) for (const [key, value] of Object.entries(init)) result[key] = value
+    return result
   }
   createQuadLayer(_init?: XRQuadLayerInit): XRQuadLayer {
     return {} as XRQuadLayer
