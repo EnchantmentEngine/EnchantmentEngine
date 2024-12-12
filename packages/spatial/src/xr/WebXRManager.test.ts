@@ -23,12 +23,27 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ECSState, createEngine, destroyEngine, getComponent } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { LinearSRGBColorSpace, RGBAFormat, Texture, UnsignedByteType, WebGLRenderTarget, WebGLRenderer } from 'three'
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill, XREmulatorHelper } from '../../tests/webxr/emulator'
+
+import { ECSState, createEngine, destroyEngine, getComponent } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import {
+  ClampToEdgeWrapping,
+  LinearSRGBColorSpace,
+  NearestFilter,
+  RGBAFormat,
+  Texture,
+  UVMapping,
+  UnsignedByteType,
+  UnsignedInt248Type,
+  UnsignedIntType,
+  WebGLExtensions,
+  WebGLProperties,
+  WebGLRenderTarget,
+  WebGLRenderer
+} from 'three'
 import { EngineState } from '../EngineState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
@@ -44,6 +59,24 @@ const TypeListenerFunctionString = 'function(type, listener) {\n  }'
 beforeAll(() => {
   new CustomWebXRPolyfill()
 })
+
+function mockWebGLRenderer(): WebGLRenderer {
+  return {
+    properties: {
+      get: (_: any): any => ({ __ignoreDepthValues: 0 })
+    } as WebGLProperties,
+    extensions: {
+      has: (_name: string): boolean => true,
+      get: (_name: string): any => ({})
+    } as WebGLExtensions
+  } as WebGLRenderer
+}
+
+function mockWebGLRenderingContext(): WebGLRenderingContext {
+  return {
+    getParameter(_pname: GLenum): any {}
+  } as WebGLRenderingContext
+}
 
 describe('XRRendererState', () => {
   describe('Fields', () => {
@@ -1107,15 +1140,11 @@ describe('WebXRManagerFunctions', () => {
     })
   }) //:: WebXRManagerFunctions.createRenderTargetLegacy
 
-  /**
-   * @todo XRWebGLBinding is not defined.
-   * The function crashes as soon as its called.
-   * */
-  describe.todo('createRenderTarget', () => {
-    let glContext = {} as WebGLRenderingContext
+  describe('createRenderTarget', () => {
+    let glContext = mockWebGLRenderingContext()
     let framebufferScaleFactor = 1
     let glAttributes = {} as WebGLContextAttributes
-    let renderer = {} as WebGLRenderer
+    let renderer = mockWebGLRenderer()
     let manager = {} as WebXRManager
 
     beforeEach(async () => {
@@ -1124,19 +1153,41 @@ describe('WebXRManagerFunctions', () => {
     })
 
     afterEach(() => {
-      glContext = {} as WebGLRenderingContext
+      glContext = mockWebGLRenderingContext()
       framebufferScaleFactor = 1
       glAttributes = {} as WebGLContextAttributes
-      renderer = {} as WebGLRenderer
+      renderer = mockWebGLRenderer()
       manager = {} as WebXRManager
       destroyEmulatedXREngine()
       destroyEngine()
     })
 
-    /**
-    // @todo
-    it("should set `@param manager`.isMultiview to true if both manager.useMultiview and `@param renderer`.extensions.has('OCULUS_multiview') are true", () => {})
-    */
+    it("should set `@param manager`.isMultiview to true if both manager.useMultiview and `@param renderer`.extensions.has('OCULUS_multiview') are true", () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      manager.isMultiview = Initial
+      manager.useMultiview = true
+      glContext
+      // Sanity check before running
+      expect(manager.useMultiview).toBeTruthy()
+      expect(renderer.extensions.has('OCULUS_multiview')).toBeTruthy()
+      const before = manager.isMultiview
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = manager.isMultiview
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
 
     it('should set XRRendererState.glBinding to a new XRWebGLBinding instance', () => {
       const Initial = {} as XRWebGLBinding
@@ -1175,26 +1226,221 @@ describe('WebXRManagerFunctions', () => {
     /**
     // @todo
     it("should call `@param session`.updateRenderState with the newly assigned XRRendererState.glProjLayer", () => {})
-    it("should set result.options.format to RGBAFormat", () => {})
-    it("should set result.options.type to UnsignedByteType", () => {})
-    it("should set result.options.depthTexture to glProjLayer.textureWidth", () => {})
-    it("should set result.options.depthTexture to glProjLayer.textureHeight", () => {})
-    it("should set result.options.depthTexture.type to UnsignedInt248Type if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.depthTexture.type to UnsignedIntType if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.depthTexture.type to undefined if `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.depthTexture.mapping to undefined", () => {})
-    it("should set result.options.depthTexture.wrapS to undefined", () => {})
-    it("should set result.options.depthTexture.wrapT to undefined", () => {})
-    it("should set result.options.depthTexture.magFilter to undefined", () => {})
-    it("should set result.options.depthTexture.minFilter to undefined", () => {})
-    it("should set result.options.depthTexture.anisotropy to undefined", () => {})
-    it("should set result.options.depthTexture.format to DepthStencilFormat if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.depthTexture.format to DepthFormat if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.depthTexture.format to undefined if `@param attributes`.depth is truthy", () => {})
-    it("should set result.options.stencilBuffer to `@param attributes`.stencil", () => {})
-    it("should set result.options.colorSpace to `@param renderer`.outputColorSpace", () => {})
-    it("should set result.options.samples to 4 if `@param attributes`.antialias is truthy", () => {})
-    it("should set result.options.samples to 0 if `@param attributes`.antialias is falsy", () => {})
+    */
+
+    it('should set result.texture.format to RGBAFormat', () => {
+      const Expected = RGBAFormat
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).texture.format
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.texture.type to UnsignedByteType', () => {
+      const Expected = UnsignedByteType
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).texture.type
+      expect(result).toBe(Expected)
+    })
+
+    /** @todo How to hook/control the glProjLayer created inside the function */
+    it.todo('should set result.width to glProjLayer.textureWidth', () => {
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).width
+      expect(result).toBe(getState(XRRendererState).glProjLayer?.textureWidth)
+    })
+
+    /** @todo How to hook/control the glProjLayer created inside the function */
+    it.todo('should set result.options.depthTexture to glProjLayer.textureHeight', () => {
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).height
+      expect(result).toBe(getState(XRRendererState).glProjLayer?.textureHeight)
+    })
+
+    it('should set result.options.depthTexture.type to UnsignedInt248Type if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy', () => {
+      const Expected = UnsignedInt248Type
+      // Set the data as expected
+      glAttributes.stencil = true
+      glAttributes.depth = true
+      // Sanity check before running
+      expect(glAttributes.stencil).toBeTruthy()
+      expect(glAttributes.depth).toBeTruthy()
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.type
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.options.depthTexture.type to UnsignedIntType if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy', () => {
+      const Expected = UnsignedIntType
+      // Set the data as expected
+      glAttributes.stencil = false
+      glAttributes.depth = true
+      // Sanity check before running
+      expect(glAttributes.stencil).toBeFalsy()
+      expect(glAttributes.depth).toBeTruthy()
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.type
+      expect(result).toBe(Expected)
+    })
+
+    /** @todo Find why the resulting type is not the default listed in the Threejs on-hover documentation */
+    it.todo(
+      'should set result.depthTexture.type to the default value (UnsignedInt248Type) if `@param attributes`.depth is falsy',
+      () => {
+        const Expected = UnsignedInt248Type
+        // Set the data as expected
+        glAttributes.stencil = true
+        glAttributes.depth = undefined
+        // Sanity check before running
+        expect(glAttributes.stencil).toBeTruthy()
+        expect(glAttributes.depth).toBeFalsy()
+        // Run and Check the result
+        const result = WebXRManagerFunctions.createRenderTarget(
+          getState(XRState).session!,
+          framebufferScaleFactor,
+          glContext,
+          glAttributes,
+          renderer,
+          manager
+        ).depthTexture.type
+        expect(result).toBe(Expected)
+      }
+    )
+
+    it('should set result.depthTexture.mapping to the default value (UVMapping)', () => {
+      const Expected = UVMapping
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.mapping
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.depthTexture.wrapS to the default value (ClampToEdgeWrapping)', () => {
+      const Expected = ClampToEdgeWrapping
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.wrapS
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.depthTexture.wrapT to the default value (ClampToEdgeWrapping)', () => {
+      const Expected = ClampToEdgeWrapping
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.wrapT
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.depthTexture.magFilter to the default value (NearestFilter)', () => {
+      const Expected = NearestFilter
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.magFilter
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.depthTexture.minFilter to the default value (NearestFilter)', () => {
+      const Expected = NearestFilter
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.minFilter
+      expect(result).toBe(Expected)
+    })
+
+    it('should set result.depthTexture.anisotropy to the default value (1)', () => {
+      const Expected = 1
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.anisotropy
+      expect(result).toBe(Expected)
+    })
+
+    /**
+    // @todo
+    it("should set result.depthTexture.format to DepthStencilFormat if `@param attributes`.stencil is truthy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.depthTexture.format to DepthFormat if `@param attributes`.stencil is falsy and `@param attributes`.depth is truthy", () => {})
+    it("should set result.depthTexture.format to undefined if `@param attributes`.depth is truthy", () => {})
+    it("should set result.stencilBuffer to `@param attributes`.stencil", () => {})
+    it("should set result.texture.colorSpace to `@param renderer`.outputColorSpace", () => {})
+    it("should set result.texture.samples to 4 if `@param attributes`.antialias is truthy", () => {})
+    it("should set result.texture.samples to 0 if `@param attributes`.antialias is falsy", () => {})
     it("should set `@param result`.width to XRRendererState.glProjLayer.textureWidth", () => {})
     it("should set `@param result`.height to XRRendererState.glProjLayer.textureHeight", () => {})
     */
