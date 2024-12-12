@@ -482,32 +482,32 @@ describe('WebXRManagerFunctions', () => {
         expect(makeXRCompatibleSpy).toHaveBeenCalled()
       })
 
-      /** @todo How to change the value of renderState.layers? readonly with only a getter */
-      it.todo(
-        'should call WebXRManagerFunctions.createRenderTarget if `@param session`.renderState.layers is not undefined and `@param renderer`.capabilities.isWebGL2 is true',
-        async () => {
-          // Set the data as expected
-          assert(renderer)
-          const resultSpy = vi.spyOn(WebXRManagerFunctions, 'createRenderTarget')
-          const manager = {
-            onSessionEnd: () => {},
-            setFoveation: (_) => {}
-          } as WebXRManager
-          manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
-          const setSession = manager.setSession
-          // getMutableState(XRState).session.merge({renderState: {layers: [] as XRLayer[] | undefined} as XRRenderState})
-          // Object.assign(getState(XRState).session!, {renderState: {layers: [] as XRLayer[] | undefined} as XRRenderState})
-          // Object.defineProperty(getState(XRState).session!, {renderState: {layers: [] as XRLayer[] | undefined} as XRRenderState})
-          // Sanity check before running
-          expect(getState(XRState).session?.renderState.layers).not.toBe(undefined)
-          expect(resultSpy).not.toHaveBeenCalled()
-          // Run and Check the result
-          const promise = setSession(getState(XRState).session!)
-          expect(promise).resolves.toEqual(undefined)
-          await promise
-          expect(resultSpy).toHaveBeenCalledOnce()
-        }
-      )
+      it('should call WebXRManagerFunctions.createRenderTarget if `@param session`.renderState.layers is not undefined and `@param renderer`.capabilities.isWebGL2 is true', async () => {
+        // Set the data as expected
+        assert(renderer)
+        Object.defineProperty(getState(XRState).session!, 'renderState', {
+          value: { layers: [] as XRLayer[] | undefined } as XRRenderState,
+          writable: false
+        })
+        renderer.properties = {
+          get: (_: any): any => ({ __ignoreDepthValues: 0 })
+        } as WebGLProperties
+        const resultSpy = vi.spyOn(WebXRManagerFunctions, 'createRenderTarget')
+        const manager = {
+          onSessionEnd: () => {},
+          setFoveation: (_) => {}
+        } as WebXRManager
+        manager.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, manager)
+        const setSession = manager.setSession
+        // Sanity check before running
+        expect(getState(XRState).session?.renderState.layers).not.toBe(undefined)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        const promise = setSession(getState(XRState).session!)
+        expect(promise).resolves.toEqual(undefined)
+        await promise
+        expect(resultSpy).toHaveBeenCalledOnce()
+      })
 
       it('should call WebXRManagerFunctions.createRenderTargetLegacy if `@param session`.renderState.layers is undefined or renderer.capabilities.isWebGL2 is false', async () => {
         // Set the data as expected
@@ -948,10 +948,36 @@ describe('WebXRManagerFunctions', () => {
       expect(result).toBe(Expected)
     })
 
-    /**
-    // @todo Needs a way to modify session.renderState.layers so its not undefined
-    it("should set XRRendererState.glBaseLayer.antialias to true when `@param session.renderState.layers` is !== undefined", () => {})
-    */
+    it('should set XRRendererState.glBaseLayer.antialias to true when `@param session.renderState.layers` is !== undefined', () => {
+      const Expected = true
+      const Initial = !Expected
+      // Set the data as expected
+      Object.defineProperty(getState(XRState).session!, 'renderState', {
+        value: { layers: [] as XRLayer[] | undefined } as XRRenderState,
+        writable: false
+      })
+      renderer.properties = {
+        get: (_: any): any => ({ __ignoreDepthValues: 0 })
+      } as WebGLProperties
+      getMutableState(XRRendererState).glBaseLayer.set({ antialias: Initial } as XRWebGLLayer)
+      // Sanity check before running
+      expect(getState(XRState).session?.renderState.layers).not.toBe(undefined)
+      const before = getState(XRRendererState).glBaseLayer?.antialias
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      WebXRManagerFunctions.createRenderTargetLegacy(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      )
+      const result = getState(XRRendererState).glBaseLayer?.antialias
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
 
     it('should set XRRendererState.glBaseLayer.config.alpha to `@param attributes`.alpha', () => {
       const Expected = false
@@ -1512,8 +1538,12 @@ describe('WebXRManagerFunctions', () => {
       expect(result).toBe(Expected)
     })
 
-    /** @todo How to hook/control the glProjLayer created inside the function */
-    it.todo('should set result.width to glProjLayer.textureWidth', () => {
+    it('should set result.width to glProjLayer.textureWidth', () => {
+      const Expected = 42
+      // @ts-expect-error
+      global.XRWebGLBinding.prototype.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
+        return { textureWidth: Expected } as XRProjectionLayer
+      }
       // Run and Check the result
       const result = WebXRManagerFunctions.createRenderTarget(
         getState(XRState).session!,
@@ -1526,8 +1556,12 @@ describe('WebXRManagerFunctions', () => {
       expect(result).toBe(getState(XRRendererState).glProjLayer?.textureWidth)
     })
 
-    /** @todo How to hook/control the glProjLayer created inside the function */
-    it.todo('should set result.options.depthTexture to glProjLayer.textureHeight', () => {
+    it('should set result.height to glProjLayer.textureHeight', () => {
+      const Expected = 42
+      // @ts-expect-error
+      global.XRWebGLBinding.prototype.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
+        return { textureHeight: Expected } as XRProjectionLayer
+      }
       // Run and Check the result
       const result = WebXRManagerFunctions.createRenderTarget(
         getState(XRState).session!,
@@ -1580,29 +1614,25 @@ describe('WebXRManagerFunctions', () => {
       expect(result).toBe(Expected)
     })
 
-    /** @todo Find why the resulting type is not the default listed in the Threejs on-hover documentation */
-    it.todo(
-      'should set result.depthTexture.type to the default value (UnsignedInt248Type) if `@param attributes`.depth is falsy',
-      () => {
-        const Expected = UnsignedInt248Type
-        // Set the data as expected
-        glAttributes.stencil = true
-        glAttributes.depth = undefined
-        // Sanity check before running
-        expect(glAttributes.stencil).toBeTruthy()
-        expect(glAttributes.depth).toBeFalsy()
-        // Run and Check the result
-        const result = WebXRManagerFunctions.createRenderTarget(
-          getState(XRState).session!,
-          framebufferScaleFactor,
-          glContext,
-          glAttributes,
-          renderer,
-          manager
-        ).depthTexture.type
-        expect(result).toBe(Expected)
-      }
-    )
+    it('should set result.depthTexture.type to the default value (UnsignedIntType) if `@param attributes`.depth is falsy', () => {
+      const Expected = UnsignedIntType
+      // Set the data as expected
+      glAttributes.stencil = true
+      glAttributes.depth = undefined
+      // Sanity check before running
+      expect(glAttributes.stencil).toBeTruthy()
+      expect(glAttributes.depth).toBeFalsy()
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).depthTexture.type
+      expect(result).toBe(Expected)
+    })
 
     it('should set result.depthTexture.mapping to the default value (UVMapping)', () => {
       const Expected = UVMapping
@@ -1812,11 +1842,10 @@ describe('WebXRManagerFunctions', () => {
       expect(result).toBe(Expected)
     })
 
-    /** @todo How to hook/control the glProjLayer created inside the function */
-    it.todo('should set `@param result`.width to XRRendererState.glProjLayer.textureWidth', () => {
+    it('should set `@param result`.width to XRRendererState.glProjLayer.textureWidth', () => {
       const Expected = 42
       // @ts-expect-error
-      global.XRWebGLBinding.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
+      global.XRWebGLBinding.prototype.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
         return { textureWidth: Expected } as XRProjectionLayer
       }
       // Run and Check the result
@@ -1830,10 +1859,24 @@ describe('WebXRManagerFunctions', () => {
       ).width
       expect(result).toBe(getState(XRRendererState).glProjLayer?.textureWidth)
     })
-    /**
-    // @todo How to hook/control the glProjLayer created inside the function
-    it("should set `@param result`.height to XRRendererState.glProjLayer.textureHeight", () => {})
-    */
+
+    it('should set `@param result`.height to XRRendererState.glProjLayer.textureHeight', () => {
+      const Expected = 42
+      // @ts-expect-error
+      global.XRWebGLBinding.prototype.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
+        return { textureHeight: Expected } as XRProjectionLayer
+      }
+      // Run and Check the result
+      const result = WebXRManagerFunctions.createRenderTarget(
+        getState(XRState).session!,
+        framebufferScaleFactor,
+        glContext,
+        glAttributes,
+        renderer,
+        manager
+      ).height
+      expect(result).toBe(getState(XRRendererState).glProjLayer?.textureHeight)
+    })
 
     describe("when manager.useMultiview and `@param renderer`.extensions.has('OCULUS_multiview') are both true ..", () => {
       it(".. should set `@param manager`.maxNumViews to the result of gl.getParameter(renderer.extensions.get('OCULUS_multiview').MAX_VIEWS_OVR)", () => {
@@ -1857,10 +1900,32 @@ describe('WebXRManagerFunctions', () => {
         expect(result).toBe(Expected)
       })
 
-      /**
-      // @todo How to hook/control the glProjLayer created inside the function
-      it(".. should set `@param result`.numViews to XRRendererState.glProjLayer.textureHeight", () => {})
-      */
+      it('.. should set `@param manager`.numViews to XRRendererState.glProjLayer.textureHeight', () => {
+        const Expected = 42
+        const Initial = 21
+        // Set the data as expected
+        manager.maxNumViews = Initial
+        // @ts-expect-error
+        global.XRWebGLBinding.prototype.createProjectionLayer = (_init?: XRProjectionLayerInit): XRProjectionLayer => {
+          return { textureHeight: Expected } as XRProjectionLayer
+        }
+        // Sanity check before running
+        const before = manager.maxNumViews
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        WebXRManagerFunctions.createRenderTarget(
+          getState(XRState).session!,
+          framebufferScaleFactor,
+          glContext,
+          glAttributes,
+          renderer,
+          manager
+        )
+        const result = manager.maxNumViews
+        expect(result).toBe(Initial)
+        expect(result).not.toBe(Expected)
+      })
     })
   }) //:: WebXRManagerFunctions.createRenderTarget
 }) //:: WebXRManagerFunctions
