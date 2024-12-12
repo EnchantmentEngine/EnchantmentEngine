@@ -96,3 +96,35 @@ export class MockXRAnchor implements XRAnchor {
   delete(): void {}
   requestPersistentHandle?(): Promise<string>
 }
+
+export class MockXRWebGLBinding implements XRWebGLBinding {
+  readonly nativeProjectionScaleFactor: number
+
+  constructor(_session: XRSession, _context: WebGLRenderingContext) {}
+  createProjectionLayer(_init?: XRProjectionLayerInit): XRProjectionLayer {
+    return {} as XRProjectionLayer
+  }
+  createQuadLayer(_init?: XRQuadLayerInit): XRQuadLayer {
+    return {} as XRQuadLayer
+  }
+  createCylinderLayer(_init?: XRCylinderLayerInit): XRCylinderLayer {
+    return {} as XRCylinderLayer
+  }
+  createEquirectLayer(_init?: XREquirectLayerInit): XREquirectLayer {
+    return {} as XREquirectLayer
+  }
+  createCubeLayer(_init?: XRCubeLayerInit): XRCubeLayer {
+    return {} as XRCubeLayer
+  }
+  getSubImage(_layer: XRCompositionLayer, _frame: XRFrame, _eye?: XREye): XRWebGLSubImage {
+    return {} as XRWebGLSubImage
+  }
+  getViewSubImage(_layer: XRProjectionLayer, _view: XRView): XRWebGLSubImage {
+    return {} as XRWebGLSubImage
+  }
+  getCameraImage(_camera: XRCamera): WebGLTexture {
+    return {} as WebGLTexture
+  }
+}
+// @ts-expect-error Allow declaring the XRWebGLBinding Mock into the global object as a polyfill
+global.XRWebGLBinding = MockXRWebGLBinding
