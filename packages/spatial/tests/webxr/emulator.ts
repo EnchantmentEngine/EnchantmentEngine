@@ -99,7 +99,7 @@ export async function requestEmulatedXRSession(deviceDefinition = DeviceDefiniti
 export const OculusQuest = {
   id: 'Oculus Quest',
   name: 'Oculus Quest',
-  modes: ['inline', 'immersive-vr'],
+  modes: ['inline', 'immersive-vr', 'immersive-ar'],
   headset: {
     hasPosition: true,
     hasRotation: true
