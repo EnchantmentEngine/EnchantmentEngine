@@ -451,7 +451,6 @@ describe('setupXRSession', () => {
     expect(result).toBe(Expected)
   })
 
-  /** @todo How to modify the 'immersive-ar' property without crashing ?? */
   it(`should set XRState.sessionMode to 'immersive-ar'
       when XRState.supportedSessionModes['immersive-ar'] is true
       and @param requestedMode is not passed`, async () => {
@@ -474,7 +473,6 @@ describe('setupXRSession', () => {
     expect(result).toBe(Expected)
   })
 
-  /** @todo How to modify the 'immersive-vr' property without crashing ?? */
   it(`should set XRState.sessionMode to 'immersive-vr'
       when XRState.supportedSessionModes['immersive-ar'] is false
       XRState.supportedSessionModes['immersive-vr'] is true
@@ -519,25 +517,26 @@ describe('setupXRSession', () => {
     expect(result).toBe(Expected)
   })
 
-  /** @todo How to set these conditions outside of the setupXRSession function ?? */
-  it.todo(
-    `should call EngineState.viewerEntity.RendererComponent.xrManager.setSession
+  /**
+  // @todo Only used by 8th wall
+  it(`should call EngineState.viewerEntity.RendererComponent.xrManager.setSession
       with a framebufferScaleFactor of 0.5
       when xrSession.interactionMode is 'screen-space'
-      and xrSession.domOverlayState?.type is 'screen'`,
-    async () => {
-      const Expected = 0.5
-      // Set the data as expected
-      const xrManager = getComponent(getState(EngineState).viewerEntity, RendererComponent).xrManager!
-      const setSessionSpy = vi.spyOn(xrManager, 'setSession')
-      // Run and Check the result
-      const session = await setupXRSession()
-      assert(session)
-      expect(session.interactionMode).toBe('screen-space')
-      expect(session.interactionMode).toBe('screen')
-      expect(setSessionSpy).toHaveBeenCalledWith(session, Expected)
-    }
-  )
+      and xrSession.domOverlayState?.type is 'screen'`, async () => {
+    const Expected = 0.5
+    // Set the data as expected
+    const xrManager = getComponent(getState(EngineState).viewerEntity, RendererComponent).xrManager!
+    const setSessionSpy = vi.spyOn(xrManager, 'setSession')
+    // Run and Check the result
+    expect(navigator.userAgent.includes('OculusBrowser')).toBe(true)
+    const session = await setupXRSession()
+    assert(session)
+    expect(session.interactionMode).toBe('screen-space')
+    expect(session.domOverlayState).toBe('screen')
+    expect(setSessionSpy).toHaveBeenCalled()
+    expect(setSessionSpy).toHaveBeenCalledWith(session, Expected)
+  })
+  */
 
   it(`should call EngineState.viewerEntity.RendererComponent.xrManager.setSession
       with a framebufferScaleFactor of 1.2
