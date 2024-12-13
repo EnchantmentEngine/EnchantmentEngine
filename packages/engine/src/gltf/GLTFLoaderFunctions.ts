@@ -1374,7 +1374,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     }
 
     /** Always set visible extension if this is not an ECS node */
-    if (!node.extensions?.[UUIDComponent.jsonID]) setComponent(entity, VisibleComponent)
+    if (!node.extensions?.[UUIDComponent.jsonID]) setComponent(nodeEntity, VisibleComponent)
 
     // add all extensions for synchronous mount
     if (node.extensions) {
