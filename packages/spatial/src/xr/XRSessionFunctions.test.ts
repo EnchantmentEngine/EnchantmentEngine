@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getIncomingAction } from '../../tests/util/actionHelpers'
+import { getIncomingAction, getLastAction } from '../../tests/util/actionHelpers'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
 import {
@@ -35,7 +35,7 @@ import {
 } from '../../tests/webxr/emulator'
 
 import { createEngine, destroyEngine, getComponent, getMutableComponent } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { applyIncomingActions, getMutableState, getState } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { EngineState } from '../EngineState'
 import { TransformComponent } from '../SpatialModule'
@@ -333,22 +333,14 @@ describe('onSessionEnd', () => {
     expect(result).toBe(Expected)
   })
 
-  /** @todo How to check that the action was requested with specific data ?
-   * It returns .active:true, when expected .active:false */
-  it.todo('should call `dispatchAction` with XRAction.sessionChanged{active:false}', () => {
+  it('should call `dispatchAction` with XRAction.sessionChanged{active:false}', () => {
     const Expected = false
-    // Set the data as expected
-    const resultSpy = vi.spyOn(global, 'dispatchEvent')
-    // Sanity check before running
-    expect(resultSpy).not.toHaveBeenCalled()
     // Run and Check the result
     onSessionEnd()
-    const result = getIncomingAction(XRAction.sessionChanged.type)
-    assert(result)
-    expect(typeof result).toBe('object')
-    expect(resultSpy).toHaveBeenCalled()
+    applyIncomingActions()
     // @ts-expect-error
-    expect(result.active).toBe(Expected)
+    const result = getLastAction().active
+    expect(result).toBe(Expected)
   })
 }) //:: onSessionEnd
 
