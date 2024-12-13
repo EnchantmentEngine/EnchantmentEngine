@@ -60,12 +60,13 @@ import {
 
 import { EntityLayerState, hasAuthoringCounterpart } from '@ir-engine/ecs/src/LayerState'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes.ts'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
-  getAncestorWithComponents,
   useAncestorWithComponents,
   useChildrenWithComponents
 } from '@ir-engine/spatial/src/transform/components/EntityTree'
@@ -79,6 +80,7 @@ import {
 } from '../assets/loaders/gltf/GLTFExtensions'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
+import { SceneDynamicLoadTagComponent } from '../scene/components/SceneDynamicLoadTagComponent'
 import { SourceComponent } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
@@ -88,6 +90,7 @@ import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
 import { getParserOptions, GLTFSourceState } from './GLTFState'
 import { gltfReplaceUUIDsReferences } from './gltfUtils'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
+import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect.ts'
 
 type DependencyEval = {
   key: string
@@ -130,6 +133,7 @@ const buildComponentDependencies = (json: GLTF.IGLTF) => {
     if (node.extensions && node.extensions[UUIDComponent.jsonID]) {
       const uuid = node.extensions[UUIDComponent.jsonID] as EntityUUID
       const extensions = Object.keys(node.extensions)
+      if (typeof node.extensions[SceneDynamicLoadTagComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
         if (loadDependencies[extension]) {
           if (!dependencies.componentDependencies[uuid]) dependencies.componentDependencies[uuid] = []
@@ -161,6 +165,10 @@ export const GLTFComponent = defineComponent({
     src: S.String(''),
     /** @todo move this to it's own component */
     cameraOcclusion: S.Bool(false),
+
+    //collision info
+    applyColliders: S.Bool(false),
+    shape: ShapeSchema('box'),
 
     // internals
     body: S.NonSerialized(S.Nullable(S.Type<ArrayBuffer>())),
@@ -292,12 +300,12 @@ const GLTFComponentReactor = () => {
 
   const sceneLoaded = GLTFComponent.useSceneLoaded(entity)
 
+  const scene = useOptionalComponent(entity, SceneComponent)
+
   useEffect(() => {
-    if (!sceneLoaded) return
-    const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
-    if (!sceneEntity) return
-    setComponent(sceneEntity, SceneComponent, { active: true })
-  }, [sceneLoaded])
+    if (!sceneLoaded || !scene) return
+    setComponent(entity, SceneComponent, { active: true })
+  }, [sceneLoaded, !!scene])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
   return (
@@ -401,6 +409,7 @@ const ResourceReactor = (props: { documentID: string; entity: Entity }) => {
   const resourceQuery = useQuery([SourceComponent, ResourcePendingComponent])
   const gltfDocumentState = useMutableState(GLTFDocumentState)
   const sourceEntities = useHookstate(SourceComponent.entitiesBySourceState[props.documentID])
+  useApplyCollidersToChildMeshesEffect(props.entity)
 
   useEffect(() => {
     if (getComponent(props.entity, GLTFComponent).progress === 100) return
@@ -485,7 +494,8 @@ const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: stri
   const layer = EntityLayerState.getLayerID(gltfComponentEntity)
   const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID, layer) as Entity | undefined
   const hasComponents = useHasComponents(entity ?? UndefinedEntity, components)
-  return entity && hasComponents ? (
+  const dynamicLoad = !!useOptionalComponent(entity ?? UndefinedEntity, SceneDynamicLoadTagComponent)
+  return entity && !dynamicLoad && hasComponents ? (
     <>
       {components.map((component) => {
         return (
@@ -528,10 +538,6 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: C
 
   useEffect(() => {
     return () => {
-      const ancestor = getAncestorWithComponents(gltfComponentEntity, [SceneComponent])
-      // const scene = getMutableComponent(ancestor, SceneComponent)
-      // scene.active.set(true)
-      setComponent(ancestor, SceneComponent, { active: true })
       removeError(gltfComponentEntity, GLTFComponent, 'LOADING_ERROR')
       removeError(gltfComponentEntity, GLTFComponent, 'INVALID_SOURCE')
     }
@@ -624,8 +630,14 @@ const useGLTFDocument = (entity: Entity) => {
   const url = state.src.value
   const source = GLTFComponent.useInstanceID(entity)
   useGLTFResource(url, entity)
+  const dynamicLoadComponent = useOptionalComponent(entity, SceneDynamicLoadTagComponent)
+  const isEditing = useMutableState(EngineState).isEditing.value
+
+  const dynamicLoadAndNotEditing = !isEditing && !!dynamicLoadComponent && !dynamicLoadComponent?.loaded?.value
 
   useEffect(() => {
+    if (dynamicLoadAndNotEditing) return
+
     if (!url) {
       addError(entity, GLTFComponent, 'INVALID_SOURCE', 'Invalid URL')
       return
@@ -689,7 +701,7 @@ const useGLTFDocument = (entity: Entity) => {
       state.body.set(null)
       state.progress.set(0)
     }
-  }, [url])
+  }, [url, dynamicLoadAndNotEditing])
 }
 
 export const parseBinaryData = (data) => {
