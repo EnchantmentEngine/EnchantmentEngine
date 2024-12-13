@@ -33,3 +33,10 @@ export function getIncomingAction(name: string) {
   }
   return undefined
 }
+
+/**
+ * @description Returns the last action from the Engine.instance's actions history
+ * */
+export function getLastAction() {
+  return Engine.instance.store.actions.history.at(-1)
+}
