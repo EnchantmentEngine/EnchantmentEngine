@@ -291,26 +291,32 @@ describe('XRAnchorFunctions', () => {
       destroyEngine()
     })
 
-    /** @todo Why is the session undefined, when it is being initialized in mockEmulatedXREngine ?? */
-    it.skip('should call xrFrame.session.restorePersistentAnchor with `@param uuid` when `@param xrFrame.session` is truthy', async () => {
+    it('should call xrFrame.session.restorePersistentAnchor with `@param uuid` when `@param xrFrame.session` is truthy', async () => {
       // Set the data as expected
       const xrFrame = getState(XRState).xrFrame
       const uuid = 'starstars'
+      const resultSpy = vi.fn()
+      // @ts-expect-error
+      getMutableState(XRState).xrFrame.get()!.session.restorePersistentAnchor = resultSpy
       // Sanity check before running
       assert(xrFrame)
       expect(xrFrame.session).toBeTruthy()
       expect(xrFrame.session).not.toBe(null)
       expect(xrFrame.session).not.toBe(undefined)
+      expect(resultSpy).not.toHaveBeenCalled()
       // Run the process
       try {
         await XRAnchorFunctions.restoreAnchor(xrFrame, uuid)
       } catch (error) {
         expect(true).eq(
           false,
-          'XRAnchorFunctions.restoreAnchor should not throw an error under the defined conditions.'
+          'XRAnchorFunctions.restoreAnchor should not throw an error under the defined conditions.\nError found:\n  ' +
+            error
         )
       }
       // Check the result
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith(uuid)
     })
 
     it('should throw an error if `@param xrFrame.session` is falsy', async () => {
@@ -345,23 +351,28 @@ describe('XRAnchorFunctions', () => {
       destroyEngine()
     })
 
-    /** @todo Why is the session undefined, when it is being initialized in mockEmulatedXREngine ?? */
-    it.skip('should call xrFrame.session.deletePersistentAnchor with `@param uuid` when `@param xrFrame.session` is truthy', async () => {
+    it('should call xrFrame.session.deletePersistentAnchor with `@param uuid` when `@param xrFrame.session` is truthy', async () => {
       // Set the data as expected
       const xrFrame = getState(XRState).xrFrame
       const uuid = 'starstars'
+      const resultSpy = vi.fn()
+      // @ts-expect-error
+      getMutableState(XRState).xrFrame.get()!.session.deletePersistentAnchor = resultSpy
       // Sanity check before running
       assert(xrFrame)
       expect(xrFrame.session).toBeTruthy()
       expect(xrFrame.session).not.toBe(null)
       expect(xrFrame.session).not.toBe(undefined)
+      expect(resultSpy).not.toHaveBeenCalled()
       // Run the process
       try {
-        await XRAnchorFunctions.restoreAnchor(xrFrame, uuid)
+        await XRAnchorFunctions.deleteAnchor(xrFrame, uuid)
       } catch (error) {
         expect(true).eq(false, 'XRAnchorFunctions.deleteAnchor should not throw an error under the defined conditions.')
       }
       // Check the result
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith(uuid)
     })
 
     it('should throw an error if `@param xrFrame.session` is falsy', async () => {
