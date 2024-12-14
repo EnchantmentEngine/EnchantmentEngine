@@ -35,12 +35,12 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { State, defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { State, defineAction, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState } from '../EngineState'
 import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
 import { GroupComponent, addObjectToGroup } from '../renderer/components/GroupComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -148,7 +148,7 @@ function PersistentAnchorReactor() {
       /** remove from scene and add to world origins */
       const originalParent = getComponent(getComponent(entity, EntityTreeComponent).parentEntity, UUIDComponent)
       originalParentEntityUUID.set(originalParent)
-      setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+      setComponent(entity, EntityTreeComponent, { parentEntity: getState(EngineState).localFloorEntity })
       TransformComponent.dirtyTransforms[entity] = true
 
       const wireframe = anchor.wireframe.value

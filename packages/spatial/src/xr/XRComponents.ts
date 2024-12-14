@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import type { VRMHumanBoneName } from '@pixiv/three-vrm'
 import { useEffect } from 'react'
 
-import { Engine, UndefinedEntity } from '@ir-engine/ecs'
+import { UndefinedEntity } from '@ir-engine/ecs'
 import {
   defineComponent,
   setComponent,
@@ -38,6 +38,7 @@ import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Types } from 'bitecs'
+import { EngineState } from '../EngineState'
 import { EntityTreeComponent } from '../transform/components/EntityTree'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
@@ -301,10 +302,10 @@ export const XRSpaceComponent = defineComponent({
       let parentEntity = UndefinedEntity
       switch (baseSpace) {
         case ReferenceSpace.localFloor:
-          parentEntity = Engine.instance.localFloorEntity
+          parentEntity = getState(EngineState).localFloorEntity
           break
         case ReferenceSpace.viewer:
-          parentEntity = Engine.instance.cameraEntity
+          parentEntity = getState(EngineState).viewerEntity
           break
       }
 
