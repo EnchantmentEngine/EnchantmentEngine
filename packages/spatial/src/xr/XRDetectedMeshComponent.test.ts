@@ -331,5 +331,38 @@ describe('XRDetectedMeshComponent', () => {
   }) //:: foundMesh
 
   /** @todo */
-  describe('reactor', () => {}) //:: reactor
+  describe('reactor', () => {
+    describe('XRDetectedMeshComponent.mesh', () => {
+      // it("should not do anything if XRDetectedMeshComponent.mesh.value is falsy", () => {})
+      // it("should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument", () => {})
+      // it("should set XRDetectedMeshComponent.geometry to the newly created geometry", () => {})
+      // it("should create a new Mesh object with a XRDetectedPlaneComponent.shadowMaterial and call addObjectToGroup with the entityContext and the new mesh", () => {})
+      // it("should create a new Mesh object with a XRDetectedPlaneComponent.occlusionMat and call addObjectToGroup with the entityContext and the new mesh", () => {})
+      // it("should create a new Mesh object with a XRDetectedPlaneComponent.placementHelperMaterial and call addObjectToGroup with the entityContext and the new mesh", () => {})
+      // it("should set .renderOrder to -1 on the newly created occlusionMesh mesh object", () => {})
+      // it("should set entityContext.shadowMesh to the newly created shadowMesh mesh object", () => {})
+      // it("should set entityContext.occlusionMesh to the newly created occlusionMesh mesh object", () => {})
+      // it("should set entityContext.placementHelper to the newly created placementHelper mesh object", () => {})
+      describe('when it unmounts ..', () => {
+        // it(".. should call removeObjectFromGroup with the entityContext and the shadowMesh mesh object", () => {})
+        // it(".. should call removeObjectFromGroup with the entityContext and the occlusionMesh mesh object", () => {})
+        // it(".. should call removeObjectFromGroup with the entityContext and the placementHelper mesh object", () => {})
+      })
+    }) //:: XRDetectedMeshComponent.mesh
+
+    describe('XRDetectedMeshComponent.geometry', () => {
+      // it("should set entityContext.XRDetectedMeshComponent.shadowMesh to entityContext.XRDetectedMeshComponent.geometry if entityContext.XRDetectedMeshComponent.shadowMesh.geometry is truthy ", () => {})
+      // it("should not set entityContext.XRDetectedMeshComponent.shadowMesh if entityContext.XRDetectedMeshComponent.shadowMesh.geometry is falsy", () => {})
+      // it("it("should set entityContext.XRDetectedMeshComponent.occlusionMesh to entityContext.XRDetectedMeshComponent.geometry if entityContext.XRDetectedMeshComponent.occlusionMesh.geometry is truthy ", () => {})", () => {})
+      // it("should not set entityContext.XRDetectedMeshComponent.occlusionMesh if entityContext.XRDetectedMeshComponent.occlusionMesh.geometry is falsy", () => {})
+      describe('when it unmounts ..', () => {
+        // it(".. should call entityContext.XRDetectedMeshComponent.geometry.dispose", () => {})
+      })
+    }) //:: XRDetectedMeshComponent.geometry
+
+    describe('XRState.scenePlacementMode', () => {
+      // it("should set XRDetectedMeshComponent.placementHelper.visible to true if XRState.scenePlacementMode is 'placing'", () => {})
+      // it("should set XRDetectedMeshComponent.placementHelper.visible to false if XRState.scenePlacementMode is not 'placing'", () => {})
+    }) //:: XRState.scenePlacementMode
+  }) //:: reactor
 }) //:: XRDetectedMeshComponent
