@@ -112,8 +112,18 @@ describe('XRHitTestComponent', () => {
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('reactor', () => {}) //:: reactor
+  // @todo How to check the contents of the function inside these `.then(fn)` calls?
+  describe('reactor', () => {
+    // it("should not do anything if the entityContext does not have a XRHitTestComponent", () => {})
+    describe("when XRHitTestComponent.options has a field called 'space' ..", () => {
+      // it(".. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]", () => {})
+    })
+    describe("when XRHitTestComponent.options does not have a field called 'space' ..", () => {
+      // it(".. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]", () => {})
+    })
+    // it("should call XRHitTestComponent.source.cancel when it unmounts", () => {})
+    // it("should trigger when entityContext.XRHitTestComponent.options changes", () => {})
+  }) //:: reactor
 }) //:: XRHitTestComponent
 
 describe('XRAnchorComponent', () => {
@@ -123,8 +133,13 @@ describe('XRAnchorComponent', () => {
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('reactor', () => {}) //:: reactor
+  describe('reactor', () => {
+    /**
+    // @todo
+    it("should call XRAnchorComponent.anchor.delete when it unmounts", () => {})
+    it("should trigger when XRAnchorComponent.anchor changes", () => {})
+    */
+  }) //:: reactor
 }) //:: XRAnchorComponent
 
 describe('XRSpaceComponent', () => {
@@ -134,6 +149,14 @@ describe('XRSpaceComponent', () => {
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('reactor', () => {}) //:: reactor
+  describe('reactor', () => {
+    /**
+    // @todo
+    it("should set an EntityTreeComponent to the entityContext with EngineState.localFloorEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.localFloor", () => {})
+    it("should set an EntityTreeComponent to the entityContext with EngineState.viewerEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.viewer", () => {})
+    it("should set an EntityTreeComponent to the entityContext with UndefinedEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is not ReferenceSpace.viewer or ReferenceSpace.localFloor", () => {})
+    it("should set a TransformComponent to the entityContext", () => {})
+    it("should trigger when XRSpaceComponent mounts/unmounts", () => {})
+    */
+  }) //:: reactor
 }) //:: XRSpaceComponent
