@@ -43,7 +43,6 @@ import { onNewScene, onSaveScene, saveSceneGLTF } from '../../functions/sceneFun
 import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
 import { PublishModalWithProvider } from '../../panels/files/PublishModal'
-import { useCurrentFiles } from '../../panels/files/helpers'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { UIAddonsState } from '../../services/UIAddonsState'
@@ -145,42 +144,42 @@ const generateToolbarMenu = () => {
 }
 
 const toolbarMenu = generateToolbarMenu()
-const usePublish = () => {
-  const filesState = useMutableState(FilesState)
-  const fileService = useMutation(fileBrowserPath)
-  const { createNewFolder } = useCurrentFiles()
-  const onPublish = async () => {
-    const sceneModified = EditorState.isModified()
-
-    if (!sceneModified) return
-
-    const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
-    //fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
-    createNewFolder()
-    if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
-      throw new Error('Cannot save scene without scene data')
-
-    const abortController = new AbortController()
-    await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
-  }
-
-  return { onPublish }
-}
-//original publish
-// const onPublish = async () => {
+// const usePublish = () => {
 //   const filesState = useMutableState(FilesState)
 //   const fileService = useMutation(fileBrowserPath)
-//   const sceneModified = EditorState.isModified()
+//   const { createNewFolder } = useCurrentFiles()
+//   const onPublish = async () => {
+//     const sceneModified = EditorState.isModified()
 
-//   if (!sceneModified) return
+//     if (!sceneModified) return
 
-//   const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
-//   fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
-//   if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
-//     throw new Error('Cannot save scene without scene data')
-//   const abortController = new AbortController()
-//   await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+//     const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
+//     //fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+//     createNewFolder()
+//     if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
+//       throw new Error('Cannot save scene without scene data')
+
+//     const abortController = new AbortController()
+//     await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+//   }
+
+//   return { onPublish }
 // }
+//original publish
+const onPublish = async () => {
+  const filesState = useMutableState(FilesState)
+  const fileService = useMutation(fileBrowserPath)
+  const sceneModified = EditorState.isModified()
+
+  if (!sceneModified) return
+
+  const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
+  fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+  if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
+    throw new Error('Cannot save scene without scene data')
+  const abortController = new AbortController()
+  await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+}
 
 export default function Toolbar() {
   const { t } = useTranslation()
