@@ -23,14 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AddEditLocationModal from '@ir-engine/client-core/src/admin/components/locations/AddEditLocationModal'
 import ProfilePill from '@ir-engine/client-core/src/common/components/ProfilePill'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { RouterState } from '@ir-engine/client-core/src/common/services/RouterService'
 import { useProjectPermissions } from '@ir-engine/client-core/src/user/useUserProjectPermission'
-import { useFind } from '@ir-engine/common'
-import { ScopeType, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
+import { useFind, useMutation } from '@ir-engine/common'
+import { ScopeType, fileBrowserPath, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs'
 import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -43,7 +42,10 @@ import { useTranslation } from 'react-i18next'
 import { onNewScene, onSaveScene, saveSceneGLTF } from '../../functions/sceneFunctions'
 import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
+import PublishModal from '../../panels/files/PublishModal'
+import { useCurrentFiles } from '../../panels/files/helpers'
 import { EditorState } from '../../services/EditorServices'
+import { FilesState } from '../../services/FilesState'
 import { UIAddonsState } from '../../services/UIAddonsState'
 import CreatePrefabPanel from '../dialogs/CreatePrefabPanelDialog'
 import CreateSceneDialog from '../dialogs/CreateScenePanelDialog'
@@ -143,18 +145,42 @@ const generateToolbarMenu = () => {
 }
 
 const toolbarMenu = generateToolbarMenu()
+const usePublish = () => {
+  const filesState = useMutableState(FilesState)
+  const fileService = useMutation(fileBrowserPath)
+  const { createNewFolder } = useCurrentFiles()
+  const onPublish = async () => {
+    const sceneModified = EditorState.isModified()
 
-const onPublish = async () => {
-  const sceneModified = EditorState.isModified()
+    if (!sceneModified) return
 
-  if (!sceneModified) return
+    const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
+    //fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+    createNewFolder()
+    if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
+      throw new Error('Cannot save scene without scene data')
 
-  const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
-  if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
-    throw new Error('Cannot save scene without scene data')
-  const abortController = new AbortController()
-  await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+    const abortController = new AbortController()
+    await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+  }
+
+  return { onPublish }
 }
+//original publish
+// const onPublish = async () => {
+//   const filesState = useMutableState(FilesState)
+//   const fileService = useMutation(fileBrowserPath)
+//   const sceneModified = EditorState.isModified()
+
+//   if (!sceneModified) return
+
+//   const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
+//   fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+//   if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
+//     throw new Error('Cannot save scene without scene data')
+//   const abortController = new AbortController()
+//   await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
+// }
 
 export default function Toolbar() {
   const { t } = useTranslation()
@@ -176,7 +202,7 @@ export default function Toolbar() {
   const hasPublishAccess = hasLocationWriteScope || permission?.type === 'owner' || permission?.type === 'editor'
   const locationQuery = useFind(locationPath, { query: { action: 'studio', sceneId: sceneAssetID.value } })
   const currentLocation = locationQuery.data[0]
-
+  const { onPublish } = usePublish()
   return (
     <>
       <div className="flex h-10 items-center justify-between bg-theme-primary">
@@ -216,8 +242,8 @@ export default function Toolbar() {
                 disabled={!hasPublishAccess}
                 onClick={() =>
                   PopoverState.showPopupover(
-                    <AddEditLocationModal
-                      action="studio"
+                    <PublishModal
+                      action="admin"
                       sceneID={sceneAssetID.value}
                       location={currentLocation}
                       inStudio={true}

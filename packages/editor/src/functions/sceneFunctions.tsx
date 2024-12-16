@@ -57,7 +57,8 @@ export const saveSceneGLTF = async (
   projectName: string,
   sceneFile: string,
   signal: AbortSignal,
-  saveAs?: boolean
+  saveAs?: boolean,
+  savePath?: string
 ) => {
   if (signal.aborted) throw new Error(i18n.t('editor:errors.saveProjectAborted'))
 
@@ -65,8 +66,10 @@ export const saveSceneGLTF = async (
   const sourceID = GLTFComponent.getInstanceID(rootEntity)
 
   const sceneName = cleanString(sceneFile!.replace('.scene.json', '').replace('.gltf', ''))
-  const currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
-
+  let currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
+  if (savePath) {
+    currentSceneDirectory = currentSceneDirectory.replace('scenes', savePath)
+  }
   if (saveAs) {
     const existingScene = await API.instance.service(staticResourcePath).find({
       query: { key: `${currentSceneDirectory}/${sceneName}.gltf`, $limit: 1 }
