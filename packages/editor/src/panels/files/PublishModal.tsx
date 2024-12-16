@@ -33,7 +33,7 @@ import {
   locationPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { useCurrentFiles } from '@ir-engine/editor/src/panels/files/helpers'
+import { CurrentFilesQueryProvider, useCurrentFiles } from '@ir-engine/editor/src/panels/files/helpers'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { FilesState } from '@ir-engine/editor/src/services/FilesState'
 import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -59,7 +59,11 @@ const locationTypeOptions = [
   { label: 'Public', value: 'public' },
   { label: 'Showroom', value: 'showroom' }
 ]
-
+export const PublishModalWithProvider = (props) => (
+  <CurrentFilesQueryProvider>
+    <PublishModal {...props} />
+  </CurrentFilesQueryProvider>
+)
 export default function PublishModal(props: {
   action: string
   location?: LocationType
@@ -132,7 +136,7 @@ export default function PublishModal(props: {
       console.error('Cannot create folder because createNewFolder is undefined.')
       return
     }
-    await createNewFolder()
+    createNewFolder
   }
   const handleDuplicateScene = async () => {
     //save duplicate scene to public location

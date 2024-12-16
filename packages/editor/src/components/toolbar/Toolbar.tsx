@@ -42,7 +42,7 @@ import { useTranslation } from 'react-i18next'
 import { onNewScene, onSaveScene, saveSceneGLTF } from '../../functions/sceneFunctions'
 import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
-import PublishModal from '../../panels/files/PublishModal'
+import { PublishModalWithProvider } from '../../panels/files/PublishModal'
 import { useCurrentFiles } from '../../panels/files/helpers'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
@@ -242,8 +242,8 @@ export default function Toolbar() {
                 disabled={!hasPublishAccess}
                 onClick={() =>
                   PopoverState.showPopupover(
-                    <PublishModal
-                      action="admin"
+                    <PublishModalWithProvider
+                      action="studio"
                       sceneID={sceneAssetID.value}
                       location={currentLocation}
                       inStudio={true}
