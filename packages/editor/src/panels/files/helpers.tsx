@@ -57,7 +57,7 @@ const FilesQueryContext = createContext({
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
-  createNewFolder: () => {}
+  createNewFolder: (name?: string) => {}
 })
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
@@ -105,7 +105,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     await filesQuery.refetch()
   }
 
-  const createNewFolder = () => fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+  const createNewFolder = (name) => fileService.create(`${filesState.selectedDirectory.value}` + name)
 
   const files = filesQuery.data.map((file) => {
     const isFolder = file.type === 'folder'

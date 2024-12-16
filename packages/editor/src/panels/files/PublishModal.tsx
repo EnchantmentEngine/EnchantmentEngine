@@ -43,6 +43,7 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { ModalHeader } from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import { HiLink } from 'react-icons/hi2'
+import { saveSceneGLTF } from '../../functions/sceneFunctions'
 const getDefaultErrors = () => ({
   name: '',
   maxUsers: '',
@@ -136,7 +137,7 @@ export default function PublishModal(props: {
       console.error('Cannot create folder because createNewFolder is undefined.')
       return
     }
-    createNewFolder
+    await createNewFolder('publish')
   }
   const handleDuplicateScene = async () => {
     //save duplicate scene to public location
@@ -150,7 +151,14 @@ export default function PublishModal(props: {
     const abortController = new AbortController()
     try {
       if (sceneName && projectName) {
-        //await saveSceneGLTF(sceneAssetID!, projectName, sceneName + '-duplicated', abortController.signal, true)
+        await saveSceneGLTF(
+          sceneAssetID!,
+          projectName,
+          sceneName + '-duplicated',
+          abortController.signal,
+          true,
+          'publish'
+        )
       }
     } catch (error) {
       PopoverState.showPopupover(
@@ -384,7 +392,7 @@ export default function PublishModal(props: {
                 : t('editor:toolbar.publishLocation.title')}
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
             </Button>
-            <Button onClick={handleCreateFolder}>{t('save duplicate')}</Button>
+            <Button onClick={handleCreateFolder}>{t('save duplicate scene')}</Button>
           </div>
         </div>
       </div>
