@@ -283,12 +283,11 @@ const reactor = () => {
   const xrState = useMutableState(XRState)
 
   useEffect(() => {
-    if (!xrState.sessionActive.value) {
+    return () => {
       const depthDataTexture = xrState.depthDataTexture.value
-      if (depthDataTexture) {
-        depthDataTexture.dispose()
-        xrState.depthDataTexture.set(null)
-      }
+      if (!depthDataTexture) return
+      depthDataTexture.dispose()
+      xrState.depthDataTexture.set(null)
     }
   }, [xrState.sessionActive])
 
