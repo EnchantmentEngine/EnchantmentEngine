@@ -28,8 +28,8 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { RouterState } from '@ir-engine/client-core/src/common/services/RouterService'
 import { useProjectPermissions } from '@ir-engine/client-core/src/user/useUserProjectPermission'
-import { useFind, useMutation } from '@ir-engine/common'
-import { ScopeType, fileBrowserPath, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
+import { useFind } from '@ir-engine/common'
+import { ScopeType, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs'
 import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -44,7 +44,6 @@ import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
 import { PublishModalWithProvider } from '../../panels/files/PublishModal'
 import { EditorState } from '../../services/EditorServices'
-import { FilesState } from '../../services/FilesState'
 import { UIAddonsState } from '../../services/UIAddonsState'
 import CreatePrefabPanel from '../dialogs/CreatePrefabPanelDialog'
 import CreateSceneDialog from '../dialogs/CreateScenePanelDialog'
@@ -167,14 +166,11 @@ const toolbarMenu = generateToolbarMenu()
 // }
 //original publish
 const onPublish = async () => {
-  const filesState = useMutableState(FilesState)
-  const fileService = useMutation(fileBrowserPath)
   const sceneModified = EditorState.isModified()
 
   if (!sceneModified) return
 
   const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
-  fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
   if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
     throw new Error('Cannot save scene without scene data')
   const abortController = new AbortController()
