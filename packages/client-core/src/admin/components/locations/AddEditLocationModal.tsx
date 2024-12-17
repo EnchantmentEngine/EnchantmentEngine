@@ -29,13 +29,11 @@ import {
   LocationID,
   LocationPatch,
   LocationType,
-  fileBrowserPath,
   locationPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Button, Input, Select } from '@ir-engine/ui'
-import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { ModalHeader } from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
@@ -117,25 +115,6 @@ export default function AddEditLocationModal(props: {
     }
   })
 
-  const handleDuplicateScene = async () => {
-    //save duplicate scene to public location\
-    const { projectName, sceneName, rootEntity, sceneAssetID } = getState(EditorState)
-    const folder = await app.service(fileBrowserPath).create(name, params)
-    //check if there is publish folder if not create one
-    const sceneModified = EditorState.isModified()
-    const abortController = new AbortController()
-    try {
-      if (sceneName || sceneModified) {
-        if (projectName) {
-          await saveSceneGLTF(sceneAssetID!, projectName, sceneName + '-duplicated', abortController.signal, true)
-        }
-      }
-    } catch (error) {
-      PopoverState.showPopupover(
-        <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
-      )
-    }
-  }
   const handlePublish = async () => {
     errors.set(getDefaultErrors())
 
@@ -362,7 +341,6 @@ export default function AddEditLocationModal(props: {
                 : t('editor:toolbar.publishLocation.title')}
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
             </Button>
-            <Button onClick={handleDuplicateScene}>{t('save duplicate scene')}</Button>
           </div>
         </div>
       </div>
