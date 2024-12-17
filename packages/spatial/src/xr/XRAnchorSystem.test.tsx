@@ -678,6 +678,25 @@ describe('XRAnchorSystem', () => {
   }) //:: Fields
 
   /** @todo */
+  describe('reactor', () => {
+    /** @todo */
+    // should be a reactor that does nothing if EngineState.viewerEntity.value is falsy
+    describe('when the component mounts ..', () => {
+      /**
+      // @todo
+      it("should set XRAnchorSystemState.scenePlacementEntity to a new entity that has the components [NameComponent, XRScenePlacementComponent, TransformComponent, EntityTreeComponent, VisibleComponent, InputComponent]", () => {})
+      it("should set XRAnchorSystemState.originAnchorEntity to a new entity that has the components [NameComponent, EntityTreeComponent, GroupComponent]", () => {})
+      // @todo How or what to test for the mergeBufferGeometries line
+      */
+    }) //:: mount
+
+    /** @todo Complete the list of statements of this hook */
+    //:: [scenePlacementMode, xrSession]
+    // should not do anything if XRState.session.value is falsy
+
+    /** @todo Complete the list of statements of the reactor */
+  }) //:: reactor
+
+  /** @todo */
   describe('execute', () => {}) //:: execute
-  describe('reactor', () => {}) //:: reactor
 }) //:: XRAnchorSystem
