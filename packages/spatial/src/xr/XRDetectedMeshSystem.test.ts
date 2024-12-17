@@ -79,8 +79,23 @@ describe('XRDetectedMeshSystem', () => {
   }) //:: Fields
 
   /** @todo */
+  describe('reactor', () => {
+    describe('when the component unmounts or XRState.session changes to a falsy value ..', () => {
+      /**
+      // @todo
+      it("should not do anything if XRState.session.value is falsy", () => {})
+      it("should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap", () => {})
+      it("should call XRDetectedPlaneComponent.detectedPlanesMap.clear()", () => {})
+      it("should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()", () => {})
+      it("should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap", () => {})
+      it("should call XRDetectedPlaneComponent.detectedMeshesMap.clear()", () => {})
+      it("should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()", () => {})
+      */
+    }) //:: cleanup
+  }) //:: reactor
+
+  /** @todo */
   describe('execute', () => {}) //:: execute
-  describe('reactor', () => {}) //:: reactor
 }) //:: XRDetectedMeshSystem
 
 describe('XRDetectedMeshSystem Functions', () => {
