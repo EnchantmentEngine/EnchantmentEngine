@@ -815,6 +815,19 @@ describe('XRDepthOcclusionSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute,', () => {}) //:: execute
-  describe('reactor,', () => {}) //:: reactor
+  describe('reactor', () => {
+    describe('xrState.sessionActive', () => {
+      describe('when it unmounts ..', () => {
+        /**
+        // @todo
+        it("should not do anything if XRState.depthDataTexture is falsy", () => {})
+        it("should call XRState.depthDataTexture.dispose", () => {})
+        it("should set XRState.depthDataTexture to null", () => {})
+        */
+      })
+    }) //:: xrState.sessionActive
+  }) //:: reactor
+
+  /** @todo */
+  describe('execute', () => {}) //:: execute
 }) //:: XRDepthOcclusionSystem
