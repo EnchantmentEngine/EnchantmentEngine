@@ -67,8 +67,89 @@ describe('XRLightProbeSystem', () => {
   }) //:: Fields
 
   /** @todo */
+  describe('reactor', () => {
+    describe('on mount', () => {
+      /**
+      // @todo
+      it("should set XRLightProbeState.lightProbe.intensity to 0", () => {})
+      */
+    }) //:: on mount
+
+    describe('XRState.session', () => {
+      /**
+      // @todo
+      it("should not do anything if XRState.session.value is falsy", () => {})
+      it("should not do anything if XRState.session.requestLightProbe does not exist on the object", () => {})
+      it("should call XRState.session.requestLightProbe with {reflectionFormat: session.preferredReflectionFormat}", () => {})
+      it("should set XRLightProbeState.probe to the XRLightProbe returned by XRState.session.requestLightProbe when the promise resolves correctly", () => {})
+      it("should not set XRLightProbeState.probe to the XRLightProbe returned by XRState.session.requestLightProbe when the promise does not resolve correctly", () => {})
+      */
+
+      describe('when the component unmounts ..', () => {
+        /**
+        // @todo
+        it(".. should set XRLightProbeState.environment to null", () => {})
+        it(".. should set XRLightProbeState.xrWebGLBinding to null", () => {})
+        it(".. should set XRLightProbeState.isEstimatingLight to null", () => {})
+        it(".. should set XRLightProbeState.probe to null", () => {})
+        */
+      }) //:: unmount
+    }) //:: XRState.session
+
+    describe('XRLightProbeState.isEstimatingLight', () => {
+      /**
+      // @todo
+      it("should not do anything if xrLightProbeState.isEstimatingLight.value is falsy", () => {})
+      it("should not do anything if xrState.sessionMode.value is not 'immersive-ar'", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity and add a DirectionalLightComponent to the entity", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity, add a DirectionalLightComponent to the entity and set its intensity to 0", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity, add a DirectionalLightComponent to the entity and set its shadowBias to -0.000001", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity, add a DirectionalLightComponent to the entity and set its shadowRadius to 1", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity, add a DirectionalLightComponent to the entity and set its cameraFar to 2000", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity, add a DirectionalLightComponent to the entity and set its castShadow to true", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity and add a GroupComponent to the entity", () => {})
+      it("should set XRLightProbeState.directionalLightEntity to a new entity and add a VisibleComponent to the entity", () => {})
+      */
+      describe('when the component unmounts ..', () => {
+        /**
+        // @todo
+        it(".. should set XRLightProbeState.directionalLightEntity to UndefinedEntity", () => {})
+        */
+      })
+    }) //:: XRLightProbeState.isEstimatingLight
+
+    describe('XRLightProbeState.probe', () => {
+      /**
+      // @todo
+      it("should not do anything if XRState.session is falsy", () => {})
+      it("should not do anything if XRLightProbeState.probe.value is falsy", () => {})
+      it("should not do anything if XRWebGLBinding is not a property of window", () => {})
+      it("should set XRLightProbeState.environment to the .texture property of a renderTarget created with new WebGLCubeRenderTarget(16)", () => {})
+      it("should call EngineState.viewerEntity.RendererComponent.renderer.getContext().getExtension with 'EXT_sRGB' when session.preferredReflectionFormat is 'srgba8'", () => {})
+      it("should call EngineState.viewerEntity.RendererComponent.renderer.getContext().getExtension with 'OES_texture_half_float' when session.preferredReflectionFormat is 'rgba16f'", () => {})
+      it("should set XRLightProbeState.xrWebGLBinding to a new instance of XRWebGLBinding created with XRState.session and EngineState.viewerEntity.RendererComponent.renderer.getContext() as arguments", () => {})
+      it("should call XRLightProbeState.probe.value.addEventListener with 'reflectionchange' and a function that calls XRLightProbeSystemFunctions.updateReflection()", () => {})
+      */
+    }) //:: XRLightProbeState.probe
+
+    // @todo Figure out if its good to separate these two, or if it should remain one describe
+    describe('[XRLightProbeState.environment.value, xrLightProbeState.directionalLightEntity.value]', () => {
+      /**
+      // @todo
+      it("should not do anything if one of the values is falsy", () => {})
+      it("should set an EnvironmentMapComponent on XRLightProbeState.directionalLightEntity", () => {})
+      */
+      describe('when the component unmounts ..', () => {
+        /**
+        // @todo
+        it(".. should remove the EnvironmentMapComponent on XRLightProbeState.directionalLightEntity", () => {})
+        */
+      }) //:: unmount
+    }) //:: [XRLightProbeState.environment.value, xrLightProbeState.directionalLightEntity.value]
+  }) //:: reactor
+
+  /** @todo */
   describe('execute,', () => {}) //:: execute
-  describe('reactor', () => {}) //:: reactor
 }) //:: XRLightProbeSystem
 
 describe('XRLightProbeState', () => {
