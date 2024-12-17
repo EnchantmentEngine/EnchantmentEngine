@@ -23,15 +23,26 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useMutableState } from '@ir-engine/hyperflux'
+import { User01Lg } from '@ir-engine/ui/src/icons'
+import LocationIconButton from '.'
 
-import { AppState } from '../../common/services/AppService'
-import shelfStyles from './index.module.scss'
+export default {
+  title: 'Components/Tailwind/LocationIconButton',
+  component: LocationIconButton,
+  parameters: {
+    componentSubtitle: 'Input',
+    design: {
+      type: 'figma',
+      url: 'https://www.figma.com/design/ln2VDACenFEkjVeHkowxyi/iR-Engine-Design-Library-File?node-id=2105-17763'
+    }
+  }
+}
 
-export const useShelfStyles = () => {
-  const appState = useMutableState(AppState)
-  return {
-    topShelfStyle: appState.showTopShelf.value ? shelfStyles.animateTop : shelfStyles.fadeOutTop,
-    bottomShelfStyle: appState.showBottomShelf.value ? shelfStyles.animateBottom : shelfStyles.fadeOutBottom
+export const Default = {
+  args: {
+    icon: User01Lg,
+    tooltip: {
+      title: 'User'
+    }
   }
 }

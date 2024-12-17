@@ -36,7 +36,6 @@ import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionSe
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '../../media/PeerMediaChannelState'
 import { AuthState } from '../../user/services/AuthService'
 import { FilteredUsersState } from '../../world/FilteredUsersSystem'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 import { UserMediaWindow, UserMediaWindowWidget } from '../UserMediaWindow'
 import styles from './index.module.scss'
 
@@ -126,12 +125,10 @@ export const useMediaWindows = () => {
 }
 
 export const UserMediaWindows = () => {
-  const { topShelfStyle } = useShelfStyles()
-
   const windows = useMediaWindows()
 
   return (
-    <div className={`${styles.userMediaWindowsContainer} ${topShelfStyle}`}>
+    <div className={styles.userMediaWindowsContainer}>
       <div className={styles.userMediaWindows}>
         {windows.map(({ peerID, type }) => (
           <UserMediaWindow type={type} peerID={peerID} key={type + '-' + peerID} />

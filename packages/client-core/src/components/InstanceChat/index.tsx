@@ -56,7 +56,6 @@ import { AppState } from '../../common/services/AppService'
 import { AvatarUIActions, AvatarUIState } from '../../systems/state/AvatarUIState'
 import { useUserAvatarThumbnail } from '../../user/functions/useUserAvatarThumbnail'
 import { clientContextParams } from '../../util/ClientContextState'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 import { default as defaultStyles, default as styles } from './index.module.scss'
 
 const logger = multiLogger.child({ component: 'client-core:InstanceChat', modifier: clientContextParams })
@@ -486,7 +485,6 @@ export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
 
 export const InstanceChatWrapper = () => {
   const { t } = useTranslation()
-  const { bottomShelfStyle } = useShelfStyles()
 
   const acceptedTOS = useMutableState(AuthState).user.acceptedTOS.value
   const isGuest = useMutableState(AuthState).user.isGuest.value
@@ -519,7 +517,7 @@ export const InstanceChatWrapper = () => {
   return (
     <>
       {targetChannelId.value ? (
-        <div className={`${bottomShelfStyle} ${styles.chatRoot}`}>
+        <div className={`${styles.chatRoot}`}>
           <InstanceChat />
         </div>
       ) : (

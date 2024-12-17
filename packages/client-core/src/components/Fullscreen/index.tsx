@@ -26,21 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
-import IconButtonWithTooltip from '@ir-engine/ui/src/primitives/mui/IconButtonWithTooltip'
-
 import multiLogger from '@ir-engine/common/src/logger'
+import LocationIconButton from '@ir-engine/ui/src/components/tailwind/LocationIconButton'
+import { SquareLg, SquaresLg } from '@ir-engine/ui/src/icons'
 import { clientContextParams } from '../../util/ClientContextState'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
-import styles from './index.module.scss'
 
 const logger = multiLogger.child({ component: 'client-core:FullScreen', modifier: clientContextParams })
 
 export const Fullscreen = () => {
   const { t } = useTranslation()
   const [fullScreenActive, setFullScreenActive] = useState(false)
-  const { bottomShelfStyle } = useShelfStyles()
 
   useEffect(() => {
     const onFullScreenChange = () => {
@@ -66,30 +61,40 @@ export const Fullscreen = () => {
   }
 
   return (
-    <div className={styles.fullScreen} style={{ pointerEvents: 'auto' }}>
-      {fullScreenActive ? (
-        <IconButtonWithTooltip
-          title={t('user:menu.exitFullScreen')}
-          type="solid"
-          className={`${bottomShelfStyle}`}
-          onClick={() => setFullscreen(false)}
-          sizePx={50}
-          onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-          onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-          icon={<Icon type="FullscreenExit" />}
-        />
-      ) : (
-        <IconButtonWithTooltip
-          title={t('user:menu.enterFullScreen')}
-          className={`${bottomShelfStyle}`}
-          type="solid"
-          onClick={() => setFullscreen(true)}
-          sizePx={50}
-          onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-          onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-          icon={<Icon type="ZoomOutMap" />}
-        />
-      )}
-    </div>
+    <LocationIconButton
+      tooltip={{
+        title: fullScreenActive ? t('user:menu.exitFullScreen') : t('user:menu.enterFullScreen'),
+        position: 'top'
+      }}
+      icon={fullScreenActive ? SquareLg : SquaresLg} // TODO: Use the correct icons
+      onClick={() => setFullscreen(!fullScreenActive)}
+    />
   )
+
+  // return (
+  //   <div className={styles.fullScreen} style={{ pointerEvents: 'auto' }}>
+  //     {fullScreenActive ? (
+  //       <IconButtonWithTooltip
+  //         title={t('user:menu.exitFullScreen')}
+  //         type="solid"
+  //         onClick={() => setFullscreen(false)}
+  //         sizePx={50}
+  //         onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
+  //         onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
+  //         icon={<Icon type="FullscreenExit" />}
+  //       />
+  //     ) : (
+  //       <IconButtonWithTooltip
+  //         title={t('user:menu.enterFullScreen')}
+  //         className={`${bottomShelfStyle}`}
+  //         type="solid"
+  //         onClick={() => setFullscreen(true)}
+  //         sizePx={50}
+  //         onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
+  //         onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
+  //         icon={<Icon type="ZoomOutMap" />}
+  //       />
+  //     )}
+  //   </div>
+  // )
 }

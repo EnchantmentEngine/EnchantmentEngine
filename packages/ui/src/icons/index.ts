@@ -749,3 +749,6 @@ export { default as ZoomInSm } from './files/ZoomInSm'
 export { default as ZoomOutLg } from './files/ZoomOutLg'
 export { default as ZoomOutMd } from './files/ZoomOutMd'
 export { default as ZoomOutSm } from './files/ZoomOutSm'
+export type SVGIconType = React.ForwardRefExoticComponent<
+  Omit<React.SVGProps<SVGSVGElement>, 'ref'> & React.RefAttributes<SVGSVGElement>
+>

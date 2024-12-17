@@ -31,9 +31,7 @@ import IconButtonWithTooltip from '@ir-engine/ui/src/primitives/mui/IconButtonWi
 
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { AppState } from '../../../common/services/AppService'
-import { useShelfStyles } from '../../../components/Shelves/useShelfStyles'
 import { PopupMenuServices, PopupMenuState } from './PopupMenuService'
-import styles from './index.module.scss'
 
 export const UserMenu = () => {
   const popupMenuState = useMutableState(PopupMenuState)
@@ -41,45 +39,35 @@ export const UserMenu = () => {
   const Panel = popupMenu.openMenu ? popupMenu.menus[popupMenu.openMenu] : null
   const hotbarItems = popupMenu.hotbar
 
-  const { bottomShelfStyle } = useShelfStyles()
-
   return (
-    <div>
-      <ClickAwayListener onClickAway={() => PopupMenuServices.showPopupMenu()} mouseEvent="onMouseDown">
-        <>
-          <section
-            className={`${styles.hotbarContainer} ${bottomShelfStyle} ${
-              popupMenuState.openMenu.value ? styles.fadeOutBottom : ''
-            }`}
-          >
-            <div className={styles.buttonsContainer}>
-              {Object.keys(hotbarItems).map((id, index) => {
-                const hotbarItem = hotbarItems[id]
-                if (!hotbarItem) return null
-                return (
-                  <IconButtonWithTooltip
-                    key={index}
-                    type="solid"
-                    title={hotbarItem.tooltip}
-                    icon={hotbarItem.icon}
-                    sizePx={50}
-                    disabled={hotbarItem.disabled}
-                    onClick={() => {
-                      if (getState(AppState).showBottomShelf) PopupMenuServices.showPopupMenu(id)
-                    }}
-                    sx={{
-                      cursor: 'pointer',
-                      background: 'var(--iconButtonBackground)'
-                    }}
-                  />
-                )
-              })}
-            </div>
-          </section>
-          {Panel && <Panel {...popupMenu.params} />}
-          <PopupMenu />
-        </>
-      </ClickAwayListener>
-    </div>
+    <ClickAwayListener onClickAway={() => PopupMenuServices.showPopupMenu()} mouseEvent="onMouseDown">
+      <>
+        <div className="flex w-full items-center justify-center gap-x-6">
+          {Object.keys(hotbarItems).map((id, index) => {
+            const hotbarItem = hotbarItems[id]
+            if (!hotbarItem) return null
+            return (
+              <IconButtonWithTooltip
+                key={index}
+                type="solid"
+                title={hotbarItem.tooltip}
+                icon={hotbarItem.icon}
+                sizePx={50}
+                disabled={hotbarItem.disabled}
+                onClick={() => {
+                  if (getState(AppState).showBottomShelf) PopupMenuServices.showPopupMenu(id)
+                }}
+                sx={{
+                  cursor: 'pointer',
+                  background: 'var(--iconButtonBackground)'
+                }}
+              />
+            )
+          })}
+        </div>
+        {Panel && <Panel {...popupMenu.params} />}
+        <PopupMenu />
+      </>
+    </ClickAwayListener>
   )
 }

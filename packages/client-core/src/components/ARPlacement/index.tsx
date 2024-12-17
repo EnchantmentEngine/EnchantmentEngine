@@ -32,7 +32,6 @@ import { XRState, isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 
 import { AppState } from '../../common/services/AppService'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 import styles from './index.module.scss'
 
 let lastX = 0
@@ -128,7 +127,6 @@ const AxisComponent = () => {
 }
 
 export const ARPlacement = () => {
-  const { bottomShelfStyle } = useShelfStyles()
   const { t } = useTranslation()
 
   const xrState = useMutableState(XRState)
@@ -160,7 +158,7 @@ export const ARPlacement = () => {
   return (
     <>
       {inPlacingMode && <AxisComponent />}
-      <div className={`${styles.arPlacement} ${inPlacingMode ? `` : bottomShelfStyle}`}>
+      <div className={`${styles.arPlacement} ${inPlacingMode ? `` : ''}`}>
         {inPlacingMode && (
           <button
             type="button"
