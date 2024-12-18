@@ -113,16 +113,23 @@ describe('XRHitTestComponent', () => {
   }) //:: Fields
 
   // @todo How to check the contents of the function inside these `.then(fn)` calls?
+  /** @todo */
   describe('reactor', () => {
-    // it("should not do anything if the entityContext does not have a XRHitTestComponent", () => {})
+    it.todo('should not do anything if the entityContext does not have a XRHitTestComponent', () => {})
     describe("when XRHitTestComponent.options has a field called 'space' ..", () => {
-      // it(".. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]", () => {})
+      it.todo(
+        '.. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]',
+        () => {}
+      )
     })
     describe("when XRHitTestComponent.options does not have a field called 'space' ..", () => {
-      // it(".. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]", () => {})
+      it.todo(
+        '.. should call XRState.session.requestHitTestSource with XRHitTestComponent.options and a .then callback that [??]',
+        () => {}
+      )
     })
-    // it("should call XRHitTestComponent.source.cancel when it unmounts", () => {})
-    // it("should trigger when entityContext.XRHitTestComponent.options changes", () => {})
+    it.todo('should call XRHitTestComponent.source.cancel when it unmounts', () => {})
+    it.todo('should trigger when entityContext.XRHitTestComponent.options changes', () => {})
   }) //:: reactor
 }) //:: XRHitTestComponent
 
@@ -133,12 +140,10 @@ describe('XRAnchorComponent', () => {
     })
   }) //:: Fields
 
+  /** @todo */
   describe('reactor', () => {
-    /**
-    // @todo
-    it("should call XRAnchorComponent.anchor.delete when it unmounts", () => {})
-    it("should trigger when XRAnchorComponent.anchor changes", () => {})
-    */
+    it.todo('should call XRAnchorComponent.anchor.delete when it unmounts', () => {})
+    it.todo('should trigger when XRAnchorComponent.anchor changes', () => {})
   }) //:: reactor
 }) //:: XRAnchorComponent
 
@@ -149,14 +154,21 @@ describe('XRSpaceComponent', () => {
     })
   }) //:: Fields
 
+  /** @todo */
   describe('reactor', () => {
-    /**
-    // @todo
-    it("should set an EntityTreeComponent to the entityContext with EngineState.localFloorEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.localFloor", () => {})
-    it("should set an EntityTreeComponent to the entityContext with EngineState.viewerEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.viewer", () => {})
-    it("should set an EntityTreeComponent to the entityContext with UndefinedEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is not ReferenceSpace.viewer or ReferenceSpace.localFloor", () => {})
-    it("should set a TransformComponent to the entityContext", () => {})
-    it("should trigger when XRSpaceComponent mounts/unmounts", () => {})
-    */
+    it.todo(
+      'should set an EntityTreeComponent to the entityContext with EngineState.localFloorEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.localFloor',
+      () => {}
+    )
+    it.todo(
+      'should set an EntityTreeComponent to the entityContext with EngineState.viewerEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.viewer',
+      () => {}
+    )
+    it.todo(
+      'should set an EntityTreeComponent to the entityContext with UndefinedEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is not ReferenceSpace.viewer or ReferenceSpace.localFloor',
+      () => {}
+    )
+    it.todo('should set a TransformComponent to the entityContext', () => {})
+    it.todo('should trigger when XRSpaceComponent mounts/unmounts', () => {})
   }) //:: reactor
 }) //:: XRSpaceComponent

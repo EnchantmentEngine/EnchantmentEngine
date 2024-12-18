@@ -66,16 +66,10 @@ describe('XRSystem', () => {
 
   /** @todo */
   describe('reactor', () => {
-    /**
-    // @todo
-    it("should call navigator.xr.addEventListene with 'devicechange'  and updateSessionSupport", () => {})
-    it("should call updateSessionSupport", () => {})
-    */
+    it.todo("should call navigator.xr.addEventListene with 'devicechange'  and updateSessionSupport", () => {})
+    it.todo('should call updateSessionSupport', () => {})
     describe('when it unmounts ..', () => {
-      /**
-      // @todo
-      it(".. should call navigator.xr.removeEventListener with 'devicechange'  and updateSessionSupport", () => {})
-      */
+      it.todo(".. should call navigator.xr.removeEventListener with 'devicechange'  and updateSessionSupport", () => {})
     }) //:: unmount
   }) //:: reactor
 

@@ -81,16 +81,13 @@ describe('XRDetectedMeshSystem', () => {
   /** @todo */
   describe('reactor', () => {
     describe('when the component unmounts or XRState.session changes to a falsy value ..', () => {
-      /**
-      // @todo
-      it("should not do anything if XRState.session.value is falsy", () => {})
-      it("should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap", () => {})
-      it("should call XRDetectedPlaneComponent.detectedPlanesMap.clear()", () => {})
-      it("should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()", () => {})
-      it("should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap", () => {})
-      it("should call XRDetectedPlaneComponent.detectedMeshesMap.clear()", () => {})
-      it("should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()", () => {})
-      */
+      it.todo('should not do anything if XRState.session.value is falsy', () => {})
+      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {})
+      it.todo('should call XRDetectedPlaneComponent.detectedPlanesMap.clear()', () => {})
+      it.todo('should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()', () => {})
+      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap', () => {})
+      it.todo('should call XRDetectedPlaneComponent.detectedMeshesMap.clear()', () => {})
+      it.todo('should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()', () => {})
     }) //:: cleanup
   }) //:: reactor
 

@@ -37,36 +37,26 @@ describe('PersistentAnchorComponent', () => {
     })
   }) //:: Fields
 
+  /** @todo */
   describe('reactor', () => {
-    /**
-    // @todo
-    it("should not do anything if the entityContext does not have a GroupComponent", () => {})
-    */
+    it.todo('should not do anything if the entityContext does not have a GroupComponent', () => {})
     describe("when PersistentAnchorComponent.value is truthy and XRState.sessionMode is 'immersive-ar' ..", () => {
-      /**
-      // @todo
-      it(".. should set entityContext.EntityTreeComponent.parentEntity to EngineState.localFloorEntity", () => {})
-      it(".. should set TransformComponent.dirtyTransforms for the entityContext to true", () => {})
-      it(".. should call anchorMeshFound with (?....?)", () => {})
-      */
+      it.todo('.. should set entityContext.EntityTreeComponent.parentEntity to EngineState.localFloorEntity', () => {})
+      it.todo('.. should set TransformComponent.dirtyTransforms for the entityContext to true', () => {})
+      it.todo('.. should call anchorMeshFound with (?....?)', () => {})
     })
 
     describe("when PersistentAnchorComponent.value is falsy or XRState.sessionMode is not 'immersive-ar' ..", () => {
-      /**
-      // @todo
-      it(".. should set entityContext.EntityTreeComponent.parentEntity to the originalParentEntity", () => {})
-      it(".. should set TransformComponent.dirtyTransforms for the entityContext to true", () => {})
-      it(".. should call anchorMeshLost with (?....?)", () => {})
-      */
+      it.todo('.. should set entityContext.EntityTreeComponent.parentEntity to the originalParentEntity', () => {})
+      it.todo('.. should set TransformComponent.dirtyTransforms for the entityContext to true', () => {})
+      it.todo('.. should call anchorMeshLost with (?....?)', () => {})
     })
 
-    /**
     // @todo: how to find/control the originalParentEntity ??
-    it("should trigger when entity.PersistentAnchorComponent.active changes", () => {})
-    // @todo
-    it("should trigger when entity.GroupComponent.length changes", () => {})
-    it("should trigger when XRState.sessionActive changes", () => {})
-    */
+    it.todo('should trigger when entity.PersistentAnchorComponent.active changes', () => {})
+
+    it.todo('should trigger when entity.GroupComponent.length changes', () => {})
+    it.todo('should trigger when XRState.sessionActive changes', () => {})
   }) //:: reactor
 }) //:: PersistentAnchorComponent
 
