@@ -25,6 +25,7 @@ Ethereal Engine. All Rights Reserved.
 
 import {
   ComponentType,
+  LayerComponent,
   S,
   UUIDComponent,
   defineComponent,
@@ -33,7 +34,6 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { hasAuthoringCounterpart } from '@ir-engine/ecs/src/LayerState'
 import { NO_PROXY, startReactor, useImmediateEffect } from '@ir-engine/hyperflux'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
@@ -111,8 +111,9 @@ export const MaterialDefinitionComponent = defineComponent({
   schema: MaterialDefinitionSchema,
 
   reactor: () => {
+    //@todo: this should probably be integrated into GLTF loader as materials can only ever come from a GLTF file
     const entity = useEntityContext()
-    if (hasAuthoringCounterpart(entity)) return null
+    if (LayerComponent.hasUpstreamEntity(entity)) return null
     return <MaterialDefinitionReactor />
   }
 })

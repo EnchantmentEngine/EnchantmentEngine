@@ -28,44 +28,41 @@ Infinite Reality Engine. All Rights Reserved.
  * @todo Write the `fileoverview` for `ComponentFunctions.ts`
  */
 import * as bitECS from 'bitecs'
-import React, { startTransition } from 'react'
+import React from 'react'
 // tslint:disable:ordered-imports
 import type from 'react/experimental'
 
 import {
   DeepReadonly,
-  getNestedObject,
   HyperFlux,
   InferStateValueType,
   NO_PROXY_STEALTH,
-  SetPartialStateAction,
   ReactorRoot,
+  SetPartialStateAction,
   State,
   hookstate,
   isTest,
   none,
   startReactor,
-  useHookstate,
-  useMutableState,
-  useImmediateEffect
+  useHookstate
 } from '@ir-engine/hyperflux'
 import { Entity, UndefinedEntity } from './Entity'
-import { EntityContext, entityExists } from './EntityFunctions'
-// import { createEntity } from './createEntity'
+import { EntityContext, entityExists, removeEntity } from './EntityFunctions'
 import { defineQuery } from './QueryFunctions'
+import { createEntity } from './createEntity'
 import { Kind, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
 import {
   CreateSchemaValue,
-  HasSchemaDeserializers,
+  DeserializeSchemaValue,
   HasRequiredSchema,
   HasRequiredSchemaValues,
-  DeserializeSchemaValue,
-  IsSingleValueSchema,
-  SerializeSchema,
+  HasSchemaDeserializers,
   HasSchemaValidators,
-  HasValidSchemaValues
+  HasValidSchemaValues,
+  IsSingleValueSchema,
+  SerializeSchema
 } from './schemas/JSONSchemaUtils'
-import { EntityLayerState, LayerID } from './LayerState'
+import { S } from './schemas/JSONSchemas'
 
 /**
  * @description
@@ -325,7 +322,7 @@ export const defineComponent = <
           component.get(NO_PROXY_STEALTH) as ComponentType,
           entity
         )
-        if (!valid) throw new Error(`${def.name}:OnSet Invalid value for key ${key}`)
+        if (!valid) throw new Error(`${def.name}:OnSet Invalid value for key ${key} ${JSON.stringify(json)}`)
       }
 
       if (Array.isArray(json) || typeof json !== 'object' || isSingleValueSchema) component.set(json as ComponentType)
@@ -561,29 +558,73 @@ export const setComponent = <C extends Component>(
   component.onSet(entity, component.stateMap[entity]!, args)
 
   const propagate = () => {
-    const layer = EntityLayerState.getEntityLayer(entity)
-    for (const dstLayerID of Object.keys(layer.relations)) {
-      if (layer.relations[dstLayerID] === 'propagate') {
-        const dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
-
-        // if (!entityExists(dstEntity)) {
+    if (component === LayerComponent || LayerComponents.includes(component as any)) return
+    const entityLayer = LayerComponent.get(entity)
+    const layerComponent = getComponent(entity, LayerComponents[entityLayer])
+    for (const [linkedLayer, linkedEntityNumber] of Object.entries(layerComponent.relations).map(([layer, val]) => [
+      Number(layer),
+      val as Entity
+    ])) {
+      const linkedEntity = linkedEntityNumber as Entity
+      if (LayerRelations[entityLayer][linkedLayer] === LayerRelationTypes.Propagate) {
+        //@todo: would like to create the entity if it doesn't exist but this causes circular dependencies with createEntity.ts
+        // if (!entityExists(linkedEntity)) {
         //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
-        // dstEntity = createEntity(dstLayerID as LayerID)
-        // EntityLayerState.linkEntity(entity, dstEntity)
+        // linkedEntity = createEntity(dstLayerID as LayerID)
+        // EntityLayerState.linkEntity(entity, linkedEntity)
         // for (const entityComponent of getAllComponents(entity)) {
         //   if (entityComponent === component) continue //we're about to do this operation anyways
-        //   setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
+        //   setComponent(linkedEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
         // }
         // }
 
-        //switch any target entities in the args to their corresponding linked entity in the destination layer
+        // let argsClone: SetComponentType<C> | undefined = args
+
+        // if (component.jsonID) argsClone = structuredClone(component.toJSON(getComponent(entity, component)))
+        // else argsClone = weakClone(getComponent(entity, component))
+
+        // if (argsClone && component.schema && component.jsonID) {
+        //   //switch any target entities in the args to their corresponding linked entity in the destination layer
+
+        //   const componentSchema = component.schema as TTypedSchema<C> | undefined
+        //   const frontier = [{ schema: componentSchema, path: '' }] as { schema: any; path: string }[]
+        //   while (frontier.length > 0) {
+        //     const { schema, path } = frontier.pop()!
+        //     const argsClonePath = getNestedObject(argsClone, path).result
+        //     if (!schema || typeof argsClonePath !== 'object') continue
+        //     for (const key in argsClonePath) {
+        //       const valSchema = schema?.properties?.[key]
+        //       //check if the value is an entity
+        //       if (
+        //         valSchema?.properties?.options &&
+        //         valSchema.properties.options['id'] === 'Entity'
+        //         // && setArgs[key] !== UndefinedEntity
+        //       ) {
+        //         // const respectiveComponent = getOptionalComponent(linkedEntity, component)
+        //         // if (!respectiveComponent) continue
+        //         // const val = getNestedObject(respectiveComponent, path + '.' + key).result
+        //         //if so, we need to switch it to the linked entity in the destination layer
+        //         // argsClonePath[key] = val
+        //         const obj = getNestedObject(argsClone, path).result
+        //         const baseEntity = obj[key]
+        //         const baseUUID = getComponent(baseEntity, UUIDComponent)
+        //         const linkedEntity = UUIDComponent.getEntityByUUID(baseUUID, linkedLayer as LayerID)
+        //         Object.assign(obj, { [key]: linkedEntity })
+        //       } else if (typeof argsClonePath[key] === 'object') {
+        //         frontier.push({ schema: valSchema, path: path + '.' + key })
+        //       }
+        //     }
+        //   }
+        // }
+
         if (component.schema) {
           const componentSchema = component.schema as TTypedSchema<C>
           const frontier = [{ schema: componentSchema, setArgs: args }] as { schema: any; setArgs: any }[]
           while (frontier.length > 0) {
             const { schema, setArgs } = frontier.pop()!
             if (!schema || typeof setArgs !== 'object') continue
-            for (const key in setArgs) {
+            const keys = Object.keys(setArgs)
+            for (const key of keys) {
               const valSchema = schema.properties?.[key] as any
               //check if the value is an entity
               if (
@@ -592,8 +633,12 @@ export const setComponent = <C extends Component>(
                 setArgs[key] !== UndefinedEntity
               ) {
                 //if so, we need to switch it to the linked entity in the destination layer
-                const linkedEntity = EntityLayerState.getLinkedEntity(setArgs[key], dstLayerID as LayerID)
-                setArgs[key] = linkedEntity
+                const upstreamEntity = LayerComponents[linkedLayer].refs[setArgs[key]]
+                // console.log('linkedEntity', dstEntity)
+                // Object.assign(setArgs, { [key]: linkedEntity })
+                setArgs[key] = upstreamEntity
+                // console.log('set field', key, 'to', dstEntity)
+                // console.log('result:', setArgs)
               } else if (typeof setArgs[key] === 'object') {
                 frontier.push({ schema: valSchema, setArgs: setArgs[key] })
               }
@@ -601,21 +646,20 @@ export const setComponent = <C extends Component>(
           }
         }
 
+        // console.log(args)
+
         //set up reactive logic to propagate component changes to linked entity
         // console.log(dstEntity)
-        setComponent(dstEntity, component, args)
+        setComponent(linkedEntity, component, args)
+        //getMutableComponent(linkedEntity, component).set(argsClone)
       }
     }
   }
 
   propagate()
 
-  if (!componentExists && !component.reactorMap.has(entity)) {
+  if (!componentExists && !component.reactorMap.has(entity) /* && hasComponent(entity, SimulationLayerComponent)*/) {
     const root = startReactor(() => {
-      const layerState = useMutableState(EntityLayerState)
-      useImmediateEffect(() => {
-        propagate()
-      }, [component.stateMap[entity], layerState.layers])
       return component.reactor
         ? React.createElement(EntityContext.Provider, { value: entity }, React.createElement(component.reactor, {}))
         : null
@@ -632,51 +676,32 @@ export const setComponent = <C extends Component>(
   return getComponent(entity, component)
 }
 
-/**
- * @experimental
- * @description `@todo` Explain how `updateComponent` works.
- */
-export const updateComponent = <C extends Component>(
-  entity: Entity,
-  Component: C,
-  props: Partial<SerializedComponentType<C>>
-) => {
-  if (typeof props === 'undefined') return
-
-  const comp = getMutableComponent(entity, Component)
-  if (!comp) {
-    throw new Error('[updateComponent]: component does not exist ' + Component.name)
-  }
-
-  if (typeof props !== 'object') {
-    // component has top level value (eg NameComponent)
-    comp.set(props)
-  } else {
-    for (const propertyName of Object.keys(props as any)) {
-      const value = props[propertyName]
-      const { result, finalProp } = getNestedObject(comp, propertyName)
-      if (
-        typeof value !== 'undefined' &&
-        typeof result[finalProp] === 'object' &&
-        typeof result[finalProp].set === 'function'
-      ) {
-        result[finalProp].set(value)
+// weakClone will copy values but copy the reference for classes
+export const weakClone = (obj: any) => {
+  const newObj = {}
+  for (const key in obj) {
+    if (typeof obj[key] === 'object') {
+      if (obj[key] !== null && obj[key].constructor) {
+        if (Array.isArray(obj[key])) {
+          newObj[key] = weakClone(obj[key].slice())
+        } else {
+          newObj[key] = obj[key]
+          // if (
+          //   argsClonePath[key] &&
+          //   typeof argsClonePath[key] === 'object' &&
+          //   'clone' in argsClonePath[key] &&
+          //   typeof argsClonePath[key].clone === 'function'
+          // ) {
+          //   argsClonePath[key] = argsClonePath[key].clone()
+          //   continue
+          // }
+        }
       } else {
-        result[finalProp] = value
+        newObj[key] = weakClone(obj[key])
       }
-    }
+    } else newObj[key] = obj[key]
   }
-  const root = Component.reactorMap.get(entity)
-  if (!root?.isRunning) root?.run()
-
-  const layer = EntityLayerState.getEntityLayer(entity)
-  for (const dstLayerID of Object.keys(layer.relations)) {
-    if (layer.relations[dstLayerID] === 'inherit') {
-      const dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
-      //set up reactive logic to propagate component changes to linked entity
-      updateComponent(dstEntity, Component, props)
-    }
-  }
+  return newObj
 }
 
 export const hasComponent = <C extends Component>(entity: Entity, component: C): boolean => {
@@ -712,32 +737,30 @@ export function useHasComponents<C extends Component>(entity: Entity, components
 
 export const removeComponent = <C extends Component>(entity: Entity, component: C) => {
   if (!hasComponent(entity, component)) return
+
+  const layer = LayerComponents[LayerComponent.get(entity)]
+  if (layer && hasComponent(entity, layer)) {
+    const layerComponent = getComponent(entity, layer)
+    for (const [layer, linkedEntityNumber] of Object.entries(layerComponent.relations).map(([layer, val]) => [
+      Number(layer),
+      val
+    ])) {
+      const linkedEntity = linkedEntityNumber as Entity
+      if (LayerRelations[layer][LayerComponent.layer[entity]] === LayerRelationTypes.Propagate) {
+        removeComponent(linkedEntity, component)
+      }
+    }
+  }
+
   component.onRemove(entity, component.stateMap[entity]!)
+
   bitECS.removeComponent(HyperFlux.store, component, entity, false)
+
   const root = component.reactorMap.get(entity)
   component.reactorMap.delete(entity)
   if (root?.isRunning) root.stop()
   /** clear state data after reactor stops, to ensure hookstate is still referenceable */
   component.stateMap[entity]?.set(none)
-
-  const layer = EntityLayerState.getEntityLayer(entity)
-  for (const dstLayerID of Object.keys(layer.relations)) {
-    if (layer.relations[dstLayerID] === 'propagate') {
-      let dstEntity = EntityLayerState.getLinkedEntity(entity, dstLayerID as LayerID)
-
-      if (!entityExists(dstEntity)) {
-        //if the linked entity doesn't exist, we recreate it and sync its state with the source entity
-        // dstEntity = createEntity(dstLayerID as LayerID)
-        // EntityLayerState.linkEntity(entity, dstEntity)
-        // for (const entityComponent of getAllComponents(entity)) {
-        //   if (entityComponent === component) continue //we're about to remove this component anyways
-        //   setComponent(dstEntity, entityComponent, entityComponent.stateMap[entity]!.get(NO_PROXY_STEALTH))
-        // }
-      }
-      //set up reactive logic to propagate component changes to linked entity
-      removeComponent(dstEntity, component)
-    }
-  }
 }
 
 /**
@@ -863,4 +886,98 @@ export const getAllComponentsOfType = <C extends Component>(component: C): Compo
   return entities.map((e) => {
     return getComponent(e, component)!
   })
+}
+
+export const Layers = {
+  Simulation: 0 as const,
+  Authoring: 1 as const
+}
+
+export type LayerID = (typeof Layers)[keyof typeof Layers]
+
+export const LayerRelationTypes = {
+  Propagate: 'propagate'
+}
+
+export const LayerRelations = {
+  [Layers.Simulation]: {},
+  [Layers.Authoring]: {
+    [Layers.Simulation]: LayerRelationTypes.Propagate
+  }
+} as Record<number, Record<number, keyof typeof LayerRelationTypes>>
+
+export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
+  return defineComponent({
+    name: `${name}LayerComponent`,
+    schema: S.Object({
+      relations: S.Record(S.Enum(Layers), S.Entity())
+    }),
+
+    // backward references
+    refs: {} as Record<Entity, Entity>,
+
+    onSet: (entity, component) => {
+      const relations = Object.entries(LayerRelations[layer]).map(([layer, val]) => [Number(layer), val]) as any as [
+        LayerID,
+        keyof typeof LayerRelationTypes
+      ][]
+      for (const [linkedLayer, relation] of relations) {
+        if (relation === LayerRelationTypes.Propagate) {
+          const linkedEntity = createEntity(linkedLayer)
+          getMutableComponent(entity, LayerComponents[layer]).relations[linkedLayer].set(linkedEntity)
+          LayerComponents[linkedLayer].refs[linkedEntity] = entity
+          console.log('createEntity', { linkedLayer, relation, entity, linkedEntity })
+        }
+      }
+    },
+
+    onRemove(entity, component) {
+      const relations = LayerRelations[layer]
+      for (const [linkedLayer, relation] of Object.entries(relations).map(([layer, val]) => [Number(layer), val])) {
+        if (relation === LayerRelationTypes.Propagate) {
+          const relation = getComponent(entity, LayerComponents[layer]).relations[linkedLayer]
+          removeEntity(relation)
+          delete LayerComponents[linkedLayer].refs[relation]
+        }
+      }
+    }
+  })
+})
+
+export const SimulationLayerComponent = LayerComponents[Layers.Simulation]
+
+export const LayerComponent = defineComponent({
+  name: 'LayerComponent',
+
+  schema: {
+    layer: bitECS.Types.ui8
+  },
+
+  onSet(entity, component, layer: LayerID) {
+    LayerComponent.layer[entity] = layer
+    setComponent(entity, LayerComponents[layer])
+  },
+
+  get: (entity: Entity) => {
+    return LayerComponent.layer[entity] as any as LayerID
+  },
+
+  onRemove(entity, component) {
+    const layer = LayerComponent.layer[entity]
+    removeComponent(entity, LayerComponents[layer])
+    LayerComponent.layer[entity] = 0
+  },
+
+  hasUpstreamEntity(entity: Entity) {
+    const entityLayer = LayerComponent.get(entity)
+    if (entityLayer === Layers.Simulation) {
+      const upstreamEntity = LayerComponents[Layers.Simulation].refs[entity]
+      if (upstreamEntity !== UndefinedEntity && entityExists(upstreamEntity)) return true
+    }
+    return false
+  }
+})
+
+export const getAuthoringCounterpart = (entity: Entity) => {
+  return LayerComponents[Layers.Authoring].refs[entity]
 }

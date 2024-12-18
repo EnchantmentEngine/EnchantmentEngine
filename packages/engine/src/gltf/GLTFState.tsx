@@ -46,10 +46,16 @@ import {
 
 import {
   ComponentJSONIDMap,
-  createEntity,
   Entity,
-  entityExists,
   EntityUUID,
+  LayerComponent,
+  Layers,
+  PresentationSystemGroup,
+  UUIDComponent,
+  UndefinedEntity,
+  createEntity,
+  defineSystem,
+  entityExists,
   getComponent,
   getMutableComponent,
   getOptionalComponent,
@@ -57,28 +63,26 @@ import {
   removeComponent,
   removeEntity,
   setComponent,
-  UndefinedEntity,
   useOptionalComponent,
-  UUIDComponent,
+  useQuery,
   validateComponentSchema
 } from '@ir-engine/ecs'
-import { LayerID } from '@ir-engine/ecs/src/LayerState'
 import {
+  NO_PROXY,
+  NO_PROXY_STEALTH,
+  State,
+  Topic,
   defineState,
   dispatchAction,
   getMutableState,
   getState,
-  NO_PROXY,
-  NO_PROXY_STEALTH,
   none,
-  State,
-  Topic,
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
@@ -99,7 +103,7 @@ import { GLTFParserOptions } from '../assets/loaders/gltf/GLTFParser'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceComponent } from '../scene/components/SourceComponent'
-import { GLTFComponent } from './GLTFComponent'
+import { GLTFComponent, GLTFComponentReactor } from './GLTFComponent'
 import { GLTFDocumentState, GLTFModifiedState, GLTFNodeState, GLTFSnapshotAction } from './GLTFDocumentState'
 import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
 import { MaterialDefinitionComponent } from './MaterialDefinitionComponent'
@@ -132,7 +136,8 @@ export const GLTFSourceState = defineState({
    * @returns
    */
   load: (source: string, uuid = MathUtils.generateUUID() as EntityUUID, parentEntity = UndefinedEntity) => {
-    const entity = createEntity('authoring' as LayerID)
+    // getState(EngineState).isEditing is a hack, we will pass this down as needed
+    const entity = createEntity(getState(EngineState).isEditing ? Layers.Authoring : Layers.Simulation)
     setComponent(entity, UUIDComponent, uuid)
     setComponent(entity, NameComponent, source.split('/').pop()!)
     setComponent(entity, VisibleComponent, true)
@@ -150,6 +155,28 @@ export const GLTFSourceState = defineState({
 
   unload: (entity: Entity) => {
     removeEntity(entity)
+  }
+})
+
+export const GLTFLoadSystem = defineSystem({
+  uuid: 'ee.engine.gltf.GLTFLoadSystem',
+  insert: { after: PresentationSystemGroup },
+  reactor: () => {
+    const gltfSimulationEntities = useQuery([GLTFComponent])
+    const gltfAuthoringEntities = useQuery([GLTFComponent], Layers.Authoring)
+    const gltfEntities = [...gltfSimulationEntities, ...gltfAuthoringEntities]
+    return (
+      <>
+        {/* The authoring layer entities will have their entities propagated to the simulation layer */}
+        {gltfEntities.map((entity) => {
+          if (LayerComponent.hasUpstreamEntity(entity)) return null
+          return <GLTFComponentReactor key={'simulation-' + entity} entity={entity} />
+        })}
+        {/* {gltfAuthoringEntities.map((entity) => (
+          <GLTFComponentReactor key={'authoring-' + entity} entity={entity} />
+        ))} */}
+      </>
+    )
   }
 })
 
