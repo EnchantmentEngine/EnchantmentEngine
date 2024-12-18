@@ -34,6 +34,18 @@ function depsDiff(deps1, deps2) {
   )
 }
 
+function noop() {}
+
+/**
+ * Run an effect immediately on mount and whenever deps change.
+ *
+ * WARNING: Do not use this hook in a context that may suspend,
+ * as the cleanup function will not be called on suspension,
+ * and the effect will be run again on resume.
+ *
+ * @param effect
+ * @param deps
+ */
 export function useImmediateEffect(effect: EffectCallback, deps?: DependencyList) {
   const cleanupRef = useRef<any>()
   const depsRef = useRef<any>()
@@ -52,7 +64,7 @@ export function useImmediateEffect(effect: EffectCallback, deps?: DependencyList
   }
 
   // make sure deps are hooked
-  useEffect(() => {}, deps)
+  useEffect(noop, deps)
 
   // make sure final cleanup is called on unmount
   useLayoutEffect(() => {
