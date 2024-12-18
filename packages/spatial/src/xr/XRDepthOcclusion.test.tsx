@@ -815,6 +815,15 @@ describe('XRDepthOcclusionSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute,', () => {}) //:: execute
-  describe('reactor,', () => {}) //:: reactor
+  describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('execute', () => {
+    it.todo('should not do anything if depthSupported is falsy', () => {})
+    // @todo How to control/access depthTexture ?
+    it.todo(
+      'should call XRDepthOcclusion.updateDepthMaterials with XRState.xrFrame, ReferenceSpace.origin and depthTexture as arguments',
+      () => {}
+    )
+  }) //:: execute
 }) //:: XRDepthOcclusionSystem
