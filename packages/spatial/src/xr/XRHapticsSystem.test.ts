@@ -65,5 +65,33 @@ describe('XRHapticsSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute,', () => {}) //:: execute
+  describe('execute,', () => {
+    describe('for every action in the XRAction.vibrateController action queue ..', () => {
+      describe('for every entity that has an InputSourceComponent ..', () => {
+        it.todo(
+          'should not do anything for this action+entity pair if entity.InputSourceComponent.source.gamepad is falsy',
+          () => {}
+        )
+        it.todo(
+          'should not do anything for this action+entity pair if entity.InputSourceComponent.source.handedness is not action.handedness',
+          () => {}
+        )
+        describe("when entity.InputSourceComponent.source.gamepad has a 'hapticActuators' field ..", () => {
+          it.todo(
+            '.. should call entity.InputSourceComponent.source.hapticActuators[0].pulse with (action.value, action.duration)',
+            () => {}
+          )
+          it.todo('.. should not do anything else for this action+entity pair  (continue)', () => {})
+        })
+        it.todo(
+          'should not do anything else for this action+entity pair (continue) if entity.InputSourceComponent.source.gamepad.vibrationActuator is falsy',
+          () => {}
+        )
+        it.todo(
+          "should call entity.InputSourceComponent.source.gamepad.vibrationActuator.playEffect with ('dual-rumble', action.duration) if vibrationActuator is truthy",
+          () => {}
+        )
+      })
+    })
+  }) //:: execute
 }) //:: XRHapticsSystem
