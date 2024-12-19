@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { GetGPUTier, getGPUTier } from 'detect-gpu'
-import { debounce } from 'lodash'
+import * as DetectGPU from 'detect-gpu'
+import { debounce } from 'lodash-es'
 import { SMAAPreset } from 'postprocessing'
 import { useEffect } from 'react'
 import { Camera, MathUtils, Scene } from 'three'
@@ -419,12 +419,12 @@ const decrementCPUPerformance = () => {
 
 const buildPerformanceState = async (
   renderer: ComponentType<typeof RendererComponent>,
-  override?: GetGPUTier['override']
+  override?: DetectGPU.GetGPUTier['override']
 ) => {
   const performanceState = getMutableState(PerformanceState)
   const gl = renderer.renderContext as WebGL2RenderingContext
 
-  const gpuTier = await getGPUTier({
+  const gpuTier = await DetectGPU.getGPUTier({
     glContext: gl,
     desktopTiers: [0, 15, 30, 60, 120, 240],
     //Mobile is harder to determine, most phones lock benchmark rendering at 60fps

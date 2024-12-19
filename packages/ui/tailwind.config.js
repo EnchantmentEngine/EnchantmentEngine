@@ -25,6 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import tailwindConfig from '../../tailwind.config'
 
-module.exports = {
+export default {
   ...tailwindConfig
 }

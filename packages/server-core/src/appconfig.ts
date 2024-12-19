@@ -146,7 +146,7 @@ const server = {
     (process.env.BUILD_MODE === 'individual'
       ? path.resolve(appRootPath.path, 'public')
       : path.resolve(appRootPath.path, 'packages', 'server', 'public')),
-  nodeModulesDir: path.resolve(__dirname, '../..', 'node_modules'),
+  nodeModulesDir: path.resolve(appRootPath.path, 'node_modules'),
   localStorageProvider: process.env.LOCAL_STORAGE_PROVIDER!,
   localStorageProviderPort: process.env.LOCAL_STORAGE_PROVIDER_PORT!,
   corsServerPort: process.env.CORS_SERVER_PORT!,

@@ -1277,7 +1277,7 @@ export const getGitProjectData = (project) => {
   }
 
   //TODO: We can use simpleGit instead of manually accessing files.
-  const projectGitDir = path.resolve(__dirname, `../../../../projects/projects/${project}/.git`)
+  const projectGitDir = path.resolve(appRootPath.path, `packages/projects/projects/${project}/.git`)
 
   const config = getGitConfigData(projectGitDir)
   if (config?.remote?.origin?.url) {

@@ -23,11 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import appRootPath from 'app-root-path'
 import * as fs from 'fs'
 import type { Knex } from 'knex'
 import * as path from 'path'
 
-const sqlFilePath = path.join(__dirname, './project_triggers.sql')
+const sqlFilePath = path.join(
+  appRootPath.path,
+  'packages/server-core/src/projects/project-history/migrations/project_triggers.sql'
+)
 
 /**
  * @param { import("knex").Knex } knex

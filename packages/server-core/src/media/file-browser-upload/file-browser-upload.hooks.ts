@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { iff, isProvider } from 'feathers-hooks-common'
-import { SYNC } from 'feathers-sync'
+import * as FeathersSync from 'feathers-sync'
 
 import verifyScope from '../../hooks/verify-scope'
 
@@ -56,14 +56,14 @@ export default {
     get: [],
     create: [
       (context) => {
-        context[SYNC] = false
+        context[FeathersSync.SYNC] = false
         return context
       }
     ],
     update: [],
     patch: [
       (context) => {
-        context[SYNC] = false
+        context[FeathersSync.SYNC] = false
         return context
       }
     ],

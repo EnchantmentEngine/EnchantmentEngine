@@ -1,5 +1,6 @@
 // This script adds our license header to any relevant files
 
+import appRootPath from 'app-root-path'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
@@ -32,7 +33,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 `
 
-const rootDir = join(__dirname, '..')
+const rootDir = appRootPath.path
 const targetExtensions = ['ts', 'js', 'tsx', 'jsx']
 
 const files = execSync('git ls-files', { cwd: rootDir })

@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   mode: 'jit',
   content: [
     '../client/**/*.{ts,tsx}',

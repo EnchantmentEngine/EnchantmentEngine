@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Noise } from 'noisejs'
+import * as Noise from 'noisejs'
 import { DataTexture, LinearFilter, RedFormat, RepeatWrapping, UnsignedByteType } from 'three'
 
 export function generateNoiseTexture(textureSize: number) {

@@ -44,7 +44,7 @@ import appRootPath from 'app-root-path'
 import manifestJson from './manifest.json'
 
 const projectRelativeFolder = path.resolve(appRootPath.path, 'packages/projects')
-const avatarsFolder = path.resolve(__dirname, 'assets/avatars')
+const avatarsFolder = path.resolve(appRootPath.path, 'packages/projects/projects', manifestJson.name, 'assets/avatars')
 
 const handleOEmbedRequest = async (app: Application, project: ProjectType, url: URL, currentOEmbed: OembedType) => {
   const isLocation = /^\/location\//.test(url.pathname)

@@ -29,7 +29,7 @@ import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 
 import { projectHistoryPath, projectPath } from '@ir-engine/common/src/schema.type.module'
-import { isEmpty } from 'lodash'
+import { isEmpty } from 'lodash-es'
 import { HookContext } from '../../../declarations'
 import logger from '../../ServerLogger'
 import allowNullQuery from '../../hooks/allow-null-query'

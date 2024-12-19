@@ -1,6 +1,7 @@
 {
   "name": "@ir-engine/ir-template",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "test": "cross-env TEST=true vitest run",
     "check-errors": "tsc --noemit",

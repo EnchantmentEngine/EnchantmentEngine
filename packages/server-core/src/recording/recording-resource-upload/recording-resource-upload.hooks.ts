@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { disallow } from 'feathers-hooks-common'
-import { SYNC } from 'feathers-sync'
+import * as FeathersSync from 'feathers-sync'
 
 export default {
   before: {
@@ -34,7 +34,7 @@ export default {
     create: [
       disallow('external'),
       (context) => {
-        context[SYNC] = false
+        context[FeathersSync.SYNC] = false
         return context
       }
     ],

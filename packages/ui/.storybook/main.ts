@@ -24,7 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import type { StorybookConfig } from '@storybook/react-vite'
-import { dirname, join } from 'path'
+import appRootPath from 'app-root-path'
+import { dirname, join, resolve } from 'path'
 import { mergeConfig } from 'vite'
 
 const config: StorybookConfig = {
@@ -75,7 +76,7 @@ const config: StorybookConfig = {
           crypto: require.resolve('crypto-browserify'),
           stream: require.resolve('stream-browserify'),
           // alias public folder to root
-          '@': require('path').resolve(__dirname, '../../client/public')
+          '@': resolve(appRootPath.path, 'packages/client/public')
         }
       },
       build: {

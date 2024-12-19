@@ -28,6 +28,7 @@ import path from 'path'
 
 import { ProjectConfigInterface } from '@ir-engine/projects/ProjectConfigInterface'
 
+import appRootPath from 'app-root-path'
 import { Application } from '../declarations'
 import AnalyticsServices from './analytics/services'
 import AssetServices from './assets/services'
@@ -46,14 +47,16 @@ import SocialServices from './social/services'
 import UserServices from './user/services'
 import WorldServices from './world/services'
 
-const installedProjects = fs.existsSync(path.resolve(__dirname, '../../projects/projects'))
+const installedProjects = fs.existsSync(path.resolve(appRootPath.path, 'packages/projects/projects'))
   ? async () => {
       const projects = fs
-        .readdirSync(path.resolve(__dirname, '../../projects/projects'), { withFileTypes: true })
+        .readdirSync(path.resolve(appRootPath.path, 'packages/projects/projects'), { withFileTypes: true })
         .filter((orgDir) => orgDir.isDirectory())
         .map((orgDir) => {
           return fs
-            .readdirSync(path.resolve(__dirname, '../../projects/projects', orgDir.name), { withFileTypes: true })
+            .readdirSync(path.resolve(appRootPath.path, 'packages/projects/projects', orgDir.name), {
+              withFileTypes: true
+            })
             .filter((projectDir) => projectDir.isDirectory())
             .map((projectDir) => `${orgDir.name}/${projectDir.name}`)
         })

@@ -1,4 +1,3 @@
-
 /*
 CPAL-1.0 License
 
@@ -24,10 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-
-module.exports = {
+export default {
   plugins: {
     tailwindcss: import('tailwindcss'),
-    autoprefixer: import('autoprefixer'),
-  },
+    autoprefixer: import('autoprefixer')
+  }
 }

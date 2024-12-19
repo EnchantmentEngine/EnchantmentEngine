@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { isEmpty } from 'lodash'
+import { isEmpty } from 'lodash-es'
 import React, { forwardRef, ReactNode } from 'react'
 import { HiCheckCircle, HiExclamationCircle, HiInformationCircle } from 'react-icons/hi2'
 import { PiWarningFill } from 'react-icons/pi'

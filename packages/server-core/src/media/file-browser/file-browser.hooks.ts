@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { iff, isProvider } from 'feathers-hooks-common'
-import { SYNC } from 'feathers-sync'
+import * as FeathersSync from 'feathers-sync'
 
 import {
   fileBrowserPatchValidator,
@@ -52,14 +52,14 @@ export default {
     get: [],
     create: [
       (context) => {
-        context[SYNC] = false
+        context[FeathersSync.SYNC] = false
         return context
       }
     ],
     update: [schemaHooks.validateData(fileBrowserUpdateValidator)],
     patch: [
       (context) => {
-        context[SYNC] = false
+        context[FeathersSync.SYNC] = false
         return context
       },
       schemaHooks.validateData(fileBrowserPatchValidator),

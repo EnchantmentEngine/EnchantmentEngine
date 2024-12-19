@@ -23,9 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-
-const appRootPath = require('app-root-path')
-const dotenv = require('dotenv')
+import appRootPath from 'app-root-path'
+import dotenv from 'dotenv'
 dotenv.config({
   path: appRootPath.path + '/.env.local'
 })
