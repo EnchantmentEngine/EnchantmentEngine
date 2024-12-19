@@ -28,6 +28,7 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import {
+  Entity,
   SystemDefinitions,
   SystemUUID,
   UndefinedEntity,
@@ -36,6 +37,7 @@ import {
   destroyEngine,
   entityExists,
   hasComponent,
+  removeComponent,
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
@@ -51,13 +53,16 @@ beforeAll(() => {
 
 describe('XRDetectedMeshSystem', () => {
   const System = SystemDefinitions.get(XRDetectedMeshSystem)!
+  let testEntity = UndefinedEntity
 
   beforeEach(async () => {
     createEngine()
     await mockEmulatedXREngine()
+    testEntity = createEntity()
   })
 
   afterEach(() => {
+    removeEntity(testEntity)
     destroyEmulatedXREngine()
     destroyEngine()
   })
@@ -80,9 +85,27 @@ describe('XRDetectedMeshSystem', () => {
 
   /** @todo */
   describe('reactor', () => {
-    describe('when the component unmounts or XRState.session changes to a falsy value ..', () => {
+    describe('cleanup', () => {
       it.todo('should not do anything if XRState.session.value is falsy', () => {})
-      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {})
+
+      // @todo Why is this setup not passing the expected checks ?
+      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {
+        // Set the data as expected
+        const Entities = [createEntity(), createEntity(), createEntity(), createEntity()] as Entity[]
+        for (const entity of Entities) {
+          XRDetectedPlaneComponent.detectedPlanesMap.set({ lastChangedTime: Math.random() } as XRPlane, entity)
+        }
+        // Sanity check before running
+        for (const entity of XRDetectedPlaneComponent.detectedPlanesMap.values()) {
+          expect(entityExists(entity)).toBe(true)
+        }
+        // Run and Check the result
+        removeComponent(testEntity, XRDetectedPlaneComponent)
+        for (const entity of XRDetectedPlaneComponent.detectedPlanesMap.values()) {
+          expect(entityExists(entity)).toBe(false)
+        }
+      })
+
       it.todo('should call XRDetectedPlaneComponent.detectedPlanesMap.clear()', () => {})
       it.todo('should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()', () => {})
       it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap', () => {})
