@@ -65,6 +65,12 @@ describe('XRSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute,', () => {}) //:: execute
   describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('execute,', () => {
+    describe('for every action in the XRAction.sessionChanged list ..', () => {
+      it.todo('.. should call xrSessionChanged with the action as its argument', () => {})
+    })
+  }) //:: execute
 }) //:: XRSystem
