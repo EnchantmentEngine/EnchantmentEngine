@@ -79,8 +79,16 @@ describe('XRDetectedMeshSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute', () => {}) //:: execute
   describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('execute', () => {
+    it.todo('should not do anything if XRState.xrFrame.session is falsy', () => {})
+    it.todo("should not do anything if XRState.xrFrame.session.environmentBlendMode is 'opaque'", () => {})
+    it.todo('should not do anything if ReferenceSpace.localFloor is falsy', () => {})
+    it.todo('should call XRDetectedMeshSystemFunctions.handleDetectedPlanes with XRState.xrFrame', () => {})
+    it.todo('should call XRDetectedMeshSystemFunctions.handleDetectedMeshes with XRState.xrFrame', () => {})
+  }) //:: execute
 }) //:: XRDetectedMeshSystem
 
 describe('XRDetectedMeshSystem Functions', () => {
