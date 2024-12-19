@@ -67,8 +67,42 @@ describe('XRLightProbeSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute,', () => {}) //:: execute
   describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('execute,', () => {
+    it.todo('should not do anything if XRState.xrFrame is falsy', () => {})
+    it.todo('should not do anything if XRLightProbeState.probe is falsy', () => {})
+    it.todo("should not do anything if XRState.xrFrame does not have a property named 'getLightEstimate'", () => {})
+    it.todo('should call XRState.xrFrame.getLightEstimate with XRLightProbeState.probe', () => {})
+    it.todo(
+      'should not do anything else if the return value of XRState.xrFrame.getLightEstimate(XRLightProbeState.probe) is falsy',
+      () => {}
+    )
+    it.todo('should set XRLightProbeState.isEstimatingLight to true if its falsy', () => {})
+    it.todo('should not do anything else if XRLightProbeState.directionalLightEntity is falsy', () => {})
+    it.todo(
+      'should set XRLightProbeState.lightProbe.sh to XRState.xrFrame.getLightEstimate(XRLightProbeState.probe).sphericalHarmonicsCoefficients',
+      () => {}
+    )
+    it.todo('should set XRLightProbeState.lightProbe.intensity to 1.0', () => {})
+    it.todo(
+      'should create an internal intensityScalar variable by calling Math.max with the expected values  (@todo How to check/control these in a sane way)',
+      () => {}
+    )
+    it.todo(
+      'should set XRLightProbeState.directionalLightEntity.DirectionalLightComponent.color to the expected color  (@todo How to check/control their values)',
+      () => {}
+    )
+    it.todo(
+      'should set XRLightProbeState.directionalLightEntity.DirectionalLightComponent.intensity to the intensityScalar variable  (@todo How to check for the value of this variable)',
+      () => {}
+    )
+    it.todo(
+      'should set XRLightProbeState.directionalLightEntity.TransformComponent.rotation from the vectors (Vector3_Zero, lightEstimate.primaryLightDirection)',
+      () => {}
+    )
+  }) //:: execute
 }) //:: XRLightProbeSystem
 
 describe('XRLightProbeState', () => {
