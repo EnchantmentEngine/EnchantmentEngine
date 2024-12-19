@@ -26,9 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getCanvasBlob } from '@ir-engine/client-core/src/common/utils'
 import config from '@ir-engine/common/src/config'
-import { THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH } from '@ir-engine/common/src/constants/AvatarConstants'
+import { THUMBNAIL_HEIGHT } from '@ir-engine/common/src/constants/AvatarConstants'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { useHookstate } from '@ir-engine/hyperflux'
@@ -63,6 +62,7 @@ interface AvatarCreatorMenuProps {
 const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProps) => {
   const { t } = useTranslation()
   const selectedBlob = useHookstate<Blob | null>(null)
+  const thumbnail = useHookstate<Blob | null>(null)
   const avatarName = useHookstate('')
   const avatarUrl = useHookstate('')
   const loading = useHookstate(LoadingState.LoadingCreator)
@@ -133,6 +133,7 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
         if (!props.previewEnabled) {
           loading.set(LoadingState.None)
         }
+        thumbnail.set(await export2DReadyPlayerMeAvatar(message.data.avatarId))
       } catch (error) {
         logger.error(error)
         error.set(t('user:usermenu.avatar.selectValidFile'))
@@ -181,30 +182,27 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
     }
   }
 
+  const export2DReadyPlayerMeAvatar = async (avatarId: string): Promise<Blob> => {
+    const res = await fetch(
+      `https://models.readyplayer.me/${avatarId}.png?size=${THUMBNAIL_HEIGHT}&camera=portrait&pose=relaxed`
+    )
+    return await res.blob()
+  }
+
   const uploadAvatar = async (): Promise<void> => {
     if (error.value || selectedBlob.value === null) {
       return
     }
     loading.set(LoadingState.Uploading)
 
-    const canvas = document.createElement('canvas')
-    canvas.width = THUMBNAIL_WIDTH
-    canvas.height = THUMBNAIL_HEIGHT
-
-    const avatarCanvas = document.getElementById('stage')?.firstChild as CanvasImageSource
-
-    const newContext = canvas.getContext('2d')
-    newContext?.drawImage(avatarCanvas, 0, 0)
-
     const thumbnailName = avatarUrl.value.substring(0, avatarUrl.value.lastIndexOf('.')) + '.png'
     const modelName = !isAvaturn(avatarUrl.value)
       ? avatarUrl.value.substring(0, avatarUrl.value.lastIndexOf('.')) + '.glb'
       : avatarUrl.value.split('/').pop() + '.glb'
 
-    const blob = await getCanvasBlob(canvas)
     await AvatarService.createAvatar(
       new File([selectedBlob.value!], modelName),
-      new File([blob!], thumbnailName),
+      new File([thumbnail.value!], thumbnailName),
       avatarName.value,
       false
     )
@@ -306,7 +304,7 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
                   />
                 </div>
               )}
-              {avatarPreviewLoaded && !props.previewEnabled && (
+              {(avatarPreviewLoaded || loading.value === LoadingState.Uploading) && !props.previewEnabled && (
                 <div className="relative col-span-3 flex">
                   <Text className="m-auto" fontSize="lg">
                     {props?.previewDisabledMessage
