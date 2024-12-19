@@ -28,7 +28,7 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { IUniform, Material, Matrix4, MeshBasicMaterial, Quaternion, Shader, Vector2, Vector3 } from 'three'
 import { Vector3_One } from '../common/constants/MathConstants'
 import { PluginType } from '../common/functions/OnBeforeCompilePlugin'
@@ -820,7 +820,26 @@ describe('XRDepthOcclusionSystem', () => {
       describe('when it unmounts ..', () => {
         it.todo('should not do anything if XRState.depthDataTexture is falsy', () => {})
         it.todo('should call XRState.depthDataTexture.dispose', () => {})
-        it.todo('should set XRState.depthDataTexture to null', () => {})
+
+        // @todo Why is this setup not triggering the expected behavior ?
+        it.todo('should set XRState.depthDataTexture to null', async () => {
+          const Expected = null
+          const Initial = {} as DepthDataTexture
+          // Set the data as expected
+          getMutableState(XRState).depthDataTexture.set(Initial)
+          // Sanity check before running
+          expect(getState(XRState).sessionActive).toBe(true)
+          const before = getState(XRState).depthDataTexture
+          expect(before).toBe(Initial)
+          expect(before).not.toBe(Expected)
+          // Run and Check the result
+          await vi.waitFor(() => {
+            getMutableState(XRState).sessionActive.set(!getState(XRState).sessionActive)
+            const result = getState(XRState).depthDataTexture
+            expect(result).not.toBe(Initial)
+            expect(result).toBe(Expected)
+          })
+        })
       })
     }) //:: xrState.sessionActive
   }) //:: reactor
