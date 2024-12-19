@@ -678,6 +678,31 @@ describe('XRAnchorSystem', () => {
   }) //:: Fields
 
   /** @todo */
-  describe('execute', () => {}) //:: execute
   describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('execute', () => {
+    describe('for every action in the XRAction.sessionChanged list ..', () => {})
+    it.todo('.. should not do anything for the action if action.active is falsy', () => {})
+    it.todo(".. should set XRState.scenePlacementMode to 'unplaced'", () => {})
+    describe('for every entity that has the components [XRHitTestComponent, TransformComponent]', () => {
+      it.todo('.. should remove the XRHitTestComponent from the entity', () => {})
+    })
+    describe('for every entity that has the components [XRAnchorComponent, TransformComponent]', () => {
+      it.todo('.. should remove the XRAnchorComponent from the entity', () => {})
+    })
+
+    it.todo('should not do anything else if XRState.xrFrame is falsy', () => {})
+    describe('for every entity that has the components [XRHitTestComponent, TransformComponent]', () => {
+      it.todo('.. should call updateAnchor with the entity as its argument', () => {})
+    })
+    describe('for every entity that has the components [XRAnchorComponent, TransformComponent]', () => {
+      it.todo('.. should call updateHitTest with the entity as its argument', () => {})
+    })
+    describe("when XRState.scenePlacementMode is 'placing' ..", () => {
+      it.todo('.. should call updateScenePlacement with XRAnchorSystemState.scenePlacementEntity', () => {})
+      it.todo('.. should call updateWorldOriginFromScenePlacement', () => {})
+      it.todo('.. should set XRAnchorSystemState.originAnchorEntity.scale to Vector3_One', () => {})
+    })
+  }) //:: execute
 }) //:: XRAnchorSystem
