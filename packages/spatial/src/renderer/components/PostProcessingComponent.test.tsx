@@ -40,7 +40,6 @@ import {
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
-import { noiseAddToEffectRegistry } from '@ir-engine/engine/src/postprocessing/NoiseEffect'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
@@ -51,6 +50,7 @@ import React from 'react'
 import { EngineState } from '../../EngineState'
 import { destroySpatialEngine, initializeSpatialEngine } from '../../initializeEngine'
 import { RendererState } from '../RendererState'
+import { PostProcessingEffectState } from '../effects/EffectRegistry'
 import { PostProcessingComponent } from './PostProcessingComponent'
 
 type PostProcessingComponentData = {
@@ -255,8 +255,19 @@ describe('PostProcessingComponent', async () => {
     })
 
     it('should add and remove effects correctly', async () => {
-      const effectKey = 'NoiseEffect'
-      noiseAddToEffectRegistry()
+      const effectKey = 'MockEffect'
+
+      getMutableState(PostProcessingEffectState).merge({
+        [effectKey]: {
+          reactor: () => {
+            return null
+          },
+          defaultValues: {
+            isActive: false
+          },
+          schema: {}
+        }
+      })
 
       const { rerender, unmount } = render(<></>)
 

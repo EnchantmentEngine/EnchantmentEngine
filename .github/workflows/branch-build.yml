@@ -100,20 +100,9 @@ jobs:
       - run: rm -rf packages/taskserver
       - run: npm run build-client
 
-  test_engine:
+  test_hyperflux:
     needs: install-modules
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          - ecs
-          - engine
-          - hyperflux
-          - network
-          - spatial
-          - visual-script
-          - xrui
     defaults:
       run:
         shell: bash
@@ -122,16 +111,98 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: rm -rf packages/client
-      - run: rm -rf packages/common
-      - run: rm -rf packages/client-core
-      - run: rm -rf packages/editor
-      - run: rm -rf packages/ui
-      - run: rm -rf packages/instanceserver
-      - run: rm -rf packages/server
-      - run: rm -rf packages/server-core
-      - run: rm -rf packages/taskserver
+      - run: mv -r packages/hyperflux packages_moved/hyperflux
+      - run: rm -rf packages
+      - run: mv -r packages_moved/hyperflux packages/hyperflux 
       - run: cd packages/${{ matrix.package }} && npm run test
+
+  test_ecs:
+    needs: install-modules
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: .
+          key: dir-${{github.sha}}
+      - run: mv -r packages/hyperflux packages_moved/hyperflux
+      - run: mv -r packages/ecs packages_moved/ecs
+      - run: rm -rf packages
+      - run: mv -r packages_moved/hyperflux packages/hyperflux
+      - run: mv -r packages_moved/ecs packages/ecs
+      - run: cd packages/ecs && npm run test
+
+  test_network:
+    needs: install-modules
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: .
+          key: dir-${{github.sha}}
+      - run: mv -r packages/hyperflux packages_moved/hyperflux
+      - run: mv -r packages/ecs packages_moved/ecs
+      - run: mv -r packages/network packages_moved/network
+      - run: rm -rf packages
+      - run: mv -r packages_moved/hyperflux packages/hyperflux
+      - run: mv -r packages_moved/ecs packages/ecs
+      - run: mv -r packages_moved/network packages/network
+      - run: cd packages/network && npm run test
+
+  test_spatial:
+    needs: install-modules
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: .
+          key: dir-${{github.sha}}
+      - run: mv -r packages/hyperflux packages_moved/hyperflux
+      - run: mv -r packages/ecs packages_moved/ecs
+      - run: mv -r packages/network packages_moved/network
+      - run: mv -r packages/xrui packages_moved/xrui
+      - run: mv -r packages/spatial packages_moved/spatial
+      - run: rm -rf packages
+      - run: mv -r packages_moved/hyperflux packages/hyperflux
+      - run: mv -r packages_moved/ecs packages/ecs
+      - run: mv -r packages_moved/network packages/network
+      - run: mv -r packages_moved/xrui packages/xrui
+      - run: mv -r packages_moved/spatial packages/spatial
+      - run: cd packages/spatial && npm run test
+
+  test_engine:
+    needs: install-modules
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: .
+          key: dir-${{github.sha}}
+      - run: mv -r packages/hyperflux packages_moved/hyperflux
+      - run: mv -r packages/ecs packages_moved/ecs
+      - run: mv -r packages/network packages_moved/network
+      - run: mv -r packages/xrui packages_moved/xrui
+      - run: mv -r packages/spatial packages_moved/spatial
+      - run: mv -r packages/engine packages_moved/engine
+      - run: rm -rf packages
+      - run: mv -r packages_moved/hyperflux packages/hyperflux
+      - run: mv -r packages_moved/ecs packages/ecs
+      - run: mv -r packages_moved/network packages/network
+      - run: mv -r packages_moved/xrui packages/xrui
+      - run: mv -r packages_moved/spatial packages/spatial
+      - run: mv -r packages_moved/engine packages/engine
+      - run: cd packages/engine && npm run test
 
   test_client:
     needs: install-modules

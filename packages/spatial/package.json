@@ -21,7 +21,6 @@
     "@ir-engine/ecs": "^1.6.0",
     "@ir-engine/hyperflux": "^1.6.0",
     "@ir-engine/network": "^1.6.0",
-    "@ir-engine/visual-script": "^1.6.0",
     "@tweenjs/tween.js": "^23.1.2",
     "bitecs": "0.3.40",
     "lodash": "4.17.21",
