@@ -43,30 +43,32 @@ import { useTexture } from '@ir-engine/engine/src/assets/functions/resourceLoade
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFDocumentState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
-import { defineState, getMutableState, getState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY, defineState, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
-import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { addObjectToGroup, GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { GroupComponent, addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { EntityTreeComponent, useChildWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
-import { ObjectFitFunctions } from '@ir-engine/spatial/src/xrui/functions/ObjectFitFunctions'
 import type { WebLayer3D } from '@ir-engine/xrui'
 
+import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
+import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { AppThemeState, getAppTheme } from '../common/services/AppThemeState'
+import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { useRemoveEngineCanvas } from '../hooks/useEngineCanvas'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
 import { LocationState } from '../social/services/LocationService'
-import { AuthState } from '../user/services/AuthService'
 import { LoadingSystemState } from './state/LoadingState'
 import { createLoaderDetailView } from './ui/LoadingDetailView'
 
@@ -135,7 +137,11 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
   const gltfComponent = useComponent(sceneEntity, GLTFComponent)
   const loadingProgress = gltfComponent.progress.value
-  const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
+  const avatarEntity = AvatarComponent.useSelfAvatarEntity()
+  const avatarLoaded = AvatarRigComponent.useAvatarLoaded(avatarEntity)
+  const userID = useMutableState(EngineState).userID.value
+  const spectatorLoaded = !!useMutableState(SpectateEntityState).value[userID]
+  const viewerReady = avatarLoaded || spectatorLoaded
   const locationState = useMutableState(LocationState)
   const state = useMutableState(LoadingUISystemState)
 
@@ -151,18 +157,18 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   /** Scene is loading */
   useEffect(() => {
     const transition = getState(LoadingUISystemState).transition
-    if (transition.state === 'OUT' && state.ready.value && !sceneLoaded) transition.setState('IN')
+    if (transition.state === 'OUT' && state.ready.value && !viewerReady) transition.setState('IN')
   }, [state.ready])
 
   /** Scene has loaded */
   useEffect(() => {
-    if (sceneLoaded && !state.ready.value) state.ready.set(true)
+    if (viewerReady && !state.ready.value) state.ready.set(true)
     const transition = getState(LoadingUISystemState).transition
-    if (transition.state === 'IN' && sceneLoaded) transition.setState('OUT')
+    if (transition.state === 'IN' && viewerReady) transition.setState('OUT')
     /** used by the PWA service worker */
     /** @TODO find a better place for this */
     window.dispatchEvent(new Event('load'))
-  }, [sceneLoaded])
+  }, [viewerReady])
 
   useEffect(() => {
     const ui = state.ui.get(NO_PROXY)!
@@ -331,21 +337,14 @@ const execute = () => {
 }
 
 const Reactor = () => {
-  const themeState = useMutableState(AppThemeState)
-  const themeModes = useHookstate(getMutableState(AuthState).user?.userSetting?.ornull?.themeModes)
-  const locationSceneID = useHookstate(getMutableState(LocationState).currentLocation.location.sceneId).value
-  const sceneEntity = useLoadedSceneEntity(locationSceneID)
+  const locationSceneURL = useHookstate(getMutableState(LocationState).currentLocation.location.sceneURL).value
+  const sceneEntity = useLoadedSceneEntity(locationSceneURL)
   const gltfDocumentState = useMutableState(GLTFDocumentState)
-
-  useEffect(() => {
-    const theme = getAppTheme()
-    if (theme) defaultColor.set(theme!.textColor)
-  }, [themeState, themeModes])
 
   if (!sceneEntity) return null
 
   // wait for scene gltf to load
-  if (!gltfDocumentState[getComponent(sceneEntity, GLTFComponent).src]) return null
+  if (!gltfDocumentState[getComponent(sceneEntity, SourceComponent)]) return null
 
   return (
     <>

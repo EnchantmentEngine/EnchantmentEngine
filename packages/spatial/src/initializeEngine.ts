@@ -29,6 +29,7 @@ import { createEntity, getComponent, removeEntity, setComponent, UUIDComponent }
 import { EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 
+import { useEffect } from 'react'
 import { CameraComponent } from './camera/components/CameraComponent'
 import { NameComponent } from './common/NameComponent'
 import { EngineState } from './EngineState'
@@ -39,7 +40,7 @@ import { SceneComponent } from './renderer/components/SceneComponents'
 import { VisibleComponent } from './renderer/components/VisibleComponent'
 import { ObjectLayers } from './renderer/constants/ObjectLayers'
 import { PerformanceManager } from './renderer/PerformanceState'
-import { initializeEngineRenderer, RendererComponent } from './renderer/WebGLRendererSystem'
+import { RendererComponent } from './renderer/WebGLRendererSystem'
 import { EntityTreeComponent } from './transform/components/EntityTree'
 import { TransformComponent } from './transform/components/TransformComponent'
 
@@ -61,11 +62,8 @@ export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
   camera.layers.enable(ObjectLayers.TransformGizmo)
   camera.layers.enable(ObjectLayers.UVOL)
 
-  const { originEntity, localFloorEntity } = getState(EngineState)
-
   if (canvas) {
-    setComponent(viewerEntity, RendererComponent, { canvas, scenes: [originEntity, localFloorEntity, viewerEntity] })
-    initializeEngineRenderer(viewerEntity)
+    setComponent(viewerEntity, RendererComponent, { canvas, scenes: [viewerEntity] })
     PerformanceManager.buildPerformanceState(getComponent(viewerEntity, RendererComponent))
   }
 
@@ -86,6 +84,15 @@ export const destroySpatialViewer = () => {
   })
 }
 
+export const useSpatialEngine = () => {
+  useEffect(() => {
+    initializeSpatialEngine()
+    return () => {
+      destroySpatialEngine()
+    }
+  }, [])
+}
+
 export const initializeSpatialEngine = () => {
   const originEntity = createEntity()
   setComponent(originEntity, NameComponent, 'origin')
@@ -100,7 +107,7 @@ export const initializeSpatialEngine = () => {
   setComponent(localFloorEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(localFloorEntity, TransformComponent)
   setComponent(localFloorEntity, VisibleComponent, true)
-  setComponent(localFloorEntity, SceneComponent)
+  setComponent(localFloorEntity, SceneComponent, { active: true })
   const origin = new Group()
   addObjectToGroup(localFloorEntity, origin)
   const floorHelperMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshNormalMaterial())
@@ -115,7 +122,7 @@ export const initializeSpatialEngine = () => {
 }
 
 export const destroySpatialEngine = () => {
-  const { originEntity, localFloorEntity, viewerEntity } = getState(EngineState)
+  const { originEntity, localFloorEntity } = getState(EngineState)
 
   if (localFloorEntity) {
     removeEntity(localFloorEntity)

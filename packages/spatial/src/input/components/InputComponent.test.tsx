@@ -23,9 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '@hookstate/core'
 import assert from 'assert'
 import React, { useEffect } from 'react'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import {
   getComponent,
@@ -50,9 +52,9 @@ import {
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { Raycaster } from 'three'
+import { assertArray } from '../../../tests/util/assert'
 import { EngineState } from '../../EngineState'
 import { initializeSpatialEngine } from '../../initializeEngine'
-import { assertArrayEqual } from '../../physics/components/RigidBodyComponent.test'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import { EntityTreeComponent, isAncestor } from '../../transform/components/EntityTree'
 import { ButtonStateMap, MouseScroll, XRStandardGamepadAxes } from '../state/ButtonState'
@@ -78,24 +80,11 @@ const InputComponentDefaults: InputComponentData = {
 }
 
 function assertInputComponentEq(A: InputComponentData, B: InputComponentData): void {
-  assertArrayEqual(A.inputSinks, B.inputSinks)
+  assertArray.eq(A.inputSinks, B.inputSinks)
   assert.equal(A.activationDistance, B.activationDistance)
   assert.equal(A.highlight, B.highlight)
   assert.equal(A.grow, B.grow)
-  assertArrayEqual(A.inputSources, B.inputSources)
-}
-
-/** @description Returns whethere or not the given `@param arr` has duplicate values. */
-export function arrayHasDuplicates(arr: any[]): boolean {
-  return new Set(arr).size !== arr.length
-}
-
-export function assertArrayHasDuplicates(arr: any[]) {
-  assert.ok(arrayHasDuplicates(arr))
-}
-
-export function assertArrayHasNoDuplicates(arr: any[]) {
-  assert.ok(!arrayHasDuplicates(arr))
+  assertArray.eq(A.inputSources, B.inputSources)
 }
 
 /** @description Alias to create a dummy entity with an InputComponent. Used for syntax ergonomics. */
@@ -219,22 +208,6 @@ describe('InputComponent', () => {
       const after = getComponent(testEntity, InputComponent)
       assertInputComponentEq(after, Expected)
     })
-
-    it('should not change values of an initialized InputComponent when the data passed had incorrect types', () => {
-      const before = getComponent(testEntity, InputComponent)
-      assertInputComponentEq(before, InputComponentDefaults)
-      const Incorrect = {
-        inputSinks: false,
-        activationDistance: false,
-        highlight: 46 & 2,
-        grow: 'invalid',
-        inputSources: [] as Entity[]
-      }
-      // @ts-ignore Override the linter to force-send invalid types
-      setComponent(testEntity, InputComponent, Incorrect)
-      const after = getComponent(testEntity, InputComponent)
-      assertInputComponentEq(after, InputComponentDefaults)
-    })
   }) // << onSet
 
   describe('toJSON', () => {
@@ -324,10 +297,10 @@ describe('InputComponent', () => {
         parentEntity,
         parentEntity
       ]
-      assertArrayHasDuplicates(DummyList)
+      assertArray.hasDuplicates(DummyList)
       getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set(DummyList)
       const result = InputComponent.getInputEntities(testEntity)
-      assertArrayHasNoDuplicates(result)
+      assertArray.hasNoDuplicates(result)
       assert.ok(
         !result.includes(testEntity),
         'the result should not contain the given entity if it does not have an InputComponent'
@@ -390,7 +363,7 @@ describe('InputComponent', () => {
       // 3. We retrieve DummyList4 from the inputSources of entity `four`, which are accessed from the parentEntity.InputSinkComponent
       const result = InputComponent.getInputSourceEntities(testEntity)
       assert.ok(result.length > 0, 'The result should not be empty')
-      assertArrayEqual(
+      assertArray.eq(
         result,
         Expected,
         'The result should contain the expected lists of inputSources combined, no matter what their values are'
@@ -827,7 +800,7 @@ describe('InputComponent', () => {
       const resultArray = [merged[0], merged[1], merged[2], merged[3]] as Axes
       // Check that the result is what we expect it to be
       const Expected = [BiggerX, BiggerY, BiggerZ, BiggerW] as Axes
-      assertArrayEqual(resultArray, Expected)
+      assertArray.eq(resultArray, Expected)
       assert.equal(merged.HorizontalScroll, Expected[MouseScroll.HorizontalScroll])
       assert.equal(merged.VerticalScroll, Expected[MouseScroll.VerticalScroll])
     })

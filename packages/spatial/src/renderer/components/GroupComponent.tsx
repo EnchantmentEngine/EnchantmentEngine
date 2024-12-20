@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { FC, memo, useLayoutEffect } from 'react'
+import '../../threejsPatches'
+
+import React, { FC, memo, useEffect, useLayoutEffect } from 'react'
 import { Camera, Object3D } from 'three'
 
 import {
@@ -40,22 +42,37 @@ import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { QueryComponents, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { NO_PROXY, none } from '@ir-engine/hyperflux'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { removeCallback, setCallback } from '../../common/CallbackComponent'
 import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Layer } from './ObjectLayerComponent'
+import { VisibleComponent } from './VisibleComponent'
 
 export type Object3DWithEntity = Object3D & { entity: Entity }
 
 export const GroupComponent = defineComponent({
   name: 'GroupComponent',
-
-  onInit: (entity: Entity) => {
-    return [] as Object3D[]
-  },
+  schema: S.Array(S.Type<Object3D>()),
 
   reactor: () => {
     const entity = useEntityContext()
     const groupComponent = useComponent(entity, GroupComponent)
+
+    useEffect(() => {
+      setCallback(entity, 'setVisible', () => {
+        setComponent(entity, VisibleComponent, true)
+      })
+
+      setCallback(entity, 'setInvisible', () => {
+        removeComponent(entity, VisibleComponent)
+      })
+
+      return () => {
+        removeCallback(entity, 'setVisible')
+        removeCallback(entity, 'setInvisible')
+      }
+    }, [])
 
     useLayoutEffect(() => {
       const group = groupComponent.get(NO_PROXY)

@@ -23,29 +23,23 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Not } from 'bitecs'
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { CircleGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { UserID } from '@ir-engine/common/src/schema.type.module'
-import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
-import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
+import { removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { applyVideoToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
-import {
-  NetworkObjectComponent,
-  NetworkObjectOwnedTag,
-  NetworkState,
-  webcamVideoDataChannelType
-} from '@ir-engine/network'
+import { NetworkObjectComponent, NetworkObjectOwnedTag, NetworkState } from '@ir-engine/network'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { easeOutElastic } from '@ir-engine/spatial/src/common/functions/MathFunctions'
@@ -61,9 +55,11 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 
-import { MediasoupMediaProducerConsumerState } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
+import { Not } from '@ir-engine/ecs'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { PeerMediaChannelState } from '../media/PeerMediaChannelState'
+import { XruiNameplateComponent } from '../social/components/XruiNameplateComponent'
 import AvatarContextMenu from '../user/components/UserMenu/menus/AvatarContextMenu'
 import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
 import { createAvatarDetailView } from './ui/AvatarDetailView'
@@ -99,7 +95,7 @@ export const renderAvatarContextMenu = (userId: UserID, contextMenuEntity: Entit
   contextMenuXRUI.quaternion.copy(cameraTransform.rotation)
 }
 
-const userQuery = defineQuery([AvatarComponent, TransformComponent, NetworkObjectComponent, Not(NetworkObjectOwnedTag)])
+const userQuery = defineQuery([AvatarComponent, TransformComponent, NetworkObjectComponent]) //, Not(NetworkObjectOwnedTag)])
 
 const _vector3 = new Vector3()
 
@@ -145,7 +141,7 @@ const onSecondaryClick = () => {
   const state = getMutableState(AvatarUIContextMenuState)
   if (hits.length) {
     const hit = hits[0]
-    const hitEntity = (hit.body?.userData as any)?.entity as Entity
+    const hitEntity = hit.body.entity
     if (typeof hitEntity !== 'undefined' && hitEntity !== AvatarComponent.getSelfAvatarEntity()) {
       if (hasComponent(hitEntity, NetworkObjectComponent)) {
         const userId = getComponent(hitEntity, NetworkObjectComponent).ownerId
@@ -234,12 +230,11 @@ const execute = () => {
           return peer.userId === ownerId
         })
         if (peer) {
-          const consumer = MediasoupMediaProducerConsumerState.getConsumerByPeerIdAndMediaTag(
-            mediaNetwork.id,
-            peer.peerID,
-            webcamVideoDataChannelType
-          ) as any
-          const active = !consumer?.paused
+          const peerMediaState = getState(PeerMediaChannelState)[peer.peerID].cam
+          const stream = peerMediaState.videoMediaStream
+          if (!stream) continue
+          const track = stream.getVideoTracks()[0]
+          const active = !peerMediaState.videoStreamPaused
           if (videoPreviewMesh.material.map) {
             if (!active) {
               videoPreviewMesh.material.map = null!
@@ -248,7 +243,6 @@ const execute = () => {
           } else {
             if (active && !applyingVideo.has(ownerId)) {
               applyingVideo.set(ownerId, true)
-              const track = (consumer as any).track
               const newVideoTrack = track.clone()
               const newVideo = document.createElement('video')
               newVideo.autoplay = true
@@ -286,10 +280,10 @@ const execute = () => {
     AvatarUITransitions.delete(userEntity)
   }
 
-  // const state = getState(AvatarUIContextMenuState)
-  // if (state.id !== '') {
-  //   renderAvatarContextMenu(state.id as UserID, state.ui.entity)
-  // }
+  const state = getState(AvatarUIContextMenuState)
+  if (state.id !== '') {
+    renderAvatarContextMenu(state.id as UserID, state.ui.entity)
+  }
 }
 
 const reactor = () => {
@@ -303,12 +297,32 @@ const reactor = () => {
       getMutableState(PopupMenuState).menus[AvatarMenus.AvatarContext].set(none)
     }
   }, [])
+
+  return (
+    <>
+      <QueryReactor
+        Components={[AvatarComponent, TransformComponent, NetworkObjectComponent, Not(NetworkObjectOwnedTag)]}
+        ChildEntityReactor={AvatarInstanceReactor}
+      />
+    </>
+  )
+}
+
+const AvatarInstanceReactor = () => {
+  const avatarEntity = useEntityContext()
+
+  useEffect(() => {
+    setComponent(avatarEntity, XruiNameplateComponent)
+    return () => {
+      removeComponent(avatarEntity, XruiNameplateComponent)
+    }
+  }, [])
   return null
 }
 
 export const AvatarUISystem = defineSystem({
   uuid: 'ee.client.AvatarUISystem',
-  insert: { before: TransformDirtyUpdateSystem },
-  execute,
-  reactor
+  insert: { before: TransformDirtyUpdateSystem }
+  // execute,
+  // reactor
 })

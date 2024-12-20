@@ -23,8 +23,11 @@
 // Infinite Reality Engine. All Rights Reserved.
 // */
 
+import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
+
 import assert from 'assert'
 import { MathUtils } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import {
   EntityUUID,
@@ -45,7 +48,6 @@ import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components
 import { act, render } from '@testing-library/react'
 import { Effect } from 'postprocessing'
 import React from 'react'
-import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
 import { EngineState } from '../../EngineState'
 import { destroySpatialEngine, initializeSpatialEngine } from '../../initializeEngine'
 import { RendererState } from '../RendererState'
@@ -76,7 +78,7 @@ function assertPostProcessingComponentEq(A: PostProcessingComponentData, B: Post
   }
 }
 
-describe('PostProcessingComponent', () => {
+describe('PostProcessingComponent', async () => {
   describe('IDs', () => {
     it('should initialize the PostProcessingComponent.name field with the expected value', () => {
       assert.equal(PostProcessingComponent.name, 'PostProcessingComponent')
@@ -141,25 +143,6 @@ describe('PostProcessingComponent', () => {
       const result = getComponent(testEntity, PostProcessingComponent)
       assertPostProcessingComponentEq(result, Expected)
     })
-
-    it('should not change values of an initialized PostProcessingComponent when the data passed had incorrect types', () => {
-      const Incorrect = {
-        effects: 42,
-        enabled: 46 & 2
-      }
-      // Sanity check the data
-      assertPostProcessingComponentEq(
-        getComponent(testEntity, PostProcessingComponent),
-        PostProcessingComponentDefaults
-      )
-      // Run and Check the result
-      // @ts-ignore Coerce the incorrect data type into the component
-      setComponent(testEntity, PostProcessingComponent, Incorrect)
-      assertPostProcessingComponentEq(
-        getComponent(testEntity, PostProcessingComponent),
-        PostProcessingComponentDefaults
-      )
-    })
   }) //:: onSet
 
   describe('toJSON', () => {
@@ -206,7 +189,7 @@ describe('PostProcessingComponent', () => {
             blendMode: {
               _blendFunction: 23,
               opacity: { value: 1 },
-              _listeners: { change: [null] }
+              _listeners: { change: [] }
             }, //:: blendMode
             _inputColorSpace: 'srgb-linear',
             _outputColorSpace: ''
@@ -223,7 +206,7 @@ describe('PostProcessingComponent', () => {
             blendMode: {
               _blendFunction: 23,
               opacity: { value: 1 },
-              _listeners: { change: [null] }
+              _listeners: { change: [] }
             }, //:: blendMode
             _inputColorSpace: 'srgb-linear',
             _outputColorSpace: ''
@@ -243,7 +226,7 @@ describe('PostProcessingComponent', () => {
   describe('reactor', () => {}) //:: reactor
   */
 
-  describe('General Purpose', () => {
+  describe('General Purpose', async () => {
     let rootEntity = UndefinedEntity
     let testEntity = UndefinedEntity
 
@@ -277,13 +260,13 @@ describe('PostProcessingComponent', () => {
 
       const { rerender, unmount } = render(<></>)
 
-      await act(() => rerender(<></>))
+      await act(() => rerender(null))
 
+      setComponent(rootEntity, RendererComponent)
       const postProcessingComponent = getMutableComponent(testEntity, PostProcessingComponent)
       postProcessingComponent.effects[effectKey].isActive.set(true)
 
-      setComponent(rootEntity, RendererComponent)
-      await act(() => rerender(<></>))
+      await act(() => rerender(null))
 
       // @ts-ignore Allow access to the EffectPass.effects private field
       const before = getComponent(rootEntity, RendererComponent).effectComposer.EffectPass.effects
@@ -291,7 +274,7 @@ describe('PostProcessingComponent', () => {
 
       postProcessingComponent.effects[effectKey].isActive.set(false)
 
-      await act(() => rerender(<></>))
+      await act(() => rerender(null))
 
       // @ts-ignore Allow access to the EffectPass.effects private field
       const after = getComponent(rootEntity, RendererComponent).effectComposer.EffectPass.effects

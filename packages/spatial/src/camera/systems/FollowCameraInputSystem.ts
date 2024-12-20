@@ -46,9 +46,9 @@ import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { useEffect } from 'react'
 import { EngineState } from '../../EngineState'
-import { TransformComponent } from '../../SpatialModule'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
+import { TransformComponent } from '../../transform/components/TransformComponent'
 
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
@@ -135,7 +135,18 @@ const execute = () => {
     let { theta, phi } = getOptionalComponent(cameraEntity, TargetCameraRotationComponent) ?? follow
     let time = 0.3
 
-    if (buttons?.PrimaryClick?.pressed && buttons?.PrimaryClick?.dragging) {
+    const canvas = getComponent(cameraEntity, RendererComponent).canvas
+    if (follow.pointerLock && buttons?.PrimaryClick?.pressed && document.pointerLockElement !== canvas) {
+      /**
+       * @todo - add support for unadjustedMovement API
+       *  - https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API#handling_promise_and_non-promise_versions_of_requestpointerlock
+       */
+      canvas?.requestPointerLock()
+    }
+
+    const hasPointerLock = follow.pointerLock && document.pointerLockElement === canvas
+
+    if ((buttons?.PrimaryClick?.pressed && buttons?.PrimaryClick?.dragging) || hasPointerLock) {
       InputState.setCapturingEntity(cameraEntity)
     }
     if (buttons?.FollowCameraModeCycle?.down) onFollowCameraModeCycle(cameraEntity)
@@ -151,7 +162,7 @@ const execute = () => {
       theta -= x * 2
       phi += y * 2
       const pointerDragging = inputSource.buttons?.PrimaryClick?.dragging
-      if (pointerDragging) {
+      if (pointerDragging || hasPointerLock) {
         const inputPointer = getComponent(inputPointerEid, InputPointerComponent)
         pointerPositionDelta.copy(inputPointer.movement)
         phi -= pointerPositionDelta.y * cameraSettings.cameraRotationSpeed

@@ -37,15 +37,17 @@ import Menu from '@ir-engine/client-core/src/common/components/Menu'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import multiLogger from '@ir-engine/common/src/logger'
 import { EMAIL_REGEX, PHONE_REGEX } from '@ir-engine/common/src/regex'
-import { InviteCode, InviteData } from '@ir-engine/common/src/schema.type.module'
+import { authenticationSettingPath, InviteCode, InviteData } from '@ir-engine/common/src/schema.type.module'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { isShareAvailable } from '@ir-engine/spatial/src/common/functions/DetectFeatures'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 import OutlinedInput from '@ir-engine/ui/src/primitives/mui/OutlinedInput'
 
+import { useFind } from '@ir-engine/common'
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import useFeatureFlags from '../../../../hooks/useFeatureFlags'
 import { InviteService } from '../../../../social/services/InviteService'
 import { AuthState } from '../../../services/AuthService'
 import styles from '../index.module.scss'
@@ -160,7 +162,9 @@ export const useShareMenuHooks = ({ refLink }) => {
 const ShareMenu = (): JSX.Element => {
   const { t } = useTranslation()
   const refLink = useRef() as React.MutableRefObject<HTMLInputElement>
-  const engineState = useMutableState(EngineState)
+
+  const [shareTOQuestEnabled] = useFeatureFlags([FeatureFlags.Client.Menu.ShareToQuest])
+
   const {
     copyLinkToClipboard,
     shareOnApps,
@@ -174,6 +178,10 @@ const ShareMenu = (): JSX.Element => {
     refLink
   })
 
+  useEffect(() => {
+    logger.info({ event_name: 'share_clicked' })
+  }, [])
+
   // Ref: https://developer.oculus.com/documentation/web/web-launch
   const questShareLink = new URL('https://oculus.com/open_url/')
   questShareLink.searchParams.set('url', shareLink)
@@ -184,25 +192,50 @@ const ShareMenu = (): JSX.Element => {
     navigator.clipboard.writeText(text)
     NotificationService.dispatchNotify(t('user:usermenu.share.linkCopied'), { variant: 'success' })
   }
+  const authSetting = useFind(authenticationSettingPath).data.at(0)
+
+  const getConnectPlaceholder = () => {
+    let smsMagicLink,
+      emailMagicLink = false
+
+    if (authSetting?.authStrategies) {
+      for (let item of authSetting.authStrategies) {
+        if (item.smsMagicLink) smsMagicLink = true
+        if (item.emailMagicLink) emailMagicLink = true
+      }
+
+      if (emailMagicLink && smsMagicLink) {
+        return t('user:usermenu.share.ph-phoneEmail')
+      } else if (emailMagicLink && !smsMagicLink) {
+        return t('user:usermenu.share.ph-email')
+      } else if (!emailMagicLink && smsMagicLink) {
+        return t('user:usermenu.share.ph-phone')
+      } else {
+        return ''
+      }
+    } else return ''
+  }
 
   return (
     <Menu open title={t('user:usermenu.share.title')} onClose={() => PopupMenuServices.showPopupMenu()}>
       <Box className={styles.menuContent}>
-        <Box className={styles.shareQuest}>
-          <Button
-            className={styles.shareQuestButton}
-            endIcon={<OculusIcon sx={{ width: '36px', height: '36px', margin: '-7px 0 -5px -7px' }} />}
-            type="gradientRounded"
-            onClick={() => window.open(questShareLink, '_blank')}
-          >
-            {t('user:usermenu.share.shareQuest')}
-          </Button>
-          <IconButton
-            icon={<Icon type="FileCopy" sx={{ width: '18px' }} />}
-            sizePx={35}
-            onClick={() => copyToClipboard(questShareLink.toString())}
-          />
-        </Box>
+        {shareTOQuestEnabled && (
+          <Box className={styles.shareQuest}>
+            <Button
+              className={styles.shareQuestButton}
+              endIcon={<OculusIcon sx={{ width: '36px', height: '36px', margin: '-7px 0 -5px -7px' }} />}
+              type="gradientRounded"
+              onClick={() => window.open(questShareLink, '_blank')}
+            >
+              {t('user:usermenu.share.shareQuest')}
+            </Button>
+            <IconButton
+              icon={<Icon type="FileCopy" sx={{ width: '18px' }} />}
+              sizePx={35}
+              onClick={() => copyToClipboard(questShareLink.toString())}
+            />
+          </Box>
+        )}
 
         <div className={styles.QRContainer}>
           <QRCodeSVG height={176} width={200} value={shareLink} />
@@ -255,7 +288,7 @@ const ShareMenu = (): JSX.Element => {
         <InputText
           endIcon={<Icon type="Send" />}
           label={t('user:usermenu.share.shareInvite')}
-          placeholder={t('user:usermenu.share.ph-phoneEmail')}
+          placeholder={getConnectPlaceholder()}
           value={token}
           onChange={(e) => handleChangeToken(e)}
           onEndIconClick={packageInvite}

@@ -23,17 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Vector3 } from 'three'
-
 import { defineComponent, useComponent, useEntityContext, useOptionalComponent } from '@ir-engine/ecs'
 import { useState } from '@ir-engine/hyperflux'
 
-import { useLayoutEffect } from 'react'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { useEffect, useLayoutEffect } from 'react'
+import { removeCallback, setCallback } from '../../common/CallbackComponent'
+import { MeshComponent } from '../../renderer/components/MeshComponent.ts'
+import { T } from '../../schema/schemaFunctions'
 import { useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Physics } from '../classes/Physics'
 import { CollisionGroups, DefaultCollisionMask } from '../enums/CollisionGroups'
-import { Shape, Shapes } from '../types/PhysicsTypes'
+import { ShapeSchema, Shapes } from '../types/PhysicsTypes'
 import { RigidBodyComponent } from './RigidBodyComponent'
 import { TriggerComponent } from './TriggerComponent'
 
@@ -41,42 +43,22 @@ export const ColliderComponent = defineComponent({
   name: 'ColliderComponent',
   jsonID: 'EE_collider',
 
-  onInit(entity) {
-    return {
-      shape: 'box' as Shape,
-      mass: 1,
-      massCenter: new Vector3(),
-      friction: 0.5,
-      restitution: 0.5,
-      collisionLayer: CollisionGroups.Default,
-      collisionMask: DefaultCollisionMask
-    }
-  },
+  schema: S.Object({
+    shape: ShapeSchema('box'),
+    mass: S.Number(1),
+    massCenter: T.Vec3(),
+    friction: S.Number(0.5),
+    restitution: S.Number(0.5),
+    collisionLayer: S.Enum(CollisionGroups, CollisionGroups.Default),
+    collisionMask: S.Number(DefaultCollisionMask),
 
-  onSet(entity, component, json) {
-    if (!json) return
-
-    if (typeof json.shape === 'string') component.shape.set(json.shape)
-    if (typeof json.mass === 'number') component.mass.set(json.mass)
-    if (typeof json.massCenter === 'object')
-      component.massCenter.set(new Vector3(json.massCenter.x, json.massCenter.y, json.massCenter.z))
-    if (typeof json.friction === 'number') component.friction.set(json.friction)
-    if (typeof json.restitution === 'number') component.restitution.set(json.restitution)
-    if (typeof json.collisionLayer === 'number') component.collisionLayer.set(json.collisionLayer)
-    if (typeof json.collisionMask === 'number') component.collisionMask.set(json.collisionMask)
-  },
-
-  toJSON(entity, component) {
-    return {
-      shape: component.shape.value,
-      mass: component.mass.value,
-      massCenter: component.massCenter.value,
-      friction: component.friction.value,
-      restitution: component.restitution.value,
-      collisionLayer: component.collisionLayer.value,
-      collisionMask: component.collisionMask.value
-    }
-  },
+    //shape specific parameters
+    matchMesh: S.Bool(true),
+    centerOffset: T.Vec3({ x: 0, y: 0, z: 0 }),
+    boxSize: T.Vec3({ x: 1, y: 1, z: 1 }),
+    radius: S.Number(1),
+    height: S.Number(2)
+  }),
 
   reactor: function () {
     const entity = useEntityContext()
@@ -87,6 +69,7 @@ export const ColliderComponent = defineComponent({
     const physicsWorld = Physics.useWorld(entity)
     const triggerComponent = useOptionalComponent(entity, TriggerComponent)
     const hasCollider = useState(false)
+    const meshComponent = useOptionalComponent(entity, MeshComponent)
 
     useLayoutEffect(() => {
       if (!rigidbodyComponent?.initialized?.value || !physicsWorld) return
@@ -102,7 +85,24 @@ export const ColliderComponent = defineComponent({
         Physics.removeCollider(physicsWorld, entity)
         hasCollider.set(false)
       }
-    }, [physicsWorld, component.shape, !!rigidbodyComponent?.initialized?.value, transform.scale])
+    }, [
+      physicsWorld,
+      component.shape,
+      !!rigidbodyComponent?.initialized?.value,
+      transform.scale,
+      component.centerOffset,
+      component.boxSize,
+      component.radius,
+      component.height
+    ])
+
+    useEffect(() => {
+      return () => {
+        if (!physicsWorld) return
+        Physics.removeCollider(physicsWorld, entity)
+        hasCollider.set(false)
+      }
+    }, [])
 
     useLayoutEffect(() => {
       if (!physicsWorld) return
@@ -142,6 +142,21 @@ export const ColliderComponent = defineComponent({
         Physics.setTrigger(physicsWorld, entity, false)
       }
     }, [physicsWorld, triggerComponent, hasCollider])
+
+    useEffect(() => {
+      setCallback(entity, 'Disable Collision', () => {
+        if (!physicsWorld) return
+        Physics.setCollisionLayer(physicsWorld, entity, CollisionGroups.None)
+      })
+      setCallback(entity, 'Enable Collision', () => {
+        if (!physicsWorld) return
+        Physics.setCollisionLayer(physicsWorld, entity, component.collisionLayer.value)
+      })
+      return () => {
+        removeCallback(entity, 'Disable Collision')
+        removeCallback(entity, 'Enable Collision')
+      }
+    }, [])
 
     return null
   }

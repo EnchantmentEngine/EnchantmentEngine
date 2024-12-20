@@ -20,14 +20,22 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Id, NullableId } from '@feathersjs/feathers'
 import { useFind, useMutation, useSearch } from '@ir-engine/common'
-import { UserType, userPath } from '@ir-engine/common/src/schema.type.module'
+import {
+  ScopeType,
+  UserType,
+  scopePath,
+  userAvatarPath,
+  userLoginPath,
+  userPath
+} from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
+import { Engine } from '@ir-engine/ecs'
 import { State, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { Button, Checkbox } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Checkbox from '@ir-engine/ui/src/primitives/tailwind/Checkbox'
 import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
+import { truncateText } from '@ir-engine/ui/src/primitives/tailwind/TruncatedText'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaRegCircleCheck, FaRegCircleXmark } from 'react-icons/fa6'
@@ -35,7 +43,6 @@ import { HiPencil, HiTrash } from 'react-icons/hi2'
 import { LuInfo } from 'react-icons/lu'
 import { PopoverState } from '../../../common/services/PopoverState'
 import { AuthState } from '../../../user/services/AuthService'
-import { userHasAccess } from '../../../user/userHasAccess'
 import DataTable from '../../common/Table'
 import { UserRowType, userColumns } from '../../common/constants/user'
 import AccountIdentifiers from './AccountIdentifiers'
@@ -72,6 +79,16 @@ export default function UserTable({
   const { t } = useTranslation()
   const user = useHookstate(getMutableState(AuthState).user)
 
+  const scopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.userID,
+      type: 'location:write' as ScopeType,
+      paginate: false
+    }
+  })
+
+  const userHasAccess = scopeQuery.data.length > 0
+
   const adminUserQuery = useFind(userPath, {
     query: {
       isGuest: skipGuests ? false : undefined,
@@ -96,10 +113,50 @@ export default function UserTable({
 
   const createRows = (rows: readonly UserType[]): UserRowType[] =>
     rows.map((row) => {
+      const RenderLogin = () => {
+        const login = useFind(userLoginPath, {
+          query: {
+            userId: row.id,
+            $sort: { createdAt: -1 },
+            $limit: 1
+          }
+        })
+
+        return login.data.length > 0 ? (
+          <div className="flex">
+            {toDisplayDateTime(login.data[0].createdAt)}
+            <Tooltip
+              content={
+                <>
+                  <span>IP Address: {login.data[0].ipAddress}</span>
+                  <br />
+                  <span>User Agent: {login.data[0].userAgent}</span>
+                </>
+              }
+            >
+              <LuInfo className="ml-2 h-5 w-5 bg-transparent" />
+            </Tooltip>
+          </div>
+        ) : (
+          <></>
+        )
+      }
+
+      const RenderAvatarImage = () => {
+        const userAvatarQuery = useFind(userAvatarPath, {
+          query: {
+            userId: row.id
+          }
+        })
+        const userAvatar = userAvatarQuery.status === 'success' ? userAvatarQuery.data[0] : null
+
+        return <AvatarImage src={userAvatar?.avatar?.thumbnailResource?.url || ''} name={row.name} />
+      }
+
       return {
         select: (
           <Checkbox
-            value={selectedUsers.value.findIndex((invite) => invite.id === row.id) !== -1}
+            checked={selectedUsers.value.findIndex((invite) => invite.id === row.id) !== -1}
             onChange={(value) => {
               if (value) selectedUsers.merge([row])
               else selectedUsers.set((prevInvites) => prevInvites.filter((invite) => invite.id !== row.id))
@@ -107,26 +164,18 @@ export default function UserTable({
           />
         ),
         id: row.id,
-        name: row.name,
-        avatar: <AvatarImage src={row?.avatar?.thumbnailResource?.url || ''} name={row.name} />,
-        accountIdentifier: <AccountIdentifiers user={row} />,
-        lastLogin: row.lastLogin && (
+        name: (
           <div className="flex">
-            {toDisplayDateTime(row.lastLogin.createdAt)}
-            <Tooltip
-              content={
-                <>
-                  <span>IP Address: {row.lastLogin.ipAddress}</span>
-                  <br />
-                  <span>User Agent: {row.lastLogin.userAgent}</span>
-                </>
-              }
-            >
-              <LuInfo className="ml-2 h-5 w-5 bg-transparent" />
+            <Tooltip content={row.name}>
+              <span>{truncateText(row.name, { visibleChars: 14, truncatorPosition: 'end' })}</span>
             </Tooltip>
           </div>
         ),
-        acceptedTOS: row.acceptedTOS ? (
+        avatar: <RenderAvatarImage />,
+        accountIdentifier: <AccountIdentifiers user={row} />,
+        lastLogin: <RenderLogin />,
+
+        ageVerified: row.ageVerified ? (
           <FaRegCircleCheck className="h-5 w-5 text-theme-iconGreen" />
         ) : (
           <FaRegCircleXmark className="h-5 w-5 text-theme-iconRed" />
@@ -135,18 +184,16 @@ export default function UserTable({
         action: (
           <div className="flex items-center justify-start gap-3">
             <Button
-              rounded="full"
-              variant="outline"
+              variant="tertiary"
               className="h-8 w-8"
-              disabled={!userHasAccess('location:write')}
+              disabled={!userHasAccess}
               title={t('admin:components.common.view')}
               onClick={() => PopoverState.showPopupover(<AddEditUserModal user={row} />)}
             >
-              <HiPencil className="place-self-center text-theme-iconGreen" />
+              <HiPencil className="text-theme-iconGreen" />
             </Button>
             <Button
-              rounded="full"
-              variant="outline"
+              variant="tertiary"
               className="h-8 w-8"
               disabled={user.id.value === row.id}
               title={t('admin:components.common.delete')}
@@ -161,7 +208,7 @@ export default function UserTable({
                 )
               }}
             >
-              <HiTrash className="place-self-center text-theme-iconRed" />
+              <HiTrash className="text-theme-iconRed" />
             </Button>
           </div>
         )
@@ -170,13 +217,14 @@ export default function UserTable({
 
   return (
     <DataTable
+      size="lg"
       query={adminUserQuery}
       columns={[
         {
           id: 'select',
           label: (
             <Checkbox
-              value={selectedUsers.length === adminUserQuery.data.length}
+              checked={selectedUsers.length === adminUserQuery.data.length}
               onChange={(value) => {
                 if (value) selectedUsers.set(adminUserQuery.data.slice())
                 else selectedUsers.set([])

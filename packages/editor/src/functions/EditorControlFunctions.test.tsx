@@ -26,10 +26,11 @@ Infinite Reality Engine. All Rights Reserved.
 import { GLTF } from '@gltf-transform/core'
 import assert from 'assert'
 import { Cache, Color, MathUtils } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { UserID } from '@ir-engine/common/src/schema.type.module'
 import { createEntity, getComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
-import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { GLTFSnapshotState, GLTFSourceState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
@@ -52,7 +53,7 @@ describe('EditorControlFunctions', () => {
     createEngine()
     getMutableState(EngineState).isEditing.set(true)
     getMutableState(EngineState).isEditor.set(true)
-    Engine.instance.store.userID = 'user' as UserID
+    getMutableState(EngineState).userID.set('user' as UserID)
 
     await Physics.load()
     physicsWorldEntity = createEntity()
@@ -265,6 +266,12 @@ describe('EditorControlFunctions', () => {
                       x: 0,
                       y: 0,
                       z: 0
+                    },
+                    rotation: {
+                      x: 0,
+                      y: 0,
+                      z: 0,
+                      w: 1
                     }
                   },
                   {
@@ -272,6 +279,12 @@ describe('EditorControlFunctions', () => {
                       x: 5,
                       y: 5,
                       z: 5
+                    },
+                    rotation: {
+                      x: 0,
+                      y: 0,
+                      z: 0,
+                      w: 1
                     }
                   }
                 ]
@@ -624,14 +637,14 @@ describe('EditorControlFunctions', () => {
       const childEntity = UUIDComponent.getEntityByUUID(childUUID)
       const sourceID = getComponent(nodeEntity, SourceComponent)
 
-      EditorControlFunctions.reparentObject([childEntity], null, rootEntity)
+      EditorControlFunctions.reparentObject([childEntity], null, null, rootEntity)
 
       applyIncomingActions()
 
       const newSnapshot = getState(GLTFSnapshotState)[sourceID].snapshots[1]
       assert.equal(newSnapshot.scenes![0].nodes![0], 0)
       assert.equal(newSnapshot.scenes![0].nodes![1], 1)
-      assert(!newSnapshot.nodes![0].children)
+      assert.equal(newSnapshot.nodes![0].children?.length!, 0)
     })
 
     it('should reparent an object to another object', () => {
@@ -674,7 +687,6 @@ describe('EditorControlFunctions', () => {
       applyIncomingActions()
 
       const newSnapshot = getState(GLTFSnapshotState)[sourceID].snapshots[1]
-      console.log('newSnapshot', newSnapshot)
       assert.equal(newSnapshot.scenes![0].nodes![0], 0)
       assert.equal(newSnapshot.scenes![0].nodes.length, 1)
       assert.equal(newSnapshot.nodes![0].children![0], 1)
@@ -721,8 +733,8 @@ describe('EditorControlFunctions', () => {
       applyIncomingActions()
 
       const newSnapshot = getState(GLTFSnapshotState)[sourceID].snapshots[1]
-      assert.equal(newSnapshot.scenes![0].nodes![0], 1)
-      assert.equal(newSnapshot.scenes![0].nodes![1], 0)
+      assert.equal(newSnapshot.nodes![0].name, 'child')
+      assert.equal(newSnapshot.nodes![1].name, 'node')
       assert(!newSnapshot.nodes![0].children)
     })
 
@@ -826,7 +838,6 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       applyIncomingActions()
 
-      const node1Entity = UUIDComponent.getEntityByUUID(node1UUID)
       const node2Entity = UUIDComponent.getEntityByUUID(node2UUID)
       const node4Entity = UUIDComponent.getEntityByUUID(node4UUID)
 
@@ -844,7 +855,7 @@ describe('EditorControlFunctions', () => {
         (n) => n.extensions?.[UUIDComponent.jsonID] === getComponent(node2Entity, UUIDComponent)
       )
 
-      EditorControlFunctions.reparentObject([node4Entity], node2Entity, node1Entity, rootEntity)
+      EditorControlFunctions.reparentObject([node4Entity], node2Entity, rootEntity)
       applyIncomingActions()
 
       const newSnapshot = getState(GLTFSnapshotState)[sourceID].snapshots[1]

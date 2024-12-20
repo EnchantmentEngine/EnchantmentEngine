@@ -30,18 +30,18 @@ import {
   DoubleSide,
   LinearFilter,
   Mesh,
+  MirroredRepeatWrapping,
   PlaneGeometry,
+  RepeatWrapping,
   ShaderMaterial,
-  Side,
   SphereGeometry,
   Texture,
   Uniform,
   Vector2,
-  VideoTexture,
-  Wrapping
+  VideoTexture
 } from 'three'
 
-import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getOptionalComponent,
@@ -49,7 +49,7 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity } from '@ir-engine/ecs/src/Entity'
 import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineState, NO_PROXY, useHookstate, useState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -58,11 +58,13 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent, useMeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { ContentFitTypeSchema } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
-import { ContentFitType } from '@ir-engine/spatial/src/xrui/functions/ObjectFitFunctions'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { clearErrors } from '../functions/ErrorFunctions'
-import { getTextureSize, PLANE_GEO, resizeVideoMesh, SPHERE_GEO } from './ImageComponent'
+import { getTextureSize, PLANE_GEO, resizeVideoMesh, SideSchema, SPHERE_GEO } from './ImageComponent'
 import { MediaElementComponent } from './MediaComponent'
 
 export const VideoTexturePriorityQueueState = defineState({
@@ -87,75 +89,37 @@ class VideoTexturePriorityQueue extends VideoTexture {
   update() {}
 }
 
+const WrappingSchema = S.LiteralUnion(
+  [RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping],
+  ClampToEdgeWrapping
+)
+
+const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], 'Flat')
+
 export const VideoComponent = defineComponent({
   name: 'EE_video',
   jsonID: 'EE_video',
 
-  onInit: (entity) => {
-    return {
-      side: DoubleSide as Side,
-      size: new Vector2(1, 1),
-      uvOffset: new Vector2(0, 0),
-      uvScale: new Vector2(1, 1),
-      alphaUVOffset: new Vector2(0, 0),
-      alphaUVScale: new Vector2(1, 1),
-      wrapS: ClampToEdgeWrapping as Wrapping,
-      wrapT: ClampToEdgeWrapping as Wrapping,
-      useAlpha: false,
-      useAlphaUVTransform: false,
-      alphaThreshold: 0.5,
-      fit: 'contain' as ContentFitType,
-      projection: 'Flat' as 'Flat' | 'Equirectangular360',
-      mediaUUID: '' as EntityUUID,
-      // internal
-      videoMeshEntity: UndefinedEntity,
-      texture: null as VideoTexturePriorityQueue | null,
-      userData: { ignoreOnExport: true }
-    }
-  },
+  schema: S.Object({
+    side: SideSchema(DoubleSide),
+    size: T.Vec2({ x: 1, y: 1 }),
+    uvOffset: T.Vec2({ x: 0, y: 0 }),
+    uvScale: T.Vec2({ x: 1, y: 1 }),
+    alphaUVOffset: T.Vec2({ x: 0, y: 0 }),
+    alphaUVScale: T.Vec2({ x: 1, y: 1 }),
+    wrapS: WrappingSchema,
+    wrapT: WrappingSchema,
+    useAlpha: S.Bool(false),
+    useAlphaUVTransform: S.Bool(false),
+    alphaThreshold: S.Number(0.5),
+    fit: ContentFitTypeSchema('contain'),
+    projection: ProjectionSchema,
+    mediaUUID: S.EntityUUID(),
 
-  toJSON: (entity, component) => {
-    return {
-      /**
-       * An entity with with an attached MediaComponent;if an empty string, then the current entity is assumed
-       */
-      mediaUUID: component.mediaUUID.value,
-      side: component.side.value,
-      size: component.size.value,
-      uvOffset: component.uvOffset.value,
-      uvScale: component.uvScale.value,
-      alphaUVOffset: component.alphaUVOffset.value,
-      alphaUVScale: component.alphaUVScale.value,
-      wrapS: component.wrapS.value,
-      wrapT: component.wrapT.value,
-      useAlpha: component.useAlpha.value,
-      useAlphaUVTransform: component.useAlphaUVTransform.value,
-      alphaThreshold: component.alphaThreshold.value,
-      fit: component.fit.value,
-      projection: component.projection.value
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-    if (typeof json.mediaUUID === 'string') component.mediaUUID.set(json.mediaUUID)
-    if (typeof json.side === 'number') component.side.set(json.side)
-    if (typeof json.size === 'object') component.size.set(new Vector2(json.size.x, json.size.y))
-    if (typeof json.uvOffset === 'object') component.uvOffset.set(new Vector2(json.uvOffset.x, json.uvOffset.y))
-    if (typeof json.uvScale === 'object') component.uvScale.set(new Vector2(json.uvScale.x, json.uvScale.y))
-    if (typeof json.alphaUVOffset === 'object')
-      component.alphaUVOffset.set(new Vector2(json.alphaUVOffset.x, json.alphaUVOffset.y))
-    if (typeof json.alphaUVScale === 'object')
-      component.alphaUVScale.set(new Vector2(json.alphaUVScale.x, json.alphaUVScale.y))
-    if (typeof json.wrapS === 'number') component.wrapS.set(json.wrapS)
-    if (typeof json.wrapT === 'number') component.wrapT.set(json.wrapT)
-    if (typeof json.useAlpha === 'boolean') component.useAlpha.set(json.useAlpha)
-    if (typeof json.useAlphaUVTransform === 'boolean') component.useAlphaUVTransform.set(json.useAlphaUVTransform)
-    if (typeof json.alphaThreshold === 'number') component.alphaThreshold.set(json.alphaThreshold)
-    if (typeof json.fit === 'string') component.fit.set(json.fit)
-    if (typeof json.projection === 'string' && (json.projection === 'Flat' || json.projection === 'Equirectangular360'))
-      component.projection.set(json.projection)
-  },
+    // internal
+    videoMeshEntity: S.Entity(),
+    texture: S.NonSerialized(S.Nullable(S.Type<VideoTexturePriorityQueue>()))
+  }),
 
   onRemove: (entity, component) => {
     if (VideoComponent.uniqueVideoEntities.includes(entity)) {
@@ -250,7 +214,8 @@ function VideoReactor() {
 
         void main() {
         #ifdef USE_MAP
-          vec2 mapUv = applyWrapping(vUv * uvScale + uvOffset, wrapS, wrapT);
+          vec2 adjustedUv = vUv * uvScale + uvOffset;
+          vec2 mapUv = applyWrapping(adjustedUv, wrapS, wrapT);
           vec4 color = texture2D(map, mapUv);
           color.rgb = pow(color.rgb, vec3(2.2));
           if (useAlpha) {
@@ -263,7 +228,10 @@ function VideoReactor() {
                 float intensity = color.r * 0.3 + color.g * 0.59 + color.b * 0.11;
                 if (intensity < alphaThreshold) discard;
             }
-          }
+          }          
+          if( adjustedUv.y < 0.0 || adjustedUv.y > 1.0 || adjustedUv.x < 0.0 || adjustedUv.x > 1.0) {
+            color = vec4(0.0, 0.0, 0.0, 1.0);
+          }          
           gl_FragColor = color;
         #else
           gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -304,8 +272,8 @@ function VideoReactor() {
     const uvOffset = new Vector2(0, 0)
     const uvScale = new Vector2(1, 1)
 
-    const containerWidth = video.size.width.value
-    const containerHeight = video.size.height.value
+    const size = video.size.value
+    const [containerWidth, containerHeight] = [size.x, size.y]
     const containerRatio = containerWidth / containerHeight
 
     videoMesh.scale.x = containerWidth
@@ -423,7 +391,13 @@ function VideoReactor() {
     const sourceMeshComponent = getOptionalComponent(mediaEntity, MeshComponent)
     const sourceTexture = sourceVideoComponent?.texture
     if (video.texture.value) {
+      //needed to set up the self-referencing source video texture
       ;(video.texture.value.image as HTMLVideoElement) = mediaElement.element.value as HTMLVideoElement
+
+      //if we're a videoComponent pointing to a different source, this will update the initial texture when we set source
+      if (entity !== mediaEntity && sourceVideoComponent) {
+        video.texture.set(sourceVideoComponent.texture)
+      }
       clearErrors(entity, VideoComponent)
     } else {
       if (sourceTexture && sourceMeshComponent) {
@@ -440,6 +414,6 @@ function VideoReactor() {
         }
       }
     }
-  }, [video.texture, mediaEntity, mediaElement])
+  }, [video.texture, video.mediaUUID, mediaEntity, mediaElement])
   return null
 }

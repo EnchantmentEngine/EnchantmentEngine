@@ -32,7 +32,14 @@ import { useTranslation } from 'react-i18next'
 import { ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { useFind, useMutation } from '@ir-engine/common'
-import { InstanceID, MessageID, UserName, messagePath } from '@ir-engine/common/src/schema.type.module'
+import {
+  InstanceID,
+  MessageID,
+  MessageType,
+  UserName,
+  UserType,
+  messagePath
+} from '@ir-engine/common/src/schema.type.module'
 import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
 import { dispatchAction, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
@@ -44,11 +51,15 @@ import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 import TextField from '@ir-engine/ui/src/primitives/mui/TextField'
 
+import multiLogger from '@ir-engine/common/src/logger'
 import { AppState } from '../../common/services/AppService'
 import { AvatarUIActions, AvatarUIState } from '../../systems/state/AvatarUIState'
 import { useUserAvatarThumbnail } from '../../user/functions/useUserAvatarThumbnail'
+import { clientContextParams } from '../../util/ClientContextState'
 import { useShelfStyles } from '../Shelves/useShelfStyles'
 import { default as defaultStyles, default as styles } from './index.module.scss'
+
+const logger = multiLogger.child({ component: 'client-core:InstanceChat', modifier: clientContextParams })
 
 interface ChatHooksProps {
   chatWindowOpen: boolean
@@ -81,6 +92,7 @@ export const useChatHooks = ({ chatWindowOpen, setUnreadMessages, messageRefInpu
    * Message composition logic
    */
 
+  const sortedMessagesState = useHookstate([] as MessageType[])
   const composingMessage = useHookstate('')
   const cursorPosition = useHookstate(0)
   const user = useHookstate(getMutableState(AuthState).user)
@@ -157,15 +169,25 @@ export const useChatHooks = ({ chatWindowOpen, setUnreadMessages, messageRefInpu
         )
       }
 
-      mutateMessage.create({
-        text: composingMessage.value,
-        channelId: targetChannelId.value
-      })
+      mutateMessage
+        .create({
+          text: composingMessage.value,
+          channelId: targetChannelId.value
+        })
+        .then((message) => {
+          // will get overwritten by the query effect below, but we need to update the UI immediately
+          sortedMessagesState.merge([message])
+        })
+
       composingMessage.set('')
     }
 
     cursorPosition.set(0)
   }
+
+  useEffect(() => {
+    sortedMessagesState.set([...messages.data].reverse())
+  }, [messages.data])
 
   /**
    * Chat panel dimensions
@@ -195,12 +217,69 @@ export const useChatHooks = ({ chatWindowOpen, setUnreadMessages, messageRefInpu
     handleComposingMessageChange,
     packageMessage,
     composingMessage: composingMessage.value,
-    messages
+    sortedMessages: sortedMessagesState.value as MessageType[]
   }
 }
 
 interface InstanceChatProps {
   styles?: any
+}
+
+const Message = (props: { user: UserType; sortedMessages: MessageType[]; message: MessageType; index: number }) => {
+  const { user, sortedMessages, message, index } = props
+
+  const userThumbnail = useUserAvatarThumbnail(message.senderId)
+
+  return (
+    <>
+      <Fragment key={message.id as MessageID}>
+        {message.isNotification ? (
+          <div key={message.id as MessageID} id={message.id} className={`${styles.selfEnd} ${styles.noMargin}`}>
+            <div className={styles.dFlex}>
+              <div className={`${styles.msgNotification} ${styles.mx2}`}>
+                <p className={styles.shadowText}>{message.text}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            key={message.id as MessageID}
+            id={message.id}
+            className={`${styles.dFlex} ${styles.flexColumn} ${styles.mgSmall}`}
+          >
+            <div className={`${styles.selfEnd} ${styles.noMargin}`}>
+              <div
+                className={`${message.senderId !== user?.id ? styles.msgReplyContainer : styles.msgOwner} ${
+                  styles.msgContainer
+                } ${styles.dFlex}`}
+              >
+                <div className={styles.msgWrapper}>
+                  {sortedMessages[index - 1] && sortedMessages[index - 1].isNotification ? (
+                    <h3 className={styles.sender}>{message.sender.name as UserName}</h3>
+                  ) : (
+                    sortedMessages[index - 1] &&
+                    message.senderId !== sortedMessages[index - 1].senderId && (
+                      <h3 className={styles.sender}>{message.sender.name as UserName}</h3>
+                    )
+                  )}
+                  <p className={styles.text}>{message.text}</p>
+                </div>
+                {index !== 0 && sortedMessages[index - 1] && sortedMessages[index - 1].isNotification ? (
+                  <Avatar src={userThumbnail} className={styles.avatar} />
+                ) : (
+                  sortedMessages[index - 1] &&
+                  message.senderId !== sortedMessages[index - 1].senderId && (
+                    <Avatar src={userThumbnail} className={styles.avatar} />
+                  )
+                )}
+                {index === 0 && <Avatar src={userThumbnail} className={styles.avatar} />}
+              </div>
+            </div>
+          </div>
+        )}
+      </Fragment>
+    </>
+  )
 }
 
 export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
@@ -210,13 +289,11 @@ export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
   const messageContainerVisible = useHookstate(false)
   const messageRefInput = useRef<HTMLInputElement>()
 
-  const { handleComposingMessageChange, packageMessage, composingMessage, messages } = useChatHooks({
+  const { handleComposingMessageChange, packageMessage, composingMessage, sortedMessages } = useChatHooks({
     chatWindowOpen: chatWindowOpen.value,
     setUnreadMessages: unreadMessages.set,
     messageRefInput: messageRefInput as any
   })
-
-  const sortedMessages = [...messages.data].reverse()
 
   const user = useHookstate(getMutableState(AuthState).user)
 
@@ -247,7 +324,7 @@ export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
     const elemBottom = rect.bottom
     const isVisible = elemTop < window.innerHeight && elemBottom >= 0
     if (isVisible) messageRef.current.scrollTop = messageRef.current.scrollHeight
-  }, [messages.data])
+  }, [sortedMessages])
 
   const messageRef = useRef<any>()
 
@@ -289,63 +366,9 @@ export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
       }, 500)
     }
     chatWindowOpen.set(!chatWindowOpen.value)
+    logger.info({ event_name: 'world_chat_toggle', event_value: chatWindowOpen.value })
     chatWindowOpen.value && unreadMessages.set(false)
     isInitRender.set(false)
-  }
-
-  const Message = (props: { message; index }) => {
-    const { message, index } = props
-
-    const userThumbnail = useUserAvatarThumbnail(message.senderId)
-
-    return (
-      <Fragment key={message.id as MessageID}>
-        {message.isNotification ? (
-          <div key={message.id as MessageID} id={message.id} className={`${styles.selfEnd} ${styles.noMargin}`}>
-            <div className={styles.dFlex}>
-              <div className={`${styles.msgNotification} ${styles.mx2}`}>
-                <p className={styles.shadowText}>{message.text}</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
-            key={message.id as MessageID}
-            id={message.id}
-            className={`${styles.dFlex} ${styles.flexColumn} ${styles.mgSmall}`}
-          >
-            <div className={`${styles.selfEnd} ${styles.noMargin}`}>
-              <div
-                className={`${message.senderId !== user?.id.value ? styles.msgReplyContainer : styles.msgOwner} ${
-                  styles.msgContainer
-                } ${styles.dFlex}`}
-              >
-                <div className={styles.msgWrapper}>
-                  {sortedMessages[index - 1] && sortedMessages[index - 1].isNotification ? (
-                    <h3 className={styles.sender}>{message.sender.name as UserName}</h3>
-                  ) : (
-                    sortedMessages[index - 1] &&
-                    message.senderId !== sortedMessages[index - 1].senderId && (
-                      <h3 className={styles.sender}>{message.sender.name as UserName}</h3>
-                    )
-                  )}
-                  <p className={styles.text}>{message.text}</p>
-                </div>
-                {index !== 0 && sortedMessages[index - 1] && sortedMessages[index - 1].isNotification ? (
-                  <Avatar src={userThumbnail} className={styles.avatar} />
-                ) : (
-                  sortedMessages[index - 1] &&
-                  message.senderId !== sortedMessages[index - 1].senderId && (
-                    <Avatar src={userThumbnail} className={styles.avatar} />
-                  )
-                )}
-                {index === 0 && <Avatar src={userThumbnail} className={styles.avatar} />}
-              </div>
-            </div>
-          </div>
-        )}
-      </Fragment>
-    )
   }
 
   return (
@@ -367,8 +390,14 @@ export const InstanceChat = ({ styles = defaultStyles }: InstanceChatProps) => {
             }
           >
             <div className={styles.scrollFix} />
-            {sortedMessages?.map((message, index, messages) => (
-              <Message message={message} index={index} key={message.id as MessageID} />
+            {sortedMessages?.map((message, index) => (
+              <Message
+                sortedMessages={sortedMessages}
+                user={user.value as UserType}
+                message={message}
+                index={index}
+                key={message.id as MessageID}
+              />
             ))}
           </div>
         )}
@@ -459,7 +488,7 @@ export const InstanceChatWrapper = () => {
   const { t } = useTranslation()
   const { bottomShelfStyle } = useShelfStyles()
 
-  const acceptedTOS = useMutableState(AuthState).user.acceptedTOS.value
+  const ageVerified = useMutableState(AuthState).user.ageVerified.value
   const isGuest = useMutableState(AuthState).user.isGuest.value
 
   const networkWorldConfig = useHookstate(getMutableState(NetworkState).config.world)
@@ -476,12 +505,12 @@ export const InstanceChatWrapper = () => {
       </>
     )
 
-  if (!acceptedTOS)
+  if (!ageVerified)
     return (
       <>
         <div className={styles.modalConnecting}>
           <div className={styles.modalConnectingTitle}>
-            <p>{t('common:loader.needToAgreeTOS')}</p>
+            <p>{t('common:loader.needToVerifyAge')}</p>
           </div>
         </div>
       </>

@@ -38,10 +38,11 @@ import {
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, ColorRepresentation, Mesh, MeshBasicMaterial, SpotLight, Vector3 } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
+import { assertColor, assertVec } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
 import { LightHelperComponent } from '../../../common/debug/LightHelperComponent'
 import { destroySpatialEngine } from '../../../initializeEngine'
-import { assertVecApproxEq } from '../../../physics/classes/Physics.test'
 import { TransformComponent } from '../../../transform/components/TransformComponent'
 import { RendererState } from '../../RendererState'
 import { GroupComponent, addObjectToGroup } from '../GroupComponent'
@@ -74,7 +75,7 @@ const SpotLightComponentDefaults: SpotLightComponentData = {
 }
 
 function assertSpotLightComponentEq(A: SpotLightComponentData, B: SpotLightComponentData): void {
-  assert.equal(A.color, B.color)
+  assertColor.eq(A.color, B.color)
   assert.equal(A.intensity, B.intensity)
   assert.equal(A.range, B.range)
   assert.equal(A.decay, B.decay)
@@ -86,7 +87,7 @@ function assertSpotLightComponentEq(A: SpotLightComponentData, B: SpotLightCompo
 }
 
 function assertSpotLightComponentNotEq(A: SpotLightComponentData, B: SpotLightComponentData): void {
-  assert.notEqual(A.color, B.color)
+  assertColor.notEq(A.color, B.color)
   assert.notEqual(A.intensity, B.intensity)
   assert.notEqual(A.range, B.range)
   assert.notEqual(A.decay, B.decay)
@@ -166,27 +167,6 @@ describe('SpotLightComponent', () => {
       assertSpotLightComponentNotEq(result, SpotLightComponentDefaults)
       assertSpotLightComponentEq(result, Expected)
     })
-
-    it('should not change the values of an initialized SpotLightComponent when the data passed had incorrect types', () => {
-      const before = getComponent(testEntity, SpotLightComponent)
-      assertSpotLightComponentEq(before, SpotLightComponentDefaults)
-      const Incorrect = {
-        color: false,
-        intensity: 'someIntensity',
-        range: 'someRange',
-        decay: 'someDecay',
-        castShadow: 'someCastShadow',
-        shadowBias: 'someShadowBias',
-        shadowRadius: 'someShadowRadius',
-        helperEntity: 'someHelperEntity'
-      }
-
-      // Run and Check the result
-      // @ts-ignore Allow coercing incorrect types into onSet
-      setComponent(testEntity, SpotLightComponent, Incorrect)
-      const result = getComponent(testEntity, SpotLightComponent)
-      assertSpotLightComponentEq(result, SpotLightComponentDefaults)
-    })
   }) //:: onSet
 
   describe('toJSON', () => {
@@ -260,7 +240,7 @@ describe('SpotLightComponent', () => {
       setComponent(testEntity, SpotLightComponent)
       // Check side-effect
       const light = getComponent(testEntity, GroupComponent)[1] as SpotLight
-      assertVecApproxEq(light.target.position, Expected, 3)
+      assertVec.approxEq(light.target.position, Expected, 3)
     })
 
     it("should set the light.target.name to 'light-target' when it is mounted", () => {
@@ -324,12 +304,12 @@ describe('SpotLightComponent', () => {
 
       // Sanity check before running
       const before = getComponent(testEntity, SpotLightComponent).color
-      assert.equal(before, SpotLightComponentDefaults.color)
+      assertColor.eq(before, SpotLightComponentDefaults.color)
 
       // Run and Check the result
       setComponent(testEntity, SpotLightComponent, { color: Expected })
       const result = getComponent(testEntity, SpotLightComponent).color
-      assert.equal(result, Expected)
+      assertColor.eq(result, Expected)
       // Check side-effect
       const light = getComponent(testEntity, GroupComponent)[0] as SpotLight
       assert.equal(light.color.getHex(), Expected)

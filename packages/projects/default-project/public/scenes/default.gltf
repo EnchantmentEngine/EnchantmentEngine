@@ -315,16 +315,6 @@
           },
           "enabled": false
         },
-        "EE_media_settings": {
-          "immersiveMedia": false,
-          "refDistance": 20,
-          "rolloffFactor": 1,
-          "maxDistance": 10000,
-          "distanceModel": "linear",
-          "coneInnerAngle": 360,
-          "coneOuterAngle": 0,
-          "coneOuterGain": 0
-        },
         "EE_render_settings": {
           "primaryLight": "cb045cfd-8daf-4a2b-b764-35625be54a11",
           "csm": true,
@@ -370,15 +360,15 @@
       }
     },
     {
-      "name": "EE_skybox",
+      "name": "Skybox",
       "extensions": {
         "EE_uuid": "e7d6bfb1-6390-4a8b-b744-da83b059c2d3",
         "EE_visible": true,
         "EE_skybox": {
           "backgroundColor": 3026478,
-          "equirectangularPath": "",
+          "equirectangularPath": "__$project$__/ir-engine/default-project/assets/generic_midday_02.png?hash=96ae3d",
           "cubemapPath": "__$project$__/ir-engine/default-project/assets/skyboxsun25deg/",
-          "backgroundType": 0,
+          "backgroundType": 2,
           "skyboxProps": {
             "turbidity": 10,
             "rayleigh": 1,
@@ -496,7 +486,6 @@
     "EE_fog",
     "EE_camera_settings",
     "EE_postprocessing",
-    "EE_media_settings",
     "EE_render_settings",
     "EE_scene_settings",
     "EE_visible",

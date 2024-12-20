@@ -24,22 +24,15 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import {
-  BufferGeometry,
-  Color,
-  ColorRepresentation,
-  LineBasicMaterial,
-  LineSegments,
-  Material,
-  NormalBufferAttributes
-} from 'three'
+import { BufferGeometry, Color, LineBasicMaterial, LineSegments, Material, NormalBufferAttributes } from 'three'
 
-import { defineComponent, Entity, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
 import { NO_PROXY } from '@ir-engine/hyperflux'
 
-import { matchesColor, matchesGeometry, matchesMaterial } from '../../common/functions/MatchesUtils'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
 import { useDisposable, useResource } from '../../resources/resourceHooks'
+import { T } from '../../schema/schemaFunctions'
 import { ObjectLayers } from '../constants/ObjectLayers'
 import { addObjectToGroup, removeObjectFromGroup } from './GroupComponent'
 import { ObjectLayerMaskComponent } from './ObjectLayerComponent'
@@ -48,34 +41,20 @@ import { setVisibleComponent } from './VisibleComponent'
 export const LineSegmentComponent = defineComponent({
   name: 'LineSegmentComponent',
 
-  onInit: (entity) => {
-    return {
-      name: 'line-segment',
-      geometry: null! as BufferGeometry,
-      material: new LineBasicMaterial() as Material & { color: Color },
-      color: undefined as undefined | ColorRepresentation,
-      layerMask: ObjectLayers.NodeHelper,
-      entity: undefined as undefined | Entity
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-    if (typeof json.name === 'string') component.name.set(json.name)
-
-    if (matchesGeometry.test(json.geometry)) component.geometry.set(json.geometry)
-    else throw new Error('LineSegmentComponent: Geometry required for LineSegmentComponent')
-
-    if (matchesMaterial.test(json.material)) component.material.set(json.material)
-    if (matchesColor.test(json.color)) component.color.set(json.color)
-    if (typeof json.layerMask === 'number') component.layerMask.set(json.layerMask)
-  },
+  schema: S.Object({
+    name: S.String('line-segment'),
+    geometry: S.Required(S.Type<BufferGeometry>()),
+    material: S.Class(() => new LineBasicMaterial() as Material),
+    color: S.Optional(T.Color()),
+    layerMask: S.Number(ObjectLayers.NodeHelper),
+    entity: S.Optional(S.Entity())
+  }),
 
   reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, LineSegmentComponent)
-    const [geometryState] = useResource(component.geometry.value, entity, component.geometry.uuid.value)
-    const [materialState] = useResource(component.material.value, entity, component.material.uuid.value)
+    const [geometryState] = useResource(component.geometry.value, entity)
+    const [materialState] = useResource(component.material.value, entity)
     const [lineSegment] = useDisposable(
       LineSegments,
       entity,
@@ -102,9 +81,11 @@ export const LineSegmentComponent = defineComponent({
     useEffect(() => {
       const color = component.color.value
       if (!color) return
-      const mat = component.material.get(NO_PROXY) as Material & { color: Color }
-      mat.color.set(color)
-      mat.needsUpdate = true
+      const mat = component.material.get(NO_PROXY) as Material & { color?: Color }
+      if (mat.color) {
+        mat.color.set(color)
+        mat.needsUpdate = true
+      }
     }, [component.color])
 
     useEffect(() => {

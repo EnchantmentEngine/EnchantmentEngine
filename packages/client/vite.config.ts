@@ -27,22 +27,21 @@ import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 import packageRoot from 'app-root-path'
 import dotenv from 'dotenv'
 import fs, { readFileSync, writeFileSync } from 'fs'
-import lodash from 'lodash'
+import { isArray, mergeWith } from 'lodash'
 import path from 'path'
 import { UserConfig, defineConfig } from 'vite'
-import viteCompression from 'vite-plugin-compression'
+import viteCompression from 'vite-plugin-compression2'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 
 import appRootPath from 'app-root-path'
+import { EngineSettings } from '../common/src/constants/EngineSettings'
 import manifest from './manifest.default.json'
 import packageJson from './package.json'
 import PWA from './pwa.config'
 import { getClientSetting } from './scripts/getClientSettings'
-import { getCoilSetting } from './scripts/getCoilSettings'
-
-const { isArray, mergeWith } = lodash
+import { getEngineSetting } from './scripts/getEngineSettings'
 
 const parseModuleName = (moduleName: string) => {
   // // chunk medisoup-client
@@ -116,13 +115,6 @@ const merge = (src, dest) =>
       return b.concat(a)
     }
   })
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import('ts-node').then((tsnode) => {
-  tsnode.register({
-    project: './tsconfig.json'
-  })
-})
 
 const getProjectConfigExtensions = async (config: UserConfig) => {
   const projects = fs.existsSync(path.resolve(__dirname, '../projects/projects'))
@@ -258,7 +250,7 @@ export default defineConfig(async () => {
     path: packageRoot.path + '/.env.local'
   })
   const clientSetting = await getClientSetting()
-  const coilSetting = await getCoilSetting()
+  const coilSetting = await getEngineSetting('coil', [EngineSettings.Coil.PaymentPointer])
 
   resetSWFiles()
 
@@ -276,7 +268,10 @@ export default defineConfig(async () => {
     }
   }
 
-  const define = { __IR_ENGINE_VERSION__: JSON.stringify(packageJson.version) }
+  const define = {
+    __IR_ENGINE_VERSION__: JSON.stringify(packageJson.version),
+    'globalThis.process.env': {}
+  }
   for (const [key, value] of Object.entries(process.env)) {
     define[`globalThis.process.env.${key}`] = JSON.stringify(value)
   }
@@ -284,7 +279,6 @@ export default defineConfig(async () => {
   const returned = {
     define: define,
     server: {
-      proxy: {},
       cors: !isDevOrLocal,
       hmr:
         process.env.VITE_HMR === 'true'
@@ -298,6 +292,9 @@ export default defineConfig(async () => {
       port: process.env['VITE_APP_PORT'],
       headers: {
         'Origin-Agent-Cluster': '?1'
+      },
+      watch: {
+        ignored: ['**/server/upload/**']
       },
       ...(isDevOrLocal
         ? {
@@ -343,13 +340,18 @@ export default defineConfig(async () => {
               ? 'dev-sw.js?dev-sw'
               : 'service-worker.js'
             : '',
-        paymentPointer: coilSetting?.paymentPointer || '',
-        rootCookieAccessor: `${clientSetting.url}/root-cookie-accessor.html`
+        paymentPointer: coilSetting?.find((item) => item.key === EngineSettings.Coil.PaymentPointer)?.value || '',
+        rootCookieAccessor: `${clientSetting.url}/root-cookie-accessor.html`,
+        gtmId: clientSetting.gtmContainerId,
+        gtmEnvironent:
+          clientSetting.gtmAuth && clientSetting.gtmPreview
+            ? `&gtm_auth=${clientSetting.gtmAuth}&gtm_preview=${clientSetting.gtmPreview}&gtm_cookies_win=x`
+            : ''
       }),
       viteCompression({
-        filter: /\.(js|mjs|json|css)$/i,
+        include: /\.(js|mjs|json|css)$/i,
         algorithm: 'brotliCompress',
-        deleteOriginFile: true
+        deleteOriginalAssets: true
       }),
       viteCommonjs({
         include: ['use-sync-external-store']
@@ -381,13 +383,13 @@ export default defineConfig(async () => {
           dir: 'dist',
           format: 'es', // 'commonjs' | 'esm' | 'module' | 'systemjs'
           // ignore files under 1mb
-          experimentalMinChunkSize: 1000000,
-          manualChunks: (id) => {
-            // chunk dependencies
-            if (id.includes('node_modules')) {
-              return parseModuleName(id)
-            }
-          }
+          experimentalMinChunkSize: 1000000
+          // manualChunks: (id) => {
+          //   // chunk dependencies
+          //   if (id.includes('node_modules')) {
+          //     return parseModuleName(id)
+          //   }
+          // }
         }
       }
     }

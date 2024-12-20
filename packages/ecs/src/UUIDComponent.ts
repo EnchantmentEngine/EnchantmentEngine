@@ -30,38 +30,40 @@ import { hookstate, NO_PROXY_STEALTH, State, useHookstate } from '@ir-engine/hyp
 import { defineComponent, setComponent } from './ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from './Entity'
 import { createEntity } from './EntityFunctions'
+import { S } from './schemas/JSONSchemas'
 
 export const UUIDComponent = defineComponent({
   name: 'UUIDComponent',
   jsonID: 'EE_uuid',
 
-  onInit: () => '' as EntityUUID,
+  schema: S.Required(
+    S.EntityUUID({
+      validate: (uuid, prev, entity) => {
+        if (!uuid) {
+          console.error('UUID cannot be empty')
+          return false
+        }
+        if (uuid === prev) return true
 
-  onSet: (entity, component, uuid: EntityUUID) => {
-    if (!uuid) throw new Error('UUID cannot be empty')
+        // throw error if uuid is already in use
+        const currentEntity = UUIDComponent.getEntityByUUID(uuid)
+        if (currentEntity !== UndefinedEntity && currentEntity !== entity) {
+          console.error(`UUID ${uuid} is already in use`)
+          return false
+        }
 
-    if (component.value === uuid) return
+        // remove old uuid
+        if (prev) {
+          const currentUUID = prev
+          _getUUIDState(currentUUID).set(UndefinedEntity)
+        }
 
-    // throw error if uuid is already in use
-    const currentEntity = UUIDComponent.getEntityByUUID(uuid)
-    if (currentEntity !== UndefinedEntity && currentEntity !== entity) {
-      throw new Error(`UUID ${uuid} is already in use`)
-    }
-
-    // remove old uuid
-    if (component.value) {
-      const currentUUID = component.value
-      _getUUIDState(currentUUID).set(UndefinedEntity)
-    }
-
-    // set new uuid
-    component.set(uuid)
-    _getUUIDState(uuid).set(entity)
-  },
-
-  toJSON(entity, component) {
-    return component.value
-  },
+        // set new uuid
+        _getUUIDState(uuid).set(entity)
+        return true
+      }
+    })
+  ),
 
   onRemove: (entity, component) => {
     const uuid = component.value

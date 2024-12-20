@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect, useState } from 'react'
 import { useDrop } from 'react-dnd'
@@ -31,7 +32,7 @@ import { SupportedFileTypes } from '../../constants/AssetTypes'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState, FilesViewModeState, SelectedFilesState } from '../../services/FilesState'
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
-import { BrowserContextMenu } from './contextmenu'
+import { FileContextMenu } from './contextmenu'
 import FileItem, { TableWrapper } from './fileitem'
 import { CurrentFilesQueryProvider, canDropOnFileBrowser, useCurrentFiles, useFileBrowserDrop } from './helpers'
 import FilesLoaders from './loaders'
@@ -49,32 +50,46 @@ function Browser() {
   })
   const isListView = useMutableState(FilesViewModeState).viewMode.value === 'list'
   const selectedFiles = useMutableState(SelectedFilesState)
-  const { files } = useCurrentFiles()
+  const { files, refreshDirectory } = useCurrentFiles()
+  const thumbnailJobState = useMutableState(FileThumbnailJobState)
+
+  useEffect(() => {
+    refreshDirectory()
+  }, [thumbnailJobState.length])
 
   const FileItems = () => (
     <>
       {files.map((file) => (
-        <FileItem file={file} key={file.key} />
+        <FileItem
+          file={file}
+          onContextMenu={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
+              selectedFiles.set([file])
+            }
+            setAnchorEvent(event)
+          }}
+          key={file.key}
+          data-testid="files-panel-file-item"
+        />
       ))}
     </>
   )
 
   return (
     <div
-      className="h-full"
+      className={twMerge('h-full overflow-y-scroll', isFileDropOver ? 'border-2 border-gray-300' : '')}
+      ref={fileDropRef}
       onContextMenu={(event) => {
         event.preventDefault()
         event.stopPropagation()
+        selectedFiles.set([])
         setAnchorEvent(event)
       }}
     >
       <div
-        ref={fileDropRef}
-        className={twMerge(
-          'mb-2 h-auto px-3 pb-6 text-gray-400 ',
-          !isListView && 'flex py-8',
-          isFileDropOver ? 'border-2 border-gray-300' : ''
-        )}
+        className={twMerge('mb-2 h-auto px-3 pb-6 text-gray-400 ', !isListView && 'flex py-8')}
         onClick={(event) => {
           event.stopPropagation()
           selectedFiles.set([])
@@ -91,7 +106,7 @@ function Browser() {
           )}
         </div>
       </div>
-      <BrowserContextMenu anchorEvent={anchorEvent} setAnchorEvent={setAnchorEvent} />
+      <FileContextMenu anchorEvent={anchorEvent} setAnchorEvent={setAnchorEvent} />
     </div>
   )
 }
@@ -102,7 +117,7 @@ export default function FileBrowser() {
   const projectName = useMutableState(EditorState).projectName.value
   useEffect(() => {
     if (projectName) {
-      filesState.merge({ selectedDirectory: `/projects/${projectName}/`, projectName: projectName })
+      filesState.merge({ selectedDirectory: `/projects/${projectName}/public/`, projectName: projectName })
     }
   }, [projectName])
 

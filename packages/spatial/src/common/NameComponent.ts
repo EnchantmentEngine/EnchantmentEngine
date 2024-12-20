@@ -26,19 +26,18 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useImmediateEffect } from '@ir-engine/hyperflux'
+import { NonEmptyString } from '../schema/schemaFunctions'
 
 const entitiesByName = {} as Record<string, Entity[]>
 
 export const NameComponent = defineComponent({
   name: 'NameComponent',
 
-  onInit: () => '' as string,
-
-  onSet: (entity, component, name?: string) => {
-    if (typeof name !== 'string') throw new Error('NameComponent expects a non-empty string')
-    component.set(name)
-  },
+  schema: S.String('', {
+    validate: NonEmptyString('NameComponent expects a non-empty string')
+  }),
 
   reactor: () => {
     const entity = useEntityContext()

@@ -35,11 +35,12 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
 import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
+import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext } from 'react'
 import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
-import { handleUploadFiles } from '../../functions/assetFunctions'
+import { filterExistingFiles, handleUploadFiles } from '../../functions/assetFunctions'
 import { FilesState } from '../../services/FilesState'
 
 /* CONSTANTS */
@@ -65,7 +66,10 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   const filesQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
-      directory: filesState.selectedDirectory.value
+      directory:
+        filesState.selectedDirectory.value != ''
+          ? filesState.selectedDirectory.value
+          : '/projects/' + filesState.projectName.value
     }
   })
 
@@ -171,7 +175,7 @@ export function useFileBrowserDrop() {
     dropOn?: FileDataType,
     selectedFileKeys?: string[]
   ) => {
-    const destinationPath = dropOn?.isFolder ? `${dropOn.key}/` : filesState.selectedDirectory.value
+    const destinationPath = dropOn?.isFolder ? `${dropOn.key}` : filesState.selectedDirectory.value
 
     if (isFileDataType(data)) {
       if (dropOn?.isFolder) {
@@ -194,6 +198,7 @@ export function useFileBrowserDrop() {
 
       await Promise.all(
         data.files.map(async (file) => {
+          file = cleanFileNameFile(file)
           const assetType = !file.type || file.type.length === 0 ? AssetLoader.getAssetType(file.name) : file.type
           if (!assetType || assetType === file.name) {
             await fileService.create(`${destinationPath}${file.name}`)
@@ -205,7 +210,8 @@ export function useFileBrowserDrop() {
 
       if (filesToUpload.length) {
         try {
-          await handleUploadFiles(filesState.projectName.value, path, filesToUpload)
+          const uniqueFiles = await filterExistingFiles(filesState.projectName.value, path, filesToUpload)
+          await handleUploadFiles(filesState.projectName.value, path, uniqueFiles)
         } catch (err) {
           NotificationService.dispatchNotify(err.message, { variant: 'error' })
         }
@@ -251,6 +257,7 @@ export const createStaticResourceDigest = (staticResources: ImmutableArray<Stati
     attribution: '',
     licensing: '',
     description: '',
+    name: '',
     // stats: '',
     thumbnailKey: '',
     thumbnailMode: '',
@@ -276,14 +283,17 @@ export const createStaticResourceDigest = (staticResources: ImmutableArray<Stati
 }
 
 export function fileConsistsOfContentType(files: readonly FileDataType[], contentType: string): boolean {
-  return files.every((file) => {
-    if (file.isFolder) {
-      return contentType.startsWith('image')
-    } else {
-      const guessedType: string = CommonKnownContentTypes[file.type]
-      return guessedType?.startsWith(contentType)
-    }
-  })
+  return (
+    files.length > 0 &&
+    files.every((file) => {
+      if (file.isFolder) {
+        return contentType.startsWith('image')
+      } else {
+        const guessedType: string = CommonKnownContentTypes[file.type]
+        return guessedType?.startsWith(contentType)
+      }
+    })
+  )
 }
 
 export const canDropOnFileBrowser = (folderName: string) =>

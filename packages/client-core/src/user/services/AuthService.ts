@@ -35,7 +35,7 @@ import { AuthUserSeed, resolveAuthUser } from '@ir-engine/common/src/interfaces/
 import multiLogger from '@ir-engine/common/src/logger'
 import {
   AuthStrategiesType,
-  AvatarID,
+  HasAccessType,
   IdentityProviderType,
   InstanceID,
   UserApiKeyType,
@@ -44,9 +44,6 @@ import {
   UserName,
   UserPatch,
   UserPublicPatch,
-  UserSettingID,
-  UserSettingPatch,
-  UserSettingType,
   UserType,
   generateTokenPath,
   identityProviderPath,
@@ -55,12 +52,9 @@ import {
   magicLinkPath,
   userApiKeyPath,
   userAvatarPath,
-  userPath,
-  userSettingPath
+  userPath
 } from '@ir-engine/common/src/schema.type.module'
-import type { HasAccessType } from '@ir-engine/common/src/schemas/networking/allowed-domains.schema'
 import {
-  HyperFlux,
   defineState,
   getMutableState,
   getState,
@@ -68,101 +62,65 @@ import {
   syncStateWithLocalStorage,
   useHookstate
 } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { MessageResponse, ParentCommunicator } from '../../common/iframeCOM'
 import { NotificationService } from '../../common/services/NotificationService'
 
 export const logger = multiLogger.child({ component: 'client-core:AuthService' })
 export const TIMEOUT_INTERVAL = 50 // ms per interval of waiting for authToken to be updated
 
+const iframe = document.getElementById('root-cookie-accessor') as HTMLIFrameElement
+const communicator = new ParentCommunicator('root-cookie-accessor', config.client.clientUrl) //Eventually we can configure iframe target seperatly
+
 export const UserSeed: UserType = {
   id: '' as UserID,
   name: '' as UserName,
   isGuest: true,
-  avatarId: '' as AvatarID,
-  avatar: {
-    id: '' as AvatarID,
-    name: '',
-    isPublic: true,
-    userId: '' as UserID,
-    modelResourceId: '',
-    thumbnailResourceId: '',
-    identifierName: '',
-    project: '',
-    createdAt: '',
-    updatedAt: ''
-  },
-  apiKey: {
-    id: '',
-    token: '',
-    userId: '' as UserID,
-    createdAt: '',
-    updatedAt: ''
-  },
-  acceptedTOS: false,
-  userSetting: {
-    id: '' as UserSettingID,
-    themeModes: {},
-    userId: '' as UserID,
-    createdAt: '',
-    updatedAt: ''
-  },
-  scopes: [],
-  identityProviders: [],
-  locationAdmins: [],
-  locationBans: [],
-  instanceAttendance: [],
-  lastLogin: {
-    id: '',
-    ipAddress: '',
-    userAgent: '',
-    identityProviderId: '',
-    userId: '' as UserID,
-    createdAt: ''
-  },
+  ageVerified: false,
   createdAt: '',
   updatedAt: ''
 }
 
-const resolveWalletUser = (credentials: any): UserType => {
-  return {
-    ...UserSeed,
-    name: credentials.user.displayName,
-    isGuest: true,
-    avatarId: credentials.user.id,
-    // avatarUrl: credentials.user.icon,
-    apiKey: credentials.user.apiKey || { id: '', token: '', userId: '' as UserID }
+const invalidDomainHandling = (error: MessageResponse): void => {
+  if (error?.data?.invalidDomain) {
+    try {
+      localStorage.setItem('invalidCrossOriginDomain', 'true')
+    } catch (err) {
+      console.log('Was not able to read invalid Domain messaging', err)
+    }
   }
 }
 
-const waitForToken = async (win, clientUrl): Promise<string> => {
-  return new Promise((resolve) => {
-    win.postMessage(
-      JSON.stringify({
-        key: `${stateNamespaceKey}.AuthState.authUser`,
-        method: 'get'
-      }),
-      clientUrl
-    )
-    const getIframeResponse = function (e) {
-      if (e.origin !== clientUrl) return
-      if (e?.data) {
+const waitForToken = (win: Window, clientUrl: string): Promise<string> => {
+  return communicator
+    .sendMessage('get', {
+      key: `${stateNamespaceKey}.AuthState.authUser`
+    })
+    .then((response) => {
+      if (response.success) {
         try {
-          const value = JSON.parse(e.data)
-          if (value?.accessToken != null) {
-            window.removeEventListener('message', getIframeResponse)
-            resolve(value?.accessToken)
+          const data = JSON.parse(response.data) //this is cookie data(e.data.data) so it's a string
+          if (data?.accessToken != null) {
+            return data?.accessToken
           }
+          return ''
         } catch {
-          resolve('')
+          return '' // Failed to parse token from cookie
         }
-      } else resolve(e)
-    }
-    window.addEventListener('message', getIframeResponse)
-  })
+      } else {
+        return '' // didn't get data but can't guarantee
+      }
+    })
+    .catch((message) => {
+      if (message instanceof SyntaxError) {
+        throw message
+      }
+      invalidDomainHandling(message)
+      return message
+    })
 }
 
 const getToken = async (): Promise<string> => {
-  let gotResponse = false
-  const iframe = document.getElementById('root-cookie-accessor') as HTMLFrameElement
   let win
   try {
     win = iframe!.contentWindow
@@ -170,46 +128,20 @@ const getToken = async (): Promise<string> => {
     win = iframe!.contentWindow
   }
 
-  window.addEventListener('message', (e) => {
-    if (e?.data) {
-      try {
-        const value = JSON.parse(e.data)
-        if (value?.invalidDomain != null) {
-          localStorage.setItem('invalidCrossOriginDomain', 'true')
-        }
-      } catch (err) {
-        console.log('ERROR MESSAGE', err)
-        //
-      }
-    }
-  })
-
   const clientUrl = config.client.clientUrl
-  let iteration = 0
-  const hasAccess = (await new Promise((resolve) => {
-    const checkAccessInterval = setInterval(() => {
-      if (iteration > 4) {
-        clearInterval(checkAccessInterval)
-        resolve({ cookieSet: false, hasStorageAccess: false })
-      }
-      if (!gotResponse) {
-        iteration++
-        win.postMessage(JSON.stringify({ method: 'checkAccess' }), clientUrl)
-      } else clearInterval(checkAccessInterval)
-    }, 100)
-    const hasAccessListener = async function (e) {
-      gotResponse = true
-      window.removeEventListener('message', hasAccessListener)
-      if (!e.data) resolve({ hasStorageAccess: false, cookieSet: false })
-      const data = JSON.parse(e.data)
-      if (data.skipCrossOriginCookieCheck != null || data.storageAccessPermission === 'denied')
+  const hasAccess = (await communicator
+    .sendMessage('checkAccess')
+    .then((message) => {
+      if (message?.data?.skipCrossOriginCookieCheck === true || message?.data?.storageAccessPermission === 'denied')
         localStorage.setItem('skipCrossOriginCookieCheck', 'true')
-      resolve(data)
-    }
-    window.addEventListener('message', hasAccessListener)
-  })) as HasAccessType
+      return message.data
+    })
+    .catch((message) => {
+      invalidDomainHandling(message)
+      return {}
+    })) as HasAccessType
 
-  if (!hasAccess.cookieSet || !hasAccess.hasStorageAccess) {
+  if (!hasAccess?.cookieSet || !hasAccess?.hasStorageAccess) {
     const skipCheck = localStorage.getItem('skipCrossOriginCookieCheck')
     const invalidCrossOriginDomain = localStorage.getItem('invalidCrossOriginDomain')
     if (skipCheck === 'true' || invalidCrossOriginDomain === 'true') {
@@ -218,22 +150,28 @@ const getToken = async (): Promise<string> => {
       return Promise.resolve(accessToken?.length > 0 ? accessToken : '')
     } else {
       iframe.style.display = 'block'
-      return await new Promise((resolve) => {
+      iframe.style.visibility = 'visible'
+      return new Promise((resolve) => {
         const clickResponseListener = async function (e) {
+          if (e.origin !== config.client.clientUrl || e.source !== iframe.contentWindow) return
           try {
-            window.removeEventListener('message', clickResponseListener)
-            const parsed = !e.data ? {} : JSON.parse(e.data)
-            if (parsed.skipCrossOriginCookieCheck != null) {
-              localStorage.setItem('skipCrossOriginCookieCheck', parsed.skipCrossOriginCookieCheck)
+            const data = e?.data?.data
+            if (data.skipCrossOriginCookieCheck === true || data.storageAccessPermission === 'denied') {
+              localStorage.setItem('skipCrossOriginCookieCheck', 'true')
               iframe.style.display = 'none'
+              iframe.style.visibility = 'hidden'
               resolve('')
             } else {
-              const token = await waitForToken(win, clientUrl)
+              const token = waitForToken(win, clientUrl)
               iframe.style.display = 'none'
+              iframe.style.visibility = 'hidden'
               resolve(token)
             }
           } catch (err) {
             //Do nothing
+            resolve('')
+          } finally {
+            window.removeEventListener('message', clickResponseListener)
           }
         }
         window.addEventListener('message', clickResponseListener)
@@ -247,7 +185,6 @@ const getToken = async (): Promise<string> => {
 export const AuthState = defineState({
   name: 'AuthState',
   initial: () => ({
-    isLoggedIn: false,
     isProcessing: false,
     error: '',
     authUser: AuthUserSeed,
@@ -278,7 +215,7 @@ export interface LinkedInLoginForm {
   email: string
 }
 
-export const writeAuthUserToIframe = () => {
+export const writeAuthUserToIframe = async () => {
   if (localStorage.getItem('skipCrossOriginCookieCheck') === 'true') return
   const iframe = document.getElementById('root-cookie-accessor') as HTMLFrameElement
   let win
@@ -288,14 +225,14 @@ export const writeAuthUserToIframe = () => {
     win = iframe!.contentWindow
   }
 
-  win.postMessage(
-    JSON.stringify({
+  await communicator
+    .sendMessage('set', {
       key: `${stateNamespaceKey}.${AuthState.name}.authUser`,
-      method: 'set',
       data: getState(AuthState).authUser
-    }),
-    config.client.clientUrl
-  )
+    })
+    .catch((message) => {
+      invalidDomainHandling(message)
+    })
 }
 
 /**
@@ -325,11 +262,16 @@ export const AuthService = {
     if (location.pathname.startsWith('/auth')) return
     const authState = getMutableState(AuthState)
     try {
-      const rootDomainToken = await getToken()
+      const rootDomainToken = config.client.rootDomainEnabled
+        ? await getToken()
+        : forceClientAuthReset
+        ? undefined
+        : authState?.authUser?.accessToken?.value
 
       if (forceClientAuthReset) await API.instance.authentication.reset()
 
-      if (rootDomainToken?.length > 0) await API.instance.authentication.setAccessToken(rootDomainToken as string)
+      if (rootDomainToken && rootDomainToken.length > 0)
+        await API.instance.authentication.setAccessToken(rootDomainToken as string)
       else await _resetToGuestToken({ reset: false })
 
       let res: AuthenticationResult
@@ -339,9 +281,10 @@ export const AuthService = {
         if (
           err.className === 'not-found' ||
           (err.className === 'not-authenticated' && err.message === 'jwt expired') ||
-          (err.className === 'not-authenticated' && err.message === 'invalid algorithm')
+          (err.className === 'not-authenticated' && err.message === 'invalid algorithm') ||
+          (err.className === 'not-authenticated' && err.message === 'invalid signature')
         ) {
-          authState.merge({ isLoggedIn: false, user: UserSeed, authUser: AuthUserSeed })
+          authState.merge({ user: UserSeed, authUser: AuthUserSeed })
           await _resetToGuestToken()
           res = await API.instance.reAuthenticate()
         } else {
@@ -353,7 +296,7 @@ export const AuthService = {
         const identityProvider = res[identityProviderPath] as IdentityProviderType
         // Response received form reAuthenticate(), but no `id` set.
         if (!identityProvider?.id) {
-          authState.merge({ isLoggedIn: false, user: UserSeed, authUser: AuthUserSeed })
+          authState.merge({ user: UserSeed, authUser: AuthUserSeed })
           await _resetToGuestToken()
           res = await API.instance.reAuthenticate()
         }
@@ -367,7 +310,7 @@ export const AuthService = {
       }
     } catch (err) {
       logger.error(err, 'Error on resolving auth user in doLoginAuto, logging out')
-      authState.merge({ isLoggedIn: false, user: UserSeed, authUser: AuthUserSeed })
+      authState.merge({ user: UserSeed, authUser: AuthUserSeed })
       writeAuthUserToIframe()
 
       // if (window.location.pathname !== '/') {
@@ -380,20 +323,10 @@ export const AuthService = {
     try {
       const client = API.instance
       const user = await client.service(userPath).get(userId)
-      if (!user.userSetting) {
-        const settingsRes = (await client
-          .service(userSettingPath)
-          .find({ query: { userId: userId } })) as Paginated<UserSettingType>
-
-        if (settingsRes.total === 0) {
-          user.userSetting = await client.service(userSettingPath).create({ userId: userId })
-        } else {
-          user.userSetting = settingsRes.data[0]
-        }
-      }
-      getMutableState(AuthState).merge({ isLoggedIn: true, user })
+      getMutableState(AuthState).merge({ user })
     } catch (err) {
       NotificationService.dispatchNotify(i18n.t('common:error.loading-error').toString(), { variant: 'error' })
+      console.error(err)
     }
   },
 
@@ -479,7 +412,7 @@ export const AuthService = {
   //     walletUser.id = oldId
 
   //     // loadXRAvatarForUpdatedUser(walletUser)
-  //     authState.merge({ isLoggedIn: true, user: walletUser, authUser })
+  //     authState.merge({  user: walletUser, authUser })
   //   } catch (err) {
   //     authState.merge({ error: i18n.t('common:error.login-error') })
   //     NotificationService.dispatchNotify(err.message, { variant: 'error' })
@@ -491,10 +424,10 @@ export const AuthService = {
   /**
    * Logs in the current user based on an OAuth response.
    */
-  async loginUserByOAuth(service: string, location: any) {
+  async loginUserByOAuth(service: string, location: any, isSignUp: boolean, redirectUrl?: string) {
     getMutableState(AuthState).merge({ isProcessing: true, error: '' })
     const token = getState(AuthState).authUser.accessToken
-    const path = new URLSearchParams(location.search).get('redirectUrl') || location.pathname
+    const path = redirectUrl || new URLSearchParams(location.search).get('redirectUrl') || location.pathname
 
     const redirectConfig = {
       path
@@ -506,10 +439,13 @@ export const AuthService = {
 
     if (instanceId) redirectConfig.instanceId = instanceId
     if (domain) redirectConfig.domain = domain
+    const action = isSignUp == false ? 'signin' : 'signup'
 
     window.location.href = `${
       config.client.serverUrl
-    }/oauth/${service}?feathers_token=${token}&redirect=${JSON.stringify(redirectConfig)}`
+    }/oauth/${service}?feathers_token=${token}&redirect=${JSON.stringify(redirectConfig)}&action=${encodeURIComponent(
+      action
+    )}`
   },
 
   async removeUserOAuth(service: string) {
@@ -595,20 +531,20 @@ export const AuthService = {
     authState.merge({ isProcessing: true, error: '' })
     try {
       await API.instance.logout()
-      authState.merge({ isLoggedIn: false, user: UserSeed, authUser: AuthUserSeed })
+      authState.merge({ user: UserSeed, authUser: AuthUserSeed })
     } catch (_) {
-      authState.merge({ isLoggedIn: false, user: UserSeed, authUser: AuthUserSeed })
+      authState.merge({ user: UserSeed, authUser: AuthUserSeed })
     } finally {
       authState.merge({ isProcessing: false, error: '' })
       writeAuthUserToIframe()
       await new Promise<void>((resolve) => {
         const clientUrl = config.client.clientUrl
         const getIframeResponse = function (e) {
-          if (e.origin !== clientUrl) return
-          if (e?.data) {
+          if (e.origin !== config.client.clientUrl || e.source !== iframe.contentWindow) return
+          if (e?.data?.data) {
             try {
-              const value = JSON.parse(e.data)
-              if (value?.cookieWasSet === `${stateNamespaceKey}.${AuthState.name}.authUser`) {
+              const data = e?.data?.data
+              if (data?.cookieWasSet === `${stateNamespaceKey}.${AuthState.name}.authUser`) {
                 window.removeEventListener('message', getIframeResponse)
                 resolve()
               }
@@ -710,7 +646,7 @@ export const AuthService = {
         sms: 'sms-sent-msg',
         default: 'success-msg'
       }
-      NotificationService.dispatchNotify(i18n.t(`user:auth.magiklink.${message[type ?? 'default']}`).toString(), {
+      NotificationService.dispatchNotify(i18n.t(`user:auth.magiclink.${message[type ?? 'default']}`).toString(), {
         variant: 'success'
       })
     } catch (err) {
@@ -718,6 +654,21 @@ export const AuthService = {
       throw new Error(err)
     } finally {
       authState.merge({ isProcessing: false, error: '' })
+    }
+  },
+
+  async validateUser(email: string): Promise<boolean> {
+    try {
+      const identityProviders = await API.instance.service(identityProviderPath).find({
+        query: {
+          email: email.toLowerCase(),
+          type: 'email'
+        }
+      })
+
+      return identityProviders.data.some((provider) => provider.email === email.toLowerCase())
+    } catch (error) {
+      return false
     }
   },
 
@@ -750,7 +701,7 @@ export const AuthService = {
         userId
       })) as IdentityProviderType
       if (identityProvider.userId) {
-        NotificationService.dispatchNotify(i18n.t('user:auth.magiklink.email-sent-msg').toString(), {
+        NotificationService.dispatchNotify(i18n.t('user:auth.magiclink.email-sent-msg').toString(), {
           variant: 'success'
         })
         return AuthService.loadUserData(identityProvider.userId)
@@ -778,7 +729,7 @@ export const AuthService = {
         userId
       })) as IdentityProviderType
       if (identityProvider.userId) {
-        NotificationService.dispatchNotify(i18n.t('user:auth.magiklink.sms-sent-msg').toString(), { variant: 'error' })
+        NotificationService.dispatchNotify(i18n.t('user:auth.magiclink.sms-sent-msg').toString(), { variant: 'error' })
         return AuthService.loadUserData(identityProvider.userId)
       }
     } catch (err) {
@@ -811,11 +762,6 @@ export const AuthService = {
     AuthService.loadUserData(userId)
   },
 
-  async updateUserSettings(id: UserSettingID, data: UserSettingPatch) {
-    const response = await API.instance.service(userSettingPath).patch(id, data)
-    getMutableState(AuthState).user.userSetting.merge(response)
-  },
-
   async removeUser(userId: UserID) {
     await API.instance.service(userPath).remove(userId)
     AuthService.logoutUser()
@@ -830,8 +776,6 @@ export const AuthService = {
     } else {
       apiKey = await API.instance.service(userApiKeyPath).create({})
     }
-
-    getMutableState(AuthState).user.merge({ apiKey })
   },
 
   async createLoginToken() {
@@ -915,15 +859,18 @@ function parseLoginDisplayCredential(credentials) {
 }
 
 export const useAuthenticated = () => {
-  const authState = useHookstate(getMutableState(AuthState))
+  const userID = useHookstate(getMutableState(AuthState).user.id).value
 
   useEffect(() => {
     AuthService.doLoginAuto()
+    return () => {
+      communicator.destroy()
+    }
   }, [])
 
   useEffect(() => {
-    HyperFlux.store.userID = authState.user.id.value
-  }, [authState.user.id])
+    getMutableState(EngineState).userID.set(userID)
+  }, [userID])
 
-  return authState.isLoggedIn.value
+  return userID !== ''
 }

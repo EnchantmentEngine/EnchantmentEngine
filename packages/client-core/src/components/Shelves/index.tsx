@@ -33,7 +33,7 @@ import IconButtonWithTooltip from '@ir-engine/ui/src/primitives/mui/IconButtonWi
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { AppState } from '../../common/services/AppService'
-import { clientContextParams } from '../../util/contextParams'
+import { clientContextParams } from '../../util/ClientContextState'
 import styles from './index.module.scss'
 
 const logger = multiLogger.child({ component: 'system:Shelves ', modifier: clientContextParams })
@@ -47,14 +47,14 @@ export const Shelves = () => {
 
   const handleShowMediaIcons = () => {
     appState.showTopShelf.set((prevValue) => {
-      logger.info({ event_name: 'header_show', event_value: !prevValue })
+      logger.info({ event_name: prevValue ? 'header_hide' : 'header_show', event_value: true })
       return !prevValue
     })
   }
 
   const handleShowBottomIcons = () => {
     appState.showBottomShelf.set((prevValue) => {
-      logger.info({ event_name: 'footer_show', event_value: !prevValue })
+      logger.info({ event_name: prevValue ? 'footer_hide' : 'footer_show', event_value: true })
       return !prevValue
     })
   }
@@ -62,24 +62,27 @@ export const Shelves = () => {
   return (
     <div style={{ pointerEvents: 'auto' }}>
       <IconButtonWithTooltip
-        className={`${showTopShelf ? styles.btn : styles.smBtn} ${showTopShelf ? styles.rotate : styles.rotateBack}`}
-        tooltipClassName={styles.topIcon}
+        type="solid"
         title={showTopShelf ? t('user:menu.hide') : t('user:menu.show')}
+        icon={<Icon type={showTopShelf ? 'KeyboardDoubleArrowUp' : 'KeyboardDoubleArrowDown'} />}
+        sizePx={50}
+        className={`${showTopShelf ? styles.rotate : styles.rotateBack}`}
+        tooltipClassName={styles.topIcon}
         onClick={handleShowMediaIcons}
         onPointerDown={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
         onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-        icon={<Icon type={showTopShelf ? 'KeyboardDoubleArrowUp' : 'KeyboardDoubleArrowDown'} />}
+        style={{ zIndex: 1000 }}
       />
       <IconButtonWithTooltip
-        className={`${showBottomShelf ? styles.btn : styles.smBtn} ${
-          showBottomShelf ? styles.rotate : styles.rotateBack
-        } `}
-        tooltipClassName={styles.bottomIcon}
+        type="solid"
         title={showBottomShelf ? t('user:menu.hide') : t('user:menu.show')}
+        icon={<Icon type={showBottomShelf ? 'KeyboardDoubleArrowDown' : 'KeyboardDoubleArrowUp'} />}
+        sizePx={50}
+        className={`${showBottomShelf ? styles.rotate : styles.rotateBack}`}
+        tooltipClassName={styles.bottomIcon}
         onClick={handleShowBottomIcons}
         onPointerDown={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
         onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-        icon={<Icon type={showBottomShelf ? 'KeyboardDoubleArrowDown' : 'KeyboardDoubleArrowUp'} />}
       />
     </div>
   )

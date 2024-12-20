@@ -399,7 +399,7 @@ export async function handleWebRtcTransportCreate(
 
     getMutableState(MediasoupTransportObjectsState)[newTransport.id].set(newTransport)
 
-    let { id, iceParameters, iceCandidates, dtlsParameters } = newTransport
+    const { id, iceParameters, iceCandidates, dtlsParameters } = newTransport
 
     const instanceServerSettingsResponse = await API.instance.service(instanceServerSettingPath).find()
     const webRTCSettings = instanceServerSettingsResponse.data[0].webRTCSettings
@@ -793,14 +793,6 @@ export async function handleRequestProducer(
 
     logger.info(`New Producer: peerID "${peerID}", Media stream "${appData.mediaTag}"`)
 
-    if (userId && network.peers[peerID]) {
-      network.peers[peerID]!.media![appData.mediaTag!] = {
-        paused,
-        producerId: producer.id,
-        globalMute: false,
-        encodings: (rtpParameters as any).encodings
-      }
-    }
     dispatchAction(
       MediasoupMediaProducerActions.producerCreated({
         requestID,

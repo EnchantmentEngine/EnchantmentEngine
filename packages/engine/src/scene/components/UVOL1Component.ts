@@ -58,14 +58,15 @@ import { useVideoFrameCallback } from '@ir-engine/spatial/src/common/functions/u
 import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { CORTOLoader } from '../../assets/loaders/corto/CORTOLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { AudioState } from '../../audio/AudioState'
+import { handleAutoplay, LegacyVolumetricComponent } from './LegacyVolumetricComponent'
 import { MediaElementComponent } from './MediaComponent'
 import { ShadowComponent } from './ShadowComponent'
 import { UVOLDissolveComponent } from './UVOLDissolveComponent'
-import { handleAutoplay, VolumetricComponent } from './VolumetricComponent'
 
 const decodeCorto = (url: string, start: number, end: number) => {
   return new Promise<BufferGeometry | null>((res, rej) => {
@@ -94,15 +95,30 @@ interface ManifestSchema {
 export const UVOL1Component = defineComponent({
   name: 'UVOL1Component',
 
-  onInit: (entity) => {
-    return {
-      manifestPath: '',
-      data: {} as ManifestSchema,
-      firstGeometryFrameLoaded: false,
-      loadingEffectStarted: false,
-      loadingEffectEnded: false
-    }
-  },
+  schema: S.Object({
+    manifestPath: S.String(''),
+    data: S.Object(
+      {
+        maxVertices: S.Number(),
+        maxTriangles: S.Number(),
+        frameData: S.Array(
+          S.Object({
+            frameNumber: S.Number(),
+            keyframeNumber: S.Number(),
+            startBytePosition: S.Number(),
+            vertices: S.Number(),
+            faces: S.Number(),
+            meshLength: S.Number()
+          })
+        ),
+        frameRate: S.Number()
+      },
+      {}
+    ),
+    firstGeometryFrameLoaded: S.Bool(false),
+    loadingEffectStarted: S.Bool(false),
+    loadingEffectEnded: S.Bool(false)
+  }),
 
   onSet: (entity, component, json) => {
     if (!json) return
@@ -119,7 +135,7 @@ export const UVOL1Component = defineComponent({
 
 function UVOL1Reactor() {
   const entity = useEntityContext()
-  const volumetric = useComponent(entity, VolumetricComponent)
+  const volumetric = useComponent(entity, LegacyVolumetricComponent)
   const component = useComponent(entity, UVOL1Component)
   const shadow = useOptionalComponent(entity, ShadowComponent)
   const videoElement = getMutableComponent(entity, MediaElementComponent).value

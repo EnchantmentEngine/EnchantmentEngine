@@ -41,10 +41,10 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { StyledEngineProvider } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import { NotificationService } from '../common/services/NotificationService'
-import { useLoadEngineWithScene, useNetwork } from '../components/World/EngineHooks'
+import { useNetwork } from '../components/World/EngineHooks'
 import { LocationService } from '../social/services/LocationService'
 import { LoadingUISystemState } from '../systems/LoadingUISystem'
-import { clientContextParams } from '../util/contextParams'
+import { clientContextParams } from '../util/ClientContextState'
 
 const logger = multiLogger.child({ component: 'system:location', modifier: clientContextParams })
 
@@ -68,10 +68,9 @@ const LocationPage = ({ online }: Props) => {
   AuthService.useAPIListeners()
   LocationService.useLocationBanListeners()
 
-  useLoadEngineWithScene()
-
   useEffect(() => {
-    if (ready.value) logger.info({ event_name: 'enter_location' })
+    if (!ready.value) return
+    logger.info({ event_name: 'enter_location' })
     return () => logger.info({ event_name: 'exit_location' })
   }, [ready.value])
 

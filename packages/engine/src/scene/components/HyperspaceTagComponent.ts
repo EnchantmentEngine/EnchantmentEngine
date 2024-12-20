@@ -58,15 +58,22 @@ import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { ObjectDirection } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
+import {
+  createTransitionState,
+  TransitionStateSchema
+} from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { addObjectToGroup, GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { destroyEntityTree, EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import {
+  EntityTreeComponent,
+  removeEntityNodeRecursively
+} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
@@ -168,13 +175,11 @@ class PortalEffect extends Object3D {
 export const HyperspaceTagComponent = defineComponent({
   name: 'HyperspaceTagComponent',
 
-  onInit(entity) {
-    return {
-      // all internals
-      sceneVisible: true,
-      transition: createTransitionState(0.5, 'OUT')
-    }
-  },
+  schema: S.Object({
+    // all internals
+    sceneVisible: S.Bool(true),
+    transition: TransitionStateSchema(createTransitionState(0.5, 'OUT'))
+  }),
 
   reactor: () => {
     const entity = useEntityContext()
@@ -220,7 +225,7 @@ export const HyperspaceTagComponent = defineComponent({
 
       return () => {
         removeEntity(ambientLightEntity)
-        destroyEntityTree(hyperspaceEffectEntity)
+        removeEntityNodeRecursively(hyperspaceEffectEntity)
       }
     }, [])
 

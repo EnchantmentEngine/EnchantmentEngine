@@ -39,6 +39,8 @@ import {
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, ColorRepresentation, MeshBasicMaterial, PointLight } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
+import { assertColor } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
 import { LightHelperComponent } from '../../../common/debug/LightHelperComponent'
 import { destroySpatialEngine } from '../../../initializeEngine'
@@ -68,11 +70,11 @@ const PointLightComponentDefaults: PointLightComponentData = {
   castShadow: false,
   shadowBias: 0.5,
   shadowRadius: 1,
-  helperEntity: null as Entity | null
+  helperEntity: UndefinedEntity
 }
 
 function assertPointLightComponentEq(A: PointLightComponentData, B: PointLightComponentData): void {
-  assert.equal(A.color, B.color)
+  assertColor.eq(A.color, B.color)
   assert.equal(A.intensity, B.intensity)
   assert.equal(A.range, B.range)
   assert.equal(A.decay, B.decay)
@@ -83,7 +85,7 @@ function assertPointLightComponentEq(A: PointLightComponentData, B: PointLightCo
 }
 
 function assertPointLightComponentNotEq(A: PointLightComponentData, B: PointLightComponentData): void {
-  assert.notEqual(A.color, B.color)
+  assertColor.notEq(A.color, B.color)
   assert.notEqual(A.intensity, B.intensity)
   assert.notEqual(A.range, B.range)
   assert.notEqual(A.decay, B.decay)
@@ -163,27 +165,6 @@ describe('PointLightComponent', () => {
       assertPointLightComponentNotEq(result, PointLightComponentDefaults)
       assertPointLightComponentEq(result, Expected)
     })
-
-    it('should not change the values of an initialized PointLightComponent when the data passed had incorrect types', () => {
-      const before = getComponent(testEntity, PointLightComponent)
-      assertPointLightComponentEq(before, PointLightComponentDefaults)
-      const Incorrect = {
-        color: false,
-        intensity: 'someIntensity',
-        range: 'someRange',
-        decay: 'someDecay',
-        castShadow: 'someCastShadow',
-        shadowBias: 'someShadowBias',
-        shadowRadius: 'someShadowRadius',
-        helperEntity: 'someHelperEntity'
-      }
-
-      // Run and Check the result
-      // @ts-ignore Allow coercing incorrect types into onSet
-      setComponent(testEntity, PointLightComponent, Incorrect)
-      const result = getComponent(testEntity, PointLightComponent)
-      assertPointLightComponentEq(result, PointLightComponentDefaults)
-    })
   }) //:: onSet
 
   describe('toJSON', () => {
@@ -251,12 +232,12 @@ describe('PointLightComponent', () => {
 
       // Sanity check before running
       const before = getComponent(testEntity, PointLightComponent).color
-      assert.equal(before, PointLightComponentDefaults.color)
+      assertColor.eq(before, PointLightComponentDefaults.color)
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { color: Expected })
       const result = getComponent(testEntity, PointLightComponent).color
-      assert.equal(result, Expected)
+      assertColor.eq(result, Expected)
       // Check side-effect
       const light = getComponent(testEntity, GroupComponent)[0] as PointLight
       assert.equal(light.color.getHex(), Expected)
@@ -446,4 +427,4 @@ describe('PointLightComponent', () => {
       assert.equal(hasComponent(testEntity, LightHelperComponent), Initial)
     })
   }) //:: reactor
-})
+}) //:: PointLightComponent

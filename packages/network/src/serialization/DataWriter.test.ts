@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { strictEqual } from 'assert'
 import { Quaternion, Vector3 } from 'three'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
@@ -44,7 +45,7 @@ import {
 
 import { createMockNetwork } from '../../tests/createMockNetwork'
 import { roundNumberToPlaces } from '../../tests/MathTestUtils'
-import { Network } from '../Network'
+import { Network, NetworkTopics } from '../Network'
 import { NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
 import { NetworkState } from '../NetworkState'
 import { readCompressedRotation, readCompressedVector3 } from './DataReader'
@@ -62,7 +63,7 @@ import { createViewCursor, readFloat64, readUint32, readUint8, sliceViewCursor }
 describe('DataWriter', () => {
   beforeEach(() => {
     createEngine()
-    createMockNetwork()
+    createMockNetwork(NetworkTopics.world, 'host peer id' as PeerID, 'host user id' as UserID)
     getMutableState(NetworkState).networkSchema[TransformSerialization.ID].set({
       read: TransformSerialization.readTransform,
       write: TransformSerialization.writeTransform
@@ -363,8 +364,9 @@ describe('DataWriter', () => {
     const writeView = createViewCursor()
     const entity = createEntity()
     const networkId = 999 as NetworkId
-    const userId = '0' as UserID
-    const peerID = 'peer id' as PeerID
+    const network = NetworkState.worldNetwork as Network
+    const userID = network.hostUserID!
+    const peerID = network.hostPeerID!
     const ownerIndex = 0
 
     // construct values for a valid quaternion
@@ -384,7 +386,7 @@ describe('DataWriter', () => {
       networkId,
       ownerPeer: peerID,
       authorityPeerID: peerID,
-      ownerId: userId
+      ownerId: userID
     })
 
     NetworkObjectComponent.networkId[entity] = networkId
@@ -433,7 +435,6 @@ describe('DataWriter', () => {
 
   it('should writeEntities', () => {
     const writeView = createViewCursor()
-    const peerID = Engine.instance.store.peerID
 
     const n = 5
     const entities: Entity[] = Array(n)
@@ -448,14 +449,10 @@ describe('DataWriter', () => {
     const [rotX, rotY, rotZ, rotW] = [a, b, c, d]
 
     const network = NetworkState.worldNetwork as Network
+    const userID = network.hostUserID!
+    const peerID = network.hostPeerID!
 
-    const userID = 'userId' as unknown as UserID & PeerID
-    const userIndex = 0
     const peerIndex = 0
-    network.peerIDToPeerIndex[peerID] = peerIndex
-    network.peerIndexToPeerID[peerIndex] = peerID
-    network.userIDToUserIndex[userID] = userIndex
-    network.userIndexToUserID[userIndex] = userID
 
     entities.forEach((entity) => {
       const networkId = entity as unknown as NetworkId
@@ -468,7 +465,7 @@ describe('DataWriter', () => {
       setComponent(entity, NetworkObjectComponent, {
         networkId,
         ownerPeer: peerID,
-        authorityPeerID: userID,
+        authorityPeerID: peerID,
         ownerId: userID
       })
     })
@@ -544,12 +541,9 @@ describe('DataWriter', () => {
     const network = NetworkState.worldNetwork as Network
 
     const userID = 'userId' as unknown as UserID & PeerID
-    const userIndex = 0
     const peerIndex = 0
     network.peerIDToPeerIndex[peerID] = peerIndex
     network.peerIndexToPeerID[peerIndex] = peerID
-    network.userIDToUserIndex[userID] = userIndex
-    network.userIndexToUserID[userIndex] = userID
 
     entities.forEach((entity) => {
       const networkId = entity as unknown as NetworkId

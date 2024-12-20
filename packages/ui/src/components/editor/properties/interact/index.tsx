@@ -36,22 +36,22 @@ import {
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import {
   InteractableComponent,
   XRUIActivationType
 } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
-import { useState } from '@ir-engine/hyperflux'
+import { useHookstate } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { Checkbox } from '@ir-engine/ui'
 import Button from '../../../../primitives/tailwind/Button'
-import BooleanInput from '../../input/Boolean'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
-import NodeEditor from '../nodeEditor'
 
 type OptionsType = Array<{
   callbacks: Array<{
@@ -64,7 +64,7 @@ type OptionsType = Array<{
 
 export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
-  const targets = useState<OptionsType>([
+  const targets = useHookstate<OptionsType>([
     { label: 'Self', value: getComponent(props.entity, UUIDComponent), callbacks: [] }
   ])
   const callbackQuery = useQuery([CallbackComponent])
@@ -106,7 +106,7 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       })
     }
     targets.set(options)
-  }, [callbackQuery])
+  }, [JSON.stringify(callbackQuery)])
 
   const updateLabel = (value: string) => {
     commitProperty(InteractableComponent, 'label')(value)
@@ -138,7 +138,7 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       {...props}
       name={t('editor:properties.interactable.name')}
       description={t('editor:properties.interactable.description')}
-      icon={<InteractableComponentNodeEditor.iconComponent />}
+      Icon={InteractableComponentNodeEditor.iconComponent}
     >
       <InputGroup name="Label" label={t('editor:properties.interactable.lbl-label')}>
         <StringInput
@@ -161,7 +161,11 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
 
       {interactableComponent.uiActivationType.value == XRUIActivationType.proximity && (
-        <InputGroup name="ActivationDistance" label={t('editor:properties.interactable.lbl-activationDistance')}>
+        <InputGroup
+          name="ActivationDistance"
+          label={t('editor:properties.interactable.lbl-UIactivationDistance')}
+          info={t('editor:properties.interactable.info-UIactivationDistance')}
+        >
           <NumericInput
             value={interactableComponent.activationDistance.value}
             onChange={updateProperty(InteractableComponent, 'activationDistance')}
@@ -176,8 +180,8 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
           label={t('editor:properties.interactable.lbl-clickInteract')}
           info={t('editor:properties.interactable.info-clickInteract')}
         >
-          <BooleanInput
-            value={interactableComponent.clickInteract.value}
+          <Checkbox
+            checked={interactableComponent.clickInteract.value}
             onChange={commitProperty(InteractableComponent, 'clickInteract')}
           />
         </InputGroup>

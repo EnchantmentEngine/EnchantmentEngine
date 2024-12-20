@@ -28,14 +28,25 @@ import { useTranslation } from 'react-i18next'
 import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 
 import { useFind } from '@ir-engine/common'
-import { taskServerSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
+import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { Input } from '@ir-engine/ui'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 
 const TaskServerTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefObject<HTMLDivElement>) => {
   const { t } = useTranslation()
 
-  const settingTaskServer = useFind(taskServerSettingPath).data
+  const settingTaskServer = useFind(engineSettingPath, {
+    query: {
+      category: 'task-server',
+      paginate: false
+    }
+  }).data
+
+  const ports = settingTaskServer.filter((el) => el.key === EngineSettings.TaskServer.Port).map((el) => el.value)
+  const processIntervals = settingTaskServer
+    .filter((el) => el.key === EngineSettings.TaskServer.ProcessInterval)
+    .map((el) => el.value)
 
   return (
     <Accordion
@@ -48,16 +59,22 @@ const TaskServerTab = forwardRef(({ open }: { open: boolean }, ref: React.Mutabl
     >
       <div className="mt-6 grid grid-cols-2 gap-6">
         <Input
-          className="col-span-1"
-          label={t('admin:components.setting.taskServer.port')}
-          value={settingTaskServer.map((el) => el.port).join(', ')}
+          fullWidth
+          labelProps={{
+            text: t('admin:components.setting.taskServer.port'),
+            position: 'top'
+          }}
+          value={ports.join(', ')}
           disabled
         />
 
         <Input
-          className="col-span-1"
-          label={t('admin:components.setting.taskServer.processInterval')}
-          value={settingTaskServer.map((el) => el.processInterval).join(', ')}
+          fullWidth
+          labelProps={{
+            text: t('admin:components.setting.taskServer.processInterval'),
+            position: 'top'
+          }}
+          value={processIntervals.join(', ')}
           disabled
         />
       </div>

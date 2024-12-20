@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import {
   Camera,
-  ColorRepresentation,
   DirectionalLight,
   DirectionalLightHelper,
   HemisphereLight,
@@ -38,10 +37,11 @@ import {
   SpotLightHelper
 } from 'three'
 
-import { defineComponent, Entity, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { matchesColor } from '@ir-engine/spatial/src/common/functions/MatchesUtils'
+import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useDisposable } from '../../resources/resourceHooks'
+import { T } from '../../schema/schemaFunctions'
 import { useHelperEntity } from './DebugComponentUtils'
 
 const getLightHelperType = (light: Light) => {
@@ -54,25 +54,13 @@ const getLightHelperType = (light: Light) => {
 export const LightHelperComponent = defineComponent({
   name: 'LightHelperComponent',
 
-  onInit: (entity) => {
-    return {
-      name: 'light-helper',
-      light: undefined! as Light,
-      size: 1,
-      color: undefined as undefined | ColorRepresentation,
-      entity: undefined as undefined | Entity
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-
-    if (!json.light || !json.light.isLight) throw new Error('LightHelperComponent: Valid Light required')
-    component.light.set(json.light)
-    if (typeof json.name === 'string') component.name.set(json.name)
-    if (typeof json.size === 'number') component.size.set(json.size)
-    if (matchesColor.test(json.color)) component.color.set(json.color)
-  },
+  schema: S.Object({
+    name: S.String('light-helper'),
+    light: S.Required(S.Type<Light>()),
+    size: S.Number(1),
+    color: S.Optional(T.Color()),
+    entity: S.Optional(S.Entity())
+  }),
 
   reactor: function () {
     const entity = useEntityContext()

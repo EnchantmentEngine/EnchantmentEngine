@@ -31,8 +31,8 @@ import { PopoverState } from '@ir-engine/client-core/src/common/services/Popover
 import { useFind, useSearch } from '@ir-engine/common'
 import { invitePath, InviteType, UserName } from '@ir-engine/common/src/schema.type.module'
 import { State } from '@ir-engine/hyperflux'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Checkbox from '@ir-engine/ui/src/primitives/tailwind/Checkbox'
+import { Button, Checkbox } from '@ir-engine/ui'
+import { validate as isValidUUID } from 'uuid'
 
 import { inviteColumns, InviteRowType } from '../../common/constants/invite'
 import DataTable from '../../common/Table'
@@ -62,14 +62,13 @@ export default function InviteTable({
     {
       $or: [
         {
-          userId: {
-            $like: '%' + search + '%'
-          }
+          id: isValidUUID(search) ? search : undefined
         },
         {
-          inviteeId: {
-            $like: '%' + search + '%'
-          }
+          userId: isValidUUID(search) ? search : undefined
+        },
+        {
+          inviteeId: isValidUUID(search) ? search : undefined
         },
         {
           inviteType: {
@@ -90,7 +89,7 @@ export default function InviteTable({
     rows.map((row) => ({
       select: (
         <Checkbox
-          value={selectedInvites.value.findIndex((invite) => invite.id === row.id) !== -1}
+          checked={selectedInvites.value.findIndex((invite) => invite.id === row.id) !== -1}
           onChange={(value) => {
             if (value) selectedInvites.merge([row])
             else selectedInvites.set((prevInvites) => prevInvites.filter((invite) => invite.id !== row.id))
@@ -107,30 +106,29 @@ export default function InviteTable({
       action: (
         <div className="flex items-center gap-3">
           <Button
-            size="small"
+            size="sm"
             variant="primary"
             onClick={() => PopoverState.showPopupover(<AddEditInviteModal invite={row} />)}
           >
             {t('admin:components:invite.update')}
           </Button>
-          <Button
-            variant="outline"
-            startIcon={<HiTrash className="place-self-center text-theme-iconRed" />}
-            onClick={() => PopoverState.showPopupover(<RemoveInviteModal invites={[row]} />)}
-          />
+          <Button variant="tertiary" onClick={() => PopoverState.showPopupover(<RemoveInviteModal invites={[row]} />)}>
+            <HiTrash className="text-theme-iconRed" />
+          </Button>
         </div>
       )
     }))
 
   return (
     <DataTable
+      size="xl"
       query={adminInviteQuery}
       columns={[
         {
           id: 'select',
           label: (
             <Checkbox
-              value={selectedInvites.length === adminInviteQuery.data.length}
+              checked={selectedInvites.length === adminInviteQuery.data.length}
               onChange={(value) => {
                 if (value) selectedInvites.set(adminInviteQuery.data.slice())
                 else selectedInvites.set([])

@@ -27,7 +27,6 @@ import { useEffect } from 'react'
 import {
   BufferAttribute,
   BufferGeometry,
-  Color,
   DoubleSide,
   LineBasicMaterial,
   NormalBlending,
@@ -42,13 +41,17 @@ import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src
 import { useMutableState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
 import { useResource } from '../../resources/resourceHooks'
-import LogarithmicDepthBufferMaterialChunk from '../constants/LogarithmicDepthBufferMaterialChunk'
+import { T } from '../../schema/schemaFunctions'
 import { RendererState } from '../RendererState'
+import LogarithmicDepthBufferMaterialChunk from '../constants/LogarithmicDepthBufferMaterialChunk'
+import { ObjectLayerMasks } from '../constants/ObjectLayers'
 import { LineSegmentComponent } from './LineSegmentComponent'
 import { useMeshComponent } from './MeshComponent'
+import { ObjectLayerMaskComponent } from './ObjectLayerComponent'
 
 /**
  * Original Author: Fyrestar
@@ -129,30 +132,12 @@ void main() {
 
 export const InfiniteGridComponent = defineComponent({
   name: 'InfiniteGridComponent',
-  onInit(entity) {
-    return {
-      size: 1,
-      color: new Color(0x535353),
-      distance: 200
-    }
-  },
 
-  onSet(
-    entity,
-    component,
-    json: Partial<{
-      size: number
-      color: string | Color
-      distance: number
-    }>
-  ) {
-    if (!json) return
-
-    if (typeof json.size === 'number') component.size.set(json.size)
-    if (typeof json.color === 'string') component.color.set(new Color(json.color))
-    if (json.color instanceof Color) component.color.set(json.color)
-    if (typeof json.distance === 'number') component.distance.set(json.distance)
-  },
+  schema: S.Object({
+    size: S.Number(1),
+    color: T.Color(0x535353),
+    distance: S.Number(200)
+  }),
 
   reactor: () => {
     const entity = useEntityContext()
@@ -232,6 +217,7 @@ export const InfiniteGridComponent = defineComponent({
           material: lineMaterial
         })
         setComponent(lineEntity, EntityTreeComponent, { parentEntity: entity })
+        setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Gizmos)
         lineEntities.push(lineEntity)
       }
 
@@ -249,6 +235,7 @@ export const createInfiniteGridHelper = () => {
   setComponent(entity, EntityTreeComponent)
   setComponent(entity, InfiniteGridComponent)
   setComponent(entity, NameComponent, 'Infinite Grid Helper')
+  setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Gizmos)
   setVisibleComponent(entity, true)
   return entity
 }

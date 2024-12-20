@@ -70,8 +70,10 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
   if (context.arguments[1]?.token && context.path === 'project' && context.method === 'update') {
     const appId = config.authentication.oauth.github.appId ? parseInt(config.authentication.oauth.github.appId) : null
     const token = context.arguments[1].token
-    const algorithms = process.env.APP_ENV === 'development' ? 'HS256' : 'RS256'
-    const jwtDecoded = verify(token, config.authentication.secret, { algorithms: [algorithms] })! as JwtPayload
+    if (!config.authentication.oauth.github.privateKey) throw new NotAuthenticated('No GitHub private key configured')
+    const jwtDecoded = verify(token, config.authentication.oauth.github.privateKey, {
+      algorithms: ['RS256']
+    })! as JwtPayload
     if (jwtDecoded.iss == null || parseInt(jwtDecoded.iss) !== appId)
       throw new NotAuthenticated('Invalid app credentials')
     const octoKit = new Octokit({ auth: token })
@@ -89,7 +91,7 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
   }
 
   // Ignore whitelisted services & methods
-  const isWhitelisted = checkWhitelist(context)
+  const isWhitelisted = await checkWhitelist(context)
   if (isWhitelisted) {
     return next()
   }
@@ -136,12 +138,17 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
  * A method to check if the service requesting is whitelisted.
  * In that scenario we don't need to perform authentication check.
  */
-const checkWhitelist = (context: HookContext<Application>): boolean => {
+const checkWhitelist = async (context: HookContext<Application>): Promise<boolean> => {
   for (const item of config.authentication.whiteList) {
     if (typeof item === 'string' && context.path === item) {
       return true
-    } else if (typeof item === 'object' && context.path === item.path && item.methods.includes(context.method)) {
-      return true
+    } else if (typeof item === 'object' && context.path === item.path) {
+      if (Array.isArray(item.methods)) {
+        return item.methods.includes(context.method)
+      } else if (typeof item.methods === 'object' && typeof item.methods[context.method] === 'function') {
+        const func = item.methods[context.method]
+        return !!(await func(context))
+      }
     }
   }
 

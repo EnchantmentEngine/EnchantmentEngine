@@ -35,15 +35,16 @@ import { getState } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 import multiLogger from '@ir-engine/server-core/src/ServerLogger'
 
+import { Spark } from 'primus'
 import { InstanceServerState } from './InstanceServerState'
 import { authorizeUserToJoinServer, handleConnectingPeer, handleDisconnect } from './NetworkFunctions'
 import { getServerNetwork } from './SocketWebRTCServerFunctions'
 
 const logger = multiLogger.child({ component: 'instanceserver:spark' })
 
-const NON_READY_INTERVALS = 100 //100 tenths of a second, i.e. 10 seconds
+const NON_READY_INTERVALS = 10 * 1000 // 10 seconds
 
-export const setupSocketFunctions = async (app: Application, spark: any) => {
+export const setupSocketFunctions = async (app: Application, spark: Spark) => {
   let authTask: AuthTask | undefined
 
   /**
@@ -55,12 +56,12 @@ export const setupSocketFunctions = async (app: Application, spark: any) => {
   const ready = await new Promise<boolean>((resolve) => {
     let counter = 0
     const interval = setInterval(() => {
-      counter++
+      counter += 100
       if (getState(InstanceServerState).ready) {
         clearInterval(interval)
         resolve(true)
       }
-      if (counter > NON_READY_INTERVALS) {
+      if (counter >= NON_READY_INTERVALS) {
         clearInterval(interval)
         resolve(false)
       }
@@ -68,6 +69,7 @@ export const setupSocketFunctions = async (app: Application, spark: any) => {
   })
 
   if (!ready) {
+    /** We are not ready, so we can't accept any new connections. The client will try again. */
     app.primus.write({ instanceReady: false })
     return
   }
@@ -131,7 +133,7 @@ export const setupSocketFunctions = async (app: Application, spark: any) => {
        * @todo Check if the user is banned
        */
 
-      const connectionData = handleConnectingPeer(network, spark, peerID, user, data.inviteCode)
+      const connectionData = await handleConnectingPeer(network, spark, peerID, user, data.inviteCode)
 
       spark.write({
         ...connectionData,

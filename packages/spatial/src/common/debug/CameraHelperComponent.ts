@@ -25,28 +25,20 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Camera, CameraHelper } from 'three'
 
-import { defineComponent, Entity, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
 
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useDisposable } from '../../resources/resourceHooks'
 import { useHelperEntity } from './DebugComponentUtils'
 
 export const CameraHelperComponent = defineComponent({
   name: 'CameraHelperComponent',
 
-  onInit: (entity) => {
-    return {
-      name: 'camera-helper',
-      camera: null! as Camera,
-      entity: undefined as undefined | Entity
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-    if (!json.camera || !json.camera.isCamera) throw new Error('CameraHelperComponent: Valid Camera required')
-    component.camera.set(json.camera)
-    if (typeof json.name === 'string') component.name.set(json.name)
-  },
+  schema: S.Object({
+    name: S.String('camera-helper'),
+    camera: S.Required(S.Type<Camera>(null!)),
+    entity: S.Optional(S.Entity())
+  }),
 
   reactor: function () {
     const entity = useEntityContext()

@@ -60,13 +60,15 @@ export const ModalHeader = ({
   // sticky top-0 z-10 bg-theme-surface-main
   return (
     <div className="relative flex items-center justify-center border-b border-b-theme-primary px-6 py-5">
-      {title && <Text>{title}</Text>}
+      {title && <Text data-testid="modal-title-text">{title}</Text>}
       <Button
-        variant="outline"
+        variant="tertiary"
         className="absolute right-0 border-0 dark:bg-transparent dark:text-[#A3A3A3]"
-        startIcon={<MdClose />}
+        data-testid="modal-close-button"
         onClick={() => onClose && onClose(true)}
-      />
+      >
+        <MdClose />
+      </Button>
     </div>
   )
 }
@@ -97,7 +99,7 @@ export const ModalFooter = ({
     <div className="grid grid-flow-col border-t border-t-theme-primary px-6 py-5">
       {showCloseButton && (
         <Button
-          data-test-id={`${id}-close-button`}
+          data-testid="modal-cancel-button"
           variant="secondary"
           disabled={closeButtonDisabled}
           onClick={() => onCancel && onCancel(false)}
@@ -107,13 +109,13 @@ export const ModalFooter = ({
       )}
       {onSubmit && (
         <Button
-          data-test-id={`${id}-submit-button`}
-          endIcon={submitLoading ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
+          data-testid="modal-submit-button"
           disabled={submitButtonDisabled || submitLoading}
           onClick={onSubmit}
           className="place-self-end"
         >
           {submitButtonText || t('common:components.confirm')}
+          {submitLoading ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
         </Button>
       )}
     </div>
