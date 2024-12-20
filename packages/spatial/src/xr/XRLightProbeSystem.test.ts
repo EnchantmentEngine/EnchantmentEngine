@@ -68,8 +68,9 @@ describe('XRLightProbeSystem', () => {
 
   /** @todo */
   describe('reactor', () => {
+    // @todo When system mounting/unmounting is exposed
     describe('on mount', () => {
-      it.todo('should set XRLightProbeState.lightProbe.intensity to 0', () => {})
+      it.skip('should set XRLightProbeState.lightProbe.intensity to 0', () => {})
     }) //:: on mount
 
     describe('XRState.session', () => {

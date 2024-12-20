@@ -85,11 +85,12 @@ describe('XRDetectedMeshSystem', () => {
 
   /** @todo */
   describe('reactor', () => {
+    // @todo When system mounting/unmounting is exposed
     describe('cleanup', () => {
-      it.todo('should not do anything if XRState.session.value is falsy', () => {})
+      it.skip('should not do anything if XRState.session.value is falsy', () => {})
 
       // @todo Why is this setup not passing the expected checks ?
-      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {
+      it.skip('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {
         // Set the data as expected
         const Entities = [createEntity(), createEntity(), createEntity(), createEntity()] as Entity[]
         for (const entity of Entities) {
@@ -106,11 +107,11 @@ describe('XRDetectedMeshSystem', () => {
         }
       })
 
-      it.todo('should call XRDetectedPlaneComponent.detectedPlanesMap.clear()', () => {})
-      it.todo('should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()', () => {})
-      it.todo('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap', () => {})
-      it.todo('should call XRDetectedPlaneComponent.detectedMeshesMap.clear()', () => {})
-      it.todo('should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()', () => {})
+      it.skip('should call XRDetectedPlaneComponent.detectedPlanesMap.clear()', () => {})
+      it.skip('should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()', () => {})
+      it.skip('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap', () => {})
+      it.skip('should call XRDetectedPlaneComponent.detectedMeshesMap.clear()', () => {})
+      it.skip('should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()', () => {})
     }) //:: cleanup
   }) //:: reactor
 
