@@ -43,9 +43,9 @@ const updateSessionSupportForMode = (mode: XRSessionMode) => {
 }
 
 const updateSessionSupport = () => {
-  updateSessionSupportForMode('inline')
-  updateSessionSupportForMode('immersive-ar')
-  updateSessionSupportForMode('immersive-vr')
+  XRSystemFunctions.updateSessionSupportForMode('inline')
+  XRSystemFunctions.updateSessionSupportForMode('immersive-ar')
+  XRSystemFunctions.updateSessionSupportForMode('immersive-vr')
 }
 
 const xrSessionChangedQueue = defineActionQueue(XRAction.sessionChanged.matches)
@@ -56,11 +56,11 @@ const execute = () => {
 
 const reactor = () => {
   useEffect(() => {
-    navigator.xr?.addEventListener('devicechange', updateSessionSupport)
-    updateSessionSupport()
+    navigator.xr?.addEventListener('devicechange', XRSystemFunctions.updateSessionSupport)
+    XRSystemFunctions.updateSessionSupport()
 
     return () => {
-      navigator.xr?.removeEventListener('devicechange', updateSessionSupport)
+      navigator.xr?.removeEventListener('devicechange', XRSystemFunctions.updateSessionSupport)
     }
   }, [])
   return null
@@ -72,3 +72,9 @@ export const XRSystem = defineSystem({
   execute,
   reactor
 })
+
+/** @note Internal usage. Exported for unit tests. */
+export const XRSystemFunctions = {
+  updateSessionSupportForMode,
+  updateSessionSupport
+}
