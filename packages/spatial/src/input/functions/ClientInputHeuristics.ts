@@ -38,7 +38,6 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
 import { defineState, getState } from '@ir-engine/hyperflux'
 import { Object3D, Quaternion, Ray, Raycaster, Vector3 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
@@ -132,18 +131,16 @@ export function findProximity(
   if (closestEntities.length === 0) return
   if (closestEntities.length > 1) {
     //sort if more than 1 entry
-    closestEntities.sort((a, b) => {
-      //prioritize anything with an InteractableComponent if otherwise equal
-      const aNum = hasComponent(a.entity, InteractableComponent) ? -1 : 0
-      const bNum = hasComponent(b.entity, InteractableComponent) ? -1 : 0
-      //aNum - bNum : 0 if equal, -1 if a has tag and b doesn't, 1 if a doesnt have tag and b does
-      return Math.sign(a.distance - b.distance) + (aNum - bNum)
-    })
+    closestEntities.sort(sortDistance)
   }
   sortedIntersections.push({
     entity: closestEntities[0].entity,
     distance: Math.sqrt(closestEntities[0].distance)
   })
+}
+
+const sortDistance = (a: IntersectionData, b: IntersectionData) => {
+  return Math.sign(a.distance - b.distance)
 }
 
 const hitTarget = new Vector3()
