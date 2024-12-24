@@ -26,33 +26,39 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const ShadowMd = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const Chat = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 20 20"
+    viewBox="0 0 64 64"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
     <g clipPath="url(#prefix__a)">
+      <g clipPath="url(#prefix__b)">
+        <circle cx={32} cy={32} r={32} fill="#fff" />
+      </g>
       <path
-        stroke="#000"
+        stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.75}
-        d="M18.333 10H9.999m8.334 0c0-1.518-.406-2.94-1.115-4.166M18.333 10a8.3 8.3 0 0 1-1.115 4.167m-7.219 4.167a8.333 8.333 0 0 1 0-16.667m0 16.667v-4.167m0 4.167a8.33 8.33 0 0 0 7.219-4.167m-7.219-12.5v4.167m0-4.167a8.33 8.33 0 0 1 7.219 4.167M9.999 10V5.834M10 10v4.167m0-8.333h7.219m-7.219 8.333h7.219"
+        strokeWidth={2}
+        d="M27 28.5h5M27 32h8m-5.316 6H36.2c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C41 35.72 41 34.88 41 33.2v-5.4c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C38.72 23 37.88 23 36.2 23h-8.4c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C23 25.28 23 26.12 23 27.8v12.536c0 .532 0 .799.11.936a.5.5 0 0 0 .39.188c.176 0 .384-.167.8-.5l2.385-1.908c.488-.39.731-.585 1.003-.724q.362-.184.761-.267c.299-.061.61-.061 1.235-.061"
       />
     </g>
     <defs>
       <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h20v20H0z" />
+        <path fill="#fff" d="M0 0h64v64H0z" />
+      </clipPath>
+      <clipPath id="prefix__b">
+        <path fill="#fff" d="M0 0h64v64H0z" />
       </clipPath>
     </defs>
   </svg>
 )
-const ForwardRef = forwardRef(ShadowMd)
+const ForwardRef = forwardRef(Chat)
 export default ForwardRef

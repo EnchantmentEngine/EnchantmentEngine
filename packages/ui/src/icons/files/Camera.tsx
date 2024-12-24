@@ -26,33 +26,39 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const ShadowMd = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const Camera = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 20 20"
+    viewBox="0 0 64 64"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
     <g clipPath="url(#prefix__a)">
+      <g clipPath="url(#prefix__b)">
+        <circle cx={32} cy={32} r={32} fill="#fff" />
+      </g>
       <path
-        stroke="#000"
+        stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.75}
-        d="M18.333 10H9.999m8.334 0c0-1.518-.406-2.94-1.115-4.166M18.333 10a8.3 8.3 0 0 1-1.115 4.167m-7.219 4.167a8.333 8.333 0 0 1 0-16.667m0 16.667v-4.167m0 4.167a8.33 8.33 0 0 0 7.219-4.167m-7.219-12.5v4.167m0-4.167a8.33 8.33 0 0 1 7.219 4.167M9.999 10V5.834M10 10v4.167m0-8.333h7.219m-7.219 8.333h7.219"
+        d="M25 25a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h9a3 3 0 0 0 2.87-2.126M37 32l3.634-3.634c.429-.429.643-.643.827-.657a.5.5 0 0 1 .42.173c.119.14.119.444.119 1.05v6.137c0 .605 0 .908-.12 1.049a.5.5 0 0 1-.42.173c-.183-.014-.397-.228-.826-.657zm0 0v-2.2c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C34.72 25 33.88 25 32.2 25h-2.7M22 22l20 20"
       />
     </g>
     <defs>
       <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h20v20H0z" />
+        <path fill="#fff" d="M0 0h64v64H0z" />
+      </clipPath>
+      <clipPath id="prefix__b">
+        <path fill="#fff" d="M0 0h64v64H0z" />
       </clipPath>
     </defs>
   </svg>
 )
-const ForwardRef = forwardRef(ShadowMd)
+const ForwardRef = forwardRef(Camera)
 export default ForwardRef
