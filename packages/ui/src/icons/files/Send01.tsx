@@ -26,36 +26,26 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const Settings = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const Send01 = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 64 64"
+    viewBox="0 0 24 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <g clipPath="url(#prefix__b)">
-        <circle cx={32} cy={32} r={32} fill="#fff" />
-      </g>
-      <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}>
-        <path d="m29.395 39.371.585 1.315a2.212 2.212 0 0 0 4.044 0l.584-1.315a2.43 2.43 0 0 1 2.47-1.423l1.43.152a2.212 2.212 0 0 0 2.023-3.502l-.847-1.164a2.43 2.43 0 0 1-.46-1.434c0-.513.162-1.014.464-1.429l.847-1.163a2.21 2.21 0 0 0-.785-3.274 2.2 2.2 0 0 0-1.237-.228l-1.43.152a2.43 2.43 0 0 1-1.47-.312 2.42 2.42 0 0 1-1-1.117l-.59-1.315a2.212 2.212 0 0 0-4.044 0l-.584 1.315c-.207.468-.557.86-1 1.117-.445.256-.96.365-1.47.312l-1.434-.152a2.212 2.212 0 0 0-2.023 3.502l.847 1.163a2.43 2.43 0 0 1 0 2.858l-.847 1.163a2.21 2.21 0 0 0 .786 3.273c.381.195.811.274 1.237.23l1.43-.153a2.43 2.43 0 0 1 2.474 1.43" />
-        <path d="M32 35a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-      </g>
-    </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-      <clipPath id="prefix__b">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-    </defs>
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M10.5 13.5 21 3M10.627 13.828l2.628 6.758c.232.596.347.893.514.98a.5.5 0 0 0 .462 0c.167-.086.283-.384.515-.979L21.336 3.7c.21-.537.315-.805.258-.977a.5.5 0 0 0-.316-.316c-.172-.057-.44.048-.978.257L3.413 9.253c-.595.233-.893.349-.98.516a.5.5 0 0 0 0 .461c.087.167.385.283.98.515l6.759 2.628c.12.047.18.07.232.106a.5.5 0 0 1 .116.117c.037.051.06.111.107.232"
+    />
   </svg>
 )
-const ForwardRef = forwardRef(Settings)
+const ForwardRef = forwardRef(Send01)
 export default ForwardRef

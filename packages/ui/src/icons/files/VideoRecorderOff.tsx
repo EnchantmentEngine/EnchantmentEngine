@@ -26,39 +26,26 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const Chat = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const VideoRecorderOff = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 64 64"
+    viewBox="0 0 24 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <g clipPath="url(#prefix__b)">
-        <circle cx={32} cy={32} r={32} fill="#fff" />
-      </g>
-      <path
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M27 28.5h5M27 32h8m-5.316 6H36.2c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C41 35.72 41 34.88 41 33.2v-5.4c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C38.72 23 37.88 23 36.2 23h-8.4c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C23 25.28 23 26.12 23 27.8v12.536c0 .532 0 .799.11.936a.5.5 0 0 0 .39.188c.176 0 .384-.167.8-.5l2.385-1.908c.488-.39.731-.585 1.003-.724q.362-.184.761-.267c.299-.061.61-.061 1.235-.061"
-      />
-    </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-      <clipPath id="prefix__b">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-    </defs>
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      d="M5 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h9a3 3 0 0 0 2.87-2.125M17 12l3.634-3.634c.429-.429.643-.643.827-.657a.5.5 0 0 1 .42.173c.119.14.119.444.119 1.05v6.137c0 .605 0 .908-.12 1.049a.5.5 0 0 1-.42.173c-.183-.014-.397-.228-.826-.657zm0 0V9.8c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C14.72 5 13.88 5 12.2 5H9.5M2 2l20 20"
+    />
   </svg>
 )
-const ForwardRef = forwardRef(Chat)
+const ForwardRef = forwardRef(VideoRecorderOff)
 export default ForwardRef

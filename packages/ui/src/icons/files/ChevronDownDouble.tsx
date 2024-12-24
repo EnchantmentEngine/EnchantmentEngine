@@ -26,39 +26,26 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const Help = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const ChevronDownDouble = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 64 64"
+    viewBox="0 0 24 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <g clipPath="url(#prefix__b)">
-        <circle cx={32} cy={32} r={32} fill="#fff" />
-      </g>
-      <path
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M29.09 29a3 3 0 0 1 5.83 1c0 2-3 3-3 3m.08 4h.01M42 32c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10 10 4.477 10 10"
-      />
-    </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-      <clipPath id="prefix__b">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-    </defs>
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="m7 13 5 5 5-5M7 6l5 5 5-5"
+    />
   </svg>
 )
-const ForwardRef = forwardRef(Help)
+const ForwardRef = forwardRef(ChevronDownDouble)
 export default ForwardRef

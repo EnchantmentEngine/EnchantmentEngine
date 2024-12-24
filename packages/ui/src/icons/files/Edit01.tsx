@@ -26,33 +26,26 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const Alert = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const Edit01 = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 84 64"
+    viewBox="0 0 24 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <circle cx={32} cy={32} r={32} fill="#fff" />
-      <path
-        fill="#080808"
-        fillRule="evenodd"
-        d="M29.4 23.003c1.155-2 4.044-2 5.198 0l7.354 12.748c1.154 2-.29 4.499-2.598 4.499H24.645c-2.309 0-3.752-2.5-2.598-4.5zM32 28.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V29a.75.75 0 0 1 .75-.75m0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5"
-        clipRule="evenodd"
-      />
-    </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-    </defs>
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M2.876 18.116c.046-.414.069-.62.132-.814a2 2 0 0 1 .233-.485c.111-.17.259-.317.553-.61L17 3a2.828 2.828 0 1 1 4 4L7.794 20.206c-.294.294-.442.442-.611.553a2 2 0 0 1-.485.233c-.193.063-.4.086-.814.132L2.5 21.5z"
+    />
   </svg>
 )
-const ForwardRef = forwardRef(Alert)
+const ForwardRef = forwardRef(Edit01)
 export default ForwardRef
