@@ -23,40 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { serverSettingMethods, serverSettingPath } from '@ir-engine/common/src/schemas/setting/server-setting.schema'
+import { useContext } from 'react'
 
-import { Application } from '../../../declarations'
-import { updateAppConfig } from '../../updateAppConfig'
-import { ServerSettingService } from './server-setting.class'
-import serverSettingDocs from './server-setting.docs'
-import hooks from './server-setting.hooks'
+import { State, useHookstate } from '@ir-engine/hyperflux'
 
-declare module '@ir-engine/common/declarations' {
-  interface ServiceTypes {
-    [serverSettingPath]: ServerSettingService
-  }
-}
+import { XRUIStateContext } from './XRUIStateContext'
 
-export default (app: Application): void => {
-  const options = {
-    name: serverSettingPath,
-    paginate: app.get('paginate'),
-    Model: app.get('knexClient'),
-    multi: true
-  }
-
-  app.use(serverSettingPath, new ServerSettingService(options), {
-    // A list of all methods this service exposes externally
-    methods: serverSettingMethods,
-    // You can add additional custom events to be sent to clients here
-    events: [],
-    docs: serverSettingDocs
-  })
-
-  const service = app.service(serverSettingPath)
-  service.hooks(hooks)
-
-  service.on('patched', () => {
-    updateAppConfig()
-  })
-}
+//@ts-ignore
+export const useXRUIState = <S extends State>() => useHookstate<S>(useContext(XRUIStateContext) as S)

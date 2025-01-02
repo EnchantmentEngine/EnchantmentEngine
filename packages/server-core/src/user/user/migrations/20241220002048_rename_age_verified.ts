@@ -23,8 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { serverSettingPath } from '@ir-engine/common/src/schemas/setting/server-setting.schema'
 import type { Knex } from 'knex'
+
+import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 
 /**
  * @param { import("knex").Knex } knex
@@ -33,11 +34,11 @@ import type { Knex } from 'knex'
 export async function up(knex: Knex): Promise<void> {
   await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  const gaTrackingIdColumnExists = await knex.schema.hasColumn(serverSettingPath, 'gaTrackingId')
+  const acceptedTOSColumnExists = await knex.schema.hasColumn(userPath, 'acceptedTOS')
 
-  if (gaTrackingIdColumnExists === true) {
-    await knex.schema.alterTable(serverSettingPath, async (table) => {
-      table.dropColumn('gaTrackingId')
+  if (acceptedTOSColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('acceptedTOS', 'ageVerified')
     })
   }
 
@@ -51,11 +52,11 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  const gaTrackingIdColumnExists = await knex.schema.hasColumn(serverSettingPath, 'gaTrackingId')
+  const ageVerifiedColumnExists = await knex.schema.hasColumn(userPath, 'ageVerified')
 
-  if (gaTrackingIdColumnExists === false) {
-    await knex.schema.alterTable(serverSettingPath, async (table) => {
-      table.string('gaTrackingId', 255).nullable()
+  if (ageVerifiedColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('ageVerified', 'acceptedTOS')
     })
   }
 

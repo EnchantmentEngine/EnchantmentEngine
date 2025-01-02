@@ -22,25 +22,21 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
+import { Engine } from '@ir-engine/ecs'
 
-import { createSwaggerServiceOptions } from 'feathers-swagger'
-
-import {
-  serverSettingDataSchema,
-  serverSettingPatchSchema,
-  serverSettingQuerySchema,
-  serverSettingSchema
-} from '@ir-engine/common/src/schemas/setting/server-setting.schema'
-
-export default createSwaggerServiceOptions({
-  schemas: {
-    serverSettingDataSchema,
-    serverSettingPatchSchema,
-    serverSettingQuerySchema,
-    serverSettingSchema
-  },
-  docs: {
-    description: 'Server setting service description',
-    securities: ['all']
+/**
+ * @description Returns the first incoming action that matches the `@param name` from the Engine.instance's actions store
+ * */
+export function getIncomingAction(name: string) {
+  for (const action of Engine.instance.store.actions.incoming) {
+    if (action.type === name) return action
   }
-})
+  return undefined
+}
+
+/**
+ * @description Returns the last action from the Engine.instance's actions history
+ * */
+export function getLastAction() {
+  return Engine.instance.store.actions.history.at(-1)
+}

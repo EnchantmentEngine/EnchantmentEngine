@@ -23,19 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { Params } from '@feathersjs/feathers'
-import { KnexAdapterParams, KnexService } from '@feathersjs/knex'
+import { TransitionComponent } from './ComponentFunctions'
+import { defineQuery } from './QueryFunctions'
+import { defineSystem } from './SystemFunctions'
+import { AnimationSystemGroup } from './SystemGroups'
 
-import {
-  ServerSettingData,
-  ServerSettingPatch,
-  ServerSettingQuery,
-  ServerSettingType
-} from '@ir-engine/common/src/schemas/setting/server-setting.schema'
+const transitionQuery = defineQuery([TransitionComponent])
 
-export interface ServerSettingParams extends KnexAdapterParams<ServerSettingQuery> {}
-
-export class ServerSettingService<
-  T = ServerSettingType,
-  ServiceParams extends Params = ServerSettingParams
-> extends KnexService<ServerSettingType, ServerSettingData, ServerSettingParams, ServerSettingPatch> {}
+export const TransitionSystem = defineSystem({
+  uuid: 'TransitionSystem',
+  execute: () => {
+    const transitionEntities = transitionQuery()
+    for (const entity of transitionEntities) {
+      TransitionComponent.update(entity)
+    }
+  },
+  insert: {
+    before: AnimationSystemGroup
+  }
+})
