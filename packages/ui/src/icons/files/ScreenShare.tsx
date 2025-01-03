@@ -26,33 +26,40 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const ShadowMd = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const ScreenShare = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 20 20"
+    viewBox="0 0 24 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      d="M8 21h8m-4-4v4m-5.2-4h10.4c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C22 14.72 22 13.88 22 12.2V7.8c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C19.72 3 18.88 3 17.2 3H6.8c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C2 5.28 2 6.12 2 7.8v4.4c0 1.68 0 2.52.327 3.162a3 3 0 0 0 1.311 1.311C4.28 17 5.12 17 6.8 17"
+    />
     <g clipPath="url(#prefix__a)">
       <path
-        stroke="#000"
+        stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.75}
-        d="M18.333 10H9.999m8.334 0c0-1.518-.406-2.94-1.115-4.166M18.333 10a8.3 8.3 0 0 1-1.115 4.167m-7.219 4.167a8.333 8.333 0 0 1 0-16.667m0 16.667v-4.167m0 4.167a8.33 8.33 0 0 0 7.219-4.167m-7.219-12.5v4.167m0-4.167a8.33 8.33 0 0 1 7.219 4.167M9.999 10V5.834M10 10v4.167m0-8.333h7.219m-7.219 8.333h7.219"
+        d="M16.555 10.413c.11-.074.165-.11.185-.154a.14.14 0 0 0 0-.118c-.02-.044-.075-.08-.185-.154l-3.812-2.54c-.189-.127-.284-.19-.364-.192a.26.26 0 0 0-.18.065c-.05.048-.05.145-.05.339v1.503c-.96.13-1.84.51-2.493 1.078-.713.62-1.107 1.422-1.107 2.253v.214a5.2 5.2 0 0 1 1.728-1.049 6.3 6.3 0 0 1 1.872-.383v1.466c0 .194 0 .29.05.339.044.042.11.066.18.064.08-.001.175-.064.364-.19z"
       />
     </g>
+    <path stroke="#000" d="m9.6 11.4 3-3 3 1.8-3 1.8-1.8-1.2L13.2 9l1.2 1.2-2.4.6 1.2-1.2" />
     <defs>
       <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h20v20H0z" />
+        <path fill="#fff" d="M7.2 6H18v8.4H7.2z" />
       </clipPath>
     </defs>
   </svg>
 )
-const ForwardRef = forwardRef(ShadowMd)
+const ForwardRef = forwardRef(ScreenShare)
 export default ForwardRef
