@@ -23,30 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Camera, CameraHelper } from 'three'
+import { useContext } from 'react'
 
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { State, useHookstate } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useDisposable } from '../../resources/resourceHooks'
-import { useHelperEntity } from './DebugComponentUtils'
+import { XRUIStateContext } from './XRUIStateContext'
 
-export const CameraHelperComponent = defineComponent({
-  name: 'CameraHelperComponent',
-
-  schema: S.Object({
-    name: S.String('camera-helper'),
-    camera: S.Required(S.Type<Camera>(null!)),
-    entity: S.Optional(S.Entity())
-  }),
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const component = useComponent(entity, CameraHelperComponent)
-    const [helper] = useDisposable(CameraHelper, entity, component.camera.value as Camera)
-    useHelperEntity(entity, component, helper)
-    helper.update()
-
-    return null
-  }
-})
+//@ts-ignore
+export const useXRUIState = <S extends State>() => useHookstate<S>(useContext(XRUIStateContext) as S)

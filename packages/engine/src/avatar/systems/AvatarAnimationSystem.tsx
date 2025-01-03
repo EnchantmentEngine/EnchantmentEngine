@@ -219,7 +219,7 @@ const execute = () => {
       normalizedHips.matrixWorld.multiplyMatrices(newWorldMatrix, normalizedHips.matrix)
       normalizedHips.matrixWorld.scale(new Vector3(100, 100, 100))
       for (const boneName of VRMHumanBoneList) {
-        const bone = getComponent(rigComponent.bonesToEntities[boneName], NormalizedBoneComponent)
+        const bone = getOptionalComponent(rigComponent.bonesToEntities[boneName], NormalizedBoneComponent)
         if (!bone) continue
         bone.scale.setScalar(1)
         bone.updateMatrix()
@@ -408,7 +408,7 @@ const RigReactor = (props: { entity: Entity }) => {
     if (gltfComponent?.progress?.value !== 100 || !avatarAnimationComponent?.value) return
     try {
       createVRM(entity)
-      setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Avatars)
+      setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Avatar)
       setupAvatarProportions(entity)
     } catch (e) {
       console.error('Failed to load avatar', e)

@@ -35,16 +35,20 @@ import { WebContainer3D } from '@ir-engine/xrui/core/three/WebContainer3D'
 import { WebLayerManager } from '@ir-engine/xrui/core/three/WebLayerManager'
 
 import { AssetLoaderState } from '@ir-engine/engine/src/assets/state/AssetLoaderState'
-import { EngineState } from '../../EngineState'
-import { InputComponent } from '../../input/components/InputComponent'
-import { RendererComponent } from '../../renderer/WebGLRendererSystem'
-import { addObjectToGroup } from '../../renderer/components/GroupComponent'
-import { setObjectLayers } from '../../renderer/components/ObjectLayerComponent'
-import { VisibleComponent } from '../../renderer/components/VisibleComponent'
-import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
-import { DistanceFromCameraComponent } from '../../transform/components/DistanceComponents'
-import { XRUIStateContext } from '../XRUIStateContext'
-import { XRUIComponent } from '../components/XRUIComponent'
+import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import {
+  ObjectLayerMaskComponent,
+  setObjectLayers
+} from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
+import { XRUIStateContext } from './XRUIStateContext'
 
 export function createXRUI<S extends State<any> | null>(
   UIFunc: React.FC,
@@ -84,8 +88,11 @@ export function createXRUI<S extends State<any> | null>(
   const root = new Group()
   root.name = containerElement.id
   root.add(container)
-  addObjectToGroup(entity, root)
+  root.preserveChildren = true
   setObjectLayers(container, ObjectLayers.UI)
+  ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.UI)
+  setComponent(entity, ObjectComponent, root)
+  setComponent(entity, TransformComponent)
   setComponent(entity, DistanceFromCameraComponent)
   setComponent(entity, XRUIComponent, container)
   setComponent(entity, VisibleComponent, true)
