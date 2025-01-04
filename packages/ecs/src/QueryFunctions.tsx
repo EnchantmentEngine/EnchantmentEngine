@@ -28,7 +28,7 @@ import React, { ErrorInfo, FC, memo, Suspense, useLayoutEffect, useMemo } from '
 
 import { getState, HyperFlux, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
 
-import { Component, LayerComponents, LayerID, Layers } from './ComponentFunctions'
+import { LayerComponents, LayerID, Layers } from './ComponentFunctions'
 import { Entity } from './Entity'
 import { EntityContext } from './EntityFunctions'
 import { defineSystem } from './SystemFunctions'
