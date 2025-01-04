@@ -35,7 +35,6 @@ import {
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { getMutableState, getState, ReactorRoot, startReactor } from '@ir-engine/hyperflux'
-import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import React from 'react'
 import sinon from 'sinon'
@@ -53,16 +52,16 @@ import { InputState } from '../state/InputState'
 import ClientInputHooks from './ClientInputHooks'
 
 const createMockHTMLCanvasElement = (ev: MockEventListener) => {
-  return {
-    addEventListener: ev.addEventListener,
-    removeEventListener: ev.removeEventListener,
-    getDrawingBufferSize: () => 0,
-    getContext: () => {},
-    parentElement: {
+  return new (class {
+    addEventListener = ev.addEventListener
+    removeEventListener = ev.removeEventListener
+    getDrawingBufferSize = () => 0
+    getContext = () => {}
+    parentElement = {
       clientWidth: 100,
       clientHeight: 100
     }
-  } as any as HTMLCanvasElement
+  })() as any as HTMLCanvasElement
 }
 
 describe('ClientInputHooks', () => {
@@ -1167,7 +1166,6 @@ describe('ClientInputHooks', () => {
       setComponent(parentEntity, InputComponent)
       setComponent(parentEntity, EntityTreeComponent)
 
-      // setComponent(testEntity, InputComponent)
       setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
       assert.equal(before.has(testEntity), false)
 
@@ -1258,25 +1256,24 @@ describe('ClientInputHooks', () => {
       assert.equal(before.has(testEntity), false)
 
       // Setup the reactor
-      const Reactor = React.createElement(
-        EntityContext.Provider,
-        { value: testEntity },
-        React.createElement(ClientInputHooks.BoundingBoxInputReactor, {})
+      const reactor = startReactor(() =>
+        React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ClientInputHooks.BoundingBoxInputReactor, {})
+        )
       )
-
-      const { rerender, unmount } = render(Reactor)
-      await act(() => rerender(Reactor))
 
       // Check the result
       const one = getState(InputState).inputBoundingBoxes
       assert.equal(one.has(testEntity), true)
 
       removeComponent(parentEntity, InputComponent)
-      await act(() => rerender(Reactor))
+
+      reactor.run()
+
       const two = getState(InputState).inputBoundingBoxes
       assert.equal(two.has(testEntity), false)
-
-      unmount()
     })
   })
 })

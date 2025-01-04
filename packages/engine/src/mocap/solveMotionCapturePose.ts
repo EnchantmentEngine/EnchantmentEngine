@@ -49,7 +49,8 @@ import { getState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { GroupComponent, addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
@@ -166,7 +167,7 @@ const drawMocapDebug = (label: string) => {
         setObjectLayers(mesh, ObjectLayers.AvatarHelper)
       }
       const entity = debugEntities[key]
-      const mesh = getComponent(entity, GroupComponent)[0] as any as Mesh<BufferGeometry, MeshBasicMaterial>
+      const mesh = getComponent(entity, ObjectComponent) as Mesh<BufferGeometry, MeshBasicMaterial>
       mesh.material.color.set(color)
       if (key === `${LandmarkIndices.RIGHT_WRIST}`) mesh.material.color.set(0xff0000)
       if (key === `${LandmarkIndices.RIGHT_PINKY}`) mesh.material.color.set(0x00ff00)
@@ -192,11 +193,11 @@ const drawMocapDebug = (label: string) => {
 
     for (let i = 0; i < PoseLandmarker.POSE_CONNECTIONS.length * 2; i += 2) {
       const { start, end } = PoseLandmarker.POSE_CONNECTIONS[i / 2]
-      const firstPoint = getComponent(debugEntities[start], GroupComponent)[0] as any as Mesh<
+      const firstPoint = getComponent(debugEntities[start], ObjectComponent) as any as Mesh<
         BufferGeometry,
         MeshBasicMaterial
       >
-      const secondPoint = getComponent(debugEntities[end], GroupComponent)[0] as any as Mesh<
+      const secondPoint = getComponent(debugEntities[end], ObjectComponent) as any as Mesh<
         BufferGeometry,
         MeshBasicMaterial
       >

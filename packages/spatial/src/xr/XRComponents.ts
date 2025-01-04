@@ -210,7 +210,7 @@ export const XRRightHandComponent = defineComponent({
 })
 
 export const XRHitTestComponent = defineComponent({
-  name: 'XRHitTest',
+  name: 'XRHitTestComponent',
   schema: S.Object({
     options: S.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
     source: S.Type<XRHitTestSource>(),
@@ -263,7 +263,7 @@ export const XRHitTestComponent = defineComponent({
 })
 
 export const XRAnchorComponent = defineComponent({
-  name: 'XRAnchor',
+  name: 'XRAnchorComponent',
   schema: S.Object({
     anchor: S.Type<XRAnchor>()
   }),
@@ -284,7 +284,7 @@ export const XRAnchorComponent = defineComponent({
 })
 
 export const XRSpaceComponent = defineComponent({
-  name: 'XRSpace',
+  name: 'XRSpaceComponent',
 
   schema: S.Object({
     space: S.Type<XRSpace>(),

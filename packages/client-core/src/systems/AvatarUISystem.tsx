@@ -24,11 +24,11 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import React, { useEffect } from 'react'
-import { CircleGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
+import { CircleGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { UserID } from '@ir-engine/common/src/schema.type.module'
-import { removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
@@ -49,7 +49,6 @@ import { Physics, RaycastArgs } from '@ir-engine/spatial/src/physics/classes/Phy
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
 import { getInteractionGroups } from '@ir-engine/spatial/src/physics/functions/getInteractionGroups'
 import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -57,7 +56,10 @@ import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUICompon
 
 import { Not } from '@ir-engine/ecs'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { PeerMediaChannelState } from '../media/PeerMediaChannelState'
 import { XruiNameplateComponent } from '../social/components/XruiNameplateComponent'
 import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
@@ -179,13 +181,12 @@ const execute = () => {
     const ui = createAvatarDetailView(userId)
     const transition = createTransitionState(1, 'IN')
     AvatarUITransitions.set(userEntity, transition)
-    const root = new Group()
-    root.name = `avatar-ui-root-${userEntity}`
     const mesh = ui.state.videoPreviewMesh.value as Mesh<CircleGeometry, MeshBasicMaterial>
-    mesh.position.y += 0.3
-    mesh.visible = false
-    root.add(mesh)
-    addObjectToGroup(ui.entity, root)
+    const previewMeshEntity = createEntity()
+    setComponent(previewMeshEntity, TransformComponent, { position: new Vector3(0, 0.3, 0) })
+    setComponent(previewMeshEntity, EntityTreeComponent, { parentEntity: ui.entity })
+    setComponent(previewMeshEntity, NameComponent, `avatar-ui-root-${userEntity}`)
+    setComponent(previewMeshEntity, MeshComponent, mesh)
     AvatarUI.set(userEntity, ui)
   }
 
