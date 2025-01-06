@@ -23,26 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { assertArray } from '../../tests/util/assert'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import {
-  UndefinedEntity,
-  createEngine,
-  createEntity,
-  destroyEngine,
-  getComponent,
-  hasComponent,
-  removeComponent,
-  removeEntity,
-  setComponent
-} from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
-import { EngineState } from '../EngineState'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
-import { TransformComponent } from '../transform/components/TransformComponent'
+import { UndefinedEntity, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
 import {
   XRAnchorComponent,
   XRHandComponent,
@@ -51,7 +36,6 @@ import {
   XRRightHandComponent,
   XRSpaceComponent
 } from './XRComponents'
-import { ReferenceSpace } from './XRState'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {

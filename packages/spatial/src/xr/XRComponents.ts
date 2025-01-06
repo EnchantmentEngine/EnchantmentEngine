@@ -36,10 +36,10 @@ import {
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
+import { EntityTreeComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Types } from 'bitecs'
-import { EngineState } from '../EngineState'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
 
@@ -302,10 +302,10 @@ export const XRSpaceComponent = defineComponent({
       let parentEntity = UndefinedEntity
       switch (baseSpace) {
         case ReferenceSpace.localFloor:
-          parentEntity = getState(EngineState).localFloorEntity
+          parentEntity = getState(ReferenceSpaceState).localFloorEntity
           break
         case ReferenceSpace.viewer:
-          parentEntity = getState(EngineState).viewerEntity
+          parentEntity = getState(ReferenceSpaceState).viewerEntity
           break
       }
 
