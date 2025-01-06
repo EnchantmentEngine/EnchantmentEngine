@@ -33,6 +33,7 @@ import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Vector3_Zero } from '../common/constants/MathConstants'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
 import { ObjectComponent } from '../renderer/components/ObjectComponent'
@@ -219,7 +220,7 @@ const reactor = () => {
       const cubeRenderTarget = new WebGLCubeRenderTarget(16)
       xrLightProbeState.environment.set(cubeRenderTarget.texture)
 
-      const gl = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.getContext()
+      const gl = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.getContext()
 
       // Ensure that we have any extensions needed to use the preferred cube map format.
       switch (session.preferredReflectionFormat) {
