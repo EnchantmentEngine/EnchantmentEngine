@@ -23,31 +23,42 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AxesHelper } from 'three'
+import type { Knex } from 'knex'
 
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useDisposable } from '../../resources/resourceHooks'
-import { useHelperEntity } from './DebugComponentUtils'
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-export const AxesHelperComponent = defineComponent({
-  name: 'AxesHelperComponent',
+  const acceptedTOSColumnExists = await knex.schema.hasColumn(userPath, 'acceptedTOS')
 
-  schema: S.Object({
-    name: S.String('axes-helper'),
-    size: S.Number(1),
-    layerMask: S.Number(ObjectLayerMasks.NodeHelper),
-    entity: S.Optional(S.Entity())
-  }),
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const component = useComponent(entity, AxesHelperComponent)
-    const [helper] = useDisposable(AxesHelper, entity, component.size.value)
-    useHelperEntity(entity, component, helper, component.layerMask.value)
-
-    return null
+  if (acceptedTOSColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('acceptedTOS', 'ageVerified')
+    })
   }
-})
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
+
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  const ageVerifiedColumnExists = await knex.schema.hasColumn(userPath, 'ageVerified')
+
+  if (ageVerifiedColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('ageVerified', 'acceptedTOS')
+    })
+  }
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
