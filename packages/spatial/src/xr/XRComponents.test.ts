@@ -23,11 +23,26 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertArray } from '../../tests/util/assert'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import { UndefinedEntity, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
+import {
+  EntityTreeComponent,
+  UndefinedEntity,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  getComponent,
+  hasComponent,
+  removeComponent,
+  removeEntity,
+  setComponent
+} from '@ir-engine/ecs'
+import { getMutableState } from '@ir-engine/hyperflux'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
+import { TransformComponent } from '../transform/components/TransformComponent'
 import {
   XRAnchorComponent,
   XRHandComponent,
@@ -36,6 +51,7 @@ import {
   XRRightHandComponent,
   XRSpaceComponent
 } from './XRComponents'
+import { ReferenceSpace } from './XRState'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {
@@ -241,7 +257,7 @@ describe('XRSpaceComponent', () => {
     it('should set an EntityTreeComponent to the entityContext with EngineState.localFloorEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.localFloor', () => {
       const Expected = createEntity()
       // Set the data as expected
-      getMutableState(EngineState).localFloorEntity.set(Expected)
+      getMutableState(ReferenceSpaceState).localFloorEntity.set(Expected)
       // Sanity check before running
       expect(hasComponent(testEntity, EntityTreeComponent)).toBe(false)
       // Run and Check the result
@@ -253,7 +269,7 @@ describe('XRSpaceComponent', () => {
     it('should set an EntityTreeComponent to the entityContext with EngineState.viewerEntity as its parentEntity when entityContext.XRSpaceComponent.baseSpace is ReferenceSpace.viewer', () => {
       const Expected = createEntity()
       // Set the data as expected
-      getMutableState(EngineState).viewerEntity.set(Expected)
+      getMutableState(ReferenceSpaceState).viewerEntity.set(Expected)
       // Sanity check before running
       expect(hasComponent(testEntity, EntityTreeComponent)).toBe(false)
       // Run and Check the result
