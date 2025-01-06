@@ -41,14 +41,13 @@ import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
+import { RendererState } from '../../renderer/RendererState'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '../../renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
-import { RendererState } from '../../renderer/RendererState'
 import { T } from '../../schema/schemaFunctions'
-import { TransformComponent } from './TransformComponent'
 
 export const BoundingBoxComponent = defineComponent({
   name: 'BoundingBoxComponent',
@@ -78,9 +77,9 @@ export const BoundingBoxComponent = defineComponent({
 
       setComponent(helperEntity, ObjectComponent, helper)
       ObjectLayerMaskComponent.setLayer(helperEntity, ObjectLayers.NodeHelper)
+
       boundingBox.helper.set(helperEntity)
 
-      TransformComponent.dirtyTransforms[entity] = true //used to dirty trasform and set the appropate bounding box
       updateBoundingBox(entity)
 
       return () => {
@@ -119,6 +118,7 @@ export const updateBoundingBox = (entity: Entity) => {
 
   const helperObject = getComponent(helperEntity, ObjectComponent) as any as Box3Helper
   helperObject.updateMatrixWorld(true)
+  helperObject.position.set(0, 0, 0)
 }
 
 const _box = new Box3()
