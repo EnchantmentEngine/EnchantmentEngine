@@ -31,33 +31,32 @@ import {
 } from '@ir-engine/client-core/src/util/upload'
 import { API } from '@ir-engine/common'
 import {
+  ModelTransformStatus,
+  transformModel as clientSideTransformModel
+} from '@ir-engine/common/src/model/ModelTransformFunctions'
+import {
   assetLibraryPath,
   fileBrowserPath,
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import {
-  ModelTransformStatus,
-  transformModel as clientSideTransformModel
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
 import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
 import { cleanFileNameFile, cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
-import { setComponent } from '@ir-engine/ecs'
+import { iterateEntityNode, removeEntityNodeRecursively, setComponent } from '@ir-engine/ecs'
 import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { KTX2EncodeArguments } from '@ir-engine/engine/src/assets/constants/CompressionParms'
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { modelResourcesPath } from '@ir-engine/engine/src/assets/functions/pathResolver'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
-import { showMultipleFileModal } from '../panels/files/toolbar'
-import { ImportSettingsState } from '../services/ImportSettingsState'
 import { exportGLTFScene } from '@ir-engine/engine/src/gltf/exportGLTFScene'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
-import { iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { getMutableState } from '@ir-engine/hyperflux'
+import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 import { LoaderUtils } from 'three'
 import { LODVariantDescriptor } from '../constants/GLTFPresets'
+import { showMultipleFileModal } from '../panels/files/toolbar'
+import { ImportSettingsState } from '../services/ImportSettingsState'
 
 enum FileType {
   THREE_D = '3D',
