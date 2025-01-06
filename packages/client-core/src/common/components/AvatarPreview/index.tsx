@@ -31,6 +31,7 @@ import commonStyles from '@ir-engine/client-core/src/common/components/common.mo
 import Text from '@ir-engine/client-core/src/common/components/Text'
 import {
   createEntity,
+  EntityTreeComponent,
   getOptionalComponent,
   removeComponent,
   removeEntity,
@@ -44,7 +45,6 @@ import { AmbientLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { AssetPreviewCameraComponent } from '@ir-engine/spatial/src/camera/components/AssetPreviewCameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
