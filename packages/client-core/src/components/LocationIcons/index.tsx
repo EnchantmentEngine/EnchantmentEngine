@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 
 import { TouchGamepad } from '@ir-engine/client-core/src/common/components/TouchGamepad'
-import { UserMenu } from '@ir-engine/client-core/src/user/components/UserMenu'
+import UserMenu from '@ir-engine/client-core/src/user/menus'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 

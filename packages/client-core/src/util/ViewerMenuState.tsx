@@ -23,32 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { WidgetAppServiceReceptorSystem } from '../systems/WidgetAppService'
+import { defineState } from '@ir-engine/hyperflux'
 
-import { AvatarSpawnSystem } from '../networking/AvatarSpawnSystem'
-// import { AvatarUISystem } from '../systems/AvatarUISystem'
-import { LoadingUISystem } from '../systems/LoadingUISystem'
-import { MediaControlSystem } from '../systems/MediaControlSystem'
-import { PositionalAudioSystem } from '../systems/PositionalAudioSystem'
-import { WarningUISystem } from '../systems/WarningUISystem'
-import { WidgetUISystem } from '../systems/WidgetUISystem'
-// import { UserUISystem } from '../user/UserUISystem'
-import { UserUISystem } from '../user/UserUISystem2'
-import { LinkRedirectSystem } from './LinkRedirectSystem'
-import { PortalRedirectSystem } from './PortalRedirectSystem'
+const getInitialState = () => ({
+  userMenus: {
+    profile: true,
+    settings: false,
+    readyplayer: false,
+    avaturn: false,
+    avatarselect: false,
+    avatarmodify: false,
+    share: false,
+    emote: false
+  }
+})
 
-import './ClientNetworkModule'
-
-export {
-  AvatarSpawnSystem,
-  // AvatarUISystem,
-  LinkRedirectSystem,
-  LoadingUISystem,
-  MediaControlSystem,
-  PortalRedirectSystem,
-  PositionalAudioSystem,
-  UserUISystem,
-  WarningUISystem,
-  WidgetAppServiceReceptorSystem,
-  WidgetUISystem
-}
+export const ViewerMenuState = defineState({
+  name: 'ViewerMenuState',
+  initial: () => getInitialState()
+})
