@@ -65,7 +65,7 @@ import './InstanceServerModule'
 
 import { NotAuthenticated } from '@feathersjs/errors'
 import { projectsPath } from '@ir-engine/common/src/schemas/projects/projects.schema'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { InstanceServerState } from './InstanceServerState'
 import { authorizeUserToJoinServer, handleDisconnect, setupIPs } from './NetworkFunctions'
@@ -505,9 +505,9 @@ export const onConnection = (app: Application) => async (connection: RealTimeCon
 
   if (userId) {
     const user = await app.service(userPath).get(userId)
-    // disallow users from joining media servers if they haven't accepted the TOS
-    if (channelId && !user.acceptedTOS) {
-      logger.warn('User tried to connect without accepting TOS')
+    // disallow users from joining media servers if they aren't age verified
+    if (channelId && !user.ageVerified) {
+      logger.warn('User tried to connect without specifying they are age verified')
       return
     }
   }

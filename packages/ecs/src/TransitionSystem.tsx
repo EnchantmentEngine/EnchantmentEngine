@@ -23,25 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-const { defineProperties } = Object
+import { TransitionComponent } from './ComponentFunctions'
+import { defineQuery } from './QueryFunctions'
+import { defineSystem } from './SystemFunctions'
+import { AnimationSystemGroup } from './SystemGroups'
 
-export const ProxyWithECS = <T>(store: Record<string | keyof T, any>, obj: T, ...keys: (keyof T)[]) => {
-  return defineProperties(
-    obj,
-    keys.reduce(
-      (accum, key) => {
-        accum[key] = {
-          get() {
-            return store[key]
-          },
-          set(n) {
-            return (store[key] = n)
-          },
-          configurable: true
-        }
-        return accum
-      },
-      {} as Record<keyof T, any>
-    )
-  )
-}
+const transitionQuery = defineQuery([TransitionComponent])
+
+export const TransitionSystem = defineSystem({
+  uuid: 'TransitionSystem',
+  execute: () => {
+    const transitionEntities = transitionQuery()
+    for (const entity of transitionEntities) {
+      TransitionComponent.update(entity)
+    }
+  },
+  insert: {
+    before: AnimationSystemGroup
+  }
+})

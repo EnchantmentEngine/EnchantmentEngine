@@ -23,29 +23,42 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Object3D } from 'three'
+import type { Knex } from 'knex'
 
-import { defineComponent, useComponent, useEntityContext, useOptionalComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, useImmediateEffect } from '@ir-engine/hyperflux'
-import { NameComponent } from '../../common/NameComponent'
+import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 
-export const Object3DComponent = defineComponent({
-  name: 'Object3DComponent',
-  jsonID: 'EE_object3d',
-  schema: S.Required(S.NonSerialized(S.Type<Object3D>())),
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  reactor: () => {
-    const entity = useEntityContext()
-    const object3DComponent = useComponent(entity, Object3DComponent)
-    const nameComponent = useOptionalComponent(entity, NameComponent)
+  const acceptedTOSColumnExists = await knex.schema.hasColumn(userPath, 'acceptedTOS')
 
-    useImmediateEffect(() => {
-      if (!nameComponent) return
-      const object = object3DComponent.get(NO_PROXY) as Object3D
-      object.name = nameComponent.value
-    }, [nameComponent?.value])
-
-    return null
+  if (acceptedTOSColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('acceptedTOS', 'ageVerified')
+    })
   }
-})
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
+
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  const ageVerifiedColumnExists = await knex.schema.hasColumn(userPath, 'ageVerified')
+
+  if (ageVerifiedColumnExists) {
+    await knex.schema.alterTable(userPath, async (table) => {
+      table.renameColumn('ageVerified', 'acceptedTOS')
+    })
+  }
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
