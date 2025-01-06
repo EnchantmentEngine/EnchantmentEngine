@@ -41,12 +41,12 @@ import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
-import { RendererState } from '../../renderer/RendererState'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '../../renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
+import { RendererState } from '../../renderer/RendererState'
 import { T } from '../../schema/schemaFunctions'
 import { TransformComponent } from './TransformComponent'
 
@@ -75,10 +75,6 @@ export const BoundingBoxComponent = defineComponent({
       setComponent(helperEntity, VisibleComponent)
 
       setComponent(helperEntity, EntityTreeComponent, { parentEntity: entity })
-
-      addObjectToGroup(helperEntity, helper)
-
-      setObjectLayers(helper, ObjectLayers.NodeHelper)
 
       setComponent(helperEntity, ObjectComponent, helper)
       ObjectLayerMaskComponent.setLayer(helperEntity, ObjectLayers.NodeHelper)
