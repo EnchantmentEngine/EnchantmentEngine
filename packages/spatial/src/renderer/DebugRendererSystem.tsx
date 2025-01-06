@@ -39,16 +39,16 @@ import { getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/Com
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { EntityTreeComponent } from '@ir-engine/ecs'
 import { NameComponent } from '../common/NameComponent'
-import { EngineState } from '../EngineState'
 import { RapierWorldState } from '../physics/classes/Physics'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { addObjectToGroup, ObjectComponent } from '../renderer/components/ObjectComponent'
 import { setObjectLayers } from '../renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../renderer/constants/ObjectLayers'
 import { RendererState } from '../renderer/RendererState'
 import { WebGLRendererSystem } from '../renderer/WebGLRendererSystem'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
 import { createInfiniteGridHelper } from './components/InfiniteGridHelper'
 import { SceneComponent } from './components/SceneComponents'
 
@@ -99,7 +99,7 @@ const PhysicsReactor = () => {
 
 const reactor = () => {
   const engineRendererSettings = useMutableState(RendererState)
-  const originEntity = useMutableState(EngineState).originEntity.value
+  const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
 
   useEffect(() => {
     if (!engineRendererSettings.gridVisibility.value || !originEntity) return

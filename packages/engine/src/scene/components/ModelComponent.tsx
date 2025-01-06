@@ -23,7 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { UUIDComponent, useEntityContext } from '@ir-engine/ecs'
+import {
+  EntityTreeComponent,
+  UUIDComponent,
+  iterateEntityNode,
+  removeEntityNodeRecursively,
+  useEntityContext
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -41,11 +47,6 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRenderer
 import { GroupComponent, addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  EntityTreeComponent,
-  iterateEntityNode,
-  removeEntityNodeRecursively
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { VRM } from '@pixiv/three-vrm'
 import { useEffect } from 'react'
 import { AnimationMixer, Group, Scene } from 'three'

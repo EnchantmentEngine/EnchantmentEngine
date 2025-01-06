@@ -41,7 +41,14 @@ import {
   Vector3
 } from 'three'
 
-import { PresentationSystemGroup, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import {
+  EntityTreeComponent,
+  PresentationSystemGroup,
+  createEntity,
+  removeEntity,
+  removeEntityNodeRecursively,
+  useEntityContext
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -62,18 +69,14 @@ import {
   TransitionStateSchema,
   createTransitionState
 } from '@ir-engine/spatial/src/common/functions/createTransitionState'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  EntityTreeComponent,
-  removeEntityNodeRecursively
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
@@ -100,7 +103,7 @@ class PortalEffect extends Object3D {
     setComponent(portalEntity, NameComponent, this.name)
     setComponent(portalEntity, EntityTreeComponent, { parentEntity: parent })
     setComponent(portalEntity, VisibleComponent, true)
-    addObjectToGroup(portalEntity, this.tubeMesh)
+    setComponent(portalEntity, MeshComponent, this.tubeMesh)
     this.tubeMesh.layers.set(ObjectLayers.Portal)
   }
 
@@ -195,7 +198,7 @@ export const HyperspaceTagComponent = defineComponent({
       const ambientLightEntity = ambientLightEntityState.value
 
       const hyperspaceEffect = new PortalEffect(hyperspaceEffectEntity)
-      addObjectToGroup(hyperspaceEffectEntity, hyperspaceEffect)
+      setComponent(hyperspaceEffectEntity, ObjectComponent, hyperspaceEffect)
       setObjectLayers(hyperspaceEffect, ObjectLayers.Portal)
 
       getComponent(hyperspaceEffectEntity, TransformComponent).scale.set(10, 10, 10)
@@ -204,7 +207,7 @@ export const HyperspaceTagComponent = defineComponent({
 
       const light = new AmbientLight('#aaa')
       light.layers.enable(ObjectLayers.Portal)
-      addObjectToGroup(ambientLightEntity, light)
+      setComponent(ambientLightEntity, ObjectComponent, light)
 
       setComponent(ambientLightEntity, EntityTreeComponent, { parentEntity: hyperspaceEffectEntity })
       setComponent(ambientLightEntity, VisibleComponent)

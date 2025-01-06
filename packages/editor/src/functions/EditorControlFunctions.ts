@@ -26,7 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import { GLTF } from '@gltf-transform/core'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { EntityUUID, generateEntityUUID, removeEntity, SetComponentType, UUIDComponent } from '@ir-engine/ecs'
+import {
+  EntityTreeComponent,
+  EntityUUID,
+  findRootAncestors,
+  generateEntityUUID,
+  iterateEntityNode,
+  removeEntity,
+  SetComponentType,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   Component,
   componentJsonDefaults,
@@ -50,11 +59,6 @@ import { dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { getMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import {
-  EntityTreeComponent,
-  findRootAncestors,
-  iterateEntityNode
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 

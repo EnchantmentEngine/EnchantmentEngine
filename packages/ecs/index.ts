@@ -48,6 +48,7 @@ import { createEntity } from './src/createEntity'
 import { executeFixedSystem, executeSystems, getDAG } from './src/EngineFunctions'
 import { UndefinedEntity } from './src/Entity'
 import { entityExists, removeEntity, useEntityContext } from './src/EntityFunctions'
+import { EntityTreeComponent } from './src/EntityTree'
 import { defineQuery, QueryReactor, removeQuery, useQuery } from './src/QueryFunctions'
 import { defineSystem, destroySystem, executeSystem, useExecute } from './src/SystemFunctions'
 import { UUIDComponent } from './src/UUIDComponent'
@@ -75,6 +76,8 @@ const ECS = {
   entityExists,
   useEntityContext,
   UndefinedEntity,
+  /** Hierarchy */
+  EntityTreeComponent,
   /** System API */
   executeSystem,
   defineSystem,
@@ -106,8 +109,10 @@ export * from './src/EasingFunctions'
 export * from './src/ECSState'
 export * from './src/Engine'
 export * from './src/EngineFunctions'
+export * from './src/EngineState'
 export * from './src/Entity'
 export * from './src/EntityFunctions'
+export * from './src/EntityTree'
 export * from './src/QueryFunctions'
 export * from './src/schemas/ECSSchemas'
 export * from './src/schemas/JSONSchemas'

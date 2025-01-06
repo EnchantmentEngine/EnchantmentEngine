@@ -57,17 +57,13 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 
-import { LayerComponent } from '@ir-engine/ecs'
+import { LayerComponent, useAncestorWithComponents, useChildrenWithComponents } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  useAncestorWithComponents,
-  useChildrenWithComponents
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { Texture } from 'three'
 import { useGLTFResource } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'

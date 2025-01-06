@@ -26,17 +26,21 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Box3, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
-import { Engine, Entity, UndefinedEntity, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import {
+  Engine,
+  Entity,
+  EntityTreeComponent,
+  UndefinedEntity,
+  createEntity,
+  removeEntity,
+  useEntityContext
+} from '@ir-engine/ecs'
 import { defineComponent, getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { TransformPivot } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import {
-  EntityTreeComponent,
-  removeEntityNodeRecursively
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformGizmoTagComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -124,9 +128,9 @@ export const TransformGizmoControlledComponent = defineComponent({
       transformGizmoControlledComponent.controller.set(gizmoControlEntity)
 
       return () => {
-        removeEntityNodeRecursively(gizmoControlEntity)
-        removeEntityNodeRecursively(gizmoVisualEntity)
-        removeEntityNodeRecursively(gizmoPlaneEntity)
+        removeEntity(gizmoControlEntity)
+        removeEntity(gizmoVisualEntity)
+        removeEntity(gizmoPlaneEntity)
       }
     }, [])
 

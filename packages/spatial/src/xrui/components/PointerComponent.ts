@@ -37,6 +37,7 @@ import {
 
 import {
   Entity,
+  EntityTreeComponent,
   S,
   createEntity,
   defineComponent,
@@ -47,10 +48,9 @@ import {
   useEntityContext
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { WebContainer3D } from '@ir-engine/xrui'
 
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { NameComponent } from '../../common/NameComponent'
 import { useAnimationTransition } from '../../common/functions/createTransitionState'
 import { InputSourceComponent } from '../../input/components/InputSourceComponent'
@@ -140,7 +140,7 @@ export const PointerComponent = defineComponent({
     const entity = createEntity()
     setComponent(entity, PointerComponent, { inputSource })
     setComponent(entity, NameComponent, 'Pointer' + inputSource.handedness)
-    setComponent(entity, EntityTreeComponent, { parentEntity: getState(EngineState).localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, ComputedTransformComponent, {
       referenceEntities: [inputSourceEntity],
       computeFunction: () => {

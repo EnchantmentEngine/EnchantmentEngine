@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { camelCaseToSpacedString } from '@ir-engine/common/src/utils/camelCaseToSpacedString'
-import { hasComponent, SerializedComponentType, useComponent } from '@ir-engine/ecs'
+import { hasComponent, SerializedComponentType, useAncestorWithComponents, useComponent } from '@ir-engine/ecs'
 import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -33,7 +33,6 @@ import { ColliderComponent, supportedColliderShapes } from '@ir-engine/spatial/s
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { useAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiMinimize2 } from 'react-icons/fi'

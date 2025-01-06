@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { UUIDComponent, useEntityContext } from '@ir-engine/ecs'
+import { EngineState, EntityTreeComponent, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -36,8 +36,6 @@ import {
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -70,9 +68,9 @@ export const SplineTrackComponent = defineComponent({
 
     useExecute(
       () => {
-        const { isEditor } = getState(EngineState)
+        const { isEditing } = getState(EngineState)
         const { deltaSeconds } = getState(ECSState)
-        if (isEditor) return
+        if (isEditing) return
         if (!component.splineEntityUUID.value) return
         const splineTargetEntity = UUIDComponent.getEntityByUUID(component.splineEntityUUID.value)
         if (!splineTargetEntity) return

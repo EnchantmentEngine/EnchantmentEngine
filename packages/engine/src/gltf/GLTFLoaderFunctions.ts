@@ -28,6 +28,7 @@ import {
   ComponentJSONIDMap,
   ComponentType,
   Entity,
+  EntityTreeComponent,
   EntityUUID,
   LayerComponent,
   UUIDComponent,
@@ -36,7 +37,8 @@ import {
   getOptionalComponent,
   hasComponent,
   removeComponent,
-  setComponent
+  setComponent,
+  traverseEntityNode
 } from '@ir-engine/ecs'
 import { NO_PROXY, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -44,18 +46,15 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { Object3DComponent } from '@ir-engine/spatial/src/renderer/components/Object3DComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { proxifyParentChildRelationships } from '@ir-engine/spatial/src/renderer/functions/proxifyParentChildRelationships'
 import {
   MaterialInstanceComponent,
   MaterialPrototypeComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { ResourceManager, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
-import { EntityTreeComponent, traverseEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { useEffect } from 'react'
 import {
   AnimationClip,
@@ -1445,8 +1444,6 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       }
 
       setComponent(nodeEntity, MeshComponent, mesh)
-      addObjectToGroup(nodeEntity, mesh)
-      proxifyParentChildRelationships(mesh)
 
       mesh.name = node.name ?? 'Node-' + i
 
@@ -1497,15 +1494,10 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       const bone = new Bone()
       bone.name = node.name ?? 'Node-' + i
       setComponent(nodeEntity, BoneComponent, bone)
-      addObjectToGroup(nodeEntity, bone)
-      proxifyParentChildRelationships(bone)
-      setComponent(nodeEntity, Object3DComponent, bone)
     } else {
       const obj3d = new Object3D()
       obj3d.name = node.name ?? 'Node-' + i
-      addObjectToGroup(nodeEntity, obj3d)
-      proxifyParentChildRelationships(obj3d)
-      setComponent(nodeEntity, Object3DComponent, obj3d)
+      setComponent(nodeEntity, ObjectComponent, obj3d)
     }
   }
 
@@ -1516,14 +1508,12 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     const animationTrack = GLTFLoaderFunctions.useLoadAnimation(options, i)
     if (animationTrack) animationClips.push(animationTrack)
   }
-  if (!hasComponent(entity, Object3DComponent)) {
+  if (!hasComponent(entity, ObjectComponent)) {
     const obj3d = new Object3D()
-    setComponent(entity, Object3DComponent, obj3d)
-    addObjectToGroup(entity, obj3d)
-    proxifyParentChildRelationships(obj3d)
+    setComponent(entity, ObjectComponent, obj3d)
   }
 
-  const obj3d = getComponent(entity, Object3DComponent)
+  const obj3d = getComponent(entity, ObjectComponent)
   obj3d.animations = animationClips
   if (!hasComponent(entity, AnimationComponent)) {
     setComponent(entity, AnimationComponent, {

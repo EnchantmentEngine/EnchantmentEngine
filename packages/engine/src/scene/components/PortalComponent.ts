@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { ArrowHelper, BackSide, Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
 
-import { EntityUUID, createEntity, useEntityContext } from '@ir-engine/ecs'
+import { EntityTreeComponent, EntityUUID, createEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   ComponentType,
   defineComponent,
@@ -47,7 +47,6 @@ import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'

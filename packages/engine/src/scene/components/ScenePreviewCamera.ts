@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useLayoutEffect } from 'react'
 import { CameraHelper, Euler, PerspectiveCamera } from 'three'
 
-import { useEntityContext, useExecute } from '@ir-engine/ecs'
+import { EngineState, useEntityContext, useExecute } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -37,7 +37,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -58,14 +58,14 @@ export const ScenePreviewCameraComponent = defineComponent({
     const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
     const previewCamera = useComponent(entity, ScenePreviewCameraComponent)
     const previewCameraTransform = useComponent(entity, TransformComponent)
-    const engineCameraTransform = useOptionalComponent(getState(EngineState).viewerEntity, TransformComponent)
+    const engineCameraTransform = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     const isEditing = useHookstate(getMutableState(EngineState).isEditing).value
 
     useLayoutEffect(() => {
       if (!engineCameraTransform || isEditing) return
 
       const transform = getComponent(entity, TransformComponent)
-      const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       cameraTransform.position.copy(transform.position)
       cameraTransform.rotation.copy(transform.rotation)
       const camera = previewCamera.camera.value as PerspectiveCamera

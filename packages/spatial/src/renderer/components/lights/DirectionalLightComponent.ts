@@ -27,6 +27,7 @@ import { useEffect } from 'react'
 import { BufferGeometry, DirectionalLight, Float32BufferAttribute } from 'three'
 
 import {
+  EntityTreeComponent,
   S,
   UndefinedEntity,
   createEntity,
@@ -43,7 +44,6 @@ import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hy
 import { mergeBufferGeometries } from '../../../common/classes/BufferGeometryUtils'
 import { useDisposable } from '../../../resources/resourceHooks'
 import { T } from '../../../schema/schemaFunctions'
-import { EntityTreeComponent } from '../../../transform/components/EntityTree'
 import { RendererState } from '../../RendererState'
 import { LineSegmentComponent } from '../LineSegmentComponent'
 import { ObjectComponent } from '../ObjectComponent'

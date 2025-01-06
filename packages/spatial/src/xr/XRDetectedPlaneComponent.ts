@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMaterial } from 'three'
 
-import { createEntity, useEntityContext } from '@ir-engine/ecs'
+import { EntityTreeComponent, createEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getMutableComponent,
@@ -38,7 +38,6 @@ import {
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../common/NameComponent'

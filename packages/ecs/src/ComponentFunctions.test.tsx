@@ -29,10 +29,8 @@ import { Types } from 'bitecs'
 import React, { useEffect } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { removeEntity } from '@ir-engine/ecs'
+import { EntityTreeComponent, removeEntity } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import sinon from 'sinon'
 import { DirectionalLight, Matrix4, Vector3 } from 'three'
@@ -297,7 +295,18 @@ describe('ComponentFunctions', async () => {
 
       const Vec3Component = defineComponent({
         name: 'Vector3Component',
-        schema: T.Vec3()
+        schema: S.SerializedClass(
+          () => new Vector3(),
+          {
+            x: S.Number(),
+            y: S.Number(),
+            z: S.Number()
+          },
+          {
+            deserialize: (curr, value) => curr.copy(value),
+            id: 'Vec3'
+          }
+        )
       })
 
       const entity = createEntity()

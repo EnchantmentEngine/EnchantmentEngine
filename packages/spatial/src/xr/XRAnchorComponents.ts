@@ -29,6 +29,7 @@ import matches from 'ts-matches'
 
 import {
   Engine,
+  EntityTreeComponent,
   EntityUUID,
   S,
   UUIDComponent,
@@ -42,7 +43,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { NameComponent } from '../common/NameComponent'
 import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'

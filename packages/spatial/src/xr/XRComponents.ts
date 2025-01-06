@@ -35,9 +35,9 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
+import { EntityTreeComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Types } from 'bitecs'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
 
