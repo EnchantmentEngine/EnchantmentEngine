@@ -27,7 +27,7 @@ import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh } from 'three'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
-import { defineComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { createEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
@@ -35,7 +35,7 @@ import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { NameComponent } from '../common/NameComponent'
-import { addObjectToGroup, removeObjectFromGroup } from '../renderer/components/ObjectComponent'
+import { ObjectComponent } from '../renderer/components/ObjectComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { shadowMaterial } from './XRDetectedPlaneComponent'
@@ -66,14 +66,14 @@ export const XRDetectedMeshComponent = defineComponent({
       const shadowMesh = new Mesh(geometry, shadowMaterial)
       // const placementHelper = new Mesh(geometry, placementHelperMaterial)
 
-      addObjectToGroup(entity, shadowMesh)
+      setComponent(entity, ObjectComponent, shadowMesh)
       // addObjectToGroup(entity, placementHelper)
 
       component.shadowMesh.set(shadowMesh)
       // component.placementHelper.set(placementHelper)
 
       return () => {
-        removeObjectFromGroup(entity, shadowMesh)
+        removeComponent(entity, ObjectComponent)
         // removeObjectFromGroup(entity, placementHelper)
       }
     }, [component.mesh])
