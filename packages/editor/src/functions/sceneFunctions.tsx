@@ -68,7 +68,7 @@ export const saveSceneGLTF = async (
   const sceneName = cleanString(sceneFile!.replace('.scene.json', '').replace('.gltf', ''))
   let currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
   if (savePath) {
-    currentSceneDirectory = currentSceneDirectory.replace('scenes', savePath)
+    currentSceneDirectory = savePath
   }
   if (saveAs) {
     const existingScene = await API.instance.service(staticResourcePath).find({

@@ -105,7 +105,7 @@ export default function PublishModal(props: {
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
   const filesState = useMutableState(FilesState)
   const fileService = useMutation(fileBrowserPath)
-  const { createNewFolder } = useCurrentFiles()
+  const { files, createNewFolder, createPublishFolder } = useCurrentFiles()
   useEffect(() => {
     if (location) {
       name.set(location.name)
@@ -125,40 +125,42 @@ export default function PublishModal(props: {
       type: 'scene'
     }
   })
-  // const handleCreateFolder = async () => {
-  //   try {
-  //     await createNewFolder(); // Ensure this call is properly awaited
-  //   } catch (error) {
-  //     console.error('Error creating folder:', error);
-  //   }
-  // }
+
   const handleCreateFolder = async () => {
-    if (!createNewFolder) {
-      console.error('Cannot create folder because createNewFolder is undefined.')
-      return
-    }
-    await createNewFolder('publish')
-  }
-  const handleDuplicateScene = async () => {
-    //save duplicate scene to public location
+    // if (!createNewFolder) {
+    //   console.error('Cannot create folder because createNewFolder is undefined.')
+    //   return
+    // }
+    // //if exist publish folder dont create\
+
+    // const ifFolderExist = files.some(file => file.fullName === 'publish' && file.type === 'folder')
+    // if (ifFolderExist) {
+    //   console.log('Publish folder already exist')
+    //   //return
+    // }
+    // else {
+    // //await createNewFolder('publish')
+    //   await createPublishFolder()
+
+    // }
     const { projectName, sceneName, rootEntity, sceneAssetID } = getState(EditorState)
-    const path = '/project/' + projectName + '/public/' + 'publish'
-    const dupicatedScenePath = projectName + '/public/' + 'publish/' + sceneName + '-duplicated'
-    //await createNewFolder
-    //await fileService.create(path)
-    //fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
-    //check if there is publish folder if not create one
     const abortController = new AbortController()
     try {
       if (sceneName && projectName) {
+        const saveScenePath = getState(EditorState)
+          .scenePath!.split('/')
+          .slice(0, -1)
+          .join('/')
+          .replace('scenes', 'publish')
         await saveSceneGLTF(
           sceneAssetID!,
           projectName,
           sceneName + '-duplicated',
           abortController.signal,
           true,
-          'publish'
+          saveScenePath
         )
+        PopoverState.hidePopupover()
       }
     } catch (error) {
       PopoverState.showPopupover(

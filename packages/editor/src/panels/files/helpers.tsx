@@ -57,7 +57,8 @@ const FilesQueryContext = createContext({
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
-  createNewFolder: (name?: string) => {}
+  createNewFolder: () => {},
+  createPublishFolder: () => {}
 })
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
@@ -105,8 +106,8 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     await filesQuery.refetch()
   }
 
-  const createNewFolder = (name) => fileService.create(`${filesState.selectedDirectory.value}` + name)
-
+  const createNewFolder = () => fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+  const createPublishFolder = () => fileService.create(`/projects/${filesState.projectName.value}/public/publish`)
   const files = filesQuery.data.map((file) => {
     const isFolder = file.type === 'folder'
     const fullName = isFolder ? file.name : file.name + '.' + file.type
@@ -119,13 +120,20 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
       isFolder
     }
   })
-
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
   return (
     <FilesQueryContext.Provider
-      value={{ filesQuery, files, changeDirectoryByPath, backDirectory, refreshDirectory, createNewFolder }}
+      value={{
+        filesQuery,
+        files,
+        changeDirectoryByPath,
+        backDirectory,
+        refreshDirectory,
+        createNewFolder,
+        createPublishFolder
+      }}
     >
       {children}
     </FilesQueryContext.Provider>

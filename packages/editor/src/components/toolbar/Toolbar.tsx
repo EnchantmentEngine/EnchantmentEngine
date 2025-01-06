@@ -143,28 +143,6 @@ const generateToolbarMenu = () => {
 }
 
 const toolbarMenu = generateToolbarMenu()
-// const usePublish = () => {
-//   const filesState = useMutableState(FilesState)
-//   const fileService = useMutation(fileBrowserPath)
-//   const { createNewFolder } = useCurrentFiles()
-//   const onPublish = async () => {
-//     const sceneModified = EditorState.isModified()
-
-//     if (!sceneModified) return
-
-//     const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
-//     //fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
-//     createNewFolder()
-//     if (!sceneAssetID || !projectName || !sceneName || !rootEntity)
-//       throw new Error('Cannot save scene without scene data')
-
-//     const abortController = new AbortController()
-//     await saveSceneGLTF(sceneAssetID, projectName, sceneName, abortController.signal)
-//   }
-
-//   return { onPublish }
-// }
-//original publish
 const onPublish = async () => {
   const sceneModified = EditorState.isModified()
 
@@ -197,7 +175,6 @@ export default function Toolbar() {
   const hasPublishAccess = hasLocationWriteScope || permission?.type === 'owner' || permission?.type === 'editor'
   const locationQuery = useFind(locationPath, { query: { action: 'studio', sceneId: sceneAssetID.value } })
   const currentLocation = locationQuery.data[0]
-  //const { onPublish } = usePublish()
   return (
     <>
       <div className="flex h-10 items-center justify-between bg-theme-primary">
