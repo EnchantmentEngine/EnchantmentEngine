@@ -23,23 +23,18 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, setComponent } from '@ir-engine/ecs'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { proxifyParentChildRelationships } from '@ir-engine/spatial/src/renderer/functions/proxifyParentChildRelationships'
-import { Mesh } from 'three'
+import { defineState, UserID } from '@ir-engine/hyperflux'
 
-/**
- * Helper function for attaching a mesh to a scene entity
- * @param entity Entity to attach the mesh to
- * @param mesh Mesh to attach to the entity
- * @param objectLayers Object layers to assign to the mesh. Default is [ObjectLayers.Scene]
- */
-export function addMesh(entity: Entity, mesh: Mesh, objectLayers: number[] = [ObjectLayers.Scene]) {
-  setComponent(entity, MeshComponent, mesh)
-  addObjectToGroup(entity, mesh)
-  proxifyParentChildRelationships(mesh)
-  setObjectLayers(mesh, ...objectLayers)
-}
+export const EngineState = defineState({
+  name: 'EngineState',
+  initial: () => ({
+    /**
+     * The uuid of the logged-in user
+     */
+    userID: '' as UserID,
+
+    /** @deprecated use isEditing instead */
+    isEditor: false,
+    isEditing: false
+  })
+})

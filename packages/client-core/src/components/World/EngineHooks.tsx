@@ -49,7 +49,7 @@ import {
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { AuthState } from '../../user/services/AuthService'
 
 const logger = multiLogger.child({ component: 'client-core:world' })
@@ -73,17 +73,17 @@ export const useEngineInjection = () => {
 
 export const useNetwork = (props: { online?: boolean }) => {
   const userID = useMutableState(EngineState).userID.value
-  const acceptedTOS = useMutableState(AuthState).user.acceptedTOS.value
+  const ageVerified = useMutableState(AuthState).user.ageVerified.value
 
   useEffect(() => {
     getMutableState(NetworkState).config.set({
       world: !!props.online,
-      media: !!props.online && acceptedTOS,
+      media: !!props.online && ageVerified,
       friends: !!props.online,
       instanceID: !!props.online,
       roomID: false
     })
-  }, [props.online, acceptedTOS])
+  }, [props.online, ageVerified])
 
   /** Offline/local world network */
   useEffect(() => {

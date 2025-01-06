@@ -23,30 +23,26 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Camera, CameraHelper } from 'three'
+import { UndefinedEntity } from '@ir-engine/ecs'
+import { defineState } from '@ir-engine/hyperflux'
 
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+export const ReferenceSpaceState = defineState({
+  name: 'ReferenceSpaceState',
+  initial: {
+    /**
+     * Represents the reference space of the xr session local floor.
+     */
+    localFloorEntity: UndefinedEntity,
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useDisposable } from '../../resources/resourceHooks'
-import { useHelperEntity } from './DebugComponentUtils'
+    /**
+     * Represents the reference space for the absolute origin of the rendering context.
+     */
 
-export const CameraHelperComponent = defineComponent({
-  name: 'CameraHelperComponent',
+    originEntity: UndefinedEntity,
 
-  schema: S.Object({
-    name: S.String('camera-helper'),
-    camera: S.Required(S.Type<Camera>(null!)),
-    entity: S.Optional(S.Entity())
-  }),
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const component = useComponent(entity, CameraHelperComponent)
-    const [helper] = useDisposable(CameraHelper, entity, component.camera.value as Camera)
-    useHelperEntity(entity, component, helper)
-    helper.update()
-
-    return null
+    /**
+     * Represents the reference space for the viewer.
+     */
+    viewerEntity: UndefinedEntity
   }
 })
