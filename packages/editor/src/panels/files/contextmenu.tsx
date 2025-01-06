@@ -167,7 +167,7 @@ export function FileContextMenu({
         )}
         {/* Add New Folder */}
         <DropdownItem
-          onClick={() => createNewFolder()}
+          onClick={createNewFolder}
           data-testid="files-panel-file-item-context-menu-add-new-folder-button"
           label={t('editor:layout.filebrowser.addNewFolder')}
         />
