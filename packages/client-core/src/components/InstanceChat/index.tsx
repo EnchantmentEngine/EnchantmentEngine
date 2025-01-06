@@ -519,9 +519,7 @@ export const InstanceChatWrapper = () => {
   return (
     <>
       {targetChannelId.value ? (
-        <div className={`${bottomShelfStyle} ${styles.chatRoot}`}>
-          <InstanceChat />
-        </div>
+        <div className={`${bottomShelfStyle} ${styles.chatRoot}`}>{/* <InstanceChat /> */}</div>
       ) : (
         <>
           {networkWorldConfig.value && (

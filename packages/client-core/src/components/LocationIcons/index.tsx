@@ -31,15 +31,14 @@ import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 
 import { EngineState } from '@ir-engine/ecs'
+import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { LoadingSystemState } from '../../systems/state/LoadingState'
 import { ARPlacement } from '../ARPlacement'
 import { Fullscreen } from '../Fullscreen'
 import { InstanceChatWrapper } from '../InstanceChat'
 import { MediaIconsBox } from '../MediaIconsBox'
-import { Shelves } from '../Shelves'
 import { UserMediaWindows } from '../UserMediaWindows'
 import { XRLoading } from '../XRLoading'
-import styles from './index.module.scss'
 
 export const LocationIcons = () => {
   const userID = useHookstate(getMutableState(EngineState).userID).value
@@ -47,23 +46,32 @@ export const LocationIcons = () => {
   if (!userID) return null
 
   return (
-    <>
-      <UserMenu />
-      <>
-        {/** Container for fading most stuff in and out depending on if the location is loaded or not  */}
-        <div style={{ opacity: 1 - loadingScreenOpacity.value }}>
-          <div className={`${styles.rightSidebar}`}>
-            <UserMediaWindows />
-            <InstanceChatWrapper />
-          </div>
-          <Shelves />
-          <ARPlacement />
-          <XRLoading />
-          <MediaIconsBox />
-          <TouchGamepad />
-          {!iOS && <Fullscreen />}
-        </div>
-      </>
-    </>
+    <div style={{ opacity: 1 - loadingScreenOpacity.value }} className="relative h-screen w-full p-6">
+      <PopupMenu />
+      <div className="pointer-events-auto absolute top-0 h-fit w-full pt-[inherit]">
+        <MediaIconsBox />
+      </div>
+
+      <div className="pointer-events-auto absolute left-0 top-0 pl-[inherit] pt-[inherit]">
+        <UserMediaWindows />
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-0 h-fit w-full pb-[inherit]">
+        <UserMenu />
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-0 left-0 pb-[inherit] pl-[inherit]">
+        {!iOS && <Fullscreen />}
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-0 right-0 pb-[inherit] pr-[inherit]">
+        <InstanceChatWrapper />
+      </div>
+
+      <ARPlacement />
+      <XRLoading />
+
+      <TouchGamepad />
+    </div>
   )
 }
