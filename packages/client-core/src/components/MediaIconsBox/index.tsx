@@ -46,7 +46,13 @@ import multiLogger from '@ir-engine/common/src/logger'
 import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import LocationIconButton from '@ir-engine/ui/src/components/tailwind/LocationIconButton'
-import { Microphone01Lg, Monitor01Lg, VideoRecorderLg, VideoRecorderOffLg } from '@ir-engine/ui/src/icons'
+import {
+  Microphone01Lg,
+  MicrophoneOff,
+  ScreenShare,
+  VideoRecorderLg,
+  VideoRecorderOffLg
+} from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { VrIcon } from '../../common/components/Icons/VrIcon'
 import { SearchParamState } from '../../common/services/RouterService'
@@ -144,7 +150,7 @@ export const MediaIconsBox = () => {
           tooltip={{
             title: t('user:menu.toggleMute')
           }}
-          icon={Microphone01Lg} // TODO: Use correct icon
+          icon={isCamAudioEnabled ? Microphone01Lg : MicrophoneOff}
           id="UserAudio"
           onClick={MediaStreamState.toggleMicrophonePaused}
         />
@@ -205,7 +211,7 @@ export const MediaIconsBox = () => {
             tooltip={{
               title: t('user:menu.shareScreen')
             }}
-            icon={Monitor01Lg} // TODO: Use correct icon
+            icon={ScreenShare}
             id="UserScreenSharing"
             onClick={MediaStreamState.toggleScreenshare}
           />

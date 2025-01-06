@@ -28,7 +28,7 @@ import { useTranslation } from 'react-i18next'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import LocationIconButton from '@ir-engine/ui/src/components/tailwind/LocationIconButton'
-import { Expand06 } from '@ir-engine/ui/src/icons'
+import { Expand06Lg } from '@ir-engine/ui/src/icons'
 import { clientContextParams } from '../../util/ClientContextState'
 
 const logger = multiLogger.child({ component: 'client-core:FullScreen', modifier: clientContextParams })
@@ -66,7 +66,7 @@ export const Fullscreen = () => {
         title: fullScreenActive ? t('user:menu.exitFullScreen') : t('user:menu.enterFullScreen'),
         position: 'top'
       }}
-      icon={Expand06}
+      icon={Expand06Lg}
       onClick={() => setFullscreen(!fullScreenActive)}
     />
   )
