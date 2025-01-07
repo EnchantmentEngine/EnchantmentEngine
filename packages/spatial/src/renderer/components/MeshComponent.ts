@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Box3, BufferGeometry, Material, Mesh } from 'three'
+import { Box3, BufferAttribute, BufferGeometry, Material, Mesh, Texture } from 'three'
 
 import { Entity, useEntityContext } from '@ir-engine/ecs'
 import {
@@ -59,7 +59,6 @@ export const MeshComponent = defineComponent({
       setComponent(entity, ObjectComponent, meshResource.get(NO_PROXY) as Mesh)
       return () => {
         removeComponent(entity, ObjectComponent)
-        
       }
     }, [])
 
@@ -81,19 +80,43 @@ export const MeshComponent = defineComponent({
     }, [sceneLayer && meshComponent.geometry.value.boundingBox])
 
     useEffect(() => {
-      const geometry = meshComponent.geometry.value
-      if (geometry !== geometryResource.value && !isHookstateValue(geometry)) geometryResource.set(geometry)
+      const geometry = meshComponent.geometry.value as BufferGeometry
+      if (geometry !== geometryResource.value && !isHookstateValue(geometry)) {
+        geometryResource.set(geometry)
+      }
+      geometry.computeBoundingSphere()
+      const attributes = geometry.attributes
+      for (const name in attributes) {
+        if ('onUpload' in attributes[name]) (attributes[name] as BufferAttribute).onUpload(onUploadDropBuffer)
+      }
+      if (geometry.index) geometry.index.onUpload(onUploadDropBuffer)
     }, [meshComponent.geometry])
 
     useEffect(() => {
-      const material = meshComponent.material.value
+      const material = meshComponent.material.value as Material | Material[]
 
       if (material !== materialResource.value && !isHookstateValue(material)) materialResource.set(material)
 
       if (Array.isArray(material)) {
         material.forEach((material) => (material.needsUpdate = true))
+
+        for (const mat of material) {
+          Object.values(mat)
+            .filter((v: Texture) => v?.isTexture)
+            .map((v) => {
+              v.onUpdate = onTextureUploadDropSource
+              v.needsUpdate = true
+            })
+        }
       } else {
         ;(material as Material).needsUpdate = true
+
+        Object.values(material)
+          .filter((v: Texture) => v?.isTexture)
+          .map((v) => {
+            v.onUpdate = onTextureUploadDropSource
+            v.needsUpdate = true
+          })
       }
     }, [meshComponent.material])
 
@@ -142,4 +165,14 @@ export function useMeshComponent<TGeometry extends BufferGeometry, TMaterial ext
   }, [])
 
   return meshComponent as unknown as State<Mesh<TGeometry, TMaterial>>
+}
+
+const onUploadDropBuffer = function () {
+  this.array = new this.array.constructor(1)
+}
+
+const onTextureUploadDropSource = function () {
+  this.source.data = null
+  this.mipmaps.map((b) => delete b.data)
+  this.mipmaps = []
 }
