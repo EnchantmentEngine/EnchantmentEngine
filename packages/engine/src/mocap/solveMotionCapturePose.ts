@@ -49,7 +49,6 @@ import { getState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
@@ -61,6 +60,7 @@ import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { NormalizedBoneComponent } from '../avatar/components/NormalizedBoneComponent'
 import { LandmarkIndices } from './MocapConstants'
 import { MotionCaptureRigComponent } from './MotionCaptureRigComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 const grey = new Color(0.5, 0.5, 0.5)
 
@@ -161,7 +161,7 @@ const drawMocapDebug = (label: string) => {
         const mesh = new Mesh(new SphereGeometry(0.01), new MeshBasicMaterial({ color }))
         const entity = createEntity()
         debugEntities[key] = entity
-        addObjectToGroup(entity, mesh)
+        setComponent(entity, MeshComponent, mesh)
         setVisibleComponent(entity, true)
         setComponent(entity, NameComponent, `Mocap Debug ${label} ${LandmarkNames[key]}`)
         setObjectLayers(mesh, ObjectLayers.AvatarHelper)
@@ -185,7 +185,7 @@ const drawMocapDebug = (label: string) => {
 
     if (!lineSegmentEntity) {
       lineSegmentEntity = createEntity()
-      addObjectToGroup(lineSegmentEntity, positionLineSegment)
+      setComponent(lineSegmentEntity, ObjectComponent, positionLineSegment)
       setVisibleComponent(lineSegmentEntity, true)
       setComponent(lineSegmentEntity, NameComponent, 'Mocap Debug Line Segment ' + label)
       setObjectLayers(positionLineSegment, ObjectLayers.AvatarHelper)

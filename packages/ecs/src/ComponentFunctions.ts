@@ -1036,7 +1036,8 @@ export const LayerComponent = defineComponent({
     const entityLayer = LayerComponent.get(entity)
     if (entityLayer === Layers.Simulation) {
       const upstreamEntity = LayerComponents[Layers.Simulation].refs[entity]
-      if (upstreamEntity !== UndefinedEntity && entityExists(upstreamEntity)) return true
+      if (upstreamEntity !== undefined && upstreamEntity !== UndefinedEntity && entityExists(upstreamEntity))
+        return true
     }
     return false
   }
