@@ -255,15 +255,20 @@ export function FileContextMenu({
     <ContextMenu anchorEvent={anchorEvent} onClose={() => setAnchorEvent(undefined)}>
       <div className="w-40 overflow-hidden rounded" tabIndex={0}>
         {fileActions
-          .filter((action) => action.condition)
+          .filter((action) => action.condition || Object.keys(action).length === 0)
           .map((action, index) => (
-            <DropdownItem
-              key={index}
-              label={action.label}
-              onClick={action.action}
-              data-testid={action.testId}
-              className="bg-[rgba(20,22,25,0.9)] text-white"
-            />
+            <>
+              {Object.keys(action).length === 0 && <hr className="mx-1 border-[#42454D]" />}
+              {Object.keys(action).length > 0 && (
+                <DropdownItem
+                  key={index}
+                  label={action.label}
+                  onClick={action.action}
+                  data-testid={action.testId}
+                  className="bg-[rgba(20,22,25,0.9)] text-white"
+                />
+              )}
+            </>
           ))}
       </div>
     </ContextMenu>
