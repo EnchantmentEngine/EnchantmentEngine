@@ -177,10 +177,14 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
     }
 
     if (identityProvider) {
+      console.log('Removing existing login tokens')
       await this.removePreviousLoginTokensByProvider(identityProvider.id)
+      console.log('Removed existing login tokens, creating new one')
       const loginToken = await this.app.service(loginTokenPath).create({
         identityProviderId: identityProvider.id
       })
+
+      console.log('New login token', loginToken)
 
       if (data.type === 'email') {
         await this.sendEmail(data.email, loginToken.id, loginToken.token, data.redirectUrl)
