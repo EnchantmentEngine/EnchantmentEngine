@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Object3D } from 'three'
 
-import { ResourceManager } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 
 import { GLTF, GLTFLoaderPlugin } from '../GLTFLoader'
 import { ImporterExtension } from './ImporterExtension'
@@ -45,7 +45,7 @@ class ResourceManagerLoadExtension extends ImporterExtension implements GLTFLoad
   AddAssetToResourceManager(asset: Object3D) {
     const parser = this.parser
     const assetKey = parser.options.url
-    ResourceManager.addReferencedAsset(assetKey, asset)
+    ResourceState.addReferencedAsset(assetKey, asset)
     if (asset.children) for (const child of asset.children) this.AddAssetToResourceManager(child)
   }
 }

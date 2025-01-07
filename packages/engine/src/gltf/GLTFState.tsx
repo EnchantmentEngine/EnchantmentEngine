@@ -97,7 +97,7 @@ import {
   MaterialInstanceComponent,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { ResourceManager, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { GLTFParserOptions } from '../assets/loaders/gltf/GLTFParser'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
@@ -951,9 +951,9 @@ const SkinnedMeshReactor = (props: { nodeIndex: number; documentID: string; enti
     skinnedMeshComponent.skeleton.set(skeleton)
 
     const url = options.url
-    ResourceManager.addReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
+    ResourceState.addReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
     return () => {
-      ResourceManager.removeReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
+      ResourceState.removeReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
     }
   }, [jointEntityLoadedState, inverseBindMatrices, !!skinnedMeshComponent])
 
@@ -1071,9 +1071,9 @@ const PrimitiveReactor = (props: {
     mesh.name = node.name ?? 'Node-' + props.nodeIndex
 
     const url = options.url
-    ResourceManager.addReferencedAsset(url, mesh, ResourceType.Mesh)
+    ResourceState.addReferencedAsset(url, mesh, ResourceType.Mesh)
     return () => {
-      ResourceManager.removeReferencedAsset(url, mesh, ResourceType.Mesh)
+      ResourceState.removeReferencedAsset(url, mesh, ResourceType.Mesh)
       if (entityExists(props.entity)) {
         removeComponent(props.entity, SkinnedMeshComponent)
         removeComponent(props.entity, MeshComponent)

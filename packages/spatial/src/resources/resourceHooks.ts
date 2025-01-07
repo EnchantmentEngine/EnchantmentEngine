@@ -29,12 +29,12 @@ import { v4 as uuidv4 } from 'uuid'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { NO_PROXY, State, useDidMount, useHookstate } from '@ir-engine/hyperflux'
 
-import { DisposableObject, ResourceAssetType, ResourceManager } from './ResourceState'
+import { DisposableObject, ResourceAssetType, ResourceState } from './ResourceState'
 
 /**
  *
  * Loader hook for creating an instance of a class that implements the DisposableObject interface in ResourceState.ts in a React context,
- * but has it's lifecycle managed by the ResourceManager in ResourceState.ts
+ * but has it's lifecycle managed by the ResourceState in ResourceState.ts
  *
  * @deprecated in favor of useResource
  * @param disposableLike A class that implements the DisposableObject interface eg. DirectionalLight
@@ -48,11 +48,11 @@ export function useDisposable<T extends DisposableObject, T2 extends new (...par
   ...args: ConstructorParameters<T2>
 ): [InstanceType<T2>, () => void] {
   const classState = useHookstate(() => disposableLike)
-  const objState = useHookstate<InstanceType<T2>>(() => ResourceManager.loadObj(disposableLike, entity, ...args))
+  const objState = useHookstate<InstanceType<T2>>(() => ResourceState.loadObj(disposableLike, entity, ...args))
 
   const unload = () => {
     if (objState.value) {
-      ResourceManager.unload(ResourceManager.getResourceID(objState.get(NO_PROXY)), entity)
+      ResourceState.unload(ResourceState.getResourceID(objState.get(NO_PROXY)), entity)
     }
   }
 
@@ -64,7 +64,7 @@ export function useDisposable<T extends DisposableObject, T2 extends new (...par
     if (disposableLike !== classState.value) {
       unload()
       classState.set(() => disposableLike)
-      objState.set(() => ResourceManager.loadObj(disposableLike, entity, ...args))
+      objState.set(() => ResourceState.loadObj(disposableLike, entity, ...args))
     }
   }, [disposableLike])
 
@@ -74,7 +74,7 @@ export function useDisposable<T extends DisposableObject, T2 extends new (...par
 /**
  *
  * Loader hook for creating an instance of a class that extends DisposableObject in a non-React context,
- * Tracked by the ResourceManager in ResourceState.ts, but will not be unloaded unless the unload function that is returned is called
+ * Tracked by the ResourceState in ResourceState.ts, but will not be unloaded unless the unload function that is returned is called
  * Useful for when you only want to create the object if a condition is met (eg. is debug enabled)
  *
  * @param disposableLike A class that implements the DisposableObject interface in ResourceState.ts eg. DirectionalLight
@@ -87,10 +87,10 @@ export function createDisposable<T extends DisposableObject, T2 extends new (...
   entity: Entity,
   ...args: ConstructorParameters<T2>
 ): [InstanceType<T2>, () => void] {
-  const obj = ResourceManager.loadObj(disposableLike, entity, ...args)
+  const obj = ResourceState.loadObj(disposableLike, entity, ...args)
 
   const unload = () => {
-    ResourceManager.unload(ResourceManager.getResourceID(obj), entity)
+    ResourceState.unload(ResourceState.getResourceID(obj), entity)
   }
 
   return [obj, unload]
@@ -114,10 +114,10 @@ export function useResource<TObj>(
   onUnload?: () => void
 ): [State<TObj>, () => void] {
   const uniqueID = useHookstate<string>(uuidv4)
-  const resourceState = useHookstate<TObj>(() => ResourceManager.addResource(resource, uniqueID.value, entity))
+  const resourceState = useHookstate<TObj>(() => ResourceState.addResource(resource, uniqueID.value, entity))
 
   const unload = () => {
-    ResourceManager.unload(uniqueID.value, entity)
+    ResourceState.unload(uniqueID.value, entity)
     if (onUnload) onUnload()
   }
 
@@ -129,7 +129,7 @@ export function useResource<TObj>(
 
   useDidMount(() => {
     unload()
-    ResourceManager.addResource(resourceState.value, uniqueID.value, entity)
+    ResourceState.addResource(resourceState.value, uniqueID.value, entity)
   }, [resourceState])
 
   return [resourceState, unload]
@@ -144,14 +144,14 @@ export function useReferencedResource<Asset>(
 
   const unload = () => {
     const resourceValue = resourceState.value as ResourceAssetType
-    if (resourceValue) ResourceManager.removeReferencedAsset(assetKey, resourceValue)
+    if (resourceValue) ResourceState.removeReferencedAsset(assetKey, resourceValue)
     if (onUnload) onUnload()
   }
 
   useEffect(() => {
     const resourceValue = resourceState.value as ResourceAssetType
     if (resourceValue) {
-      ResourceManager.addReferencedAsset(assetKey, resourceValue)
+      ResourceState.addReferencedAsset(assetKey, resourceValue)
       return unload
     }
   }, [resourceState])

@@ -54,7 +54,7 @@ import {
   MaterialInstanceComponent,
   MaterialPrototypeComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { ResourceManager, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { useEffect } from 'react'
 import {
   AnimationClip,
@@ -1013,9 +1013,9 @@ const useLoadImageSource = (
 
     result.set(resultTexture)
     const url = options.url
-    ResourceManager.addReferencedAsset(url, resultTexture, ResourceType.Texture)
+    ResourceState.addReferencedAsset(url, resultTexture, ResourceType.Texture)
     return () => {
-      ResourceManager.removeReferencedAsset(url, resultTexture, ResourceType.Texture)
+      ResourceState.removeReferencedAsset(url, resultTexture, ResourceType.Texture)
     }
   }, [loadedTexture])
 
@@ -1448,7 +1448,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
       mesh.name = node.name ?? 'Node-' + i
 
       const url = options.url
-      ResourceManager.addReferencedAsset(url, mesh, ResourceType.Mesh)
+      ResourceState.addReferencedAsset(url, mesh, ResourceType.Mesh)
       const materialInstance: ComponentType<typeof MaterialInstanceComponent> = { uuid: [] }
       for (let primIndex = 0; primIndex < meshDef.primitives.length; primIndex++) {
         const primitive = meshDef.primitives[primIndex]
@@ -1567,7 +1567,7 @@ const loadGLTF = async (options: GLTFParserOptions) => {
     skinnedMeshComponent.skeleton = skeleton
 
     const url = options.url
-    ResourceManager.addReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
+    ResourceState.addReferencedAsset(url, skeleton as unknown as Object3D, ResourceType.Object3D)
   }
 
   //parent root nodes to gltf entity

@@ -40,7 +40,7 @@ import {
 import { getState, NO_PROXY, State, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import {
   ResourceAssetType,
-  ResourceManager,
+  ResourceState,
   ResourceStatus,
   ResourceType
 } from '@ir-engine/spatial/src/resources/ResourceState'
@@ -74,7 +74,7 @@ function useLoader<T extends ResourceAssetType>(
   const uuid = useHookstate<string>(uuidv4)
 
   const unload = () => {
-    if (url) ResourceManager.unload(url, entity, uuid.value)
+    if (url) ResourceState.unload(url, entity, uuid.value)
   }
 
   useEffect(() => {
@@ -129,7 +129,7 @@ function useLoader<T extends ResourceAssetType>(
         )
 
       if (entity && entityExists(entity)) ResourcePendingComponent.removeResource(entity, _url)
-      ResourceManager.unload(_url, entity, uuid.value)
+      ResourceState.unload(_url, entity, uuid.value)
       value.set(null)
       progress.set(null)
       error.set(null)
@@ -156,7 +156,7 @@ function useBatchLoader<T extends ResourceAssetType>(
   const progress = useHookstate<ProgressEvent<EventTarget>[]>(new Array(urls.length).fill(null))
 
   const unload = () => {
-    for (const url of urls) ResourceManager.unload(url, entity)
+    for (const url of urls) ResourceState.unload(url, entity)
   }
 
   useEffect(() => {
@@ -212,7 +212,7 @@ async function getLoader<T extends ResourceAssetType>(
   loader?: AssetLoader
 ): Promise<[T | null, () => void, ErrorEvent | Error | null]> {
   const unload = () => {
-    ResourceManager.unload(url, entity)
+    ResourceState.unload(url, entity)
   }
 
   return new Promise((resolve) => {
@@ -278,7 +278,7 @@ export function useGLTFResource(url: string, entity: Entity): void {
 
   useLayoutEffect(() => {
     return () => {
-      if (url) ResourceManager.unload(url, entity)
+      if (url) ResourceState.unload(url, entity)
     }
   }, [url])
 }
@@ -286,7 +286,7 @@ export function useGLTFResource(url: string, entity: Entity): void {
 /**
  *
  * GLTF loader function for when you need to load an asset in a non-React context.
- * The asset will be loaded through the ResourceManager in ResourceState.ts.
+ * The asset will be loaded through the ResourceState in ResourceState.ts.
  * The asset will only be unloaded when onUnloadCallback is called, otherwise the asset will be leaked.
  *
  * @param url The URL of the GLTF file to load
@@ -305,7 +305,7 @@ export async function getGLTFAsync(
 /**
  *
  * Texture loader hook for use in React Contexts.
- * The asset will be loaded through the ResourceManager in ResourceState.ts.
+ * The asset will be loaded through the ResourceState in ResourceState.ts.
  * The asset will be unloaded and disposed when the component is unmounted or when onUnloadCallback is called.
  *
  * @param url The URL of the texture file to load
@@ -335,7 +335,7 @@ export function useFile(
 /**
  *
  * Texture loader function for when you need to load an asset in a non-React context.
- * The asset will be loaded through the ResourceManager in ResourceState.ts.
+ * The asset will be loaded through the ResourceState in ResourceState.ts.
  * The asset will only be unloaded when onUnloadCallback is called, otherwise the asset will be leaked.
  *
  * @param url The URL of the texture file to load

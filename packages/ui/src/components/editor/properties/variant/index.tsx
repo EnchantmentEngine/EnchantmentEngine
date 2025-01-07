@@ -39,12 +39,7 @@ import {
   VariantLevel
 } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { State, getState } from '@ir-engine/hyperflux'
-import {
-  ResourceManager,
-  ResourceState,
-  ResourceStatus,
-  ResourceType
-} from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState, ResourceStatus, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import Button from '../../../../primitives/tailwind/Button'
 import InputGroup from '../../input/Group'
 import ModelInput from '../../input/Model'
@@ -76,7 +71,7 @@ const buildBudgetVariantMetadata = (
       const maxTextureSize = metadata.textureWidths ? Math.max(...metadata.textureWidths) : 0
       const verts = metadata.verts
       callback(maxTextureSize, verts)
-      ResourceManager.unload(src, UndefinedEntity)
+      ResourceState.unload(src, UndefinedEntity)
     },
     () => {},
     (error) => {

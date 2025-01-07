@@ -29,12 +29,7 @@ import { DoneCallback, afterEach, beforeEach, describe, it } from 'vitest'
 import { createEntity, destroyEngine } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { getState } from '@ir-engine/hyperflux'
-import {
-  ResourceManager,
-  ResourceState,
-  ResourceStatus,
-  ResourceType
-} from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState, ResourceStatus, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 
 import Sinon from 'sinon'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
@@ -119,7 +114,7 @@ describe('resourceLoaderFunctions', () => {
           ResourceType.GLTF,
           entity,
           (response) => {
-            ResourceManager.unload(url, entity)
+            ResourceState.unload(url, entity)
             assert(resourceState.resources[url] === undefined, 'Asset not removed')
 
             done()
@@ -157,12 +152,12 @@ describe('resourceLoaderFunctions', () => {
                 assert(resourceState.resources[url].references.length === 2, 'References not counted')
                 assert(resourceState.resources[url].references.indexOf(entity) !== -1, 'Entity not referenced')
                 assert(resourceState.resources[url].references.indexOf(entity) !== -1, 'Entity2 not referenced')
-                ResourceManager.unload(url, entity)
+                ResourceState.unload(url, entity)
 
                 assert(resourceState.resources[url].references.length.valueOf() === 1, 'Entity reference not removed')
                 assert(resourceState.resources[url].references.indexOf(entity) === -1)
 
-                ResourceManager.unload(url, entity2)
+                ResourceState.unload(url, entity2)
                 assert(resourceState.resources[url] === undefined, 'Asset not removed')
 
                 done()
@@ -204,12 +199,12 @@ describe('resourceLoaderFunctions', () => {
               (response) => {
                 assert(resourceState.resources[url].references.length === 2, 'References not counted')
                 assert(resourceState.resources[url].references.indexOf(entity) !== -1, 'Entity not referenced')
-                ResourceManager.unload(url, entity)
+                ResourceState.unload(url, entity)
 
                 assert(resourceState.resources[url].references.length.valueOf() === 1, 'Entity reference not removed')
                 assert(resourceState.resources[url].references.indexOf(entity) !== -1)
 
-                ResourceManager.unload(url, entity)
+                ResourceState.unload(url, entity)
                 assert(resourceState.resources[url] === undefined, 'Asset not removed')
 
                 done()
@@ -245,7 +240,7 @@ describe('resourceLoaderFunctions', () => {
           entity,
           (response) => {
             assert(resourceState.resources[url] !== undefined, 'Asset not found')
-            ResourceManager.unload(url, entity)
+            ResourceState.unload(url, entity)
             if (oneDone) done()
             else oneDone = true
           },
@@ -261,7 +256,7 @@ describe('resourceLoaderFunctions', () => {
           entity2,
           (response) => {
             assert(resourceState.resources[url] !== undefined, 'Asset not found')
-            ResourceManager.unload(url, entity2)
+            ResourceState.unload(url, entity2)
             if (oneDone) done()
             else oneDone = true
           },
@@ -289,7 +284,7 @@ describe('resourceLoaderFunctions', () => {
             assert(resourceState.resources[url].assetRefs?.Mesh.length === 2)
             const referencedMeshes = resourceState.resources[url].assetRefs.Mesh
             for (const refMesh of referencedMeshes) assert(resourceState.resources[refMesh])
-            ResourceManager.unload(url, entity)
+            ResourceState.unload(url, entity)
             assert(!resourceState.resources[url])
             done()
           },

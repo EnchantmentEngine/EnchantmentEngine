@@ -118,24 +118,6 @@ type Resource = {
   metadata: Metadata
 }
 
-export const ResourceState = defineState({
-  name: 'ResourceManagerState',
-
-  initial: () => ({
-    resources: {} as Record<string, Resource>,
-    totalVertexCount: 0,
-    totalBufferCount: 0,
-    debug: false
-  }),
-
-  debugLog: (...data: any[]) => {
-    if (getState(ResourceState).debug) console.log(...data)
-  },
-  debugWarn: (...data: any[]) => {
-    if (getState(ResourceState).debug) console.warn(...data)
-  }
-})
-
 //#region budget checking functions
 const getTotalSizeOfResources = () => {
   let size = 0
@@ -748,7 +730,7 @@ const unload = (id: string, entity: Entity, uuid?: string) => {
     return entities
   })
 
-  if (resource.references.length == 0) {
+  if (resource.references.length === 0) {
     if (resourceState.debug.value)
       ResourceState.debugLog('Before Removing Resources: ' + JSON.stringify(getRendererInfo()))
     removeResource(id)
@@ -795,7 +777,23 @@ const removeResource = (id: string) => {
   resources[id].set(none)
 }
 
-export const ResourceManager = {
+export const ResourceState = defineState({
+  name: 'ResourceState',
+
+  initial: () => ({
+    resources: {} as Record<string, Resource>,
+    totalVertexCount: 0,
+    totalBufferCount: 0,
+    debug: false
+  }),
+
+  debugLog: (...data: any[]) => {
+    if (getState(ResourceState).debug) console.log(...data)
+  },
+  debugWarn: (...data: any[]) => {
+    if (getState(ResourceState).debug) console.warn(...data)
+  },
+
   resourceCallbacks,
   loadObj,
   getResourceID,
@@ -812,4 +810,4 @@ export const ResourceManager = {
   },
   /** Removes a resource even if it is still being referenced, needed for updating assets in the studio */
   __unsafeRemoveResource: removeResource
-}
+})

@@ -50,7 +50,6 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { Object3DWithEntity, ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { ResourceManager } from '@ir-engine/spatial/src/resources/ResourceState'
 import {
   DistanceFromCameraComponent,
   FrustumCullCameraComponent
@@ -59,6 +58,7 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { KHRUnlitExtensionComponent } from '../../gltf/MaterialDefinitionComponent'
 import { UpdatableCallback, UpdatableComponent } from '../components/UpdatableComponent'
 
+import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 import { ShadowComponent } from '../components/ShadowComponent'
 import { SourceComponent } from '../components/SourceComponent'
 
@@ -113,7 +113,7 @@ function SceneObjectReactor() {
       ? GLTFComponent.getInstanceID(entity)
       : getOptionalComponent(entity, SourceComponent)
     return () => {
-      ResourceManager.unloadObj(obj, source)
+      ResourceState.unloadObj(obj, source)
     }
   }, [])
 

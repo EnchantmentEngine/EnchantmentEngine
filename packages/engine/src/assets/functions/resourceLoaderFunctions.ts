@@ -27,7 +27,6 @@ import { Entity } from '@ir-engine/ecs'
 import { getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 import {
   ResourceAssetType,
-  ResourceManager,
   ResourceState,
   ResourceStatus,
   ResourceType
@@ -54,7 +53,7 @@ export const setGLTFResource = (url: string, entity: Entity, status: ResourceSta
     })
   } else if (!resources[url].references.value.includes(entity)) resources[url].references.merge([entity])
 
-  const callbacks = ResourceManager.resourceCallbacks[resourceType]
+  const callbacks = ResourceState.resourceCallbacks[resourceType]
   const resource = resources[url]
   resource.status.set(status)
 
@@ -104,7 +103,7 @@ export const loadResource = <T extends ResourceAssetType>(
 ) => {
   const resourceState = getMutableState(ResourceState)
   const resources = resourceState.nested('resources')
-  let callbacks = ResourceManager.resourceCallbacks[resourceType]
+  let callbacks = ResourceState.resourceCallbacks[resourceType]
   if (!resources[url].value) {
     resources.merge({
       [url]: {
@@ -119,7 +118,7 @@ export const loadResource = <T extends ResourceAssetType>(
     if (uuid) resources[url].onLoads.merge({ [uuid]: { entity, onLoad } })
   } else {
     //No need for callbacks if the asset has already been loaded
-    callbacks = ResourceManager.resourceCallbacks[ResourceType.Unknown]
+    callbacks = ResourceState.resourceCallbacks[ResourceType.Unknown]
     resources[url].references.merge([entity])
     if (uuid) resources[url].onLoads.merge({ [uuid]: { entity, onLoad } })
 
@@ -135,33 +134,33 @@ export const loadResource = <T extends ResourceAssetType>(
     }
     // If asset already exists clone it to share GPU memory
     else if (cloneAsset(asset, onLoad)) {
-      ResourceState.debugLog(`ResourceManager:load cloning already loaded asset: ${url} for entity: ${entity}`)
+      ResourceState.debugLog(`ResourceState:load cloning already loaded asset: ${url} for entity: ${entity}`)
       return
     }
   }
 
   const resource = resources[url]
   callbacks.onStart(resource)
-  ResourceState.debugLog(`ResourceManager:load Loading resource: ${url} for entity: ${entity}`)
+  ResourceState.debugLog(`ResourceState:load Loading resource: ${url} for entity: ${entity}`)
   AssetLoader.loadAsset<T>(
     url,
     (response: T) => {
       if (!resource || !resource.value) {
-        console.warn(`ResourceManager:load Resource removed before load finished: ${url} for entity: ${entity}`)
+        console.warn(`ResourceState:load Resource removed before load finished: ${url} for entity: ${entity}`)
         return
       }
       resource.asset.set(response)
       resource.status.set(ResourceStatus.Loaded)
       callbacks.onLoad(response, resource, resourceState)
-      ResourceState.debugLog(`ResourceManager:load Loaded resource: ${url} for entity: ${entity}`)
-      ResourceManager.checkBudgets()
+      ResourceState.debugLog(`ResourceState:load Loaded resource: ${url} for entity: ${entity}`)
+      ResourceState.checkBudgets()
       onLoad(response)
 
       if (pending[url]) {
         for (const pendingLoad of pending[url]) {
           if (!cloneAsset(response as Cloneable<T>, pendingLoad))
-            console.warn(`ResourceManager:load unable to clone asset for pending response: ${url}`)
-          else ResourceState.debugLog(`ResourceManager:load cloning pending asset: ${url}`)
+            console.warn(`ResourceState:load unable to clone asset for pending response: ${url}`)
+          else ResourceState.debugLog(`ResourceState:load cloning pending asset: ${url}`)
         }
         pending[url].clear()
       }
@@ -171,13 +170,13 @@ export const loadResource = <T extends ResourceAssetType>(
       onProgress(request)
     },
     (error) => {
-      console.warn(`ResourceManager:load error loading ${resourceType} at url ${url} for entity ${entity}`, error)
+      console.warn(`ResourceState:load error loading ${resourceType} at url ${url} for entity ${entity}`, error)
       if (resource && resource.value) {
         resource.status.set(ResourceStatus.Error)
         callbacks.onError(error, resource)
       }
       onError(error)
-      ResourceManager.unload(url, entity, uuid)
+      ResourceState.unload(url, entity, uuid)
     },
     signal,
     loader
@@ -208,7 +207,7 @@ const reloadResource = (url: string) => {
 
   ResourceState.debugLog('resourceLoaderFunctions:reloadResource Updating asset for url: ' + url)
   const resourceType = resource.type.value
-  ResourceManager.__unsafeRemoveResource(url)
+  ResourceState.__unsafeRemoveResource(url)
   for (const [uuid, loadObj] of Object.entries(onLoads)) {
     loadResource(
       url,

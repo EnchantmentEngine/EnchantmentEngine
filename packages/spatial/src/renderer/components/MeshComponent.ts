@@ -59,6 +59,7 @@ export const MeshComponent = defineComponent({
       setComponent(entity, ObjectComponent, meshResource.get(NO_PROXY) as Mesh)
       return () => {
         removeComponent(entity, ObjectComponent)
+        
       }
     }, [])
 
