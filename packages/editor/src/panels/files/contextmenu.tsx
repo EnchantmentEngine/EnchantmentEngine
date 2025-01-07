@@ -107,62 +107,6 @@ export function FileContextMenu({
 
   const fileActions = [
     {
-      condition: hasFiles,
-      label: t('editor:layout.assetGrid.placeObject'),
-      action: () => {
-        const vec3 = new Vector3()
-        getSpawnPositionAtCenter(vec3)
-        selectedFiles
-          .filter((file) => !file.isFolder.value)
-          .map((file) => {
-            addMediaNode(file.url.value, undefined, undefined, [
-              { name: TransformComponent.jsonID, props: { position: vec3 } }
-            ])
-          })
-        setAnchorEvent(undefined)
-      },
-      testId: 'files-panel-file-item-context-menu-place-object-button'
-    },
-    {
-      condition: hasFiles,
-      label: t('editor:layout.assetGrid.placeObjectAtOrigin'),
-      action: () => {
-        selectedFiles
-          .filter((file) => !file.isFolder.value)
-          .map((file) => {
-            addMediaNode(file.url.value)
-          })
-        setAnchorEvent(undefined)
-      },
-      testId: 'files-panel-file-item-context-menu-place-object-at-origin-button'
-    },
-    {
-      condition: hasSelection,
-      label: t('editor:layout.assetGrid.copyURL'),
-      action: () => {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(selectedFiles.map((file) => file.url.value).join(' '))
-        }
-        setAnchorEvent(undefined)
-      },
-      testId: 'files-panel-file-item-context-menu-copy-url-button'
-    },
-    {
-      condition: hasFiles,
-      label: t('editor:layout.assetGrid.openInNewTab'),
-      action: () => {
-        selectedFiles.filter((file) => !file.isFolder.value).forEach((file) => window.open(file.url.value))
-        setAnchorEvent(undefined)
-      },
-      testId: 'files-panel-file-item-context-menu-open-in-new-tab-button'
-    },
-    {
-      condition: true, // Always visible
-      label: t('editor:layout.filebrowser.addNewFolder'),
-      action: createNewFolder,
-      testId: 'files-panel-file-item-context-menu-add-new-folder-button'
-    },
-    {
       condition: hasSelection,
       label: t('editor:layout.filebrowser.cutAsset'),
       action: () => {
@@ -186,6 +130,7 @@ export function FileContextMenu({
       action: () => <PasteFileButton setAnchorEvent={setAnchorEvent} />,
       testId: ''
     },
+    {}, // BREAK
     {
       condition: selectedFiles.length === 1,
       label: t('editor:layout.filebrowser.renameAsset'),
@@ -225,6 +170,65 @@ export function FileContextMenu({
       },
       testId: ''
     },
+    {}, // BREAK
+    {
+      condition: hasSelection,
+      label: t('editor:layout.assetGrid.copyURL'),
+      action: () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(selectedFiles.map((file) => file.url.value).join(' '))
+        }
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-copy-url-button'
+    },
+    {
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.openInNewTab'),
+      action: () => {
+        selectedFiles.filter((file) => !file.isFolder.value).forEach((file) => window.open(file.url.value))
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-open-in-new-tab-button'
+    },
+    {}, // BREAK
+    {
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.placeObject'),
+      action: () => {
+        const vec3 = new Vector3()
+        getSpawnPositionAtCenter(vec3)
+        selectedFiles
+          .filter((file) => !file.isFolder.value)
+          .map((file) => {
+            addMediaNode(file.url.value, undefined, undefined, [
+              { name: TransformComponent.jsonID, props: { position: vec3 } }
+            ])
+          })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-place-object-button'
+    },
+    {
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.placeObjectAtOrigin'),
+      action: () => {
+        selectedFiles
+          .filter((file) => !file.isFolder.value)
+          .map((file) => {
+            addMediaNode(file.url.value)
+          })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-place-object-at-origin-button'
+    },
+    {}, // BREAK
+    {
+      condition: true, // Always visible
+      label: t('editor:layout.filebrowser.addNewFolder'),
+      action: createNewFolder,
+      testId: 'files-panel-file-item-context-menu-add-new-folder-button'
+    },
     {
       condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'image'),
       label: t('editor:layout.filebrowser.compress'),
@@ -249,11 +253,17 @@ export function FileContextMenu({
 
   return (
     <ContextMenu anchorEvent={anchorEvent} onClose={() => setAnchorEvent(undefined)}>
-      <div className="w-40" tabIndex={0}>
+      <div className="w-40 overflow-hidden rounded" tabIndex={0}>
         {fileActions
           .filter((action) => action.condition)
           .map((action, index) => (
-            <DropdownItem key={index} label={action.label} onClick={action.action} data-testid={action.testId} />
+            <DropdownItem
+              key={index}
+              label={action.label}
+              onClick={action.action}
+              data-testid={action.testId}
+              className="bg-[rgba(20,22,25,0.9)] text-white"
+            />
           ))}
       </div>
     </ContextMenu>
