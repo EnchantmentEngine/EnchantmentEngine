@@ -262,10 +262,10 @@ export function FileContextMenu({
               {Object.keys(action).length > 0 && (
                 <DropdownItem
                   key={index}
-                  label={action.label}
+                  label={action.label || ''}
                   onClick={action.action}
                   data-testid={action.testId}
-                  className="bg-[rgba(20,22,25,0.9)] text-white"
+                  className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
                 />
               )}
             </>
