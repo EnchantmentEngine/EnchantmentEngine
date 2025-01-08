@@ -59,6 +59,7 @@ export class LoginService implements ServiceInterface {
    */
   async get(id: Id, params?: LoginParams) {
     try {
+      console.log('LOGIN params.headers', params.headers)
       if (!id) {
         logger.info('Invalid login id, cannot be null or undefined')
         return {
@@ -167,7 +168,9 @@ export class LoginService implements ServiceInterface {
         }
       })
 
+      console.log('removing login token', loginToken.id)
       await this.app.service(loginTokenPath).remove(loginToken.id)
+      console.log('removed login token', loginToken.id)
       await this.app.service(userPath).patch(identityProvider.userId, {
         isGuest: false
       })

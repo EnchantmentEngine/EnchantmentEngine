@@ -186,6 +186,13 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
 
       console.log('New login token', loginToken)
 
+      try {
+        const fetchedLoginToken = await this.app.service(loginTokenPath).get(loginToken.id)
+        console.log('loginToken existed immediately after creation at', new Date())
+      } catch(err) {
+        console.log('loginToken was missing immediately after creation at', new Date())
+      }
+
       if (data.type === 'email') {
         await this.sendEmail(data.email, loginToken.id, loginToken.token, data.redirectUrl)
       } else if (data.type === 'sms') {
