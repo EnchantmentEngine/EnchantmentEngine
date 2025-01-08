@@ -86,6 +86,7 @@ function PasteFileButton({
         }
       }}
       label={t('editor:layout.filebrowser.pasteAsset')}
+      className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
     />
   )
 }
@@ -107,6 +108,7 @@ export function FileContextMenu({
 
   const fileActions = [
     {
+      // CUT
       condition: hasSelection,
       label: t('editor:layout.filebrowser.cutAsset'),
       action: () => {
@@ -116,6 +118,7 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-cut-asset-button'
     },
     {
+      // COPY
       condition: hasSelection,
       label: t('editor:layout.filebrowser.copyAsset'),
       action: () => {
@@ -125,10 +128,12 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-copy-asset-button'
     },
     {
+      // PASTE
       condition: true, // Paste is always available
       label: '',
-      action: () => <PasteFileButton setAnchorEvent={setAnchorEvent} />,
-      testId: ''
+      action: () => {},
+      testId: '',
+      component: <PasteFileButton setAnchorEvent={setAnchorEvent} />
     },
     {}, // BREAK
     {
@@ -143,6 +148,7 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-rename-asset-button'
     },
     {
+      // DELETE
       condition: hasSelection,
       label: t('editor:layout.assetGrid.deleteAsset'),
       action: () => {
@@ -160,6 +166,7 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-delete-asset-button'
     },
     {
+      // COMPRESS
       condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'model'),
       label: t('editor:layout.filebrowser.compress'),
       action: () => {
@@ -170,8 +177,21 @@ export function FileContextMenu({
       },
       testId: ''
     },
+    {
+      // COMPRESS IMAGE
+      condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'image'),
+      label: t('editor:layout.filebrowser.compress') + ' Image',
+      action: () => {
+        PopoverState.showPopupover(
+          <ImageCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
+        )
+        setAnchorEvent(undefined)
+      },
+      testId: ''
+    },
     {}, // BREAK
     {
+      // COPY
       condition: hasSelection,
       label: t('editor:layout.assetGrid.copyURL'),
       action: () => {
@@ -183,6 +203,7 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-copy-url-button'
     },
     {
+      // OPEN IN NEW TAB
       condition: hasFiles,
       label: t('editor:layout.assetGrid.openInNewTab'),
       action: () => {
@@ -193,6 +214,7 @@ export function FileContextMenu({
     },
     {}, // BREAK
     {
+      // PLACE OBJECT
       condition: hasFiles,
       label: t('editor:layout.assetGrid.placeObject'),
       action: () => {
@@ -210,6 +232,7 @@ export function FileContextMenu({
       testId: 'files-panel-file-item-context-menu-place-object-button'
     },
     {
+      // PLACE OBJECT AT ORIGIN
       condition: hasFiles,
       label: t('editor:layout.assetGrid.placeObjectAtOrigin'),
       action: () => {
@@ -224,23 +247,14 @@ export function FileContextMenu({
     },
     {}, // BREAK
     {
+      // ADD NEW FOLDER
       condition: true, // Always visible
       label: t('editor:layout.filebrowser.addNewFolder'),
       action: createNewFolder,
       testId: 'files-panel-file-item-context-menu-add-new-folder-button'
     },
     {
-      condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'image'),
-      label: t('editor:layout.filebrowser.compress'),
-      action: () => {
-        PopoverState.showPopupover(
-          <ImageCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
-        )
-        setAnchorEvent(undefined)
-      },
-      testId: ''
-    },
-    {
+      // VIEW PROPERTIES
       condition: hasSelection,
       label: t('editor:layout.filebrowser.viewAssetProperties'),
       action: () => {
@@ -256,20 +270,26 @@ export function FileContextMenu({
       <div className="w-40 overflow-hidden rounded" tabIndex={0}>
         {fileActions
           .filter((action) => action.condition || Object.keys(action).length === 0)
-          .map((action, index) => (
-            <>
-              {Object.keys(action).length === 0 && <hr className="mx-1 border-[#42454D]" />}
-              {Object.keys(action).length > 0 && (
-                <DropdownItem
-                  key={index}
-                  label={action.label || ''}
-                  onClick={action.action}
-                  data-testid={action.testId}
-                  className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
-                />
-              )}
-            </>
-          ))}
+          .map((action, index) => {
+            if (action.component) {
+              return action.component
+            }
+
+            return (
+              <>
+                {Object.keys(action).length === 0 && <hr className="mx-1 border-[#42454D]" />}
+                {Object.keys(action).length > 0 && (
+                  <DropdownItem
+                    key={index}
+                    label={action.label || ''}
+                    onClick={action.action}
+                    data-testid={action.testId}
+                    className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
+                  />
+                )}
+              </>
+            )
+          })}
       </div>
     </ContextMenu>
   )

@@ -57,11 +57,12 @@ export function DropdownItem({
     <div
       tabIndex={0}
       className={twMerge(
-        'h-[38px] w-full cursor-pointer bg-[#141619] px-4 py-2.5 text-xs text-[#9CA0AA] outline-none hover:bg-[#2C4A8C]',
+        'h-[38px] w-full cursor-pointer bg-[#141619] px-4 py-2.5 text-xs text-[#9CA0AA] outline-none',
         'flex items-center',
         !disabled && active && 'text-[#F5F5F5]',
         !disabled && selected && 'bg-[#191B1F] text-[#375DAF]',
-        disabled && 'cursor-not-allowed bg-[#191B1F] text-[#42454D]',
+        disabled ? '' : 'hover:bg-[#2C4A8C]',
+        disabled && 'cursor-not-allowed bg-[#191B1F] text-[#42454D] text-opacity-30',
         className
       )}
       {...props}
