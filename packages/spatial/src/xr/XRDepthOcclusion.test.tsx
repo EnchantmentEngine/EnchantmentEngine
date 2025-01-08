@@ -28,7 +28,7 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
 import { SystemDefinitions, SystemUUID, createEngine, destroyEngine } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { IUniform, Material, Matrix4, MeshBasicMaterial, Quaternion, Shader, Vector2, Vector3 } from 'three'
 import { Vector3_One } from '../common/constants/MathConstants'
 import { PluginType } from '../common/functions/OnBeforeCompilePlugin'
@@ -817,13 +817,43 @@ describe('XRDepthOcclusionSystem', () => {
   /** @todo */
   describe('reactor', () => {}) //:: reactor
 
-  /** @todo */
   describe('execute', () => {
-    it.todo('should not do anything if depthSupported is falsy', () => {})
-    // @todo How to control/access depthTexture ?
-    it.todo(
-      'should call XRDepthOcclusion.updateDepthMaterials with XRState.xrFrame, ReferenceSpace.origin and depthTexture as arguments',
-      () => {}
-    )
+    it('should call XRDepthOcclusion.updateDepthMaterials with XRState.xrFrame, ReferenceSpace.origin and _depthTexture as arguments', () => {
+      // Set the data as expected
+      // @ts-expect-error getDepthInformation is only declared privately inside the source file. Its type cannot be unioned (&) from this test
+      getMutableState(XRState).xrFrame.merge({ getDepthInformation: () => {} })
+      getMutableState(XRState).xrFrame.merge({
+        getViewerPose: () => {
+          // @ts-expect-error Assign an empty getViewerPose with just enough data to not fail the test
+          return { views: [] as XRView[] } as XRViewerPose
+        }
+      })
+      const resultSpy = vi.spyOn(XRDepthOcclusion, 'updateDepthMaterials')
+      // Sanity check before running
+      expect(resultSpy).not.toHaveBeenCalled()
+      const depthSupported = typeof (getState(XRState).xrFrame as any)?.getDepthInformation === 'function'
+      expect(depthSupported).toBe(true)
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).toHaveBeenCalled()
+    })
+
+    it('should not do anything if depthSupported is falsy', () => {
+      // Set the data as expected
+      getMutableState(XRState).xrFrame.merge({
+        getViewerPose: () => {
+          // @ts-expect-error Assign an empty getViewerPose with just enough data to not fail the test
+          return { views: [] as XRView[] } as XRViewerPose
+        }
+      })
+      const resultSpy = vi.spyOn(XRDepthOcclusion, 'updateDepthMaterials')
+      // Sanity check before running
+      expect(resultSpy).not.toHaveBeenCalled()
+      const depthSupported = typeof (getState(XRState).xrFrame as any)?.getDepthInformation === 'function'
+      expect(depthSupported).toBe(false)
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).not.toHaveBeenCalled()
+    })
   }) //:: execute
 }) //:: XRDepthOcclusionSystem
