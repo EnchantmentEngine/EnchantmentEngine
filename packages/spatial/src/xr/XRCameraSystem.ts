@@ -213,10 +213,11 @@ let _currentDepthFar = null as number | null
 const _vec = new Vector2()
 
 export function updateXRCamera() {
-  const renderer = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.renderer
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+  const renderer = getOptionalComponent(viewerEntity, RendererComponent)?.renderer
   if (!renderer) return
 
-  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  const camera = getComponent(viewerEntity, CameraComponent)
   const xrState = getState(XRState)
   const session = xrState.session
 
