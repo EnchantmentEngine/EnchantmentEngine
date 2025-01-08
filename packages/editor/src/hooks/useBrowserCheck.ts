@@ -22,6 +22,12 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
+import { useHookstate } from '@hookstate/core'
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
+import { getMutableState } from '@ir-engine/hyperflux'
+import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
+import React from 'react'
+import { EditorState } from '../services/EditorServices'
 
 export const isSupportedBrowser = () => {
   const userAgent = window.navigator.userAgent
@@ -29,4 +35,32 @@ export const isSupportedBrowser = () => {
   const isSafari = /^((?!chrome|androidg).)*safari/i.test(userAgent)
 
   return isGoogleChrome || isSafari
+}
+
+export const useBrowserCheck = () => {
+  const supportedBrowser = useHookstate(isSupportedBrowser)
+  const { acknowledgedUnsupportedBrowser } = useHookstate(getMutableState(EditorState))
+
+  React.useEffect(() => {
+    if (!supportedBrowser.value) {
+      NotificationService.dispatchNotify(
+        'The browser you are on is not supported. For the best experience please use Google Chrome.',
+        { variant: 'warning' }
+      )
+    }
+
+    if (isMobile) {
+      NotificationService.dispatchNotify(
+        'Not optimized for mobile, experience might have issues. For best experience use desktop Chrome.',
+        {
+          variant: 'warning'
+        }
+      )
+    }
+  }, [])
+
+  return {
+    supportedBrowser,
+    acknowledgedUnsupportedBrowser
+  }
 }
