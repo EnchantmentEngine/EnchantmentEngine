@@ -26,27 +26,26 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const ShadowMd = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const MicrophoneOff = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 20 20"
+    viewBox="0 0 20 21"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <path d="M18.333 10H9.999m8.334 0c0-1.518-.406-2.94-1.115-4.166M18.333 10a8.3 8.3 0 0 1-1.115 4.167m-7.219 4.167a8.333 8.333 0 0 1 0-16.667m0 16.667v-4.167m0 4.167a8.33 8.33 0 0 0 7.219-4.167m-7.219-12.5v4.167m0-4.167a8.33 8.33 0 0 1 7.219 4.167M9.999 10V5.834M10 10v4.167m0-8.333h7.219m-7.219 8.333h7.219" />
-    </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h20v20H0z" />
-      </clipPath>
-    </defs>
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      d="M16.483 8.6v1.9q0 .507-.075.994M2.935 8.6v1.9c0 3.673 3.033 6.65 6.774 6.65m0 0V20m0-2.85a6.82 6.82 0 0 0 4.93-2.09M5.838 20h7.742M19 17.91l-6.768-6m2.407 3.15c.414-.43.01-.041.297-.57zm-2.026-6.65V3.85c0-1.574-1.3-2.85-2.904-2.85A2.9 2.9 0 0 0 6.95 2.957m5.281 8.953L1 1.95l5.806 5.13v3.42c0 1.574 1.3 2.85 2.903 2.85 1.08 0 2.024-.58 2.523-1.44"
+    />
   </svg>
 )
-const ForwardRef = forwardRef(ShadowMd)
+const ForwardRef = forwardRef(MicrophoneOff)
 export default ForwardRef
