@@ -73,10 +73,12 @@ import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
 import Grid from '@ir-engine/ui/src/primitives/mui/Grid'
 import { initialAuthState, initialOAuthConnectedState } from '../../../../common/initialAuthState'
 import { NotificationService } from '../../../../common/services/NotificationService'
+import { PopoverState } from '../../../../common/services/PopoverState'
 import { useZendesk } from '../../../../hooks/useZendesk'
 import { clientContextParams } from '../../../../util/ClientContextState'
 import { UserMenus } from '../../../UserUISystem'
 import { useUserAvatarThumbnail } from '../../../functions/useUserAvatarThumbnail'
+import SettingsMenu from '../../../menus/SettingsMenu'
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { AvatarService } from '../../../services/AvatarService'
 import { PopupMenuServices } from '../PopupMenuService'
@@ -621,7 +623,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
                   }}
                 />
               }
-              onClick={() => PopupMenuServices.showPopupMenu(UserMenus.Settings2)}
+              onClick={() => PopoverState.showPopupover(<SettingsMenu />)}
             />
           )}
           {initialized && (
