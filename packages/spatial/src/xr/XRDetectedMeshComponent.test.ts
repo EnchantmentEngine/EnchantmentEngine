@@ -22,7 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MockXRFrame } from '../../tests/util/MockXR'
 import { assertVec } from '../../tests/util/assert'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
@@ -41,10 +41,11 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { Quaternion, Vector3 } from 'three'
+import { BufferGeometry, Quaternion, ShadowMaterial, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../SpatialModule'
 import { NameComponent } from '../common/NameComponent'
+import { ObjectComponent } from '../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
 import { XRDetectedMeshComponent } from './XRDetectedMeshComponent'
 import { ReferenceSpace, XRState } from './XRState'
@@ -334,29 +335,103 @@ describe('XRDetectedMeshComponent', () => {
 
   /** @todo */
   describe('reactor', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(async () => {
+      createEngine()
+      mockEmulatedXREngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
     describe('XRDetectedMeshComponent.mesh', () => {
       it.todo('should not do anything if XRDetectedMeshComponent.mesh.value is falsy', () => {})
+
+      /** @todo Why is the hook not triggered again after setting the component ?? */
       it.todo(
         'should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument',
+        async () => {
+          const Expected = {} as XRMesh
+          const Initial = { semanticLabel: 'testLabel' } as XRMesh
+          // Set the data as expected
+          const resultSpy = vi.spyOn(XRDetectedMeshComponent, 'createGeometryFromMesh')
+
+          // Sanity check before running
+          expect(resultSpy).toHaveBeenCalledTimes(0)
+          setComponent(testEntity, XRDetectedMeshComponent, { mesh: Initial })
+
+          // const { rerender, unmount } = render(<></>)
+          // await act(async () => rerender(<></>))
+
+          expect(resultSpy).toHaveBeenCalledTimes(1)
+          expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeTruthy()
+
+          // Run and Check the result
+          setComponent(testEntity, XRDetectedMeshComponent, { mesh: Expected })
+          // XRDetectedMeshComponent.reactorMap.get(testEntity)!.stop()
+          // XRDetectedMeshComponent.reactorMap.get(testEntity)!.run()
+
+          // await act(async () => rerender(<></>))
+
+          // await vi.waitFor(() => {
+          expect(resultSpy).toHaveBeenCalledTimes(2)
+          expect(resultSpy).toHaveBeenCalledWith(Expected)
+          // })
+
+          // unmount()
+        }
+      )
+
+      /** @todo Why is the hook not triggered again after setting the component ?? */
+      it.todo('should set XRDetectedMeshComponent.geometry to the newly created geometry', async () => {
+        const Initial = { id: 42 } as BufferGeometry
+        // Set the data as expected
+        setComponent(testEntity, XRDetectedMeshComponent, { geometry: Initial })
+        // Sanity check before running
+        const before = getComponent(testEntity, XRDetectedMeshComponent).geometry
+        expect(before).toBe(Initial)
+        // Run and Check the result
+        setComponent(testEntity, XRDetectedMeshComponent, { mesh: { semanticLabel: 'testLabel' } as XRMesh })
+        await vi.waitFor(() => {
+          const result = getComponent(testEntity, XRDetectedMeshComponent).geometry
+          expect(result).not.toBe(Initial) // A change in .mesh should trigger a change in .geometry
+        })
+      })
+
+      it.todo(
+        'should create a new Mesh object with XRDetectedMeshComponent.shadowMaterial and set an ObjectComponent to the entityContext with the new mesh',
+        () => {
+          const Expected = false
+          // Set the data as expected
+          const shadowMaterial = new ShadowMaterial({ opacity: 0.42, color: 0x424242 })
+          // setComponent(testEntity, XRDetectedMeshComponent, { shadowMesh })
+          // Sanity check before running
+          expect(hasComponent(testEntity, ObjectComponent)).toBe(false)
+          // Run and Check the result
+          expect(hasComponent(testEntity, ObjectComponent)).toBe(true)
+          const result = true
+          expect(result).toBe(Expected)
+        }
+      )
+
+      it.todo(
+        'should create a new Mesh object with XRDetectedMeshComponent.occlusionMat and set an ObjectComponent to the entityContext with the new mesh',
         () => {}
       )
-      it.todo('should set XRDetectedMeshComponent.geometry to the newly created geometry', () => {})
       it.todo(
-        'should create a new Mesh object with a XRDetectedPlaneComponent.shadowMaterial and call addObjectToGroup with the entityContext and the new mesh',
-        () => {}
-      )
-      it.todo(
-        'should create a new Mesh object with a XRDetectedPlaneComponent.occlusionMat and call addObjectToGroup with the entityContext and the new mesh',
-        () => {}
-      )
-      it.todo(
-        'should create a new Mesh object with a XRDetectedPlaneComponent.placementHelperMaterial and call addObjectToGroup with the entityContext and the new mesh',
+        'should create a new Mesh object with XRDetectedMeshComponent.placementHelperMaterial and set an ObjectComponent to the entityContext with the new mesh',
         () => {}
       )
       it.todo('should set .renderOrder to -1 on the newly created occlusionMesh mesh object', () => {})
       it.todo('should set entityContext.shadowMesh to the newly created shadowMesh mesh object', () => {})
       it.todo('should set entityContext.occlusionMesh to the newly created occlusionMesh mesh object', () => {})
       it.todo('should set entityContext.placementHelper to the newly created placementHelper mesh object', () => {})
+
       describe('when it unmounts ..', () => {
         it.todo('.. should call removeObjectFromGroup with the entityContext and the shadowMesh mesh object', () => {})
         it.todo(
