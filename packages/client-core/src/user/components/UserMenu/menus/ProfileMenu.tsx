@@ -37,7 +37,6 @@ import { LinkedInIcon } from '@ir-engine/client-core/src/common/components/Icons
 import { MetaIcon } from '@ir-engine/client-core/src/common/components/Icons/MetaIcon'
 import { XIcon } from '@ir-engine/client-core/src/common/components/Icons/XIcon'
 import InputText from '@ir-engine/client-core/src/common/components/InputText'
-import Menu from '@ir-engine/client-core/src/common/components/Menu'
 import Text from '@ir-engine/client-core/src/common/components/Text'
 import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
 import { useFind } from '@ir-engine/common'
@@ -71,8 +70,10 @@ import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
 import Grid from '@ir-engine/ui/src/primitives/mui/Grid'
+import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import { initialAuthState, initialOAuthConnectedState } from '../../../../common/initialAuthState'
 import { NotificationService } from '../../../../common/services/NotificationService'
+import { PopoverState } from '../../../../common/services/PopoverState'
 import { useZendesk } from '../../../../hooks/useZendesk'
 import { clientContextParams } from '../../../../util/ClientContextState'
 import { UserMenus } from '../../../UserUISystem'
@@ -475,7 +476,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   const enableConnect = authState?.value?.emailMagicLink || authState?.value?.smsMagicLink
 
   return (
-    <Menu open isPopover={isPopover} onClose={() => PopupMenuServices.showPopupMenu()}>
+    <Modal onClose={PopoverState.hidePopupover} className="pointer-events-auto w-[50vw] max-w-2xl" hideFooter>
       <Box className={styles.menuContent}>
         <Box className={styles.profileContainer}>
           <Avatar
@@ -976,7 +977,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
           </a>
         </div>
       </Box>
-    </Menu>
+    </Modal>
   )
 }
 
