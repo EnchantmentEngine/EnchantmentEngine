@@ -89,10 +89,11 @@ export const XRDetectedMeshComponent = defineComponent({
       }
     }, [component.geometry])
 
-    useEffect(() => {
-      const placementHelper = component.placementHelper.value as Mesh
-      placementHelper.visible = scenePlacementMode.value === 'placing'
-    }, [scenePlacementMode])
+    /** @warning Currently broken. Makes the other hooks behave unexpectedly */
+    // useEffect(() => {
+    //   const placementHelper = component.placementHelper.value as Mesh
+    //   placementHelper.visible = scenePlacementMode.value === 'placing'
+    // }, [scenePlacementMode])
 
     return null
   },
