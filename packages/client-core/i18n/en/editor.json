@@ -69,6 +69,7 @@
     "sceneCreationFail": "Scene creation failed. {{reason}}",
     "uploadAborted": "Upload aborted",
     "uploadFailed": "Upload failed {{reason}}",
+    "fileUploadFailed": "File upload failed",
     "assetDeletionFail": "Asset deletion failed. {{reason}}",
     "projectAssetDeletionFail": "Project Asset deletion failed. {{reason}}",
     "networkError": "Network Error: {{status}}. {{text}}",
@@ -1363,7 +1364,10 @@
           "name": "Name",
           "type": "Type",
           "dateModified": "Date Modified",
-          "size": "Size"
+          "size": "Size",
+          "author": "Author",
+          "statistics": "Statistics",
+          "createdAt": "Created At"
         }
       },
       "image-convert": {
