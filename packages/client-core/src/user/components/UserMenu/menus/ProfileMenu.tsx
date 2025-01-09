@@ -26,21 +26,11 @@ Infinite Reality Engine. All Rights Reserved.
 // import * as polyfill from 'credential-handler-polyfill'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
-import Avatar from '@ir-engine/client-core/src/common/components/Avatar'
-import ConfirmDialog from '@ir-engine/client-core/src/common/components/ConfirmDialog'
-import { AppleIcon } from '@ir-engine/client-core/src/common/components/Icons/AppleIcon'
-import { DiscordIcon } from '@ir-engine/client-core/src/common/components/Icons/DiscordIcon'
-import { GoogleIcon } from '@ir-engine/client-core/src/common/components/Icons/GoogleIcon'
-import { LinkedInIcon } from '@ir-engine/client-core/src/common/components/Icons/LinkedInIcon'
-import { MetaIcon } from '@ir-engine/client-core/src/common/components/Icons/MetaIcon'
-import { XIcon } from '@ir-engine/client-core/src/common/components/Icons/XIcon'
-import InputText from '@ir-engine/client-core/src/common/components/InputText'
-import Text from '@ir-engine/client-core/src/common/components/Text'
 import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
 import { useFind } from '@ir-engine/common'
-import config, { validateEmail, validatePhoneNumber } from '@ir-engine/common/src/config'
+import { validateEmail, validatePhoneNumber } from '@ir-engine/common/src/config'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
   ScopeType,
@@ -59,18 +49,26 @@ import {
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
-import Box from '@ir-engine/ui/src/primitives/mui/Box'
-import Checkbox from '@ir-engine/ui/src/primitives/mui/Checkbox'
-import CircularProgress from '@ir-engine/ui/src/primitives/mui/CircularProgress'
-import FormControlLabel from '@ir-engine/ui/src/primitives/mui/FormControlLabel'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
-import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
-import Grid from '@ir-engine/ui/src/primitives/mui/Grid'
+import { Input } from '@ir-engine/ui'
+import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
+import {
+  CheckLg,
+  CogLg,
+  Copy03Lg,
+  Edit01Lg,
+  HelpIconLg,
+  LogIn01Lg,
+  Refresh1Lg,
+  ReportWebsiteDefaullg,
+  Trash04Lg
+} from '@ir-engine/ui/src/icons'
+import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { initialAuthState, initialOAuthConnectedState } from '../../../../common/initialAuthState'
 import { NotificationService } from '../../../../common/services/NotificationService'
 import { PopoverState } from '../../../../common/services/PopoverState'
@@ -81,9 +79,6 @@ import { useUserAvatarThumbnail } from '../../../functions/useUserAvatarThumbnai
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { AvatarService } from '../../../services/AvatarService'
 import { PopupMenuServices } from '../PopupMenuService'
-import styles from '../index.module.scss'
-
-const termsOfService = config.client.tosAddress ?? '/terms-of-service'
 
 const logger = multiLogger.child({ component: 'engine:ecs:ProfileMenu', modifier: clientContextParams })
 interface Props {
@@ -133,6 +128,10 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
 
   const originallyAgeVerified = useHookstate(checked18OrOver)
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
+
+  useEffect(() => {
+    console.log('acceptedTOS: ', acceptedTOS, apiKey)
+  }, [acceptedTOS, apiKey])
 
   const submitAgeVerified = () => {
     if (!originallyAgeVerified.value && !checked18OrOver) {
@@ -476,507 +475,180 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   const enableConnect = authState?.value?.emailMagicLink || authState?.value?.smsMagicLink
 
   return (
-    <Modal onClose={PopoverState.hidePopupover} className="pointer-events-auto w-[50vw] max-w-2xl" hideFooter>
-      <Box className={styles.menuContent}>
-        <Box className={styles.profileContainer}>
-          <Avatar
-            imageSrc={avatarThumbnail}
-            showChangeButton={acceptedTOS}
-            onChange={() => PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect, { showBackButton: true })}
-          />
+    <Modal
+      onClose={PopoverState.hidePopupover}
+      className="pointer-events-auto w-[50vw] min-w-[720px] max-w-2xl"
+      hideFooter
+    >
+      <div className="grid w-full grid-cols-2 gap-x-2">
+        <div className="grid grid-cols-3 gap-x-2">
+          <div className="relative col-span-1 h-20 w-20">
+            <AvatarImage size="fill" src={avatarThumbnail} />
+            <button className="absolute -bottom-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#DDE1E5] p-2">
+              <Edit01Lg className="place-items-center text-black" />
+            </button>
+          </div>
 
-          <Box className={styles.profileDetails}>
-            <Text variant="body2">
+          <div className="col-span-2 grid grid-cols-1 gap-y-1">
+            <Text fontSize="xl" fontWeight="semibold">
               {hasAdminAccess ? t('user:usermenu.profile.youAreAn') : t('user:usermenu.profile.youAreA')}
               <span className={commonStyles.bold}>{hasAdminAccess ? ' Admin' : isGuest ? ' Guest' : ' User'}</span>.
             </Text>
 
             {acceptedTOS && selfUser?.inviteCode.value && (
-              <Text mt={1} variant="body2">
+              <Text fontSize="sm">
                 {t('user:usermenu.profile.inviteCode')}: {selfUser.inviteCode.value}
               </Text>
             )}
 
-            {/* {hasAcceptedTermsAndAge && !selfUser?.isGuest.value && (
-              <Text mt={1} variant="body2" onClick={() => createLoginLink()}>
-                {t('user:usermenu.profile.createLoginLink')}
-              </Text>
-            )} */}
-
             {acceptedTOS && (
-              <Text id="show-user-id" mt={1} variant="body2" onClick={() => showUserId.set(!showUserId.value)}>
-                {showUserId.value ? t('user:usermenu.profile.hideUserId') : t('user:usermenu.profile.showUserId')}
-              </Text>
+              <button className="w-fit" onClick={() => showUserId.set(!showUserId.value)}>
+                <Text fontSize="sm">
+                  {showUserId.value ? t('user:usermenu.profile.hideUserId') : t('user:usermenu.profile.showUserId')}
+                </Text>
+              </button>
             )}
 
             {acceptedTOS && apiKey?.id && (
-              <Text variant="body2" mt={1} onClick={() => showApiKey.set(!showApiKey.value)}>
-                {showApiKey.value ? t('user:usermenu.profile.hideApiKey') : t('user:usermenu.profile.showApiKey')}
-              </Text>
+              <button onClick={() => showApiKey.set(!showApiKey.value)} className="w-fit">
+                <Text fontSize="sm">
+                  {showApiKey.value ? t('user:usermenu.profile.hideApiKey') : t('user:usermenu.profile.showApiKey')}
+                </Text>
+              </button>
             )}
+          </div>
+        </div>
 
-            {isGuest && !originallyAcceptedTOS && (
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      disabled={acceptedTOS}
-                      value={checkedTOS.value}
-                      onChange={(e) => checkedTOS.set(e.target.checked)}
-                      color="primary"
-                      name="isAgreedTermsOfService"
-                    />
-                  }
-                  label={
-                    <div
-                      className={styles.termsLink}
-                      style={{
-                        fontStyle: 'italic'
-                      }}
-                    >
-                      {t('user:usermenu.profile.agreeTOS')}
-                      <Link
-                        style={{
-                          fontStyle: 'italic',
-                          color: 'var(--textColor)',
-                          textDecoration: 'underline'
-                        }}
-                        to={termsOfService}
-                        target="_blank"
-                      >
-                        {t('user:usermenu.profile.termsOfService')}
-                      </Link>
-                    </div>
-                  }
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      disabled={acceptedTOS}
-                      value={checked13OrOver.value}
-                      onChange={(e) => checked13OrOver.set(e.target.checked)}
-                      color="primary"
-                      name="is13OrOver"
-                    />
-                  }
-                  label={
-                    <div
-                      style={{
-                        fontStyle: 'italic'
-                      }}
-                      className={styles.termsLink}
-                    >
-                      {t('user:usermenu.profile.confirmAge13')}
-                    </div>
-                  }
-                />
-              </Grid>
-            )}
+        <div className="grid grid-cols-3 gap-x-2">
+          <button className="col-span-1 flex h-20 w-20 items-center justify-center rounded-full bg-[#616161] p-2">
+            <CogLg className="h-10 w-10 text-white" />
+          </button>
 
-            {!isGuest && !originallyAgeVerified.value && (
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      disabled={checked18OrOver}
-                      value={checked18OrOver}
-                      onChange={submitAgeVerified}
-                      color="primary"
-                      name="is18OrOver"
-                    />
-                  }
-                  label={
-                    <div
-                      style={{
-                        fontStyle: 'italic'
-                      }}
-                      className={styles.termsLink}
-                    >
-                      {t('user:usermenu.profile.confirmAge18')}
-                    </div>
-                  }
-                />
-              </Grid>
-            )}
+          <div className="col-span-2 grid grid-cols-1 gap-y-2">
+            <button
+              className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#616161] p-1"
+              onClick={openChat}
+            >
+              <HelpIconLg />
+              {t('user:usermenu.profile.helpChat')}
+            </button>
 
-            {!isGuest && (
-              <Text variant="body2" mt={1} onClick={handleLogout}>
-                {t('user:usermenu.profile.logout')}
-              </Text>
-            )}
-          </Box>
+            <button
+              className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1"
+              onClick={openChat}
+            >
+              <ReportWebsiteDefaullg />
+              {t('user:usermenu.profile.reportWorld')}
+            </button>
+          </div>
+        </div>
+      </div>
 
-          {!isPopover && (
-            <IconButton
-              background="var(--textColor)"
-              sizePx={80}
-              icon={
-                <Icon
-                  type="Settings"
-                  sx={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    margin: 'auto',
-                    color: 'var(--inputBackground)'
-                  }}
-                />
-              }
-              onClick={() => PopupMenuServices.showPopupMenu(UserMenus.Settings2)}
-            />
-          )}
-          {initialized && (
-            <Box display="flex" flexDirection="column" alignItems="center">
-              {!isGuest && (
-                <IconButton
-                  background="var(--textColor)"
-                  sx={{
-                    width: '125px',
-                    height: '45px',
-                    marginTop: '1rem',
-                    borderRadius: '10px'
-                  }}
-                  icon={
-                    <>
-                      <Icon
-                        type="Help"
-                        sx={{
-                          display: 'block',
-                          width: '30%',
-                          height: '100%',
-                          margin: 'auto',
-                          color: 'var(--inputBackground)'
-                        }}
-                      />
-                      <Text
-                        align="center"
-                        sx={{
-                          width: '100%',
-                          marginLeft: '4px',
-                          fontSize: '12px',
-                          color: 'var(--inputBackground)'
-                        }}
-                      >
-                        {t('user:usermenu.profile.helpChat')}
-                      </Text>
-                    </>
-                  }
-                  onClick={openChat}
-                ></IconButton>
-              )}
-
-              <IconButton
-                background="red"
-                sx={{
-                  width: '125px',
-                  height: '45px',
-                  marginTop: '1rem',
-                  borderRadius: '10px'
-                }}
-                icon={
-                  <>
-                    <Icon
-                      type="Report"
-                      sx={{
-                        display: 'block',
-                        width: '30%',
-                        height: '100%',
-                        margin: 'auto',
-                        color: 'var(--inputBackground)'
-                      }}
-                    />
-                    <Text
-                      align="center"
-                      sx={{
-                        width: '100%',
-                        marginLeft: '4px',
-                        fontSize: '12px',
-                        color: 'var(--inputBackground)'
-                      }}
-                    >
-                      {t('user:usermenu.profile.reportWorld')}
-                    </Text>
-                  </>
-                }
-                onClick={openChat}
-              ></IconButton>
-            </Box>
-          )}
-        </Box>
-
-        <InputText
-          disabled={!acceptedTOS}
-          name={'username' as UserName}
-          label={t('user:usermenu.profile.lbl-username')}
+      <div className="mt-5 grid w-full grid-cols-1 gap-y-4">
+        <Input
           value={username.value || ('' as UserName)}
-          error={errorUsername.value}
-          sx={{ mt: 4 }}
-          endIcon={<Icon type="Check" />}
-          onEndIconClick={updateUserName}
+          state={errorUsername.value ? 'error' : undefined}
+          helperText={errorUsername.value}
           onChange={handleUsernameChange}
           onKeyDown={(e) => {
             if (e.key === 'Enter') updateUserName(e)
           }}
+          labelProps={{
+            text: t('user:usermenu.profile.lbl-username'),
+            position: 'top'
+          }}
+          endComponent={
+            <button className="h-4 w-4" onMouseDown={updateUserName}>
+              <CheckLg />
+            </button>
+          }
+          fullWidth
         />
 
         {showUserId.value && (
-          <InputText
-            id="user-id"
-            label={t('user:usermenu.profile.userIcon.userId')}
-            value={userId}
-            sx={{ mt: 2 }}
-            endIcon={<Icon type="ContentCopy" />}
-            onEndIconClick={() => {
-              navigator.clipboard.writeText(userId)
-              NotificationService.dispatchNotify(t('user:usermenu.profile.userIdCopied'), {
-                variant: 'success'
-              })
+          <Input
+            labelProps={{
+              text: t('user:usermenu.profile.userIcon.userId'),
+              position: 'top'
             }}
+            value={userId}
+            endComponent={
+              <button
+                className="h-4 w-4"
+                onMouseDown={() => {
+                  navigator.clipboard.writeText(userId)
+                  NotificationService.dispatchNotify(t('user:usermenu.profile.userIdCopied'), {
+                    variant: 'success'
+                  })
+                }}
+              >
+                <Copy03Lg />
+              </button>
+            }
+            fullWidth
           />
         )}
 
         {showApiKey.value && (
-          <InputText
-            label={t('user:usermenu.profile.apiKey')}
-            value={apiKey?.token}
-            sx={{ mt: 2 }}
-            endIcon={<Icon type="ContentCopy" />}
-            startIcon={<Icon type="Refresh" />}
-            startIconTitle={t('user:usermenu.profile.refreshApiKey')}
-            onStartIconClick={refreshApiKey}
-            onEndIconClick={() => {
-              navigator.clipboard.writeText(apiKey?.token)
-              NotificationService.dispatchNotify(t('user:usermenu.profile.apiKeyCopied'), {
-                variant: 'success'
-              })
+          <Input
+            labelProps={{
+              text: t('user:usermenu.profile.apiKey'),
+              position: 'top'
             }}
+            value={apiKey?.token}
+            startComponent={
+              <button className="h-4 w-4" onMouseDown={refreshApiKey}>
+                <Refresh1Lg />
+              </button>
+            }
+            endComponent={
+              <button
+                className="h-4 w-4"
+                onMouseDown={() => {
+                  navigator.clipboard.writeText(apiKey?.token)
+                  NotificationService.dispatchNotify(t('user:usermenu.profile.apiKeyCopied'), {
+                    variant: 'success'
+                  })
+                }}
+              >
+                <Copy03Lg />
+              </button>
+            }
+            fullWidth
           />
         )}
+      </div>
 
-        {/* {loginLink.value.length > 0 && (
-          <div>
-            <InputText
-              label={t('user:usermenu.profile.loginLink')}
-              value={loginLink.value}
-              sx={{ mt: 2 }}
-              endIcon={<Icon type="ContentCopy" />}
-              startIcon={<Icon type="Refresh" />}
-              startIconTitle={t('user:usermenu.profile.createLoginLink')}
-              onStartIconClick={createLoginLink}
-              onEndIconClick={() => {
-                navigator.clipboard.writeText(loginLink.value)
-                NotificationService.dispatchNotify(t('user:usermenu.profile.loginLinkCopied'), {
-                  variant: 'success'
-                })
-              }}
-            />
-            <div className={styles.QRContainer}>
-              <QRCodeSVG height={176} width={200} value={loginLink.value} />
-            </div>
-          </div>
-        )} */}
+      {!isGuest && (
+        <div className="mt-5 grid w-1/2 grid-cols-1 gap-y-2 px-5">
+          <button className="flex w-full items-center justify-start gap-x-2 p-2" onClick={handleLogout}>
+            <LogIn01Lg />
+            {t('user:usermenu.profile.logout')}
+          </button>
 
-        {!hideLogin && acceptedTOS && (
-          <>
-            {isGuest && enableConnect && (
-              <>
-                <InputText
-                  label={getConnectText()}
-                  value={apiKey}
-                  placeholder={getConnectPlaceholder()}
-                  error={error.value ? getErrorText() : undefined}
-                  sx={{ mt: 2 }}
-                  endIcon={<Icon type="Send" />}
-                  onEndIconClick={handleGuestSubmit}
-                  onBlur={validate}
-                  onChange={handleInputChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleGuestSubmit(e)
+          <button
+            className="flex w-full items-center justify-start gap-x-2 p-2"
+            onClick={() => {
+              PopoverState.showPopupover(
+                <ConfirmDialog
+                  title={t('user:usermenu.profile.delete.finalDeleteConfirm')}
+                  text={t('user:usermenu.profile.delete.finalDeleteText')}
+                  onSubmit={async () => {
+                    AuthService.removeUser(userId)
+                    AuthService.logoutUser()
+                    showDeleteAccount.set(false)
                   }}
                 />
-
-                {loading.value && (
-                  <Box display="flex" justifyContent="center">
-                    <CircularProgress size={30} />
-                  </Box>
-                )}
-              </>
-            )}
-
-            {/* {isGuest && enableWalletLogin && (
-              <>
-                <Text align="center" variant="body2" mb={1} mt={2}>
-                  {t('user:usermenu.profile.or')}
-                </Text>
-
-                {enableWalletLogin && (
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <Button type="gradientRounded" onClick={() => handleWalletLoginClick()}>
-                      {t('user:usermenu.profile.loginWithXRWallet')}
-                    </Button>
-
-                    <Box display="flex" columnGap={2} alignItems="center">
-                      <Button type="gradientRounded" onClick={() => handleIssueCredentialClick()}>
-                        {t('user:usermenu.profile.issueVC')}
-                      </Button>
-
-                      <Button type="gradientRounded" onClick={() => handleRequestCredentialClick()}>
-                        {t('user:usermenu.profile.requestVC')}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-              </>
-            )} */}
-
-            {enableSocial && (
-              <>
-                {selfUser?.isGuest.value && (
-                  <Text align="center" variant="body2" mb={1} mt={2}>
-                    {acceptedTOS ? t('user:usermenu.profile.addSocial') : t('user:usermenu.profile.logIn')}
-                  </Text>
-                )}
-                <div className={styles.socialContainer}>
-                  {authState?.value?.discord && !oauthConnectedState.discord.value && (
-                    <IconButton
-                      id="discord"
-                      icon={<DiscordIcon viewBox="0 0 40 40" />}
-                      onClick={handleOAuthServiceClick}
-                    />
-                  )}
-                  {authState?.value?.google && !oauthConnectedState.google.value && (
-                    <IconButton
-                      id="google"
-                      icon={<GoogleIcon viewBox="0 0 40 40" />}
-                      onClick={handleOAuthServiceClick}
-                    />
-                  )}
-                  {authState?.value?.apple && !oauthConnectedState.apple.value && (
-                    <IconButton id="apple" icon={<AppleIcon viewBox="0 0 40 40" />} onClick={handleOAuthServiceClick} />
-                  )}
-                  {authState?.value?.facebook && !oauthConnectedState.facebook.value && (
-                    <IconButton
-                      id="facebook"
-                      icon={<MetaIcon width="40" height="40" viewBox="0 0 40 40" />}
-                      onClick={handleOAuthServiceClick}
-                    />
-                  )}
-                  {authState?.value?.linkedin && !oauthConnectedState.linkedin.value && (
-                    <IconButton
-                      id="linkedin"
-                      icon={<LinkedInIcon viewBox="0 0 40 40" />}
-                      onClick={handleOAuthServiceClick}
-                    />
-                  )}
-                  {authState?.value?.twitter && !oauthConnectedState.twitter.value && (
-                    <IconButton
-                      id="twitter"
-                      icon={<XIcon width="40" height="40" viewBox="0 0 40 40" />}
-                      onClick={handleOAuthServiceClick}
-                    />
-                  )}
-                  {authState?.value?.github && !oauthConnectedState.github.value && (
-                    <IconButton id="github" icon={<Icon type="GitHub" />} onClick={handleOAuthServiceClick} />
-                  )}
-                </div>
-
-                {!selfUser?.isGuest.value && removeSocial && (
-                  <>
-                    <Text align="center" variant="body2" mb={1} mt={2}>
-                      {t('user:usermenu.profile.removeSocial')}
-                    </Text>
-                    <div className={styles.socialContainer}>
-                      {authState?.apple.value && oauthConnectedState.apple.value && (
-                        <IconButton
-                          id="apple"
-                          icon={<AppleIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.discord.value && oauthConnectedState.discord.value && (
-                        <IconButton
-                          id="discord"
-                          icon={<DiscordIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.google.value && oauthConnectedState.google.value && (
-                        <IconButton
-                          id="google"
-                          icon={<GoogleIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.facebook.value && oauthConnectedState.facebook.value && (
-                        <IconButton
-                          id="facebook"
-                          icon={<MetaIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.linkedin.value && oauthConnectedState.linkedin.value && (
-                        <IconButton
-                          id="linkedin"
-                          icon={<LinkedInIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.twitter.value && oauthConnectedState.twitter.value && (
-                        <IconButton
-                          id="twitter"
-                          icon={<XIcon viewBox="0 0 40 40" />}
-                          onClick={handleRemoveOAuthServiceClick}
-                        />
-                      )}
-                      {authState?.github.value && oauthConnectedState.github.value && (
-                        <IconButton id="github" icon={<Icon type="GitHub" />} onClick={handleRemoveOAuthServiceClick} />
-                      )}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {!isGuest && (
-              <Text id="delete-account" mb={1} variant="body2" onClick={() => showDeleteAccount.set(true)}>
-                {t('user:usermenu.profile.delete.deleteAccount')}
-              </Text>
-            )}
-
-            {showDeleteAccount.value && (
-              <ConfirmDialog
-                open
-                description={
-                  <>
-                    <Text variant="body2">{t('user:usermenu.profile.delete.deleteControlsText')}</Text>
-                    <Text variant="body2" color="red" mt={2}>
-                      {t('user:usermenu.profile.delete.finalDeleteText')}
-                    </Text>
-                  </>
-                }
-                submitButtonText={t('user:usermenu.profile.delete.finalDeleteConfirm')}
-                onClose={() => showDeleteAccount.set(false)}
-                onSubmit={() => {
-                  AuthService.removeUser(userId)
-                  AuthService.logoutUser()
-                  showDeleteAccount.set(false)
-                }}
-              />
-            )}
-          </>
-        )}
-        <div
-          className={styles.center}
-          style={{
-            fontFamily: 'var(--lato)',
-            fontSize: '12px'
-          }}
-        >
-          <a target="_blank" href={clientSetting?.privacyPolicy}>
-            {t('user:usermenu.profile.privacyPolicy')}
-          </a>
+              )
+            }}
+          >
+            <Trash04Lg />
+            {t('user:usermenu.profile.delete.deleteAccount')}
+          </button>
         </div>
-      </Box>
+      )}
+
+      <hr className="mt-5 border-[#616161]" />
     </Modal>
   )
 }
