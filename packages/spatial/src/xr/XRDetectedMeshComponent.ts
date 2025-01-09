@@ -82,7 +82,8 @@ export const XRDetectedMeshComponent = defineComponent({
       const shadowMesh = component.shadowMesh.value
       const geometry = component.geometry.value
 
-      if (shadowMesh.geometry) (shadowMesh.geometry as any) = geometry
+      // @ts-expect-error Allow assignment to a readonly property
+      shadowMesh.geometry = geometry
 
       return () => {
         geometry.dispose()

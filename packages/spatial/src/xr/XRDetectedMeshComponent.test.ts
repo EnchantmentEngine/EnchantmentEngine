@@ -40,7 +40,7 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { BoxGeometry, BufferGeometry, Mesh, Quaternion, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../SpatialModule'
@@ -416,7 +416,7 @@ describe('XRDetectedMeshComponent', () => {
     }) //:: XRDetectedMeshComponent.mesh
 
     describe('XRDetectedMeshComponent.geometry', () => {
-      it('should set entityContext.XRDetectedMeshComponent.shadowMesh.geometry to entityContext.XRDetectedMeshComponent.geometry if entityContext.XRDetectedMeshComponent.shadowMesh.geometry is truthy ', () => {
+      it('should set entityContext.XRDetectedMeshComponent.shadowMesh.geometry to entityContext.XRDetectedMeshComponent.geometry', () => {
         const Initial = { id: 42, dispose: () => {} } as BufferGeometry
         // Set the data as expected
         setComponent(testEntity, XRDetectedMeshComponent, {
@@ -424,24 +424,6 @@ describe('XRDetectedMeshComponent', () => {
           geometry: new BoxGeometry(),
           shadowMesh: new Mesh()
         })
-        // Sanity check before running
-        expect(getComponent(testEntity, XRDetectedMeshComponent).shadowMesh.geometry).toBeTruthy()
-        // Run and Check the result
-        setComponent(testEntity, XRDetectedMeshComponent, { geometry: new BoxGeometry() })
-        const result = getComponent(testEntity, XRDetectedMeshComponent).shadowMesh.geometry
-        expect(result).not.toBe(Initial)
-      })
-
-      it('should not set entityContext.XRDetectedMeshComponent.shadowMesh.geometry if entityContext.XRDetectedMeshComponent.shadowMesh.geometry is falsy', () => {
-        const Initial = { id: 42, dispose: () => {} } as BufferGeometry
-        // Set the data as expected
-        setComponent(testEntity, XRDetectedMeshComponent, {
-          mesh: { semanticLabel: 'testLabel' } as XRMesh,
-          shadowMesh: new Mesh()
-        })
-        getMutableComponent(testEntity, XRDetectedMeshComponent).shadowMesh.geometry.set(none)
-        // Sanity check before running
-        expect(getComponent(testEntity, XRDetectedMeshComponent).shadowMesh.geometry).toBeFalsy()
         // Run and Check the result
         setComponent(testEntity, XRDetectedMeshComponent, { geometry: new BoxGeometry() })
         const result = getComponent(testEntity, XRDetectedMeshComponent).shadowMesh.geometry
