@@ -68,17 +68,59 @@ function AssetCategory({ index }: { index: number }) {
   )
 }
 
-export default function CategoriesList() {
-  const { sidebarWidth, categories } = useAssetsCategory()
+function SidebarSection({ icon = <></>, label, isActive, onClick }) {
+  const [isHover, setIsHover] = React.useState(false)
 
   return (
     <div
-      className="mb-8 h-full space-y-1 overflow-x-hidden overflow-y-scroll bg-[#0E0F11] pb-8 pl-1 pr-2 pt-2"
+      className={twMerge(
+        'flex items-center justify-between overflow-hidden rounded bg-[#141619] p-2 text-[#B2B5BD] transition-all duration-300 ease-in-out hover:bg-[#191B1F] hover:text-[#F5F5F5]',
+        isActive ? 'h-auto flex-grow' : 'h-9 flex-none',
+        'border border-2 border-transparent',
+        isActive && 'border-[#375DAF]'
+      )}
+      onClick={onClick}
+      onMouseEnter={() => setIsHover(true)}
+      onMouseLeave={() => setIsHover(false)}
+    >
+      <div className="flex items-center gap-2">
+        {icon}
+        <span>{label}</span>
+      </div>
+      {isHover && <div>Drag</div>}
+    </div>
+  )
+}
+
+export default function CategoriesList() {
+  const { sidebarWidth, categories } = useAssetsCategory()
+  const [sidebarSections, setSidebarSections] = React.useState({
+    favorites: [],
+    assets: [],
+    files: []
+  })
+
+  const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined)
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section)
+  }
+
+  return (
+    <div
+      className="flex h-full flex-col space-y-1 overflow-hidden bg-[#0E0F11] pb-2 pl-1 pr-2 pt-2"
       style={{ width: sidebarWidth.value }}
     >
-      {categories.value.map((category, index) => (
-        <AssetCategory key={category.name + index} index={index} />
-      ))}
+      {Object.entries(sidebarSections).map(([key, value]) => {
+        return (
+          <SidebarSection
+            key={key}
+            label={key}
+            onClick={() => handleSectionChange(key)}
+            isActive={key === activeSection}
+          />
+        )
+      })}
     </div>
   )
 }
