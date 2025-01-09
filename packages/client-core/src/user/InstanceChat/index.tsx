@@ -1,0 +1,254 @@
+/*
+CPAL-1.0 License
+
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0. (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+The License is based on the Mozilla Public License Version 1.1, but Sections 14
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
+Exhibit A has been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
+specific language governing rights and limitations under the License.
+
+The Original Code is Infinite Reality Engine.
+
+The Original Developer is the Initial Developer. The Initial Developer of the
+Original Code is the Infinite Reality Engine team.
+
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+Infinite Reality Engine. All Rights Reserved.
+*/
+
+import { useFind, useMutation } from '@ir-engine/common'
+import { InstanceID, MessageType, messagePath } from '@ir-engine/common/src/schema.type.module'
+import { State, dispatchAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { NetworkState } from '@ir-engine/network'
+import { MessageTextSquare01Lg, Send01Lg, XCloseLg } from '@ir-engine/ui/src/icons'
+import React, { createContext, useContext, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { twMerge } from 'tailwind-merge'
+import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
+import { ChannelState } from '../../social/services/ChannelService'
+import { AvatarUIActions, AvatarUIState } from '../../systems/state/AvatarUIState'
+import LocationIconButton from '../components/LocationIconButton'
+import { AuthState } from '../services/AuthService'
+
+const InstanceChatContext = createContext({
+  messages: {} as State<MessageType[]>,
+  isChatOpen: {} as State<boolean>,
+  unreadMessages: {} as State<boolean>,
+  newMessages: {} as State<{ [mid: MessageType['id']]: boolean }>,
+  setNewMessage: (_: MessageType['id']) => {}
+})
+
+const InstanceChatProvider = ({ children }: { children: React.ReactNode }) => {
+  const messages = useHookstate<MessageType[]>([])
+  const newMessages = useHookstate<{ [mid: MessageType['id']]: boolean }>({})
+  const unreadMessages = useHookstate(false)
+  const isChatOpen = useHookstate(true)
+  const user = useMutableState(AuthState).user
+  const targetChannelId = useMutableState(ChannelState).targetChannelId
+  const channelState = useMutableState(ChannelState)
+  const messagesResponse = useFind(messagePath, {
+    query: {
+      channelId: targetChannelId.value,
+      $limit: 20,
+      $sort: { createdAt: -1 }
+    }
+  })
+
+  const setNewMessage = (messageId: MessageType['id']) => {
+    newMessages.merge({ [messageId]: true })
+    const lightenMessageBackground = setTimeout(() => {
+      newMessages.merge({ [messageId]: false })
+      clearTimeout(lightenMessageBackground)
+    }, 30_000)
+  }
+
+  useEffect(() => {
+    messages.set(messagesResponse.data.toReversed())
+    messagesResponse.data.forEach((message) => {
+      if (!(message.id in newMessages.value)) {
+        setNewMessage(message.id)
+      }
+    })
+  }, [messagesResponse.data])
+
+  useEffect(() => {
+    if (!isChatOpen && messages.at(-1)?.senderId.value !== user.id.value && channelState.messageCreated.value) {
+      unreadMessages.set(true)
+    } else {
+      unreadMessages.set(false)
+    }
+  }, [channelState.messageCreated, isChatOpen, messages])
+
+  return (
+    <InstanceChatContext.Provider value={{ messages, newMessages, isChatOpen, unreadMessages, setNewMessage }}>
+      {children}
+    </InstanceChatContext.Provider>
+  )
+}
+
+const useInstanceChatMessages = () => useContext(InstanceChatContext)
+
+function NewMessage() {
+  const composedMessage = useHookstate('')
+  const targetChannelId = useMutableState(ChannelState).targetChannelId
+  const user = useMutableState(AuthState).user
+  const usersTyping = useMutableState(AvatarUIState).usersTyping[user?.id.value].value
+  const messageMutation = useMutation(messagePath, false)
+  const { messages, setNewMessage, isChatOpen, unreadMessages } = useInstanceChatMessages()
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleComposedMessage = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    const message = event.target.value
+    if (message.length > composedMessage.value.length && !usersTyping) {
+      dispatchAction(
+        AvatarUIActions.setUserTyping({
+          typing: true
+        })
+      )
+    } else if ((message.length == 0 || message.length < composedMessage.value.length) && usersTyping) {
+      dispatchAction(
+        AvatarUIActions.setUserTyping({
+          typing: false
+        })
+      )
+    }
+    composedMessage.set(message)
+  }
+
+  const sendMessage = () => {
+    const instanceId = NetworkState.worldNetwork.id as InstanceID
+    if (composedMessage.value.length && instanceId) {
+      if (usersTyping) {
+        dispatchAction(
+          AvatarUIActions.setUserTyping({
+            typing: false
+          })
+        )
+      }
+      messageMutation
+        .create({
+          text: composedMessage.value,
+          channelId: targetChannelId.value
+        })
+        .then((message) => {
+          setNewMessage(message.id)
+          messages.merge([message])
+        })
+      composedMessage.set('')
+      textAreaRef.current?.focus()
+    }
+  }
+
+  useEffect(() => {
+    if (!composedMessage.value || !usersTyping) return
+    const delayDebounce = setTimeout(() => {
+      dispatchAction(
+        AvatarUIActions.setUserTyping({
+          typing: false
+        })
+      )
+    }, 3000)
+    return () => clearTimeout(delayDebounce)
+  }, [composedMessage.value])
+
+  // useEffect(() => ) - todo focus textarea on mount
+
+  return (
+    <div className="mt-5 flex w-full items-center justify-end">
+      <div className="relative w-16">
+        {!isChatOpen.value && unreadMessages.value && (
+          <div className="absolute right-0 top-0 h-4 w-4 rounded-full bg-blue-500" />
+        )}
+        <LocationIconButton
+          icon={isChatOpen.value ? XCloseLg : MessageTextSquare01Lg}
+          onClick={() => isChatOpen.set(!isChatOpen.value)}
+        />
+      </div>
+      {isChatOpen.value && (
+        <div className="height-[74px] ml-[13px] flex w-full items-center justify-between rounded-[37px] bg-black/50">
+          <textarea
+            ref={textAreaRef}
+            value={composedMessage.value}
+            className="my-auto ml-8 mr-4 w-full resize-none bg-transparent text-base text-white outline-none"
+            onKeyUp={(event) => event.key === 'Enter' && !event.shiftKey && sendMessage()}
+            onChange={handleComposedMessage}
+          />
+          <span className="m-[5px]">
+            <LocationIconButton icon={Send01Lg} onClick={sendMessage} />
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Message({ message }: { message: MessageType }) {
+  const user = useMutableState(AuthState).user
+  const { newMessages } = useInstanceChatMessages()
+
+  return message.isNotification ? (
+    <div className="place-self-center text-center text-sm text-white opacity-[68]">{message.text}</div>
+  ) : (
+    <div
+      className={twMerge(
+        'mb-[13px] w-full max-w-[15vw] rounded-[11px] bg-white px-2 py-[11px] opacity-50',
+        message.sender.id === user.id.value && 'place-self-end',
+        newMessages.value[message.id] && 'opacity-100'
+      )}
+    >
+      <div className="font-bold text-[#444444]">{message.sender.name}</div>
+      <div className="mt-[9px] text-sm text-[#444444]">{message.text}</div>
+    </div>
+  )
+}
+
+function Messages() {
+  const { messages, isChatOpen } = useInstanceChatMessages()
+  if (!isChatOpen.value) return null
+  return (
+    <div className="flex h-96 flex-col justify-end gap-y-[13px]">
+      {messages.value.map((message) => (
+        <Message key={message.id} message={message} />
+      ))}
+    </div>
+  )
+}
+
+export default function InstanceChat() {
+  const { t } = useTranslation()
+  const ageVerified = useMutableState(AuthState).user.ageVerified.value
+  const mediaNetworkState = useMediaNetwork()
+  const networkState = useMutableState(NetworkState)
+  const isGuest = useMutableState(AuthState).user.isGuest.value
+
+  console.log('debug1 ', mediaNetworkState?.value)
+
+  if (networkState.config.media.value && !mediaNetworkState?.ready.value) return null
+
+  return (
+    <InstanceChatProvider>
+      {/* {isGuest || !ageVerified ? ( */}
+      {false ? (
+        <div className="rounded-lg bg-[#C6C6C6] p-4">
+          <div className="mx-auto text-center font-semibold text-[#3B3A3A]">{t('user:instanceChat.wantToChat')}</div>
+          <button className="mt-4 flex items-center justify-center rounded-[20px] bg-[#969696] px-[30px] py-1.5">
+            {isGuest ? t('user:instanceChat.register') : t('user:instanceChat.verifyAge')}
+          </button>
+          {/* todo: where does this link on button click go? */}
+        </div>
+      ) : (
+        <div className="w-[25vw] pb-6 pr-6">
+          <Messages />
+          <NewMessage />
+        </div>
+      )}
+    </InstanceChatProvider>
+  )
+}
