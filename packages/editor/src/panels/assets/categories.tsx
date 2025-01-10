@@ -68,26 +68,39 @@ function AssetCategory({ index }: { index: number }) {
   )
 }
 
-function SidebarSection({ icon = <></>, label, isActive, onClick }) {
+function SidebarSection({ icon = <></>, label, onClick }) {
   const [isHover, setIsHover] = React.useState(false)
+  const [isActive, setIsActive] = React.useState(false)
+
+  const toggleDropdown = () => {
+    setIsActive(!isActive)
+  }
 
   return (
-    <div
-      className={twMerge(
-        'flex items-center justify-between overflow-hidden rounded bg-[#141619] p-2 text-[#B2B5BD] transition-all duration-300 ease-in-out hover:bg-[#191B1F] hover:text-[#F5F5F5]',
-        isActive ? 'h-auto flex-grow' : 'h-9 flex-none',
-        'border border-2 border-transparent',
-        isActive && 'border-[#375DAF]'
-      )}
-      onClick={onClick}
-      onMouseEnter={() => setIsHover(true)}
-      onMouseLeave={() => setIsHover(false)}
-    >
-      <div className="flex items-center gap-2">
-        {icon}
-        <span>{label}</span>
+    <div className={twMerge('transition-all duration-300 ease-in-out', isActive ? 'h-auto flex-grow' : '')}>
+      <div
+        className={twMerge(
+          'overflow-hidden rounded bg-[#141619] p-2 text-[#B2B5BD] hover:bg-[#191B1F] hover:text-[#F5F5F5]',
+          'border border-2',
+          isActive ? 'border-[#375DAF]' : 'border-transparent'
+        )}
+        onClick={onClick}
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
+      >
+        <button className="flex h-full w-full items-center justify-between" onClick={toggleDropdown}>
+          <div className="flex items-center gap-2">
+            {icon}
+            <span>{label}</span>
+          </div>
+          {isHover && <div>Drag</div>}
+        </button>
       </div>
-      {isHover && <div>Drag</div>}
+      {isActive && (
+        <div className="h-full rounded bg-[#141619] p-2 text-[#B2B5BD] hover:bg-[#191B1F] hover:text-[#F5F5F5]">
+          drop down
+        </div>
+      )}
     </div>
   )
 }
