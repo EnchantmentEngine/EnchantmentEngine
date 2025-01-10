@@ -23,15 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
 import { FilesViewModeSettings } from '@ir-engine/editor/src/services/FilesState'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
+import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
 import { HiDotsVertical } from 'react-icons/hi'
+import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
-import { AssetIconMap } from './icons'
 
 const depthPaddingMap = {
   0: 'pl-0',
@@ -59,7 +61,7 @@ function AssetCategory({ index }: { index: number }) {
   return (
     <EditorDropdownItem
       label={category.name}
-      ItemIcon={AssetIconMap[category.name]}
+      ItemIcon={Folder}
       selected={selectedCategory?.name === category.name}
       collapsed={category.collapsed}
       onClick={handleClickCategory}
@@ -68,7 +70,13 @@ function AssetCategory({ index }: { index: number }) {
   )
 }
 
-function SidebarSection({ icon = <></>, label, onClick }) {
+const SideBarIcons = {
+  favorites: Pin02Lg,
+  assets: CubeOutlineLg,
+  files: File04Lg
+}
+
+function SidebarSection({ Icon, label, items = [] }) {
   const [isHover, setIsHover] = React.useState(false)
   const [isActive, setIsActive] = React.useState(false)
 
@@ -77,28 +85,35 @@ function SidebarSection({ icon = <></>, label, onClick }) {
   }
 
   return (
-    <div className={twMerge('transition-all duration-300 ease-in-out', isActive ? 'h-auto flex-grow' : '')}>
+    <div
+      className={twMerge(
+        'transition-all duration-300 ease-in-out',
+        isActive && items.length > 0 ? 'h-auto flex-grow' : ''
+      )}
+    >
       <div
         className={twMerge(
           'overflow-hidden rounded bg-[#141619] p-2 text-[#B2B5BD] hover:bg-[#191B1F] hover:text-[#F5F5F5]',
           'border border-2',
           isActive ? 'border-[#375DAF]' : 'border-transparent'
         )}
-        onClick={onClick}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
       >
         <button className="flex h-full w-full items-center justify-between" onClick={toggleDropdown}>
           <div className="flex items-center gap-2">
-            {icon}
-            <span>{label}</span>
+            <Icon />
+            <span>{capitalizeFirstLetter(label)}</span>
           </div>
-          {isHover && <div>Drag</div>}
+          {isHover && <RxHamburgerMenu />}
         </button>
       </div>
-      {isActive && (
-        <div className="h-full rounded bg-[#141619] p-2 text-[#B2B5BD] hover:bg-[#191B1F] hover:text-[#F5F5F5]">
-          drop down
+
+      {isActive && items.length > 0 && (
+        <div className="h-full overflow-y-auto rounded bg-[#141619] p-2 text-[#B2B5BD]">
+          {items.map((category, index) => (
+            <AssetCategory key={category ? category?.name + index : ''} index={index} />
+          ))}
         </div>
       )}
     </div>
@@ -113,11 +128,14 @@ export default function CategoriesList() {
     files: []
   })
 
-  const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined)
-
-  const handleSectionChange = (section: string) => {
-    setActiveSection(section)
-  }
+  React.useEffect(() => {
+    if (categories.value) {
+      setSidebarSections({
+        ...sidebarSections,
+        assets: [...categories.value] as any
+      })
+    }
+  }, [categories.value])
 
   return (
     <div
@@ -125,14 +143,7 @@ export default function CategoriesList() {
       style={{ width: sidebarWidth.value }}
     >
       {Object.entries(sidebarSections).map(([key, value]) => {
-        return (
-          <SidebarSection
-            key={key}
-            label={key}
-            onClick={() => handleSectionChange(key)}
-            isActive={key === activeSection}
-          />
-        )
+        return <SidebarSection key={key} label={key} items={value} Icon={SideBarIcons[key]} />
       })}
     </div>
   )

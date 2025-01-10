@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ChevronDownSm, ChevronRightSm, Maximize02Sm } from '@ir-engine/ui/src/icons'
+import { ChevronDownLg, ChevronRightLg, Maximize02Sm } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -80,7 +80,7 @@ export default function EditorDropdownItem({
         'cursor-pointer rounded px-2 py-1',
         'group/editor-dropdownitem',
         !disabled && 'bg-[#141619] hover:bg-[#141619] focus:bg-[#2C2E33]',
-        selected && 'bg-[#2C2E33]',
+        // selected && 'bg-[#2C2E33]',
         disabled && 'cursor-not-allowed bg-[#191B1F]',
         className
       )}
@@ -92,9 +92,9 @@ export default function EditorDropdownItem({
       {...props}
     >
       {collapsed ? (
-        <ChevronRightSm className={chevronArrowClassName} />
+        <ChevronRightLg className={chevronArrowClassName} />
       ) : (
-        <ChevronDownSm className={chevronArrowClassName} />
+        <ChevronDownLg className={chevronArrowClassName} />
       )}
       {ItemIcon ? <ItemIcon className={itemIconClassName} /> : <Maximize02Sm className={itemIconClassName} />}
       <span
