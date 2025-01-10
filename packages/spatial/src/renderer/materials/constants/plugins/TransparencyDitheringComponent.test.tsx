@@ -37,7 +37,8 @@ import {
 } from '@ir-engine/ecs'
 import assert from 'assert'
 import { Material, Uniform } from 'three'
-import { assertArrayEqual } from '../../../../physics/components/RigidBodyComponent.test'
+import { afterEach, beforeEach, describe, it } from 'vitest'
+import { assertArray } from '../../../../../tests/util/assert'
 import { MaterialStateComponent } from '../../MaterialComponent'
 import {
   TransparencyDitheringPluginComponent,
@@ -55,7 +56,7 @@ function assertTransparencyDitheringRootComponentEq(
   A: TransparencyDitheringRootComponentData,
   B: TransparencyDitheringRootComponentData
 ): void {
-  assertArrayEqual(A.materials, B.materials)
+  assertArray.eq(A.materials, B.materials)
 }
 
 describe('TransparencyDitheringRootComponent', () => {

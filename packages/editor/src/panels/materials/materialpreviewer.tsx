@@ -32,7 +32,7 @@ import {
   getComponent,
   getMutableComponent,
   setComponent,
-  useComponent,
+  useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { EnvmapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
@@ -40,7 +40,7 @@ import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/Ma
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { getMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
@@ -52,7 +52,10 @@ function MaterialPreviewCanvas() {
   const renderPanel = useRender3DPanelSystem(panelRef)
   const selectedMaterial = useHookstate(getMutableState(MaterialSelectionState).selectedMaterial)
   const panel = document.getElementById(MATERIALS_PANEL_ID)
-  const materialComponent = useComponent(UUIDComponent.getEntityByUUID(selectedMaterial.value!), MaterialStateComponent)
+  const materialComponent = useOptionalComponent(
+    UUIDComponent.getEntityByUUID(selectedMaterial.value!),
+    MaterialStateComponent
+  )
 
   useEffect(() => {
     if (!selectedMaterial.value) return
@@ -69,12 +72,12 @@ function MaterialPreviewCanvas() {
       3
     )
     sphereMesh.geometry.attributes['uv1'] = sphereMesh.geometry.attributes['uv']
-    addObjectToGroup(sceneEntity, sphereMesh)
+    setComponent(sceneEntity, MeshComponent, sphereMesh)
     setComponent(sceneEntity, EnvmapComponent, { type: 'Skybox', envMapIntensity: 2 })
     const orbitCamera = getMutableComponent(cameraEntity, CameraOrbitComponent)
     orbitCamera.focusedEntities.set([sceneEntity])
     orbitCamera.refocus.set(true)
-  }, [selectedMaterial, materialComponent.material])
+  }, [selectedMaterial, materialComponent?.material])
 
   useEffect(() => {
     if (!panelRef?.current) return

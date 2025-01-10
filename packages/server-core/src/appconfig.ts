@@ -25,9 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import appRootPath from 'app-root-path'
 import chargebeeInst from 'chargebee'
-import dotenv from 'dotenv-flow'
+import fs from 'fs'
 import path from 'path'
+import { register } from 'trace-unhandled'
 import url from 'url'
+
+// ensure logger is loaded first - it loads the dotenv config
+import multiLogger from './ServerLogger'
 
 import { oembedPath } from '@ir-engine/common/src/schemas/media/oembed.schema'
 import { allowedDomainsPath } from '@ir-engine/common/src/schemas/networking/allowed-domains.schema'
@@ -38,9 +42,12 @@ import { githubRepoAccessWebhookPath } from '@ir-engine/common/src/schemas/user/
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
+import { HookContext } from '@feathersjs/feathers'
+import { defaultWebRTCSettings } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import { EngineSettingType, instanceSignalingPath, projectsPath } from '@ir-engine/common/src/schema.type.module'
 import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
+import { parseValue } from '@ir-engine/common/src/utils/dataTypeUtils'
 import { createHash } from 'crypto'
-import multiLogger from './ServerLogger'
 import {
   APPLE_SCOPES,
   DISCORD_SCOPES,
@@ -55,7 +62,6 @@ const kubernetesEnabled = process.env.KUBERNETES === 'true'
 const testEnabled = process.env.TEST === 'true'
 
 if (!testEnabled) {
-  const { register } = require('trace-unhandled')
   register()
 
   // ensure process fails properly
@@ -90,18 +96,10 @@ if (!testEnabled) {
   })
 }
 
-if (!kubernetesEnabled) {
-  dotenv.config({
-    path: appRootPath.path,
-    node_env: 'local'
-  })
-}
-
 if (process.env.APP_ENV === 'development' || process.env.LOCAL === 'true') {
   // Avoids DEPTH_ZERO_SELF_SIGNED_CERT error for self-signed certs - needed for local storage provider
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-  const fs = require('fs')
   if (!fs.existsSync(appRootPath.path + '/.env') && !fs.existsSync(appRootPath.path + '/.env.local')) {
     const fromEnvPath = appRootPath.path + '/.env.local.default'
     const toEnvPath = appRootPath.path + '/.env.local'
@@ -198,8 +196,9 @@ const client = {
   releaseName: process.env.RELEASE_NAME || 'local'
 }
 
-// TODO: rename to 'instanceserver'
 const instanceserver = {
+  p2pEnabled: process.env.P2P_INSTANCE_ENABLED === 'true',
+  p2pMaxConnections: parseInt(process.env.P2P_INSTANCE_MAX_CONNECTIONS!),
   clientHost: process.env.APP_HOST!,
   rtcStartPrt: parseInt(process.env.RTC_START_PORT!),
   rtcEndPort: parseInt(process.env.RTC_END_PORT!),
@@ -211,6 +210,9 @@ const instanceserver = {
   port: process.env.INSTANCESERVER_PORT!,
   locationName: process.env.PRELOAD_LOCATION_NAME!,
   shutdownDelayMs: parseInt(process.env.INSTANCESERVER_SHUTDOWN_DELAY_MS!) || 0
+}
+const instanceServerWebRtc = {
+  webRTCSettings: defaultWebRTCSettings
 }
 
 /**
@@ -250,7 +252,7 @@ const email = {
 
 type WhiteListItem = {
   path: string
-  methods: string[]
+  methods: string[] | { [key: string]: (context: HookContext) => Promise<boolean> }
 }
 
 /**
@@ -278,6 +280,8 @@ const authentication = {
     allowedDomainsPath,
     oembedPath,
     githubRepoAccessWebhookPath,
+    { path: instanceSignalingPath, methods: ['patch'] },
+    { path: projectsPath, methods: ['find'] },
     { path: identityProviderPath, methods: ['create'] },
     { path: routePath, methods: ['find'] },
     { path: acceptInvitePath, methods: ['get'] },
@@ -419,22 +423,17 @@ const blockchain = {
   blockchainUrlSecret: process.env.BLOCKCHAIN_URL_SECRET
 }
 
-const ipfs = {
-  enabled: process.env.USE_IPFS
-}
-
 const zendesk = {
   name: process.env.ZENDESK_KEY_NAME,
   secret: process.env.ZENDESK_SECRET,
   kid: process.env.ZENDESK_KID
 }
-
-const mailchimp = {
-  key: process.env.MAILCHIMP_KEY,
-  server: process.env.MAILCHIMP_SERVER,
-  audienceId: process.env.MAILCHIMP_AUDIENCE_ID,
-  defaultTags: process.env.MAILCHIMP_DEFAULT_TAGS,
-  groupId: process.env.MAILCHIMP_GROUP_ID
+const metabase = {
+  siteUrl: process.env.METABASE_SITE_URL,
+  secretKey: process.env.METABASE_SECRET_KEY,
+  crashDashboardId: process.env.METABASE_CRASH_DASHBOARD_ID,
+  expiration: process.env.METABASE_EXPIRATION,
+  environment: process.env.METABASE_ENVIRONMENT
 }
 
 /**
@@ -449,10 +448,10 @@ const config = {
   coil,
   db,
   email,
-  instanceserver,
-  ipfs,
+  'instance-server': instanceserver,
+  'instance-server-webrtc': instanceServerWebRtc,
   server,
-  taskserver,
+  'task-server': taskserver,
   redis,
   scopes,
   blockchain,
@@ -469,12 +468,30 @@ const config = {
     typeof process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'undefined' || process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'true',
   fsProjectSyncEnabled: process.env.FS_PROJECT_SYNC_ENABLED === 'false' ? false : true,
   zendesk,
-  mailchimp
+  metabase
 }
 
 chargebeeInst.configure({
   site: process.env.CHARGEBEE_SITE!,
   api_key: config.chargebee.apiKey
 })
+
+/**
+ * Updates a nested configuration value in the appConfig object.
+ * @param key - The key of the nested configuration value, in dot notation.
+ * @param value - The value to set for the nested configuration.
+ * @param category - The category of the configuration.
+ */
+export function updateNestedConfig(appConfig: Record<string, any>, setting: EngineSettingType) {
+  const { key, value, dataType, category } = setting
+  const keys = key.split('.')
+  if (keys.length !== 2) {
+    return
+  }
+  if (!appConfig[category][keys[0]]) {
+    appConfig[category][keys[0]] = {}
+  }
+  appConfig[category][keys[0]][keys[1]] = parseValue(value, dataType)
+}
 
 export default config

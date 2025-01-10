@@ -27,6 +27,7 @@ import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { Types } from 'bitecs'
 import React, { useEffect } from 'react'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import sinon from 'sinon'
 import { DirectionalLight, Matrix4, Vector3 } from 'three'
@@ -290,7 +291,18 @@ describe('ComponentFunctions', async () => {
 
       const Vec3Component = defineComponent({
         name: 'Vector3Component',
-        schema: S.Vec3()
+        schema: S.SerializedClass(
+          () => new Vector3(),
+          {
+            x: S.Number(),
+            y: S.Number(),
+            z: S.Number()
+          },
+          {
+            deserialize: (curr, value) => curr.copy(value),
+            id: 'Vec3'
+          }
+        )
       })
 
       const entity = createEntity()
@@ -860,5 +872,5 @@ describe('ComponentFunctions Hooks', async () => {
   }) // useOptionalComponent : Isolated Test Cases
 
   // TODO
-  describe('defineQuery', () => {})
+  // describe('defineQuery', () => {})
 })

@@ -28,7 +28,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { EntityTreeComponent, UUIDComponent } from '@ir-engine/ecs'
 import {
   Component,
   ComponentMap,
@@ -53,8 +53,7 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
+import { Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 const renderEntityTreeRoots = () => {
@@ -183,22 +182,16 @@ export const EntityDebug = () => {
     <div className="m-1 bg-neutral-600 p-1">
       <div className="my-1">
         <Text>{t('common:debug.scenes')}</Text>
-        <JSONTree data={entityTree.value} postprocessValue={(v: any) => v?.value ?? v} />
+        <JSONTree data={entityTree.get(NO_PROXY)} postprocessValue={(v: any) => v?.value ?? v} />
       </div>
       <div className="my-1">
         <Text>{t('common:debug.entities')}</Text>
         <Input
-          containerClassName="my-0.5"
           placeholder="Search..."
           value={entitySearch.value}
           onChange={(event) => entitySearch.set(event.target.value)}
         />
-        <Input
-          containerClassName="my-0.5"
-          placeholder="Query..."
-          value={entityQuery.value}
-          onChange={(e) => entityQuery.set(e.target.value)}
-        />
+        <Input placeholder="Query..." value={entityQuery.value} onChange={(e) => entityQuery.set(e.target.value)} />
         <JSONTree data={namedEntities.get(NO_PROXY)} />
       </div>
       <div className="my-1">

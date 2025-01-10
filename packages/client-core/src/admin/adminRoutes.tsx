@@ -37,10 +37,11 @@ import '@ir-engine/engine/src/EngineModule'
 import { useTranslation } from 'react-i18next'
 import { HiMiniMoon, HiMiniSun } from 'react-icons/hi2'
 
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { useFind } from '@ir-engine/common'
+import { identityProviderPath, scopePath } from '@ir-engine/common/src/schema.type.module'
+import { Engine } from '@ir-engine/ecs'
+import { Button, Tooltip } from '@ir-engine/ui'
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
-
-import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 import { RouterState } from '../common/services/RouterService'
 import { DefaultAdminRoutes } from './DefaultAdminRoutes'
 
@@ -49,8 +50,9 @@ const $allowed = lazy(() => import('@ir-engine/client-core/src/admin/allowedRout
 const AdminTopBar = () => {
   const { t } = useTranslation()
   const theme = useHookstate(getMutableState(ThemeState)).theme
+  const identityProvidersQuery = useFind(identityProviderPath)
   const selfUser = getState(AuthState).user
-  const tooltip = `${selfUser.name} (${selfUser.identityProviders
+  const tooltip = `${selfUser.name} (${identityProvidersQuery.data
     .map((item) => `${item.type}: ${item.accountIdentifier}`)
     .join(', ')}) ${selfUser.id}`
 
@@ -71,7 +73,7 @@ const AdminTopBar = () => {
           )}
         </Button>
         <Tooltip content={tooltip}>
-          <Button className="pointer-events-auto" size="small" onClick={() => AuthService.logoutUser()}>
+          <Button className="pointer-events-auto" size="sm" onClick={() => AuthService.logoutUser()}>
             {t('admin:components.common.logOut')}
           </Button>
         </Tooltip>
@@ -104,8 +106,8 @@ const AdminSideBar = () => {
                         ? 'bg-theme-highlight font-semibold text-theme-primary '
                         : 'bg-theme-surface-main'
                     }`}
-                    startIcon={sidebarItem.icon}
                   >
+                    {sidebarItem.icon}
                     {t(sidebarItem.name)}
                   </Button>
                 </Link>
@@ -119,11 +121,9 @@ const AdminSideBar = () => {
 
 const AdminRoutes = () => {
   const location = useLocation()
-  const admin = useHookstate(getMutableState(AuthState)).user
+  const scopeQuery = useFind(scopePath, { query: { userId: Engine.instance.userID, paginate: false } })
 
   const allowedRoutes = useMutableState(AllowedAdminRoutesState)
-
-  const scopes = admin?.scopes?.value
 
   useEffect(() => {
     allowedRoutes.set(DefaultAdminRoutes)
@@ -134,21 +134,23 @@ const AdminRoutes = () => {
       const routeScope = state.scope.value
       const hasScope =
         routeScope === '' ||
-        scopes?.find((scope) => {
+        scopeQuery.data.find((scope) => {
           const [scopeKey, type] = scope.type.split(':')
           return Array.isArray(routeScope) ? routeScope.includes(scopeKey) : scopeKey === routeScope
         })
       state.access.set(!!hasScope)
     }
-  }, [scopes])
+  }, [scopeQuery.data])
 
   useEffect(() => {
-    if (admin?.id?.value?.length! > 0 && !admin?.scopes?.value?.find((scope) => scope.type === 'admin:admin')) {
+    if (scopeQuery.status !== 'success') return
+
+    if (!scopeQuery.data.find((scope) => scope.type === 'admin:admin')) {
       RouterState.navigate('/', { redirectUrl: location.pathname })
     }
-  }, [admin])
+  }, [scopeQuery.data])
 
-  if (admin?.id?.value?.length! > 0 && !admin?.scopes?.value?.find((scope) => scope.type === 'admin:admin')) {
+  if (!scopeQuery.data.find((scope) => scope.type === 'admin:admin')) {
     return <></>
   }
 

@@ -44,12 +44,22 @@ import { useFind } from '@ir-engine/common'
 import config, { validateEmail, validatePhoneNumber } from '@ir-engine/common/src/config'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
+  ScopeType,
   UserName,
   authenticationSettingPath,
   clientSettingPath,
+  identityProviderPath,
+  scopePath,
+  userApiKeyPath,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import {
+  defineState,
+  getMutableState,
+  syncStateWithLocalStorage,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
 import Checkbox from '@ir-engine/ui/src/primitives/mui/Checkbox'
 import CircularProgress from '@ir-engine/ui/src/primitives/mui/CircularProgress'
@@ -59,6 +69,7 @@ import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
+import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
 import Grid from '@ir-engine/ui/src/primitives/mui/Grid'
 import { initialAuthState, initialOAuthConnectedState } from '../../../../common/initialAuthState'
 import { NotificationService } from '../../../../common/services/NotificationService'
@@ -68,7 +79,6 @@ import { UserMenus } from '../../../UserUISystem'
 import { useUserAvatarThumbnail } from '../../../functions/useUserAvatarThumbnail'
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { AvatarService } from '../../../services/AvatarService'
-import { useUserHasAccessHook } from '../../../userHasAccess'
 import { PopupMenuServices } from '../PopupMenuService'
 import styles from '../index.module.scss'
 
@@ -81,6 +91,14 @@ interface Props {
   isPopover?: boolean
   onClose?: () => void
 }
+
+export const TermsOfServiceState = defineState({
+  name: 'ir.client.TermsOfServiceState',
+  initial: {
+    accepted: false
+  },
+  extension: syncStateWithLocalStorage(['accepted'])
+})
 
 const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   const { t } = useTranslation()
@@ -104,24 +122,24 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   const clientSetting = useFind(clientSettingPath).data.at(0)
   const loading = useHookstate(getMutableState(AuthState).isProcessing)
   const userId = selfUser.id.value
-  const apiKey = selfUser.apiKey?.token?.value
+  const apiKey = useFind(userApiKeyPath).data[0]
   const isGuest = selfUser.isGuest.value
-  const acceptedTOS = !!selfUser.acceptedTOS.value
+  const acceptedTOS = useMutableState(TermsOfServiceState).accepted.value
 
-  const checkedTOS = useHookstate(!isGuest)
-  const checked13OrOver = useHookstate(!isGuest)
-  const checked18OrOver = useHookstate(acceptedTOS)
-  const hasAcceptedTermsAndAge = checkedTOS.value && checked13OrOver.value
+  const checkedTOS = useHookstate(!isGuest || acceptedTOS)
+  const checked13OrOver = useHookstate(!isGuest || acceptedTOS)
+  const checked18OrOver = selfUser.ageVerified.value
 
-  const originallyAcceptedTOS = useHookstate(acceptedTOS)
+  const originallyAgeVerified = useHookstate(checked18OrOver)
+  const originallyAcceptedTOS = useHookstate(acceptedTOS).value
 
-  useEffect(() => {
-    if (!originallyAcceptedTOS.value && checked18OrOver.value) {
+  const submitAgeVerified = () => {
+    if (!originallyAgeVerified.value && !checked18OrOver) {
       API.instance
         .service(userPath)
-        .patch(userId, { acceptedTOS: true })
+        .patch(userId, { ageVerified: true })
         .then(() => {
-          selfUser.acceptedTOS.set(true)
+          selfUser.ageVerified.set(true)
           logger.info({
             event_name: 'accept_tos'
           })
@@ -130,9 +148,22 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
           console.error(e, 'Error updating user')
         })
     }
-  }, [checked18OrOver])
+  }
 
-  const hasAdminAccess = useUserHasAccessHook('admin:admin')
+  useEffect(() => {
+    if (checked13OrOver.value && checkedTOS.value) {
+      getMutableState(TermsOfServiceState).accepted.set(true)
+    }
+  }, [checked13OrOver, checkedTOS])
+
+  const adminScopeQuery = useFind(scopePath, {
+    query: {
+      userId: selfUser.id.value,
+      type: 'admin:admin' as ScopeType
+    }
+  })
+
+  const hasAdminAccess = adminScopeQuery.data.length > 0
   const avatarThumbnail = useUserAvatarThumbnail(userId)
 
   const { initialized, openChat } = useZendesk()
@@ -184,35 +215,36 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
     if (!loading.value) logger.info({ event_name: 'view_profile' })
   }, [loading.value])
 
+  const identityProvidersQuery = useFind(identityProviderPath)
+
   useEffect(() => {
     oauthConnectedState.set(Object.assign({}, initialOAuthConnectedState))
-    if (selfUser.identityProviders.get({ noproxy: true }))
-      for (const ip of selfUser.identityProviders.get({ noproxy: true })!) {
-        switch (ip.type) {
-          case 'apple':
-            oauthConnectedState.merge({ apple: true })
-            break
-          case 'discord':
-            oauthConnectedState.merge({ discord: true })
-            break
-          case 'facebook':
-            oauthConnectedState.merge({ facebook: true })
-            break
-          case 'linkedin':
-            oauthConnectedState.merge({ linkedin: true })
-            break
-          case 'google':
-            oauthConnectedState.merge({ google: true })
-            break
-          case 'twitter':
-            oauthConnectedState.merge({ twitter: true })
-            break
-          case 'github':
-            oauthConnectedState.merge({ github: true })
-            break
-        }
+    for (const ip of identityProvidersQuery.data) {
+      switch (ip.type) {
+        case 'apple':
+          oauthConnectedState.merge({ apple: true })
+          break
+        case 'discord':
+          oauthConnectedState.merge({ discord: true })
+          break
+        case 'facebook':
+          oauthConnectedState.merge({ facebook: true })
+          break
+        case 'linkedin':
+          oauthConnectedState.merge({ linkedin: true })
+          break
+        case 'google':
+          oauthConnectedState.merge({ google: true })
+          break
+        case 'twitter':
+          oauthConnectedState.merge({ twitter: true })
+          break
+        case 'github':
+          oauthConnectedState.merge({ github: true })
+          break
       }
-  }, [selfUser.identityProviders])
+    }
+  }, [identityProvidersQuery.data])
 
   const updateUserName = (e) => {
     e.preventDefault()
@@ -220,7 +252,8 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   }
 
   const handleUsernameChange = (e) => {
-    username.set(e.target.value)
+    const validInput = e.target.value.replace(INVALID_USER_NAME_REGEX, '')
+    username.set(validInput)
     if (!e.target.value) errorUsername.set(t('user:usermenu.profile.usernameError'))
     else if (e.target.value.length > USERNAME_MAX_LENGTH)
       errorUsername.set(
@@ -287,7 +320,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
       event_name: 'connect_social_login',
       event_value: e.currentTarget.id
     })
-    AuthService.loginUserByOAuth(e.currentTarget.id, location)
+    AuthService.loginUserByOAuth(e.currentTarget.id, location, true)
   }
 
   const handleRemoveOAuthServiceClick = (e) => {
@@ -447,8 +480,8 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
         <Box className={styles.profileContainer}>
           <Avatar
             imageSrc={avatarThumbnail}
-            showChangeButton={hasAcceptedTermsAndAge}
-            onChange={() => PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect)}
+            showChangeButton={acceptedTOS}
+            onChange={() => PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect, { showBackButton: true })}
           />
 
           <Box className={styles.profileDetails}>
@@ -457,7 +490,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
               <span className={commonStyles.bold}>{hasAdminAccess ? ' Admin' : isGuest ? ' Guest' : ' User'}</span>.
             </Text>
 
-            {hasAcceptedTermsAndAge && selfUser?.inviteCode.value && (
+            {acceptedTOS && selfUser?.inviteCode.value && (
               <Text mt={1} variant="body2">
                 {t('user:usermenu.profile.inviteCode')}: {selfUser.inviteCode.value}
               </Text>
@@ -469,24 +502,24 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
               </Text>
             )} */}
 
-            {hasAcceptedTermsAndAge && (
+            {acceptedTOS && (
               <Text id="show-user-id" mt={1} variant="body2" onClick={() => showUserId.set(!showUserId.value)}>
                 {showUserId.value ? t('user:usermenu.profile.hideUserId') : t('user:usermenu.profile.showUserId')}
               </Text>
             )}
 
-            {hasAcceptedTermsAndAge && selfUser?.apiKey?.id && (
+            {acceptedTOS && apiKey?.id && (
               <Text variant="body2" mt={1} onClick={() => showApiKey.set(!showApiKey.value)}>
                 {showApiKey.value ? t('user:usermenu.profile.hideApiKey') : t('user:usermenu.profile.showApiKey')}
               </Text>
             )}
 
-            {isGuest && (
+            {isGuest && !originallyAcceptedTOS && (
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Checkbox
-                      disabled={hasAcceptedTermsAndAge}
+                      disabled={acceptedTOS}
                       value={checkedTOS.value}
                       onChange={(e) => checkedTOS.set(e.target.checked)}
                       color="primary"
@@ -518,7 +551,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      disabled={hasAcceptedTermsAndAge}
+                      disabled={acceptedTOS}
                       value={checked13OrOver.value}
                       onChange={(e) => checked13OrOver.set(e.target.checked)}
                       color="primary"
@@ -539,16 +572,16 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
               </Grid>
             )}
 
-            {!isGuest && !originallyAcceptedTOS.value && (
+            {!isGuest && !originallyAgeVerified.value && (
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Checkbox
-                      disabled={checked18OrOver.value}
-                      value={checked18OrOver.value}
-                      onChange={(e) => checked18OrOver.set(e.target.checked)}
+                      disabled={checked18OrOver}
+                      value={checked18OrOver}
+                      onChange={submitAgeVerified}
                       color="primary"
-                      name="is13OrOver"
+                      name="is18OrOver"
                     />
                   }
                   label={
@@ -671,7 +704,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
         </Box>
 
         <InputText
-          disabled={!hasAcceptedTermsAndAge}
+          disabled={!acceptedTOS}
           name={'username' as UserName}
           label={t('user:usermenu.profile.lbl-username')}
           value={username.value || ('' as UserName)}
@@ -704,14 +737,14 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
         {showApiKey.value && (
           <InputText
             label={t('user:usermenu.profile.apiKey')}
-            value={apiKey}
+            value={apiKey?.token}
             sx={{ mt: 2 }}
             endIcon={<Icon type="ContentCopy" />}
             startIcon={<Icon type="Refresh" />}
             startIconTitle={t('user:usermenu.profile.refreshApiKey')}
             onStartIconClick={refreshApiKey}
             onEndIconClick={() => {
-              navigator.clipboard.writeText(apiKey)
+              navigator.clipboard.writeText(apiKey?.token)
               NotificationService.dispatchNotify(t('user:usermenu.profile.apiKeyCopied'), {
                 variant: 'success'
               })
@@ -742,7 +775,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
           </div>
         )} */}
 
-        {!hideLogin && hasAcceptedTermsAndAge && (
+        {!hideLogin && acceptedTOS && (
           <>
             {isGuest && enableConnect && (
               <>
@@ -799,7 +832,7 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
               <>
                 {selfUser?.isGuest.value && (
                   <Text align="center" variant="body2" mb={1} mt={2}>
-                    {hasAcceptedTermsAndAge ? t('user:usermenu.profile.addSocial') : t('user:usermenu.profile.logIn')}
+                    {acceptedTOS ? t('user:usermenu.profile.addSocial') : t('user:usermenu.profile.logIn')}
                   </Text>
                 )}
                 <div className={styles.socialContainer}>

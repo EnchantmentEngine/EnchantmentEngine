@@ -30,19 +30,35 @@ import { validate as isValidUUID } from 'uuid'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { useFind, useMutation, useSearch } from '@ir-engine/common'
-import { locationPath, LocationType } from '@ir-engine/common/src/schema.type.module'
+import { locationPath, LocationType, scopePath, ScopeType } from '@ir-engine/common/src/schema.type.module'
+import { Button } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 
-import { userHasAccess } from '../../../user/userHasAccess'
+import config from '@ir-engine/common/src/config'
+import { Engine } from '@ir-engine/ecs'
 import { locationColumns, LocationRowType } from '../../common/constants/location'
 import DataTable from '../../common/Table'
 import AddEditLocationModal from './AddEditLocationModal'
+
+const getStudioURLfromScene = (url: string) => {
+  const key = url.replace(config.client.fileServer, '')
+  const [, orgName, projectName] = key.split('/')
+  return `/studio?projectName=${orgName}/${projectName}&scenePath=${key}`
+}
 
 const transformLink = (link: string) => link.toLowerCase().replace(' ', '-')
 
 export default function LocationTable({ search }: { search: string }) {
   const { t } = useTranslation()
+
+  const scopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.userID,
+      type: 'location:write' as ScopeType
+    }
+  })
+
+  const userHasAccess = scopeQuery.data.length > 0
 
   const adminLocationQuery = useFind(locationPath, {
     query: {
@@ -84,11 +100,7 @@ export default function LocationTable({ search }: { search: string }) {
         </a>
       ),
       sceneId: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href={`/studio?projectName=${row.sceneAsset.project!}&scenePath=${row.sceneAsset.key}`}
-        >
+        <a target="_blank" rel="noopener noreferrer" href={getStudioURLfromScene(row.sceneURL)}>
           {row.sceneId}
         </a>
       ),
@@ -101,17 +113,16 @@ export default function LocationTable({ search }: { search: string }) {
       action: (
         <div className="flex items-center justify-start gap-3">
           <Button
-            rounded="full"
-            variant="outline"
+            variant="tertiary"
             className="h-8 w-8"
-            disabled={!userHasAccess('location:write')}
+            disabled={!userHasAccess}
             title={t('admin:components.common.view')}
-            startIcon={<HiPencil className="place-self-center text-theme-iconGreen" />}
             onClick={() => PopoverState.showPopupover(<AddEditLocationModal action="admin" location={row} />)}
-          />
+          >
+            <HiPencil className="text-theme-iconGreen" />
+          </Button>
           <Button
-            rounded="full"
-            variant="outline"
+            variant="tertiary"
             className="h-8 w-8"
             title={t('admin:components.common.delete')}
             onClick={() =>
@@ -124,8 +135,9 @@ export default function LocationTable({ search }: { search: string }) {
                 />
               )
             }
-            startIcon={<HiTrash className="place-self-center text-theme-iconRed" />}
-          />
+          >
+            <HiTrash className="place-self-center text-theme-iconRed" />
+          </Button>
         </div>
       )
     }))

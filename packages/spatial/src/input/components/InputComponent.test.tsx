@@ -23,9 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '@hookstate/core'
 import assert from 'assert'
 import React, { useEffect } from 'react'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import {
   getComponent,
@@ -39,22 +41,24 @@ import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { ReactorReconciler, ReactorRoot, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 
 import {
+  EngineState,
   Entity,
   EntityContext,
+  EntityTreeComponent,
   EntityUUID,
   InputSystemGroup,
   SystemDefinitions,
   UndefinedEntity,
   createEntity,
+  isAncestor,
   removeEntity
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { Raycaster } from 'three'
-import { EngineState } from '../../EngineState'
+import { assertArray } from '../../../tests/util/assert'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialEngine } from '../../initializeEngine'
-import { assertArrayEqual } from '../../physics/components/RigidBodyComponent.test'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
-import { EntityTreeComponent, isAncestor } from '../../transform/components/EntityTree'
 import { ButtonStateMap, MouseScroll, XRStandardGamepadAxes } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
 import { DefaultButtonAlias, InputComponent, InputExecutionOrder, InputExecutionSystemGroup } from './InputComponent'
@@ -78,24 +82,11 @@ const InputComponentDefaults: InputComponentData = {
 }
 
 function assertInputComponentEq(A: InputComponentData, B: InputComponentData): void {
-  assertArrayEqual(A.inputSinks, B.inputSinks)
+  assertArray.eq(A.inputSinks, B.inputSinks)
   assert.equal(A.activationDistance, B.activationDistance)
   assert.equal(A.highlight, B.highlight)
   assert.equal(A.grow, B.grow)
-  assertArrayEqual(A.inputSources, B.inputSources)
-}
-
-/** @description Returns whethere or not the given `@param arr` has duplicate values. */
-export function arrayHasDuplicates(arr: any[]): boolean {
-  return new Set(arr).size !== arr.length
-}
-
-export function assertArrayHasDuplicates(arr: any[]) {
-  assert.ok(arrayHasDuplicates(arr))
-}
-
-export function assertArrayHasNoDuplicates(arr: any[]) {
-  assert.ok(!arrayHasDuplicates(arr))
+  assertArray.eq(A.inputSources, B.inputSources)
 }
 
 /** @description Alias to create a dummy entity with an InputComponent. Used for syntax ergonomics. */
@@ -308,10 +299,10 @@ describe('InputComponent', () => {
         parentEntity,
         parentEntity
       ]
-      assertArrayHasDuplicates(DummyList)
+      assertArray.hasDuplicates(DummyList)
       getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set(DummyList)
       const result = InputComponent.getInputEntities(testEntity)
-      assertArrayHasNoDuplicates(result)
+      assertArray.hasNoDuplicates(result)
       assert.ok(
         !result.includes(testEntity),
         'the result should not contain the given entity if it does not have an InputComponent'
@@ -374,7 +365,7 @@ describe('InputComponent', () => {
       // 3. We retrieve DummyList4 from the inputSources of entity `four`, which are accessed from the parentEntity.InputSinkComponent
       const result = InputComponent.getInputSourceEntities(testEntity)
       assert.ok(result.length > 0, 'The result should not be empty')
-      assertArrayEqual(
+      assertArray.eq(
         result,
         Expected,
         'The result should contain the expected lists of inputSources combined, no matter what their values are'
@@ -811,7 +802,7 @@ describe('InputComponent', () => {
       const resultArray = [merged[0], merged[1], merged[2], merged[3]] as Axes
       // Check that the result is what we expect it to be
       const Expected = [BiggerX, BiggerY, BiggerZ, BiggerW] as Axes
-      assertArrayEqual(resultArray, Expected)
+      assertArray.eq(resultArray, Expected)
       assert.equal(merged.HorizontalScroll, Expected[MouseScroll.HorizontalScroll])
       assert.equal(merged.VerticalScroll, Expected[MouseScroll.VerticalScroll])
     })
@@ -1086,7 +1077,7 @@ describe('InputComponent', () => {
     })
 
     it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true', async () => {
-      const entity = getState(EngineState).localFloorEntity
+      const entity = getState(ReferenceSpaceState).localFloorEntity
 
       const Expected = { highlight: true, grow: true }
       ReactorReconciler.flushSync(() => {

@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Intersection, Layers, Object3D, Raycaster } from 'three'
 
-import { Entity, PresentationSystemGroup, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, EntityTreeComponent, PresentationSystemGroup, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getMutableComponent,
@@ -51,12 +51,10 @@ import { InputComponent } from '@ir-engine/spatial/src/input/components/InputCom
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { InfiniteGridComponent } from '@ir-engine/spatial/src/renderer/components/InfiniteGridHelper'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
-import { TransformGizmoControlComponent } from '../classes/TransformGizmoControlComponent'
-import { TransformGizmoControlledComponent } from '../classes/TransformGizmoControlledComponent'
+import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
+import { TransformGizmoControlledComponent } from '../classes/gizmo/transform/TransformGizmoControlledComponent'
 import { addMediaNode } from '../functions/addMediaNode'
 import { EditorControlFunctions } from '../functions/EditorControlFunctions'
 import isInputSelected from '../functions/isInputSelected'
@@ -73,6 +71,7 @@ import { EditorHelperState, PlacementMode } from '../services/EditorHelperState'
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
@@ -162,8 +161,9 @@ const onKeyX = () => {
 }
 
 const onKeyZ = (control: boolean, shift: boolean) => {
-  const source = getState(EditorState).scenePath
-  if (!source) return
+  const rootEntity = getState(EditorState).rootEntity
+  if (!rootEntity) return
+  const source = getComponent(rootEntity, SourceComponent)
   if (control) {
     const state = getState(GLTFSnapshotState)[source]
     if (shift) {
@@ -361,8 +361,13 @@ const execute = () => {
       clickStartEntity = capturingEntity
     }
   }
+
   if (buttons.PrimaryClick?.up && !buttons.PrimaryClick?.dragging) {
-    if (hasComponent(clickStartEntity, SourceComponent) && !getState(ClickPlacementState).placementEntity) {
+    if (
+      hasComponent(clickStartEntity, SourceComponent) &&
+      !getState(ClickPlacementState).placementEntity &&
+      getMutableState(EditorHelperState).gizmoEnabled.value
+    ) {
       const selectedEntities = SelectionState.getSelectedEntities()
 
       //only update selection if the selection actually changed (prevents unnecessarily creating new transform gizmos in edit mode)
@@ -447,7 +452,7 @@ const reactor = () => {
     setComponent(infiniteGridHelperEntity, InfiniteGridComponent, { size: editorHelperState.translationSnap.value })
   }, [editorHelperState.translationSnap, rendererState.infiniteGridHelperEntity])
 
-  const viewerEntity = useMutableState(EngineState).viewerEntity.value
+  const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
 
   useEffect(() => {
     if (!viewerEntity) return

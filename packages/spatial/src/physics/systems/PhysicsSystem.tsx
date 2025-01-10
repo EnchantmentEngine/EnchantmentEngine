@@ -35,19 +35,23 @@ import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 
-import { UUIDComponent, useEntityContext } from '@ir-engine/ecs'
+import { EngineState, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import React from 'react'
+import { Vector3 } from 'three'
+import { InputHeuristicState, IntersectionData } from '../../input/functions/ClientInputHeuristics'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { PhysicsSerialization } from '../PhysicsSerialization'
-import { Physics } from '../classes/Physics'
+import { Physics, RaycastArgs } from '../classes/Physics'
 import { CollisionComponent } from '../components/CollisionComponent'
 import {
   RigidBodyComponent,
   RigidBodyFixedTagComponent,
   RigidBodyKinematicTagComponent
 } from '../components/RigidBodyComponent'
-import { ColliderHitEvent, CollisionEvents } from '../types/PhysicsTypes'
+import { CollisionGroups } from '../enums/CollisionGroups'
+import { getInteractionGroups } from '../functions/getInteractionGroups'
+import { ColliderHitEvent, CollisionEvents, SceneQueryType } from '../types/PhysicsTypes'
 
 const nonFixedRigidbodyQuery = defineQuery([RigidBodyComponent, Not(RigidBodyFixedTagComponent)])
 const collisionQuery = defineQuery([CollisionComponent])
@@ -104,13 +108,50 @@ const execute = () => {
 const PhysicsSceneReactor = () => {
   const entity = useEntityContext()
   const uuid = useComponent(entity, UUIDComponent).value
+  const scene = useComponent(entity, SceneComponent)
+
   useEffect(() => {
+    if (!scene.active.value) return
     Physics.createWorld(uuid)
     return () => {
       Physics.destroyWorld(uuid)
     }
-  }, [uuid])
+  }, [uuid, scene.active.value])
   return null
+}
+
+const _inputRaycast = {
+  type: SceneQueryType.Closest,
+  origin: new Vector3(),
+  direction: new Vector3(),
+  maxDistance: 1000,
+  groups: getInteractionGroups(CollisionGroups.Default, CollisionGroups.Default),
+  excludeRigidBody: undefined
+} as RaycastArgs
+
+const sceneQuery = defineQuery([SceneComponent])
+
+export function spatialInputRaycastHeuristic(
+  intersectionData: Set<IntersectionData>,
+  position: Vector3,
+  direction: Vector3
+) {
+  const isEditing = getState(EngineState).isEditing
+  if (isEditing) return
+
+  _inputRaycast.origin.copy(position)
+  _inputRaycast.direction.copy(direction)
+
+  for (const entity of sceneQuery()) {
+    const world = Physics.getWorld(entity)
+    if (!world) continue
+
+    const hits = Physics.castRay(world, _inputRaycast)
+    for (const hit of hits) {
+      if (!hit.entity) continue
+      intersectionData.add({ entity: hit.entity, distance: hit.distance })
+    }
+  }
 }
 
 const reactor = () => {
@@ -119,6 +160,13 @@ const reactor = () => {
   const physicsQuery = useQuery([SceneComponent])
 
   useEffect(() => {
+    getMutableState(InputHeuristicState).merge([
+      {
+        order: 0,
+        heuristic: spatialInputRaycastHeuristic
+      }
+    ])
+
     const networkState = getMutableState(NetworkState)
 
     networkState.networkSchema[PhysicsSerialization.ID].set({

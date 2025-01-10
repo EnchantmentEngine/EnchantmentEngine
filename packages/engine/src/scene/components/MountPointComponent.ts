@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Vector3 } from 'three'
+import { ArrowHelper, Vector3 } from 'three'
 
 import { UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
@@ -33,18 +33,18 @@ import {
   getOptionalComponent,
   hasComponent,
   removeComponent,
-  setComponent,
-  useComponent
+  setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { dispatchAction, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { TransformComponent } from '@ir-engine/spatial'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
-import { ArrowHelperComponent } from '@ir-engine/spatial/src/common/debug/ArrowHelperComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { emoteAnimations, preloadedAnimations } from '../../avatar/animation/Util'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { AvatarControllerComponent } from '../../avatar/components/AvatarControllerComponent'
@@ -62,11 +62,9 @@ export type MountPointTypes = (typeof MountPoint)[keyof typeof MountPoint]
 
 const MountPointTypesSchema = S.LiteralUnion(Object.values(MountPoint), 'seat')
 
-/**
- * @todo refactor this into i18n and configurable
- */
+/** Mapping of mount point types to interact messages using translation keys from i18n. */
 const mountPointInteractMessages = {
-  [MountPoint.seat]: 'Press E to Sit'
+  [MountPoint.seat]: 'editor:properties.mountPoint.interact-message-seat'
 }
 
 const mountCallbackName = 'mountEntity'
@@ -74,7 +72,7 @@ const mountCallbackName = 'mountEntity'
 const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
   if (avatarEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
   const mountedEntities = getState(MountPointState)
-  if (mountedEntities[getComponent(mountEntity, UUIDComponent)]) return //already sitting, exiting
+  if (getComponent(mountEntity, UUIDComponent) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
 
   const avatarUUID = getComponent(avatarEntity, UUIDComponent)
   const mountPoint = getOptionalComponent(mountEntity, MountPointComponent)
@@ -82,7 +80,11 @@ const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
   const mountPointUUID = getComponent(mountEntity, UUIDComponent)
 
   //check if we're already sitting or if the seat is occupied
-  if (getState(MountPointState)[mountPointUUID] || hasComponent(avatarEntity, SittingComponent)) return
+  if (
+    mountPointUUID in getState(MountPointState).mountsToMountedEntities ||
+    hasComponent(avatarEntity, SittingComponent)
+  )
+    return
 
   setComponent(avatarEntity, SittingComponent, {
     mountPointEntity: mountEntity!
@@ -131,9 +133,9 @@ const unmountEntity = (entity: Entity) => {
   )
   const mountTransform = getComponent(sittingComponent.mountPointEntity, TransformComponent)
   const mountComponent = getComponent(sittingComponent.mountPointEntity, MountPointComponent)
-  //we use teleport avatar only when rigidbody is not enabled, otherwise translation is called on rigidbody
+  //We use teleport avatar only when rigidbody is not enabled, otherwise translation is called on rigidbody
   const dismountPoint = new Vector3().copy(mountComponent.dismountOffset).applyMatrix4(mountTransform.matrixWorld)
-  teleportAvatar(entity, dismountPoint)
+  teleportAvatar(entity, dismountPoint, mountComponent.forceDismountPosition)
   removeComponent(entity, SittingComponent)
 }
 
@@ -143,7 +145,8 @@ export const MountPointComponent = defineComponent({
 
   schema: S.Object({
     type: MountPointTypesSchema,
-    dismountOffset: S.Vec3({ x: 0, y: 0, z: 0.75 })
+    dismountOffset: T.Vec3({ x: 0, y: 0, z: 0.75 }),
+    forceDismountPosition: S.Bool(false)
   }),
 
   mountEntity,
@@ -154,37 +157,24 @@ export const MountPointComponent = defineComponent({
   reactor: function () {
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
-    const mountPoint = useComponent(entity, MountPointComponent)
     const mountedEntities = useMutableState(MountPointState)
 
     useEffect(() => {
       setCallback(entity, mountCallbackName, () => mountEntity(AvatarComponent.getSelfAvatarEntity(), entity))
-      // setComponent(entity, BoundingBoxComponent, {
-      //   box: new Box3().setFromCenterAndSize(
-      //     getComponent(entity, TransformComponent).position,
-      //     new Vector3(0.1, 0.1, 0.1)
-      //   )
-      // })
     }, [])
 
     useEffect(() => {
       // manually hide interactable's XRUI when mounted through visibleComponent - (as interactable uses opacity to toggle visibility)
       const interactableComponent = getComponent(entity, InteractableComponent)
       if (interactableComponent) {
-        interactableComponent.uiVisibilityOverride = mountedEntities[getComponent(entity, UUIDComponent)].value
-          ? XRUIVisibilityOverride.off
-          : XRUIVisibilityOverride.none
+        interactableComponent.uiVisibilityOverride =
+          getComponent(entity, UUIDComponent) in mountedEntities.mountsToMountedEntities.value
+            ? XRUIVisibilityOverride.off
+            : XRUIVisibilityOverride.none
       }
-    }, [mountedEntities])
+    }, [mountedEntities.mountsToMountedEntities])
 
-    useEffect(() => {
-      if (debugEnabled.value) {
-        setComponent(entity, ArrowHelperComponent, { name: 'mount-point-helper' })
-      }
-      return () => {
-        removeComponent(entity, ArrowHelperComponent)
-      }
-    }, [debugEnabled])
+    useHelperEntity(entity, () => new ArrowHelper(), debugEnabled.value)
 
     return null
   }

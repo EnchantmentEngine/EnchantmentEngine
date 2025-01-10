@@ -60,13 +60,13 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { UUIDComponent, getAncestorWithComponents, useAncestorWithComponents } from '@ir-engine/ecs'
 import { NO_PROXY, defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { Vector3_Zero } from '../../common/constants/MathConstants'
+import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '@ir-engine/network'
+import { Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { getAncestorWithComponents, useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { computeTransformMatrix } from '../../transform/systems/TransformSystem'
 import { ColliderComponent } from '../components/ColliderComponent'
@@ -96,6 +96,16 @@ export type PhysicsWorld = World & {
   collisionEventQueue: EventQueue
   drainCollisions: ReturnType<typeof Physics.drainCollisionEventQueue>
   drainContacts: ReturnType<typeof Physics.drainContactEventQueue>
+}
+
+declare module '@dimforge/rapier3d-compat' {
+  export interface Collider {
+    entity: Entity
+  }
+
+  export interface RigidBody {
+    entity: Entity
+  }
 }
 
 async function load() {
@@ -254,9 +264,8 @@ function createRigidBody(world: PhysicsWorld, entity: Entity) {
   rigidBody.linearVelocity.copy(Vector3_Zero)
   rigidBody.angularVelocity.copy(Vector3_Zero)
 
-  // set entity in userdata for fast look up when required.
-  const rigidBodyUserdata = { entity: entity }
-  body.userData = rigidBodyUserdata
+  // set entity in rigidbody for fast look up when required.
+  body.entity = entity
 
   world.Rigidbodies.set(entity, body)
 }
@@ -292,7 +301,11 @@ const setRigidBodyType = (world: PhysicsWorld, entity: Entity, type: Body) => {
       break
   }
 
-  rigidbody.setBodyType(typeEnum, false)
+  rigidbody.setBodyType(typeEnum, true)
+
+  /** @todo turns out this is a react/rapier bug when it comes to changing the rigidbody type. This is the best workaround I could find*/
+  rigidbody.setEnabled(false)
+  rigidbody.setEnabled(true)
 }
 
 function setRigidbodyPose(
@@ -369,6 +382,7 @@ function updateRigidbodyPose(entities: Entity[]) {
     if (!world) continue
     const body = world.Rigidbodies.get(entity)
     if (!body) continue
+    if (hasComponent(entity, NetworkObjectComponent) && !hasComponent(entity, NetworkObjectAuthorityTag)) continue
     const translation = body.translation() as Vector3
     const rotation = body.rotation() as Quaternion
     const linvel = body.linvel() as Vector3
@@ -403,12 +417,20 @@ function applyImpulse(world: PhysicsWorld, entity: Entity, impulse: Vector3) {
   rigidBody.applyImpulse(impulse, true)
 }
 
-function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Entity) {
+function createColliderDesc(
+  world: PhysicsWorld,
+  entity: Entity,
+  rootEntity: Entity,
+  colliderEntityOverride: Entity = UndefinedEntity
+) {
   if (!world.Rigidbodies.has(rootEntity)) return
 
   const mesh = getOptionalComponent(entity, MeshComponent)
 
-  const colliderComponent = getComponent(entity, ColliderComponent)
+  const colliderComponent = getComponent(
+    colliderEntityOverride !== UndefinedEntity ? colliderEntityOverride : entity,
+    ColliderComponent
+  )
 
   let shape: ShapeType
 
@@ -440,34 +462,141 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
 
   let colliderDesc: ColliderDesc
 
+  const meshCenterOffset = new Vector3(0, 0, 0)
+  const positionRelativeToRoot = new Vector3(0, 0, 0)
+  const quaternionRelativeToRoot = new Quaternion().copy(Q_IDENTITY)
+
+  const scaleRelativeToRoot = new Vector3(1, 1, 1)
+
+  const rootWorldScale = TransformComponent.getWorldScale(rootEntity, new Vector3())
+
+  // get matrix relative to root
+  if (rootEntity !== entity) {
+    const matrixRelativeToRoot = new Matrix4()
+    TransformComponent.getMatrixRelativeToEntity(entity, rootEntity, matrixRelativeToRoot)
+    matrixRelativeToRoot.decompose(positionRelativeToRoot, quaternionRelativeToRoot, scaleRelativeToRoot)
+  }
+
   switch (shape) {
     case ShapeType.Cuboid:
       if (colliderComponent.shape === 'plane') colliderDesc = ColliderDesc.cuboid(10000, 0.001, 10000)
       else {
-        if (mesh) {
+        if (colliderComponent.matchMesh && mesh) {
           // if we have a mesh, we want to make sure it uses the geometry itself to calculate the size
-          const _buff = mesh.geometry.clone()
-          const box = new Box3().setFromBufferAttribute(_buff.attributes.position as BufferAttribute)
-          const size = new Vector3()
-          box.getSize(size)
-          size.multiply(scale).multiplyScalar(0.5)
-          colliderDesc = ColliderDesc.cuboid(Math.abs(size.x), Math.abs(size.y), Math.abs(size.z))
+
+          //box around mesh without it's local baked rotations from gltf root
+          const box = new Box3().setFromBufferAttribute(mesh.geometry.attributes.position as BufferAttribute)
+          box.getCenter(meshCenterOffset)
+          const boxSize = box.getSize(new Vector3())
+
+          /*multiplying by scale here is the same as multiplying by scaleRelativeToRoot, rotating, then multiplying by rootWorldScale
+          this is fine because offset doesn't matter for it's size*/
+          boxSize.multiply(scale).multiplyScalar(0.5)
+          // boxSize.applyQuaternion(quaternionRelativeToRoot) //rotate so size is in proper orientation for scene xforming
+          boxSize.set(Math.abs(boxSize.x), Math.abs(boxSize.y), Math.abs(boxSize.z))
+          colliderComponent.boxSize.copy(boxSize)
+          colliderDesc = ColliderDesc.cuboid(boxSize.x, boxSize.y, boxSize.z)
         } else {
-          colliderDesc = ColliderDesc.cuboid(Math.abs(scale.x * 0.5), Math.abs(scale.y * 0.5), Math.abs(scale.z * 0.5))
+          const boxSize = colliderComponent.boxSize
+          colliderDesc = ColliderDesc.cuboid(
+            Math.abs(boxSize.x * scale.x * 0.5),
+            Math.abs(boxSize.y * scale.y * 0.5),
+            Math.abs(boxSize.z * scale.z * 0.5)
+          )
         }
       }
       break
 
     case ShapeType.Ball:
-      colliderDesc = ColliderDesc.ball(Math.abs(scale.x))
+      if (colliderComponent.matchMesh && mesh) {
+        //this is a bit heavier than rotating a box3 but necessary to not lose fidelity for the mesh bounding sphere
+        const newGeo = mesh?.geometry.clone()
+        newGeo.scale(scale.x, scale.y, scale.z)
+        newGeo.computeBoundingSphere()
+        if (newGeo.boundingSphere) {
+          const boundingSphere = newGeo.boundingSphere
+
+          //I'm done with rapier's sphere collider.center = (0,0,0) bug, so I'm just going to use the bounding box center
+          const box = new Box3().setFromBufferAttribute(mesh.geometry.attributes.position as BufferAttribute)
+          box.getCenter(meshCenterOffset)
+
+          const calculatedRadius = boundingSphere.radius
+          colliderComponent.radius = calculatedRadius
+          colliderDesc = ColliderDesc.ball(calculatedRadius)
+        } else {
+          colliderDesc = ColliderDesc.ball(Math.max(Math.abs(scale.x), Math.abs(scale.y), Math.abs(scale.z)))
+        }
+      } else {
+        colliderDesc = ColliderDesc.ball(Math.max(Math.abs(scale.x), Math.abs(scale.y), Math.abs(scale.z)))
+      }
       break
 
     case ShapeType.Capsule:
-      colliderDesc = ColliderDesc.capsule(Math.abs(scale.y), Math.abs(scale.x))
+      if (colliderComponent.matchMesh && mesh) {
+        const box = new Box3().setFromBufferAttribute(mesh.geometry.attributes.position as BufferAttribute)
+
+        box.getCenter(meshCenterOffset)
+        const boxSize = box.getSize(new Vector3())
+
+        boxSize.multiply(scale)
+        boxSize.applyQuaternion(quaternionRelativeToRoot)
+        boxSize.set(Math.abs(boxSize.x), Math.abs(boxSize.y), Math.abs(boxSize.z))
+
+        //better radius calculation if object is not square and/or not not taller than wide
+        const newGeo = mesh?.geometry.clone().scale(scaleRelativeToRoot.x, scaleRelativeToRoot.y, scaleRelativeToRoot.z)
+        //for capsule/cylinder we have an absolute orientation expected for the collider, so we need to complete mesh rotation first before calculations
+        newGeo.applyQuaternion(quaternionRelativeToRoot).scale(rootWorldScale.x, rootWorldScale.y, rootWorldScale.z)
+        newGeo.computeBoundingSphere()
+
+        //calculate diagonal of box using pythagorean theorem for radius, compare to sphere radius in case object is not taller than wide
+        const calcRadius = Math.min(
+          newGeo.boundingSphere!.radius!,
+          Math.sqrt(Math.pow(boxSize.x / 2, 2) + Math.pow(boxSize.z / 2, 2))
+        )
+
+        colliderComponent.radius = calcRadius
+        colliderComponent.height = boxSize.y
+        colliderDesc = ColliderDesc.capsule(boxSize.y / 2, calcRadius)
+      } else {
+        colliderDesc = ColliderDesc.capsule(
+          Math.abs((colliderComponent.height / 2) * scale.y),
+          Math.abs(colliderComponent.radius * scale.x)
+        )
+      }
       break
 
     case ShapeType.Cylinder:
-      colliderDesc = ColliderDesc.cylinder(Math.abs(scale.y), Math.abs(scale.x))
+      if (colliderComponent.matchMesh && mesh) {
+        // mesh?.geometry?.computeBoundingBox()
+        const box = new Box3().setFromBufferAttribute(mesh.geometry.attributes.position as BufferAttribute)
+
+        box.getCenter(meshCenterOffset)
+        const boxSize = box.getSize(new Vector3())
+        boxSize.multiply(scale)
+        boxSize.applyQuaternion(quaternionRelativeToRoot)
+        boxSize.set(Math.abs(boxSize.x), Math.abs(boxSize.y), Math.abs(boxSize.z))
+
+        //better radius calculation if object is not square and/or not not taller than wide
+        const newGeo = mesh?.geometry.clone().scale(scaleRelativeToRoot.x, scaleRelativeToRoot.y, scaleRelativeToRoot.z)
+        //for capsule/cylinder we have an absolute orientation expected for the collider, so we need to complete mesh rotation first before calculations
+        newGeo.applyQuaternion(quaternionRelativeToRoot).scale(rootWorldScale.x, rootWorldScale.y, rootWorldScale.z)
+        newGeo.computeBoundingSphere()
+
+        //calculate diagonal of box using pythagorean theorem for radius, compare to sphere radius in case object is not taller than wide
+        const calcRadius = Math.min(
+          newGeo.boundingSphere!.radius!,
+          Math.sqrt(Math.pow(boxSize.x / 2, 2) + Math.pow(boxSize.z / 2, 2))
+        )
+
+        colliderComponent.radius = calcRadius
+        colliderComponent.height = boxSize.y
+        colliderDesc = ColliderDesc.cylinder(boxSize.y / 2, calcRadius)
+      } else {
+        colliderDesc = ColliderDesc.cylinder(
+          Math.abs((colliderComponent.height / 2) * scale.y),
+          Math.abs(colliderComponent.radius * scale.x)
+        )
+      }
       break
 
     case ShapeType.ConvexPolyhedron: {
@@ -478,6 +607,7 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
         const vertices = new Float32Array((_buff.attributes.position as BufferAttribute).array)
         const indices = new Uint32Array(_buff.index!.array)
         colliderDesc = ColliderDesc.convexMesh(vertices, indices) as ColliderDesc
+        colliderDesc.setRotation(quaternionRelativeToRoot)
       } catch (e) {
         console.log('Failed to construct collider from trimesh geometry', mesh.geometry, e)
         return
@@ -493,6 +623,7 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
         const vertices = new Float32Array((_buff.attributes.position as BufferAttribute).array)
         const indices = new Uint32Array(_buff.index!.array)
         colliderDesc = ColliderDesc.trimesh(vertices, indices)
+        colliderDesc.setRotation(quaternionRelativeToRoot)
       } catch (e) {
         console.log('Failed to construct collider from trimesh geometry', mesh.geometry, e)
         return
@@ -505,18 +636,29 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
       return
   }
 
-  const positionRelativeToRoot = new Vector3()
-  const quaternionRelativeToRoot = new Quaternion()
+  //apply local->model root scaling
+  meshCenterOffset.multiply(scaleRelativeToRoot)
+  //apply local->model root rotation
+  meshCenterOffset.applyQuaternion(quaternionRelativeToRoot)
 
-  // get matrix relative to root
-  if (rootEntity !== entity) {
-    const matrixRelativeToRoot = new Matrix4()
-    TransformComponent.getMatrixRelativeToEntity(entity, rootEntity, matrixRelativeToRoot)
-    matrixRelativeToRoot.decompose(positionRelativeToRoot, quaternionRelativeToRoot, new Vector3())
+  //positionRelativeToRoot is already in proper final scene orientation, just add offsets
+  positionRelativeToRoot.add(meshCenterOffset) //apply local geo center-point offset
+  positionRelativeToRoot.multiply(rootWorldScale) //apply root gltf world scale
+  positionRelativeToRoot.add(colliderComponent.centerOffset) //user specified offset adjustments
+  colliderDesc.setTranslation(positionRelativeToRoot.x, positionRelativeToRoot.y, positionRelativeToRoot.z)
+
+  /*capsule and cylinder already apply mesh relative rotation before calculating the collider (above case statements), since capsule
+   * and cylinder are vertically oriented and require mesh correction prior to setup. Alternatively, we attempt to find the largest dimension
+   * of the mesh and apply a counter rotation tailored to that here so the capsule is oriented by size rather than vertical orientation.
+   * Neither of these approaches are ideal however, and while this has an uglier check it will behave consistently and predictably.
+   *
+   * note: if we prefer the longest side to be the height, we can edit the case statement, calculate the inverted rotation and
+   * potentially combine it with the quaternionRelativeToRoot (in a new variable to protect the original) then use that here instead
+   * in the cases of capsule/cylinder
+   */
+  if (shape !== ShapeType.Cylinder && shape !== ShapeType.Capsule) {
+    colliderDesc.setRotation(quaternionRelativeToRoot)
   }
-
-  const rootWorldScale = TransformComponent.getWorldScale(rootEntity, new Vector3())
-  positionRelativeToRoot.multiply(rootWorldScale)
 
   colliderDesc.setFriction(colliderComponent.friction)
   colliderDesc.setRestitution(colliderComponent.restitution)
@@ -524,9 +666,6 @@ function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Ent
   const collisionLayer = colliderComponent.collisionLayer
   const collisionMask = colliderComponent.collisionMask
   colliderDesc.setCollisionGroups(getInteractionGroups(collisionLayer, collisionMask))
-
-  colliderDesc.setTranslation(positionRelativeToRoot.x, positionRelativeToRoot.y, positionRelativeToRoot.z)
-  colliderDesc.setRotation(quaternionRelativeToRoot)
 
   if (hasComponent(entity, TriggerComponent)) {
     colliderDesc.setSensor(true)
@@ -550,6 +689,7 @@ function attachCollider(
   const rigidBody = world.Rigidbodies.get(rigidBodyEntity) // guaranteed will exist
   if (!rigidBody) return console.error('Rigidbody not found for entity ' + rigidBodyEntity)
   const collider = world.createCollider(colliderDesc, rigidBody)
+  collider.entity = colliderEntity
   world.Colliders.set(colliderEntity, collider)
   return collider
 }
@@ -765,7 +905,7 @@ function castRay(world: PhysicsWorld, raycastQuery: RaycastArgs, filterPredicate
         position: ray.pointAt(hitWithNormal.toi),
         normal: hitWithNormal.normal,
         body,
-        entity: (body.userData as any)['entity']
+        entity: body.entity
       })
   }
 
@@ -838,7 +978,7 @@ function castShape(world: PhysicsWorld, shapecastQuery: ShapecastArgs) {
       normal: hitWithNormal.normal1,
       collider: hitWithNormal.collider,
       body: hitWithNormal.collider.parent() as RigidBody,
-      entity: (hitWithNormal.collider.parent()?.userData as any)['entity'] ?? UndefinedEntity
+      entity: hitWithNormal.collider.parent()?.entity ?? UndefinedEntity
     })
   }
 }
@@ -852,8 +992,8 @@ const drainCollisionEventQueue =
     const isTriggerEvent = collider1.isSensor() || collider2.isSensor()
     const rigidBody1 = collider1.parent()
     const rigidBody2 = collider2.parent()
-    const entity1 = (rigidBody1?.userData as any)['entity']
-    const entity2 = (rigidBody2?.userData as any)['entity']
+    const entity1 = rigidBody1!.entity
+    const entity2 = rigidBody2!.entity
 
     setComponent(entity1, CollisionComponent)
     setComponent(entity2, CollisionComponent)
@@ -892,10 +1032,10 @@ const drainContactEventQueue = (physicsWorld: PhysicsWorld) => (event: TempConta
   const collider1 = physicsWorld.getCollider(event.collider1())
   const collider2 = physicsWorld.getCollider(event.collider2())
 
-  const rigidBody1 = collider1.parent()
-  const rigidBody2 = collider2.parent()
-  const entity1 = (rigidBody1?.userData as any)['entity']
-  const entity2 = (rigidBody2?.userData as any)['entity']
+  const rigidBody1 = collider1.parent()!
+  const rigidBody2 = collider2.parent()!
+  const entity1 = rigidBody1?.entity
+  const entity2 = rigidBody2?.entity
 
   const collisionComponent1 = getOptionalComponent(entity1, CollisionComponent)
   const collisionComponent2 = getOptionalComponent(entity2, CollisionComponent)

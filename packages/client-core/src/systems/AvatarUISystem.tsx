@@ -23,18 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Not } from 'bitecs'
-import { useEffect } from 'react'
-import { CircleGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
+import React, { useEffect } from 'react'
+import { CircleGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { UserID } from '@ir-engine/common/src/schema.type.module'
-import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
-import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
+import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
@@ -50,15 +49,18 @@ import { Physics, RaycastArgs } from '@ir-engine/spatial/src/physics/classes/Phy
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
 import { getInteractionGroups } from '@ir-engine/spatial/src/physics/functions/getInteractionGroups'
 import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EntityTreeComponent, Not } from '@ir-engine/ecs'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { PeerMediaChannelState } from '../media/PeerMediaChannelState'
+import { XruiNameplateComponent } from '../social/components/XruiNameplateComponent'
 import AvatarContextMenu from '../user/components/UserMenu/menus/AvatarContextMenu'
 import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
 import { createAvatarDetailView } from './ui/AvatarDetailView'
@@ -94,7 +96,7 @@ export const renderAvatarContextMenu = (userId: UserID, contextMenuEntity: Entit
   contextMenuXRUI.quaternion.copy(cameraTransform.rotation)
 }
 
-const userQuery = defineQuery([AvatarComponent, TransformComponent, NetworkObjectComponent, Not(NetworkObjectOwnedTag)])
+const userQuery = defineQuery([AvatarComponent, TransformComponent, NetworkObjectComponent]) //, Not(NetworkObjectOwnedTag)])
 
 const _vector3 = new Vector3()
 
@@ -140,7 +142,7 @@ const onSecondaryClick = () => {
   const state = getMutableState(AvatarUIContextMenuState)
   if (hits.length) {
     const hit = hits[0]
-    const hitEntity = (hit.body?.userData as any)?.entity as Entity
+    const hitEntity = hit.body.entity
     if (typeof hitEntity !== 'undefined' && hitEntity !== AvatarComponent.getSelfAvatarEntity()) {
       if (hasComponent(hitEntity, NetworkObjectComponent)) {
         const userId = getComponent(hitEntity, NetworkObjectComponent).ownerId
@@ -155,7 +157,7 @@ const onSecondaryClick = () => {
 }
 
 const execute = () => {
-  const viewerEntity = getState(EngineState).viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
 
   const ecsState = getState(ECSState)
@@ -178,13 +180,12 @@ const execute = () => {
     const ui = createAvatarDetailView(userId)
     const transition = createTransitionState(1, 'IN')
     AvatarUITransitions.set(userEntity, transition)
-    const root = new Group()
-    root.name = `avatar-ui-root-${userEntity}`
     const mesh = ui.state.videoPreviewMesh.value as Mesh<CircleGeometry, MeshBasicMaterial>
-    mesh.position.y += 0.3
-    mesh.visible = false
-    root.add(mesh)
-    addObjectToGroup(ui.entity, root)
+    const previewMeshEntity = createEntity()
+    setComponent(previewMeshEntity, TransformComponent, { position: new Vector3(0, 0.3, 0) })
+    setComponent(previewMeshEntity, EntityTreeComponent, { parentEntity: ui.entity })
+    setComponent(previewMeshEntity, NameComponent, `avatar-ui-root-${userEntity}`)
+    setComponent(previewMeshEntity, MeshComponent, mesh)
     AvatarUI.set(userEntity, ui)
   }
 
@@ -279,10 +280,10 @@ const execute = () => {
     AvatarUITransitions.delete(userEntity)
   }
 
-  // const state = getState(AvatarUIContextMenuState)
-  // if (state.id !== '') {
-  //   renderAvatarContextMenu(state.id as UserID, state.ui.entity)
-  // }
+  const state = getState(AvatarUIContextMenuState)
+  if (state.id !== '') {
+    renderAvatarContextMenu(state.id as UserID, state.ui.entity)
+  }
 }
 
 const reactor = () => {
@@ -296,12 +297,32 @@ const reactor = () => {
       getMutableState(PopupMenuState).menus[AvatarMenus.AvatarContext].set(none)
     }
   }, [])
+
+  return (
+    <>
+      <QueryReactor
+        Components={[AvatarComponent, TransformComponent, NetworkObjectComponent, Not(NetworkObjectOwnedTag)]}
+        ChildEntityReactor={AvatarInstanceReactor}
+      />
+    </>
+  )
+}
+
+const AvatarInstanceReactor = () => {
+  const avatarEntity = useEntityContext()
+
+  useEffect(() => {
+    setComponent(avatarEntity, XruiNameplateComponent)
+    return () => {
+      removeComponent(avatarEntity, XruiNameplateComponent)
+    }
+  }, [])
   return null
 }
 
 export const AvatarUISystem = defineSystem({
   uuid: 'ee.client.AvatarUISystem',
-  insert: { before: TransformDirtyUpdateSystem },
-  execute,
-  reactor
+  insert: { before: TransformDirtyUpdateSystem }
+  // execute,
+  // reactor
 })

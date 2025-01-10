@@ -23,74 +23,55 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { QueryReactor, UUIDComponent } from '@ir-engine/ecs'
+import { EntityTreeComponent, UUIDComponent, iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
   getOptionalComponent,
   hasComponent,
   setComponent,
-  useComponent,
-  useOptionalComponent
+  useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+import { EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NO_PROXY, dispatchAction, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
-import { GroupComponent, addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { GroupComponent, addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  EntityTreeComponent,
-  iterateEntityNode,
-  removeEntityNodeRecursively,
-  useAncestorWithComponents
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { VRM } from '@pixiv/three-vrm'
-import { Not } from 'bitecs'
-import React, { FC, useEffect } from 'react'
+import { useEffect } from 'react'
 import { AnimationMixer, Group, Scene } from 'three'
-import { useGLTF } from '../../assets/functions/resourceLoaderHooks'
 import { GLTF } from '../../assets/loaders/gltf/GLTFLoader'
 import { AnimationComponent } from '../../avatar/components/AnimationComponent'
-import { autoconvertMixamoAvatar } from '../../avatar/functions/avatarFunctions'
 import { GLTFDocumentState, GLTFSnapshotAction } from '../../gltf/GLTFDocumentState'
 import { GLTFSnapshotState, GLTFSourceState } from '../../gltf/GLTFState'
 import { SceneJsonType, convertSceneJSONToGLTF } from '../../gltf/convertJsonToGLTF'
 import { addError, removeError } from '../functions/ErrorFunctions'
-import { parseGLTFModel, proxifyParentChildRelationships } from '../functions/loadGLTFModel'
-import { getModelSceneID, useModelSceneID } from '../functions/loaders/ModelFunctions'
-import { createLoadingSpinner } from '../functions/spatialLoadingSpinner'
+import { parseGLTFModel } from '../functions/loadGLTFModel'
+import { getModelSceneID } from '../functions/loaders/ModelFunctions'
 import { SourceComponent } from './SourceComponent'
 
 /**
  * ModelComponent is an entity/object hierarchy loaded from a resource
+ * @deprecated - use GLTFComponent instead
  */
 export const ModelComponent = defineComponent({
   name: 'ModelComponent',
-  jsonID: 'EE_model',
+  jsonID: 'EE_model_old',
 
   schema: S.Object({
     src: S.String(''),
     cameraOcclusion: S.Bool(true),
     /** optional, only for bone matchable avatars */
     convertToVRM: S.Bool(false),
-    scene: S.Nullable(S.Type<Group>()),
-    asset: S.Nullable(S.Type<VRM | GLTF>()),
-    dereference: S.Bool(false)
+    scene: S.NonSerialized(S.Nullable(S.Type<Group>())),
+    asset: S.NonSerialized(S.Nullable(S.Type<VRM | GLTF>())),
+    dereference: S.NonSerialized(S.Bool(false))
   }),
-
-  toJSON: (component) => {
-    return {
-      src: component.src,
-      cameraOcclusion: component.cameraOcclusion,
-      convertToVRM: component.convertToVRM
-    }
-  },
 
   errors: ['LOADING_ERROR', 'INVALID_SOURCE'],
 
@@ -103,34 +84,7 @@ function ModelReactor() {
   const gltfDocumentState = useHookstate(getMutableState(GLTFDocumentState))
   const modelSceneID = getModelSceneID(entity)
 
-  const [gltf, error] = useGLTF(modelComponent.src.value, entity)
-
-  const loadedSrc = useHookstate('')
-  const loadingEntity = useHookstate<Entity>(UndefinedEntity)
-
-  const createLoadingGeo = () => {
-    if (loadedSrc.value === modelComponent.src.value) return
-    if (loadingEntity.value) return
-    const spinnerEntity = createLoadingSpinner(`loading ${modelComponent.src.value}`, entity)
-    loadingEntity.set(spinnerEntity)
-  }
-
-  const removeLoadingGeo = () => {
-    loadedSrc.set(modelComponent.src.value)
-    if (!loadingEntity.value) return
-    removeEntity(loadingEntity.value)
-    loadingEntity.set(UndefinedEntity)
-  }
-
-  useEffect(() => {
-    createLoadingGeo()
-
-    if (modelComponent.src.value) return
-    addError(entity, ModelComponent, 'INVALID_SOURCE', 'No source provided')
-    return () => {
-      removeError(entity, ModelComponent, 'INVALID_SOURCE')
-    }
-  }, [modelComponent.src])
+  const [gltf, error] = [null as null | GLTF, null as null | Error]
 
   useEffect(() => {
     const occlusion = modelComponent.cameraOcclusion.value
@@ -139,8 +93,15 @@ function ModelReactor() {
   }, [modelComponent.cameraOcclusion])
 
   useEffect(() => {
+    if (modelComponent.src.value) return
+    addError(entity, ModelComponent, 'INVALID_SOURCE', 'No source provided')
+    return () => {
+      removeError(entity, ModelComponent, 'INVALID_SOURCE')
+    }
+  }, [modelComponent.src])
+
+  useEffect(() => {
     if (!error) return
-    removeLoadingGeo()
     console.error(error)
     addError(entity, ModelComponent, 'INVALID_SOURCE', error.message)
     return () => {
@@ -154,7 +115,6 @@ function ModelReactor() {
         const obj3d = new Group()
         obj3d.entity = entity
         addObjectToGroup(entity, obj3d)
-        proxifyParentChildRelationships(obj3d)
       }
       return
     }
@@ -164,16 +124,16 @@ function ModelReactor() {
       return
     }
 
-    const boneMatchedAsset =
-      gltf instanceof VRM || modelComponent.convertToVRM.value ? (autoconvertMixamoAvatar(gltf) as GLTF) : gltf
+    // const boneMatchedAsset =
+    //   gltf instanceof VRM || modelComponent.convertToVRM.value ? (autoconvertMixamoAvatar(gltf) as GLTF) : gltf
 
     /**if we've loaded or converted to vrm, create animation component whose mixer's root is the normalized rig */
-    if (boneMatchedAsset instanceof VRM)
-      setComponent(entity, AnimationComponent, {
-        mixer: new AnimationMixer(boneMatchedAsset.humanoid.normalizedHumanBonesRoot)
-      })
+    // if (boneMatchedAsset instanceof VRM)
+    //   setComponent(entity, AnimationComponent, {
+    //     mixer: new AnimationMixer(boneMatchedAsset.humanoid.normalizedHumanBonesRoot)
+    //   })
 
-    modelComponent.asset.set(boneMatchedAsset)
+    modelComponent.asset.set(gltf)
   }, [gltf])
 
   useEffect(() => {
@@ -186,7 +146,7 @@ function ModelReactor() {
 
     removeError(entity, ModelComponent, 'INVALID_SOURCE')
     removeError(entity, ModelComponent, 'LOADING_ERROR')
-    const sceneObj = group[0] as Group
+    const sceneObj = group as Group
 
     sceneObj.userData.src = model.src
     modelComponent.scene.set(sceneObj)
@@ -233,8 +193,6 @@ function ModelReactor() {
       })
     }
 
-    removeLoadingGeo()
-
     return () => {
       getMutableState(GLTFSourceState)[uuid].set(none)
 
@@ -268,44 +226,4 @@ function ModelReactor() {
   }, [modelComponent.dereference, gltfDocumentState[modelSceneID]])
 
   return null
-}
-
-/**
- * Returns true if the entity has a model component or a mesh component that is not a child of model
- * @param entity
- * @returns {boolean}
- */
-export const useHasModelOrIndependentMesh = (entity: Entity) => {
-  const hasModel = !!useOptionalComponent(entity, ModelComponent)
-  const isChildOfModel = !!useAncestorWithComponents(entity, [ModelComponent])
-  const hasMesh = !!useOptionalComponent(entity, MeshComponent)
-
-  return hasModel || (hasMesh && !isChildOfModel)
-}
-
-export const MeshOrModelQuery = (props: { ChildReactor: FC<{ entity: Entity; rootEntity: Entity }> }) => {
-  const ModelReactor = () => {
-    const entity = useEntityContext()
-    const sceneInstanceID = useModelSceneID(entity)
-    const childEntities = useHookstate(SourceComponent.entitiesBySourceState[sceneInstanceID])
-    return (
-      <>
-        {childEntities.value?.map((childEntity) => (
-          <props.ChildReactor entity={childEntity} rootEntity={entity} key={childEntity} />
-        ))}
-      </>
-    )
-  }
-
-  const MeshReactor = () => {
-    const entity = useEntityContext()
-    return <props.ChildReactor entity={entity} rootEntity={entity} key={entity} />
-  }
-
-  return (
-    <>
-      <QueryReactor Components={[ModelComponent]} ChildEntityReactor={ModelReactor} />
-      <QueryReactor Components={[Not(SourceComponent), MeshComponent]} ChildEntityReactor={MeshReactor} />
-    </>
-  )
 }

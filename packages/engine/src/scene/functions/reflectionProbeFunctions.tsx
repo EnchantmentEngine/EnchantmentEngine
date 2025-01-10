@@ -24,8 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Entity, getComponent } from '@ir-engine/ecs'
-import { TransformComponent } from '@ir-engine/spatial'
 import { createDisposable } from '@ir-engine/spatial/src/resources/resourceHooks'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import {
   CanvasTexture,
   EquirectangularReflectionMapping,
@@ -149,7 +149,7 @@ export function createReflectionProbeRenderTarget(entity: Entity, probes: Entity
 
   // const testEntity = createEntity()
   // setComponent(testEntity, EntityTreeComponent, {
-  //   parentEntity: getComponent(getState(EngineState).viewerEntity, SceneComponent).children[0]
+  //   parentEntity: getComponent(getState(ReferenceSpaceState).viewerEntity, SceneComponent).children[0]
   // })
   // setComponent(testEntity, TransformComponent, { position: new Vector3(0, randFloat(5, 15), 0) })
 

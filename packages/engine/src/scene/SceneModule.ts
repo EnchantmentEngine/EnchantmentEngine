@@ -29,7 +29,7 @@ import { NoiseOffsetSystem } from '@ir-engine/spatial/src/renderer/materials/con
 
 import { PositionalAudioComponent } from '../audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
-import { GrabbableComponent } from '../interaction/components/GrabbableComponent'
+import { GrabbableComponent } from '../grabbable/GrabbableComponent'
 import { MountPointSystem } from '../interaction/systems/MountPointSystem'
 import { MaterialLibrarySystem } from '../scene/materials/systems/MaterialLibrarySystem'
 import { CameraSettingsComponent } from './components/CameraSettingsComponent'
@@ -38,10 +38,10 @@ import { EnvmapComponent } from './components/EnvmapComponent'
 import { GroundPlaneComponent } from './components/GroundPlaneComponent'
 import { HyperspaceTagComponent } from './components/HyperspaceTagComponent'
 import { ImageComponent } from './components/ImageComponent'
+import { LegacyVolumetricComponent } from './components/LegacyVolumetricComponent'
 import { LinkComponent } from './components/LinkComponent'
 import { MediaComponent } from './components/MediaComponent'
 import { MountPointComponent } from './components/MountPointComponent'
-import { NewVolumetricComponent } from './components/NewVolumetricComponent'
 import { OldColliderComponent } from './components/OldColliderComponent'
 import { ParticleSystemComponent } from './components/ParticleSystemComponent'
 import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
@@ -60,10 +60,10 @@ import { VariantComponent } from './components/VariantComponent'
 import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
-import { MeshBVHSystem } from './systems/MeshBVHSystem'
 import { ParticleSystem } from './systems/ParticleSystemSystem'
 import { PortalSystem } from './systems/PortalSystem'
 import { SceneKillHeightSystem } from './systems/SceneKillHeightSystem'
+import { SceneNetworkSystem } from './systems/SceneNetworkSystem'
 import { SceneObjectDynamicLoadSystem } from './systems/SceneObjectDynamicLoadSystem'
 import { SceneObjectSystem } from './systems/SceneObjectSystem'
 import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
@@ -101,8 +101,8 @@ export const SceneComponents = [
   SplineTrackComponent,
   VariantComponent,
   VideoComponent,
+  LegacyVolumetricComponent,
   VolumetricComponent,
-  NewVolumetricComponent,
   // WaterComponent,
   LinkComponent,
   TextComponent,
@@ -114,12 +114,12 @@ export {
   EnvironmentSystem,
   FogSystem,
   MaterialLibrarySystem,
-  MeshBVHSystem,
   MountPointSystem,
   NoiseOffsetSystem,
   ParticleSystem,
   PortalSystem,
   SceneKillHeightSystem,
+  SceneNetworkSystem,
   SceneObjectDynamicLoadSystem,
   SceneObjectSystem,
   ShadowSystem,

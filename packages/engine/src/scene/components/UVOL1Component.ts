@@ -55,7 +55,7 @@ import { AnimationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { useVideoFrameCallback } from '@ir-engine/spatial/src/common/functions/useVideoFrameCallback'
-import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -63,10 +63,10 @@ import { CORTOLoader } from '../../assets/loaders/corto/CORTOLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { AudioState } from '../../audio/AudioState'
+import { handleAutoplay, LegacyVolumetricComponent } from './LegacyVolumetricComponent'
 import { MediaElementComponent } from './MediaComponent'
 import { ShadowComponent } from './ShadowComponent'
 import { UVOLDissolveComponent } from './UVOLDissolveComponent'
-import { handleAutoplay, VolumetricComponent } from './VolumetricComponent'
 
 const decodeCorto = (url: string, start: number, end: number) => {
   return new Promise<BufferGeometry | null>((res, rej) => {
@@ -135,7 +135,7 @@ export const UVOL1Component = defineComponent({
 
 function UVOL1Reactor() {
   const entity = useEntityContext()
-  const volumetric = useComponent(entity, VolumetricComponent)
+  const volumetric = useComponent(entity, LegacyVolumetricComponent)
   const component = useComponent(entity, UVOL1Component)
   const shadow = useOptionalComponent(entity, ShadowComponent)
   const videoElement = getMutableComponent(entity, MediaElementComponent).value
@@ -195,7 +195,7 @@ function UVOL1Reactor() {
     volumetric.currentTrackInfo.duration.set(component.data.frameData.length / component.data.frameRate.value)
 
     return () => {
-      removeObjectFromGroup(entity, mesh)
+      removeComponent(entity, ObjectComponent)
       videoTexture.dispose()
       const numberOfFrames = component.data.value.frameData.length
       removePlayedBuffer(numberOfFrames)
@@ -260,7 +260,7 @@ function UVOL1Reactor() {
         component.loadingEffectStarted.set(true)
       }
 
-      addObjectToGroup(entity, mesh)
+      setComponent(entity, ObjectComponent, mesh)
     }
 
     prepareMesh()

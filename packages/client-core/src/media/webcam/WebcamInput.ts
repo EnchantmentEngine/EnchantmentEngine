@@ -1,20 +1,18 @@
 import * as Comlink from 'comlink'
 
 import { isDev } from '@ir-engine/common/src/config'
-import { UUIDComponent } from '@ir-engine/ecs'
+import logger from '@ir-engine/common/src/logger'
+import { UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
 import { getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
-import { SkinnedMeshComponent } from '@ir-engine/engine/src/avatar/components/SkinnedMeshComponent'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { defineActionQueue, getMutableState } from '@ir-engine/hyperflux'
 import { createWorkerFromCrossOriginURL } from '@ir-engine/spatial/src/common/functions/createWorkerFromCrossOriginURL'
-import { GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
-
-import logger from '@ir-engine/common/src/logger'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 import { MediaStreamState } from '../MediaStreamState'
 import { WebcamInputComponent } from './WebcamInputComponent'
 
@@ -300,7 +298,7 @@ const setAvatarExpression = (entity: Entity): void => {
     }
   })
 }
-const webcamQuery = defineQuery([GroupComponent, AvatarRigComponent, WebcamInputComponent])
+const webcamQuery = defineQuery([ObjectComponent, AvatarRigComponent, WebcamInputComponent])
 const avatarSpawnQueue = defineActionQueue(AvatarNetworkAction.spawn.matches)
 
 const execute = () => {

@@ -34,7 +34,6 @@ import {
   Mesh,
   MeshMatcapMaterial,
   MeshStandardMaterial,
-  Object3D,
   RGBAFormat,
   SRGBColorSpace,
   Texture,
@@ -51,19 +50,18 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+import { Entity } from '@ir-engine/ecs/src/Entity'
+import { entityExists, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { isClient } from '@ir-engine/hyperflux'
-import { GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { createDisposable } from '@ir-engine/spatial/src/resources/resourceHooks'
+import { useResource } from '@ir-engine/spatial/src/resources/resourceHooks'
 
+import { useChildrenWithComponents } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import {
-  MaterialInstanceComponent,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import {
   envmapParsReplaceLambert,
@@ -71,169 +69,232 @@ import {
   envmapReplaceLambert,
   worldposReplace
 } from '../classes/BPCEMShader'
-import { EnvMapSourceType, EnvMapTextureType } from '../constants/EnvMapEnum'
+import { EnvMapSourceType } from '../constants/EnvMapEnum'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
 import { createReflectionProbeRenderTarget } from '../functions/reflectionProbeFunctions'
 import { EnvMapBakeComponent } from './EnvMapBakeComponent'
 import { ReflectionProbeComponent } from './ReflectionProbeComponent'
+import { SourceComponent } from './SourceComponent'
 
 const tempColor = new Color()
 
-const envMapSourceType = S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.None)
+const EnvmapCubemapReactor = () => {
+  const entity = useEntityContext()
+  const component = useComponent(entity, EnvmapComponent)
+
+  useEffect(() => {
+    return () => {
+      if (entityExists(entity)) component.envmap.set(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCubeMapTexture(
+      component.envMapCubemapURL.value,
+      (texture: CubeTexture | undefined) => {
+        if (texture) {
+          texture.mapping = CubeReflectionMapping
+          texture.colorSpace = SRGBColorSpace
+          component.envmap.set(texture)
+          removeError(entity, EnvmapComponent, 'MISSING_FILE')
+        }
+      },
+      undefined,
+      (_) => {
+        component.envmap.set(null)
+        addError(entity, EnvmapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
+      }
+    )
+  }, [component.envMapCubemapURL])
+
+  return null
+}
+
+const EnvmapEquirectangularReactor = () => {
+  const entity = useEntityContext()
+  const component = useComponent(entity, EnvmapComponent)
+  const [envMapTexture, error] = useTexture(component.envMapSourceURL.value, entity)
+
+  useEffect(() => {
+    return () => {
+      if (entityExists(entity)) component.envmap.set(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!envMapTexture || !envMapTexture.isTexture) return
+    envMapTexture.mapping = EquirectangularReflectionMapping
+    component.envmap.set(envMapTexture)
+  }, [envMapTexture])
+
+  useEffect(() => {
+    if (!error) return
+    component.envmap.set(null)
+    addError(entity, EnvmapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
+  }, [error])
+
+  return null
+}
+
+const EnvmapColorReactor = () => {
+  const entity = useEntityContext()
+  const component = useComponent(entity, EnvmapComponent)
+  const [textureState] = useResource(() => null! as DataTexture, entity)
+
+  useEffect(() => {
+    return () => {
+      if (entityExists(entity)) component.envmap.set(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    const color = component.envMapSourceColor.value ?? tempColor
+    const resolution = 64 // Min value required
+    const texture = new DataTexture(getRGBArray(new Color(color)), resolution, resolution, RGBAFormat)
+    texture.needsUpdate = true
+    texture.colorSpace = SRGBColorSpace
+    texture.mapping = EquirectangularReflectionMapping
+    textureState.set(texture)
+    component.envmap.set(texture)
+  }, [component.envMapSourceColor])
+
+  return null
+}
+
+const EnvmapProbesReactor = () => {
+  const entity = useEntityContext()
+
+  const probeQuery = useQuery([ReflectionProbeComponent])
+
+  useEffect(() => {
+    return () => {
+      const component = getMutableComponent(entity, EnvmapComponent)
+      if (entityExists(entity)) component.envmap.set(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    const [renderTexture, unload] = createReflectionProbeRenderTarget(entity, probeQuery)
+    const component = getMutableComponent(entity, EnvmapComponent)
+    component.envmap.set(renderTexture)
+    return () => {
+      unload()
+    }
+  }, [probeQuery])
+
+  return null
+}
 
 export const EnvmapComponent = defineComponent({
   name: 'EnvmapComponent',
   jsonID: 'EE_envmap',
 
   schema: S.Object({
-    type: S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.None),
-    envMapTextureType: S.LiteralUnion(Object.values(EnvMapTextureType), EnvMapTextureType.Equirectangular),
-    envMapSourceColor: S.Color(0xfff),
+    type: S.LiteralUnion(Object.values(EnvMapSourceType), EnvMapSourceType.Skybox),
+    envMapSourceColor: T.Color(0xfff),
     envMapSourceURL: S.String(''),
+    envMapCubemapURL: S.String(''),
     envMapSourceEntityUUID: S.EntityUUID(),
     envMapIntensity: S.Number(1),
+
     // internal
-    envmap: S.Nullable(S.Type<Texture>())
+    envmap: S.NonSerialized(S.Nullable(S.Type<Texture>()))
   }),
 
   reactor: function () {
-    const entity = useEntityContext()
     if (!isClient) return null
-
+    const entity = useEntityContext()
     const component = useComponent(entity, EnvmapComponent)
-    const mesh = useOptionalComponent(entity, MeshComponent)?.value as Mesh<any, any> | null
-    const [envMapTexture, error] = useTexture(
-      component.envMapTextureType.value === EnvMapTextureType.Equirectangular ? component.envMapSourceURL.value : '',
-      entity
+
+    const hasRootMesh = !!useOptionalComponent(entity, MeshComponent)
+    const childrenMesh = useChildrenWithComponents(
+      entity,
+      [MeshComponent, VisibleComponent, SourceComponent],
+      [EnvmapComponent]
     )
+    const bakeEntity = UUIDComponent.useEntityByUUID(component.envMapSourceEntityUUID.value)
 
-    const probeQuery = useQuery([ReflectionProbeComponent])
+    const getMeshes = () => {
+      const meshEntities = [...childrenMesh]
+      if (hasRootMesh) meshEntities.push(entity)
+
+      return meshEntities.map((meshEntity) => getComponent(meshEntity, MeshComponent))
+    }
 
     useEffect(() => {
-      return () => {
-        updateEnvMap(mesh, null)
+      const meshes = getMeshes()
+
+      if (!component.envmap.value) {
+        for (const mesh of meshes) {
+          updateEnvMap(mesh, null)
+        }
+      } else {
+        for (const mesh of meshes) {
+          updateEnvMap(mesh, component.envmap.value as Texture)
+        }
       }
-    }, [])
+    }, [childrenMesh, component.envmap, hasRootMesh])
 
     useEffect(() => {
-      updateEnvMapIntensity(mesh, component.envMapIntensity.value)
-    }, [mesh, component.envMapIntensity])
+      const meshes = getMeshes()
 
-    useEffect(() => {
-      if (component.type.value !== EnvMapSourceType.Skybox) return
-      component.envmap.set(null)
+      for (const mesh of meshes) {
+        updateEnvMapIntensity(mesh, component.envMapIntensity.value)
+      }
+    }, [childrenMesh, component.envMapIntensity, component.envmap, hasRootMesh])
+
+    switch (component.type.value) {
+      case 'Bake': {
+        if (bakeEntity) {
+          return (
+            <EnvBakeComponentReactor
+              key={bakeEntity}
+              envmapEntity={entity}
+              bakeEntity={bakeEntity}
+              childrenMesh={childrenMesh}
+            />
+          )
+        }
+        break
+      }
+      case 'Cubemap':
+        return <EnvmapCubemapReactor key={'EnvmapCubemapReactor'} />
+      case 'Equirectangular':
+        return <EnvmapEquirectangularReactor key={'EnvmapEquirectangularReactor'} />
+      case 'Color':
+        return <EnvmapColorReactor key={'EnvmapColorReactor'} />
+      case 'Probes':
+        return <EnvmapProbesReactor key={'EnvmapProbesReactor'} />
+      case 'Skybox':
       /** Setting the value from the skybox can be found in EnvironmentSystem */
-    }, [component.type])
-
-    useEffect(() => {
-      if (component.type.value !== EnvMapSourceType.Color) return
-
-      const col = component.envMapSourceColor.value ?? tempColor
-      const resolution = 64 // Min value required
-      const [texture, unload] = createDisposable(
-        DataTexture,
-        entity,
-        getRGBArray(new Color(col)),
-        resolution,
-        resolution,
-        RGBAFormat
-      )
-      texture.needsUpdate = true
-      texture.colorSpace = SRGBColorSpace
-      texture.mapping = EquirectangularReflectionMapping
-      component.envmap.set(texture)
-
-      return () => {
-        unload()
-      }
-    }, [component.type, component.envMapSourceColor])
-
-    useEffect(() => {
-      if (component.type.value !== EnvMapSourceType.Probes) return
-      if (!probeQuery.length) return
-      const [renderTexture, unload] = createReflectionProbeRenderTarget(entity, probeQuery)
-      component.envmap.set(renderTexture)
-      return () => {
-        unload()
-        component.envmap.set(null)
-      }
-    }, [component.type, probeQuery.length])
-
-    useEffect(() => {
-      if (!envMapTexture) return
-
-      envMapTexture.mapping = EquirectangularReflectionMapping
-      component.envmap.set(envMapTexture)
-    }, [envMapTexture])
-
-    useEffect(() => {
-      if (!error) return
-
-      component.envmap.set(null)
-      addError(entity, EnvmapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
-    }, [error])
-
-    useEffect(() => {
-      if (component.type.value !== EnvMapSourceType.Texture) return
-
-      if (component.envMapTextureType.value == EnvMapTextureType.Cubemap) {
-        loadCubeMapTexture(
-          component.envMapSourceURL.value,
-          (texture: CubeTexture | undefined) => {
-            if (texture) {
-              texture.mapping = CubeReflectionMapping
-              texture.colorSpace = SRGBColorSpace
-              component.envmap.set(texture)
-              removeError(entity, EnvmapComponent, 'MISSING_FILE')
-            }
-          },
-          undefined,
-          (_) => {
-            component.envmap.set(null)
-            addError(entity, EnvmapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
-          }
-        )
-      }
-    }, [component.type, component.envMapSourceURL])
-
-    useEffect(() => {
-      //if (!component.envmap.value) return
-      updateEnvMap(mesh, component.envmap.value as Texture)
-    }, [mesh, component.envmap])
-
-    useEffect(() => {
-      const envmap = component.envmap.value
-      if (!envmap) return
-
-      return () => {
-        envmap.dispose()
-      }
-    }, [component.envmap])
-
-    const bakeEntity = UUIDComponent.getEntityByUUID(component.envMapSourceEntityUUID.value)
-    if (bakeEntity === UndefinedEntity) return null
-    if (component.type.value !== EnvMapSourceType.Bake) return null
-
-    return <EnvBakeComponentReactor key={bakeEntity} envmapEntity={entity} bakeEntity={bakeEntity} />
+      default:
+        break
+    }
+    return null
   },
 
   errors: ['MISSING_FILE']
 })
 
-const EnvBakeComponentReactor = (props: { envmapEntity: Entity; bakeEntity: Entity }) => {
+const EnvBakeComponentReactor = (props: { envmapEntity: Entity; bakeEntity: Entity; childrenMesh: Entity[] }) => {
   const { envmapEntity, bakeEntity } = props
   const bakeComponent = useComponent(bakeEntity, EnvMapBakeComponent)
-  const group = useComponent(envmapEntity, GroupComponent)
-  const uuid = useComponent(envmapEntity, MaterialInstanceComponent).uuid
+
   const [envMaptexture, error] = useTexture(bakeComponent.envMapOrigin.value, envmapEntity)
+
   useEffect(() => {
     const texture = envMaptexture
     if (!texture) return
     texture.mapping = EquirectangularReflectionMapping
     getMutableComponent(envmapEntity, EnvmapComponent).envmap.set(texture)
-    if (bakeComponent.boxProjection.value) applyBoxProjection(bakeEntity, group.value as Object3D[])
-  }, [envMaptexture, uuid])
+    if (bakeComponent.boxProjection.value) {
+      for (const childEntity of props.childrenMesh) {
+        const childMesh = getComponent(childEntity, MeshComponent) as Mesh<any, MeshStandardMaterial>
+        applyBoxProjection(bakeEntity, childMesh)
+      }
+    }
+  }, [envMaptexture])
 
   useEffect(() => {
     if (!error) return
@@ -266,9 +327,11 @@ export const updateEnvMapIntensity = (obj: Mesh<any, any> | null, intensity: num
   if (Array.isArray(obj.material)) {
     obj.material.forEach((m: MeshStandardMaterial) => {
       m.envMapIntensity = intensity
+      m.needsUpdate = true
     })
   } else {
     ;(obj.material as MeshStandardMaterial).envMapIntensity = intensity
+    ;(obj.material as MeshStandardMaterial).needsUpdate = true
   }
 }
 
@@ -319,16 +382,16 @@ export const BoxProjectionPlugin = defineComponent({
   }
 })
 
-const applyBoxProjection = (entity: Entity, targets: Object3D[]) => {
+const applyBoxProjection = (entity: Entity, child: Mesh<any, MeshStandardMaterial>) => {
   const bakeComponent = getComponent(entity, EnvMapBakeComponent)
-  for (const target of targets) {
-    const child = target as Mesh<any, MeshStandardMaterial>
-    if (!child.material || child.type == 'VFXBatch') return
+  if (!child.material || child.type == 'VFXBatch') return
 
-    const materialEntity = UUIDComponent.getEntityByUUID(child.material.uuid as EntityUUID)
-    setComponent(materialEntity, BoxProjectionPlugin, {
+  const materials = Array.isArray(child.material) ? child.material : [child.material]
+
+  materials.forEach((material) => {
+    setComponent(UUIDComponent.getEntityByUUID(material.uuid as EntityUUID), BoxProjectionPlugin, {
       cubeMapPos: new Uniform(bakeComponent.bakePositionOffset),
       cubeMapSize: new Uniform(bakeComponent.bakeScale)
     })
-  }
+  })
 }
