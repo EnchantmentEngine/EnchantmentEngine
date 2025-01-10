@@ -65,7 +65,9 @@ function AssetCategory({ index }: { index: number }) {
       selected={selectedCategory?.name === category.name}
       collapsed={category.collapsed}
       onClick={handleClickCategory}
-      className={depthPaddingMap[category.depth]}
+      style={{
+        paddingLeft: `${32 * category.depth}px`
+      }}
     />
   )
 }
@@ -82,6 +84,16 @@ function SidebarSection({ Icon, label, items = [] }) {
 
   const toggleDropdown = () => {
     setIsActive(!isActive)
+  }
+
+  const renderListByType = {
+    assets: (
+      <>
+        {items.map((category, index) => (
+          <AssetCategory key={category ? category?.name + index : ''} index={index} />
+        ))}
+      </>
+    )
   }
 
   return (
@@ -111,9 +123,7 @@ function SidebarSection({ Icon, label, items = [] }) {
 
       {isActive && items.length > 0 && (
         <div className="h-full overflow-y-auto rounded bg-[#141619] p-2 text-[#B2B5BD]">
-          {items.map((category, index) => (
-            <AssetCategory key={category ? category?.name + index : ''} index={index} />
-          ))}
+          {renderListByType[label] || <></>}
         </div>
       )}
     </div>

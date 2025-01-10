@@ -77,7 +77,7 @@ export default function EditorDropdownItem({
     <div
       className={twMerge(
         'flex w-full items-center gap-x-2',
-        'cursor-pointer rounded px-2 py-1',
+        'cursor-pointer rounded py-1',
         'group/editor-dropdownitem',
         !disabled && 'bg-[#141619] hover:bg-[#141619] focus:bg-[#2C2E33]',
         // selected && 'bg-[#2C2E33]',
