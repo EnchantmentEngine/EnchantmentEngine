@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
-const Icon = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+const MicrophoneOff = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
@@ -47,5 +47,5 @@ const Icon = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
     />
   </svg>
 )
-const ForwardRef = forwardRef(Icon)
+const ForwardRef = forwardRef(MicrophoneOff)
 export default ForwardRef
