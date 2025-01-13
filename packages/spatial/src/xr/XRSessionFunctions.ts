@@ -193,9 +193,3 @@ export const requestXRSession = createHookableFunction(
 export const endXRSession = createHookableFunction(async () => {
   await getMutableState(XRState).session.value?.end()
 })
-
-/**
- * A hookable function that is fired when the XR Session has changed
- * @returns
- */
-export const xrSessionChanged = createHookableFunction((_action: typeof XRAction.sessionChanged.matches._TYPE) => {})

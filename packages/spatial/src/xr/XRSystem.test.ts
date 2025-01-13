@@ -67,10 +67,6 @@ describe('XRSystem', () => {
   /** @todo */
   describe('reactor', () => {}) //:: reactor
 
-  /** @todo */
-  describe('execute,', () => {
-    describe('for every action in the XRAction.sessionChanged list ..', () => {
-      it.todo('.. should call xrSessionChanged with the action as its argument', () => {})
-    })
-  }) //:: execute
+  // @note This system's execute is currently a noop, hence why this suite is empty.
+  describe('execute,', () => {}) //:: execute
 }) //:: XRSystem

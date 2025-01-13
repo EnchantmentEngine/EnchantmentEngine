@@ -41,14 +41,7 @@ import { ReferenceSpaceState, TransformComponent } from '../SpatialModule'
 import { Q_IDENTITY, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
 import { destroySpatialEngine, destroySpatialViewer } from '../initializeEngine'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
-import {
-  endXRSession,
-  getReferenceSpaces,
-  onSessionEnd,
-  requestXRSession,
-  setupXRSession,
-  xrSessionChanged
-} from './XRSessionFunctions'
+import { endXRSession, getReferenceSpaces, onSessionEnd, requestXRSession, setupXRSession } from './XRSessionFunctions'
 import { ReferenceSpace, XRAction, XRState } from './XRState'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
@@ -701,12 +694,3 @@ describe('endXRSession', () => {
     expect(XREmulatorHelper.getLastXRSessionData(result).ended).toBe(Expected)
   })
 }) //:: endXRSession
-
-describe('xrSessionChanged', () => {
-  it('does nothing, but does not fail to run either', () => {
-    const Expected = undefined
-    // @ts-ignore Allow coercing undefined into the function parameter
-    const result = xrSessionChanged(undefined)
-    expect(result).toBe(Expected)
-  })
-}) //:: xrSessionChanged
