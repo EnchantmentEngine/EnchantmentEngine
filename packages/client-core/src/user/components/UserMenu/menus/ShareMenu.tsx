@@ -23,35 +23,25 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { FormControl, InputLabel } from '@mui/material'
 import { QRCodeSVG } from 'qrcode.react'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import Button from '@ir-engine/client-core/src/common/components/Button'
-import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
-import { OculusIcon } from '@ir-engine/client-core/src/common/components/Icons/OculusIcon'
-import InputCheck from '@ir-engine/client-core/src/common/components/InputCheck'
-import InputText from '@ir-engine/client-core/src/common/components/InputText'
-import Menu from '@ir-engine/client-core/src/common/components/Menu'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import multiLogger from '@ir-engine/common/src/logger'
 import { EMAIL_REGEX, PHONE_REGEX } from '@ir-engine/common/src/regex'
-import { authenticationSettingPath, InviteCode, InviteData } from '@ir-engine/common/src/schema.type.module'
+import { InviteCode, InviteData, authenticationSettingPath } from '@ir-engine/common/src/schema.type.module'
 import { useMutableState } from '@ir-engine/hyperflux'
-import { isShareAvailable } from '@ir-engine/spatial/src/common/functions/DetectFeatures'
-import Box from '@ir-engine/ui/src/primitives/mui/Box'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
-import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
-import OutlinedInput from '@ir-engine/ui/src/primitives/mui/OutlinedInput'
 
 import { useFind } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { Checkbox, Input } from '@ir-engine/ui'
+import { Copy03Lg, Send01Lg } from '@ir-engine/ui/src/icons'
+import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
+import { PopoverState } from '../../../../common/services/PopoverState'
 import useFeatureFlags from '../../../../hooks/useFeatureFlags'
 import { InviteService } from '../../../../social/services/InviteService'
 import { AuthState } from '../../../services/AuthService'
-import styles from '../index.module.scss'
-import { PopupMenuServices } from '../PopupMenuService'
 
 const logger = multiLogger.child({ component: 'client-core:ShareMenu' })
 
@@ -217,90 +207,93 @@ const ShareMenu = (): JSX.Element => {
   }
 
   return (
-    <Menu open title={t('user:usermenu.share.title')} onClose={() => PopupMenuServices.showPopupMenu()}>
-      <Box className={styles.menuContent}>
-        {shareTOQuestEnabled && (
-          <Box className={styles.shareQuest}>
-            <Button
-              className={styles.shareQuestButton}
-              endIcon={<OculusIcon sx={{ width: '36px', height: '36px', margin: '-7px 0 -5px -7px' }} />}
-              type="gradientRounded"
-              onClick={() => window.open(questShareLink, '_blank')}
-            >
-              {t('user:usermenu.share.shareQuest')}
-            </Button>
-            <IconButton
-              icon={<Icon type="FileCopy" sx={{ width: '18px' }} />}
-              sizePx={35}
-              onClick={() => copyToClipboard(questShareLink.toString())}
-            />
-          </Box>
-        )}
+    <Modal
+      title={t('user:usermenu.share.title')}
+      className="pointer-events-auto w-[50vw] max-w-2xl"
+      onClose={PopoverState.hidePopupover}
+    >
+      <div className="mb-3 flex w-full items-center justify-center">
+        <div className="flex justify-center gap-x-4">
+          <button className="rounded-3xl bg-gray-800 px-6 py-2" onClick={() => window.open(questShareLink, '_blank')}>
+            {t('user:usermenu.share.shareQuest')}
+          </button>
 
-        <div className={styles.QRContainer}>
+          <button onClick={() => copyToClipboard(questShareLink.toString())}>
+            <Copy03Lg />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex w-full items-center justify-center ">
+        <div className="rounded-md bg-white p-4">
           <QRCodeSVG height={176} width={200} value={shareLink} />
         </div>
+      </div>
 
-        <InputCheck
+      <div className="grid grid-cols-1 gap-y-3">
+        <Checkbox
           label={t('user:usermenu.share.lbl-spectator-mode')}
           checked={isSpectatorMode}
           onChange={toggleSpectatorMode}
         />
 
-        <InputText
-          endIcon={<Icon type="ContentCopy" />}
-          inputRef={refLink}
-          label={t('user:usermenu.share.shareDirect')}
-          sx={{ mt: 2, mb: 3 }}
+        <Input
           value={shareLink}
-          onEndIconClick={copyLinkToClipboard}
+          endComponent={
+            <button className="h-4 w-4" onMouseDown={copyLinkToClipboard}>
+              <Copy03Lg />
+            </button>
+          }
+          labelProps={{
+            text: t('user:usermenu.share.shareDirect'),
+            position: 'top'
+          }}
+          fullWidth
+          ref={refLink}
         />
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', mt: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex' }}>
-            <FormControl
-              variant="outlined"
-              className={`${commonStyles.inputField}`}
-              disabled={true}
-              focused={true}
-              size="small"
+        <Input
+          readOnly
+          value={iframeString}
+          labelProps={{
+            text: t('user:usermenu.share.shareEmbed'),
+            position: 'top'
+          }}
+          endComponent={
+            <button
+              className="h-4 w-4"
+              onMouseDown={() => {
+                copyToClipboard(iframeString)
+              }}
             >
-              <InputLabel sx={{ zIndex: 999 }}>{t('user:usermenu.share.shareEmbed')}</InputLabel>
-              <OutlinedInput
-                disabled={true}
-                fullWidth
-                label={t('user:usermenu.share.shareEmbed')}
-                size={'small'}
-                endAdornment={
-                  <IconButton
-                    className={styles.iconButton}
-                    icon={<Icon type="ContentCopy" />}
-                    sx={{ mr: -1.5 }}
-                    onClick={() => copyToClipboard(iframeString)}
-                  />
-                }
-                value={iframeString}
-              />
-            </FormControl>
-          </Box>
-        </Box>
-
-        <InputText
-          endIcon={<Icon type="Send" />}
-          label={t('user:usermenu.share.shareInvite')}
-          placeholder={getConnectPlaceholder()}
-          value={token}
-          onChange={(e) => handleChangeToken(e)}
-          onEndIconClick={packageInvite}
+              <Copy03Lg />
+            </button>
+          }
+          fullWidth
         />
 
-        {isShareAvailable && (
-          <Button fullWidth type="solidRounded" endIcon={<Icon type="IosShare" />} onClick={shareOnApps}>
-            {t('user:usermenu.share.lbl-share')}
-          </Button>
-        )}
-      </Box>
-    </Menu>
+        <Input
+          value={token}
+          labelProps={{
+            text: t('user:usermenu.share.shareInvite'),
+            position: 'top'
+          }}
+          placeholder={getConnectPlaceholder()}
+          onChange={(e) => handleChangeToken(e)}
+          endComponent={
+            <button className="h-4 w-4" onMouseDown={packageInvite}>
+              <Send01Lg />
+            </button>
+          }
+          fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              packageInvite()
+            }
+          }}
+        />
+      </div>
+    </Modal>
   )
 }
 
