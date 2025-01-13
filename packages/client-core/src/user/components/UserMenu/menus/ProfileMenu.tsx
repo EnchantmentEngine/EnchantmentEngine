@@ -53,18 +53,23 @@ import {
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
-import { Input } from '@ir-engine/ui'
+import { Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import {
   CheckLg,
   CogLg,
   Copy03Lg,
+  DiscordOriginalFalse,
   Edit01Lg,
+  FacebookOriginalFalse,
+  GithubOriginalFalse,
   HelpIconLg,
   LogIn01Lg,
   Refresh1Lg,
   ReportWebsiteDefaullg,
-  Trash04Lg
+  Send01Lg,
+  Trash04Lg,
+  TwitterOriginalFalse
 } from '@ir-engine/ui/src/icons'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
@@ -82,9 +87,7 @@ import { PopupMenuServices } from '../PopupMenuService'
 
 const logger = multiLogger.child({ component: 'engine:ecs:ProfileMenu', modifier: clientContextParams })
 interface Props {
-  className?: string
   hideLogin?: boolean
-  isPopover?: boolean
   onClose?: () => void
 }
 
@@ -96,7 +99,7 @@ export const TermsOfServiceState = defineState({
   extension: syncStateWithLocalStorage(['accepted'])
 })
 
-const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
+const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const { t } = useTranslation()
   const location = useLocation()
 
@@ -128,10 +131,6 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
 
   const originallyAgeVerified = useHookstate(checked18OrOver)
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
-
-  useEffect(() => {
-    console.log('acceptedTOS: ', acceptedTOS, apiKey)
-  }, [acceptedTOS, apiKey])
 
   const submitAgeVerified = () => {
     if (!originallyAgeVerified.value && !checked18OrOver) {
@@ -181,31 +180,6 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
   }, [authSetting])
 
   let type = ''
-  const addMoreSocial =
-    (authState?.value?.apple && !oauthConnectedState.apple.value) ||
-    (authState?.value?.discord && !oauthConnectedState.discord.value) ||
-    (authState?.value?.facebook && !oauthConnectedState.facebook.value) ||
-    (authState?.value?.github && !oauthConnectedState.github.value) ||
-    (authState?.value?.google && !oauthConnectedState.google.value) ||
-    (authState?.value?.linkedin && !oauthConnectedState.linkedin.value) ||
-    (authState?.value?.twitter && !oauthConnectedState.twitter.value)
-
-  const removeSocial = Object.values(oauthConnectedState.value).filter((value) => value).length >= 1
-
-  // const loadCredentialHandler = async () => {
-  //   try {
-  //     const mediator = config.client.mediatorServer + `/mediator?origin=${encodeURIComponent(window.location.origin)}`
-
-  //     await polyfill.loadOnce(mediator)
-  //     console.log('Ready to work with credentials!')
-  //   } catch (e) {
-  //     logger.error(e, 'Error loading polyfill')
-  //   }
-  // }
-
-  // useEffect(() => {
-  //   loadCredentialHandler()
-  // }, []) // Only run once
 
   useEffect(() => {
     selfUser && username.set(selfUser.name.value)
@@ -277,7 +251,6 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
       )
     }
   }
-  const handleInputChange = (e) => emailPhone.set(e.target.value)
 
   const validate = () => {
     if (emailPhone.value === '') return false
@@ -315,20 +288,20 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
     return
   }
 
-  const handleOAuthServiceClick = (e) => {
+  const handleOAuthServiceClick = (serviceName: keyof typeof initialOAuthConnectedState) => {
     logger.info({
       event_name: 'connect_social_login',
-      event_value: e.currentTarget.id
+      event_value: serviceName
     })
-    AuthService.loginUserByOAuth(e.currentTarget.id, location, true)
+    AuthService.loginUserByOAuth(serviceName, location, true)
   }
 
-  const handleRemoveOAuthServiceClick = (e) => {
+  const handleRemoveOAuthServiceClick = (serviceName: keyof typeof initialOAuthConnectedState) => {
     logger.info({
       event_name: 'disconnect_social_login',
-      event_value: e.currentTarget.id
+      event_value: serviceName
     })
-    AuthService.removeUserOAuth(e.currentTarget.id)
+    AuthService.removeUserOAuth(serviceName)
   }
 
   const handleLogout = async () => {
@@ -341,89 +314,9 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
     oauthConnectedState.set(Object.assign({}, initialOAuthConnectedState))
   }
 
-  /**
-   * Example function, issues a Verifiable Credential, and uses the Credential
-   * Handler API (CHAPI) to request to store this VC in the user's wallet.
-   *
-   * This is here in the ProfileMenu just for convenience -- it can be invoked
-   * by the client (browser) whenever appropriate (whenever a user performs
-   * some in-engine action, makes a payment, etc).
-   */
-  async function handleIssueCredentialClick() {
-    /** @todo temporarily disabled for vite upgrade #6453 */
-    // const signedVp = await requestVcForEvent('EnteredVolumeEvent')
-    // console.log('Issued VC:', JSON.stringify(signedVp, null, 2))
-    // const webCredentialType = 'VerifiablePresentation'
-    // // @ts-ignore
-    // const webCredentialWrapper = new window.WebCredential(webCredentialType, signedVp, {
-    //   recommendedHandlerOrigins: ['https://uniwallet.cloud']
-    // })
-    // // Use Credential Handler API to store
-    // const result = await navigator.credentials.store(webCredentialWrapper)
-    // console.log('Result of receiving via store() request:', result)
-  }
-
-  /**
-   * Example function, requests a Verifiable Credential from the user's wallet.
-   */
-  async function handleRequestCredentialClick() {
-    // const result = await navigator.credentials.get(vpRequestQuery)
-    // console.log('VC Request query result:', result)
-  }
-
-  // async function handleWalletLoginClick() {
-  //   const domain = window.location.origin
-  //   const challenge = '99612b24-63d9-11ea-b99f-4f66f3e4f81a' // TODO: generate
-
-  //   console.log('Sending DIDAuth query...')
-
-  //   const didAuthQuery: any = {
-  //     web: {
-  //       VerifiablePresentation: {
-  //         query: [
-  //           {
-  //             type: 'DIDAuth' // request the controller's DID
-  //           },
-  //           {
-  //             type: 'QueryByExample',
-  //             credentialQuery: [
-  //               {
-  //                 example: {
-  //                   '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/xr/v1'],
-  //                   // contains username and avatar icon
-  //                   type: 'LoginDisplayCredential'
-  //                 }
-  //               },
-  //               {
-  //                 example: {
-  //                   '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/xr/v1'],
-  //                   // various Infinite Reality Engine user preferences
-  //                   type: 'UserPreferencesCredential'
-  //                 }
-  //               }
-  //             ]
-  //           }
-  //         ],
-  //         challenge,
-  //         domain // e.g.: requestingparty.example.com
-  //       }
-  //     }
-  //   }
-
-  //   // Use Credential Handler API to authenticate and receive basic login display credentials
-  //   const vprResult: any = await navigator.credentials.get(didAuthQuery)
-  //   console.log(vprResult)
-
-  //   AuthService.loginUserByXRWallet(vprResult)
-  // }
-
   const refreshApiKey = () => {
     AuthService.updateApiKey()
   }
-  /** Feature that was needed for multi cam mocap that is not currently necessary*/
-  /*   const createLoginLink = () => {
-    AuthService.createLoginToken().then((token) => loginLink.set(`${config.client.serverUrl}/login/${token.token}`))
-  } */
 
   const getConnectText = () => {
     if (authState?.value?.emailMagicLink && authState?.value?.smsMagicLink) {
@@ -460,8 +353,6 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
       return ''
     }
   }
-
-  const enableWalletLogin = false // authState?.didWallet
 
   const enableSocial =
     authState?.value?.apple ||
@@ -545,6 +436,29 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
       </div>
 
       <div className="mt-5 grid w-full grid-cols-1 gap-y-4">
+        {isGuest && !originallyAcceptedTOS && (
+          <>
+            <Checkbox
+              checked={checkedTOS.value}
+              onChange={() => checkedTOS.set((v) => !v)}
+              label={t('user:usermenu.profile.agreeTOS')}
+            />
+            <Checkbox
+              checked={checked13OrOver.value}
+              onChange={() => checked13OrOver.set((v) => !v)}
+              label={t('user:usermenu.profile.confirmAge13')}
+            />
+          </>
+        )}
+
+        {!isGuest && !originallyAgeVerified.value && (
+          <Checkbox
+            checked={checked18OrOver}
+            onChange={submitAgeVerified}
+            label={t('user:usermenu.profile.confirmAge18')}
+          />
+        )}
+
         <Input
           value={username.value || ('' as UserName)}
           state={errorUsername.value ? 'error' : undefined}
@@ -617,6 +531,26 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
             fullWidth
           />
         )}
+
+        {!hideLogin && acceptedTOS && isGuest && enableConnect && (
+          <>
+            <Input
+              labelProps={{
+                text: getConnectText(),
+                position: 'top'
+              }}
+              placeholder={getConnectPlaceholder()}
+              state={error.value ? 'error' : undefined}
+              helperText={getErrorText()}
+              endComponent={
+                <button className="h-4 w-4" onMouseDown={handleGuestSubmit}>
+                  <Send01Lg />
+                </button>
+              }
+              fullWidth
+            />
+          </>
+        )}
       </div>
 
       {!isGuest && (
@@ -648,7 +582,106 @@ const ProfileMenu = ({ hideLogin, onClose, isPopover }: Props): JSX.Element => {
         </div>
       )}
 
-      <hr className="mt-5 border-[#616161]" />
+      <hr className="mb-5 mt-5 border-[#616161]" />
+
+      {!hideLogin && acceptedTOS && enableSocial && (
+        <div className="flex w-full items-center justify-center gap-x-2">
+          {authState?.value?.facebook && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.facebook.value ? 'unlink' : 'link'} your Facebook account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.facebook.value) {
+                    handleRemoveOAuthServiceClick('facebook')
+                  } else {
+                    handleOAuthServiceClick('facebook')
+                  }
+                }}
+              >
+                <FacebookOriginalFalse className="h-10 w-10" />
+                {oauthConnectedState.facebook.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {authState?.value?.twitter && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.twitter.value ? 'unlink' : 'link'} your Twitter account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.twitter.value) {
+                    handleRemoveOAuthServiceClick('twitter')
+                  } else {
+                    handleOAuthServiceClick('twitter')
+                  }
+                }}
+              >
+                <TwitterOriginalFalse className="h-10 w-10" />
+                {oauthConnectedState.twitter.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {authState?.value?.github && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.github.value ? 'unlink' : 'link'} your Github account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.github.value) {
+                    handleRemoveOAuthServiceClick('github')
+                  } else {
+                    handleOAuthServiceClick('github')
+                  }
+                }}
+              >
+                <GithubOriginalFalse className="h-10 w-10" />
+                {oauthConnectedState.github.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {authState?.value?.discord && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.discord.value ? 'unlink' : 'link'} your Discord account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.discord.value) {
+                    handleRemoveOAuthServiceClick('discord')
+                  } else {
+                    handleOAuthServiceClick('discord')
+                  }
+                }}
+              >
+                <DiscordOriginalFalse className="h-10 w-10" />
+                {oauthConnectedState.discord.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      )}
+
+      <a href={clientSetting?.privacyPolicy} target="_blank">
+        <Text className="mt-5 w-full text-center" fontSize="sm">
+          {t('user:usermenu.profile.privacyPolicy')}
+        </Text>
+      </a>
     </Modal>
   )
 }
