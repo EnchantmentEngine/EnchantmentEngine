@@ -101,8 +101,8 @@ const execute = () => {
   const frame = getState(XRState).xrFrame
   if (!frame?.session || frame.session.environmentBlendMode === 'opaque' || !ReferenceSpace.localFloor) return
 
-  handleDetectedPlanes(frame)
-  handleDetectedMeshes(frame)
+  XRDetectedMeshSystemFunctions.handleDetectedPlanes(frame)
+  XRDetectedMeshSystemFunctions.handleDetectedMeshes(frame)
 }
 
 const reactor = () => {
