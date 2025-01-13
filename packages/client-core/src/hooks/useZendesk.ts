@@ -83,8 +83,6 @@ export const useZendesk = () => {
   useEffect(() => {
     if (config.client.zendesk.enabled !== 'true') return
 
-    console.log('useZendesk', user.value, initialized.value)
-
     if (!user.isGuest.value && !initialized.value) {
       initialize()
     } else if (!user.isGuest.value && initialized.value) {
@@ -106,9 +104,7 @@ export const useZendesk = () => {
     isWidgetVisible.set(true)
   }
   const openChat = () => {
-    if (!initialized.value) {
-      return
-    }
+    if (!initialized.value) return
     window.zE?.('messenger', 'open')
   }
 
