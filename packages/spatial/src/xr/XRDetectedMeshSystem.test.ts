@@ -39,9 +39,11 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { XRDetectedMeshComponent } from './XRDetectedMeshComponent'
 import { XRDetectedMeshSystem, XRDetectedMeshSystemFunctions } from './XRDetectedMeshSystem'
 import { XRDetectedPlaneComponent } from './XRDetectedPlaneComponent'
+import { ReferenceSpace, XRState } from './XRState'
 import { XRSystem } from './XRSystem'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
@@ -83,11 +85,81 @@ describe('XRDetectedMeshSystem', () => {
 
   /** @todo */
   describe('execute', () => {
-    it.todo('should not do anything if XRState.xrFrame.session is falsy', () => {})
-    it.todo("should not do anything if XRState.xrFrame.session.environmentBlendMode is 'opaque'", () => {})
-    it.todo('should not do anything if ReferenceSpace.localFloor is falsy', () => {})
-    it.todo('should call XRDetectedMeshSystemFunctions.handleDetectedPlanes with XRState.xrFrame', () => {})
-    it.todo('should call XRDetectedMeshSystemFunctions.handleDetectedMeshes with XRState.xrFrame', () => {})
+    it('should not do anything if XRState.xrFrame.session is falsy', () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRDetectedMeshSystemFunctions, 'handleDetectedPlanes')
+      getMutableState(XRState).xrFrame.merge({ session: undefined })
+      // Sanity check before running
+      expect(getState(XRState).xrFrame?.session).toBeFalsy()
+      expect(getState(XRState).xrFrame?.session?.environmentBlendMode).not.toBe('opaque')
+      expect(ReferenceSpace.localFloor).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).not.toHaveBeenCalled()
+      expect(resultSpy).not.toHaveBeenCalledWith(getState(XRState).xrFrame)
+    })
+
+    it("should not do anything if XRState.xrFrame.session.environmentBlendMode is 'opaque'", () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRDetectedMeshSystemFunctions, 'handleDetectedPlanes')
+      // getMutableState(XRState).xrFrame.merge({session: {environmentBlendMode: "additive"} as XRSession})
+      // Sanity check before running
+      expect(getState(XRState).xrFrame?.session).toBeTruthy()
+      expect(getState(XRState).xrFrame?.session.environmentBlendMode).toBe('opaque')
+      expect(ReferenceSpace.localFloor).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).not.toHaveBeenCalled()
+      expect(resultSpy).not.toHaveBeenCalledWith(getState(XRState).xrFrame)
+    })
+
+    it('should not do anything if ReferenceSpace.localFloor is falsy', () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRDetectedMeshSystemFunctions, 'handleDetectedPlanes')
+      getMutableState(XRState).xrFrame.merge({ session: { environmentBlendMode: 'additive' } as XRSession })
+      ReferenceSpace.localFloor = null
+      // Sanity check before running
+      expect(getState(XRState).xrFrame?.session).toBeTruthy()
+      expect(getState(XRState).xrFrame?.session.environmentBlendMode).not.toBe('opaque')
+      expect(ReferenceSpace.localFloor).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).not.toHaveBeenCalled()
+      expect(resultSpy).not.toHaveBeenCalledWith(getState(XRState).xrFrame)
+    })
+
+    it('should call XRDetectedMeshSystemFunctions.handleDetectedPlanes with XRState.xrFrame', () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRDetectedMeshSystemFunctions, 'handleDetectedPlanes')
+      getMutableState(XRState).xrFrame.merge({ session: { environmentBlendMode: 'additive' } as XRSession })
+      // Sanity check before running
+      expect(getState(XRState).xrFrame?.session).toBeTruthy()
+      expect(getState(XRState).xrFrame?.session.environmentBlendMode).not.toBe('opaque')
+      expect(ReferenceSpace.localFloor).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith(getState(XRState).xrFrame)
+    })
+
+    it('should call XRDetectedMeshSystemFunctions.handleDetectedMeshes with XRState.xrFrame', () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRDetectedMeshSystemFunctions, 'handleDetectedMeshes')
+      getMutableState(XRState).xrFrame.merge({ session: { environmentBlendMode: 'additive' } as XRSession })
+      // Sanity check before running
+      expect(getState(XRState).xrFrame?.session).toBeTruthy()
+      expect(getState(XRState).xrFrame?.session.environmentBlendMode).not.toBe('opaque')
+      expect(ReferenceSpace.localFloor).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith(getState(XRState).xrFrame)
+    })
   }) //:: execute
 }) //:: XRDetectedMeshSystem
 
