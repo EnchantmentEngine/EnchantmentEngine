@@ -23,8 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useHookstate } from '@ir-engine/hyperflux'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 const totalFrames = 79
@@ -55,8 +56,9 @@ const LoadingView = ({
   animated?: boolean
 }) => {
   const animationRef = useRef<HTMLDivElement | null>(null)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [currentFrame, setCurrentFrame] = useState(0)
+
+  const isLoaded = useHookstate(false)
+  const currentFrame = useHookstate(0)
 
   const preloadImages = async () => {
     const promises = frames.map(
@@ -70,7 +72,7 @@ const LoadingView = ({
     )
     try {
       await Promise.all(promises)
-      setIsLoaded(true)
+      isLoaded.set(true)
     } catch (err) {
       console.error('Error loading imgs', err)
     }
@@ -85,7 +87,7 @@ const LoadingView = ({
 
     const updateFrame = () => {
       if (isLoaded) {
-        setCurrentFrame((prev) => (prev + 1) % totalFrames)
+        currentFrame.set((prev) => (prev + 1) % totalFrames)
         animationFrameId = requestAnimationFrame(updateFrame)
       }
     }
@@ -95,16 +97,16 @@ const LoadingView = ({
     }
 
     return () => cancelAnimationFrame(animationFrameId)
-  }, [isLoaded, animated])
+  }, [isLoaded.value, animated])
 
   useEffect(() => {
     if (animationRef.current) {
-      const frameSrc = frames[currentFrame]
+      const frameSrc = frames[currentFrame.value]
       if (frameSrc) {
         animationRef.current.style.backgroundImage = `url(${frameSrc})`
       }
     }
-  }, [currentFrame])
+  }, [currentFrame.value])
 
   const loader = (
     <div role="status" className={twMerge('relative mx-auto my-0 block h-full w-full', className)}>
