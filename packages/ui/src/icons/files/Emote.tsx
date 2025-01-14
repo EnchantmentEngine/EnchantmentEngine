@@ -32,38 +32,20 @@ const Emote = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
     width="1em"
     height="1em"
     fill="none"
-    viewBox="0 0 64 64"
+    viewBox="0 0 22 24"
     role="img"
     stroke="currentColor"
     ref={ref}
     {...props}
   >
-    <g clipPath="url(#prefix__a)">
-      <g clipPath="url(#prefix__b)">
-        <circle cx={32} cy={32} r={32} fill="#fff" />
-        <circle cx={31} cy={32} r={12} stroke="#000" strokeWidth={2} />
-        <path
-          fill="#000"
-          stroke="#000"
-          d="M29.5 24.5c-1.2 4.4-7 6.333-9.5 7-.334-4.167 1.34-10.5 10.54-10.5s12.287 5.667 12.787 9c-8.827 1.5-12.66-3.667-13.827-5.5Z"
-        />
-        <circle cx={27.5} cy={33.5} r={1.5} fill="#000" />
-        <circle cx={34.5} cy={33.5} r={1.5} fill="#000" />
-        <path
-          fill="#000"
-          stroke="#fff"
-          d="m39 15-1.26 4.344-4.74 1.62 4.74 1.692L39 27l1.407-4.344L45 20.963l-4.593-1.62z"
-        />
-      </g>
+    <g fill="#080808">
+      <path
+        fillRule="evenodd"
+        d="m14.625 2.739-3.089 1.055 4.824 1.723 1.281 4.42 1.385-4.272a10.9 10.9 0 0 1 2.869 7.388C21.895 19.099 16.993 24 10.947 24S0 19.1 0 13.053 4.901 2.105 10.947 2.105c1.29 0 2.529.224 3.678.634m-3.678 19.577a9.263 9.263 0 0 0 9.14-10.783c-6.557.607-9.477-3.34-10.403-4.796-1.01 3.7-5.88 5.328-7.99 5.892q-.01.21-.01.424a9.263 9.263 0 0 0 9.263 9.263m-1.684-8a1.263 1.263 0 1 1-2.526 0 1.263 1.263 0 0 1 2.526 0m4.632 1.263a1.263 1.263 0 1 0 0-2.526 1.263 1.263 0 0 0 0 2.526"
+        clipRule="evenodd"
+      />
+      <path d="m17.684 0-.795 2.743-2.994 1.023 2.994 1.07.795 2.743.89-2.743 2.9-1.07-2.9-1.023z" />
     </g>
-    <defs>
-      <clipPath id="prefix__a">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-      <clipPath id="prefix__b">
-        <path fill="#fff" d="M0 0h64v64H0z" />
-      </clipPath>
-    </defs>
   </svg>
 )
 const ForwardRef = forwardRef(Emote)

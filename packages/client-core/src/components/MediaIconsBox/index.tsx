@@ -48,7 +48,7 @@ import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import {
   Microphone01Lg,
   MicrophoneOff,
-  ScreenShare,
+  Screenshare,
   VideoRecorderLg,
   VideoRecorderOffLg
 } from '@ir-engine/ui/src/icons'
@@ -214,7 +214,7 @@ export const MediaIconsBox = () => {
             tooltip={{
               title: t('user:menu.shareScreen')
             }}
-            icon={ScreenShare}
+            icon={Screenshare}
             id="UserScreenSharing"
             onClick={MediaStreamState.toggleScreenshare}
           />
