@@ -23,214 +23,18 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import ClickAwayListener from '@mui/material/ClickAwayListener'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
 import { UUIDComponent } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
 import { emoteAnimations, preloadedAnimations } from '@ir-engine/engine/src/avatar/animation/Util'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { dispatchAction } from '@ir-engine/hyperflux'
-import Button from '@ir-engine/ui/src/primitives/mui/Button'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 
-import { PopupMenuServices } from '../PopupMenuService'
-import styles from './EmoteMenu.module.scss'
+import { PopoverState } from '../../../../common/services/PopoverState'
 
-const MAX_EMOTE_PER_PAGE = 6
-const MIN_EMOTE_PER_PAGE = 5
-const getEmotePerPage = () => (window.innerWidth > 768 ? MAX_EMOTE_PER_PAGE : MIN_EMOTE_PER_PAGE)
-
-export const useEmoteMenuHooks = () => {
-  const [page, setPage] = useState(0)
-  const [imgPerPage, setImgPerPage] = useState(getEmotePerPage())
-
-  let [menuRadius, setMenuRadius] = useState(window.innerWidth > 360 ? 182 : 150)
-
-  let menuPadding = window.innerWidth > 360 ? 25 : 20
-  let menuThickness = menuRadius > 170 ? 70 : 60
-  let menuItemWidth = menuThickness - menuPadding
-  let menuItemRadius = menuItemWidth / 2
-  let effectiveRadius = menuRadius - menuItemRadius - menuPadding / 2
-
-  let [items, setItems] = useState([
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Wave.svg"
-          alt="Wave"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.wave)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/clap1.svg"
-          alt="Clap"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.clap)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Dance1.svg"
-          alt="Dance 1"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.dance1)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Dance2.svg"
-          alt="Dance 2"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.dance2)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Dance3.svg"
-          alt="Dance 3"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.dance3)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Dance4.svg"
-          alt="Dance 4"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.dance4)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Kiss.svg"
-          alt="Kiss"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.kiss)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Cry.svg"
-          alt="Cry"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.cry)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Laugh.svg"
-          alt="Laugh"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.laugh)
-      }
-    },
-    {
-      body: (
-        <img
-          style={{
-            height: 'auto',
-            maxWidth: '100%'
-          }}
-          src="/static/Defeat.svg"
-          alt="Defeat"
-        />
-      ),
-      containerProps: {
-        onClick: () => playAnimation(emoteAnimations.defeat)
-      }
-    }
-  ])
-
-  const calculateMenuRadius = () => {
-    setImgPerPage(getEmotePerPage())
-    setMenuRadius(window.innerWidth > 360 ? 182 : 150)
-    calculateOtherValues()
-  }
-
-  useEffect(() => {
-    window.addEventListener('resize', calculateMenuRadius)
-    calculateOtherValues()
-  }, [])
-
-  const closeMenu = (e) => {
-    e.preventDefault()
-    PopupMenuServices.showPopupMenu()
-  }
-
-  const calculateOtherValues = (): void => {
-    menuThickness = menuRadius > 170 ? 70 : 60
-    menuItemWidth = menuThickness - menuPadding
-    menuItemRadius = menuItemWidth / 2
-    effectiveRadius = menuRadius - menuItemRadius - menuPadding / 2
-  }
-
+const EmoteMenu = (): JSX.Element => {
   const playAnimation = (stateName: string) => {
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     dispatchAction(
@@ -242,132 +46,110 @@ export const useEmoteMenuHooks = () => {
         entityUUID: getComponent(selfAvatarEntity, UUIDComponent)
       })
     )
-    // close Menu after playing animation
-    PopupMenuServices.showPopupMenu()
+    PopoverState.hidePopupover()
   }
-
-  const renderEmoteList = () => {
-    const itemList = [] as JSX.Element[]
-    const startIndex = page * imgPerPage
-    const endIndex = Math.min(startIndex + imgPerPage, items.length)
-    let angle = 360 / imgPerPage
-    let index = 0
-    let itemAngle = 0
-    let x = 0
-    let y = 0
-
-    for (let i = startIndex; i < endIndex; i++, index++) {
-      const emoticon = items[i]
-      itemAngle = angle * index + 270
-      x = effectiveRadius * Math.cos((itemAngle * Math.PI) / 280)
-      y = effectiveRadius * Math.sin((itemAngle * Math.PI) / 280)
-
-      itemList.push(
-        <div key={i}>
-          <Button
-            className={styles.menuItem}
-            {...emoticon.containerProps}
-            onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-            onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-            style={{
-              width: menuItemWidth,
-              height: menuItemWidth,
-              transform: `translate(${x}px , ${y}px)`
-            }}
-          >
-            {emoticon.body}
-          </Button>
-        </div>
-      )
-    }
-
-    return itemList
-  }
-
-  const loadNextEmotes = (e) => {
-    e.preventDefault()
-    if ((page + 1) * imgPerPage >= items.length) return
-    setPage(page + 1)
-  }
-  const loadPreviousEmotes = (e) => {
-    e.preventDefault()
-    if (page === 0) return
-    setPage(page - 1)
-  }
-
-  return {
-    closeMenu,
-    menuRadius,
-    menuThickness,
-    loadPreviousEmotes,
-    menuItemRadius,
-    renderEmoteList,
-    page,
-    imgPerPage,
-    items,
-    loadNextEmotes
-  }
-}
-
-const EmoteMenu = (): JSX.Element => {
-  const {
-    closeMenu,
-    menuRadius,
-    menuThickness,
-    loadPreviousEmotes,
-    menuItemRadius,
-    renderEmoteList,
-    page,
-    imgPerPage,
-    items,
-    loadNextEmotes
-  } = useEmoteMenuHooks()
 
   return (
-    <section className={styles.emoteMenu}>
-      <ClickAwayListener onClickAway={closeMenu} mouseEvent="onMouseDown">
-        <div
-          className={styles.itemContainer}
-          style={{
-            width: menuRadius * 2,
-            height: menuRadius * 2,
-            borderWidth: menuThickness
-          }}
-        >
-          <div className={styles.itemContainerPrev}>
-            <button
-              type="button"
-              className={`${styles.iconBlock} ${page === 0 ? styles.disabled : ''}`}
-              onClick={loadPreviousEmotes}
-              onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-              onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-            >
-              <Icon type="NavigateBefore" />
-            </button>
-          </div>
-          <div
-            className={styles.menuItemBlock}
-            style={{
-              width: menuItemRadius,
-              height: menuItemRadius
-            }}
-          >
-            {renderEmoteList()}
-          </div>
-          <div className={styles.itemContainerNext}>
-            <button
-              type="button"
-              className={`${styles.iconBlock} ${(page + 1) * imgPerPage >= items.length ? styles.disabled : ''}`}
-              onClick={loadNextEmotes}
-              onPointerUp={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-              onPointerEnter={() => AudioEffectPlayer.instance.play(AudioEffectPlayer.SOUNDS.ui)}
-            >
-              <Icon type="NavigateNext" />
-            </button>
-          </div>
-        </div>
-      </ClickAwayListener>
-    </section>
+    <svg
+      className="pointer-events-auto"
+      width="474"
+      height="440"
+      viewBox="0 0 474 440"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M90.454 423.273C35.368 379.876 0 312.568 0 236.999c0-130.891 106.108-237 237-237 130.891 0 237 106.109 237 237 0 75.569-35.368 142.877-90.454 186.274-13.952 10.991-33.554 10.231-48.435.535-10.823-7.052-17.511-19.199-17.511-32.117 0-15.468 8.252-29.5 19.783-39.81 31.008-27.725 50.525-68.035 50.525-112.903 0-83.452-67.518-151.135-150.908-151.402-83.39.267-150.908 67.95-150.908 151.402 0 44.868 19.517 85.178 50.525 112.903 11.531 10.31 19.783 24.342 19.783 39.81 0 12.918-6.688 25.065-17.511 32.117-14.881 9.696-34.483 10.456-48.435-.535"
+        fill="#D3D5D9"
+      />
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.clap)}>
+        <path
+          d="M14 196.5c0-17.949 14.55-32.5 32.5-32.5S79 178.551 79 196.5 64.45 229 46.5 229 14 214.449 14 196.5"
+          fill="#F5F5F5"
+        />
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M35.894 191.16a9.4 9.4 0 0 0-1.259 2.955c.208.153.394.339.547.558.328.471.482 1.073.361 1.686l-.328 1.882 4.027-8.941a2.3 2.3 0 0 1 1.259-1.182c.438-.164.93-.197 1.4-.066a1.9 1.9 0 0 0 0-.601 1.67 1.67 0 0 0-1.947-1.336c-.416.077-.81.318-1.073.701l-2.977 4.344zm23.047-8.962a.895.895 0 0 1 1.247.109.88.88 0 0 1-.11 1.237l-2.494 2.101a.88.88 0 0 1-1.237-.11.87.87 0 0 1 .11-1.236zm-.788 7.441a.883.883 0 1 1 .142-1.762l3.25.274c.482.044.854.47.81.963a.88.88 0 0 1-.952.799zm-5.264-9.827a.9.9 0 0 1 .963-.81.88.88 0 0 1 .799.952l-.274 3.25a.88.88 0 0 1-.952.81.88.88 0 0 1-.81-.952zm-.372 18.276c.186-.416.186-.876.044-1.281a1.7 1.7 0 0 0-.876-.93 1.68 1.68 0 0 0-1.28-.033 1.67 1.67 0 0 0-.93.865l-2.277 5.045a.293.293 0 0 1-.383.142c-.153-.066-.219-.241-.153-.383l2.276-5.045 1.05-2.32c.187-.427.187-.875.034-1.28a1.6 1.6 0 0 0-.876-.931 1.7 1.7 0 0 0-1.27-.043 1.66 1.66 0 0 0-.93.875l-3.326 7.365c-.066.153-.241.219-.383.153a.296.296 0 0 1-.154-.394l3.327-7.365.318-.711a1.65 1.65 0 0 0 .032-1.269 1.62 1.62 0 0 0-.875-.931 1.6 1.6 0 0 0-1.27-.043 1.66 1.66 0 0 0-.93.875l-.328.711-3.316 7.365a.3.3 0 0 1-.394.143.293.293 0 0 1-.142-.383l3.316-7.376c.197-.416.197-.876.044-1.27a1.66 1.66 0 0 0-.876-.93 1.63 1.63 0 0 0-1.28-.044c-.394.153-.734.46-.93.876l-5.013 11.118a.297.297 0 0 1-.394.154.3.3 0 0 1-.164-.34l.766-4.224a1.7 1.7 0 0 0-.273-1.247 1.7 1.7 0 0 0-1.084-.69 1.7 1.7 0 0 0-1.247.274c-.35.241-.602.624-.69 1.072l-.93 5.187v.011a9.63 9.63 0 0 0 .941 5.801 9.53 9.53 0 0 0 4.553 4.333c2.385 1.084 5 1.084 7.288.219a9.5 9.5 0 0 0 5.319-4.979l1.587-3.535zm2.156-2.999-1.609 1.412c.022.033.033.066.044.098a2.2 2.2 0 0 1-.055 1.729l-1.97 4.389 2.003-1.784 3.797-3.338a1.7 1.7 0 0 0 .558-1.149 1.7 1.7 0 0 0-.415-1.215 1.72 1.72 0 0 0-1.15-.558 1.66 1.66 0 0 0-1.203.416m-.69-4.64-3.26 2.889c.021.35-.045.712-.198 1.051l-.427.941c.033-.011.066-.033.099-.044a2.3 2.3 0 0 1 1.729.055c.34.153.613.372.832.646l1.52-1.347 1.916-1.685a1.67 1.67 0 0 0 .142-2.353 1.6 1.6 0 0 0-1.149-.558 1.65 1.65 0 0 0-1.204.405m-6.522.525c.01.154 0 .318-.022.471l.23-.099a2.22 2.22 0 0 1 1.729.055c.558.252.974.711 1.182 1.259v.011l3.01-2.66.58-.514c.35-.306.536-.722.557-1.149a1.6 1.6 0 0 0-.404-1.204 1.63 1.63 0 0 0-1.15-.558 1.7 1.7 0 0 0-1.214.405zm-3.053-1.948a2.2 2.2 0 0 1 1.729.055 2.23 2.23 0 0 1 1.17 1.237l3.689-3.25c.339-.307.525-.723.558-1.15a1.66 1.66 0 0 0-.416-1.203 1.66 1.66 0 0 0-2.353-.154l-5.406 4.772.033.098c.033.077.055.154.076.23.252-.284.57-.503.92-.635"
+          fill="#000"
+        />
+        <path
+          d="M33.266 207.453c.057.131.076.352.038.443l-1.15 2.708 8 3.396.88-2.077c.077-.18.211-.23.345-.28z"
+          fill="#000"
+        />
+      </g>
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.wave)}>
+        <path
+          d="M33 330.5c0-17.949 14.55-32.5 32.5-32.5S98 312.551 98 330.5 83.45 363 65.5 363 33 348.449 33 330.5"
+          fill="#F5F5F5"
+        />
+        <path
+          d="M70.822 336.254a10 10 0 0 0 1.864-1.471 10 10 0 0 0 2.952-7.091v-9.424c0-.478-.198-.923-.52-1.245a1.78 1.78 0 0 0-1.245-.511 1.78 1.78 0 0 0-1.245.511 1.8 1.8 0 0 0-.51 1.245v5.83a.313.313 0 1 1-.627 0v-8.517a1.75 1.75 0 0 0-.52-1.245 1.73 1.73 0 0 0-1.237-.52 1.75 1.75 0 0 0-1.245.52c-.321.321-.52.758-.52 1.245v8.517c0 .173-.14.313-.312.313a.31.31 0 0 1-.305-.313v-9.334c0-.486-.198-.931-.52-1.245a1.753 1.753 0 0 0-2.49 0 1.77 1.77 0 0 0-.511 1.245v9.334a.313.313 0 0 1-.627 0v-8.517c0-.487-.197-.924-.52-1.245a1.73 1.73 0 0 0-1.236-.52 1.75 1.75 0 0 0-1.245.52 1.75 1.75 0 0 0-.52 1.245v12.862c0 .173-.14.313-.304.313a.33.33 0 0 1-.314-.256l-1.096-4.386a1.77 1.77 0 0 0-.8-1.08 1.75 1.75 0 0 0-2.416.61 1.73 1.73 0 0 0-.198 1.328l1.353 5.392a10.06 10.06 0 0 0 3.421 5.169c.63.506 1.323.937 2.065 1.28v2.159h9.326v-2.421c0-.132.043-.222.102-.297m.935 3.955H60.379q-.37 0-.371.371V348h12.12v-7.42c0-.124-.124-.371-.371-.371m-2.845 5.194c-.742 0-1.36-.618-1.36-1.36s.618-1.361 1.36-1.361 1.36.619 1.36 1.361c-.123.742-.618 1.36-1.36 1.36"
+          fill="#000"
+        />
+      </g>
+
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.dance4)}>
+        <path
+          d="M377 330.5c0-17.949 14.551-32.5 32.5-32.5s32.5 14.551 32.5 32.5-14.551 32.5-32.5 32.5-32.5-14.551-32.5-32.5"
+          fill="#F5F5F5"
+        />
+        <path
+          d="M415.634 324.609v6.767c.938 2.816 2.371 8.843-.494 13.141-.445.691-1.482.79-2.125.197-.493-.444-.543-1.185-.197-1.729 1.926-2.964 1.087-7.509 0-10.868l-2.964 8.645c-.346 1.087-1.729 1.482-2.618.741l-4.644-4.05c-.593-.495-.642-1.334-.148-1.927a1.35 1.35 0 0 1 1.927-.148l3.211 2.717 1.58-5.928v-7.262c-1.432-.049-3.013-.099-4.495-.148-1.087-.05-1.927-.988-1.828-2.124l.642-7.559c.198-.543.791-.889 1.334-.889.889 0 1.63.889 1.383 1.779l-.494 4.001c-.098.692.494 1.334 1.186 1.334h8.151c.395 0 .741-.148.939-.445 1.136-1.482 1.877-3.853 2.272-5.582.296-.889.889-1.087 1.531-1.087.791.099 1.334.889 1.186 1.68-.544 2.47-1.976 7.311-5.335 8.744"
+          fill="#000"
+        />
+        <path
+          d="M409.558 318.385c-.791-1.186-.939-2.52-.297-3.656.544-1.087 1.68-1.729 2.865-1.729 1.779 0 3.261 1.482 3.261 3.26 0 1.186-.692 2.47-1.68 3.113a2.72 2.72 0 0 1-1.581.494c-.395 0-.741-.099-1.136-.247a2.9 2.9 0 0 1-1.432-1.235m14.412 26.594h.91v1.284h-.91V348h-1.593v-1.737h-3.291l-.072-1.003 3.346-5.287h1.61zm-3.368 0h1.775v-2.834l-.105.182zm-20.097-13.915c-.705 0-1.34-.358-1.834-.932-.282-.359-.494-.861-.494-1.291v-6.887l-2.045 1.722c-.282.287-.776.215-.988-.072s-.211-.789.141-1.004l3.175-2.654c.211-.215.493-.215.775-.072q.424.216.424.646v6.097c.07 0 .141-.072.282-.072a2.3 2.3 0 0 1 2.045.359 2.39 2.39 0 0 1 .917 1.865c-.07 1.22-1.128 2.295-2.398 2.295"
+          fill="#000"
+        />
+      </g>
+
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.dance1)}>
+        <path
+          d="M112 71.5c0-17.95 14.551-32.5 32.5-32.5S177 53.55 177 71.5 162.449 104 144.5 104 112 89.45 112 71.5"
+          fill="#F5F5F5"
+        />
+        <path
+          d="M151.068 65.609v6.767c.939 2.816 2.372 8.843-.494 13.14-.444.692-1.482.791-2.124.198-.494-.444-.543-1.185-.198-1.729 1.927-2.964 1.087-7.508 0-10.868l-2.963 8.645c-.346 1.087-1.729 1.482-2.619.741l-4.643-4.05c-.593-.495-.642-1.334-.148-1.927s1.383-.642 1.926-.148l3.211 2.717 1.581-5.928v-7.262c-1.433-.05-3.013-.099-4.495-.148-1.087-.05-1.927-.988-1.828-2.124l.642-7.559c.198-.543.79-.889 1.334-.889.889 0 1.63.89 1.383 1.779l-.494 4.001c-.099.692.494 1.334 1.186 1.334h8.15c.396 0 .741-.148.939-.445 1.136-1.482 1.877-3.853 2.272-5.582.297-.89.89-1.087 1.532-1.087.79.1 1.334.89 1.185 1.68-.543 2.47-1.976 7.311-5.335 8.744"
+          fill="#000"
+        />
+        <path
+          d="M144.992 59.385c-.79-1.186-.938-2.52-.296-3.656.543-1.087 1.679-1.729 2.865-1.729 1.778 0 3.26 1.482 3.26 3.26 0 1.186-.691 2.47-1.679 3.113a2.7 2.7 0 0 1-1.581.494c-.395 0-.741-.1-1.136-.247a2.9 2.9 0 0 1-1.433-1.235M158.563 89h-1.593v-6.141l-1.902.59v-1.296l3.325-1.19h.17zm-22.621-15.806c-.705 0-1.34-.36-1.834-.933-.282-.359-.494-.86-.494-1.291v-6.886l-2.045 1.721c-.282.287-.776.215-.988-.072s-.211-.789.141-1.004l3.174-2.654c.212-.215.494-.215.776-.072q.423.216.423.646v6.097c.071 0 .142-.072.283-.072a2.3 2.3 0 0 1 2.045.36c.564.43.917 1.147.917 1.864-.071 1.22-1.129 2.296-2.398 2.296"
+          fill="#000"
+        />
+      </g>
+
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.dance3)}>
+        <path
+          d="M396 196.5c0-17.949 14.551-32.5 32.5-32.5s32.5 14.551 32.5 32.5-14.551 32.5-32.5 32.5-32.5-14.551-32.5-32.5"
+          fill="#F5F5F5"
+        />
+        <path
+          d="M434.569 190.572v6.747c.936 2.807 2.364 8.814-.493 13.099-.443.689-1.477.788-2.117.197-.492-.444-.542-1.182-.197-1.724 1.92-2.955 1.083-7.485 0-10.834l-2.955 8.618c-.344 1.083-1.723 1.477-2.61.739l-4.629-4.038c-.591-.493-.64-1.33-.147-1.921a1.344 1.344 0 0 1 1.92-.148l3.201 2.709 1.576-5.909v-7.239c-1.428-.05-3.004-.099-4.481-.148-1.084-.049-1.921-.985-1.822-2.118l.64-7.534c.197-.542.788-.886 1.329-.886.887 0 1.625.886 1.379 1.772l-.492 3.989c-.099.69.492 1.33 1.182 1.33h8.125c.394 0 .739-.148.936-.443 1.132-1.478 1.871-3.842 2.265-5.565.295-.886.886-1.083 1.526-1.083.788.098 1.33.886 1.182 1.674-.541 2.462-1.97 7.288-5.318 8.716"
+          fill="#000"
+        />
+        <path
+          d="M428.512 184.368c-.788-1.182-.936-2.512-.296-3.644.542-1.084 1.675-1.724 2.857-1.724 1.772 0 3.25 1.477 3.25 3.25 0 1.182-.69 2.462-1.675 3.103a2.7 2.7 0 0 1-1.575.492c-.394 0-.739-.098-1.133-.246a2.9 2.9 0 0 1-1.428-1.231m11.283 24.818h.846q.605 0 .896-.302.291-.303.291-.803 0-.483-.291-.753-.285-.269-.791-.269-.456 0-.764.253a.8.8 0 0 0-.308.648h-1.588q0-.626.335-1.121.34-.5.945-.78.61-.28 1.341-.28 1.27 0 1.99.61.72.604.719 1.67 0 .55-.335 1.011a2.16 2.16 0 0 1-.879.709q.676.242 1.006.726.335.483.335 1.143 0 1.066-.78 1.709-.775.643-2.056.643-1.197 0-1.962-.632-.758-.632-.758-1.671h1.588q0 .451.335.737.341.285.836.286.566 0 .884-.297.325-.303.325-.797 0-1.198-1.319-1.198h-.841zm-20.307-12.178c-.703 0-1.336-.358-1.828-.93-.282-.357-.493-.858-.493-1.287v-6.865l-2.039 1.716c-.281.286-.773.215-.984-.071s-.211-.787.141-1.001l3.164-2.646c.211-.214.492-.214.773-.071q.422.214.422.643v6.078c.07 0 .141-.071.281-.071a2.3 2.3 0 0 1 2.039.357c.563.429.914 1.144.914 1.86-.07 1.215-1.125 2.288-2.39 2.288"
+          fill="#000"
+        />
+      </g>
+      <g className="cursor-pointer" onClick={() => playAnimation(emoteAnimations.dance3)}>
+        <path
+          d="M301 71.5c0-17.95 14.551-32.5 32.5-32.5S366 53.55 366 71.5 351.449 104 333.5 104 301 89.45 301 71.5"
+          fill="#F5F5F5"
+        />
+        <path
+          d="M339.632 65.609v6.767c.938 2.816 2.371 8.843-.495 13.14-.444.692-1.481.791-2.124.198-.494-.444-.543-1.185-.197-1.729 1.926-2.964 1.087-7.508 0-10.868l-2.964 8.645c-.346 1.087-1.729 1.482-2.618.741l-4.644-4.05c-.593-.495-.642-1.334-.148-1.927s1.383-.642 1.926-.148l3.211 2.717 1.581-5.928v-7.262c-1.432-.05-3.013-.099-4.495-.148-1.087-.05-1.927-.988-1.828-2.124l.642-7.559c.198-.543.791-.889 1.334-.889.889 0 1.63.89 1.383 1.779l-.494 4.001c-.099.692.494 1.334 1.186 1.334h8.151c.395 0 .741-.148.938-.445 1.137-1.482 1.877-3.853 2.273-5.582.296-.89.889-1.087 1.531-1.087.791.1 1.334.89 1.186 1.68-.544 2.47-1.976 7.311-5.335 8.744"
+          fill="#000"
+        />
+        <path
+          d="M333.555 59.385c-.79-1.186-.938-2.52-.296-3.656.543-1.087 1.68-1.729 2.865-1.729 1.779 0 3.261 1.482 3.261 3.26 0 1.186-.692 2.47-1.68 3.113a2.7 2.7 0 0 1-1.581.494c-.395 0-.741-.1-1.136-.247a2.9 2.9 0 0 1-1.433-1.235M348.759 89h-5.501v-1.091l2.596-2.768q.536-.585.789-1.02.258-.435.259-.827 0-.534-.27-.838-.271-.309-.772-.308-.54 0-.855.374-.309.37-.308.976h-1.599q0-.733.347-1.34.353-.606.992-.948.64-.347 1.45-.347 1.241 0 1.924.595.69.596.689 1.682 0 .595-.308 1.213-.309.616-1.059 1.439l-1.825 1.924h3.451zm-24.254-16.935c-.705 0-1.34-.36-1.834-.933-.282-.359-.494-.86-.494-1.291v-6.886l-2.045 1.721c-.282.287-.776.215-.988-.072s-.211-.789.141-1.004l3.175-2.654c.211-.215.493-.215.775-.072q.424.216.424.646v6.097c.07 0 .141-.072.282-.072a2.3 2.3 0 0 1 2.045.359 2.39 2.39 0 0 1 .917 1.865c-.07 1.22-1.128 2.295-2.398 2.295"
+          fill="#000"
+        />
+      </g>
+    </svg>
   )
 }
 
