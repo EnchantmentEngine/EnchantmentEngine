@@ -352,7 +352,20 @@ describe('XRDetectedMeshComponent', () => {
     })
 
     describe('XRDetectedMeshComponent.mesh', () => {
-      it.todo('should not do anything if XRDetectedMeshComponent.mesh.value is falsy', () => {})
+      it('should not do anything if XRDetectedMeshComponent.mesh.value is falsy', () => {
+        const Expected = {} as XRMesh
+        const Initial = undefined as XRMesh | undefined // @note Will have typeerrors due to geometry missing, but they are expected for this test case
+        // Set the data as expected
+        const resultSpy = vi.spyOn(XRDetectedMeshComponent, 'createGeometryFromMesh')
+        // Sanity check before running
+        expect(resultSpy).toHaveBeenCalledTimes(0)
+        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Initial })
+        expect(resultSpy).toHaveBeenCalledTimes(0)
+        expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeFalsy()
+        // Run and Check the result
+        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Expected })
+        expect(resultSpy).toHaveBeenCalledTimes(0)
+      })
 
       it('should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument', () => {
         const Expected = {} as XRMesh
