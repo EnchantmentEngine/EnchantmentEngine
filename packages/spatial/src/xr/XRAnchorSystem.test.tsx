@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
@@ -37,22 +37,29 @@ import {
   destroyEngine,
   getComponent,
   getOptionalComponent,
+  hasComponent,
   hasComponents,
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { applyIncomingActions, dispatchAction, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { MockXRAnchor } from '../../tests/util/MockXR'
 import { assertVec } from '../../tests/util/assert'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent, XRAnchorComponent } from '../SpatialModule'
-import { Q_IDENTITY, Vector3_Zero } from '../common/constants/MathConstants'
+import { Q_IDENTITY, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
 import { XRRigidTransform } from './8thwall/XR8WebXRProxy'
-import { XRAnchorSystemState, updateAnchor, updateHitTest, updateScenePlacement } from './XRAnchorSystem'
+import {
+  XRAnchorSystemFunctions,
+  XRAnchorSystemState,
+  updateAnchor,
+  updateHitTest,
+  updateScenePlacement
+} from './XRAnchorSystem'
 import { XRHitTestComponent } from './XRComponents'
 import { XRAnchorSystem, XRCameraUpdateSystem } from './XRModule'
-import { ReferenceSpace, XRState } from './XRState'
+import { ReferenceSpace, XRAction, XRState } from './XRState'
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {
@@ -680,29 +687,151 @@ describe('XRAnchorSystem', () => {
   /** @todo */
   describe('reactor', () => {}) //:: reactor
 
-  /** @todo */
   describe('execute', () => {
-    describe('for every action in the XRAction.sessionChanged list ..', () => {})
-    it.todo('.. should not do anything for the action if action.active is falsy', () => {})
-    it.todo(".. should set XRState.scenePlacementMode to 'unplaced'", () => {})
+    describe('for every action in the XRAction.sessionChanged list ..', () => {
+      /** @todo Why is xrSessionChangedQueue deleting the actions from the queue ?? */
+      it.todo('.. should not do anything for the action if action.active is falsy', () => {})
+      it.todo(".. should set XRState.scenePlacementMode to 'unplaced'", () => {
+        const Expected = 'unplaced'
+        const Initial = 'placed'
+        // Set the data as expected
+        System.execute()
+        getMutableState(XRState).scenePlacementMode.set(Initial)
+        dispatchAction(XRAction.sessionChanged({ active: true }))
+        // Sanity check before running
+        const before = getState(XRState).scenePlacementMode
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        applyIncomingActions()
+        System.execute()
+        const result = getState(XRState).scenePlacementMode
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+    })
     describe('for every entity that has the components [XRHitTestComponent, TransformComponent]', () => {
-      it.todo('.. should remove the XRHitTestComponent from the entity', () => {})
+      it.todo('.. should remove the XRHitTestComponent from the entity', () => {
+        const Expected = false
+        const Initial = true
+        // Set the data as expected
+        const testEntity = createEntity()
+        setComponent(testEntity, XRHitTestComponent)
+        setComponent(testEntity, TransformComponent)
+        // Sanity check before running
+        const before = hasComponent(testEntity, XRHitTestComponent)
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run and Check the result
+        System.execute()
+        const result = hasComponent(testEntity, XRHitTestComponent)
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
     })
     describe('for every entity that has the components [XRAnchorComponent, TransformComponent]', () => {
       it.todo('.. should remove the XRAnchorComponent from the entity', () => {})
     })
 
-    it.todo('should not do anything else if XRState.xrFrame is falsy', () => {})
-    describe('for every entity that has the components [XRHitTestComponent, TransformComponent]', () => {
-      it.todo('.. should call updateAnchor with the entity as its argument', () => {})
+    it('should not do anything else if XRState.xrFrame is falsy', () => {
+      // Set the data as expected
+      const resultSpy = vi.spyOn(XRAnchorSystemFunctions, 'updateHitTest')
+      const testEntity = createEntity()
+      setComponent(testEntity, XRHitTestComponent)
+      setComponent(testEntity, TransformComponent)
+      getMutableState(XRState).xrFrame.set(none)
+      // Sanity check before running
+      expect(getState(XRState).xrFrame).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      System.execute() // Will have type errors, but thats ok for this test. XRFrame is not expected to be null by this execute
+      expect(resultSpy).not.toHaveBeenCalled()
+      expect(resultSpy).not.toHaveBeenCalledWith(testEntity)
     })
+
     describe('for every entity that has the components [XRAnchorComponent, TransformComponent]', () => {
-      it.todo('.. should call updateHitTest with the entity as its argument', () => {})
+      it('.. should call XRAnchorSystemFunctions.updateAnchor with the entity as its argument', () => {
+        // Set the data as expected
+        const resultSpy = vi.spyOn(XRAnchorSystemFunctions, 'updateAnchor')
+        const testEntity = createEntity()
+        setComponent(testEntity, XRAnchorComponent)
+        setComponent(testEntity, TransformComponent)
+        // Sanity check before running
+        expect(getState(XRState).xrFrame).toBeTruthy()
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        System.execute()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith(testEntity)
+      })
     })
+
+    describe('for every entity that has the components [XRHitTestComponent, TransformComponent]', () => {
+      it('.. should call XRAnchorSystemFunctions.updateHitTest with the entity as its argument', () => {
+        // Set the data as expected
+        const resultSpy = vi.spyOn(XRAnchorSystemFunctions, 'updateHitTest')
+        const testEntity = createEntity()
+        setComponent(testEntity, XRHitTestComponent)
+        setComponent(testEntity, TransformComponent)
+        // Sanity check before running
+        expect(getState(XRState).xrFrame).toBeTruthy()
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        System.execute()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith(testEntity)
+      })
+    })
+
     describe("when XRState.scenePlacementMode is 'placing' ..", () => {
-      it.todo('.. should call updateScenePlacement with XRAnchorSystemState.scenePlacementEntity', () => {})
-      it.todo('.. should call updateWorldOriginFromScenePlacement', () => {})
-      it.todo('.. should set XRAnchorSystemState.originAnchorEntity.scale to Vector3_One', () => {})
+      it('.. should call XRAnchorSystemFunctions.updateScenePlacement with XRAnchorSystemState.scenePlacementEntity', () => {
+        // Set the data as expected
+        const resultSpy = vi.spyOn(XRAnchorSystemFunctions, 'updateScenePlacement')
+        getMutableState(XRState).scenePlacementMode.set('placing')
+        // Sanity check before running
+        expect(getState(XRState).xrFrame).toBeTruthy()
+        expect(getState(XRState).scenePlacementMode).toBe('placing')
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run and Check the result
+        System.execute()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(resultSpy).toHaveBeenCalledWith(getState(XRAnchorSystemState).scenePlacementEntity)
+      })
+
+      it('.. should call updateWorldOriginFromScenePlacement', () => {
+        // @note
+        //  Test code from:
+        //  updateWorldOriginFromScenePlacement.it('should change the value of EngineState.localFloorEntity.TransformComponent.position', () => {
+        //  Only the `System.execute()` is different
+        const Initial = new Vector3(2, 3, 4)
+        // Set the data as expected
+        const localFloorEntity = getState(ReferenceSpaceState).localFloorEntity
+        setComponent(localFloorEntity, TransformComponent, { position: Initial })
+        // Sanity check before running
+        const before = getComponent(localFloorEntity, TransformComponent).position.clone()
+        assertVec.approxEq(before, Initial, 3)
+        // Run and Check the result
+        System.execute() // should trigger the same behavior from updateWorldOriginFromScenePlacement()
+        const result = getComponent(localFloorEntity, TransformComponent).position
+        assertVec.anyApproxNotEq(result, before, 3)
+      })
+
+      it('.. should set XRAnchorSystemState.originAnchorEntity.scale to Vector3_One', () => {
+        const Expected = Vector3_One.clone()
+        const Initial = Vector3_Zero.clone()
+        // Set the data as expected
+        getMutableState(XRState).scenePlacementMode.set('placing')
+        setComponent(getState(XRAnchorSystemState).originAnchorEntity, TransformComponent, { scale: Initial })
+        // Sanity check before running
+        expect(getState(XRState).xrFrame).toBeTruthy()
+        expect(getState(XRState).scenePlacementMode).toBe('placing')
+        const before = getComponent(getState(XRAnchorSystemState).originAnchorEntity, TransformComponent).scale
+        assertVec.anyApproxNotEq(before, Expected, 3)
+        // Run and Check the result
+        System.execute()
+        const result = getComponent(getState(XRAnchorSystemState).originAnchorEntity, TransformComponent).scale
+        assertVec.approxEq(result, Expected, 3)
+      })
     })
   }) //:: execute
 }) //:: XRAnchorSystem
