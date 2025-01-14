@@ -112,7 +112,7 @@ const DataTable = ({ query, columns, rows, className, size }: DataTableProps) =>
     if (['success', 'error'].includes(query.status)) {
       storedRows.set({ fetched: true, rows })
     }
-  }, [rows, query.status])
+  }, [rows, query?.status])
 
   return !storedRows.fetched.value ? (
     <div className="flex animate-pulse flex-col gap-2">
