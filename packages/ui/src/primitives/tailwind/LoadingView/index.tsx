@@ -23,16 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@ir-engine/hyperflux'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 import { twMerge } from 'tailwind-merge'
-
-const totalFrames = 79
-const frames = Array.from({ length: totalFrames }, (_, index) => {
-  const frameId = index.toString().padStart(4, '0')
-  return `/static/animated-loading/iRE_2D_LOGO_Loading_${frameId}.png`
-})
 
 const LoadingView = ({
   title,
@@ -55,59 +48,6 @@ const LoadingView = ({
   spinnerOnly?: boolean
   animated?: boolean
 }) => {
-  const animationRef = useRef<HTMLDivElement | null>(null)
-
-  const isLoaded = useHookstate(false)
-  const currentFrame = useHookstate(0)
-
-  const preloadImages = async () => {
-    const promises = frames.map(
-      (src) =>
-        new Promise<void>((resolve, reject) => {
-          const img = new Image()
-          img.src = src
-          img.onload = resolve as any
-          img.onerror = reject
-        })
-    )
-    try {
-      await Promise.all(promises)
-      isLoaded.set(true)
-    } catch (err) {
-      console.error('Error loading imgs', err)
-    }
-  }
-
-  useEffect(() => {
-    preloadImages()
-  }, [])
-
-  useEffect(() => {
-    let animationFrameId: number
-
-    const updateFrame = () => {
-      if (isLoaded) {
-        currentFrame.set((prev) => (prev + 1) % totalFrames)
-        animationFrameId = requestAnimationFrame(updateFrame)
-      }
-    }
-
-    if (animated && isLoaded) {
-      animationFrameId = requestAnimationFrame(updateFrame)
-    }
-
-    return () => cancelAnimationFrame(animationFrameId)
-  }, [isLoaded.value, animated])
-
-  useEffect(() => {
-    if (animationRef.current) {
-      const frameSrc = frames[currentFrame.value]
-      if (frameSrc) {
-        animationRef.current.style.backgroundImage = `url(${frameSrc})`
-      }
-    }
-  }, [currentFrame.value])
-
   const loader = (
     <div role="status" className={twMerge('relative mx-auto my-0 block h-full w-full', className)}>
       <svg
@@ -131,7 +71,6 @@ const LoadingView = ({
 
   const loaderAnimated = (
     <div
-      ref={animationRef}
       style={{
         marginLeft: '30px',
         width: '220px',
@@ -139,7 +78,16 @@ const LoadingView = ({
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
-    />
+    >
+      <video
+        src="/static/animated-loading/logo-animated.mp4"
+        loop
+        autoPlay
+        muted
+        playsInline
+        className="h-auto w-full"
+      />
+    </div>
   )
 
   return spinnerOnly ? (
