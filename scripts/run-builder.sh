@@ -53,6 +53,7 @@ then
     aws ecr-public get-login-password --region us-east-1 | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
   fi
 elif [ $DESTIONATION_REPO_PROVIDER == "gcp" ]
+then
   echo "Log into Docker with GCP credentials"
   # Insert code for getting Artifact Registry credentials and doing docker login with them
 fi
