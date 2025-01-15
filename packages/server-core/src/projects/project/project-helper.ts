@@ -32,6 +32,7 @@ import { DescribeImagesCommand, ECRPUBLICClient } from '@aws-sdk/client-ecr-publ
 import { fromIni } from '@aws-sdk/credential-providers'
 import { BadRequest, Forbidden, NotFound } from '@feathersjs/errors'
 import { Paginated } from '@feathersjs/feathers'
+import { v1 } from '@google-cloud/artifact-registry'
 import * as k8s from '@kubernetes/client-node'
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import appRootPath from 'app-root-path'
@@ -71,6 +72,7 @@ import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import { getState } from '@ir-engine/hyperflux'
 import { ProjectConfigInterface, ProjectEventHooks } from '@ir-engine/projects/ProjectConfigInterface'
 
+import { google } from '@google-cloud/artifact-registry/build/protos/protos'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { BUILDER_CHART_REGEX } from '@ir-engine/common/src/regex'
 import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
@@ -90,10 +92,12 @@ import { getGitConfigData, getGitHeadData, getGitOrigHeadData } from '../../util
 import { useGit } from '../../util/gitHelperFunctions'
 import { getAuthenticatedRepo, getOctokitForChecking, getUserRepos } from './github-helper'
 import { ProjectParams } from './project.class'
+import IDockerImage = google.devtools.artifactregistry.v1.IDockerImage
 
 export const dockerHubRegex = /^[\w\d\s\-_]+\/[\w\d\s\-_]+:([\w\d\s\-_.]+)$/
 export const publicECRRepoRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/([a-z0-9\-_\\]+)$/
 export const publicECRTagRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+?)$/
+export const GCPArtifactRegistryRepoRegex = /^[a-zA-Z0-9\-]+-docker.pkg.dev\/[a-zA-Z0-9\-_\\]+\/([a-zA-Z0-9\-_\\]+)$/
 export const privateECRRepoRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/([a-z0-9\-_\\]+)$/
 export const privateECRTagRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+)$/
 
@@ -104,6 +108,8 @@ const awsPath = './.aws/eks'
 const credentialsPath = `${awsPath}/credentials`
 
 const execAsync = promisify(exec)
+
+const ArtifactRegistryClient = v1.ArtifactRegistryClient
 
 interface GitHubFile {
   status: number
@@ -793,6 +799,7 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
   const builderRepo = `${process.env.SOURCE_REPO_URL}/${process.env.SOURCE_REPO_NAME_STEM}-builder`
   const publicECRExec = publicECRRepoRegex.exec(builderRepo)
   const privateECRExec = privateECRRepoRegex.exec(builderRepo)
+  const gcpECRRegex = GCPArtifactRegistryRepoRegex.exec(builderRepo)
   if (publicECRExec) {
     const awsCredentials = `[default]\naws_access_key_id=${config.aws.eks.accessKeyId}\naws_secret_access_key=${config.aws.eks.secretAccessKey}\n[role]\nrole_arn = ${config.aws.eks.roleArn}\nsource_profile = default`
 
@@ -872,6 +879,34 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
     } catch (err) {
       logger.error('Failure to get private ECR images')
       logger.error('Command that was sent %o', result)
+      logger.error(err)
+      return []
+    }
+  } else if (gcpECRRegex) {
+    const arClient = new ArtifactRegistryClient()
+    let images = [] as IDockerImage[]
+    const input = {
+      parent: builderRepo
+    } as any
+    try {
+      const iterableResponse = arClient.listDockerImagesAsync(input)
+      for await (const item of iterableResponse) images = images.concat(item)
+      return images
+        .filter((image) => image.tags && image.tags.length > 0 && image.uploadTime)
+        .sort((a, b) => (b.uploadTime!.seconds as number) - (a.uploadTime!.seconds as number))
+        .map((image) => {
+          const tag = image.tags!.find((tag) => !/latest/.test(tag)) as string
+          const tagSplit = tag ? tag.split('_') : ''
+          return {
+            tag,
+            commitSHA: tagSplit.length === 1 ? tagSplit[0] : tagSplit[1],
+            engineVersion: tagSplit.length === 1 ? 'unknown' : tagSplit[0],
+            pushedAt: new Date((image.uploadTime!.seconds as number) * 1000).toJSON() as string
+          }
+        })
+    } catch (err) {
+      logger.error('Failure to get GCP Artifact Registry Images')
+      logger.error('Repo that was fetched from %s', builderRepo)
       logger.error(err)
       return []
     }

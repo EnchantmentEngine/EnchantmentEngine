@@ -1,0 +1,169 @@
+/*
+CPAL-1.0 License
+
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0. (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+The License is based on the Mozilla Public License Version 1.1, but Sections 14
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
+Exhibit A has been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
+specific language governing rights and limitations under the License.
+
+The Original Code is Infinite Reality Engine.
+
+The Original Developer is the Initial Developer. The Initial Developer of the
+Original Code is the Infinite Reality Engine team.
+
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+Infinite Reality Engine. All Rights Reserved.
+*/
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+import { v1 } from '@google-cloud/artifact-registry'
+import config from '@ir-engine/server-core/src/appconfig'
+import * as k8s from '@kubernetes/client-node'
+import cli from 'cli'
+import fs from 'fs'
+
+cli.enable('status')
+
+const options = cli.parse({
+  repoName: [false, 'Name of repository', 'string'],
+  service: [true, 'Name of service', 'string'],
+  releaseName: [true, 'Name of release', 'string']
+})
+
+const ArtifactRegistryClient = v1.ArtifactRegistryClient
+
+const K8S_PAGE_LIMIT = 1
+
+const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => {
+  const matchingPods = await k8Client.listNamespacedPod(
+    'default',
+    'false',
+    false,
+    continueValue,
+    undefined,
+    labelSelector,
+    K8S_PAGE_LIMIT
+  )
+  if (matchingPods?.body?.items) pods = pods.concat(matchingPods.body.items)
+  if (matchingPods.body.metadata?._continue)
+    return await getAllPods(k8Client, matchingPods.body.metadata._continue, labelSelector, pods)
+  else return pods
+}
+
+const getAllImages = async (arClient: any, repoName: string, images = [] as any[]) => {
+  const input = {
+    parent: repoName
+  } as any
+  const iterableResponse = arClient.listDockerImagesAsync(input)
+  for await (const item of iterableResponse) images = images.concat(item)
+  return images
+}
+
+const deleteImages = async (arClient, toBeDeleted) => {
+  const localOptions = {
+    names: toBeDeleted.map((image) => image.name),
+    parent: options.repoName || 'ir-engine'
+  }
+  const [operation] = await arClient.batchDeleteVersions(localOptions)
+  return await operation.promise()
+}
+
+cli.main(async () => {
+  try {
+    let matchingPods,
+      excludedImageUris = [] as string[],
+      currentImages = [] as string[]
+    if (options.service !== 'builder') {
+      const kc = new k8s.KubeConfig()
+      kc.loadFromDefault()
+      const k8DefaultClient = kc.makeApiClient(k8s.CoreV1Api)
+      if (options.service === 'instanceserver') {
+        matchingPods = await getAllPods(k8DefaultClient, undefined, `agones.dev/role=gameserver`, [])
+        const releaseAnnotation = `${options.releaseName}-instanceserver`
+        matchingPods = matchingPods.filter(
+          (item) => item.metadata.annotations['agones.dev/container'] === releaseAnnotation
+        )
+
+        currentImages = matchingPods.map(
+          (item) =>
+            item.spec.containers.find((container) => container.name === `${options.releaseName}-instanceserver`).image
+        )
+      } else if (options.repoName !== 'root') {
+        matchingPods = await getAllPods(
+          k8DefaultClient,
+          undefined,
+          `app.kubernetes.io/instance=${options.releaseName},app.kubernetes.io/component=${options.service}`,
+          []
+        )
+
+        currentImages = matchingPods.map(
+          (item) => item.spec.containers.find((container) => container.name === 'ir-engine').image.split(':')[1]
+        )
+      }
+      currentImages = [...new Set(currentImages)]
+    }
+
+    const awsCredentials = `[default]\naws_access_key_id=${config.aws.eks.accessKeyId}\naws_secret_access_key=${config.aws.eks.secretAccessKey}\n[role]\nrole_arn = ${config.aws.eks.roleArn}\nsource_profile = default`
+
+    if (!fs.existsSync(awsPath)) fs.mkdirSync(awsPath, { recursive: true })
+    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, Buffer.from(awsCredentials))
+
+    const arClient = new ArtifactRegistryClient({})
+
+    const images = await getAllImages(arClient, options.repoName || 'ir-engine', [])
+    if (!images) return
+    const latestImage = images.find(
+      (image) =>
+        image.tags &&
+        (image.tags.indexOf(`latest_${options.releaseName}`) >= 0 ||
+          image.tags.indexOf(`latest_${options.releaseName}_cache`) >= 0)
+    )
+    if (latestImage) {
+      const latestImageTime = latestImage.uploadTime
+      // ECR automatically supports multi-architecture builds, which results in multiple images/image indexes. In order
+      // to not accidentally delete related images, we need to keep all of them for a given tag. Ran into problems
+      // trying to inspect the image (and pulling it would be time-consuming), so just checking for images that
+      // were made within 10 seconds of the tagged manifest.
+      excludedImageUris.push(
+        ...images
+          .filter((image) => latestImageTime - image.uploadTime <= 10000 && latestImageTime - image.uploadTime >= 0)
+          .map((image) => image.uri)
+      )
+    }
+    const currentTaggedImages = images.filter(
+      (image) => image.tags && image.tags.some((item) => currentImages.includes(item))
+    )
+    if (currentTaggedImages) {
+      for (let currentTaggedImage of currentTaggedImages) {
+        const currentTaggedImageTime = currentTaggedImage.uploadTime
+        excludedImageUris.push(
+          ...images
+            .filter(
+              (image) =>
+                currentTaggedImageTime - image.uploadTime <= 10000 && currentTaggedImageTime - image.uploadTime >= 0
+            )
+            .map((image) => image.uri)
+        )
+      }
+    }
+    const withoutLatestOrCurrent = images.filter((image) => excludedImageUris.indexOf(image.uri) < 0)
+    const sorted = withoutLatestOrCurrent.sort((a, b) => b.uploadTime - a.uploadTime)
+    let toBeDeleted = sorted.slice(9)
+    if (toBeDeleted.length > 0) {
+      await deleteImages(arClient, toBeDeleted)
+      process.exit(0)
+    } else process.exit(0)
+  } catch (err) {
+    console.log('Error in deleting old ECR images:')
+    console.log(err)
+  }
+})
