@@ -43,9 +43,11 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
+import { PopoverState } from '../../../../common/services/PopoverState'
 import { UserMenus } from '../../../UserUISystem'
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { PopupMenuServices } from '../PopupMenuService'
+import AvatarModifyMenu from './AvatarModifyMenu'
 
 const AVATAR_PAGE_LIMIT = 100
 interface AvatarMenuProps {
@@ -136,6 +138,7 @@ const AvatarMenu2 = ({ showBackButton, previewEnabled = true, previewDisabledMes
       await handleConfirmAvatar()
     }
     PopupMenuServices.showPopupMenu()
+    PopoverState.hidePopupover()
   }
 
   return (
@@ -158,7 +161,7 @@ const AvatarMenu2 = ({ showBackButton, previewEnabled = true, previewDisabledMes
                     if (userAvatarId !== selectedAvatarId.value) {
                       await handleConfirmAvatar()
                     }
-                    PopupMenuServices.showPopupMenu(UserMenus.Profile)
+                    PopoverState.hidePopupover()
                   }}
                 >
                   <span>
@@ -228,7 +231,9 @@ const AvatarMenu2 = ({ showBackButton, previewEnabled = true, previewDisabledMes
                     <Button
                       className="min-w-[8rem] rounded-md text-sm font-normal"
                       variant="secondary"
-                      onClick={() => PopupMenuServices.showPopupMenu(UserMenus.AvatarModify)}
+                      onClick={() => {
+                        PopoverState.showPopupover(<AvatarModifyMenu />)
+                      }}
                     >
                       {t('user:avatar.uploadAvatar')}
                     </Button>

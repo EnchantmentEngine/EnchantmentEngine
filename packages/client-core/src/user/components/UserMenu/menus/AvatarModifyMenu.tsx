@@ -32,7 +32,6 @@ import Button from '@ir-engine/client-core/src/common/components/Button'
 import ConfirmDialog from '@ir-engine/client-core/src/common/components/ConfirmDialog'
 import InputFile from '@ir-engine/client-core/src/common/components/InputFile'
 import InputText from '@ir-engine/client-core/src/common/components/InputText'
-import Menu from '@ir-engine/client-core/src/common/components/Menu'
 import { getCanvasBlob, isValidHttpUrl } from '@ir-engine/client-core/src/common/utils'
 import {
   AVATAR_FILE_ALLOWED_EXTENSIONS,
@@ -47,13 +46,14 @@ import {
 import { AvatarType } from '@ir-engine/common/src/schema.type.module'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
-import CircularProgress from '@ir-engine/ui/src/primitives/mui/CircularProgress'
 import Grid from '@ir-engine/ui/src/primitives/mui/Grid'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
+import { PopoverState } from '../../../../common/services/PopoverState'
 import { UserMenus } from '../../../UserUISystem'
 import { AvatarService } from '../../../services/AvatarService'
 import { PopupMenuServices } from '../PopupMenuService'
@@ -313,33 +313,18 @@ const AvatarModifyMenu = ({ selectedAvatar }: Props) => {
     if (hasPendingChanges) {
       setShowConfirmChanges(true)
     } else {
-      PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect)
+      PopoverState.hidePopupover()
     }
   }
 
   return (
-    <Menu
-      open
-      showBackButton
-      actions={
-        <Box display="flex" width="100%">
-          <Button
-            disabled={!hasPendingChanges || hasErrors || isSaving}
-            startIcon={
-              isSaving ? <CircularProgress size={24} sx={{ color: 'var(--textColor)' }} /> : <Icon type="Check" />
-            }
-            size="medium"
-            type="gradientRounded"
-            title={isSaving ? t('user:common.saving') : t('user:common.save')}
-            onClick={handleSave}
-          >
-            {isSaving ? t('user:common.saving') : t('user:common.save')}
-          </Button>
-        </Box>
-      }
+    <Modal
+      submitButtonText={t('user:common.save')}
+      onSubmit={handleSave}
+      submitLoading={isSaving}
       title={selectedAvatar ? t('user:avatar.titleEditAvatar') : t('user:avatar.createAvatar')}
-      onBack={handleBack}
-      onClose={() => PopupMenuServices.showPopupMenu()}
+      onClose={() => PopoverState.hidePopupover()}
+      className="pointer-events-auto w-[50vw] max-w-2xl"
     >
       <Box className={styles.menuContent}>
         <Grid container spacing={2}>
@@ -480,7 +465,7 @@ const AvatarModifyMenu = ({ selectedAvatar }: Props) => {
           </Grid>
         </Grid>
       </Box>
-    </Menu>
+    </Modal>
   )
 }
 
