@@ -11,7 +11,7 @@ START_TIME=`date +"%d-%m-%yT%H-%M-%S"`
 mkdir -pv ~/.docker
 cp -v /var/lib/docker/certs/client/* ~/.docker
 touch ./builder-started.txt
-if [ $DESTINATION_REPO_PROVIDER == "aws"]
+if [ $DESTINATION_REPO_PROVIDER == "aws" ]
 then
   bash ./scripts/setup_aws.sh $EKS_AWS_ACCESS_KEY_ID $EKS_AWS_ACCESS_KEY_SECRET $CLOUD_REGION $CLUSTER_NAME $EKS_AWS_ROLE_ARN
 elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
@@ -44,7 +44,7 @@ fi
 bash ./scripts/cleanup_builder.sh
 
 
-if [ $DESTINATION_REPO_PROVIDER == "aws"]
+if [ $DESTINATION_REPO_PROVIDER == "aws" ]
 then
   if [ $PRIVATE_REPO == "true" ]
   then
@@ -98,7 +98,7 @@ then
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp"]
+  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
@@ -135,7 +135,7 @@ then
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp"]
+  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
@@ -171,7 +171,7 @@ else
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp"]
+  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
