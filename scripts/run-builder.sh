@@ -16,6 +16,7 @@ then
   bash ./scripts/setup_aws.sh $EKS_AWS_ACCESS_KEY_ID $EKS_AWS_ACCESS_KEY_SECRET $CLOUD_REGION $CLUSTER_NAME $EKS_AWS_ROLE_ARN
 elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
 then
+  echo "Need to set up GCP"
   # Insert script for setting up GCP credentials
   #bash ./scripts/setup_gcp.sh
 fi
@@ -52,6 +53,7 @@ then
     aws ecr-public get-login-password --region us-east-1 | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
   fi
 elif [ $DESTIONATION_REPO_PROVIDER == "gcp" ]
+  echo "Log into Docker with GCP credentials"
 # Insert code for getting Artifact Registry credentials and doing docker login with them
 fi
 

@@ -20,6 +20,7 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
     aws ecr-public describe-repositories --repository-names $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1 || aws ecr-public create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1
   fi
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
+  echo "Log into Docker with GCP credentials"
   # Insert GCP credentials fetching here, and apply that to docker login
 else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
