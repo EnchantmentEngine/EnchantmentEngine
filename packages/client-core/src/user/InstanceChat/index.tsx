@@ -228,8 +228,6 @@ export default function InstanceChat() {
   const networkState = useMutableState(NetworkState)
   const isGuest = useMutableState(AuthState).user.isGuest.value
 
-  console.log('debug1 ', mediaNetworkState?.value)
-
   if (networkState.config.media.value && !mediaNetworkState?.ready.value) return null
 
   return (
