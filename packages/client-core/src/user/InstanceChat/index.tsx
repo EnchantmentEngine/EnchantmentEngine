@@ -125,7 +125,7 @@ function NewMessage() {
 
   const sendMessage = () => {
     const instanceId = NetworkState.worldNetwork.id as InstanceID
-    if (composedMessage.value.length && instanceId) {
+    if (composedMessage.value.trim().length && instanceId) {
       if (usersTyping) {
         dispatchAction(
           AvatarUIActions.setUserTyping({
@@ -175,7 +175,9 @@ function NewMessage() {
           <textarea
             ref={textAreaRef}
             value={composedMessage.value}
-            className="my-auto ml-8 mr-4 w-full resize-none bg-transparent text-base text-white outline-none"
+            spellCheck={false}
+            autoComplete="off"
+            className="my-auto ml-8 mr-4 flex w-full resize-none items-center justify-start bg-transparent text-base text-white outline-none"
             onKeyUp={(event) => event.key === 'Enter' && !event.shiftKey && sendMessage()}
             onChange={handleComposedMessage}
           />
@@ -213,7 +215,7 @@ function Messages() {
   if (!isChatOpen.value) return null
   return (
     <div className="h-[45vh] overflow-y-auto">
-      <div className="flex flex-col-reverse justify-end gap-y-[13px]">
+      <div className="flex flex-col justify-end gap-y-[13px]">
         {messages.value.map((message) => (
           <Message key={message.id} message={message} />
         ))}
