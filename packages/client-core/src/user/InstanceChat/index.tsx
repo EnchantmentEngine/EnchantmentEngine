@@ -70,13 +70,14 @@ const InstanceChatProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   useEffect(() => {
+    if (['error', 'pending'].includes(messagesResponse.status)) return
     messages.set(messagesResponse.data.toReversed())
     messagesResponse.data.forEach((message) => {
       if (!(message.id in newMessages.value)) {
         setNewMessage(message.id)
       }
     })
-  }, [messagesResponse.data])
+  }, [messagesResponse.data, messagesResponse.status])
 
   useEffect(() => {
     if (!isChatOpen && messages.at(-1)?.senderId.value !== user.id.value && channelState.messageCreated.value) {
@@ -158,8 +159,6 @@ function NewMessage() {
     return () => clearTimeout(delayDebounce)
   }, [composedMessage.value])
 
-  // useEffect(() => ) - todo focus textarea on mount
-
   return (
     <div className="mt-5 flex w-full items-center justify-end">
       <div className="relative w-16">
@@ -213,10 +212,12 @@ function Messages() {
   const { messages, isChatOpen } = useInstanceChatMessages()
   if (!isChatOpen.value) return null
   return (
-    <div className="flex h-96 flex-col justify-end gap-y-[13px]">
-      {messages.value.map((message) => (
-        <Message key={message.id} message={message} />
-      ))}
+    <div className="h-[45vh] overflow-y-auto">
+      <div className="flex flex-col-reverse justify-end gap-y-[13px]">
+        {messages.value.map((message) => (
+          <Message key={message.id} message={message} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -232,8 +233,7 @@ export default function InstanceChat() {
 
   return (
     <InstanceChatProvider>
-      {/* {isGuest || !ageVerified ? ( */}
-      {false ? (
+      {isGuest || !ageVerified ? (
         <div className="rounded-lg bg-[#C6C6C6] p-4">
           <div className="mx-auto text-center font-semibold text-[#3B3A3A]">{t('user:instanceChat.wantToChat')}</div>
           <button className="mt-4 flex items-center justify-center rounded-[20px] bg-[#969696] px-[30px] py-1.5">
