@@ -28,8 +28,8 @@ import React from 'react'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import useClickAway from './useClickaway'
 
-const ClickawayListener = (props: { children: JSX.Element }) => {
-  const ref = useClickAway(() => PopoverState.hidePopupover())
+const ClickawayListener = (props: { children: JSX.Element; isTopMost: boolean }) => {
+  const ref = useClickAway(() => PopoverState.hidePopupover(), props.isTopMost)
   return (
     <div className="fixed inset-0 z-40 flex h-full w-full items-center justify-center bg-gray-800 bg-opacity-50">
       <div ref={ref}>{props.children}</div>

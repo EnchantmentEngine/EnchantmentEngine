@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
-export default function useClickAway(cb: (e: Event) => void) {
+export default function useClickAway(cb: (e: Event) => void, isTopMost: boolean) {
   const ref = useRef(null)
   const refCb = useRef(cb)
 
@@ -35,6 +35,9 @@ export default function useClickAway(cb: (e: Event) => void) {
 
   useEffect(() => {
     const handler = (e: Event) => {
+      if (!isTopMost) {
+        return
+      }
       const element = ref.current
       if (element && !(element as any).contains(e.target)) {
         refCb.current(e)
@@ -48,7 +51,7 @@ export default function useClickAway(cb: (e: Event) => void) {
       document.removeEventListener('mousedown', handler)
       document.removeEventListener('touchstart', handler)
     }
-  }, [])
+  }, [isTopMost])
 
   return ref
 }
