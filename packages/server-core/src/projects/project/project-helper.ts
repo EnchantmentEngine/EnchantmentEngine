@@ -97,7 +97,8 @@ import IDockerImage = google.devtools.artifactregistry.v1.IDockerImage
 export const dockerHubRegex = /^[\w\d\s\-_]+\/[\w\d\s\-_]+:([\w\d\s\-_.]+)$/
 export const publicECRRepoRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/([a-z0-9\-_\\]+)$/
 export const publicECRTagRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+?)$/
-export const GCPArtifactRegistryRepoRegex = /^[a-zA-Z0-9\-]+-docker.pkg.dev\/[a-zA-Z0-9\-_\\]+\/([a-zA-Z0-9\-_\\]+)$/
+export const GCPArtifactRegistryRepoRegex =
+  /^[a-zA-Z0-9\-]+-docker.pkg.dev\/[a-zA-Z0-9\-_\\]+\/([a-zA-Z0-9\-_\\]+)\/([a-zA-Z0-9\-_\\]+)$/
 export const privateECRRepoRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/([a-z0-9\-_\\]+)$/
 export const privateECRTagRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+)$/
 
@@ -133,6 +134,12 @@ interface GitHubFile {
       html: string
     }
   }
+}
+
+const getParent = (repoName: string) => {
+  const repoSplit = repoName.split('/')
+  const region = repoSplit[0].replace('-docker.pkg.dev', '')
+  return `projects/${repoSplit[1]}/locations/${region}/repositories/${repoSplit[2]}`
 }
 
 export const updateBuilder = async (
@@ -886,13 +893,20 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
     const arClient = new ArtifactRegistryClient()
     let images = [] as IDockerImage[]
     const input = {
-      parent: builderRepo
+      parent: getParent(builderRepo)
     } as any
     try {
       const iterableResponse = arClient.listDockerImagesAsync(input)
       for await (const item of iterableResponse) images = images.concat(item)
       return images
-        .filter((image) => image.tags && image.tags.length > 0 && image.uploadTime)
+        .filter(
+          (image) =>
+            image.uri &&
+            new RegExp(builderRepo).test(image.uri) &&
+            image.tags &&
+            image.tags.length > 0 &&
+            image.uploadTime
+        )
         .sort((a, b) => (b.uploadTime!.seconds as number) - (a.uploadTime!.seconds as number))
         .map((image) => {
           const tag = image.tags!.find((tag) => !/latest/.test(tag)) as string
@@ -901,7 +915,7 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
             tag,
             commitSHA: tagSplit.length === 1 ? tagSplit[0] : tagSplit[1],
             engineVersion: tagSplit.length === 1 ? 'unknown' : tagSplit[0],
-            pushedAt: new Date((image.uploadTime!.seconds as number) * 1000).toJSON() as string
+            pushedAt: new Date(parseInt(image.uploadTime!.seconds as string) * 1000).toJSON() as string
           }
         })
     } catch (err) {
