@@ -26,14 +26,13 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
-import NativeClickawayListener from './native'
+import useClickAway from './useClickaway'
 
 const ClickawayListener = (props: { children: JSX.Element }) => {
+  const ref = useClickAway(() => PopoverState.hidePopupover())
   return (
     <div className="fixed inset-0 z-40 flex h-full w-full items-center justify-center bg-gray-800 bg-opacity-50">
-      <NativeClickawayListener onClickAway={() => PopoverState.hidePopupover()}>
-        {props.children}
-      </NativeClickawayListener>
+      <div ref={ref}>{props.children}</div>
     </div>
   )
 }
