@@ -138,7 +138,7 @@ export const HomePage = (): any => {
               `}
             </style>
             {Panel && <Panel {...popupMenu.params} isPopover />}
-            {popupMenuState.openMenu.value !== UserMenus.Profile && <ProfileMenu isPopover />}
+            {popupMenuState.openMenu.value !== UserMenus.Profile && <ProfileMenu />}
           </Box>
         </div>
         <div className="link-container">
