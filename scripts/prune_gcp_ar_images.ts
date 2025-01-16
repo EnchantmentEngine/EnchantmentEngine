@@ -26,10 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { v1 } from '@google-cloud/artifact-registry'
-import config from '@ir-engine/server-core/src/appconfig'
 import * as k8s from '@kubernetes/client-node'
 import cli from 'cli'
-import fs from 'fs'
 
 cli.enable('status')
 
@@ -59,19 +57,28 @@ const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => 
   else return pods
 }
 
+const getParent = (includePackage = false) => {
+  const repoSplit = options.repoName.split('/')
+  const region = repoSplit[0].replace('-docker.pkg.dev', '')
+  let returned = `projects/${repoSplit[1]}/locations/${region}/repositories/${repoSplit[2]}`
+  if (includePackage) returned += `/packages/${repoSplit[3]}`
+  return returned
+}
+
 const getAllImages = async (arClient: any, repoName: string, images = [] as any[]) => {
   const input = {
-    parent: repoName
+    parent: getParent(false)
   } as any
   const iterableResponse = arClient.listDockerImagesAsync(input)
   for await (const item of iterableResponse) images = images.concat(item)
-  return images
+  return images.filter((image) => new RegExp(repoName).test(image.uri))
 }
 
 const deleteImages = async (arClient, toBeDeleted) => {
+  const parent = getParent(true)
   const localOptions = {
-    names: toBeDeleted.map((image) => image.name),
-    parent: options.repoName || 'ir-engine'
+    names: toBeDeleted.map((image) => parent + '/versions/' + image.name.split('@')[1]),
+    parent
   }
   const [operation] = await arClient.batchDeleteVersions(localOptions)
   return await operation.promise()
@@ -112,11 +119,6 @@ cli.main(async () => {
       currentImages = [...new Set(currentImages)]
     }
 
-    const awsCredentials = `[default]\naws_access_key_id=${config.aws.eks.accessKeyId}\naws_secret_access_key=${config.aws.eks.secretAccessKey}\n[role]\nrole_arn = ${config.aws.eks.roleArn}\nsource_profile = default`
-
-    if (!fs.existsSync(awsPath)) fs.mkdirSync(awsPath, { recursive: true })
-    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, Buffer.from(awsCredentials))
-
     const arClient = new ArtifactRegistryClient({})
 
     const images = await getAllImages(arClient, options.repoName || 'ir-engine', [])
@@ -135,7 +137,11 @@ cli.main(async () => {
       // were made within 10 seconds of the tagged manifest.
       excludedImageUris.push(
         ...images
-          .filter((image) => latestImageTime - image.uploadTime <= 10000 && latestImageTime - image.uploadTime >= 0)
+          .filter(
+            (image) =>
+              latestImageTime.seconds - image.uploadTime.seconds <= 10000 &&
+              latestImageTime.seconds - image.uploadTime.seconds >= 0
+          )
           .map((image) => image.uri)
       )
     }
@@ -149,14 +155,15 @@ cli.main(async () => {
           ...images
             .filter(
               (image) =>
-                currentTaggedImageTime - image.uploadTime <= 10000 && currentTaggedImageTime - image.uploadTime >= 0
+                currentTaggedImageTime.seconds - image.uploadTime.seconds <= 10000 &&
+                currentTaggedImageTime.seconds - image.uploadTime.seconds >= 0
             )
             .map((image) => image.uri)
         )
       }
     }
     const withoutLatestOrCurrent = images.filter((image) => excludedImageUris.indexOf(image.uri) < 0)
-    const sorted = withoutLatestOrCurrent.sort((a, b) => b.uploadTime - a.uploadTime)
+    const sorted = withoutLatestOrCurrent.sort((a, b) => b.uploadTime.seconds - a.uploadTime.seconds)
     let toBeDeleted = sorted.slice(9)
     if (toBeDeleted.length > 0) {
       await deleteImages(arClient, toBeDeleted)
