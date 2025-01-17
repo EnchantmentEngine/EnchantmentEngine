@@ -23,24 +23,35 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createSwaggerServiceOptions } from 'feathers-swagger'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
-import {
-  emailSettingDataSchema,
-  emailSettingPatchSchema,
-  emailSettingQuerySchema,
-  emailSettingSchema
-} from '@ir-engine/common/src/schemas/setting/email-setting.schema'
+export default function useClickAway(cb: (e: Event) => void, isTopMost: boolean) {
+  const ref = useRef(null)
+  const refCb = useRef(cb)
 
-export default createSwaggerServiceOptions({
-  schemas: {
-    emailSettingDataSchema,
-    emailSettingPatchSchema,
-    emailSettingQuerySchema,
-    emailSettingSchema
-  },
-  docs: {
-    description: 'Email setting service description',
-    securities: ['all']
-  }
-})
+  useLayoutEffect(() => {
+    refCb.current = cb
+  })
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (!isTopMost) {
+        return
+      }
+      const element = ref.current
+      if (element && !(element as any).contains(e.target)) {
+        refCb.current(e)
+      }
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [isTopMost])
+
+  return ref
+}

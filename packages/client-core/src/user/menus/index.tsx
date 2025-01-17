@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useMutableState } from '@ir-engine/hyperflux'
 import { EyeMd, Send01Lg, User01Lg } from '@ir-engine/ui/src/icons'
 
+import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { PopoverState } from '../../common/services/PopoverState'
@@ -40,37 +41,40 @@ export default function UserMenus() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex w-full items-center justify-center gap-x-6">
-      {userMenus.profile && (
-        <LocationIconButton
-          tooltip={{
-            title: t('user:menu.settings'),
-            position: 'top'
-          }}
-          icon={User01Lg}
-          onClick={() => PopoverState.showPopupover(<ProfileMenu />)}
-        />
-      )}
-      {userMenus.share && (
-        <LocationIconButton
-          tooltip={{
-            title: t('user:menu.sendLocation'),
-            position: 'top'
-          }}
-          icon={Send01Lg}
-          onClick={() => PopoverState.showPopupover(<ShareMenu />)}
-        />
-      )}
-      {userMenus.emote && (
-        <LocationIconButton
-          tooltip={{
-            title: t('user:menu.emote'),
-            position: 'top'
-          }}
-          icon={EyeMd}
-          onClick={() => PopoverState.showPopupover(<EmoteMenu />)}
-        />
-      )}
-    </div>
+    <>
+      <div className="flex w-full items-center justify-center gap-x-6">
+        {userMenus.profile && (
+          <LocationIconButton
+            tooltip={{
+              title: t('user:menu.settings'),
+              position: 'top'
+            }}
+            icon={User01Lg}
+            onClick={() => PopoverState.showPopupover(<ProfileMenu />)}
+          />
+        )}
+        {userMenus.share && (
+          <LocationIconButton
+            tooltip={{
+              title: t('user:menu.sendLocation'),
+              position: 'top'
+            }}
+            icon={Send01Lg}
+            onClick={() => PopoverState.showPopupover(<ShareMenu />)}
+          />
+        )}
+        {userMenus.emote && (
+          <LocationIconButton
+            tooltip={{
+              title: t('user:menu.emote'),
+              position: 'top'
+            }}
+            icon={EyeMd}
+            onClick={() => PopoverState.showPopupover(<EmoteMenu />)}
+          />
+        )}
+      </div>
+      <PopupMenu />
+    </>
   )
 }
