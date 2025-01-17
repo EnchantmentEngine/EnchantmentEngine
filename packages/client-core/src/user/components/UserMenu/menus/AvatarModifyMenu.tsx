@@ -312,16 +312,16 @@ const AvatarModifyMenu = ({ selectedAvatar }: Props) => {
       submitLoading={isSaving}
       title={selectedAvatar ? t('user:avatar.titleEditAvatar') : t('user:avatar.createAvatar')}
       onClose={() => PopoverState.hidePopupover()}
-      className="pointer-events-auto w-[50vw] max-w-2xl"
+      className="pointer-events-auto w-[50vw] min-w-[720px] max-w-2xl"
     >
-      <div className="grid grid-cols-2 gap-x-2">
+      <div className="grid grid-cols-2 gap-x-4">
         <div className="col-span-1">
           <AvatarPreview
             avatarUrl={avatarSrc}
             sx={{ width: `${THUMBNAIL_WIDTH}px`, height: `${THUMBNAIL_HEIGHT}px`, m: 'auto' }}
           />
         </div>
-        <div className="col-span-1 grid grid-cols-1 gap-y-2">
+        <div className="col-span-1 grid grid-cols-1 gap-y-3">
           {rpmEnabled && (
             <Button
               fullWidth

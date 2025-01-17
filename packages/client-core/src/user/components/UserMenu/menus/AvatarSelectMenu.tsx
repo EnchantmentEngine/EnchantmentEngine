@@ -48,6 +48,7 @@ import { PopoverState } from '../../../../common/services/PopoverState'
 import { UserMenus } from '../../../UserUISystem'
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { PopupMenuServices } from '../PopupMenuService'
+import AvatarCreatorMenu2, { SupportedSdks } from './AvatarCreatorMenu2'
 import AvatarModifyMenu from './AvatarModifyMenu'
 
 const AVATAR_PAGE_LIMIT = 100
@@ -216,13 +217,10 @@ const AvatarMenu2 = ({ showBackButton, previewEnabled = true, previewDisabledMes
                   <Button
                     className="min-w-[9rem] rounded-md text-sm font-normal"
                     variant="primary"
-                    onClick={() =>
-                      PopupMenuServices.showPopupMenu(UserMenus.ReadyPlayer, {
-                        showBackButton,
-                        previewEnabled,
-                        previewDisabledMessage
-                      })
-                    }
+                    onClick={() => {
+                      const Menu = AvatarCreatorMenu2(SupportedSdks.ReadyPlayerMe)
+                      PopoverState.showPopupover(<Menu showBackButton previewEnabled previewDisabledMessage />)
+                    }}
                   >
                     <UserPlus01Sm />
                     {t('user:avatar.createAvatar')}

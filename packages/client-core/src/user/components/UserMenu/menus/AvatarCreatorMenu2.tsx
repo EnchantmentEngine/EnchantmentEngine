@@ -41,9 +41,7 @@ import { twMerge } from 'tailwind-merge'
 import AvatarPreview from '../../../../common/components/AvatarPreview'
 import { PopoverState } from '../../../../common/services/PopoverState'
 import { AVATAR_ID_REGEX, generateAvatarId } from '../../../../util/avatarIdFunctions'
-import { UserMenus } from '../../../UserUISystem'
 import { AvatarService } from '../../../services/AvatarService'
-import { PopupMenuServices } from '../PopupMenuService'
 import { DiscardAvatarChangesModal } from './DiscardAvatarChangesModal'
 
 export const SupportedSdks = {
@@ -237,11 +235,7 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
     )
 
     loading.set(LoadingState.None)
-    PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect, {
-      showBackButton: showBackButton,
-      previewEnabled: previewEnabled,
-      previewDisabledMessage: previewDisabledMessage
-    })
+    PopoverState.hidePopupover()
   }
 
   const loadingMessages = {
@@ -270,13 +264,9 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
             <Button
               data-testid="edit-avatar-button"
               className=" h-6 w-6 self-center bg-transparent hover:bg-transparent focus:bg-transparent"
-              onClick={() =>
-                PopupMenuServices.showPopupMenu(UserMenus.AvatarSelect, {
-                  showBackButton: showBackButton,
-                  previewEnabled: previewEnabled,
-                  previewDisabledMessage: previewDisabledMessage
-                })
-              }
+              onClick={() => {
+                PopoverState.hidePopupover()
+              }}
             >
               <span>
                 <IoArrowBackOutline size={16} />
@@ -296,7 +286,6 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
                   <DiscardAvatarChangesModal
                     handleConfirm={() => {
                       PopoverState.hidePopupover()
-                      PopupMenuServices.showPopupMenu()
                     }}
                   />
                 )
