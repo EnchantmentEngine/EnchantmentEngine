@@ -32,6 +32,7 @@ import { useTranslation } from 'react-i18next'
 import { PopoverState } from '../../common/services/PopoverState'
 import { ViewerMenuState } from '../../util/ViewerMenuState'
 import LocationIconButton from '../components/LocationIconButton'
+import EmoteMenu from '../components/UserMenu/menus/EmoteMenu'
 import ProfileMenu from '../components/UserMenu/menus/ProfileMenu'
 import ShareMenu from '../components/UserMenu/menus/ShareMenu'
 
@@ -69,7 +70,7 @@ export default function UserMenus() {
               position: 'top'
             }}
             icon={EyeMd}
-            onClick={() => PopoverState.showPopupover(<div>hello person</div>)}
+            onClick={() => PopoverState.showPopupover(<EmoteMenu />)}
           />
         )}
       </div>
