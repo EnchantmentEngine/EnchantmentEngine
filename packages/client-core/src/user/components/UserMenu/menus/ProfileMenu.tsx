@@ -81,6 +81,7 @@ import { useZendesk } from '../../../../hooks/useZendesk'
 import { clientContextParams } from '../../../../util/ClientContextState'
 import { UserMenus } from '../../../UserUISystem'
 import { useUserAvatarThumbnail } from '../../../functions/useUserAvatarThumbnail'
+import SettingsMenu from '../../../menus/SettingsMenu'
 import { AuthService, AuthState } from '../../../services/AuthService'
 import { AvatarService } from '../../../services/AvatarService'
 import { PopupMenuServices } from '../PopupMenuService'
@@ -411,7 +412,12 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         </div>
 
         <div className="grid grid-cols-3 gap-x-2">
-          <button className="col-span-1 flex h-20 w-20 items-center justify-center rounded-full bg-[#616161] p-2">
+          <button
+            className="col-span-1 flex h-20 w-20 items-center justify-center rounded-full bg-[#616161] p-2"
+            onClick={() => {
+              PopoverState.showPopupover(<SettingsMenu />)
+            }}
+          >
             <CogLg className="h-10 w-10 text-white" />
           </button>
 
