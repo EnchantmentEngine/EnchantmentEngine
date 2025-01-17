@@ -33,7 +33,6 @@ import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNe
 import { dispatchAction } from '@ir-engine/hyperflux'
 
 import { emoteAnimations } from '@ir-engine/engine/src/avatar/animation/Util'
-import { ChevronLeftLg, ChevronRightLg } from '@ir-engine/ui/src/icons'
 import { PopoverState } from '../../../../common/services/PopoverState'
 
 const EmoteMenu = (): JSX.Element => {
@@ -276,7 +275,8 @@ const EmoteMenu = (): JSX.Element => {
         />
       ))}
 
-      <svg
+      {/* TODO: After receiving icons for second page emotes, enable the arrows */}
+      {/* <svg
         x="90"
         y="375"
         width="2.5rem"
@@ -308,7 +308,7 @@ const EmoteMenu = (): JSX.Element => {
         <circle cx="50%" cy="50%" r="20" fill="transparent" className="hover:fill-gray-200" />
 
         <ChevronRightLg width="100%" height="100%" />
-      </svg>
+      </svg> */}
     </svg>
   )
 }

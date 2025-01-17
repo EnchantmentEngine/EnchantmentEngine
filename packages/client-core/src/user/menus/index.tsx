@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
-import { EyeMd, Send01Lg, User01Lg } from '@ir-engine/ui/src/icons'
+import { Emote, Send01Lg, User01Lg } from '@ir-engine/ui/src/icons'
 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -67,7 +67,7 @@ export default function UserMenus() {
             title: t('user:menu.emote'),
             position: 'top'
           }}
-          icon={EyeMd}
+          icon={Emote}
           onClick={() => PopoverState.showPopupover(<EmoteMenu />)}
         />
       )}
