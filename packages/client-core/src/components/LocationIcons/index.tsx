@@ -31,7 +31,6 @@ import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 
 import { EngineState } from '@ir-engine/ecs'
-import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { LoadingSystemState } from '../../systems/state/LoadingState'
 import InstanceChat from '../../user/InstanceChat'
 import { ARPlacement } from '../ARPlacement'
@@ -47,7 +46,6 @@ export const LocationIcons = () => {
 
   return (
     <div style={{ opacity: 1 - loadingScreenOpacity.value }} className="relative h-screen w-full p-6">
-      <PopupMenu />
       <div className="pointer-events-auto absolute top-0 h-fit w-full pt-[inherit]">
         <MediaIconsBox />
       </div>

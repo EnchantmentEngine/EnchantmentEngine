@@ -23,24 +23,35 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
-import useClickAway from './useClickaway'
+export default function useClickAway(cb: (e: Event) => void, isTopMost: boolean) {
+  const ref = useRef(null)
+  const refCb = useRef(cb)
 
-const ClickawayListener = (props: { children: JSX.Element; isTopMost: boolean }) => {
-  const ref = useClickAway(() => PopoverState.hidePopupover(), props.isTopMost)
-  return (
-    <div className="fixed inset-0 z-40 flex h-full w-full items-center justify-center bg-gray-800 bg-opacity-50">
-      <div ref={ref}>{props.children}</div>
-    </div>
-  )
+  useLayoutEffect(() => {
+    refCb.current = cb
+  })
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (!isTopMost) {
+        return
+      }
+      const element = ref.current
+      if (element && !(element as any).contains(e.target)) {
+        refCb.current(e)
+      }
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [isTopMost])
+
+  return ref
 }
-
-ClickawayListener.displayName = 'ClickawayListener'
-
-ClickawayListener.defaultProps = {
-  children: null
-}
-
-export default ClickawayListener
