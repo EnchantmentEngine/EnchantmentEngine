@@ -136,7 +136,7 @@ export class S3Provider implements StorageProviderInterface {
         httpsAgent: { maxSockets: 300 }
       },
       credentials: fromIni({
-        profile: config.aws.s3.roleArn ? 'role' : 'default',
+        profile: process.env.STORAGE_AWS_ROLE_ARN ? 'role' : 'default',
         filepath: credentialsPath
       }),
       endpoint: config.server.storageProviderExternalEndpoint
