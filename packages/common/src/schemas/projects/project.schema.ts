@@ -72,7 +72,7 @@ export const projectSchema = Type.Object(
     createdAt: Type.String({ format: 'date-time' }),
     updatedAt: Type.String({ format: 'date-time' })
   },
-  { $id: 'Project', additionalProperties: false }
+  { $id: 'Project', additionalProperties: true }
 )
 export interface ProjectType extends Static<typeof projectSchema> {}
 
