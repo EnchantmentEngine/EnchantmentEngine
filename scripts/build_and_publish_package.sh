@@ -19,6 +19,9 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
     aws ecr-public get-login-password --region us-east-1 | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
     aws ecr-public describe-repositories --repository-names $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1 || aws ecr-public create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1
   fi
+elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
+  echo "Log into Docker with GCP credentials"
+  # Insert GCP credentials fetching here, and apply that to docker login
 else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 fi
@@ -51,6 +54,9 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg STORAGE_AWS_ACCESS_KEY_SECRET=$STORAGE_AWS_ACCESS_KEY_SECRET \
     --build-arg STORAGE_AWS_ROLE_ARN=$STORAGE_AWS_ROLE_ARN \
     --build-arg STORAGE_AWS_ENABLE_ACLS=$STORAGE_AWS_ENABLE_ACLS \
+    --build-arg STORAGE_GCP_ACCESS_KEY_ID=$STORAGE_GCP_ACCESS_KEY_ID \
+    --build-arg STORAGE_GCP_ACCESS_KEY_SECRET=$STORAGE_GCP_ACCESS_KEY_SECRET \
+    --build-arg STORAGE_GCP_ROLE_ARN=$STORAGE_GCP_ROLE_ARN \
     --build-arg STORAGE_S3_REGION=$STORAGE_S3_REGION \
     --build-arg STORAGE_S3_AVATAR_DIRECTORY=$STORAGE_S3_AVATAR_DIRECTORY \
     --build-arg SERVE_CLIENT_FROM_STORAGE_PROVIDER=$SERVE_CLIENT_FROM_STORAGE_PROVIDER \
@@ -101,6 +107,9 @@ else
     --build-arg STORAGE_AWS_ACCESS_KEY_SECRET=$STORAGE_AWS_ACCESS_KEY_SECRET \
     --build-arg STORAGE_AWS_ROLE_ARN=$STORAGE_AWS_ROLE_ARN \
     --build-arg STORAGE_AWS_ENABLE_ACLS=$STORAGE_AWS_ENABLE_ACLS \
+    --build-arg STORAGE_GCP_ACCESS_KEY_ID=$STORAGE_GCP_ACCESS_KEY_ID \
+    --build-arg STORAGE_GCP_ACCESS_KEY_SECRET=$STORAGE_GCP_ACCESS_KEY_SECRET \
+    --build-arg STORAGE_GCP_ROLE_ARN=$STORAGE_GCP_ROLE_ARN \
     --build-arg STORAGE_S3_REGION=$STORAGE_S3_REGION \
     --build-arg STORAGE_S3_AVATAR_DIRECTORY=$STORAGE_S3_AVATAR_DIRECTORY \
     --build-arg SERVE_CLIENT_FROM_STORAGE_PROVIDER=$SERVE_CLIENT_FROM_STORAGE_PROVIDER \
