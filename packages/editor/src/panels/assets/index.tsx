@@ -27,6 +27,7 @@ import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/edi
 import { TabData } from 'rc-dock'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { CurrentFilesQueryProvider } from '../files/helpers'
 import { FileUploadProgress } from '../files/loaders'
 import CategoriesList, { VerticalDivider } from './categories'
 import { AssetsQueryProvider } from './hooks'
@@ -57,11 +58,13 @@ export const AssetsPanelTab: TabData = {
 function AssetsContainer() {
   return (
     <div className="flex h-full flex-col">
-      <AssetsQueryProvider>
-        <Topbar />
-        <FileUploadProgress />
-        <VerticalDivider leftChildren={<CategoriesList />} rightChildren={<Resources />} />
-      </AssetsQueryProvider>
+      <CurrentFilesQueryProvider>
+        <AssetsQueryProvider>
+          <Topbar />
+          <FileUploadProgress />
+          <VerticalDivider leftChildren={<CategoriesList />} rightChildren={<Resources />} />
+        </AssetsQueryProvider>
+      </CurrentFilesQueryProvider>
     </div>
   )
 }

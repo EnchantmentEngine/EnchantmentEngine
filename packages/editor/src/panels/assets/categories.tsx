@@ -32,6 +32,7 @@ import React, { ReactNode } from 'react'
 import { HiDotsVertical } from 'react-icons/hi'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
+import { useCurrentFiles } from '../files/helpers'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
@@ -52,6 +53,7 @@ function AssetCategory({ index }: { index: number }) {
   const fontSize = useHookstate(getMutableState(FilesViewModeSettings).list.fontSize).value
 
   const handleClickCategory = () => {
+    // setting expanded here
     if (!category.isLeaf) expandedCategories[category.name].set(!category.collapsed)
     currentCategoryPath.set([...getParentCategories(categories.value, category.name), category])
     staticResourcesPagination.skip.set(0)
@@ -72,6 +74,23 @@ function AssetCategory({ index }: { index: number }) {
   )
 }
 
+function FileCategory({ name, file }) {
+  return (
+    <EditorDropdownItem
+      label={name}
+      ItemIcon={Folder}
+      // selected={selectedCategory?.name === category.name}
+      // collapsed={category.collapsed}
+      // onClick={() => {
+      //   foldersTree[file.name].set(foldersTree[file.name] ? !foldersTree[file.name] : false)
+      // }}
+      style={{
+        paddingLeft: `${32 * file.depth}px`
+      }}
+    />
+  )
+}
+
 const SideBarIcons = {
   favorites: Pin02Lg,
   assets: CubeOutlineLg,
@@ -81,7 +100,6 @@ const SideBarIcons = {
 function SidebarSection({ Icon, label, items = [] }) {
   const [isHover, setIsHover] = React.useState(false)
   const [isActive, setIsActive] = React.useState(false)
-
   const toggleDropdown = () => {
     setIsActive(!isActive)
   }
@@ -92,6 +110,13 @@ function SidebarSection({ Icon, label, items = [] }) {
         {items.map((category, index) => (
           <AssetCategory key={category ? category?.name + index : ''} index={index} />
         ))}
+      </>
+    ),
+    files: (
+      <>
+        {/* {Object.entries(items).map(([key, value], index) => (
+          <FileCategory name={key} file={value}/>
+        ))} */}
       </>
     )
   }
@@ -132,20 +157,34 @@ function SidebarSection({ Icon, label, items = [] }) {
 
 export default function CategoriesList() {
   const { sidebarWidth, categories } = useAssetsCategory()
+  const { files, foldersTree } = useCurrentFiles()
+
+  // todo: rename sidebar section to sidebar or find a better name
   const [sidebarSections, setSidebarSections] = React.useState({
     favorites: [],
     assets: [],
-    files: []
+    files: [] // todo: rename to folders
   })
 
   React.useEffect(() => {
+    console.log(foldersTree)
     if (categories.value) {
       setSidebarSections({
         ...sidebarSections,
         assets: [...categories.value] as any
       })
     }
-  }, [categories.value])
+
+    if (files.length) {
+      // map folder to  a tree
+      setSidebarSections({
+        ...sidebarSections,
+        files: Object.entries(foldersTree.value) as any
+      })
+    }
+
+    console.log('sidebar', sidebarSections)
+  }, [categories.value, foldersTree.value])
 
   return (
     <div
