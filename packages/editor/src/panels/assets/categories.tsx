@@ -29,7 +29,6 @@ import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
-import { HiDotsVertical } from 'react-icons/hi'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
 import { useCurrentFiles } from '../files/helpers'
@@ -155,6 +154,12 @@ function SidebarSection({ Icon, label, items = [] }) {
   )
 }
 
+enum HierarchyType {
+  FILES = 'FILES',
+  ASSET = 'ASSETS',
+  FAVORITES = 'FAVORITES'
+}
+
 export default function CategoriesList() {
   const { sidebarWidth, categories } = useAssetsCategory()
   const { files, foldersTree } = useCurrentFiles()
@@ -165,6 +170,8 @@ export default function CategoriesList() {
     assets: [],
     files: [] // todo: rename to folders
   })
+
+  const [selectedHierarchy, setSelectedHerarchy] = React.useState(HierarchyType.FAVORITES)
 
   React.useEffect(() => {
     console.log(foldersTree)
@@ -207,25 +214,37 @@ export function VerticalDivider({
 }) {
   const { sidebarWidth } = useAssetsCategory()
   const isDragging = useHookstate(false)
+
+  const handleMouseDown = (event: React.MouseEvent) => {
+    event.preventDefault()
+    isDragging.set(true)
+  }
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (isDragging.value) {
+      const newWidth = Math.max(200, event.pageX)
+      sidebarWidth.set(newWidth)
+    }
+  }
+
+  const handleMouseUp = () => {
+    isDragging.set(false)
+  }
+
   return (
-    <div
-      className="flex h-full w-full overflow-hidden"
-      onMouseUp={() => isDragging.set(false)}
-      onMouseMove={(event) => {
-        if (isDragging.value) sidebarWidth.set(event.pageX)
-      }}
-    >
-      {leftChildren}
+    <div className="flex h-full w-full overflow-hidden" onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
+      <div style={{ width: `${sidebarWidth.value}px` }} className="h-full">
+        {leftChildren}
+      </div>
+
       <div className="flex w-5 cursor-pointer items-center" data-testid="assets-panel-vertical-divider">
-        <HiDotsVertical
-          onMouseDown={(event) => {
-            event?.preventDefault()
-            isDragging.set(true)
-          }}
-          className={twMerge('cursor-grab text-white', isDragging.value && 'cursor-grabbing')}
+        <div
+          onMouseDown={handleMouseDown}
+          className={twMerge('h-full w-full cursor-grab text-white', isDragging.value && 'cursor-grabbing')}
         />
       </div>
-      {rightChildren}
+
+      <div className="h-full flex-1">{rightChildren}</div>
     </div>
   )
 }
