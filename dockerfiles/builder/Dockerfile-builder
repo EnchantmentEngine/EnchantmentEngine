@@ -23,7 +23,7 @@ FROM node:22-slim as runner
 WORKDIR /app
 
 # This commands runs the setup_helm.sh script to install helm and relevent installations
-COPY scripts/setup_helm.sh .
+COPY ../../scripts/setup_helm.sh .
 RUN chmod +x setup_helm.sh && ./setup_helm.sh
 
 
