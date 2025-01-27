@@ -70,13 +70,13 @@ export default (app: Application): void => {
     const db = knex({
       log: forceRefresh
         ? {
-            debug: logger.info.bind(logger),
-            warn: logger.warn.bind(logger),
-            error: logger.error.bind(logger),
-            enableColors: true
-          }
+          debug: logger.info.bind(logger),
+          warn: logger.warn.bind(logger),
+          error: logger.error.bind(logger),
+          enableColors: true
+        }
         : undefined,
-      client: 'mysql',
+      client: 'mysql2',
       connection: {
         user: appConfig.db.username,
         password: appConfig.db.password,
