@@ -178,7 +178,7 @@ export class FileBrowserService
     if (!params) params = {}
     if (!params.query) params.query = {}
     const { $skip, $limit } = params.query
-    let { directory } = params.query
+    let { directory, isFolder } = params.query
 
     const skip = $skip ? $skip : 0
     const limit = $limit ? $limit : 100
@@ -243,6 +243,10 @@ export class FileBrowserService
         file.url = resource.url
         file.thumbnailURL = resource.thumbnailURL
       } else file.url = storageProvider.getCachedURL(file.key, params.isInternal)
+    }
+
+    if (isFolder) {
+      result.filter((file) => file.type === 'folder')
     }
 
     return {
