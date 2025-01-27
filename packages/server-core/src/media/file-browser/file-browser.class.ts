@@ -245,10 +245,6 @@ export class FileBrowserService
       } else file.url = storageProvider.getCachedURL(file.key, params.isInternal)
     }
 
-    if (isFolder) {
-      result.filter((file) => file.type === 'folder')
-    }
-
     return {
       total,
       limit,

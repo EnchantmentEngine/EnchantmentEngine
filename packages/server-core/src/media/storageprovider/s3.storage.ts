@@ -665,6 +665,38 @@ export class S3Provider implements StorageProviderInterface {
   }
 
   /**
+   * Get the folder Hiearchy
+   * @param folderName Name of folder in storage
+   * @param depth Get all folder by the depth
+   */
+  async getFolderHierarchy(folderName: string, depth) {
+    folderName = folderName.endsWith('/') ? folderName : folderName + '/'
+    const folderContent = await this.listObjects(folderName, true)
+
+    const promises: Promise<FileBrowserContentType>[] = []
+
+    // Folders
+    for (let i = 0; i < folderContent.CommonPrefixes!.length; i++) {
+      promises.push(
+        new Promise(async (resolve) => {
+          const key = folderContent.CommonPrefixes![i].Prefix.slice(0, -1)
+          const size = await this.getFolderSize(key)
+          const cont: FileBrowserContentType = {
+            key,
+            url: `${this.bucketAssetURL}/${key}`,
+            name: key.split('/').pop()!,
+            type: 'folder',
+            size
+          }
+          resolve(cont)
+        })
+      )
+    }
+
+    return await Promise.all(promises)
+  }
+
+  /**
    * List all the files/folders in the directory.
    * @param folderName Name of folder in the storage.
    * @param recursive If true it will list content from sub folders as well.
