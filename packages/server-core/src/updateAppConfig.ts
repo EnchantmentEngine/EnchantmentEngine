@@ -95,9 +95,9 @@ export const updateAppConfig = async (): Promise<void> => {
             .join('\n')
         if (dbAuthentication.jwtPublicKey && typeof dbAuthentication.jwtPublicKey === 'string') {
           appConfig.authentication.jwtPublicKey = dbAuthentication.jwtPublicKey.split(String.raw`\n`).join('\n')
-            ; (appConfig.authentication.jwtOptions as any).keyid = createHash('sha3-256')
-              .update(appConfig.authentication.jwtPublicKey)
-              .digest('hex')
+          ;(appConfig.authentication.jwtOptions as any).keyid = createHash('sha3-256')
+            .update(appConfig.authentication.jwtPublicKey)
+            .digest('hex')
         }
         appConfig.authentication.jwtOptions.algorithm = dbAuthentication.jwtAlgorithm || 'HS256'
       }
