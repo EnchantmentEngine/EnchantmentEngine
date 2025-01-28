@@ -43,6 +43,7 @@ import UserKick from './user-kick/user-kick'
 import UserLogin from './user-login/user-login'
 import UserRelationshipType from './user-relationship-type/user-relationship-type'
 import UserRelationship from './user-relationship/user-relationship'
+import UserReport from './user-reports/user-reports'
 import UserSettings from './user-setting/user-setting'
 import User from './user/user'
 
@@ -50,6 +51,7 @@ export default [
   UserApiKey,
   User,
   UserAvatar,
+  UserReport,
   UserSettings,
   UserKick,
   UserLogin,
