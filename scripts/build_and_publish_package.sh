@@ -14,6 +14,10 @@ PRIVATE_REPO=$8
 DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE
 SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root
 
+if [ "$SOURCE_REPO_PROVIDER" == "gcp" ]; then
+  SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root
+fi
+
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   if [ "$PRIVATE_REPO" = "true" ]; then
     aws ecr get-login-password --region $REGION | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
@@ -25,7 +29,6 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
   DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
-  SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root
   # Insert GCP credentials fetching here, and apply that to docker login
 else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
