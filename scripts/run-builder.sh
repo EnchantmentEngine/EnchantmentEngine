@@ -58,15 +58,14 @@ then
   gcloud auth configure-docker us-central1-docker.pkg.dev --quiet 
 fi
 
-mkdir -p ./project-package-jsons/projects/default-project
-mkdir -p ./packages/projects/projects
-cp packages/projects/default-project/package.json ./project-package-jsons/projects/default-project
-find packages/projects/projects/ -name package.json -exec bash -c 'mkdir -p ./project-package-jsons/$(dirname $1) && cp $1 ./project-package-jsons/$(dirname $1)' - '{}' \;
+#mkdir -p ./project-package-jsons/projects/default-project
+#cp packages/projects/default-project/package.json ./project-package-jsons/projects/default-project
+#find packages/projects/projects/ -name package.json -exec bash -c 'mkdir -p ./project-package-jsons/$(dirname $1) && cp $1 ./project-package-jsons/$(dirname $1)' - '{}' \;
 
 
 if [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" == "true" ]
 then
-  npx ts-node --swc scripts/get-deletable-client-files.ts
+#  npx ts-node --swc scripts/get-deletable-client-files.ts
 
   bash ./scripts/build_and_publish_package.sh $RELEASE_NAME api api $START_TIME $CLOUD_REGION $NODE_ENV $DESTINATION_REPO_PROVIDER $PRIVATE_REPO >api-build-logs.txt 2>api-build-error.txt &
   bash ./scripts/build_and_publish_package.sh $RELEASE_NAME client client-serve-static $START_TIME $CLOUD_REGION $NODE_ENV $DESTINATION_REPO_PROVIDER $PRIVATE_REPO >client-build-logs.txt 2>client-build-error.txt &
