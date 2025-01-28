@@ -55,7 +55,7 @@ then
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
 then
   echo "Log into Docker with GCP credentials"
-  # Insert code for getting Artifact Registry credentials and doing docker login with them
+  gcloud auth configure-docker us-central1-docker.pkg.dev --quiet 
 fi
 
 mkdir -p ./project-package-jsons/projects/default-project
