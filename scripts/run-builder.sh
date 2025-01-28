@@ -11,10 +11,10 @@ START_TIME=`date +"%d-%m-%yT%H-%M-%S"`
 mkdir -pv ~/.docker
 cp -v /var/lib/docker/certs/client/* ~/.docker
 touch ./builder-started.txt
-if [ $DESTINATION_REPO_PROVIDER == "aws" ]
+if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]
 then
   bash ./scripts/setup_aws.sh $EKS_AWS_ACCESS_KEY_ID $EKS_AWS_ACCESS_KEY_SECRET $CLOUD_REGION $CLUSTER_NAME $EKS_AWS_ROLE_ARN
-elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
+elif [ "$DESTINATION_REPO_PROVIDER" = "gcp" ]
 then
   echo "Need to set up GCP"
   # Insert script for setting up GCP credentials
@@ -44,21 +44,22 @@ fi
 bash ./scripts/cleanup_builder.sh
 
 
-if [ $DESTINATION_REPO_PROVIDER == "aws" ]
+if [ "$DESTINATION_REPO_PROVIDER" == "aws" ]
 then
-  if [ $PRIVATE_REPO == "true" ]
+  if [ "$PRIVATE_REPO" == "true" ]
   then
     aws ecr get-login-password --region $CLOUD_REGION | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
   else
     aws ecr-public get-login-password --region us-east-1 | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
   fi
-elif [ $DESTIONATION_REPO_PROVIDER == "gcp" ]
+elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
 then
   echo "Log into Docker with GCP credentials"
   # Insert code for getting Artifact Registry credentials and doing docker login with them
 fi
 
 mkdir -p ./project-package-jsons/projects/default-project
+mkdir -p ./packages/projects/projects
 cp packages/projects/default-project/package.json ./project-package-jsons/projects/default-project
 find packages/projects/projects/ -name package.json -exec bash -c 'mkdir -p ./project-package-jsons/$(dirname $1) && cp $1 ./project-package-jsons/$(dirname $1)' - '{}' \;
 
@@ -81,10 +82,10 @@ then
   npm run record-build-error -- --service=taskserver --isDocker=true
   #npm run record-build-error -- --service=testbot --isDocker=true
 
-  if [ $DESTINATION_REPO_PROVIDER == "aws" ]
+  if [ "$DESTINATION_REPO_PROVIDER" == "aws" ]
   then
     echo "SHOULD PRUNE ECR IMAGES"
-    if [ $PRIVATE_REPO == "true" ]
+    if [ "$PRIVATE_REPO" == "true" ]
     then
       echo "PRUNING PRIVATE REPOS"
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --region $CLOUD_REGION --service api --releaseName $RELEASE_NAME
@@ -98,7 +99,7 @@ then
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
+  elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
@@ -120,10 +121,10 @@ then
   npm run record-build-error -- --service=taskserver --isDocker=true
   #npm run record-build-error -- --service=testbot --isDocker=true
 
-  if [ $DESTINATION_REPO_PROVIDER == "aws" ]
+  if [ "$DESTINATION_REPO_PROVIDER" == "aws" ]
   then
     echo "SHOULD PRUNE ECR IMAGES"
-    if [ $PRIVATE_REPO == "true" ]
+    if [ "$PRIVATE_REPO" == "true" ]
     then
       echo "PRUNING PRIVATE REPOS"
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --region $CLOUD_REGION --service api --releaseName $RELEASE_NAME
@@ -135,7 +136,7 @@ then
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
+  elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
@@ -157,7 +158,7 @@ else
   npm run record-build-error -- --service=taskserver --isDocker=true
   #npm run record-build-error -- --service=testbot --isDocker=true
 
-  if [ $DESTINATION_REPO_PROVIDER == "aws" ]
+  if [ "$DESTINATION_REPO_PROVIDER" == "aws" ]
   then
     if [ $PRIVATE_REPO == "true" ]
     then
@@ -171,7 +172,7 @@ else
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ $DESTINATION_REPO_PROVIDER == "gcp" ]
+  elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
