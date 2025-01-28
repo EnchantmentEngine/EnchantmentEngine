@@ -73,7 +73,7 @@ then
   bash ./scripts/build_and_publish_package.sh $RELEASE_NAME taskserver taskserver $START_TIME $CLOUD_REGION $NODE_ENV $DESTINATION_REPO_PROVIDER $PRIVATE_REPO >taskserver-build-logs.txt 2>taskserver-build-error.txt &
   #bash ./scripts/build_and_publish_package.sh $RELEASE_NAME testbot testbot $START_TIME $CLOUD_REGION $NODE_ENV $DESTINATION_REPO_PROVIDER $PRIVATE_REPO >testbot-build-logs.txt 2>testbot-build-error.txt && &
 
-  wait < <(jobs -p)
+  wait $(jobs -p)
 
   npm run record-build-error -- --service=api --isDocker=true
   npm run record-build-error -- --service=client --isDocker=true
