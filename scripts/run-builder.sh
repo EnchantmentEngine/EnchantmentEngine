@@ -58,8 +58,8 @@ then
   gcloud auth configure-docker us-central1-docker.pkg.dev --quiet 
 fi
 
-#mkdir -p ./project-package-jsons/projects/default-project
-#cp packages/projects/default-project/package.json ./project-package-jsons/projects/default-project
+mkdir -p ./project-package-jsons/projects/default-project
+cp packages/projects/default-project/package.json ./project-package-jsons/projects/default-project
 #find packages/projects/projects/ -name package.json -exec bash -c 'mkdir -p ./project-package-jsons/$(dirname $1) && cp $1 ./project-package-jsons/$(dirname $1)' - '{}' \;
 
 
