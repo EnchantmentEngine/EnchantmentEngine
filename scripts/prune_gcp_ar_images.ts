@@ -170,7 +170,7 @@ cli.main(async () => {
       process.exit(0)
     } else process.exit(0)
   } catch (err) {
-    console.log('Error in deleting old ECR images:')
+    console.log('Error in deleting old Artifact Registry images:')
     console.log(err)
   }
 })
