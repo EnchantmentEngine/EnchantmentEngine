@@ -11,6 +11,8 @@ NODE_ENV=$6
 DESTINATION_REPO_PROVIDER=$7
 PRIVATE_REPO=$8
 
+DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE
+
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   if [ "$PRIVATE_REPO" = "true" ]; then
     aws ecr get-login-password --region $REGION | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
@@ -21,6 +23,7 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   fi
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
+  DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
   # Insert GCP credentials fetching here, and apply that to docker login
 else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -35,11 +38,11 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
   docker buildx build \
     --builder ir-engine-$PACKAGE \
     --push \
-    -t $DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:${TAG}__${START_TIME} \
-    -t $DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:latest_$STAGE \
+    -t $DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:${TAG}__${START_TIME} \
+    -t $DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_$STAGE \
     -f dockerfiles/$PACKAGE/Dockerfile-$DOCKERFILE \
-    --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:latest_${STAGE}_cache \
-    --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:latest_${STAGE}_cache \
+    --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
+    --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
     --build-arg REPO_NAME=$SOURCE_REPO_NAME_STEM \
     --build-arg STAGE=$STAGE \
@@ -91,8 +94,8 @@ else
   docker buildx build \
     --builder ir-engine-$PACKAGE \
     -f dockerfiles/$PACKAGE/Dockerfile-$DOCKERFILE \
-    --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:latest_${STAGE}_cache \
-    --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-$PACKAGE:latest_${STAGE}_cache \
+    --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
+    --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
     --build-arg REPO_NAME=$SOURCE_REPO_NAME_STEM \
     --build-arg STAGE=$STAGE \
