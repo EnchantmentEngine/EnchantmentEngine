@@ -12,6 +12,7 @@ DESTINATION_REPO_PROVIDER=$7
 PRIVATE_REPO=$8
 
 DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE
+SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root
 
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   if [ "$PRIVATE_REPO" = "true" ]; then
@@ -24,6 +25,7 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
   DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
+  SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root
   # Insert GCP credentials fetching here, and apply that to docker login
 else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -44,7 +46,7 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
-    --build-arg REPO_NAME=$SOURCE_REPO_NAME_STEM \
+    --build-arg REPO_NAME=$SOURCE_REPO_NAME \
     --build-arg STAGE=$STAGE \
     --build-arg KUBERNETES=$KUBERNETES \
     --build-arg TAG=$TAG \
@@ -97,7 +99,7 @@ else
     --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
-    --build-arg REPO_NAME=$SOURCE_REPO_NAME_STEM \
+    --build-arg REPO_NAME=$SOURCE_REPO_NAME \
     --build-arg STAGE=$STAGE \
     --build-arg KUBERNETES=$KUBERNETES \
     --build-arg TAG=$TAG \
