@@ -64,6 +64,8 @@ const getProjectConfigExtensions = async (config: UserConfig) => {
         .flat()
     : []
 
+  console.log('projects', projects)
+
   for (const project of projects) {
     const staticPath = path.resolve(__dirname, `../projects/projects/`, project, 'vite.config.extension.ts')
     if (fs.existsSync(staticPath)) {
