@@ -51,6 +51,7 @@ const merge = (src, dest) =>
   })
 
 const getProjectConfigExtensions = async (config: UserConfig) => {
+  return config
   const projects = fs.existsSync(path.resolve(__dirname, '../projects/projects'))
     ? fs
         .readdirSync(path.resolve(__dirname, '../projects/projects'), { withFileTypes: true })
