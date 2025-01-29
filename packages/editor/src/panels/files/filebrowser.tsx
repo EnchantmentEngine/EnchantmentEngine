@@ -46,7 +46,7 @@ import {
 import FilesLoaders from './loaders'
 import FilesToolbar from './toolbar'
 
-function Browser() {
+export function Browser() {
   const [anchorEvent, setAnchorEvent] = useState<undefined | React.MouseEvent>(undefined)
   const dropOnFileBrowser = useFileBrowserDrop()
   const filesState = useMutableState(FilesState)

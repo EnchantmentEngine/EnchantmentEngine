@@ -29,7 +29,7 @@ import { Button, Tooltip } from '@ir-engine/ui'
 import { Slider, StudioButton } from '@ir-engine/ui/editor'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
-import { ArrowLeftSm, CogSm, FolderSm, PlusCircleSm, Refresh1Sm, SearchSmSm } from '@ir-engine/ui/src/icons'
+import { CogSm, FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { validateImportFolderPath } from '../../components/dialogs/ImportSettingsPanelDialog'
@@ -37,6 +37,7 @@ import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesViewModeSettings } from '../../services/FilesState'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
+import { PanelToolbar } from '../files/toolbar'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
 const ViewModeSettings = () => {
@@ -152,25 +153,11 @@ export default function Topbar() {
   }, [search.query])
 
   return (
-    <div className="mb-1 flex h-8 items-center gap-2 bg-[#191B1F] py-1" data-testid="assets-panel-top-bar">
-      <div className="ml-2" />
-      <div>
-        <Tooltip content={t('editor:layout.filebrowser.back')}>
-          <StudioButton size="sm" variant="tertiary" data-testid="assets-panel-back-button" onClick={handleBack}>
-            <ArrowLeftSm />
-          </StudioButton>
-        </Tooltip>
-      </div>
-      <div>
-        <Tooltip content={t('editor:layout.filebrowser.refresh')}>
-          <StudioButton size="sm" variant="tertiary" data-testid="assets-panel-refresh-button" onClick={handleRefresh}>
-            <Refresh1Sm />
-          </StudioButton>
-        </Tooltip>
-      </div>
-      <ViewModeSettings />
-      <div className="align-center flex h-6 w-full justify-center gap-2 sm:px-2 md:px-4 lg:px-6 xl:px-10">
-        <AssetsBreadcrumbs />
+    <PanelToolbar
+      onBackDirectory={handleBack}
+      onRefreshDirectory={handleRefresh}
+      breadcrumbComponent={<AssetsBreadcrumbs />}
+      searchbar={
         <SearchBar
           inputProps={{
             placeholder: t('editor:layout.scene-assets.search-placeholder'),
@@ -179,8 +166,8 @@ export default function Topbar() {
           }}
           search={search}
         />
-      </div>
-      <div className="w-fit">
+      }
+      uploadButton={
         <Button
           size="l"
           variant="secondary"
@@ -191,7 +178,12 @@ export default function Topbar() {
           <PlusCircleSm />
           <span className="text-nowrap">{t('editor:layout.filebrowser.uploadAssets')}</span>
         </Button>
-      </div>
-    </div>
+      }
+      dataTestIdJson={{
+        topbarId: 'assets-panel-top-bar',
+        backButtonId: 'assets-panel-back-button',
+        refreshButtonId: 'assets-panel-refresh-button'
+      }}
+    />
   )
 }
