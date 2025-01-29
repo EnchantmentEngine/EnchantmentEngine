@@ -252,7 +252,7 @@ export default function FilesToolbar() {
                 </StudioButton>
               </Tooltip>
             </div>
-            <div className="ml-10 flex h-7 items-center gap-2 rounded bg-[#2F3137] p-2">
+            <div className="flex h-7 items-center gap-2 rounded p-2">
               <FaList
                 className={twMerge(
                   'h-5 w-5 cursor-pointer text-[#9CA0AA]',
@@ -336,8 +336,11 @@ export function PanelToolbar({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="mb-1 flex h-8 items-center gap-2 bg-[#191B1F] py-1" data-testid={dataTestIdJson?.topbarId}>
-      <div>
+    <div
+      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#191B1F] py-1"
+      data-testid={dataTestIdJson?.topbarId}
+    >
+      <div className="flex">
         <Tooltip content={t('editor:layout.filebrowser.back')}>
           <StudioButton
             size="sm"
@@ -349,9 +352,6 @@ export function PanelToolbar({
             <ArrowLeftSm />
           </StudioButton>
         </Tooltip>
-      </div>
-
-      <div className="flex">
         <Tooltip content={t('editor:layout.filebrowser.refresh')}>
           <StudioButton
             size="sm"
@@ -369,7 +369,7 @@ export function PanelToolbar({
       <div className="flex items-center justify-between">
         {uploadButton}
         {breadcrumbComponent}
-        {/* what ever the right thign is */}
+        {/* what ever the right thing is */}
       </div>
 
       <div>{searchbar}</div>
