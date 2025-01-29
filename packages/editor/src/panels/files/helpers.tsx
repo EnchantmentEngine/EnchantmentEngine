@@ -141,7 +141,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     const result = {}
 
     paths.forEach((path) => {
-      const segments = path.split('/')
+      const segments = path.split('/').slice(4)
       let current = result
 
       segments.forEach((segment, index) => {

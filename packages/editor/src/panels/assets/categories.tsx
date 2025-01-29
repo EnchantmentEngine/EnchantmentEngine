@@ -24,8 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { FilesViewModeSettings } from '@ir-engine/editor/src/services/FilesState'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
@@ -35,21 +34,11 @@ import { useCurrentFiles } from '../files/helpers'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
-const depthPaddingMap = {
-  0: 'pl-0',
-  1: 'pl-2',
-  2: 'pl-4',
-  3: 'pl-8',
-  4: 'pl-16',
-  5: 'pl-32'
-}
-
 function AssetCategory({ index }: { index: number }) {
   const { categories, currentCategoryPath, expandedCategories } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
   const category = categories[index].value
   const selectedCategory = currentCategoryPath.at(-1)?.value
-  const fontSize = useHookstate(getMutableState(FilesViewModeSettings).list.fontSize).value
 
   const handleClickCategory = () => {
     // setting expanded here
@@ -75,24 +64,23 @@ function AssetCategory({ index }: { index: number }) {
 
 function FileCategory({ index }) {
   const { categories, expandedCategories } = useCurrentFiles()
-  const category = categories[index].value
+  const category = categories[index].get({ noproxy: true })
 
-  const handleClickCategory = () => {
-    // setting expanded here
-    if (!category.isLeaf) expandedCategories[category.name].set(!category.collapsed)
+  if (category?.name) {
+    return (
+      <EditorDropdownItem
+        label={category?.name}
+        ItemIcon={Folder}
+        collapsed={category?.collapsed}
+        onClick={() => {
+          if (!category?.isLeaf) expandedCategories[category.name].set(!category.collapsed)
+        }}
+        style={{ paddingLeft: `${32 * (category?.depth || 0)}px` }}
+      />
+    )
   }
-  return (
-    <EditorDropdownItem
-      label={category.name}
-      ItemIcon={Folder}
-      // selected={selectedCategory?.name === category.name}
-      collapsed={category.collapsed}
-      onClick={handleClickCategory}
-      style={{
-        paddingLeft: `${32 * category.depth}px`
-      }}
-    />
-  )
+
+  return <></>
 }
 
 const SideBarIcons = {
@@ -112,7 +100,7 @@ function SidebarSection({ Icon, label, items = [] }) {
     assets: (
       <>
         {items.map((category, index) => (
-          <AssetCategory key={category ? category?.name + index : ''} index={index} />
+          <AssetCategory index={index} />
         ))}
       </>
     ),
@@ -159,12 +147,6 @@ function SidebarSection({ Icon, label, items = [] }) {
   )
 }
 
-enum HierarchyType {
-  FILES = 'FILES',
-  ASSET = 'ASSETS',
-  FAVORITES = 'FAVORITES'
-}
-
 export default function CategoriesList() {
   const { sidebarWidth, categories } = useAssetsCategory()
   const { files, categories: folderCategories } = useCurrentFiles()
@@ -180,7 +162,7 @@ export default function CategoriesList() {
     if (categories.value) {
       setSidebarSections({
         ...sidebarSections,
-        assets: [...categories.value] as any
+        assets: categories.value as any
       })
     }
 
@@ -188,11 +170,11 @@ export default function CategoriesList() {
       // map folder to  a tree
       setSidebarSections({
         ...sidebarSections,
-        files: [...folderCategories.value] as any
+        files: folderCategories.value as any
       })
     }
 
-    console.log('sidebar', sidebarSections)
+    // console.log('sidebar', sidebarSections)
   }, [categories.value, folderCategories.value])
 
   return (
