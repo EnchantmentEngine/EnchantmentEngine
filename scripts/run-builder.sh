@@ -101,10 +101,10 @@ then
   elif [ "$DESTINATION_REPO_PROVIDER" = "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-client --service client --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-client --service client --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
   fi
 elif [ "$SERVE_CLIENT_FROM_API" = "true" ]
 then
@@ -138,9 +138,9 @@ then
   elif [ "$DESTINATION_REPO_PROVIDER" = "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
   fi
 else
   bash ./scripts/build_and_publish_package.sh $RELEASE_NAME api api $START_TIME $CLOUD_REGION $NODE_ENV $DESTINATION_REPO_PROVIDER $PRIVATE_REPO >api-build-logs.txt 2>api-build-error.txt &
@@ -174,10 +174,10 @@ else
   elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-client --service client --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
-    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-client --service client --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --service instanceserver --releaseName $RELEASE_NAME
+    npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-taskserver --service taskserver --releaseName $RELEASE_NAME
   fi
 fi
 

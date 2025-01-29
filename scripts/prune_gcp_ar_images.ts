@@ -32,6 +32,7 @@ import cli from 'cli'
 cli.enable('status')
 
 const options = cli.parse({
+  repoUrl: [false, 'Name of registry', 'string'],
   repoName: [false, 'Name of repository', 'string'],
   service: [true, 'Name of service', 'string'],
   releaseName: [true, 'Name of release', 'string']
@@ -58,17 +59,23 @@ const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => 
 }
 
 const getParent = (includePackage = false) => {
-  const repoSplit = options.repoName.split('/')
-  const region = repoSplit[0].replace('-docker.pkg.dev', '')
-  let returned = `projects/${repoSplit[1]}/locations/${region}/repositories/${repoSplit[2]}`
-  if (includePackage) returned += `/packages/${repoSplit[3]}`
+  console.log('getParent')
+  const urlSplit = options.repoUrl.split('/')
+  console.log('urlSplit', urlSplit)
+  const region = urlSplit[0].replace('-docker.pkg.dev', '')
+  let returned = `projects/${urlSplit[1]}/locations/${region}/repositories/${options.repoName}`
+  console.log('returned', returned)
+  if (includePackage) returned += `/packages/${options.repoName}`
+  console.log('final returned', returned)
   return returned
 }
 
 const getAllImages = async (arClient: any, repoName: string, images = [] as any[]) => {
+  console.log('getAllImages')
   const input = {
     parent: getParent(false)
   } as any
+  console.log('input', input)
   const iterableResponse = arClient.listDockerImagesAsync(input)
   for await (const item of iterableResponse) images = images.concat(item)
   return images.filter((image) => new RegExp(repoName).test(image.uri))
@@ -119,9 +126,12 @@ cli.main(async () => {
       currentImages = [...new Set(currentImages)]
     }
 
+    console.log('currentImages', currentImages)
     const arClient = new ArtifactRegistryClient({})
 
+    console.log('getting images from ArtReg', options.repoName)
     const images = await getAllImages(arClient, options.repoName || 'ir-engine', [])
+    console.log('images', images)
     if (!images) return
     const latestImage = images.find(
       (image) =>
