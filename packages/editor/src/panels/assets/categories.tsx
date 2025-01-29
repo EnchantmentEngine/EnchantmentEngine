@@ -24,12 +24,13 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
+import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
@@ -63,8 +64,9 @@ function AssetCategory({ index }: { index: number }) {
 }
 
 function FileCategory({ index }) {
-  const { categories, expandedCategories } = useCurrentFiles()
+  const { categories, expandedCategories, changeDirectoryByPath } = useCurrentFiles()
   const category = categories[index].get({ noproxy: true })
+  const filesState = useMutableState(FilesState)
 
   if (category?.name) {
     return (
@@ -73,6 +75,8 @@ function FileCategory({ index }) {
         ItemIcon={Folder}
         collapsed={category?.collapsed}
         onClick={() => {
+          const newPath = `${filesState.selectedDirectory.value}${category?.name}/`
+          changeDirectoryByPath(newPath)
           if (!category?.isLeaf) expandedCategories[category.name].set(!category.collapsed)
         }}
         style={{ paddingLeft: `${32 * (category?.depth || 0)}px` }}
@@ -89,25 +93,28 @@ const SideBarIcons = {
   files: File04Lg
 }
 
-function SidebarSection({ Icon, label, items = [] }) {
+function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
   const [isHover, setIsHover] = React.useState(false)
-  const [isActive, setIsActive] = React.useState(false)
   const toggleDropdown = () => {
-    setIsActive(!isActive)
+    if (isActive) {
+      onClick(undefined)
+    } else {
+      onClick(label)
+    }
   }
 
   const renderListByType = {
     assets: (
       <>
         {items.map((category, index) => (
-          <AssetCategory index={index} />
+          <AssetCategory key={category?.name + index} index={index} />
         ))}
       </>
     ),
     files: (
       <>
         {items.map((category, index) => (
-          <FileCategory index={index} />
+          <FileCategory key={category?.name + index} index={index} />
         ))}
       </>
     )
@@ -147,13 +154,13 @@ function SidebarSection({ Icon, label, items = [] }) {
   )
 }
 
-export default function CategoriesList() {
+export default function CategoriesList({ selected, onClick }) {
   const { sidebarWidth, categories } = useAssetsCategory()
   const { files, categories: folderCategories } = useCurrentFiles()
 
   // todo: rename sidebar section to sidebar or find a better name
   const [sidebarSections, setSidebarSections] = React.useState({
-    favorites: [],
+    // favorites: [], TODO
     assets: [],
     files: [] // todo: rename to folders
   })
@@ -173,8 +180,6 @@ export default function CategoriesList() {
         files: folderCategories.value as any
       })
     }
-
-    // console.log('sidebar', sidebarSections)
   }, [categories.value, folderCategories.value])
 
   return (
@@ -183,7 +188,16 @@ export default function CategoriesList() {
       style={{ width: sidebarWidth.value }}
     >
       {Object.entries(sidebarSections).map(([key, value]) => {
-        return <SidebarSection key={key} label={key} items={value} Icon={SideBarIcons[key]} />
+        return (
+          <SidebarSection
+            isActive={key === selected}
+            key={key}
+            label={key}
+            items={value}
+            Icon={SideBarIcons[key]}
+            onClick={onClick}
+          />
+        )
       })}
     </div>
   )

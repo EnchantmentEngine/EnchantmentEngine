@@ -29,6 +29,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import FileBrowser from './filebrowser'
 
+// NOTE: is PanelDragContainer necessary any more?
 const FilesPanelTitle = () => {
   const { t } = useTranslation()
   return (
