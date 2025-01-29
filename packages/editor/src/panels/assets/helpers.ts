@@ -23,8 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AssetsPanelCategories } from '../../services/AssetPanelCategoriesState'
-
 export type Category = {
   name: string
   object: object
@@ -61,7 +59,7 @@ export const calculateItemsToFetch = () => {
   return itemsInRow * numberOfRows
 }
 
-export function mapCategoriesHelper(collapsedCategories: { [key: string]: boolean }) {
+export function mapCategoriesHelper(collapsedCategories: { [key: string]: boolean }, initial) {
   const result: Category[] = []
   const generateCategories = (node: object, depth = 0) => {
     for (const key in node) {
@@ -79,7 +77,7 @@ export function mapCategoriesHelper(collapsedCategories: { [key: string]: boolea
       }
     }
   }
-  generateCategories(AssetsPanelCategories.initial)
+  generateCategories(initial)
   return result
 }
 

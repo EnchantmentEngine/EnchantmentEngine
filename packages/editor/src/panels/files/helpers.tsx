@@ -44,6 +44,7 @@ import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
 import { filterExistingFiles, handleUploadFiles } from '../../functions/assetFunctions'
 import { FilesState } from '../../services/FilesState'
+import { mapCategoriesHelper } from '../assets/helpers'
 
 /* CONSTANTS */
 
@@ -56,7 +57,8 @@ export const availableTableColumns = ['name', 'type', 'author', 'createdAt', 'st
 const FilesQueryContext = createContext({
   filesQuery: null as null | ReturnType<typeof useFind<'file-browser'>>,
   files: [] as FileDataType[],
-  foldersTree: {},
+  categories: [] as any,
+  expandedCategories: {} as any,
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
@@ -65,7 +67,8 @@ const FilesQueryContext = createContext({
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
   const filesState = useMutableState(FilesState)
-  const foldersTree = useHookstate({})
+  const categories = useHookstate<any>([])
+  const expandedCategories = useHookstate({} as { [key: string]: boolean })
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
@@ -134,10 +137,44 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
+  function buildHierarchy(paths) {
+    const result = {}
+
+    paths.forEach((path) => {
+      const segments = path.split('/')
+      let current = result
+
+      segments.forEach((segment, index) => {
+        if (!current[segment]) {
+          current[segment] = index === segments.length - 1 ? {} : {} // Last segment is an empty object
+        }
+        current = current[segment]
+      })
+    })
+
+    return result
+  }
+
+  const foldersQuery = useFind(fileBrowserPath, {
+    query: {
+      $limit: FILES_PAGE_LIMIT,
+      directory: '/projects/test/hello-world/public/**'
+    }
+  })
+
+  const folders = foldersQuery.data.filter((file) => file.type === 'folder')
+
+  useEffect(() => {
+    if (foldersQuery.status === 'success') {
+      categories.set(mapCategoriesHelper(expandedCategories.value, buildHierarchy(folders.map((folder) => folder.key))))
+    }
+  }, [foldersQuery.status, expandedCategories])
+
   return (
     <FilesQueryContext.Provider
       value={{
-        foldersTree,
+        categories,
+        expandedCategories,
         filesQuery,
         files,
         changeDirectoryByPath,

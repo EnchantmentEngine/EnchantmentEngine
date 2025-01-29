@@ -73,18 +73,23 @@ function AssetCategory({ index }: { index: number }) {
   )
 }
 
-function FileCategory({ name, file }) {
+function FileCategory({ index }) {
+  const { categories, expandedCategories } = useCurrentFiles()
+  const category = categories[index].value
+
+  const handleClickCategory = () => {
+    // setting expanded here
+    if (!category.isLeaf) expandedCategories[category.name].set(!category.collapsed)
+  }
   return (
     <EditorDropdownItem
-      label={name}
+      label={category.name}
       ItemIcon={Folder}
       // selected={selectedCategory?.name === category.name}
-      // collapsed={category.collapsed}
-      // onClick={() => {
-      //   foldersTree[file.name].set(foldersTree[file.name] ? !foldersTree[file.name] : false)
-      // }}
+      collapsed={category.collapsed}
+      onClick={handleClickCategory}
       style={{
-        paddingLeft: `${32 * file.depth}px`
+        paddingLeft: `${32 * category.depth}px`
       }}
     />
   )
@@ -113,9 +118,9 @@ function SidebarSection({ Icon, label, items = [] }) {
     ),
     files: (
       <>
-        {/* {Object.entries(items).map(([key, value], index) => (
-          <FileCategory name={key} file={value}/>
-        ))} */}
+        {items.map((category, index) => (
+          <FileCategory index={index} />
+        ))}
       </>
     )
   }
@@ -162,7 +167,7 @@ enum HierarchyType {
 
 export default function CategoriesList() {
   const { sidebarWidth, categories } = useAssetsCategory()
-  const { files, foldersTree } = useCurrentFiles()
+  const { files, categories: folderCategories } = useCurrentFiles()
 
   // todo: rename sidebar section to sidebar or find a better name
   const [sidebarSections, setSidebarSections] = React.useState({
@@ -171,10 +176,7 @@ export default function CategoriesList() {
     files: [] // todo: rename to folders
   })
 
-  const [selectedHierarchy, setSelectedHerarchy] = React.useState(HierarchyType.FAVORITES)
-
   React.useEffect(() => {
-    console.log(foldersTree)
     if (categories.value) {
       setSidebarSections({
         ...sidebarSections,
@@ -186,12 +188,12 @@ export default function CategoriesList() {
       // map folder to  a tree
       setSidebarSections({
         ...sidebarSections,
-        files: Object.entries(foldersTree.value) as any
+        files: [...folderCategories.value] as any
       })
     }
 
     console.log('sidebar', sidebarSections)
-  }, [categories.value, foldersTree.value])
+  }, [categories.value, folderCategories.value])
 
   return (
     <div

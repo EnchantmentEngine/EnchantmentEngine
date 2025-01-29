@@ -28,7 +28,7 @@ import { API } from '@ir-engine/common'
 import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
-import { MyAssetCategory } from '../../services/AssetPanelCategoriesState'
+import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
 import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags, mapCategoriesHelper } from './helpers'
 
 const AssetsQueryContext = createContext({
@@ -141,7 +141,7 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   useEffect(() => {
-    categories.set(mapCategoriesHelper(expandedCategories.value))
+    categories.set(mapCategoriesHelper(expandedCategories.value, AssetsPanelCategories.initial))
   }, [expandedCategories])
 
   return (
