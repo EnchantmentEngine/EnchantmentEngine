@@ -37,7 +37,7 @@ import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesViewModeSettings } from '../../services/FilesState'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
-import { PanelToolbar } from '../files/toolbar'
+import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
 const ViewModeSettings = () => {
@@ -103,20 +103,19 @@ export function AssetsBreadcrumbs() {
   }
 
   return (
-    <div
-      className="flex h-6 w-96 items-center gap-2 rounded-lg border border-[#42454D] bg-[#141619] px-2"
-      data-testid="assets-panel-breadcrumbs"
-    >
+    <div className="flex items-center gap-4" data-testid="assets-panel-breadcrumbs">
       <FolderSm onClick={() => handleSelectParentCategory(0)} className="cursor-pointer text-xs text-[#42454D]" />
       {parentCategories.map((category, idx) => (
         <span
           key={category.name.value}
-          className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3]"
+          className="flex cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3]"
           data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
           onClick={() => handleSelectParentCategory(idx)}
         >
           <span className="hover:underline">{category.name.value}</span>
-          <span>{' > '}</span>
+          <span>
+            <BreadCrumbSlash />
+          </span>
         </span>
       ))}
       {currentCategory && (

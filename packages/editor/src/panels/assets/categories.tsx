@@ -179,7 +179,7 @@ export default function CategoriesList() {
 
   return (
     <div
-      className="flex h-full flex-col space-y-1 overflow-hidden bg-[#0E0F11] pb-2 pl-1 pr-2 pt-2"
+      className="flex h-full flex-col space-y-1 overflow-y-auto bg-[#0E0F11] pb-2 pl-1 pr-2 pt-2"
       style={{ width: sidebarWidth.value }}
     >
       {Object.entries(sidebarSections).map(([key, value]) => {

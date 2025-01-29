@@ -50,6 +50,21 @@ import { FilesState, FilesViewModeSettings, FilesViewModeState } from '../../ser
 import { availableTableColumns, useCurrentFiles } from './helpers'
 import { handleDownloadProject } from './loaders'
 
+// keeping this here for now, Move this to icons or static folder
+export function BreadCrumbSlash() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g id="Breadcrumb">
+        <path
+          id="Icon"
+          d="M4.38843 12.4435L9.98843 1.24347L10.6142 1.55707L5.01423 12.7571L4.38843 12.4435Z"
+          fill="#B2B5BD"
+        />
+      </g>
+    </svg>
+  )
+}
+
 export const showMultipleFileModal = (projectName: string, directoryPath: string, files: File[]) => {
   const fileNames = files.map((file) => file.name)
 
@@ -95,11 +110,15 @@ function BreadcrumbItems() {
   breadcrumbDirectoryFiles = breadcrumbDirectoryFiles.filter((_, idx) => idx >= nestedIndex)
 
   return (
-    <div className="flex h-6 w-96 items-center gap-2 rounded-lg border border-[#42454D] bg-[#141619] px-2">
+    <div className="flex items-center gap-4">
       <FolderSm className="text-sm text-[#A3A3A3]" />
       {breadcrumbDirectoryFiles.map((file, index, arr) => (
         <Fragment key={index}>
-          {index !== 0 && <span className="cursor-default items-center text-sm text-[#A3A3A3]"> {'>'} </span>}
+          {index !== 0 && (
+            <span className="cursor-default items-center text-sm text-[#A3A3A3]">
+              <BreadCrumbSlash />
+            </span>
+          )}
           {index === arr.length - 1 ? (
             <span
               className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3] hover:underline"
@@ -337,7 +356,7 @@ export function PanelToolbar({
   const { t } = useTranslation()
   return (
     <div
-      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#191B1F] py-1"
+      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#191B1F] px-2 py-1"
       data-testid={dataTestIdJson?.topbarId}
     >
       <div className="flex">
@@ -364,10 +383,10 @@ export function PanelToolbar({
         </Tooltip>
         <ViewModeSettings />
         {utilsComponent}
+        {uploadButton}
       </div>
 
       <div className="flex items-center justify-between">
-        {uploadButton}
         {breadcrumbComponent}
         {/* what ever the right thing is */}
       </div>
