@@ -34,6 +34,7 @@ import {
   CogSm,
   Download01Sm,
   FolderSm,
+  Grid01Sm,
   PlusCircleSm,
   Refresh1Sm,
   SearchSmSm
@@ -41,6 +42,8 @@ import {
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FaList } from 'react-icons/fa'
+import { twMerge } from 'tailwind-merge'
 import { handleUploadFiles, inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState, FilesViewModeSettings, FilesViewModeState } from '../../services/FilesState'
@@ -228,24 +231,44 @@ export default function FilesToolbar() {
         }
         dataTestIdJson={{}}
         utilsComponent={
-          <div id="downloadProject">
-            <Tooltip
-              content={
-                showDownloadButtons
-                  ? t('editor:layout.filebrowser.downloadProject')
-                  : t('editor:layout.filebrowser.downloadProjectUnavailable')
-              }
-            >
-              <StudioButton
-                size="sm"
-                variant="tertiary"
-                onClick={() => handleDownloadProject(filesState.projectName.value, filesState.selectedDirectory.value)}
-                data-testid="files-panel-download-project-button"
+          <>
+            <div id="downloadProject">
+              <Tooltip
+                content={
+                  showDownloadButtons
+                    ? t('editor:layout.filebrowser.downloadProject')
+                    : t('editor:layout.filebrowser.downloadProjectUnavailable')
+                }
               >
-                <Download01Sm />
-              </StudioButton>
-            </Tooltip>
-          </div>
+                <StudioButton
+                  size="sm"
+                  variant="tertiary"
+                  onClick={() =>
+                    handleDownloadProject(filesState.projectName.value, filesState.selectedDirectory.value)
+                  }
+                  data-testid="files-panel-download-project-button"
+                >
+                  <Download01Sm />
+                </StudioButton>
+              </Tooltip>
+            </div>
+            <div className="ml-10 flex h-7 items-center gap-2 rounded bg-[#2F3137] p-2">
+              <FaList
+                className={twMerge(
+                  'h-5 w-5 cursor-pointer text-[#9CA0AA]',
+                  filesViewMode.value === 'list' && 'cursor-auto text-[#F5F5F5]'
+                )}
+                onClick={() => filesViewMode.set('list')}
+              />
+              <Grid01Sm
+                className={twMerge(
+                  'h-5 w-5 cursor-pointer text-[#9CA0AA]',
+                  filesViewMode.value === 'icons' && 'cursor-auto text-[#F5F5F5]'
+                )}
+                onClick={() => filesViewMode.set('icons')}
+              />
+            </div>
+          </>
         }
         uploadButton={
           <>
