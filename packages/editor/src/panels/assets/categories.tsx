@@ -43,48 +43,54 @@ function AssetCategory({ index }: { index: number }) {
 
   const handleClickCategory = () => {
     // setting expanded here
-    if (!category.isLeaf) expandedCategories[category.name].set(!category.collapsed)
-    currentCategoryPath.set([...getParentCategories(categories.value, category.name), category])
+    if (!category?.isLeaf) expandedCategories[category?.name].set(!category?.collapsed)
+    currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
     staticResourcesPagination.skip.set(0)
     refetchResources()
   }
 
   return (
     <EditorDropdownItem
-      label={category.name}
+      label={category?.name}
       ItemIcon={Folder}
-      selected={selectedCategory?.name === category.name}
-      collapsed={category.collapsed}
+      selected={selectedCategory?.name === category?.name}
+      collapsed={category?.collapsed}
       onClick={handleClickCategory}
       style={{
-        paddingLeft: `${32 * category.depth}px`
+        paddingLeft: `${32 * category?.depth}px`
       }}
     />
   )
 }
 
 function FileCategory({ index }) {
-  const { categories, expandedCategories, changeDirectoryByPath } = useCurrentFiles()
-  const category = categories[index].get({ noproxy: true })
+  const { categories, expandedCategories, changeDirectoryByPath, currentCategoryPath, refreshDirectory } =
+    useCurrentFiles()
+  const category = categories[index].value
   const filesState = useMutableState(FilesState)
 
-  if (category?.name) {
-    return (
-      <EditorDropdownItem
-        label={category?.name}
-        ItemIcon={Folder}
-        collapsed={category?.collapsed}
-        onClick={() => {
-          const newPath = `${filesState.selectedDirectory.value}${category?.name}/`
-          changeDirectoryByPath(newPath)
-          if (!category?.isLeaf) expandedCategories[category.name].set(!category.collapsed)
-        }}
-        style={{ paddingLeft: `${32 * (category?.depth || 0)}px` }}
-      />
-    )
+  const handleClick = () => {
+    if (expandedCategories[category?.name].value) return
+    console.log('category', categories)
+    console.log('curr', currentCategoryPath[0])
+    if (!category?.isLeaf) expandedCategories[category?.name].set(!category?.collapsed)
+    currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
+    // console.log('curr', currentCategoryPath)
+    const newPath = `${filesState.selectedDirectory.value}${category?.name}/`
+    // console.log(newPath)
+    changeDirectoryByPath(newPath)
+    // refreshDirectory()
   }
 
-  return <></>
+  return (
+    <EditorDropdownItem
+      label={category?.name}
+      ItemIcon={Folder}
+      collapsed={category?.collapsed}
+      onClick={handleClick}
+      style={{ paddingLeft: `${32 * (category?.depth || 0)}px` }}
+    />
+  )
 }
 
 const SideBarIcons = {
@@ -107,14 +113,14 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
     assets: (
       <>
         {items.map((category, index) => (
-          <AssetCategory key={category?.name + index} index={index} />
+          <AssetCategory index={index} />
         ))}
       </>
     ),
     files: (
       <>
         {items.map((category, index) => (
-          <FileCategory key={category?.name + index} index={index} />
+          <FileCategory index={index} />
         ))}
       </>
     )
@@ -169,17 +175,17 @@ export default function CategoriesList({ selected, onClick }) {
     if (categories.value) {
       setSidebarSections({
         ...sidebarSections,
-        assets: categories.value as any
+        assets: [...categories.value] as any
       })
     }
 
     if (files.length) {
-      // map folder to  a tree
       setSidebarSections({
         ...sidebarSections,
-        files: folderCategories.value as any
+        files: [...folderCategories.value] as any
       })
     }
+    console.log(sidebarSections)
   }, [categories.value, folderCategories.value])
 
   return (
@@ -235,7 +241,7 @@ export function VerticalDivider({
         {leftChildren}
       </div>
 
-      <div className="flex w-5 cursor-pointer items-center" data-testid="assets-panel-vertical-divider">
+      <div className="flex w-2 cursor-pointer items-center" data-testid="assets-panel-vertical-divider">
         <div
           onMouseDown={handleMouseDown}
           className={twMerge('h-full w-full cursor-grab text-white', isDragging.value && 'cursor-grabbing')}

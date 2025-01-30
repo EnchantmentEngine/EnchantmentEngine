@@ -59,6 +59,7 @@ const FilesQueryContext = createContext({
   files: [] as FileDataType[],
   categories: [] as any,
   expandedCategories: {} as any,
+  currentCategoryPath: [] as any,
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
@@ -69,6 +70,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   const filesState = useMutableState(FilesState)
   const categories = useHookstate<any>([])
   const expandedCategories = useHookstate({} as { [key: string]: boolean })
+  const currentCategoryPath = useHookstate<any>([])
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
@@ -127,13 +129,6 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     }
   })
 
-  useEffect(() => {
-    if (filesQuery.status === 'success') {
-      // todo: set folder tree
-      console.log(files)
-    }
-  }, [filesQuery.status])
-
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
@@ -145,8 +140,10 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
       let current = result
 
       segments.forEach((segment, index) => {
+        if (index === segments.length - 1) return // Skip adding the last segment if it's a file
+
         if (!current[segment]) {
-          current[segment] = index === segments.length - 1 ? {} : {} // Last segment is an empty object
+          current[segment] = {} // Create only if it has nested folders
         }
         current = current[segment]
       })
@@ -162,19 +159,23 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     }
   })
 
-  const folders = foldersQuery.data.filter((file) => file.type === 'folder')
+  const folders = React.useMemo(() => foldersQuery.data.filter((file) => file.type === 'folder'), [foldersQuery.data])
+
+  // Only rebuild the hierarchy when folders change
+  const folderHierarchy = React.useMemo(() => buildHierarchy(folders.map((folder) => folder.key)), [folders])
 
   useEffect(() => {
     if (foldersQuery.status === 'success') {
-      categories.set(mapCategoriesHelper(expandedCategories.value, buildHierarchy(folders.map((folder) => folder.key))))
+      categories.set(mapCategoriesHelper(expandedCategories.value, folderHierarchy))
     }
-  }, [foldersQuery.status, expandedCategories])
+  }, [foldersQuery.status, expandedCategories, folderHierarchy])
 
   return (
     <FilesQueryContext.Provider
       value={{
         categories,
         expandedCategories,
+        currentCategoryPath,
         filesQuery,
         files,
         changeDirectoryByPath,

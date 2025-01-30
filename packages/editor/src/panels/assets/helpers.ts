@@ -29,6 +29,7 @@ export type Category = {
   collapsed: boolean
   isLeaf: boolean
   depth: number
+  path?: string
 }
 
 export function iterativelyListTags(obj: object): string[] {

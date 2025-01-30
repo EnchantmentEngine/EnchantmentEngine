@@ -28,7 +28,7 @@ import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/edi
 import { TabData } from 'rc-dock'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Browser } from '../files/filebrowser'
+import FileBrowser from '../files/filebrowser'
 import { CurrentFilesQueryProvider } from '../files/helpers'
 import FilesLoaders, { FileUploadProgress } from '../files/loaders'
 import FilesToolbar from '../files/toolbar'
@@ -65,7 +65,7 @@ enum SidebarType {
 }
 
 function AssetsContainer() {
-  const sidebarType = useHookstate(SidebarType.ASSETS)
+  const sidebarType = useHookstate(undefined)
 
   const toolbar =
     sidebarType.value === SidebarType.FILES ? (
@@ -76,7 +76,7 @@ function AssetsContainer() {
     ) : (
       <Topbar />
     )
-  const rightChildren = sidebarType.value === SidebarType.FILES ? <Browser /> : <Resources />
+  const rightChildren = sidebarType.value === SidebarType.FILES ? <FileBrowser /> : <Resources />
 
   const handleSidebarChange = (category) => {
     sidebarType.set(category)
