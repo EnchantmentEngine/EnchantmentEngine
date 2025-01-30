@@ -140,40 +140,35 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
       let current = result
 
       segments.forEach((segment, index) => {
-        if (index === segments.length - 1) return // Skip adding the last segment if it's a file
+        if (index === segments.length - 1) return
 
         if (!current[segment]) {
           current[segment] = {
             path: path
-          } // Create only if it has nested folders
+          }
         }
         current = current[segment]
       })
     })
 
-    console.log('result', result)
     return result
   }
 
   const foldersQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
+      // todo: change this to the right path
       directory: '/projects/test/hello-world/public/**'
     }
   })
 
-  // const folders = React.useMemo(() => foldersQuery.data.filter((file) => file.type === 'folder'), [foldersQuery.data])
-  const folders = foldersQuery.data.filter((file) => file.type === 'folder')
-
-  console.log(folders)
-  // Only rebuild the hierarchy when folders change
-  // const folderHierarchy = React.useMemo(() => buildHierarchy(folders.map((folder) => folder.key)), [folders])
+  const folders = React.useMemo(() => foldersQuery.data.filter((file) => file.type === 'folder'), [foldersQuery.data])
+  const folderHierarchy = React.useMemo(() => buildHierarchy(folders.map((folder) => folder.key)), [folders])
 
   useEffect(() => {
-    // if (foldersQuery.status === 'success') {
-    categories.set(mapCategoriesHelper(expandedCategories.value, buildHierarchy(folders.map((folder) => folder.key))))
-    console.log('from files cat', categories)
-    // }
+    if (foldersQuery.status === 'success') {
+      categories.set(mapCategoriesHelper(expandedCategories.value, folderHierarchy))
+    }
   }, [foldersQuery.status, expandedCategories])
 
   return (

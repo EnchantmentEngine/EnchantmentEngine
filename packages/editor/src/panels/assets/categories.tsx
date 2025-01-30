@@ -177,7 +177,7 @@ export default function CategoriesList({ selected, onClick }) {
         files: [...folderCategories.value] as any
       })
     }
-    console.log(sidebarSections)
+    console.log('side', sidebarSections)
   }, [categories.value, folderCategories.value])
 
   return (

@@ -78,7 +78,7 @@ export default function EditorDropdownItem({
         'cursor-pointer rounded py-1',
         'group/editor-dropdownitem',
         !disabled && 'bg-[#141619] hover:bg-[#141619] focus:bg-[#2C2E33]',
-        // selected && 'bg-[#2C2E33]',
+        selected && 'bg-[#2C2E33]',
         disabled && 'cursor-not-allowed bg-[#191B1F]',
         className
       )}

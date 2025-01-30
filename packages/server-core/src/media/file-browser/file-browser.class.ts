@@ -178,7 +178,7 @@ export class FileBrowserService
     if (!params) params = {}
     if (!params.query) params.query = {}
     const { $skip, $limit } = params.query
-    let { directory, isFolder } = params.query
+    let { directory } = params.query
 
     const skip = $skip ? $skip : 0
     const limit = $limit ? $limit : 100
