@@ -64,22 +64,14 @@ function AssetCategory({ index }: { index: number }) {
 }
 
 function FileCategory({ index }) {
-  const { categories, expandedCategories, changeDirectoryByPath, currentCategoryPath, refreshDirectory } =
-    useCurrentFiles()
+  const { categories, expandedCategories, changeDirectoryByPath, currentCategoryPath } = useCurrentFiles()
   const category = categories[index].value
   const filesState = useMutableState(FilesState)
 
   const handleClick = () => {
-    if (expandedCategories[category?.name].value) return
-    console.log('category', categories)
-    console.log('curr', currentCategoryPath[0])
     if (!category?.isLeaf) expandedCategories[category?.name].set(!category?.collapsed)
     currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
-    // console.log('curr', currentCategoryPath)
-    const newPath = `${filesState.selectedDirectory.value}${category?.name}/`
-    // console.log(newPath)
-    changeDirectoryByPath(newPath)
-    // refreshDirectory()
+    changeDirectoryByPath(category?.path)
   }
 
   return (
