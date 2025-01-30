@@ -16,6 +16,21 @@ docker manifest inspect $DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-taskse
 
 HELM_MAIN_VERSION=$(cat helm-main-version.txt)
 
+API_REPO_NAME=$DESTINATION_REPO_NAME_STEM-api
+CLIENT_REPO_NAME=$DESTINATION_REPO_NAME_STEM-client
+INSTANCESERVER_REPO_NAME=$DESTINATION_REPO_NAME_STEM-instanceserver
+TESTBOT_REPO_NAME=$DESTINATION_REPO_NAME_STEM-testbot
+TASKSERVER_REPO_NAME=$DESTINATION_REPO_NAME_STEM-taskserver
+
+if [ "$DESTINATION_REPO_PROVIDER" = "gcp" ]
+then
+  API_REPO_NAME=$DESTINATION_REPO_NAME_STEM-api/$DESTINATION_REPO_NAME_STEM-api
+  CLIENT_REPO_NAME=$DESTINATION_REPO_NAME_STEM-client/$DESTINATION_REPO_NAME_STEM-client
+  INSTANCESERVER_REPO_NAME=$DESTINATION_REPO_NAME_STEM-instanceserver/$DESTINATION_REPO_NAME_STEM-instanceserver
+  TESTBOT_REPO_NAME=$DESTINATION_REPO_NAME_STEM-testbot/$DESTINATION_REPO_NAME_STEM-testbot
+  TASKSERVER_REPO_NAME=$DESTINATION_REPO_NAME_STEM-taskserver/$DESTINATION_REPO_NAME_STEM-taskserver
+fi
+
 if [ ! -f "api-image.txt" ] || [ -z "$(grep -L "no such manifest" api-image.txt)" ]
 then
   echo "API image was not built and uploaded properly"
@@ -35,8 +50,8 @@ then
 else
   if [ "$SERVE_CLIENT_FROM_API" = "true" ] || [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" = "true" ]
   then
-    helm repo update && helm upgrade --reuse-values --version $HELM_MAIN_VERSION --set taskserver.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-taskserver,taskserver.image.tag=$TAG,api.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-api,api.image.tag=$TAG,instanceserver.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-instanceserver,instanceserver.image.tag=$TAG,testbot.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-testbot,testbot.image.tag=$TAG,batchinvalidator.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-api,batchinvalidator.image.tag=$TAG $STAGE ir-engine/ir-engine
+    helm repo update && helm upgrade --reuse-values --version $HELM_MAIN_VERSION --set taskserver.image.repository=$DESTINATION_REPO_URL/$TASKSERVER_REPO_NAME,taskserver.image.tag=$TAG,api.image.repository=$DESTINATION_REPO_URL/$API_REPO_NAME,api.image.tag=$TAG,instanceserver.image.repository=$DESTINATION_REPO_URL/$INSTANCESERVER_REPO_NAME,instanceserver.image.tag=$TAG,testbot.image.repository=$DESTINATION_REPO_URL/$TESTBOT_REPO_NAME,testbot.image.tag=$TAG,batchinvalidator.image.repository=$DESTINATION_REPO_URL/$API_REPO_NAME,batchinvalidator.image.tag=$TAG $STAGE ir-engine/ir-engine
   else
-    helm repo update && helm upgrade --reuse-values --version $HELM_MAIN_VERSION --set taskserver.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-taskserver,taskserver.image.tag=$TAG,api.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-api,api.image.tag=$TAG,instanceserver.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-instanceserver,instanceserver.image.tag=$TAG,testbot.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-testbot,testbot.image.tag=$TAG,client.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-client,client.image.tag=$TAG,batchinvalidator.image.repository=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME_STEM-api,batchinvalidator.image.tag=$TAG $STAGE ir-engine/ir-engine
+    helm repo update && helm upgrade --reuse-values --version $HELM_MAIN_VERSION --set taskserver.image.repository=$DESTINATION_REPO_URL/$TASKSERVER_REPO_NAME,taskserver.image.tag=$TAG,api.image.repository=$DESTINATION_REPO_URL/$API_REPO_NAME,api.image.tag=$TAG,instanceserver.image.repository=$DESTINATION_REPO_URL/$INSTANCESERVER_REPO_NAME,instanceserver.image.tag=$TAG,testbot.image.repository=$DESTINATION_REPO_URL/$TESTBOT_REPO_NAME,testbot.image.tag=$TAG,client.image.repository=$DESTINATION_REPO_URL/$CLIENT_REPO_NAME,client.image.tag=$TAG,batchinvalidator.image.repository=$DESTINATION_REPO_URL/$API_REPO_NAME,batchinvalidator.image.tag=$TAG $STAGE ir-engine/ir-engine
   fi
 fi
