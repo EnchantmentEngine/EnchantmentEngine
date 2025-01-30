@@ -51,7 +51,6 @@ const merge = (src, dest) =>
   })
 
 const getProjectConfigExtensions = async (config: UserConfig) => {
-  return config
   const projects = fs.existsSync(path.resolve(__dirname, '../projects/projects'))
     ? fs
         .readdirSync(path.resolve(__dirname, '../projects/projects'), { withFileTypes: true })
@@ -67,28 +66,28 @@ const getProjectConfigExtensions = async (config: UserConfig) => {
 
   console.log('projects', projects)
 
-  for (const project of projects) {
-    const staticPath = path.resolve(__dirname, `../projects/projects/`, project, 'vite.config.extension.ts')
-    if (fs.existsSync(staticPath)) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { default: viteConfigExtension } = await import(
-          `../projects/projects/${project}/vite.config.extension.ts`
-        )
-        if (typeof viteConfigExtension === 'function') {
-          const configExtension = (await viteConfigExtension(config)) as UserConfig
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          if (configExtension?.plugins) {
-            config.plugins = [...config.plugins!, ...configExtension.plugins]
-            delete configExtension.plugins
-          }
-          config = merge(config, configExtension)
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    }
-  }
+  // for (const project of projects) {
+  //   const staticPath = path.resolve(__dirname, `../projects/projects/`, project, 'vite.config.extension.ts')
+  //   if (fs.existsSync(staticPath)) {
+  //     try {
+  //       // eslint-disable-next-line @typescript-eslint/no-var-requires
+  //       const { default: viteConfigExtension } = await import(
+  //         `../projects/projects/${project}/vite.config.extension.ts`
+  //       )
+  //       if (typeof viteConfigExtension === 'function') {
+  //         const configExtension = (await viteConfigExtension(config)) as UserConfig
+  //         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  //         if (configExtension?.plugins) {
+  //           config.plugins = [...config.plugins!, ...configExtension.plugins]
+  //           delete configExtension.plugins
+  //         }
+  //         config = merge(config, configExtension)
+  //       }
+  //     } catch (e) {
+  //       console.error(e)
+  //     }
+  //   }
+  // }
   return config as UserConfig
 }
 
