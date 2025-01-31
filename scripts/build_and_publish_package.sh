@@ -35,8 +35,13 @@ else
   echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 fi
 
-docker context create ir-engine-$PACKAGE-context
-docker buildx create --driver=docker-container ir-engine-$PACKAGE-context --name ir-engine-$PACKAGE --driver-opt "image=moby/buildkit:v0.12.0"
+if ! docker context create ir-engine-$PACKAGE-context; then
+    echo "Failed to create context ir-engine-$PACKAGE-context, it may already exist"
+fi
+
+if ! docker buildx create --driver=docker-container ir-engine-$PACKAGE-context --name ir-engine-$PACKAGE --driver-opt "image=moby/buildkit:v0.12.0"; then
+   echo "Failed to create builder ir-engine-$PACKAGE, it may already exist"
+fi
 
 BUILD_START_TIME=$(date +"%d-%m-%yT%H-%M-%S")
 echo "Starting ${PACKAGE} build at ${BUILD_START_TIME}"
@@ -98,10 +103,8 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED .
 else
   docker buildx build \
-    --builder ir-engine-$PACKAGE \
+    --network host \ 
     -f dockerfiles/$PACKAGE/Dockerfile-$DOCKERFILE \
-    --cache-to type=registry,mode=max,image-manifest=true,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
-    --cache-from type=registry,ref=$DESTINATION_REPO_URL/$DESTINATION_REPO_NAME:latest_${STAGE}_cache \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
     --build-arg REPO_NAME=$SOURCE_REPO_NAME \
     --build-arg STAGE=$STAGE \
