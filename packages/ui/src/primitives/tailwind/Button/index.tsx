@@ -46,10 +46,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: keyof typeof sizes
   variant?: keyof typeof variants
   fullWidth?: boolean
+  isIconOnly?: boolean
 }
 
 const Button = (
-  { children, size = 'l', fullWidth, variant = 'primary', className, ...props }: ButtonProps,
+  { children, size = 'l', fullWidth, variant = 'primary', isIconOnly = false, className, ...props }: ButtonProps,
   ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
   return (
@@ -58,8 +59,8 @@ const Button = (
       role="button"
       className={twMerge(
         'flex items-center justify-center gap-1 rounded-md',
-        'text-sm font-medium leading-4 text-white',
-        'px-4 py-1',
+        'font-medium leading-4 text-white',
+        isIconOnly ? 'text-xl' : 'px-4 py-1 text-sm',
         sizes[size],
         fullWidth ? 'w-full' : 'w-fit',
         'disabled:cursor-not-allowed',
