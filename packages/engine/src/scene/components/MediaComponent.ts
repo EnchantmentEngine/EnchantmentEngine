@@ -27,7 +27,7 @@ import type Hls from 'hls.js'
 import { useEffect, useLayoutEffect } from 'react'
 import { DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
-import { ComponentType } from '@ir-engine/ecs'
+import { ComponentType, getOptionalMutableComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -194,10 +194,12 @@ export function MediaReactor() {
   if (!isClient) return null
 
   function validateTime() {
-    const mediaElementComponent = getMutableComponent(entity, MediaElementComponent)
-    const element = mediaElementComponent.element.value as HTMLMediaElement
-    if (element.currentTime < media.seekTime.value) {
-      setTime(mediaElementComponent.element, media.seekTime.value)
+    const mediaElementComponent = getOptionalMutableComponent(entity, MediaElementComponent)
+    if (mediaElementComponent) {
+      const element = mediaElementComponent.element.value as HTMLMediaElement
+      if (element.currentTime < media.seekTime.value) {
+        setTime(mediaElementComponent.element, media.seekTime.value)
+      }
     }
   }
 
@@ -209,13 +211,13 @@ export function MediaReactor() {
     // This must be outside of the normal ECS flow by necessity, since we have to respond to user-input synchronously
     // in order to ensure media will play programmatically
     const handleAutoplay = () => {
-      const mediaComponent = getComponent(entity, MediaElementComponent)
+      const mediaComponent = getOptionalComponent(entity, MediaElementComponent)
       // handle when we dont have autoplay enabled but have programatically started playback
       if (!media.autoplay.value && !media.paused.value) mediaComponent?.element.play()
       // handle when we have autoplay enabled but have paused playback
       if (media.autoplay.value && media.paused.value) media.paused.set(false)
       // handle when we have autoplay and mediaComponent is paused
-      if (media.autoplay.value && !media.paused.value && mediaComponent?.element.paused) mediaComponent.element.play()
+      if (media.autoplay.value && !media.paused.value && mediaComponent?.element.paused) mediaComponent?.element.play()
       window.removeEventListener('pointerup', handleAutoplay)
       window.removeEventListener('keypress', handleAutoplay)
       window.removeEventListener('touchend', handleAutoplay)
