@@ -103,8 +103,7 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED .
 else
   docker buildx build \
-    --network host \ 
-    -f dockerfiles/$PACKAGE/Dockerfile-$DOCKERFILE \
+    --network=host -f dockerfiles/$PACKAGE/Dockerfile-$DOCKERFILE \
     --build-arg REPO_URL=$SOURCE_REPO_URL \
     --build-arg REPO_NAME=$SOURCE_REPO_NAME \
     --build-arg STAGE=$STAGE \
