@@ -33,6 +33,7 @@ import {
   ArrowLeftSm,
   CogSm,
   Download01Sm,
+  FolderPlusSm,
   FolderSm,
   Grid01Sm,
   PlusCircleSm,
@@ -287,6 +288,11 @@ export default function FilesToolbar() {
                 onClick={() => filesViewMode.set('icons')}
               />
             </div>
+            <div>
+              <StudioButton size="sm" variant="tertiary" onClick={createNewFolder}>
+                <FolderPlusSm className="h-5 w-5 cursor-pointer text-[#9CA0AA]" />
+              </StudioButton>
+            </div>
           </>
         }
         uploadButton={
@@ -354,12 +360,13 @@ export function PanelToolbar({
   utilsComponent
 }) {
   const { t } = useTranslation()
+
   return (
     <div
-      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#191B1F] px-2 py-1"
+      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#1E1F22] px-2 py-1"
       data-testid={dataTestIdJson?.topbarId}
     >
-      <div className="flex">
+      <div className="flex items-center">
         <Tooltip content={t('editor:layout.filebrowser.back')}>
           <StudioButton
             size="sm"

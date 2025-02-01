@@ -24,54 +24,18 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
-import { Button, Tooltip } from '@ir-engine/ui'
-import { Slider, StudioButton } from '@ir-engine/ui/editor'
-import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
+import { getState } from '@ir-engine/hyperflux'
+import { Button } from '@ir-engine/ui'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
-import { CogSm, FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
+import { FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { validateImportFolderPath } from '../../components/dialogs/ImportSettingsPanelDialog'
 import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
-import { FilesViewModeSettings } from '../../services/FilesState'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
 import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
-
-const ViewModeSettings = () => {
-  const { t } = useTranslation()
-  const viewModeSettings = useMutableState(FilesViewModeSettings)
-
-  return (
-    <Popup
-      contentStyle={{ background: '#15171b', border: 'solid', borderColor: '#5d646c' }}
-      position={'bottom left'}
-      trigger={
-        <Tooltip content={t('editor:layout.filebrowser.view-mode.settings.name')}>
-          <StudioButton size="sm" variant="tertiary" data-testid="assets-panel-view-options-button">
-            <CogSm />
-          </StudioButton>
-        </Tooltip>
-      }
-    >
-      <div className="flex flex-col justify-end">
-        <div className="w-3/5">
-          <Slider
-            label={t('editor:layout.filebrowser.view-mode.settings.fontSize')}
-            min={10}
-            max={100}
-            step={0.5}
-            value={viewModeSettings.list.fontSize.value}
-            onChange={viewModeSettings.list.fontSize.set}
-            onRelease={viewModeSettings.list.fontSize.set}
-          />
-        </div>
-      </div>
-    </Popup>
-  )
-}
 
 export const uploadFiles = () => {
   const projectName = getState(EditorState).projectName
@@ -160,7 +124,7 @@ export default function Topbar() {
           inputProps={{
             placeholder: t('editor:layout.scene-assets.search-placeholder'),
             height: 'xs',
-            startComponent: <SearchSmSm className="h-3.5 w-3.5 text-[#A3A3A3]" />
+            startComponent: <SearchSmSm className="h-5 w-5 text-[#A3A3A3]" />
           }}
           search={search}
         />
