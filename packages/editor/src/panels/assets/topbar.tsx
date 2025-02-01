@@ -133,7 +133,7 @@ export function AssetsBreadcrumbs() {
 export default function Topbar() {
   const { t } = useTranslation()
   const { search } = useAssetsQuery()
-  const { currentCategoryPath, expandedCategories } = useAssetsCategory()
+  const { currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
 
   const handleBack = () => {
@@ -142,7 +142,6 @@ export default function Topbar() {
   }
 
   const handleRefresh = () => {
-    expandedCategories.set({})
     refetchResources()
   }
 

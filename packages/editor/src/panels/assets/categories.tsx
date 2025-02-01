@@ -24,65 +24,71 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { useHookstate } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
-import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
-function AssetCategory({ index }: { index: number }) {
-  const { categories, currentCategoryPath, expandedCategories } = useAssetsCategory()
+type Node = {
+  name: string
+  path: string
+  depth: number
+  children: Node[]
+}
+
+function NodeHierarchyItem({ node, onClick }: { node: Node; onClick: () => void }) {
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const handleClick = () => {
+    setIsOpen(!isOpen)
+    onClick()
+  }
+
+  return (
+    <>
+      <EditorDropdownItem
+        label={node.name}
+        ItemIcon={Folder}
+        collapsed={!isOpen}
+        onClick={handleClick}
+        style={{ paddingLeft: `${32 * node.depth}px` }}
+      />
+
+      {isOpen &&
+        node.children &&
+        node.children.map((child) => <NodeHierarchyItem key={child.path} node={child} onClick={onClick} />)}
+    </>
+  )
+}
+
+function FolderCategory({ item, index }: { item: any; index: number }) {
+  const { changeDirectoryByPath } = useCurrentFiles()
+
+  const handleClick = () => {
+    changeDirectoryByPath(item.path)
+  }
+
+  return <NodeHierarchyItem node={item} onClick={handleClick} />
+}
+
+function AssetCategory({ item, index }: { item: any; index: number }) {
+  const { categories, currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
   const category = categories[index].value
   const selectedCategory = currentCategoryPath.at(-1)?.value
 
   const handleClickCategory = () => {
-    // setting expanded here
-    if (!category?.isLeaf) expandedCategories[category?.name].set(!category?.collapsed)
     currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
     staticResourcesPagination.skip.set(0)
     refetchResources()
   }
 
-  return (
-    <EditorDropdownItem
-      label={category?.name}
-      ItemIcon={Folder}
-      selected={selectedCategory?.name === category?.name}
-      collapsed={category?.collapsed}
-      onClick={handleClickCategory}
-      style={{
-        paddingLeft: `${32 * category?.depth}px`
-      }}
-    />
-  )
-}
-
-function FileCategory({ index }) {
-  const { categories, expandedCategories, changeDirectoryByPath, currentCategoryPath } = useCurrentFiles()
-  const category = categories[index].value
-  const filesState = useMutableState(FilesState)
-
-  const handleClick = () => {
-    if (!category?.isLeaf) expandedCategories[category?.name].set(!category?.collapsed)
-    currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
-    changeDirectoryByPath(category?.path)
-  }
-
-  return (
-    <EditorDropdownItem
-      label={category?.name}
-      ItemIcon={Folder}
-      collapsed={category?.collapsed}
-      onClick={handleClick}
-      style={{ paddingLeft: `${32 * (category?.depth || 0)}px` }}
-    />
-  )
+  return <NodeHierarchyItem node={item} onClick={handleClickCategory} />
 }
 
 const SideBarIcons = {
@@ -102,20 +108,8 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
   }
 
   const renderListByType = {
-    assets: (
-      <>
-        {items.map((category, index) => (
-          <AssetCategory index={index} />
-        ))}
-      </>
-    ),
-    files: (
-      <>
-        {items.map((category, index) => (
-          <FileCategory index={index} />
-        ))}
-      </>
-    )
+    assets: items.map((item, idx) => <AssetCategory item={item} index={idx} />),
+    files: items.map((item, idx) => <FolderCategory item={item} index={idx} />)
   }
 
   return (
@@ -153,7 +147,7 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
 }
 
 export default function CategoriesList({ selected, onClick }) {
-  const { sidebarWidth, categories } = useAssetsCategory()
+  const { sidebarWidth, categories: asseteCategories } = useAssetsCategory()
   const { files, categories: folderCategories } = useCurrentFiles()
 
   // todo: rename sidebar section to sidebar or find a better name
@@ -164,10 +158,10 @@ export default function CategoriesList({ selected, onClick }) {
   })
 
   React.useEffect(() => {
-    if (categories.value) {
+    if (asseteCategories.value) {
       setSidebarSections({
         ...sidebarSections,
-        assets: [...categories.value] as any
+        assets: [...asseteCategories.value] as any
       })
     }
 
@@ -177,8 +171,7 @@ export default function CategoriesList({ selected, onClick }) {
         files: [...folderCategories.value] as any
       })
     }
-    console.log('side', sidebarSections)
-  }, [categories.value, folderCategories.value])
+  }, [asseteCategories.value, folderCategories.value])
 
   return (
     <div

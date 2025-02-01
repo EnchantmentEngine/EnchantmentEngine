@@ -60,31 +60,6 @@ export const calculateItemsToFetch = () => {
   return itemsInRow * numberOfRows
 }
 
-// TODO: refactor, this doesnt work for nested folders with the same name as parent
-export function mapCategoriesHelper(collapsedCategories: { [key: string]: boolean }, initial) {
-  const result: Category[] = []
-  const generateCategories = (node: object, depth = 0) => {
-    for (const key in node) {
-      if (key === 'path') return
-      const isLeaf = Object.keys(node[key]).length === 0
-      const category: Category = {
-        name: key,
-        object: node[key],
-        collapsed: collapsedCategories[key] ?? true,
-        depth,
-        isLeaf,
-        path: node[key].path
-      }
-      result.push(category)
-      if (typeof node[key] === 'object' && !category.collapsed) {
-        generateCategories(node[key], depth + 1)
-      }
-    }
-  }
-  generateCategories(initial)
-  return result
-}
-
 export function getParentCategories(categories: readonly Category[], target: string) {
   const findNestingCategories = (nestedCategory: Record<string, any>, parentCategory: string): Category[] => {
     for (const key in nestedCategory) {

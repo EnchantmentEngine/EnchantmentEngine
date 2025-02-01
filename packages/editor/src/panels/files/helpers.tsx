@@ -44,7 +44,6 @@ import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
 import { filterExistingFiles, handleUploadFiles, sanitizeFiles } from '../../functions/assetFunctions'
 import { FilesState } from '../../services/FilesState'
-import { mapCategoriesHelper } from '../assets/helpers'
 
 /* CONSTANTS */
 
@@ -58,8 +57,6 @@ const FilesQueryContext = createContext({
   filesQuery: null as null | ReturnType<typeof useFind<'file-browser'>>,
   files: [] as FileDataType[],
   categories: [] as any,
-  expandedCategories: {} as any,
-  currentCategoryPath: [] as any,
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
@@ -69,8 +66,6 @@ const FilesQueryContext = createContext({
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
   const filesState = useMutableState(FilesState)
   const categories = useHookstate<any>([])
-  const expandedCategories = useHookstate({} as { [key: string]: boolean })
-  const currentCategoryPath = useHookstate<any>([])
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
@@ -132,26 +127,46 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
-  function buildHierarchy(paths) {
-    const result = {}
+  type Node = {
+    name: string
+    path: string
+    children: Node[]
+    depth: number
+  }
 
-    paths.forEach((path) => {
-      const segments = path.split('/').slice(4)
-      let current = result
+  function buildHierarchy(paths: { key: string; name: string }[]): Node[] {
+    const map = new Map<string, Node>()
+    const roots: Node[] = []
 
-      segments.forEach((segment, index) => {
-        if (index === segments.length - 1) return
+    for (const { key: path } of paths) {
+      const parts = path.split('/').filter(Boolean)
+      let currentPath = ''
+      let parentNode: Node | null = null
 
-        if (!current[segment]) {
-          current[segment] = {
-            path: path
+      for (let i = 0; i < parts.length; i++) {
+        currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i]
+
+        if (!map.has(currentPath)) {
+          const newNode: Node = {
+            name: parts[i],
+            path: currentPath,
+            depth: currentPath.split('/').length - 1,
+            children: []
+          }
+          map.set(currentPath, newNode)
+
+          if (parentNode) {
+            parentNode.children.push(newNode)
+          } else {
+            roots.push(newNode)
           }
         }
-        current = current[segment]
-      })
-    })
 
-    return result
+        parentNode = map.get(currentPath)!
+      }
+    }
+
+    return roots
   }
 
   const foldersQuery = useFind(fileBrowserPath, {
@@ -163,20 +178,17 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   })
 
   const folders = React.useMemo(() => foldersQuery.data.filter((file) => file.type === 'folder'), [foldersQuery.data])
-  const folderHierarchy = React.useMemo(() => buildHierarchy(folders.map((folder) => folder.key)), [folders])
 
   useEffect(() => {
     if (foldersQuery.status === 'success') {
-      categories.set(mapCategoriesHelper(expandedCategories.value, folderHierarchy))
+      categories.set(buildHierarchy(folders))
     }
-  }, [foldersQuery.status, expandedCategories])
+  }, [foldersQuery.status])
 
   return (
     <FilesQueryContext.Provider
       value={{
         categories,
-        expandedCategories,
-        currentCategoryPath,
         filesQuery,
         files,
         changeDirectoryByPath,

@@ -29,7 +29,7 @@ import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
-import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags, mapCategoriesHelper } from './helpers'
+import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags } from './helpers'
 
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
@@ -41,7 +41,6 @@ const AssetsQueryContext = createContext({
   category: {
     currentCategoryPath: null! as State<Category[]>,
     categories: null! as State<Category[]>,
-    expandedCategories: {} as State<{ [key: string]: boolean }>,
     sidebarWidth: null! as State<number>
   }
 })
@@ -54,7 +53,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
 
   const currentCategoryPath = useHookstate<Category[]>([])
   const categories = useHookstate<Category[]>([])
-  const expandedCategories = useHookstate({} as { [key: string]: boolean })
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
 
@@ -140,9 +138,17 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
+  function convertToHierarchy(obj: Record<string, any>, depth = 0): any {
+    return Object.entries(obj).map(([key, value]) => ({
+      name: key,
+      depth,
+      children: convertToHierarchy(value, depth + 1)
+    }))
+  }
+
   useEffect(() => {
-    categories.set(mapCategoriesHelper(expandedCategories.value, AssetsPanelCategories.initial))
-  }, [expandedCategories])
+    categories.set(convertToHierarchy(AssetsPanelCategories.initial))
+  }, [])
 
   return (
     <AssetsQueryContext.Provider
@@ -155,7 +161,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
         category: {
           categories,
           currentCategoryPath,
-          expandedCategories,
           sidebarWidth: categorySidbarWidth
         }
       }}
