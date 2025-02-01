@@ -37,7 +37,7 @@ import { useAssetsCategory, useAssetsQuery } from './hooks'
 
 export type AssetCategoryNode = {
   name: string
-  path?: string
+  path: string
   depth: number
   children: AssetCategoryNode[]
 }
