@@ -35,6 +35,8 @@ import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
 import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
+import { AssetCategoryNode } from './categories'
+import { findCategoryByPath } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
 export const uploadFiles = () => {
@@ -56,40 +58,39 @@ export const uploadFiles = () => {
 }
 
 export function AssetsBreadcrumbs() {
-  const { currentCategoryPath } = useAssetsCategory()
+  const { categories, currentCategoryPath } = useAssetsCategory()
   const { refetchResources } = useAssetsQuery()
-  const parentCategories = currentCategoryPath.length > 1 ? currentCategoryPath.slice(0, -1) : []
-  const currentCategory = currentCategoryPath.length > 0 ? currentCategoryPath.at(-1) : null
+  const currentCategory = currentCategoryPath.get({ noproxy: true }) as AssetCategoryNode
+
+  const breadcrumbTrail = currentCategory?.path
+    ? currentCategory.path.split('/').map((name, index, array) => ({
+        name,
+        path: array.slice(0, index + 1).join('/')
+      }))
+    : []
 
   const handleSelectParentCategory = (index: number) => {
-    currentCategoryPath.set((prevPath) => prevPath.slice(0, index + 1))
+    const selectedPath = breadcrumbTrail[index].path
+    const newParent = findCategoryByPath(categories.get({ noproxy: true }) as AssetCategoryNode[], selectedPath)
+    currentCategoryPath.set(newParent || undefined)
     refetchResources()
   }
 
   return (
-    <div className="flex items-center gap-4" data-testid="assets-panel-breadcrumbs">
+    <div className="flex items-center gap-2" data-testid="assets-panel-breadcrumbs">
       <FolderSm onClick={() => handleSelectParentCategory(0)} className="cursor-pointer text-xs text-[#42454D]" />
-      {parentCategories.map((category, idx) => (
-        <span
-          key={category.name.value}
-          className="flex cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3]"
-          data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
-          onClick={() => handleSelectParentCategory(idx)}
-        >
-          <span className="hover:underline">{category.name.value}</span>
-          <span>
-            <BreadCrumbSlash />
+      {breadcrumbTrail.map((category, idx) => (
+        <div key={category.path} className="flex items-center">
+          <span
+            className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3] hover:underline"
+            data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
+            onClick={() => handleSelectParentCategory(idx)}
+          >
+            {category.name}
           </span>
-        </span>
+          {idx < breadcrumbTrail.length - 1 && <BreadCrumbSlash />}
+        </div>
       ))}
-      {currentCategory && (
-        <span
-          className="overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3]"
-          data-testid="assets-panel-breadcrumb-current-category"
-        >
-          {currentCategory.name.value}
-        </span>
-      )}
     </div>
   )
 }
@@ -97,11 +98,18 @@ export function AssetsBreadcrumbs() {
 export default function Topbar() {
   const { t } = useTranslation()
   const { search } = useAssetsQuery()
-  const { currentCategoryPath } = useAssetsCategory()
+  const { categories, currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
 
   const handleBack = () => {
-    currentCategoryPath.set((path) => path.slice(0, -1))
+    const path = currentCategoryPath.value?.path.split('/') ?? []
+    if (path.length <= 1) {
+      currentCategoryPath.set(undefined)
+      return
+    }
+    const selectedPath = path.slice(0, path.length - 1).join('/')
+    const foundCategory = findCategoryByPath(categories.get({ noproxy: true }) as AssetCategoryNode[], selectedPath)
+    currentCategoryPath.set(foundCategory || undefined)
     refetchResources()
   }
 

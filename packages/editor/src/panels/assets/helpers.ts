@@ -23,6 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { AssetCategoryNode } from './categories'
+
 export type Category = {
   name: string
   object: object
@@ -32,14 +34,16 @@ export type Category = {
   path?: string
 }
 
-export function iterativelyListTags(obj: object): string[] {
+export function iterativelyListTags(categories): string[] {
   const tags: string[] = []
-  for (const key in obj) {
-    tags.push(key)
-    if (typeof obj[key] === 'object') {
-      tags.push(...iterativelyListTags(obj[key]))
+
+  for (const category of categories) {
+    tags.push(category.name)
+    if (category.children.length > 0) {
+      tags.push(...iterativelyListTags(category.children))
     }
   }
+
   return tags
 }
 
@@ -60,30 +64,17 @@ export const calculateItemsToFetch = () => {
   return itemsInRow * numberOfRows
 }
 
-export function getParentCategories(categories: readonly Category[], target: string) {
-  const findNestingCategories = (nestedCategory: Record<string, any>, parentCategory: string): Category[] => {
-    for (const key in nestedCategory) {
-      if (key === target) {
-        const foundCategory = categories.find((c) => c.name === parentCategory)
-        if (foundCategory) {
-          return [foundCategory]
-        }
-        return []
-      } else if (typeof nestedCategory[key] === 'object' && nestedCategory[key] !== null) {
-        const nestedCategories = findNestingCategories(nestedCategory[key], key)
-        if (nestedCategories.length) {
-          return [categories.find((c) => c.name === parentCategory)!, ...nestedCategories]
-        }
-      }
+export function findCategoryByPath(nodes: AssetCategoryNode[], targetPath: string): AssetCategoryNode | null {
+  for (const node of nodes) {
+    if (node.path === targetPath) {
+      return node
     }
-    return []
+
+    const foundInChildren = findCategoryByPath(node.children, targetPath)
+    if (foundInChildren) {
+      return foundInChildren
+    }
   }
 
-  for (const category of categories) {
-    const parentCategories = findNestingCategories(category.object, category.name)
-    if (parentCategories.length) {
-      return parentCategories
-    }
-  }
-  return []
+  return null
 }

@@ -33,22 +33,21 @@ import { twMerge } from 'tailwind-merge'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
-import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
 
-type Node = {
+export type AssetCategoryNode = {
   name: string
-  path: string
+  path?: string
   depth: number
-  children: Node[]
+  children: AssetCategoryNode[]
 }
 
-function NodeHierarchyItem({ node, onClick }: { node: Node; onClick: () => void }) {
+function NodeHierarchyItem({ node, onClick }: { node: AssetCategoryNode; onClick: (item) => void }) {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const handleClick = () => {
+    onClick(node)
     setIsOpen(!isOpen)
-    onClick()
   }
 
   return (
@@ -68,24 +67,22 @@ function NodeHierarchyItem({ node, onClick }: { node: Node; onClick: () => void 
   )
 }
 
-function FolderCategory({ item, index }: { item: any; index: number }) {
+function FolderCategory({ item }: { item: AssetCategoryNode }) {
   const { changeDirectoryByPath } = useCurrentFiles()
 
-  const handleClick = () => {
-    changeDirectoryByPath(item.path)
+  const handleClick = (item) => {
+    changeDirectoryByPath(item.path ?? '')
   }
 
   return <NodeHierarchyItem node={item} onClick={handleClick} />
 }
 
-function AssetCategory({ item, index }: { item: any; index: number }) {
-  const { categories, currentCategoryPath } = useAssetsCategory()
+function AssetCategory({ item }: { item: AssetCategoryNode }) {
+  const { currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
-  const category = categories[index].value
-  const selectedCategory = currentCategoryPath.at(-1)?.value
 
-  const handleClickCategory = () => {
-    currentCategoryPath.set([...getParentCategories(categories.value, category?.name), category])
+  const handleClickCategory = (item) => {
+    currentCategoryPath.set(item)
     staticResourcesPagination.skip.set(0)
     refetchResources()
   }
@@ -110,8 +107,8 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
   }
 
   const renderListByType = {
-    assets: items.map((item, idx) => <AssetCategory item={item} index={idx} />),
-    files: items.map((item, idx) => <FolderCategory item={item} index={idx} />)
+    assets: items.map((item: AssetCategoryNode, idx) => <AssetCategory item={item} key={item.name + idx} />),
+    files: items.map((item: AssetCategoryNode, idx) => <FolderCategory item={item} key={item.name + idx} />)
   }
 
   return (
@@ -153,7 +150,10 @@ export default function CategoriesList({ selected, onClick }) {
   const { files, categories: folderCategories } = useCurrentFiles()
 
   // todo: rename sidebar section to sidebar or find a better name
-  const [sidebarSections, setSidebarSections] = React.useState({
+  const [sidebarSections, setSidebarSections] = React.useState<{
+    assets: AssetCategoryNode[]
+    files: AssetCategoryNode[]
+  }>({
     // favorites: [], TODO
     assets: [],
     files: [] // todo: rename to folders
@@ -163,14 +163,14 @@ export default function CategoriesList({ selected, onClick }) {
     if (asseteCategories.value) {
       setSidebarSections({
         ...sidebarSections,
-        assets: [...asseteCategories.value] as any
+        assets: [...asseteCategories.get({ noproxy: true })] as AssetCategoryNode[]
       })
     }
 
     if (files.length) {
       setSidebarSections({
         ...sidebarSections,
-        files: [...folderCategories.value] as any
+        files: [...folderCategories.get({ noproxy: true })] as AssetCategoryNode[]
       })
     }
   }, [asseteCategories.value, folderCategories.value])

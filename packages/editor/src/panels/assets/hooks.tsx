@@ -29,7 +29,8 @@ import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
-import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags } from './helpers'
+import { AssetCategoryNode } from './categories'
+import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from './helpers'
 
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
@@ -39,8 +40,8 @@ const AssetsQueryContext = createContext({
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
 
   category: {
-    currentCategoryPath: null! as State<Category[]>,
-    categories: null! as State<Category[]>,
+    currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
+    categories: null! as State<AssetCategoryNode[]>,
     sidebarWidth: null! as State<number>
   }
 })
@@ -51,19 +52,20 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const resources = useHookstate<StaticResourceType[]>([])
   const resourcesLoading = useHookstate(false)
 
-  const currentCategoryPath = useHookstate<Category[]>([])
-  const categories = useHookstate<Category[]>([])
+  const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
+
+  const categories = useHookstate<AssetCategoryNode[]>([])
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
 
   const staticResourcesFindApi = () => {
     const abortController = new AbortController()
-    const selectedCategory = currentCategoryPath.at(-1)?.value
+    const selectedCategory = currentCategoryPath.value
 
     resourcesLoading.set(true)
 
     const performFetch = () => {
-      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.object)] : []
+      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.children)] : []
 
       let query = {} as StaticResourceQuery
       if (selectedCategory?.name === MyAssetCategory) {
@@ -138,12 +140,17 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
-  function convertToHierarchy(obj: Record<string, any>, depth = 0): any {
-    return Object.entries(obj).map(([key, value]) => ({
-      name: key,
-      depth,
-      children: convertToHierarchy(value, depth + 1)
-    }))
+  function convertToHierarchy(obj: Record<string, any>, depth = 0, parentPath = ''): AssetCategoryNode[] {
+    return Object.entries(obj).map(([key, value]) => {
+      const currentPath = parentPath ? `${parentPath}/${key}` : key
+
+      return {
+        name: key,
+        path: currentPath,
+        depth,
+        children: convertToHierarchy(value, depth + 1, currentPath)
+      }
+    })
   }
 
   useEffect(() => {

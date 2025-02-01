@@ -45,6 +45,7 @@ import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
 import { filterExistingFiles, handleUploadFiles, sanitizeFiles } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
+import { AssetCategoryNode } from '../assets/categories'
 
 /* CONSTANTS */
 
@@ -128,18 +129,11 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
-  type Node = {
-    name: string
-    path: string
-    children: Node[]
-    depth: number
-  }
-
   const projectName = useMutableState(EditorState).projectName.value
 
-  function buildHierarchy(paths: { key: string; name: string }[]): Node[] {
-    const map = new Map<string, Node>()
-    const roots: Node[] = []
+  function buildHierarchy(paths: { key: string; name: string }[]): AssetCategoryNode[] {
+    const map = new Map<string, AssetCategoryNode>()
+    const roots: AssetCategoryNode[] = []
 
     for (const { key: path } of paths) {
       const parts = path
@@ -147,13 +141,18 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
         .slice(`/projects/${projectName}/public/**`.split('/').length - 2)
         .filter(Boolean)
       let currentPath = ''
-      let parentNode: Node | null = null
+      let parentNode: AssetCategoryNode | null = null
 
       for (let i = 0; i < parts.length; i++) {
         currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i]
 
         if (!map.has(currentPath)) {
-          const newNode: Node = { name: parts[i], path: path, depth: currentPath.split('/').length - 1, children: [] }
+          const newNode: AssetCategoryNode = {
+            name: parts[i],
+            path: path,
+            depth: currentPath.split('/').length - 1,
+            children: []
+          }
           map.set(currentPath, newNode)
 
           if (parentNode) {
