@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -41,8 +41,8 @@ const execute = () => {
   const { deltaSeconds } = getState(ECSState)
 
   for (const entity of tweenQuery()) {
-    const tween = getComponent(entity, TweenComponent)
-    tween.update()
+    const tween = getOptionalComponent(entity, TweenComponent)
+    tween?.update()
   }
 
   for (const entity of animationQuery()) {
