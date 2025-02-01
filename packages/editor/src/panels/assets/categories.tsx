@@ -24,12 +24,14 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React, { ReactNode } from 'react'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
+import { EditorState } from '../../services/EditorServices'
+import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
 import { getParentCategories } from './helpers'
 import { useAssetsCategory, useAssetsQuery } from './hooks'
@@ -172,6 +174,15 @@ export default function CategoriesList({ selected, onClick }) {
       })
     }
   }, [asseteCategories.value, folderCategories.value])
+
+  const filesState = useMutableState(FilesState)
+
+  const projectName = useMutableState(EditorState).projectName.value
+  React.useEffect(() => {
+    if (projectName) {
+      filesState.merge({ selectedDirectory: `/projects/${projectName}/public/`, projectName: projectName })
+    }
+  }, [projectName])
 
   return (
     <div

@@ -43,6 +43,7 @@ import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
 import { filterExistingFiles, handleUploadFiles, sanitizeFiles } from '../../functions/assetFunctions'
+import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 
 /* CONSTANTS */
@@ -134,12 +135,17 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     depth: number
   }
 
+  const projectName = useMutableState(EditorState).projectName.value
+
   function buildHierarchy(paths: { key: string; name: string }[]): Node[] {
     const map = new Map<string, Node>()
     const roots: Node[] = []
 
     for (const { key: path } of paths) {
-      const parts = path.split('/').filter(Boolean)
+      const parts = path
+        .split('/')
+        .slice(`/projects/${projectName}/public/**`.split('/').length - 2)
+        .filter(Boolean)
       let currentPath = ''
       let parentNode: Node | null = null
 
@@ -147,12 +153,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
         currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i]
 
         if (!map.has(currentPath)) {
-          const newNode: Node = {
-            name: parts[i],
-            path: currentPath,
-            depth: currentPath.split('/').length - 1,
-            children: []
-          }
+          const newNode: Node = { name: parts[i], path: path, depth: currentPath.split('/').length - 1, children: [] }
           map.set(currentPath, newNode)
 
           if (parentNode) {
@@ -172,8 +173,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   const foldersQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
-      // todo: change this to the right path
-      directory: '/projects/test/hello-world/public/**'
+      directory: `/projects/${projectName}/public/**`
     }
   })
 
