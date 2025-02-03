@@ -75,7 +75,10 @@ export const authenticationDbToSchema = (rawData: AuthenticationSettingDatabaseT
 
   let jwtOptions: AuthJwtOptionsType | undefined = undefined
   if (rawData.jwtOptions) {
-    jwtOptions = typeof rawData.jwtOptions === 'string' ? JSON.parse(rawData.jwtOptions) as AuthJwtOptionsType : rawData.jwtOptions
+    jwtOptions =
+      typeof rawData.jwtOptions === 'string'
+        ? (JSON.parse(rawData.jwtOptions) as AuthJwtOptionsType)
+        : rawData.jwtOptions
 
     // Usually above JSON.parse should be enough. But since our pre-feathers 5 data
     // was serialized multiple times, therefore we need to parse it twice.

@@ -40,7 +40,8 @@ const options = cli.parse({
 
 const ArtifactRegistryClient = v1.ArtifactRegistryClient
 
-const K8S_PAGE_LIMIT = 1
+const K8S_PAGE_LIMIT = 50
+const ARTIFACT_REGISTRY_BATCH_DELETE_PAGE_SIZE = 50
 
 const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => {
   const matchingPods = await k8Client.listNamespacedPod(
@@ -59,23 +60,17 @@ const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => 
 }
 
 const getParent = (includePackage = false) => {
-  console.log('getParent')
   const urlSplit = options.repoUrl.split('/')
-  console.log('urlSplit', urlSplit)
   const region = urlSplit[0].replace('-docker.pkg.dev', '')
   let returned = `projects/${urlSplit[1]}/locations/${region}/repositories/${options.repoName}`
-  console.log('returned', returned)
   if (includePackage) returned += `/packages/${options.repoName}`
-  console.log('final returned', returned)
   return returned
 }
 
 const getAllImages = async (arClient: any, repoName: string, images = [] as any[]) => {
-  console.log('getAllImages')
   const input = {
     parent: getParent(false)
   } as any
-  console.log('input', input)
   const iterableResponse = arClient.listDockerImagesAsync(input)
   for await (const item of iterableResponse) images = images.concat(item)
   return images.filter((image) => new RegExp(repoName).test(image.uri))
@@ -83,11 +78,14 @@ const getAllImages = async (arClient: any, repoName: string, images = [] as any[
 
 const deleteImages = async (arClient, toBeDeleted) => {
   const parent = getParent(true)
+  const paginated = toBeDeleted.length > ARTIFACT_REGISTRY_BATCH_DELETE_PAGE_SIZE
+  const deletePage = paginated ? toBeDeleted.slice(0, 50) : toBeDeleted
   const localOptions = {
-    names: toBeDeleted.map((image) => parent + '/versions/' + image.name.split('@')[1]),
+    names: deletePage.map((image) => parent + '/versions/' + image.name.split('@')[1]),
     parent
   }
   const [operation] = await arClient.batchDeleteVersions(localOptions)
+  if (paginated) return await deleteImages(arClient, toBeDeleted.slice(ARTIFACT_REGISTRY_BATCH_DELETE_PAGE_SIZE))
   return await operation.promise()
 }
 
@@ -126,12 +124,9 @@ cli.main(async () => {
       currentImages = [...new Set(currentImages)]
     }
 
-    console.log('currentImages', currentImages)
     const arClient = new ArtifactRegistryClient({})
 
-    console.log('getting images from ArtReg', options.repoName)
     const images = await getAllImages(arClient, options.repoName || 'ir-engine', [])
-    console.log('images', images)
     if (!images) return
     const latestImage = images.find(
       (image) =>
