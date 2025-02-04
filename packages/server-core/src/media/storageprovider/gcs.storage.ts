@@ -99,8 +99,8 @@ export class GCSStorage implements StorageProviderInterface {
    */
   async getObject(key: string): Promise<StorageObjectInterface> {
     const file = this.provider.bucket(this.bucket).file(key)
-    const response = file.get()
-    const [metadata] = file.getMetadata()
+    const response = await file.get()
+    const [metadata] = await file.getMetadata()
     return { Body: response[0], ContentType: metadata.contentType }
   }
 
@@ -117,7 +117,9 @@ export class GCSStorage implements StorageProviderInterface {
    * @param key Key of object.
    */
   async getObjectContentType(key: string): Promise<any> {
-    return ''
+    const file = this.provider.bucket(this.bucket).file(key)
+    const [metadata] = await file.getMetadata()
+    return metadata.contentType
   }
 
   /**
