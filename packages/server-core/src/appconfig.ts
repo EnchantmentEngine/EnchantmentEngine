@@ -395,6 +395,17 @@ const aws = {
 }
 export type AwsConfig = typeof aws
 
+/**
+ * GCP
+ */
+
+const gcp = {
+  gcs: {
+    gcurl: `https://console.cloud.google.com/storage/browser/${process.env.GCLOUD_STORAGE_BUCKET}`,
+    bucket: process.env.GCLOUD_STORAGE_BUCKET
+  }
+}
+
 const chargebee = {
   url: process.env.CHARGEBEE_SITE + '.chargebee.com' || 'dummy.not-chargebee.com',
   apiKey: process.env.CHARGEBEE_API_KEY!
@@ -443,6 +454,7 @@ const config = {
   deployStage: process.env.DEPLOY_STAGE!,
   authentication,
   aws,
+  gcp,
   chargebee,
   client,
   coil,
