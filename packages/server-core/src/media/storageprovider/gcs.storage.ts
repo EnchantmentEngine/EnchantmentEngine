@@ -1,0 +1,333 @@
+/*
+CPAL-1.0 License
+
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0. (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+The License is based on the Mozilla Public License Version 1.1, but Sections 14
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
+Exhibit A has been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
+specific language governing rights and limitations under the License.
+
+The Original Code is Infinite Reality Engine.
+
+The Original Developer is the Initial Developer. The Initial Developer of the
+Original Code is the Infinite Reality Engine team.
+
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+Infinite Reality Engine. All Rights Reserved.
+*/
+
+import path from 'path/posix'
+import S3BlobStore from 's3-blob-store'
+
+import { FileBrowserContentType } from '@ir-engine/common/src/schemas/media/file-browser.schema'
+
+import config from '../../appconfig'
+import {
+  PutObjectParams,
+  SignedURLResponse,
+  StorageListObjectInterface,
+  StorageObjectInterface,
+  StorageObjectPutInterface,
+  StorageProviderInterface
+} from './storageprovider.interface'
+
+const { Storage } = require('@google-cloud/storage')
+
+/**
+ * Storage provide class to communicate with GCP Cloud Storage API.
+ */
+export class GCSStorage implements StorageProviderInterface {
+  constructor() {}
+  /**
+   * Name of GCS bucket.
+   */
+  bucket = config.gcp.gcs.bucket as string
+
+  /**
+   * Instance of GCS service object. This object has one method for each API operation.
+   */
+  provider = new Storage()
+
+  getCacheDomain(internal?: boolean): string {
+    return this.cacheDomain
+  }
+
+  /**
+   * Domain address of GCS cache.
+   */
+  cacheDomain = config.gcp.gcs.cacheDomain! as string
+
+  originURLs = [this.cacheDomain!]
+
+  private bucketAssetURL = `https://storage.googleapis.com/download/storage/v1/b/${this.bucket}/o/`
+
+  /**
+   * Get the instance of GCS storage provider.
+   */
+  getProvider(): StorageProviderInterface {
+    return this
+  }
+
+  /**
+   * Check if an object exists in the GCS storage.
+   * @param fileName Name of file in the storage.
+   * @param directoryPath Directory of file in the storage.
+   */
+  async doesExist(fileName: string, directoryPath: string): Promise<boolean> {
+    const file = this.provider.bucket(this.bucket).file(`${directoryPath}/${fileName}`)
+    const response = await file.exists()
+    return response[0]
+  }
+  /**
+   * Check if an object is directory or not.
+   * @param fileName Name of file in the storage.
+   * @param directoryPath Directory of file in the storage.
+   */
+  async isDirectory(fileName: string, directoryPath: string): Promise<boolean> {
+    const response = await this.provider.bucket(this.bucket).getFiles({
+      prefix: path.join(directoryPath, fileName, '/'),
+      maxResults: 1
+    })
+
+    // Directories in GCS don't exists and are emulated based on file path.
+    return response[0][0]?.metadata?.size === '0'
+  }
+
+  /**
+   * Get the GCS storage object.
+   * @param key Key of object.
+   */
+  async getObject(key: string): Promise<StorageObjectInterface> {
+    const file = this.provider.bucket(this.bucket).file(key)
+    const [metadata] = await file.getMetadata()
+    const [fileBody] = await file.download()
+    return { Body: fileBody, ContentType: metadata.contentType }
+  }
+
+  /**
+   * Get the object from cache.
+   * @param key Key of object.
+   * @param internal Whether this is an internal call
+   */
+  getCachedURL(key: string, internal?: boolean): string {
+    const cacheDomain = this.getCacheDomain(internal)
+    return new URL(key, 'https://' + cacheDomain).href
+  }
+
+  /**
+   * Get the content type of storage object.
+   * @param key Key of object.
+   */
+  async getObjectContentType(key: string): Promise<any> {
+    const file = this.provider.bucket(this.bucket).file(key)
+    const [metadata] = await file.getMetadata()
+    return metadata.contentType
+  }
+
+  /**
+   * Get a list of keys under a path.
+   * @param prefix Path relative to root in order to list objects.
+   * @param recursive If true it will list content from sub folders as well. Default is true.
+   * @param continuationToken It indicates that the list is being continued with a token. Used for certain providers like GCS.
+   * @returns {Promise<StorageListObjectInterface>}
+   */
+  async listObjects(prefix: string, recursive = true, continuationToken?: string): Promise<StorageListObjectInterface> {
+    const files = await this.listFolderContent(prefix, recursive)
+    return {
+      Contents: files.map((file) => {
+        return {
+          Key: file.key!,
+          Size: file.size!
+        }
+      })
+    }
+  }
+
+  /**
+   * Adds an object into the GCS storage.
+   * @param data Storage object to be added.
+   * @param params Parameters of the add request.
+   */
+  async putObject(data: StorageObjectPutInterface, params: PutObjectParams = {}): Promise<boolean> {
+    if (!data.Key) return false
+    // key should not contain '/' at the beginning
+    const key = data.Key[0] === '/' ? data.Key.substring(1) : data.Key
+
+    const file = this.provider.bucket(this.bucket).file(key)
+
+    const args: any = {
+      contentType: data.ContentType
+    }
+
+    if (data.ContentEncoding) args.contentEncoding = data.ContentEncoding
+
+    if (data.Metadata) args.metadata = data.Metadata
+
+    try {
+      await file.save(data.Body)
+      await file.setMetadata(args)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
+  async getOriginURLs(): Promise<string[]> {
+    return ['']
+  }
+
+  createInvalidation = async (): Promise<any> => Promise.resolve()
+
+  associateWithFunction = async (): Promise<any> => Promise.resolve()
+
+  createFunction = async (): Promise<any> => Promise.resolve()
+
+  listFunctions = async (): Promise<any> => Promise.resolve()
+
+  publishFunction = async (): Promise<any> => Promise.resolve()
+
+  updateFunction = async (): Promise<any> => Promise.resolve()
+
+  /**
+   * Get the BlobStore object for GCS storage.
+   */
+  getStorage(): typeof S3BlobStore {
+    return this.provider
+  }
+
+  /**
+   * Get the form fields and target URL for direct POST uploading.
+   * @param key Key of object.
+   * @param expiresAfter The number of seconds for which signed policy should be valid. Defaults to 3600 (one hour).
+   * @param conditions An array of conditions that must be met for the form upload to be accepted by GCS.
+   */
+  async getSignedUrl(key: string, expiresAfter: number, conditions): Promise<SignedURLResponse> {
+    // These options will allow temporary read access to the file
+    const options = {
+      version: 'v4',
+      action: 'read',
+      expires: expiresAfter
+    }
+
+    const result = await this.provider.bucket(this.bucket).file(key).getSignedUrl(options)
+
+    return {
+      fields: result.fields,
+      cacheDomain: this.cacheDomain,
+      url: result.url,
+      local: false
+    }
+  }
+
+  /**
+   * Delete resources in the GCS storage.
+   * @param keys List of keys.
+   */
+  async deleteResources(keys: string[]) {
+    return await Promise.all(
+      keys.map(async (key) => {
+        return this.provider.bucket(this.bucket).file(key).delete({
+          ignoreNotFound: true
+        })
+      })
+    )
+  }
+
+  /**
+   * List all the files/folders in the directory.
+   * @param folderName Name of folder in the storage.
+   * @param recursive If true it will list content from sub folders as well.
+   */
+  async listFolderContent(folderName: string, recursive = false): Promise<FileBrowserContentType[]> {
+    const prefix = folderName.endsWith('/') ? folderName : folderName + '/'
+    const response = await this.provider.bucket(this.bucket).getFiles({
+      prefix,
+      delimiter: recursive ? undefined : '/'
+    })
+
+    const promises: Promise<FileBrowserContentType>[] = []
+
+    const files = response[2]
+    if (!files.prefixes) files.prefixes = []
+
+    // Folders
+    for (let i = 0; i < files.prefixes!.length; i++) {
+      promises.push(
+        new Promise(async (resolve) => {
+          const key = files.prefixes![i].slice(0, -1)
+          const size = await this.getFolderSize(key)
+          const cont: FileBrowserContentType = {
+            key,
+            url: `${this.bucketAssetURL}/${key}`,
+            name: key.split('/').pop()!,
+            type: 'folder',
+            size
+          }
+          resolve(cont)
+        })
+      )
+    }
+
+    // Files
+    for (let i = 0; i < files.items.length; i++) {
+      const key = files.items[i].name
+      const regexx = /(?:.*)\/(?<name>.*)\.(?<extension>.*)/g
+      const query = regexx.exec(key)
+      if (query) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const cont: FileBrowserContentType = {
+              key,
+              url: files.items[i].mediaLink,
+              name: query!.groups!.name,
+              type: query!.groups!.extension,
+              size: parseInt(files.items[i].size)
+            }
+            resolve(cont)
+          })
+        )
+      }
+    }
+
+    return await Promise.all(promises)
+  }
+
+  async getFolderSize(folderName: string): Promise<number> {
+    const folderContent = await this.listFolderContent(folderName)
+    return folderContent.reduce((accumulator, { size }) => accumulator + size!, 0)
+  }
+
+  /**
+   * Move or copy object from one place to another in the gcs storage.
+   * @param oldName Name of the old object.
+   * @param newName Name of the new object.
+   * @param oldPath Path of the old object.
+   * @param newPath Path of the new object.
+   * @param isCopy If true it will create a copy of object.
+   */
+  async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
+    const isDirectory = await this.isDirectory(oldName, oldPath)
+    const oldFilePath = path.join(oldPath, oldName)
+    const newFilePath = path.join(newPath, newName)
+    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false)
+
+    return await Promise.all([
+      ...listResponse.Contents.map(async (file) => {
+        const relativePath = file.Key.replace(oldFilePath, '')
+        const key = newFilePath + relativePath
+
+        if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
+        else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
+      })
+    ])
+  }
+}
+
+export default GCSStorage

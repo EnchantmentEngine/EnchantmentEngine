@@ -215,6 +215,12 @@ export interface StorageProviderInterface {
   getObject(key: string): Promise<StorageObjectInterface>
 
   /**
+   * Get the content type of an object
+   * @returns {StorageProviderInterface}
+   */
+  getObjectContentType(key: string): Promise<string>
+
+  /**
    * Get the instance of current storage provider.
    * @returns {StorageProviderInterface}
    */
