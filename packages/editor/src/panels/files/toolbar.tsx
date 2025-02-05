@@ -108,7 +108,7 @@ function BreadcrumbItems() {
 
   const nestedIndex = breadcrumbDirectoryFiles.indexOf('projects')
 
-  breadcrumbDirectoryFiles = breadcrumbDirectoryFiles.filter((_, idx) => idx >= nestedIndex)
+  breadcrumbDirectoryFiles = breadcrumbDirectoryFiles.filter((_, idx) => idx > nestedIndex)
 
   return (
     <div className="flex items-center gap-4">
