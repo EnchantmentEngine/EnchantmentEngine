@@ -227,7 +227,7 @@ export default function FilesToolbar() {
     filesState.selectedDirectory.value.startsWith('/projects/' + filesState.projectName.value + '/public/') ||
     filesState.selectedDirectory.value.startsWith('/projects/' + filesState.projectName.value + '/assets/')
 
-  const { backDirectory, refreshDirectory, createNewFolder } = useCurrentFiles()
+  const { backDirectory, refreshDirectory } = useCurrentFiles()
 
   return (
     <>
@@ -285,11 +285,6 @@ export default function FilesToolbar() {
                 )}
                 onClick={() => filesViewMode.set('icons')}
               />
-            </div>
-            <div>
-              <StudioButton size="sm" variant="tertiary" onClick={createNewFolder}>
-                <FolderPlusSm className="h-5 w-5 cursor-pointer text-[#9CA0AA]" />
-              </StudioButton>
             </div>
           </>
         }
