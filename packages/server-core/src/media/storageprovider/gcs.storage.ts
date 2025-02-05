@@ -175,6 +175,7 @@ export class GCSStorage implements StorageProviderInterface {
       await file.setMetadata(args)
       return true
     } catch (err) {
+      console.log('Error with PutObject', err)
       return false
     }
   }
@@ -258,6 +259,7 @@ export class GCSStorage implements StorageProviderInterface {
 
     const files = response[2]
     console.log('files', files)
+    if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
 
     // Folders

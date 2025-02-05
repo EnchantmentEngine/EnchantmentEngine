@@ -44,7 +44,7 @@ cli.main(async () => {
     const putData = {
       Body: Buffer.from(JSON.stringify(files.map((file) => file.key))),
       ContentType: 'application/json',
-      Key: 'client/S3FilesToRemoveInitial.json'
+      Key: 'client/StorageProviderFilesToRemoveInitial.json'
     }
     await storageProvider.putObject(putData, { isDirectory: false })
     console.log('Created list of S3 files to delete after deployment')
