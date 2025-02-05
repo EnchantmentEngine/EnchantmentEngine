@@ -401,7 +401,7 @@ export type AwsConfig = typeof aws
 
 const gcp = {
   gcs: {
-    gcurl: `https://console.cloud.google.com/storage/browser/${process.env.GCLOUD_STORAGE_BUCKET}`,
+    cacheDomain: process.env.STORAGE_CACHE_DOMAIN,
     bucket: process.env.GCLOUD_STORAGE_BUCKET
   }
 }

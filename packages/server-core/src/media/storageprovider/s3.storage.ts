@@ -156,7 +156,7 @@ export class S3Provider implements StorageProviderInterface {
   /**
    * Name of S3 bucket.
    */
-  bucket = config.aws.s3.staticResourceBucket
+  bucket = config.aws.s3.staticResourceBucket as string
 
   /**
    * Instance of S3 service object. This object has one method for each API operation.
@@ -204,7 +204,7 @@ export class S3Provider implements StorageProviderInterface {
         : config.aws.cloudfront.domain
       : `${config.aws.cloudfront.domain}/${this.bucket}`
 
-  originURLs = [this.cacheDomain]
+  originURLs = [this.cacheDomain as string]
 
   private bucketAssetURL =
     config.server.storageProvider === 's3'
@@ -341,7 +341,7 @@ export class S3Provider implements StorageProviderInterface {
    */
   async putObject(data: StorageObjectPutInterface, params: PutObjectParams = {}): Promise<boolean> {
     if (!data.Key) return false
-    // key should not contain '/' at the begining
+    // key should not contain '/' at the beginning
     const key = data.Key[0] === '/' ? data.Key.substring(1) : data.Key
 
     const args = params.isDirectory
