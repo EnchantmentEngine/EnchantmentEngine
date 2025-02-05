@@ -50,10 +50,12 @@ import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 
 import { useTranslation } from 'react-i18next'
+import { PopoverState } from '../../common/services/PopoverState'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
 import { MediaStreamState } from '../../media/MediaStreamState'
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '../../media/PeerMediaChannelState'
+import ReportMenu from '../../user/menus/ReportMenu'
 import Draggable from './Draggable'
 import styles from './index.module.scss'
 
@@ -440,7 +442,9 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
         <span key={peerID + '-' + type + '-audio-container'} id={peerID + '-' + type + '-audio-container'} />
         <div className={styles['user-controls']}>
           <div className={styles['username']}>{username}</div>
-          {initialized && isPiP && !isSelf && (
+          {
+            // TODO: uncomment this when the PR is ready
+            /* initialized && isPiP && !isSelf && */
             <button
               style={{
                 display: 'flex',
@@ -456,7 +460,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 borderRadius: '10px',
                 backgroundColor: 'red'
               }}
-              onClick={openChat}
+              onClick={() => PopoverState.showPopupover(<ReportMenu type={'User'} showBackButton />)}
             >
               <Icon
                 type="Report"
@@ -479,7 +483,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 {t('social:user.reportUser')}
               </Text>
             </button>
-          )}
+          }
           <div className={styles['controls']}>
             <div className={styles['mute-controls']}>
               {videoMediaStream && (

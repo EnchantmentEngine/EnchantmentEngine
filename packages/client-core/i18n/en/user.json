@@ -282,7 +282,14 @@
       "refreshApiKey": "Refresh API Key",
       "privacyPolicy": "Privacy Policy",
       "helpChat": "Help Chat",
-      "reportWorld": "Report World"
+      "reportWorld": "Report World",
+      "report": "Report a {{type}}",
+      "typeAbuse": "Type of abuse",
+      "selectAbuseTypeRequired": "Please select a type of abuse",
+      "selectOne": "Select One",
+      "reportDetails": "Report details",
+      "reportDetailsRequired": "Please provide details about the abuse",
+      "reportDetailsPlaceholder": "In your own words, help us understand what went wrong"
     },
     "oauth": {
       "authenticating": "Authenticating..."

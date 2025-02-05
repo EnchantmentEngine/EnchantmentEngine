@@ -81,6 +81,7 @@ import { clientContextParams } from '../../util/ClientContextState'
 import { AuthService, AuthState } from '../services/AuthService'
 import { AvatarService } from '../services/AvatarService'
 import AvatarSelectMenu from './avatar/AvatarSelectMenu'
+import ReportMenu from './ReportMenu'
 import SettingsMenu from './SettingsMenu'
 
 const logger = multiLogger.child({ component: 'engine:ecs:ProfileMenu', modifier: clientContextParams })
@@ -416,7 +417,9 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             <CogLg className="h-10 w-10 text-text-primary" />
           </button>
 
-          {initialized && (
+          {
+            // TODO: uncomment this when the PR is ready
+            // initialized &&
             <div className="col-span-2 grid grid-cols-1 gap-y-2">
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#616161] p-1 text-text-primary-button"
@@ -428,13 +431,13 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1 text-text-primary-button"
-                onClick={openChat}
+                onClick={() => PopoverState.showPopupover(<ReportMenu type={'World'} showBackButton />)}
               >
                 <ReportWebsiteDefaullg />
                 {t('user:usermenu.profile.reportWorld')}
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
 

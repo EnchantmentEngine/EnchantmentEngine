@@ -1,0 +1,206 @@
+/*
+CPAL-1.0 License
+
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0. (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+The License is based on the Mozilla Public License Version 1.1, but Sections 14
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
+Exhibit A has been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
+specific language governing rights and limitations under the License.
+
+The Original Code is Infinite Reality Engine.
+
+The Original Developer is the Initial Developer. The Initial Developer of the
+Original Code is the Infinite Reality Engine team.
+
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+Infinite Reality Engine. All Rights Reserved.
+*/
+
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { Button, Select } from '@ir-engine/ui'
+import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
+import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
+import { twMerge } from 'tailwind-merge'
+import { PopoverState } from '../../common/services/PopoverState'
+import { AuthState } from '../services/AuthService'
+
+type ReportMenuProps = {
+  type: 'User' | 'World'
+  showBackButton: boolean
+}
+
+const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
+  const { t } = useTranslation()
+  const authState = useMutableState(AuthState)
+  const userId = authState.user?.id?.value
+
+  const handleClose = async () => {
+    PopoverState.hidePopupover()
+  }
+
+  const formData = useHookstate({
+    abuseType: 'null',
+    details: '',
+    files: [] as File[]
+  })
+
+  const errors = useHookstate({
+    abuseType: '',
+    details: ''
+  })
+
+  const fieldOptions = {
+    abuseType: {
+      label: t('user:usermenu.profile.typeAbuse'),
+      validate: (input: string) => {
+        if (input === 'null') {
+          errors.abuseType.set(t('user:usermenu.profile.selectAbuseTypeRequired'))
+          return false
+        }
+        errors.abuseType.set('')
+        return true
+      }
+    },
+    details: {
+      label: t('user:usermenu.profile.reportDetails'),
+      placeholder: t('user:usermenu.profile.reportDetailsPlaceholder'),
+      validate: () => {
+        if (formData.details.value.trim().length === 0) {
+          errors.details.set(t('user:usermenu.profile.reportDetailsRequired'))
+          return false
+        }
+        errors.details.set('')
+        return true
+      }
+    }
+  }
+
+  const abuseTypes = [
+    { label: 'Select One', value: 'null' },
+    { label: 'Harassment', value: 'harassment' },
+    { label: 'Hate Speech', value: 'hate_speech' },
+    { label: 'Inappropriate Content', value: 'inappropriate' },
+    { label: 'Other', value: 'other' }
+  ]
+
+  const handleChange = (newValue: string, name: string) => {
+    formData[name].set(newValue)
+    fieldOptions[name].validate(newValue)
+  }
+
+  const handleSubmit = () => {
+    if (!fieldOptions.abuseType.validate(formData.value.abuseType) || !fieldOptions.details.validate()) {
+      return
+    }
+    console.log(formData)
+    handleClose()
+  }
+
+  return (
+    <Modal
+      id="select-report-menu-modal"
+      className="pointer-events-auto m-auto flex h-auto w-[600px] rounded-xl bg-[#080808] [&>div]:flex [&>div]:w-full [&>div]:flex-col"
+      hideFooter={true}
+      rawChildren={
+        <div className="flex w-full flex-col">
+          <div className="flex h-14 items-center justify-between border-b border-b-theme-primary px-8">
+            {showBackButton && (
+              <Button
+                data-testid="edit-report-menu-button"
+                className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
+                onClick={handleClose}
+              >
+                <IoArrowBackOutline size={16} />
+              </Button>
+            )}
+            <Text className="flex-1 text-center">{t('user:usermenu.profile.report', { type })}</Text>
+            <Button
+              data-testid="close-button"
+              className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
+              onClick={handleClose}
+            >
+              <span>
+                <IoCloseOutline size={16} />
+              </span>
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-6 p-8">
+            <div className="flex flex-col gap-2">
+              <Text className="text-sm">
+                {fieldOptions.abuseType.label} <span className="text-[#FF0000]">*</span>
+              </Text>
+              <Select
+                required
+                width="full"
+                value={formData.abuseType.value}
+                options={abuseTypes}
+                state={errors.abuseType.value ? 'error' : undefined}
+                helperText={errors.abuseType.value}
+                onChange={(event) => handleChange(event.toString(), 'abuseType')}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Text className="text-sm">
+                {fieldOptions.details.label} <span className="text-[#FF0000]">*</span>
+              </Text>
+              <TextArea
+                required
+                value={formData.details.value || ''}
+                onChange={(e) => handleChange(e.target.value, 'details')}
+                placeholder={fieldOptions.details.placeholder}
+                className={twMerge('min-h-[120px] w-full', errors.details.value && 'border-[#C3324B]')}
+              />
+              {errors.details.value && <span className="text-[#C3324B]">{errors.details.value}</span>}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Text className="text-sm">Attachments (optional)</Text>
+              <div className="flex items-center gap-2">
+                <input
+                  required
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || [])
+                    formData.files.set(files)
+                  }}
+                />
+                <Button variant="secondary" onClick={() => document.getElementById('file-upload')?.click()}>
+                  Upload
+                </Button>
+                {formData.files.length > 0 && (
+                  <Text className="text-sm text-gray-500">{formData.files.length} file(s) selected</Text>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between gap-4 pt-4">
+              <Button variant="secondary" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit}>Submit</Button>
+            </div>
+          </div>
+        </div>
+      }
+    />
+  )
+}
+
+export default ReportMenu
