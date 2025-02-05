@@ -154,12 +154,10 @@ const onToggleTransformPivot = () => {
   toggleTransformPivot()
 }
 
-// Add new onToggleTransformSpace callback to toggle transform space
 const onToggleTransformSpace = () => {
   toggleTransformSpace()
 }
 
-// New callbacks for undo/redo
 const onUndo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
@@ -173,12 +171,12 @@ const onRedo = () => {
 }
 
 const onIncreaseGridHeight = () => {
-  const rendererState = useMutableState(RendererState)
+  const rendererState = getMutableState(RendererState)
   rendererState.gridHeight.set(rendererState.gridHeight.value + 1)
 }
 
 const onDecreaseGridHeight = () => {
-  const rendererState = useMutableState(RendererState)
+  const rendererState = getMutableState(RendererState)
   rendererState.gridHeight.set(rendererState.gridHeight.value - 1)
 }
 

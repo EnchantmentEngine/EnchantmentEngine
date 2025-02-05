@@ -139,7 +139,7 @@
     "transformPivot": {
       "toggleTransformPivot": "[X] Toggle Transform Pivot",
       "lbl-selection": "Selection",
-      "info-selection": "The center pivot of the final asset you selected in the sequence.",
+      "info-selection": "The center pivot of the first entity you selected in the sequence.",
       "lbl-center": "Center",
       "info-center": "A pivot that sits at an equal distance between all selections (centroid).",
       "lbl-bbox": "BoundingBox",
