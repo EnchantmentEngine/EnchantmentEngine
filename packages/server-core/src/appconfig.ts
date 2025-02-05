@@ -366,8 +366,8 @@ const aws = {
     endpoint: process.env.STORAGE_S3_ENDPOINT!,
     staticResourceBucket: testEnabled
       ? process.env.STORAGE_S3_TEST_RESOURCE_BUCKET!
-      : process.env.STORAGE_S3_STATIC_RESOURCE_BUCKET!,
-    region: process.env.STORAGE_S3_REGION!,
+      : process.env.STORAGE_STATIC_RESOURCE_BUCKET!,
+    region: process.env.STORAGE_REGION!,
     avatarDir: process.env.STORAGE_S3_AVATAR_DIRECTORY!,
     s3DevMode: process.env.STORAGE_S3_DEV_MODE!,
     roleArn: process.env.STORAGE_AWS_ROLE_ARN
@@ -376,9 +376,9 @@ const aws = {
     domain:
       process.env.SERVE_CLIENT_FROM_STORAGE_PROVIDER === 'true'
         ? server.clientHost
-        : process.env.STORAGE_CLOUDFRONT_DOMAIN!,
+        : process.env.STORAGE_CDN_DOMAIN!,
     distributionId: process.env.STORAGE_CLOUDFRONT_DISTRIBUTION_ID!,
-    region: process.env.STORAGE_CLOUDFRONT_REGION || process.env.STORAGE_S3_REGION
+    region: process.env.STORAGE_CLOUDFRONT_REGION || process.env.STORAGE_REGION
   },
   eks: {
     accessKeyId: process.env.EKS_AWS_ACCESS_KEY_ID!,
@@ -401,8 +401,8 @@ export type AwsConfig = typeof aws
 
 const gcp = {
   gcs: {
-    cacheDomain: process.env.STORAGE_CACHE_DOMAIN,
-    bucket: process.env.GCLOUD_STORAGE_BUCKET
+    cacheDomain: process.env.STORAGE_CDN_DOMAIN,
+    bucket: process.env.STORAGE_STATIC_RESOURCE_BUCKET
   }
 }
 

@@ -246,15 +246,18 @@ export class GCSStorage implements StorageProviderInterface {
    * @param recursive If true it will list content from sub folders as well.
    */
   async listFolderContent(folderName: string, recursive = false): Promise<FileBrowserContentType[]> {
+    console.log('getting files for', folderName)
     const prefix = folderName.endsWith('/') ? folderName : folderName + '/'
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
       delimiter: recursive ? undefined : '/'
     })
+    console.log('response', response)
 
     const promises: Promise<FileBrowserContentType>[] = []
 
     const files = response[2]
+    console.log('files', files)
     if (!files.prefixes) files.prefixes = []
 
     // Folders
