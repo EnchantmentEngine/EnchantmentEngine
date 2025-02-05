@@ -40,7 +40,6 @@ import NodeCache from 'node-cache'
 import schedule from 'node-schedule'
 
 import { ServiceTypes } from '../declarations'
-import { logToBigQuery } from './analyticsLogger'
 import config from './config'
 import { logsApiPath } from './schema.type.module'
 
@@ -157,8 +156,9 @@ const multiLogger = {
             // In addition to sending to logging endpoint,  output to console
             consoleMethods[level](...args)
 
-            if (level === 'analytics') {
-              logToBigQuery({
+            if (level === 'analytics' && config.client.serverHost && LogConfig.api) {
+              LogConfig.api.service(logsApiPath).create({
+                action: 'analytics',
                 level,
                 component: opts.component,
                 ...logParams

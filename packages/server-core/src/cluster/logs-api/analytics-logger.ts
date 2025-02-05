@@ -24,8 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { BigQuery } from '@google-cloud/bigquery'
+import { LogParamsObject } from '@ir-engine/common/src/logger'
 import { v4 as uuidv4 } from 'uuid'
-import { LogParamsObject } from './logger'
 
 interface BigQueryRow {
   event_name: string
