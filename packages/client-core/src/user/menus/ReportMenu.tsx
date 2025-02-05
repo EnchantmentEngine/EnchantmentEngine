@@ -24,13 +24,13 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
+import { t } from 'i18next'
 import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
 import { PopoverState } from '../../common/services/PopoverState'
@@ -41,8 +41,24 @@ type ReportMenuProps = {
   showBackButton: boolean
 }
 
+const ReportSuccessReportModal = ({ handleClose }) => (
+  <Modal
+    id="report-success-modal"
+    className="pointer-events-auto m-auto flex h-auto w-[400px] rounded-xl bg-[#080808] [&>div]:flex [&>div]:w-full [&>div]:flex-col"
+    hideFooter={true}
+    rawChildren={
+      <div className="flex w-full flex-col items-center gap-6 p-8">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white">
+          <span className="text-2xl">✓</span>
+        </div>
+        <Text className="text-center">{t('user:usermenu.profile.reportSuccessMessage') as string}</Text>
+        <Button onClick={handleClose}>Close</Button>
+      </div>
+    }
+  />
+)
+
 const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
-  const { t } = useTranslation()
   const authState = useMutableState(AuthState)
   const userId = authState.user?.id?.value
 
@@ -106,6 +122,7 @@ const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
     }
     console.log(formData)
     handleClose()
+    PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
   }
 
   return (
@@ -125,7 +142,7 @@ const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
                 <IoArrowBackOutline size={16} />
               </Button>
             )}
-            <Text className="flex-1 text-center">{t('user:usermenu.profile.report', { type })}</Text>
+            <Text className="flex-1 text-center">{t('user:usermenu.profile.report', { type }) as string}</Text>
             <Button
               data-testid="close-button"
               className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
@@ -181,9 +198,7 @@ const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
                     formData.files.set(files)
                   }}
                 />
-                <Button variant="secondary" onClick={() => document.getElementById('file-upload')?.click()}>
-                  Upload
-                </Button>
+                <Button onClick={() => document.getElementById('file-upload')?.click()}>Upload</Button>
                 {formData.files.length > 0 && (
                   <Text className="text-sm text-gray-500">{formData.files.length} file(s) selected</Text>
                 )}
