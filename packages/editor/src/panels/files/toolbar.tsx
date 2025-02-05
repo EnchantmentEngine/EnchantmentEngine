@@ -105,9 +105,7 @@ function BreadcrumbItems() {
   }
 
   let breadcrumbDirectoryFiles = filesState.selectedDirectory.value.slice(1, -1).split('/')
-
   const nestedIndex = breadcrumbDirectoryFiles.indexOf('projects')
-
   breadcrumbDirectoryFiles = breadcrumbDirectoryFiles.filter((_, idx) => idx > nestedIndex)
 
   return (
@@ -360,44 +358,52 @@ export function PanelToolbar({
   utilsComponent
 }) {
   const { t } = useTranslation()
+  const { createNewFolder } = useCurrentFiles()
 
   return (
     <div
       className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#1E1F22] px-2 py-1"
       data-testid={dataTestIdJson?.topbarId}
     >
-      <div className="flex items-center">
-        <Tooltip content={t('editor:layout.filebrowser.back')}>
-          <StudioButton
-            size="sm"
-            variant="tertiary"
-            data-testid={dataTestIdJson?.backButtonId}
-            onClick={onBackDirectory}
-            rounded
-          >
-            <ArrowLeftSm />
-          </StudioButton>
-        </Tooltip>
-        <Tooltip content={t('editor:layout.filebrowser.refresh')}>
-          <StudioButton
-            size="sm"
-            variant="tertiary"
-            data-testid={dataTestIdJson?.refreshButtonId}
-            onClick={onRefreshDirectory}
-          >
-            <Refresh1Sm />
-          </StudioButton>
-        </Tooltip>
-        <ViewModeSettings />
-        {utilsComponent}
-        {uploadButton}
+      {/* Tools */}
+      <div className="flex items-center divide-x divide-[#F5F5F5]">
+        <div className="flex h-6 items-center">
+          <Tooltip content={t('editor:layout.filebrowser.back')}>
+            <StudioButton
+              size="sm"
+              variant="tertiary"
+              data-testid={dataTestIdJson?.backButtonId}
+              onClick={onBackDirectory}
+              rounded
+            >
+              <ArrowLeftSm />
+            </StudioButton>
+          </Tooltip>
+          <Tooltip content={t('editor:layout.filebrowser.refresh')}>
+            <StudioButton
+              size="sm"
+              variant="tertiary"
+              data-testid={dataTestIdJson?.refreshButtonId}
+              onClick={onRefreshDirectory}
+            >
+              <Refresh1Sm />
+            </StudioButton>
+          </Tooltip>
+          <Tooltip content={t('editor:layout.filebrowser.addNewFolder')}>
+            <StudioButton size="sm" variant="tertiary" onClick={createNewFolder}>
+              <FolderPlusSm className="h-5 w-5 cursor-pointer text-[#9CA0AA]" />
+            </StudioButton>
+          </Tooltip>
+          <ViewModeSettings />
+        </div>
+        {utilsComponent && <div className="flex h-6 items-center">{utilsComponent}</div>}
+        <div className="flex h-6 items-center">{uploadButton}</div>
       </div>
 
-      <div className="flex items-center justify-between">
-        {breadcrumbComponent}
-        {/* what ever the right thing is */}
-      </div>
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between">{breadcrumbComponent}</div>
 
+      {/* Search */}
       <div>{searchbar}</div>
     </div>
   )
