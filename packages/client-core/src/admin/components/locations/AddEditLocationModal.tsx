@@ -118,7 +118,7 @@ export default function AddEditLocationModal(props: {
   const handlePublish = async () => {
     errors.set(getDefaultErrors())
 
-    if (!name.value) {
+    if (!name.value.trim()) {
       errors.name.set(t('admin:components.location.nameCantEmpty'))
     }
     if (!maxUsers.value) {
@@ -147,7 +147,7 @@ export default function AddEditLocationModal(props: {
     }
 
     const locationData: LocationData = {
-      name: name.value,
+      name: name.value.trim(),
       sceneId: scene.value,
       maxUsersPerInstance: maxUsers.value,
       locationSetting: {
@@ -164,7 +164,7 @@ export default function AddEditLocationModal(props: {
 
     try {
       if (location?.id) {
-        await locationMutation.patch(location.id, locationData as LocationPatch, {
+        await locationMutation.patch(location.id, { ...locationData, id: location.id } as LocationPatch, {
           query: { projectId: location.projectId }
         })
       } else {

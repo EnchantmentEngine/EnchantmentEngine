@@ -102,6 +102,7 @@ const Select = ({
   const [filteredOptions, setFilteredOptions] = useState(options)
   const [searchString, setSearchString] = useState('')
   const fuseRef = useRef<Fuse<OptionType> | null>(null)
+  const [localValue, setLocalValue] = useState(value)
 
   useEffect(() => {
     if (searchMode === 'fuzzy' && fuseRef.current !== null) {
@@ -163,7 +164,7 @@ const Select = ({
   }, [selectedOptionIndex])
 
   useEffect(() => {
-    if (value === '') {
+    if (localValue === '') {
       setDisplayText('')
       return
     }
@@ -171,13 +172,13 @@ const Select = ({
     if (
       0 <= selectedOptionIndex &&
       selectedOptionIndex < filteredOptions.length &&
-      filteredOptions[selectedOptionIndex].value === value
+      filteredOptions[selectedOptionIndex].value === localValue
     ) {
       setDisplayText(filteredOptions[selectedOptionIndex].label)
       return
     }
 
-    const index = filteredOptions.findIndex((option) => option.value === value)
+    const index = filteredOptions.findIndex((option) => option.value === localValue)
 
     if (index === -1) {
       if (searchMode === undefined) {
@@ -188,7 +189,7 @@ const Select = ({
     } else {
       setDisplayText(filteredOptions[index].label)
     }
-  }, [value, selectedOptionIndex])
+  }, [localValue, selectedOptionIndex])
 
   useEffect(() => {
     if (onOpen) {
@@ -294,10 +295,11 @@ const Select = ({
 
               setActiveIndex(newIndex)
               if (['Enter', ' '].includes(e.code)) {
-                onChange(filteredOptions[newIndex].value)
                 setOpen(false)
+                setLocalValue(filteredOptions[newIndex].value)
                 setSelectedOptionIndex(newIndex)
                 setDisplayText(filteredOptions[newIndex].label)
+                onChange(filteredOptions[newIndex].value)
               }
             }}
           >
@@ -337,11 +339,11 @@ const Select = ({
 
           {open && (
             <div
-              className={`absolute z-50 flex w-full flex-col overflow-y-auto rounded-lg ${
+              className={`absolute z-50 flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-lg ${
                 positioning.direction === 'down' && 'top-[calc(100%+0.5rem)]'
               } ${positioning.direction === 'up' && 'bottom-[calc(100%+0.5rem)]'}`}
               style={{
-                maxHeight: positioning.maxHeight
+                maxHeight: '150px'
               }}
             >
               {filteredOptions.length > 0 ? (
@@ -349,13 +351,14 @@ const Select = ({
                   <DropdownItem
                     key={index}
                     {...optionProps}
-                    selected={value === currentValue}
+                    selected={localValue === currentValue}
                     active={index === activeIndex}
                     onClick={() => {
-                      onChange(currentValue)
                       setOpen(false)
+                      setLocalValue(currentValue)
                       setSelectedOptionIndex(index)
                       setDisplayText(optionProps.label)
+                      onChange(currentValue)
                     }}
                     onMouseEnter={() => {
                       setActiveIndex(index)
@@ -365,10 +368,11 @@ const Select = ({
                     }}
                     onKeyUp={(e) => {
                       if (e.code === 'Enter') {
-                        onChange(currentValue)
                         setOpen(false)
+                        setLocalValue(currentValue)
                         setSelectedOptionIndex(index)
                         setDisplayText(optionProps.label)
+                        onChange(currentValue)
                       }
                     }}
                   />
