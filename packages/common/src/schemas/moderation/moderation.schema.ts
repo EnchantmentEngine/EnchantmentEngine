@@ -25,85 +25,99 @@ Infinite Reality Engine. All Rights Reserved.
 
 // For more information about this file see https://dove.feathersjs.com/guides/cli/service.schemas.html
 import type { Static } from '@feathersjs/typebox'
-import { getValidator, querySyntax, Type } from '@feathersjs/typebox'
+import { getValidator, querySyntax, StringEnum, Type } from '@feathersjs/typebox'
 
 import { OpaqueType } from '@ir-engine/common/src/interfaces/OpaqueType'
 
 import { TypedString } from '../../types/TypeboxUtils'
+import { UserID } from '../user/user.schema'
 import { dataValidator, queryValidator } from '../validators'
-import { UserID } from './user.schema'
 
-export const userReportsPath = 'user-reports'
+export const moderationPath = 'moderation'
 
-export const userReportsMethods = ['find', 'create', 'patch', 'remove'] as const
+export const moderationMethods = ['find', 'create', 'patch', 'remove'] as const
 
-export type UserReportsID = OpaqueType<'UserReportsID'> & string
+export type ModerationID = OpaqueType<'ModerationID'> & string
+
+const abuseReasons = [
+  'Nudity',
+  'Fake News & Scams',
+  'Disturbing/Inappropriate',
+  'Cheating/Hacking',
+  'Bullying/Harassment',
+  'Illegal Activity',
+  'Copyright & Other Infringements',
+  'Child Exploitation',
+  'Something Else'
+] as const
 
 // Main data model schema
-export const userReportsSchema = Type.Object(
+export const moderationSchema = Type.Object(
   {
     id: Type.String({
       format: 'uuid'
     }),
-    type: Type.String({ maxLength: 255 }),
-    UID: Type.String({ maxLength: 255 }),
-    abuseReason: Type.String({ maxLength: 255 }),
-    reportedUser: TypedString<UserID>({
+    type: StringEnum(['Person', 'World']),
+    abuseReason: StringEnum([...abuseReasons]),
+    reportedUserId: TypedString<UserID>({
       format: 'uuid'
     }),
-    reportingUser: TypedString<UserID>({
+    reportingUserId: TypedString<UserID>({
       format: 'uuid'
     }),
     world: Type.Optional(Type.String({ maxLength: 255 })),
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
     reportDetails: Type.String({ maxLength: 1050 }),
-    status: Type.String({ maxLength: 255, default: 'Open' }),
+    status: StringEnum(['Open', 'Resolved']),
+    reportedAt: Type.String({ format: 'date-time' }),
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),
     createdAt: Type.String({ format: 'date-time' }),
     updatedAt: Type.String({ format: 'date-time' })
   },
-  { $id: 'UserReports', additionalProperties: false }
+  { $id: 'Moderation', additionalProperties: false }
 )
-export interface UserReportsType extends Static<typeof userReportsSchema> {}
+export interface ModerationType extends Static<typeof moderationSchema> {}
 
 // Schema for creating new entries
-export const userReportsDataSchema = Type.Pick(
-  userReportsSchema,
-  ['type', 'reportedUser', 'reportingUser', 'UID', 'abuseReason', 'reportDetails'],
+export const moderationDataSchema = Type.Pick(
+  moderationSchema,
+  ['type', 'reportedUserId', 'world', 'ipAddress', 'reportingUserId', 'abuseReason', 'reportDetails'],
   {
-    $id: 'UserReportsData'
+    $id: 'ModerationData'
   }
 )
-export interface UserReportsData extends Static<typeof userReportsDataSchema> {}
+export interface ModerationData extends Static<typeof moderationDataSchema> {}
 
 // Schema for updating existing entries
-export const userReportsPatchSchema = Type.Partial(userReportsSchema, {
-  $id: 'UserReportsPatch'
-})
-export interface UserReportsPatch extends Static<typeof userReportsPatchSchema> {}
+export const moderationPatchSchema = Type.Partial(
+  Type.Pick(moderationSchema, ['status', 'abuseReason', 'reportDetails']),
+  {
+    $id: 'ModerationPatch'
+  }
+)
+export interface ModerationPatch extends Static<typeof moderationPatchSchema> {}
 
 // Schema for allowed query properties
-export const userReportsQueryProperties = Type.Pick(userReportsSchema, [
+export const moderationQueryProperties = Type.Pick(moderationSchema, [
   'id',
-  'reportedUser',
-  'reportingUser',
-  'UID',
+  'reportedUserId',
+  'reportingUserId',
   'abuseReason',
   'status'
 ])
-export const userReportsQuerySchema = Type.Intersect(
+export const moderationQuerySchema = Type.Intersect(
   [
-    querySyntax(userReportsQueryProperties),
+    querySyntax(moderationQueryProperties),
     // Add additional query properties here
     Type.Object({}, { additionalProperties: false })
   ],
   { additionalProperties: false }
 )
-export interface UserReportsQuery extends Static<typeof userReportsQuerySchema> {}
+export interface ModerationQuery extends Static<typeof moderationQuerySchema> {}
 
-export const userReportsValidator = /* @__PURE__ */ getValidator(userReportsSchema, dataValidator)
-export const userReportsDataValidator = /* @__PURE__ */ getValidator(userReportsDataSchema, dataValidator)
-export const userReportsPatchValidator = /* @__PURE__ */ getValidator(userReportsPatchSchema, dataValidator)
-export const userReportsQueryValidator = /* @__PURE__ */ getValidator(userReportsQuerySchema, queryValidator)
+export const moderationValidator = /* @__PURE__ */ getValidator(moderationSchema, dataValidator)
+export const moderationDataValidator = /* @__PURE__ */ getValidator(moderationDataSchema, dataValidator)
+export const moderationPatchValidator = /* @__PURE__ */ getValidator(moderationPatchSchema, dataValidator)
+export const moderationQueryValidator = /* @__PURE__ */ getValidator(moderationQuerySchema, queryValidator)

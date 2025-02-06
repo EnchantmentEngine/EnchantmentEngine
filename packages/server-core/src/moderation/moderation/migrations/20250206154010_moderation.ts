@@ -22,8 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-
-import { userReportsPath } from '@ir-engine/common/src/schemas/user/user-reports.schema'
+import { moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import type { Knex } from 'knex'
 
 /**
@@ -31,29 +30,31 @@ import type { Knex } from 'knex'
  * @returns { Promise<void> }
  */
 export async function up(knex: Knex): Promise<void> {
-  const tableExists = await knex.schema.hasTable(userReportsPath)
+  await knex.schema.createTable(moderationPath, (table) => {
+    //@ts-ignore
+    table.uuid('id').collate('utf8mb4_bin').primary()
+    table.string('reportDetails', 1050).notNullable()
+    table.string('abuseReason', 255).notNullable()
+    table.string('type', 255).notNullable()
+    //@ts-ignore
+    table.uuid('reportedUserId', 36).collate('utf8mb4_bin')
+    //@ts-ignore
+    table.uuid('reportingUserId', 36).collate('utf8mb4_bin')
+    table.string('world', 255).notNullable()
+    table.string('status', 255).notNullable().defaultTo('Open')
+    table.string('ipAddress', 255).notNullable()
 
-  if (tableExists === false) {
-    await knex.schema.createTable(userReportsPath, (table) => {
-      //@ts-ignore
-      table.uuid('id').collate('utf8mb4_bin').primary()
-      table.string('type', 255).notNullable()
-      table.string('UID', 255).notNullable()
-      table.string('abuseReason', 255).notNullable()
-      table.string('reportedUser', 255).notNullable()
-      table.string('reportingUser', 255).notNullable()
-      table.string('world', 255).nullable()
-      table.string('ipAddress', 255).nullable()
-      table.string('reportDetails', 1050).notNullable()
-      table.string('status', 255).notNullable().defaultTo('Open')
-      //@ts-ignore
-      table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
-      table.dateTime('createdAt').notNullable()
-      table.dateTime('updatedAt').notNullable()
+    //@ts-ignore
+    table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
 
-      // table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
-    })
-  }
+    table.dateTime('reportedAt').notNullable()
+    table.dateTime('createdAt').notNullable()
+    table.dateTime('updatedAt').notNullable()
+
+    table.foreign('reportedUserId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+    table.foreign('reportingUserId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+    table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+  })
 }
 
 /**
@@ -61,9 +62,5 @@ export async function up(knex: Knex): Promise<void> {
  * @returns { Promise<void> }
  */
 export async function down(knex: Knex): Promise<void> {
-  const tableExists = await knex.schema.hasTable(userReportsPath)
-
-  if (tableExists === true) {
-    await knex.schema.dropTable(userReportsPath)
-  }
+  await knex.schema.dropTableIfExists(moderationPath)
 }

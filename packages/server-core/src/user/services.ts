@@ -23,6 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import ModerationAttachment from '../moderation/moderation-attachment/moderation-attachment'
+import ModerationUpload from '../moderation/moderation-file-upload/moderation-file-upload'
+import Moderation from '../moderation/moderation/moderation'
 import AcceptInvite from '../user/accept-invite/accept-invite'
 import Avatar from './avatar/avatar'
 import DiscordBotAuth from './discord-bot-auth/discord-bot-auth'
@@ -43,7 +46,6 @@ import UserKick from './user-kick/user-kick'
 import UserLogin from './user-login/user-login'
 import UserRelationshipType from './user-relationship-type/user-relationship-type'
 import UserRelationship from './user-relationship/user-relationship'
-import UserReport from './user-reports/user-reports'
 import UserSettings from './user-setting/user-setting'
 import User from './user/user'
 
@@ -51,7 +53,9 @@ export default [
   UserApiKey,
   User,
   UserAvatar,
-  UserReport,
+  Moderation,
+  ModerationUpload,
+  ModerationAttachment,
   UserSettings,
   UserKick,
   UserLogin,

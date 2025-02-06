@@ -23,43 +23,27 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-// For more information about this file see https://dove.feathersjs.com/guides/cli/service.schemas.html
-import { resolve, virtual } from '@feathersjs/schema'
+import { resolve } from '@feathersjs/schema'
 import { v4 as uuidv4 } from 'uuid'
 
 import {
-  UserReportsID,
-  UserReportsQuery,
-  UserReportsType
-} from '@ir-engine/common/src/schemas/user/user-reports.schema'
-import { fromDateTimeSql, getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+  ModerationAttachmentQuery,
+  ModerationAttachmentsType
+} from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import type { HookContext } from '@ir-engine/server-core/declarations'
 
-export const userReportsDbToSchema = (rawData: UserReportsType): UserReportsType => {
-  return {
-    ...rawData
-  }
-}
+export const moderationAttachmentResolver = resolve<ModerationAttachmentsType, HookContext>({})
 
-export const userReportsResolver = resolve<UserReportsType, HookContext>(
-  {
-    createdAt: virtual(async (userReport) => fromDateTimeSql(userReport.createdAt)),
-    updatedAt: virtual(async (userReport) => fromDateTimeSql(userReport.updatedAt))
-  },
-  {
-    // Convert the raw data into a new structure before running property resolvers
-    converter: async (rawData, context) => {
-      return userReportsDbToSchema(rawData)
-    }
-  }
-)
+export const moderationAttachmentExternalResolver = resolve<ModerationAttachmentsType, HookContext>({})
 
-export const userReportsExternalResolver = resolve<UserReportsType, HookContext>({})
-
-export const userReportsDataResolver = resolve<UserReportsType, HookContext>(
+export const moderationAttachmentDataResolver = resolve<ModerationAttachmentsType, HookContext>(
   {
     id: async () => {
-      return uuidv4() as UserReportsID
+      return uuidv4()
+    },
+    updatedBy: async (_, __, context) => {
+      return context.params?.user?.id || null
     },
     createdAt: getDateTimeSql,
     updatedAt: getDateTimeSql
@@ -74,18 +58,11 @@ export const userReportsDataResolver = resolve<UserReportsType, HookContext>(
   }
 )
 
-export const userReportsPatchResolver = resolve<UserReportsType, HookContext>(
-  {
-    updatedAt: getDateTimeSql
+export const moderationAttachmentPatchResolver = resolve<ModerationAttachmentsType, HookContext>({
+  updatedBy: async (_, __, context) => {
+    return context.params?.user?.id || null
   },
-  {
-    // Convert the raw data into a new structure before running property resolvers
-    converter: async (rawData, context) => {
-      return {
-        ...rawData
-      }
-    }
-  }
-)
+  updatedAt: getDateTimeSql
+})
 
-export const userReportsQueryResolver = resolve<UserReportsQuery, HookContext>({})
+export const moderationAttachmentQueryResolver = resolve<ModerationAttachmentQuery, HookContext>({})

@@ -26,21 +26,21 @@ Infinite Reality Engine. All Rights Reserved.
 import { createSwaggerServiceOptions } from 'feathers-swagger'
 
 import {
-  userReportsDataSchema,
-  userReportsPatchSchema,
-  userReportsQuerySchema,
-  userReportsSchema
-} from '@ir-engine/common/src/schemas/user/user-reports.schema'
+  moderationDataSchema,
+  moderationPatchSchema,
+  moderationQuerySchema,
+  moderationSchema
+} from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 
 export default createSwaggerServiceOptions({
   schemas: {
-    userReportsDataSchema,
-    userReportsPatchSchema,
-    userReportsQuerySchema,
-    userReportsSchema
+    moderationDataSchema: moderationDataSchema,
+    moderationPatchSchema: moderationPatchSchema,
+    moderationQuerySchema: moderationQuerySchema,
+    moderationSchema: moderationSchema
   },
   docs: {
-    description: 'User reports service description',
+    description: 'Moderation service description',
     securities: ['all']
   }
 })

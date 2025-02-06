@@ -23,41 +23,5 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { authenticate } from '@feathersjs/authentication'
-import { hooks as schemaHooks } from '@feathersjs/schema'
-import {
-  userReportsDataValidator,
-  userReportsPatchValidator,
-  userReportsQueryValidator
-} from '@ir-engine/common/src/schemas/user/user-reports.schema'
-import {
-  userReportsDataResolver,
-  userReportsExternalResolver,
-  userReportsPatchResolver,
-  userReportsQueryResolver,
-  userReportsResolver
-} from './user-reports.resolvers'
-
-export default {
-  around: {
-    all: [
-      authenticate('jwt'),
-      schemaHooks.resolveExternal(userReportsExternalResolver),
-      schemaHooks.resolveResult(userReportsResolver)
-    ]
-  },
-  before: {
-    all: [schemaHooks.validateQuery(userReportsQueryValidator), schemaHooks.resolveQuery(userReportsQueryResolver)],
-    find: [],
-    get: [],
-    create: [schemaHooks.validateData(userReportsDataValidator), schemaHooks.resolveData(userReportsDataResolver)],
-    patch: [schemaHooks.validateData(userReportsPatchValidator), schemaHooks.resolveData(userReportsPatchResolver)],
-    remove: []
-  },
-  after: {
-    all: []
-  },
-  error: {
-    all: []
-  }
-}
+export const moderationFileUploadPath = 'moderation-file-upload'
+export const moderationFileUploadMethods = ['create'] as const

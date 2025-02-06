@@ -23,19 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { Params } from '@feathersjs/feathers'
-import { KnexAdapterParams, KnexService } from '@feathersjs/knex'
+import { moderationAttachmentsDataSchema } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import { createSwaggerServiceOptions } from 'feathers-swagger'
 
-import {
-  UserReportsData,
-  UserReportsPatch,
-  UserReportsQuery,
-  UserReportsType
-} from '@ir-engine/common/src/schemas/user/user-reports.schema'
-
-export interface UserReportsParams extends KnexAdapterParams<UserReportsQuery> {}
-
-export class UserReportsService<
-  T = UserReportsType,
-  ServiceParams extends Params = UserReportsParams
-> extends KnexService<UserReportsType, UserReportsData, UserReportsParams, UserReportsPatch> {}
+export default createSwaggerServiceOptions({
+  schemas: {
+    moderationAttachmentDataSchema: moderationAttachmentsDataSchema
+  },
+  docs: {
+    description: 'Moderation service description',
+    securities: ['all']
+  }
+})
