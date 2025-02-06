@@ -62,6 +62,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
 import { appendGLTF } from '@ir-engine/engine/src/gltf/gltfUtils'
+import { EEMaterialComponent } from '@ir-engine/engine/src/gltf/MaterialDefinitionComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { ComponentDropdownState } from '@ir-engine/ui/src/components/editor/ComponentDropdown/ComponentDropdownState'
 import { EditorHelperState } from '../services/EditorHelperState'
@@ -198,6 +199,12 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
     const material = getMaterial(materialId)
     if (!material) return
     const props = properties[i] ?? properties[0]
+
+    const materialEntity = UUIDComponent.getEntityByUUID(materialId)
+
+    const eeMaterialComponent = getOptionalComponent(materialEntity, EEMaterialComponent)
+    const newArgs = eeMaterialComponent?.args ?? {}
+    let argsEdited = false
     Object.entries(props).map(([k, v]) => {
       if (!material) throw new Error('Updating properties on undefined material')
       if (
@@ -210,8 +217,14 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
       } else {
         material[k] = v
       }
+      if (eeMaterialComponent) {
+        newArgs[k].contents = v
+        argsEdited = true
+      }
     })
-    const materialEntity = UUIDComponent.getEntityByUUID(materialId)
+    if (argsEdited) {
+      modifyProperty([materialEntity], EEMaterialComponent, { args: newArgs })
+    }
     const sceneID = getComponent(materialEntity, SourceComponent)
     getMutableState(GLTFModifiedState)[sceneID].set(true)
     material.needsUpdate = true
