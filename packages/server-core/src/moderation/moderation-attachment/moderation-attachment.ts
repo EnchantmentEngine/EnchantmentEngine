@@ -30,6 +30,7 @@ import {
   moderationAttachmentPath
 } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
 import { ModerationAttachmentService } from './moderation-attachment.class'
+import moderationAttachmentDocs from './moderation-attachment.docs'
 import hooks from './moderation-attachment.hooks'
 
 declare module '@ir-engine/common/declarations' {
@@ -50,8 +51,8 @@ export default (app: Application): void => {
     // A list of all methods this service exposes externally
     methods: moderationAttachmentMethods,
     // You can add additional custom events to be sent to client here
-    events: []
-    // docs: userReportsDocs
+    events: [],
+    docs: moderationAttachmentDocs
   })
 
   const service = app.service(moderationAttachmentPath)
