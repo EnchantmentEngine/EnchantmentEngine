@@ -142,7 +142,6 @@ export type CustomRoute = {
  */
 export const getCustomRoutes = async (): Promise<CustomRoute[]> => {
   const routes = (await API.instance.service(routePath).find({ query: { paginate: false } })) as any as RouteType[]
-  console.log({ routes })
 
   const elements: CustomRoute[] = []
 
