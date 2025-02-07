@@ -206,7 +206,7 @@ export class GCSStorage implements StorageProviderInterface {
           path: invalidationItem
         },
         project: config.gcp.project as string,
-        urlMap: config.gcp.urlMap as string
+        urlMap: config.gcp.gcs.urlMap as string
       })
   }
 
