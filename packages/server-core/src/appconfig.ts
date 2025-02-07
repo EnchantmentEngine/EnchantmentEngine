@@ -402,8 +402,11 @@ export type AwsConfig = typeof aws
 const gcp = {
   gcs: {
     cacheDomain: process.env.STORAGE_CDN_DOMAIN,
-    bucket: process.env.STORAGE_STATIC_RESOURCE_BUCKET
-  }
+    bucket: process.env.STORAGE_STATIC_RESOURCE_BUCKET,
+    edgeCacheService: process.env.GCP_EDGE_CACHE_SERVICE,
+    urlMap: process.env.GCP_URL_MAP
+  },
+  project: process.env.GCP_PROJECT
 }
 
 const chargebee = {

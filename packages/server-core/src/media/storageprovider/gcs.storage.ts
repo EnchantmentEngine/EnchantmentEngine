@@ -38,7 +38,9 @@ import {
   StorageProviderInterface
 } from './storageprovider.interface'
 
-const { Storage } = require('@google-cloud/storage')
+import axios from 'axios'
+import {GetSignedUrlConfig, Storage} from '@google-cloud/storage'
+import { UrlMapsClient } from '@google-cloud/compute'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
@@ -67,6 +69,8 @@ export class GCSStorage implements StorageProviderInterface {
   originURLs = [this.cacheDomain!]
 
   private bucketAssetURL = `https://storage.googleapis.com/download/storage/v1/b/${this.bucket}/o/`
+
+  private urlMaps = new UrlMapsClient()
 
   /**
    * Get the instance of GCS storage provider.
@@ -108,7 +112,7 @@ export class GCSStorage implements StorageProviderInterface {
     const file = this.provider.bucket(this.bucket).file(key)
     const [metadata] = await file.getMetadata()
     const [fileBody] = await file.download()
-    return { Body: fileBody, ContentType: metadata.contentType }
+    return { Body: fileBody, ContentType: metadata.contentType as string }
   }
 
   /**
@@ -184,7 +188,27 @@ export class GCSStorage implements StorageProviderInterface {
     return ['']
   }
 
-  createInvalidation = async (): Promise<any> => Promise.resolve()
+  async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
+    if (!invalidationItems || invalidationItems.length === 0) return
+    let invalidationItem = invalidationItems[0]
+    if (invalidationItem[0] !== '/') invalidationItem = `/${invalidationItem}`
+    if (useMediaCDN)
+      return await axios
+          .post(`https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
+              {
+                host: this.cacheDomain,
+                path: invalidationItems[0]
+              })
+    else
+      return await this.urlMaps.invalidateCache({
+        cacheInvalidationRuleResource: {
+          host: config.server.clientHost as string,
+          path: invalidationItem
+        },
+        project: config.gcp.project as string,
+        urlMap: config.gcp.urlMap as string
+      })
+  }
 
   associateWithFunction = async (): Promise<any> => Promise.resolve()
 
@@ -215,14 +239,14 @@ export class GCSStorage implements StorageProviderInterface {
       version: 'v4',
       action: 'read',
       expires: expiresAfter
-    }
+    } as GetSignedUrlConfig
 
-    const result = await this.provider.bucket(this.bucket).file(key).getSignedUrl(options)
+    const [result] = await this.provider.bucket(this.bucket).file(key).getSignedUrl(options)
 
     return {
-      fields: result.fields,
+      fields: {},
       cacheDomain: this.cacheDomain,
-      url: result.url,
+      url: result,
       local: false
     }
   }
@@ -247,17 +271,18 @@ export class GCSStorage implements StorageProviderInterface {
    * @param recursive If true it will list content from sub folders as well.
    */
   async listFolderContent(folderName: string, recursive = false): Promise<FileBrowserContentType[]> {
-    console.log('getting files for', folderName)
     const prefix = folderName.endsWith('/') ? folderName : folderName + '/'
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
       delimiter: recursive ? undefined : '/'
     })
-    console.log('response', response)
 
     const promises: Promise<FileBrowserContentType>[] = []
 
-    const files = response[2]
+    const files = response[2] as {
+      items?: { mediaLink: string, name: string, size: string }[]
+      prefixes?: string[]
+    }
     console.log('files', files)
     if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
@@ -290,10 +315,10 @@ export class GCSStorage implements StorageProviderInterface {
           new Promise(async (resolve) => {
             const cont: FileBrowserContentType = {
               key,
-              url: files.items[i].mediaLink,
-              name: query!.groups!.name,
-              type: query!.groups!.extension,
-              size: parseInt(files.items[i].size)
+              url: files.items![i].mediaLink as string,
+              name: query!.groups!.name as string,
+              type: query!.groups!.extension as string,
+              size: parseInt(files.items![i].size)
             }
             resolve(cont)
           })
