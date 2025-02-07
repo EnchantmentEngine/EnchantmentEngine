@@ -157,7 +157,7 @@ export function Browser() {
 
   return (
     <div
-      className={twMerge('h-full overflow-y-scroll', isFileDropOver ? 'border-2 border-gray-300' : '')}
+      className={twMerge('h-full overflow-y-scroll bg-surface-1', isFileDropOver ? 'border-2 border-gray-300' : '')}
       ref={fileDropRef}
       onContextMenu={(event) => {
         event.preventDefault()

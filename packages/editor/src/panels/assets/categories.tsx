@@ -186,7 +186,7 @@ export default function CategoriesList({ selected, onClick }) {
 
   return (
     <div
-      className="flex h-full flex-col space-y-1 overflow-y-auto bg-[#0E0F11] pb-2 pl-1 pr-2 pt-2"
+      className="mb-8 h-full space-y-1 overflow-x-hidden overflow-y-scroll bg-ui-background pb-8 pl-1 pr-2 pt-2"
       style={{ width: sidebarWidth.value }}
     >
       {Object.entries(sidebarSections).map(([key, value]) => {
@@ -237,7 +237,7 @@ export function VerticalDivider({
         {leftChildren}
       </div>
 
-      <div className="flex w-2 cursor-pointer items-center" data-testid="assets-panel-vertical-divider">
+      <div className="flex w-5 cursor-pointer items-center bg-surface-1" data-testid="assets-panel-vertical-divider">
         <div
           onMouseDown={handleMouseDown}
           className={twMerge('h-full w-full cursor-grab text-white', isDragging.value && 'cursor-grabbing')}

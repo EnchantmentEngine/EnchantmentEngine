@@ -27,7 +27,7 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Checkbox, Input, Tooltip } from '@ir-engine/ui'
-import { Slider, StudioButton } from '@ir-engine/ui/editor'
+import { Slider, ViewportButton } from '@ir-engine/ui/editor'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import {
   ArrowLeftSm,
@@ -110,28 +110,28 @@ function BreadcrumbItems() {
 
   return (
     <div className="flex items-center gap-4">
-      <FolderSm className="text-sm text-[#A3A3A3]" />
+      <FolderSm className="text-base text-text-primary" />
       {breadcrumbDirectoryFiles.map((file, index, arr) => (
         <Fragment key={index}>
           {index !== 0 && (
-            <span className="cursor-default items-center text-sm text-[#A3A3A3]">
+            <span className="cursor-default items-center text-base text-text-primary">
               <BreadCrumbSlash />
             </span>
           )}
           {index === arr.length - 1 ? (
             <span
-              className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3] hover:underline"
+              className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-base text-text-secondary hover:underline"
               data-testid={'files-panel-breadcrumb-current-directory'}
             >
               {file}
             </span>
           ) : (
             <a
-              className="inline-flex cursor-pointer items-center overflow-hidden text-sm text-[#A3A3A3] hover:text-theme-highlight hover:underline focus:text-theme-highlight"
+              className="hover: focus: inline-flex cursor-pointer items-center overflow-hidden text-sm text-text-secondary hover:underline"
               onClick={() => handleBreadcrumbDirectoryClick(file)}
               data-testid={`files-panel-breadcrumb-nested-level-${index}`}
             >
-              <span className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3] hover:underline">
+              <span className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-base text-text-secondary hover:underline">
                 {file}
               </span>
             </a>
@@ -149,52 +149,52 @@ const ViewModeSettings = () => {
 
   return (
     <Popup
-      contentStyle={{ background: '#15171b', border: 'solid', borderColor: '#5d646c' }}
+      contentStyle={{
+        background: 'var(--surface-1)',
+        border: 'solid',
+        borderColor: 'var(--ui-outline)',
+        borderWidth: '2px',
+        borderRadius: '0.5rem'
+      }}
       position={'bottom left'}
       trigger={
         <Tooltip content={t('editor:layout.filebrowser.view-mode.settings.name')}>
-          <StudioButton size="sm" variant="tertiary" data-testid="files-panel-view-options-button">
-            <CogSm />
-          </StudioButton>
+          <ViewportButton data-testid="files-panel-view-options-button" icon={CogSm} />
         </Tooltip>
       }
     >
       {filesViewMode.value === 'icons' ? (
         <div className="flex justify-end">
-          <div className="w-3/5">
+          <Slider
+            label={t('editor:layout.filebrowser.view-mode.settings.iconSize')}
+            min={10}
+            max={100}
+            step={0.5}
+            value={viewModeSettings.icons.iconSize.value}
+            onChange={viewModeSettings.icons.iconSize.set}
+            onRelease={viewModeSettings.icons.iconSize.set}
+            data-testid="files-panel-view-options-icon-size-value-input-group"
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-y-1">
+          <div className="flex justify-end">
             <Slider
-              label={t('editor:layout.filebrowser.view-mode.settings.iconSize')}
+              label={t('editor:layout.filebrowser.view-mode.settings.fontSize')}
+              data-testid="files-panel-view-options-list-font-size-value-input-group"
               min={10}
               max={100}
               step={0.5}
-              value={viewModeSettings.icons.iconSize.value}
-              onChange={viewModeSettings.icons.iconSize.set}
-              onRelease={viewModeSettings.icons.iconSize.set}
-              data-testid="files-panel-view-options-icon-size-value-input-group"
+              value={viewModeSettings.list.fontSize.value}
+              onChange={viewModeSettings.list.fontSize.set}
+              onRelease={viewModeSettings.list.fontSize.set}
             />
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center">
-          <div className="flex justify-end">
-            <div className="w-3/5">
-              <Slider
-                label={t('editor:layout.filebrowser.view-mode.settings.fontSize')}
-                data-testid="files-panel-view-options-list-font-size-value-input-group"
-                min={10}
-                max={100}
-                step={0.5}
-                value={viewModeSettings.list.fontSize.value}
-                onChange={viewModeSettings.list.fontSize.set}
-                onRelease={viewModeSettings.list.fontSize.set}
-              />
+          <div className="flex w-full flex-col gap-y-1">
+            <div className="mt-1 flex flex-auto font-semibold text-text-primary">
+              <h3>{t('editor:layout.filebrowser.view-mode.settings.select-listColumns')}</h3>
             </div>
-          </div>
-          <div className="w-full">
-            <div className="mt-1 flex flex-auto text-white">
-              <label>{t('editor:layout.filebrowser.view-mode.settings.select-listColumns')}</label>
-            </div>
-            <div>
+            <div className="flex flex-col gap-y-0.5">
               {availableTableColumns.map((column, index) => (
                 <Checkbox
                   checked={viewModeSettings.list.selectedTableColumns[column].value}
