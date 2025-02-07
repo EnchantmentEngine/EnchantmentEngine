@@ -237,7 +237,7 @@ export function VerticalDivider({
         {leftChildren}
       </div>
 
-      <div className="flex w-5 cursor-pointer items-center bg-surface-1" data-testid="assets-panel-vertical-divider">
+      <div className="flex w-2 cursor-pointer items-center bg-surface-1" data-testid="assets-panel-vertical-divider">
         <div
           onMouseDown={handleMouseDown}
           className={twMerge('h-full w-full cursor-grab text-white', isDragging.value && 'cursor-grabbing')}

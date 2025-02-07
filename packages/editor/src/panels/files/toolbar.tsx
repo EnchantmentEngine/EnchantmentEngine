@@ -109,7 +109,7 @@ function BreadcrumbItems() {
   breadcrumbDirectoryFiles = breadcrumbDirectoryFiles.filter((_, idx) => idx > nestedIndex)
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2">
       <FolderSm className="text-base text-text-primary" />
       {breadcrumbDirectoryFiles.map((file, index, arr) => (
         <Fragment key={index}>
