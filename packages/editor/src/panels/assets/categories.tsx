@@ -96,7 +96,7 @@ const SideBarIcons = {
   files: File04Lg
 }
 
-function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
+function SidebarSection({ Icon, label, items, onClick, isActive }) {
   const [isHover, setIsHover] = React.useState(false)
   const toggleDropdown = () => {
     if (isActive) {
@@ -151,19 +151,23 @@ export default function CategoriesList({ selected, onClick }) {
 
   // todo: rename sidebar section to sidebar or find a better name
   const [sidebarSections, setSidebarSections] = React.useState<{
+    favorites: AssetCategoryNode[]
     assets: AssetCategoryNode[]
     files: AssetCategoryNode[]
   }>({
-    // favorites: [], TODO
+    favorites: [],
     assets: [],
-    files: [] // todo: rename to folders
+    files: []
   })
 
   React.useEffect(() => {
     if (asseteCategories.value) {
       setSidebarSections({
         ...sidebarSections,
-        assets: [...asseteCategories.get({ noproxy: true })] as AssetCategoryNode[]
+        assets: [
+          { name: 'Project Assets', path: '', depth: 0, children: [] },
+          { name: 'iR Studio Assets', path: '', depth: 0, children: [...asseteCategories.get({ noproxy: true })] }
+        ] as AssetCategoryNode[]
       })
     }
 

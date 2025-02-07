@@ -25,17 +25,21 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { API, useFind } from '@ir-engine/common'
+import { staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import { Slider, ViewportButton } from '@ir-engine/ui/editor'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import {
+  ArchiveSm,
   ArrowLeftSm,
   CogSm,
   Download01Sm,
   FolderPlusSm,
   FolderSm,
   Grid01Sm,
+  Pin02Sm,
   PlusCircleSm,
   Refresh1Sm,
   SearchSmSm
@@ -47,7 +51,7 @@ import { FaList } from 'react-icons/fa'
 import { twMerge } from 'tailwind-merge'
 import { handleUploadFiles, inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
-import { FilesState, FilesViewModeSettings, FilesViewModeState } from '../../services/FilesState'
+import { FilesState, FilesViewModeSettings, FilesViewModeState, SelectedFilesState } from '../../services/FilesState'
 import { availableTableColumns, useCurrentFiles } from './helpers'
 import { handleDownloadProject } from './loaders'
 
@@ -349,6 +353,37 @@ export function PanelToolbar({
   const { t } = useTranslation()
   const { createNewFolder } = useCurrentFiles()
 
+  const files = useMutableState(SelectedFilesState).value.filter((file) => !file.isFolder)
+
+  const resources = useFind(staticResourcePath, {
+    query: {
+      key: {
+        $like: undefined,
+        $or: files.map(({ key }) => ({
+          key
+        }))
+      },
+      $limit: 10000
+    }
+  })
+
+  // todo: add this to either static resource or filesstate
+  const addToFavorites = async () => {
+    updateTag(['Favorite'])
+  }
+
+  // todo: add this to filestate?
+  const addToAssets = async () => {
+    updateTag(['Asset'])
+  }
+
+  const updateTag = async (tags: string[]) => {
+    for (const resource of resources.data) {
+      const resourceTag = resource.tags
+      await API.instance.service(staticResourcePath).patch(resource.id, { tags: [...resourceTag, ...tags] })
+    }
+  }
+
   return (
     <div
       className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#1E1F22] bg-surface-4 px-2 py-1"
@@ -375,6 +410,14 @@ export function PanelToolbar({
             <ViewportButton onClick={createNewFolder} icon={FolderPlusSm} />
           </Tooltip>
           <ViewModeSettings />
+          <div className="flex h-6 items-center">
+            <Tooltip content={t('editor:layout.filebrowser.pin')}>
+              <ViewportButton onClick={addToFavorites} icon={Pin02Sm} />
+            </Tooltip>
+            <Tooltip content={t('editor:layout.filebrowser.addToAssets')}>
+              <ViewportButton onClick={addToAssets} icon={ArchiveSm} />
+            </Tooltip>
+          </div>
         </div>
         {utilsComponent && <div className="flex h-6 items-center">{utilsComponent}</div>}
         <div className="flex h-6 items-center">{uploadButton}</div>

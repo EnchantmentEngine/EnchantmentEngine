@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
-import { API } from '@ir-engine/common'
+import { API, useFind } from '@ir-engine/common'
 import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
@@ -35,6 +35,7 @@ import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from '.
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
   resources: [] as StaticResourceType[],
+  favoriteAssets: [] as StaticResourceType[],
   refetchResources: () => {},
   resourcesLoading: false,
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
@@ -157,10 +158,17 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     categories.set(convertToHierarchy(AssetsPanelCategories.initial))
   }, [])
 
+  const favoriteAssets = useFind(staticResourcePath, {
+    query: {
+      tags: { $like: '%Favorite%' }
+    }
+  })
+
   return (
     <AssetsQueryContext.Provider
       value={{
         search,
+        favoriteAssets: favoriteAssets.data as StaticResourceType[],
         resources: resources.value as StaticResourceType[],
         refetchResources: staticResourcesFindApi,
         resourcesLoading: resourcesLoading.value,
