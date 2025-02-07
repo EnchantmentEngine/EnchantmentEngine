@@ -120,7 +120,7 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
     >
       <div
         className={twMerge(
-          'overflow-hidden rounded bg-[#141619] p-2 text-[#B2B5BD] hover:bg-[#191B1F] hover:text-[#F5F5F5]',
+          'overflow-hidden rounded bg-surface-1 p-2 text-text-secondary',
           'border border-2',
           isActive ? 'border-[#375DAF]' : 'border-transparent'
         )}
@@ -137,7 +137,7 @@ function SidebarSection({ Icon, label, items = [], onClick, isActive }) {
       </div>
 
       {isActive && items.length > 0 && (
-        <div className="h-full overflow-y-auto rounded bg-[#141619] p-2 text-[#B2B5BD]">
+        <div className="h-full overflow-y-auto rounded bg-surface-1 p-2 text-text-secondary">
           {renderListByType[label] || <></>}
         </div>
       )}
