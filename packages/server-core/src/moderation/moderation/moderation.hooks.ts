@@ -36,8 +36,25 @@ import {
   moderationResolver
 } from './moderation.resolvers'
 
+import { HookContext } from '@feathersjs/feathers'
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
 import { iff, isProvider } from 'feathers-hooks-common'
+
+const validateModeration = async (context: HookContext) => {
+  const { data } = context
+
+  if (data.type === 'Person') {
+    if (!data.reportedUserId || !data.reportingUserId) {
+      throw new Error('Both reportedUserId and reportingUserId must be provided when type is Person')
+    }
+  } else if (data.type === 'World') {
+    if (!data.reportingUserId || !data.reportedLocationId) {
+      throw new Error('Both reportingUserId and reportedLocationId must be provided when type is World')
+    }
+  }
+
+  return context
+}
 
 export default {
   around: {
@@ -55,7 +72,11 @@ export default {
       schemaHooks.validateQuery(moderationQueryValidator),
       schemaHooks.resolveQuery(moderationQueryResolver)
     ],
-    create: [schemaHooks.validateData(moderationDataValidator), schemaHooks.resolveData(moderationDataResolver)],
+    create: [
+      validateModeration,
+      schemaHooks.validateData(moderationDataValidator),
+      schemaHooks.resolveData(moderationDataResolver)
+    ],
     patch: [
       iff(isProvider('external'), verifyScope('moderation', 'write')),
       schemaHooks.validateData(moderationPatchValidator),
