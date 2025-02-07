@@ -27,7 +27,7 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Checkbox, Input, Tooltip } from '@ir-engine/ui'
-import { Slider, ViewportButton } from '@ir-engine/ui/editor'
+import { Slider, StudioButton, ViewportButton } from '@ir-engine/ui/editor'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import {
   ArrowLeftSm,
@@ -342,7 +342,6 @@ export default function FilesToolbar() {
   )
 }
 
-// todo: rename this to FilesToolbar
 export function PanelToolbar({
   onBackDirectory,
   onRefreshDirectory,

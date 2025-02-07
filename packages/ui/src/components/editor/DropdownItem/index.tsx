@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Maximize02Sm } from '@ir-engine/ui/src/icons'
+import { ChevronDownSm, ChevronRightSm, Maximize02Sm } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
