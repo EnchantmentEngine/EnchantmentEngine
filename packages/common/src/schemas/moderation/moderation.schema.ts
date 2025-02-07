@@ -29,6 +29,7 @@ import { getValidator, querySyntax, StringEnum, Type } from '@feathersjs/typebox
 
 import { OpaqueType } from '@ir-engine/common/src/interfaces/OpaqueType'
 
+import { LocationID } from '@ir-engine/common/src/schema.type.module'
 import { TypedString } from '../../types/TypeboxUtils'
 import { UserID } from '../user/user.schema'
 import { dataValidator, queryValidator } from '../validators'
@@ -59,15 +60,19 @@ export const moderationSchema = Type.Object(
     }),
     type: StringEnum(['Person', 'World']),
     abuseReason: StringEnum([...abuseReasons]),
-    reportedUserId: Type.Optional<UserID>({
-      format: 'uuid'
-    }),
+    reportedUserId: Type.Optional(
+      TypedString<UserID>({
+        format: 'uuid'
+      })
+    ),
     reportingUserId: TypedString<UserID>({
       format: 'uuid'
     }),
-    reportedLocationId: Type.Optional({
-      format: 'uuid'
-    }),
+    reportedLocationId: Type.Optional(
+      TypedString<LocationID>({
+        format: 'uuid'
+      })
+    ),
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
     reportDetails: Type.String({ maxLength: 1050 }),
     status: StringEnum(['Open', 'Resolved']),
