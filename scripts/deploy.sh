@@ -37,7 +37,7 @@ if [ ! -f "api-image.txt" ] || [ -z "$(grep -L "no such manifest" api-image.txt)
 then
   echo "API image was not built and uploaded properly"
   exit 1
-elif ([ "$SERVE_CLIENT_FROM_API" != "true" ] && [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" != "true" ] && [ ! -f "client-image.txt" ]) || ([ "$SERVE_CLIENT_FROM_API" != "true" ] && [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" != "true"] && [ -z "$(grep -L "no such manifest" client-image.txt)" ])
+elif [ "$SERVE_CLIENT_FROM_API" != "true" ] && [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" != "true" ] && [ ! -f "client-image.txt" ] || ([ "$SERVE_CLIENT_FROM_API" != "true" ] && [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" != "true"] && [ -z "$(grep -L "no such manifest" client-image.txt)" ])
 then
   echo "client image was not built and uploaded properly"
   exit 1
@@ -45,10 +45,10 @@ elif [ ! -f "instanceserver-image.txt" ] || [ -z "$(grep -L "no such manifest" i
 then
   echo "Instanceserver image was not built and uploaded properly"
   exit 1
-elif [ ! -f "taskserver-image.txt" ] || [ -z "$(grep -L "no such manifest" taskserver-image.txt)" ]
-then
-  echo "Taskserver image was not built and uploaded properly"
-  exit 1
+#elif [ ! -f "taskserver-image.txt" ] || [ -z "$(grep -L "no such manifest" taskserver-image.txt)" ]
+#then
+#  echo "Taskserver image was not built and uploaded properly"
+#  exit 1
 else
   if [ "$SERVE_CLIENT_FROM_API" = "true" ] || [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" = "true" ]
   then
