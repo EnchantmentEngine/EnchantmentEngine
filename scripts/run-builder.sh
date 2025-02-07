@@ -46,7 +46,7 @@ bash ./scripts/cleanup_builder.sh
 
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]
 then
-  if [ "$PRIVATE_REPO" == "true" ]
+  if [ "$PRIVATE_REPO" = "true" ]
   then
     aws ecr get-login-password --region $STORAGE_REGION | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
   else
@@ -84,7 +84,7 @@ then
   if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]
   then
     echo "SHOULD PRUNE ECR IMAGES"
-    if [ "$PRIVATE_REPO" == "true" ]
+    if [ "$PRIVATE_REPO" = "true" ]
     then
       echo "PRUNING PRIVATE REPOS"
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --region $STORAGE_REGION --service api --releaseName $RELEASE_NAME
@@ -157,9 +157,9 @@ else
 #  npm run record-build-error -- --service=taskserver --isDocker=true
   #npm run record-build-error -- --service=testbot --isDocker=true
 
-  if [ "$DESTINATION_REPO_PROVIDER" == "aws" ]
+  if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]
   then
-    if [ $PRIVATE_REPO == "true" ]
+    if [ $PRIVATE_REPO = "true" ]
     then
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-api --region $STORAGE_REGION --service api --releaseName $RELEASE_NAME
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-client --region $STORAGE_REGION --service client --releaseName $RELEASE_NAME
@@ -171,7 +171,7 @@ else
       npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-instanceserver --region us-east-1 --service instanceserver --releaseName $RELEASE_NAME --public
 #      npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $DESTINATION_REPO_NAME_STEM-taskserver --region us-east-1 --service taskserver --releaseName $RELEASE_NAME --public
     fi
-  elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]
+  elif [ "$DESTINATION_REPO_PROVIDER" = "gcp" ]
   then
     echo "PRUNING GCP ARTIFACT REGISTRY REPOS"
     npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoUrl $DESTINATION_REPO_URL --repoName $DESTINATION_REPO_NAME_STEM-api --service api --releaseName $RELEASE_NAME
@@ -194,7 +194,7 @@ bash ./scripts/cleanup_builder.sh
 END_TIME=`date +"%d-%m-%yT%H-%M-%S"`
 echo "Started build at $START_TIME, deployed image to K8s at $DEPLOY_TIME, ended at $END_TIME"
 sleep 3m
-if [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" == "true" ] && [ "$STORAGE_PROVIDER" == "s3" ] ; then
+if [ "$SERVE_CLIENT_FROM_STORAGE_PROVIDER" = "true" ] && [ "$STORAGE_PROVIDER" = "s3" ] ; then
   npx ts-node --swc scripts/delete-old-s3-files.ts;
   echo "Deleted old client files from S3"
 fi
