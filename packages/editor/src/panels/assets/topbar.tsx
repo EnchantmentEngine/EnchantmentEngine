@@ -78,11 +78,11 @@ export function AssetsBreadcrumbs() {
 
   return (
     <div className="flex items-center gap-2" data-testid="assets-panel-breadcrumbs">
-      <FolderSm onClick={() => handleSelectParentCategory(0)} className="cursor-pointer text-xs text-[#42454D]" />
+      <FolderSm onClick={() => handleSelectParentCategory(0)} className="text-base text-text-secondary" />
       {breadcrumbTrail.map((category, idx) => (
         <div key={category.path} className="flex items-center">
           <span
-            className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-[#A3A3A3] hover:underline"
+            className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-base text-text-secondary"
             data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
             onClick={() => handleSelectParentCategory(idx)}
           >
@@ -138,13 +138,7 @@ export default function Topbar() {
         />
       }
       uploadButton={
-        <Button
-          size="l"
-          variant="secondary"
-          data-testid="assets-panel-upload-button"
-          className="bg-[#212226]"
-          onClick={() => uploadFiles().then(handleRefresh)}
-        >
+        <Button size="l" data-testid="assets-panel-upload-button" onClick={() => uploadFiles().then(handleRefresh)}>
           <PlusCircleSm />
           <span className="text-nowrap">{t('editor:layout.filebrowser.uploadAssets')}</span>
         </Button>

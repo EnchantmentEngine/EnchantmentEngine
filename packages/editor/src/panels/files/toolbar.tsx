@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
-import { Checkbox, Input, Tooltip } from '@ir-engine/ui'
-import { Slider, StudioButton, ViewportButton } from '@ir-engine/ui/editor'
+import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
+import { Slider, ViewportButton } from '@ir-engine/ui/editor'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import {
   ArrowLeftSm,
@@ -258,16 +258,13 @@ export default function FilesToolbar() {
                     : t('editor:layout.filebrowser.downloadProjectUnavailable')
                 }
               >
-                <StudioButton
-                  size="sm"
-                  variant="tertiary"
+                <ViewportButton
                   onClick={() =>
                     handleDownloadProject(filesState.projectName.value, filesState.selectedDirectory.value)
                   }
                   data-testid="files-panel-download-project-button"
-                >
-                  <Download01Sm />
-                </StudioButton>
+                  icon={Download01Sm}
+                />
               </Tooltip>
             </div>
             <div className="flex h-7 items-center gap-2 rounded p-2">
@@ -291,9 +288,8 @@ export default function FilesToolbar() {
         uploadButton={
           <>
             <div className="w-fit">
-              <StudioButton
+              <Button
                 size="l"
-                variant="tertiary"
                 disabled={!showUploadButtons}
                 onClick={() =>
                   inputFileWithAddToScene({
@@ -310,13 +306,12 @@ export default function FilesToolbar() {
               >
                 <FolderSm />
                 <span className="text-nowrap">{t('editor:layout.filebrowser.uploadFiles')}</span>
-              </StudioButton>
+              </Button>
             </div>
             <div className="w-fit">
-              <StudioButton
+              <Button
                 size="l"
                 disabled={!showUploadButtons}
-                variant="tertiary"
                 className="disabled:bg-[#212226]"
                 onClick={() =>
                   inputFileWithAddToScene({
@@ -333,7 +328,7 @@ export default function FilesToolbar() {
               >
                 <PlusCircleSm />
                 <span className="text-nowrap">{t('editor:layout.filebrowser.uploadFolder')}</span>
-              </StudioButton>
+              </Button>
             </div>
           </>
         }
@@ -356,37 +351,28 @@ export function PanelToolbar({
 
   return (
     <div
-      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#1E1F22] px-2 py-1"
+      className="mb-1 flex h-8 items-center justify-between gap-2 bg-[#1E1F22] bg-surface-4 px-2 py-1"
       data-testid={dataTestIdJson?.topbarId}
     >
       {/* Tools */}
       <div className="flex items-center divide-x divide-[#F5F5F5]">
         <div className="flex h-6 items-center">
-          <Tooltip content={t('editor:layout.filebrowser.back')}>
-            <StudioButton
-              size="sm"
-              variant="tertiary"
-              data-testid={dataTestIdJson?.backButtonId}
-              onClick={onBackDirectory}
-              rounded
-            >
-              <ArrowLeftSm />
-            </StudioButton>
-          </Tooltip>
-          <Tooltip content={t('editor:layout.filebrowser.refresh')}>
-            <StudioButton
-              size="sm"
-              variant="tertiary"
-              data-testid={dataTestIdJson?.refreshButtonId}
-              onClick={onRefreshDirectory}
-            >
-              <Refresh1Sm />
-            </StudioButton>
-          </Tooltip>
+          <div>
+            <Tooltip content={t('editor:layout.filebrowser.back')}>
+              <ViewportButton data-testid={dataTestIdJson.backButtonId} onClick={onBackDirectory} icon={ArrowLeftSm} />
+            </Tooltip>
+          </div>
+          <div>
+            <Tooltip content={t('editor:layout.filebrowser.refresh')}>
+              <ViewportButton
+                data-testid={dataTestIdJson.refreshButtonId}
+                onClick={onRefreshDirectory}
+                icon={Refresh1Sm}
+              />
+            </Tooltip>
+          </div>
           <Tooltip content={t('editor:layout.filebrowser.addNewFolder')}>
-            <StudioButton size="sm" variant="tertiary" onClick={createNewFolder}>
-              <FolderPlusSm className="h-5 w-5 cursor-pointer text-[#9CA0AA]" />
-            </StudioButton>
+            <ViewportButton onClick={createNewFolder} icon={FolderPlusSm} />
           </Tooltip>
           <ViewModeSettings />
         </div>
