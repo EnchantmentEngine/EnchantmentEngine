@@ -149,7 +149,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
         if (!map.has(currentPath)) {
           const newNode: AssetCategoryNode = {
             name: parts[i],
-            path: path,
+            path: `/${path}`,
             depth: currentPath.split('/').length - 1,
             children: []
           }
