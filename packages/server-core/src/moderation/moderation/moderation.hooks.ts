@@ -47,10 +47,6 @@ const validateModeration = async (context: HookContext) => {
     if (!data.reportedUserId || !data.reportingUserId) {
       throw new Error('Both reportedUserId and reportingUserId must be provided when type is Person')
     }
-  } else if (data.type === 'World') {
-    if (!data.reportingUserId || !data.reportedLocationId) {
-      throw new Error('Both reportingUserId and reportedLocationId must be provided when type is World')
-    }
   }
 
   return context

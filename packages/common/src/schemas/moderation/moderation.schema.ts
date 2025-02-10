@@ -58,7 +58,7 @@ export const moderationSchema = Type.Object(
     id: Type.String({
       format: 'uuid'
     }),
-    type: StringEnum(['Person', 'World']),
+    type: StringEnum(['Person', 'Scene']),
     abuseReason: StringEnum([...abuseReasons]),
     reportedUserId: Type.Optional(
       TypedString<UserID>({
@@ -68,11 +68,9 @@ export const moderationSchema = Type.Object(
     reportingUserId: TypedString<UserID>({
       format: 'uuid'
     }),
-    reportedLocationId: Type.Optional(
-      TypedString<LocationID>({
-        format: 'uuid'
-      })
-    ),
+    reportedLocationId: TypedString<LocationID>({
+      format: 'uuid'
+    }),
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
     reportDetails: Type.String({ maxLength: 1050 }),
     status: StringEnum(['Open', 'Resolved']),
