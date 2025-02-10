@@ -37,11 +37,12 @@ import {
   getOptionalComponent,
   hasComponent,
   Not,
+  query,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { Quaternion, Vector3 } from 'three'
-import { PI, Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
+import { getState } from '@ir-engine/hyperflux'
+import { PI } from '../../common/constants/MathConstants'
 import { TransformComponent, TransformGizmoTagComponent } from '../../transform/components/TransformComponent'
 import { XRSpaceComponent } from '../../xr/XRComponents'
 import { XRUIComponent } from '../../xrui/components/XRUIComponent'
@@ -49,6 +50,7 @@ import { DefaultButtonBindings, InputComponent } from '../components/InputCompon
 import { InputPointerComponent } from '../components/InputPointerComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
 import { ButtonState, ButtonStateMap, createInitialButtonState, MouseButton } from '../state/ButtonState'
+import { InputState } from '../state/InputState'
 import { findProximity, findRaycastedInput, IntersectionData } from './ClientInputHeuristics'
 
 /** radian threshold for rotating state*/
@@ -56,9 +58,6 @@ export const ROTATING_THRESHOLD = 1.5 * (PI / 180)
 
 /** squared distance threshold for dragging state */
 export const DRAGGING_THRESHOLD = 0.001
-
-/** anti-garbage variable!! value not to be used unless you set values just before use*/
-const _pointerPositionVector3 = new Vector3()
 
 export function preventDefault(e) {
   e.preventDefault()
@@ -75,14 +74,6 @@ export function updateGamepadInput(eid: Entity) {
   const inputSource = getComponent(eid, InputSourceComponent)
   const gamepad = inputSource.source.gamepad
   const buttons = inputSource.buttons
-  // const buttonDownPos = inputSource.buttonDownPositions as WeakMap<AnyButton, Vector3>
-  // log buttons
-  // if (source.gamepad) {
-  //   for (let i = 0; i < source.gamepad.buttons.length; i++) {
-  //     const button = source.gamepad.buttons[i]
-  //     if (button.pressed) console.log('button ' + i + ' pressed: ' + button.pressed)
-  //   }
-  // }
 
   if (!gamepad) return
   const gamepadButtons = gamepad.buttons
@@ -101,15 +92,12 @@ export function updateGamepadInput(eid: Entity) {
       // First frame condition: Initialize downPosition when buttonState.pressed and gamepadButton.pressed are different (aka the first frame)
       if (!buttonState.pressed && gamepadButton.pressed) {
         buttonState.down = true
-        buttonState.downPosition = new Vector3()
-        buttonState.downRotation = new Quaternion()
-
         if (pointer) {
-          buttonState.downPosition.set(pointer.position.x, pointer.position.y, 0)
-          //TODO maybe map pointer rotation/swing/twist to downRotation here once we map the pointer events to that (think Apple pencil)
-        } else if (hasComponent(eid, XRSpaceComponent) && xrTransform) {
-          buttonState.downPosition.copy(xrTransform.position)
-          buttonState.downRotation.copy(xrTransform.rotation)
+          buttonState.downPointerPosition = pointer.position.clone()
+        }
+        if (xrTransform) {
+          buttonState.downPosition = xrTransform.position.clone()
+          buttonState.downRotation = xrTransform.rotation.clone()
         }
       }
       // Sync buttonState with gamepadButton
@@ -117,24 +105,22 @@ export function updateGamepadInput(eid: Entity) {
       buttonState.touched = gamepadButton.touched
       buttonState.value = gamepadButton.value
 
-      if (buttonState.downPosition) {
-        //if not yet dragging, compare distance to drag threshold and begin if appropriate
-        if (!buttonState.dragging) {
-          if (pointer) _pointerPositionVector3.set(pointer.position.x, pointer.position.y, 0)
-          // Will always be 0 on the first frame: downPosition will be set this frame, and therefore checked against itself
-          const squaredDistance = buttonState.downPosition.distanceToSquared(
-            pointer ? _pointerPositionVector3 : xrTransform?.position ?? Vector3_Zero
-          )
-          buttonState.dragging = squaredDistance > DRAGGING_THRESHOLD
-        }
+      //if not yet dragging, compare distance to drag threshold and begin if appropriate
+      if (pointer && buttonState.downPointerPosition && !buttonState.dragging) {
+        const squaredDistance = buttonState.downPointerPosition.distanceToSquared(pointer.position)
+        buttonState.dragging = squaredDistance > DRAGGING_THRESHOLD
+      }
 
-        //if not yet rotating, compare distance to drag threshold and begin if appropriate
-        if (!buttonState.rotating) {
-          const angleRadians = buttonState.downRotation!.angleTo(
-            pointer ? Q_IDENTITY : xrTransform?.rotation ?? Q_IDENTITY
-          )
-          buttonState.rotating = angleRadians > ROTATING_THRESHOLD
-        }
+      //if not yet dragging, compare distance to drag threshold and begin if appropriate
+      if (xrTransform && buttonState.downPosition && !buttonState.dragging) {
+        const squaredDistance = buttonState.downPosition.distanceToSquared(xrTransform.position)
+        buttonState.dragging = squaredDistance > DRAGGING_THRESHOLD
+      }
+
+      //if not yet rotating, compare distance to drag threshold and begin if appropriate
+      if (xrTransform && buttonState.downRotation && !buttonState.rotating) {
+        const angleRadians = buttonState.downRotation!.angleTo(xrTransform.rotation)
+        buttonState.rotating = angleRadians > ROTATING_THRESHOLD
       }
     } else if (buttonState) {
       buttonState.up = true
@@ -170,27 +156,37 @@ export function updatePointerDragging(pointerEntity: Entity, event: PointerEvent
 
   const pointer = getOptionalComponent(pointerEntity, InputPointerComponent)
 
-  if (!btn.pressed || !btn.downPosition) return
+  if (!pointer || !btn.pressed || !btn.downPointerPosition) return
 
   //if not yet dragging, compare distance to drag threshold and begin if appropriate
-  pointer
-    ? _pointerPositionVector3.set(pointer.position.x, pointer.position.y, 0)
-    : _pointerPositionVector3.copy(Vector3_Zero)
-  const squaredDistance = btn.downPosition.distanceToSquared(_pointerPositionVector3)
+  const squaredDistance = btn.downPointerPosition.distanceToSquared(pointer.position)
 
   if (squaredDistance > DRAGGING_THRESHOLD) {
     btn.dragging = true
   }
 }
 
-export function cleanupButton(
+function _refreshButton(
   key: string,
   buttons: ButtonStateMap<Partial<Record<string | number | symbol, ButtonState | undefined>>>,
   hasFocus: boolean
 ) {
   const button = buttons[key]
-  if (button?.down) button.down = false
-  if (button?.up || !hasFocus) delete buttons[key]
+  if (button) {
+    if (button.down) button.down = false
+    if (button.consumed) button.consumed = false
+    if (button.up || !hasFocus) {
+      delete buttons[key]
+    }
+  } else {
+    delete buttons[key]
+  }
+}
+
+function _refreshButtonState(buttonStates: ButtonStateMap<any>, hasFocus: boolean = true) {
+  for (const key of Object.keys(buttonStates)) {
+    _refreshButton(key, buttonStates, hasFocus)
+  }
 }
 
 export const redirectPointerEventsToXRUI = (cameraEntity: Entity, evt: PointerEvent) => {
@@ -261,13 +257,33 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   }
 }
 
+export function refreshInputs() {
+  const hasFocus = typeof globalThis.document === 'undefined' ? true : document.hasFocus()
+
+  for (const eid of query([[InputSourceComponent]])) {
+    const source = getComponent(eid, InputSourceComponent)
+    _refreshButtonState(source.buttons, hasFocus)
+    // clear non-spatial emulated axes data end of each frame
+    if (!hasComponent(eid, XRSpaceComponent) && hasComponent(eid, InputPointerComponent)) {
+      ;(source.source.gamepad!.axes as number[]).fill(0)
+    }
+  }
+
+  const inputState = getState(InputState)
+  const entityButtonStates = inputState.entityButtonStates
+
+  for (const buttonStates of entityButtonStates.values()) {
+    _refreshButtonState(buttonStates.cachedResults, hasFocus)
+  }
+}
+
 export const ClientInputFunctions = {
   preventDefault,
   preventDefaultKeyDown,
   updateGamepadInput,
   setInputSources,
   updatePointerDragging,
-  cleanupButton,
+  refreshInputs,
   redirectPointerEventsToXRUI,
   assignInputSources
 }

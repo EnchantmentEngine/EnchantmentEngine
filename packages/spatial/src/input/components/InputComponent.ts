@@ -82,6 +82,11 @@ export const DefaultAxisBindings = {
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
 } satisfies InputAxisBindings
 
+// Add these type definitions before the InputComponent definition
+export type ButtonStateProxy = {
+  cachedResults: ButtonStateMap<any>
+} & ButtonStateMap<any>
+
 export const InputComponent = defineComponent({
   name: 'InputComponent',
   jsonID: 'EE_input',
@@ -105,39 +110,143 @@ export const InputComponent = defineComponent({
     const entity = useEntityContext()
 
     return useExecute(() => {
+      const isEditing = getState(EngineState).isEditing
       const capturingEntity = getState(InputState).capturingEntity
-      if (
-        (!executeWhenEditing && getState(EngineState).isEditing) ||
-        (capturingEntity && !isAncestor(capturingEntity, entity, true))
-      )
+
+      // Don't execute if:
+      // 1. We don't want to execute when editing and we are editing
+      // 2. The entity is not an ancestor of the capturing entity
+      if ((!executeWhenEditing && isEditing) || !isAncestor(capturingEntity, entity, true)) {
         return
+      }
+
       executeOnInput()
     }, getInputExecutionInsert(order))
   },
 
   getInputEntities(entityContext: Entity): Entity[] {
-    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent])
-    const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent])
+    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent], true, true)
+    const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent], true, true)
     const inputSinkInputEntities = getOptionalComponent(inputSinkEntity, InputSinkComponent)?.inputEntities ?? []
     const inputEntities = [closestInputEntity, ...inputSinkInputEntities]
-    return inputEntities.filter(
-      (entity, index) => inputEntities.indexOf(entity) === index && entity !== UndefinedEntity
-    ) // remove duplicates
+    return Array.from(new Set(inputEntities.filter((entity) => entity !== UndefinedEntity))) // remove duplicates
   },
 
   getInputSourceEntities(entityContext: Entity) {
     const inputEntities = InputComponent.getInputEntities(entityContext)
-    return inputEntities.reduce<Entity[]>((prev, eid) => {
-      return [...prev, ...getComponent(eid, InputComponent).inputSources]
-    }, [])
+    return Array.from(
+      new Set(
+        inputEntities.reduce<Entity[]>((prev, eid) => {
+          return [...prev, ...getComponent(eid, InputComponent).inputSources]
+        }, [])
+      )
+    )
   },
 
   getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
   ) {
-    const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
-    return InputComponent.getMergedButtonsForInputSources(inputSourceEntities, inputBindings)
+    const entityButtonStates = getState(InputState).entityButtonStates
+    if (!entityButtonStates.has(entityContext)) {
+      const buttonStates = {} as ButtonStateProxy
+      const cachedResults = (buttonStates.cachedResults = {} as ButtonStateMap<any>)
+
+      const proxy = new Proxy(buttonStates, {
+        get: (target: ButtonStateProxy, prop: string) => {
+          if (prop === 'cachedResults') {
+            return target[prop]
+          }
+          if (typeof prop === 'symbol') {
+            return target[prop]
+          }
+
+          // Check cache first
+          if (Object.hasOwn(cachedResults, prop)) {
+            if (cachedResults[prop] && cachedResults[prop].consumed) return cachedResults[prop]
+            return undefined
+          }
+
+          let result = cachedResults[prop]
+
+          // Get all input source entities
+          const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
+          console.log('Checking button:', prop)
+          console.log('Input source entities:', inputSourceEntities)
+
+          // Helper function to find first unconsumed button state
+          const findButtonState = (button: AnyButton): ButtonState | undefined => {
+            console.log('Looking for button:', button)
+            for (const sourceEntity of inputSourceEntities) {
+              const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
+              if (!inputSourceComponent) continue
+              const state = inputSourceComponent.buttons[button]
+              console.log('Found state:', state)
+              if (state && !state.consumed) {
+                return state
+              }
+            }
+            return undefined
+          }
+
+          // First check mapped button states since they define the mapping from alias to actual buttons
+          if (inputBindings && prop in inputBindings) {
+            console.log('Found in bindings:', inputBindings[prop])
+            const bindings = inputBindings[prop]
+            for (const binding of bindings) {
+              if (Array.isArray(binding)) {
+                // For combo buttons, check if all buttons in the combo are available
+                const states = binding.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
+                console.log('Combo states:', states)
+
+                const isActive = states.length === binding.length
+
+                if (!result && isActive) {
+                  // All buttons in combo are active and not consumed, consume them and set the result
+                  states.forEach((s) => (s.consumed = true))
+                  result = cachedResults[prop] = createInitialButtonState(states[0].inputSourceEntity)
+                }
+
+                if (result && isActive) {
+                  result.down = states.every((s) => s.down)
+                  result.pressed = states.every((s) => s.pressed)
+                  result.touched = states.every((s) => s.touched)
+                  result.value = Math.max(...states.map((s) => s.value))
+                  result.dragging = states.some((s) => s.dragging)
+                  result.rotating = states.some((s) => s.rotating)
+                  result.up = false
+                  result.consumed = true
+                  return result
+                } else if (result) {
+                  result.up = true
+                  result.consumed = true
+                }
+              } else {
+                // For single button bindings, just return that button
+                result = cachedResults[prop] = result ?? findButtonState(binding)
+                console.log('Single button state:', result)
+                if (result) result.consumed = true
+                return result
+              }
+
+              // If we get here, the button in the binding is not available, so set the state to undefined
+              return (cachedResults[prop] = undefined)
+            }
+          }
+
+          // Otherwise check if this exact button exists and is not consumed
+          const rawState = findButtonState(prop as AnyButton)
+          console.log('Raw state:', rawState)
+          cachedResults[prop] = rawState
+          if (rawState) rawState.consumed = true
+          return rawState
+        }
+      })
+
+      entityButtonStates.set(entityContext, proxy)
+    }
+
+    return entityButtonStates.get(entityContext)!
   },
 
   getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
@@ -145,66 +254,7 @@ export const InputComponent = defineComponent({
     inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
   ) {
     const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
-    return InputComponent.getMergedAxesForInputSources(inputSourceEntities, inputBindings)
-  },
 
-  /**
-   * @description Returns an object that:
-   * - Contains all of the buttons described by the InputSourceComponent.buttons of all `@param inputSourceEntities`
-   * - Has synchronized the state of the buttons described by all entries of `@param inputAlias` into fields of the same name.  */
-  getMergedButtonsForInputSources<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
-    inputSourceEntities: Entity[],
-    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
-  ) {
-    // Get the merged button states from all input sources
-    const buttonStates = Object.assign(
-      {},
-      ...inputSourceEntities.map((eid) => {
-        return getComponent(eid, InputSourceComponent).buttons
-      })
-    ) as Record<AnyButton, ButtonState | undefined>
-
-    const result = { ...buttonStates } as ButtonStateMap<BindingsType>
-
-    // Process each binding
-    for (const key of Object.keys(inputBindings)) {
-      const k = key as keyof BindingsType
-      const bindings = inputBindings[key]
-
-      // Check each binding
-      const isActive = bindings.some((binding) => {
-        if (Array.isArray(binding)) {
-          // For combo bindings, check if all buttons in the combo are down
-          return binding.every((btn) => buttonStates[btn]?.down)
-        } else {
-          // Single button binding
-          return buttonStates[binding]?.down
-        }
-      })
-
-      // If any binding is active, set the alias state
-      if (isActive && inputSourceEntities.length > 0) {
-        result[k] = createInitialButtonState(inputSourceEntities[0], {
-          down: true,
-          pressed: true,
-          touched: false,
-          up: false,
-          value: 1,
-          dragging: false,
-          rotating: false
-        })
-      } else {
-        result[k] = undefined
-      }
-    }
-
-    return result
-  },
-
-  getMergedAxesForInputSources<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
-    inputSourceEntities: Entity[],
-    inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
-  ) {
     const axes = {
       0: 0,
       1: 0,

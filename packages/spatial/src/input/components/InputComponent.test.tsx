@@ -59,14 +59,12 @@ import { assertArray } from '../../../tests/util/assert'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialEngine } from '../../initializeEngine'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
-import { ReferenceSpace } from '../../xr/XRState'
+import ClientInputFunctions from '../functions/ClientInputFunctions'
 import {
-  AnyButton,
-  ButtonState,
   ButtonStateMap,
   KeyboardButton,
+  MouseButton,
   MouseScroll,
-  XRStandardGamepadAxes,
   createInitialButtonState
 } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
@@ -79,6 +77,9 @@ import {
 } from './InputComponent'
 import { InputSinkComponent } from './InputSinkComponent'
 import { InputSourceComponent } from './InputSourceComponent'
+
+/** @description Alias for the type expected by {@link InputSourceComponent.source.gamepad.axes} */
+type Axes = [number, number, number, number]
 
 type InputComponentData = {
   inputSinks: EntityUUID[]
@@ -111,32 +112,7 @@ function createDummyEntity(): Entity {
   return result
 }
 
-/** @description Returns a dummy XRInputSource object containing the given `@param mapping` as its {@link XRInputSource.gamepad.mapping} */
-function getDummyMapping(mapping: GamepadMappingType): XRInputSource {
-  return {
-    gamepad: {
-      axes: [0, 0, 0, 0],
-      buttons: [],
-      connected: true,
-      hapticActuators: [],
-      // id: 'emulated-gamepad-1',  // @note The attached number is unreliable on tests. Requires the entity number
-      index: 0,
-      mapping: mapping,
-      // timestamp: performance.now(),  // @note Unreliable on tests
-      vibrationActuator: null
-    },
-    gripSpace: undefined,
-    hand: undefined,
-    handedness: 'none',
-    profiles: [],
-    targetRayMode: 'screen',
-    targetRaySpace: {}
-  } as unknown as XRInputSource
-}
-
-/** @description Alias for the type expected by {@link InputSourceComponent.source.gamepad.axes} */
-type Axes = [number, number, number, number]
-/** @description Returns a dummy InputSourceComponent object containing the given `@param axes` */
+/** @description Returns a dummy XRInputSource object containing the given `@param axes` */
 function getDummyAxes(axes: Axes) {
   return {
     source: {
@@ -145,10 +121,8 @@ function getDummyAxes(axes: Axes) {
         buttons: [],
         connected: true,
         hapticActuators: [],
-        // id: 'emulated-gamepad-1',  // @note The attached number is unreliable on tests. Requires the entity number
         index: 0,
         mapping: '' as GamepadMappingType,
-        // timestamp: performance.now(),  // @note Unreliable on tests
         vibrationActuator: null
       },
       gripSpace: undefined,
@@ -388,221 +362,6 @@ describe('InputComponent', () => {
     })
   })
 
-  describe('getMergedButtonsForInputSources', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
-    it('should copy all buttons defined by the InputSourceComponent.buttons of all `@param inputSourceEntities` into the resulting object', () => {
-      // Create the list of expected keys
-      const Expected = [0, 1, 2, 3] as AnyButton[]
-      // Create test entity
-      const entity = createEntity()
-      // Create the list of buttons that should be returned
-      const Down = createInitialButtonState(entity, {
-        down: true,
-        pressed: false,
-        touched: false,
-        up: false,
-        value: 1,
-        dragging: false,
-        rotating: false
-      })
-      const Buttons1 = {} as Record<AnyButton, ButtonState>
-      const Buttons2 = {} as Record<AnyButton, ButtonState>
-      Buttons1[Expected[0]] = Down
-      Buttons1[Expected[1]] = Down
-      Buttons2[Expected[2]] = Down
-      Buttons2[Expected[3]] = Down
-      // Create the entities that will contain the buttons
-      const ent1 = createEntity()
-      const ent2 = createEntity()
-      setComponent(ent1, InputSourceComponent)
-      setComponent(ent2, InputSourceComponent)
-      getMutableComponent(ent1, InputSourceComponent).buttons.set(Buttons1)
-      getMutableComponent(ent2, InputSourceComponent).buttons.set(Buttons2)
-      // Call the function with the list of entities we just created
-      const list = [ent1, ent2]
-      const result = InputComponent.getMergedButtonsForInputSources(list)
-      // Check that all buttons were added to the the resulting object
-      for (const key of Expected) {
-        assert.ok(result[key] !== undefined, 'Expected key: ' + key + ' should be contained in the result')
-      }
-    })
-
-    it('should return an object with the default shape when `@param inputAlias` is omitted', () => {
-      // Create the list of expected keys
-      const Expected = ['0', '1', '2', '3']
-      for (const key of Object.keys(DefaultButtonBindings)) {
-        Expected.push(key)
-      }
-      // Create the list of buttons that should be returned
-      const Down = { down: true }
-      const Buttons1 = {}
-      const Buttons2 = {}
-      Buttons1[Expected[0]] = Down
-      Buttons1[Expected[1]] = Down
-      Buttons2[Expected[2]] = Down
-      Buttons2[Expected[3]] = Down
-      // Create the entities that will contain the buttons
-      const ent1 = createEntity()
-      const ent2 = createEntity()
-      setComponent(ent1, InputSourceComponent)
-      setComponent(ent2, InputSourceComponent)
-      getMutableComponent(ent1, InputSourceComponent).buttons.set(Buttons1)
-      getMutableComponent(ent2, InputSourceComponent).buttons.set(Buttons2)
-      // Call the function with the list of entities we just created
-      const list = [ent1, ent2]
-      const result = InputComponent.getMergedButtonsForInputSources(list)
-      // Check that all keys of the result object are contained in the list of expected keys
-      for (const key of Object.keys(result)) {
-        assert.ok(Expected.includes(key), key + ' should be contained in the result')
-      }
-    })
-
-    it('should create fields in the resulting object for all aliases described by `@param inputAlias`', () => {
-      // Create the `@param inputAlias` object
-      const SomeAliasList = {
-        SomeKeyOne: [0, 1],
-        SomeKeyTwo: [2, 3]
-      }
-      // Create the list of expected keys
-      const Expected = ['0', '1', '2', '3']
-      for (const key of Object.keys(SomeAliasList)) {
-        Expected.push(key)
-      }
-      // Create the list of buttons that should be returned
-      const Down = { down: true }
-      const Buttons1 = {}
-      const Buttons2 = {}
-      Buttons1[Expected[0]] = Down
-      Buttons1[Expected[1]] = Down
-      Buttons2[Expected[2]] = Down
-      Buttons2[Expected[3]] = Down
-      // Create the entities that will contain the buttons
-      const ent1 = createEntity()
-      const ent2 = createEntity()
-      setComponent(ent1, InputSourceComponent)
-      setComponent(ent2, InputSourceComponent)
-      getMutableComponent(ent1, InputSourceComponent).buttons.set(Buttons1)
-      getMutableComponent(ent2, InputSourceComponent).buttons.set(Buttons2)
-      // Call the function with the list of entities we just created
-      const list = [ent1, ent2]
-      const result = InputComponent.getMergedButtonsForInputSources(list, SomeAliasList)
-      // Check that all keys of the given inputAlias object are contained in the result
-      for (const key of Object.keys(result)) {
-        assert.ok(Expected.includes(key), key + ' should be contained in the result')
-      }
-    })
-
-    it('should collapse the state of the button aliases described by `@param inputAlias` into a single field of the same name in the result object', () => {
-      // Create the `@param inputAlias` object
-      const SomeAliasList = {
-        SomeKeyOne: [0 as AnyButton, 1 as AnyButton],
-        SomeKeyTwo: [2 as AnyButton, 3 as AnyButton]
-      } satisfies InputButtonBindings
-      // Create the list of expected keys
-      const Expected = ['0', '1', '2', '3']
-      for (const key of Object.keys(SomeAliasList)) {
-        Expected.push(key)
-      }
-      // Create the list of buttons that should be returned
-      const Down = { down: true }
-      const NotDown = { down: false }
-      const Buttons1 = {}
-      const Buttons2 = {}
-      // Set the state of the buttons
-      Buttons1[Expected[0]] = Down
-      Buttons1[Expected[1]] = NotDown // should be synchronized with [0] in result.SomeKeyOne
-      Buttons2[Expected[2]] = Down
-      Buttons2[Expected[3]] = NotDown // should be synchronized with [2] in result.SomeKeyTwo
-      // Create the entities that will contain the buttons
-      const ent1 = createEntity()
-      const ent2 = createEntity()
-      setComponent(ent1, InputSourceComponent)
-      setComponent(ent2, InputSourceComponent)
-      getMutableComponent(ent1, InputSourceComponent).buttons.set(Buttons1)
-      getMutableComponent(ent2, InputSourceComponent).buttons.set(Buttons2)
-      // Call the function with the list of entities we just created
-      const list = [ent1, ent2]
-      const result = InputComponent.getMergedButtonsForInputSources(list, SomeAliasList)
-      // Check that all keys of the resulting object have the expected state
-      assert.equal(result[Expected[0]].down, true)
-      assert.equal(result[Expected[1]].down, false)
-      assert.equal(result[Expected[2]].down, true)
-      assert.equal(result[Expected[3]].down, false)
-      assert.equal(result[Expected[4]].down, true)
-      assert.equal(result[Expected[5]].down, true)
-    })
-
-    // Add new tests for combo buttons
-    it('should handle combo button bindings correctly', () => {
-      // Create test buttons
-      const buttonAlias = {
-        SingleButton: [KeyboardButton.KeyA],
-        ComboButtons: [[KeyboardButton.ControlLeft, KeyboardButton.KeyZ]], // Ctrl+Z combo
-        MultipleBindings: [
-          KeyboardButton.KeyB, // Single button
-          [KeyboardButton.ControlLeft, KeyboardButton.KeyC] // Ctrl+C combo
-        ]
-      } satisfies InputButtonBindings
-
-      // Create test entity with button states
-      const entity = createEntity()
-      setComponent(entity, InputSourceComponent)
-
-      // Test case 1: No buttons pressed
-      getMutableComponent(entity, InputSourceComponent).buttons.set({})
-      let result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.equal(result.SingleButton, undefined)
-      assert.equal(result.ComboButtons, undefined)
-      assert.equal(result.MultipleBindings, undefined)
-
-      // Test case 2: Single button pressed
-      getMutableComponent(entity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(entity, { down: true })
-      })
-      result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.ok(result.SingleButton?.down)
-      assert.equal(result.ComboButtons, undefined)
-      assert.ok(result.SingleButton?.down)
-
-      // Test case 3: Partial combo pressed (should not trigger)
-      getMutableComponent(entity, InputSourceComponent).buttons.set({
-        [KeyboardButton.ControlLeft]: createInitialButtonState(entity, { down: true })
-      })
-      result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.equal(result.ComboButtons, undefined)
-
-      // Test case 4: Full combo pressed
-      getMutableComponent(entity, InputSourceComponent).buttons.set({
-        [KeyboardButton.ControlLeft]: createInitialButtonState(entity, { down: true }),
-        [KeyboardButton.KeyZ]: createInitialButtonState(entity, { down: true })
-      })
-      result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.ok(result.ComboButtons?.down)
-
-      // Test case 5: Multiple bindings - single button of multiple options pressed
-      getMutableComponent(entity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyB]: createInitialButtonState(entity, { down: true })
-      })
-      result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.ok(result.MultipleBindings?.down)
-
-      // Test case 6: Multiple bindings - combo of multiple options pressed
-      getMutableComponent(entity, InputSourceComponent).buttons.set({
-        [KeyboardButton.ControlLeft]: createInitialButtonState(entity, { down: true }),
-        [KeyboardButton.KeyC]: createInitialButtonState(entity, { down: true })
-      })
-      result = InputComponent.getMergedButtonsForInputSources([entity], buttonAlias)
-      assert.ok(result.MultipleBindings?.down)
-    })
-  })
-
   describe('getMergedButtons', () => {
     let testEntity = UndefinedEntity
     let parentEntity = UndefinedEntity
@@ -620,21 +379,21 @@ describe('InputComponent', () => {
       return destroyEngine()
     })
 
-    it('should contain all buttons held by the entities returned by getInputSourceEntities for the given `@param entityContext`', () => {
-      const Expected = ['1', '2', '3']
+    it('should return a proxy that checks button states from input sources', () => {
+      const Expected = [MouseButton.PrimaryClick, MouseButton.SecondaryClick, MouseButton.AuxiliaryClick]
       const Down = { down: true }
       const NotDown = { down: false }
       const Buttons1 = {}
       const Buttons2 = {}
       const Buttons3 = {}
-      // Set the state of the buttons
-      Buttons1[Expected[0]] = Down
-      Buttons2[Expected[1]] = NotDown
-      Buttons3[Expected[2]] = Down
       // `one`, `two` and `three` are valid entities that have an all-defaults InputComponent
       const one = createEntity()
       const two = createEntity()
       const three = createEntity()
+      // Set the state of the buttons
+      Buttons1[Expected[0]] = createInitialButtonState(one, { down: true, consumed: false })
+      Buttons2[Expected[1]] = createInitialButtonState(two, { down: false, consumed: false })
+      Buttons3[Expected[2]] = createInitialButtonState(three, { down: true, consumed: false })
       // We add the key sources to each entity
       setComponent(one, InputSourceComponent)
       setComponent(two, InputSourceComponent)
@@ -647,7 +406,6 @@ describe('InputComponent', () => {
       setComponent(inputEntity, InputComponent)
       getMutableComponent(inputEntity, InputComponent).inputSources.set([two, three])
       // Set the parentEntity as both an Input and an InputSink
-      //  @note (might not make sense conceptually. this is just to test this codepath)
       setComponent(parentEntity, InputComponent)
       getMutableComponent(parentEntity, InputComponent).inputSources.set([one])
       // The parentEntity is the InputSink where we get the inputs from
@@ -655,187 +413,120 @@ describe('InputComponent', () => {
       getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set([inputEntity])
       // parentEntity is set as the parent of testEntity
       setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      // The result should contain the buttons listed by all entities combined, retrieved by calling the function with `testEntity`
+      // The result should contain the buttons listed by all entities combined
       const result = InputComponent.getMergedButtons(testEntity)
       for (const key of Expected) {
         assert.ok(result[key] !== undefined, 'Expected key: ' + key + ' should be contained in the result')
       }
     })
 
-    it('should collapse the state of all buttons described by the given `@param inputAlias` into keys of the same name in the resulting object', () => {
-      // Create the `@param inputAlias` object
-      const SomeAliasList = {
-        SomeKeyOne: [0 as AnyButton, 1 as AnyButton],
-        SomeKeyTwo: [2 as AnyButton, 3 as AnyButton]
+    it('should handle combo button bindings correctly', () => {
+      // Create test entity and components
+      const testEntity = createEntity()
+      setComponent(testEntity, InputSourceComponent)
+      setComponent(testEntity, InputComponent, { inputSources: [testEntity] })
+      const inputSource = getMutableComponent(testEntity, InputSourceComponent)
+
+      // Create test buttons
+      const buttonAlias = {
+        SingleButton: [KeyboardButton.KeyA],
+        ComboButtons: [[KeyboardButton.KeyA, KeyboardButton.KeyB]]
       } satisfies InputButtonBindings
-      const Down = { down: true }
-      const NotDown = { down: false }
-      const Buttons1 = {}
-      const Buttons2 = {}
-      // Create the list of expected keys
-      const Expected = ['0', '1', '2', '3']
-      for (const key of Object.keys(SomeAliasList)) {
-        Expected.push(key)
-      }
-      // Set the state of the buttons
-      Buttons1[Expected[0]] = Down
-      Buttons1[Expected[1]] = NotDown
-      Buttons2[Expected[2]] = Down
-      Buttons2[Expected[3]] = NotDown
-      // Create the input sources that contain the button states
-      const one = createEntity()
-      const two = createEntity()
-      setComponent(one, InputSourceComponent)
-      setComponent(two, InputSourceComponent)
-      getMutableComponent(one, InputSourceComponent).buttons.set(Buttons1)
-      getMutableComponent(two, InputSourceComponent).buttons.set(Buttons2)
-      // Add the input sources to the InputComponent of testEntity
-      setComponent(testEntity, InputComponent)
-      getMutableComponent(testEntity, InputComponent).inputSources.set([one, two])
-      // Run the process
-      const result = InputComponent.getMergedButtons(testEntity, SomeAliasList)
-      // Check that all expected keys are being added to the result
-      for (const key of Object.keys(result)) {
-        assert.ok(Expected.includes(key), key + ' should be contained in the result')
-      }
-      // Check that all keys of the resulting object have the expected state
-      assert.equal(result[Expected[0]].down, true)
-      assert.equal(result[Expected[1]].down, false)
-      assert.equal(result[Expected[2]].down, true)
-      assert.equal(result[Expected[3]].down, false)
-      assert.equal(result[Expected[4]].down, true)
-      assert.equal(result[Expected[5]].down, true)
-    })
-  })
 
-  describe('getMergedAxesForInputSources', () => {
-    let testEntity = UndefinedEntity
+      // Test case 1: No buttons
+      inputSource.buttons.set({})
+      const result = InputComponent.getMergedButtons(testEntity, buttonAlias)
 
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-    })
+      assert.equal(result.SingleButton, undefined)
+      assert.equal(result.ComboButtons, undefined)
 
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
-    describe('should create an object that ...', () => {
-      it('... contains 4 axes values at ids (0,1,2,3)', () => {
-        setComponent(testEntity, InputSourceComponent)
-        const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result[0], undefined)
-        assert.notEqual(result[1], undefined)
-        assert.notEqual(result[2], undefined)
-        assert.notEqual(result[3], undefined)
+      // Test case 2: Single button pressed (not consumed)
+      inputSource.buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, {
+          pressed: true
+        })
       })
+      ClientInputFunctions.refreshInputs()
+      assert.ok(result.SingleButton?.pressed)
+      assert.ok(result.SingleButton?.down, 'SingleButton.down should be true')
+      assert.equal(result.ComboButtons, undefined)
 
-      it('... has all the expected keys for the default mapping', () => {
-        setComponent(testEntity, InputSourceComponent)
-        const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result.HorizontalScroll, undefined)
-        assert.notEqual(result.VerticalScroll, undefined)
-        assert.notEqual(result.FollowCameraZoomScroll, undefined)
-        assert.notEqual(result.FollowCameraShoulderCamScroll, undefined)
+      // Test case 2b: next input frame, button should not be down
+      ClientInputFunctions.refreshInputs()
+      assert.ok(result.SingleButton?.pressed)
+      assert.ok(!result.SingleButton?.down, 'SingleButton.down should be false')
+      assert.equal(result.ComboButtons, undefined)
+
+      // Test case 3: Single button touched (should trigger touch state)
+      inputSource.buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { touched: true, consumed: false })
       })
+      ClientInputFunctions.refreshInputs()
+      assert.ok(result.SingleButton?.touched)
+      assert.ok(!result.SingleButton?.down)
+      assert.equal(result.ComboButtons, undefined)
 
-      it('... has all the expected keys for the "" mapping', () => {
-        setComponent(testEntity, InputSourceComponent, getDummyMapping(''))
-        const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result.HorizontalScroll, undefined)
-        assert.notEqual(result.VerticalScroll, undefined)
-        assert.notEqual(result.FollowCameraZoomScroll, undefined)
-        assert.notEqual(result.FollowCameraShoulderCamScroll, undefined)
+      // Test case 4: Partial combo pressed (should not trigger)
+      inputSource.buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
+      assert.equal(result.ComboButtons, undefined)
+      assert.ok(result.SingleButton?.down)
 
-      it('... has all the expected keys for the "standard" mapping', () => {
-        setComponent(testEntity, InputSourceComponent, getDummyMapping('standard'))
-        const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result.FollowCameraZoomScroll, undefined)
-        assert.notEqual(result.FollowCameraShoulderCamScroll, undefined)
-        assert.notEqual(result.StandardGamepadLeftStickX, undefined)
-        assert.notEqual(result.StandardGamepadLeftStickY, undefined)
-        assert.notEqual(result.StandardGamepadRightStickX, undefined)
-        assert.notEqual(result.StandardGamepadRightStickY, undefined)
+      // Test case 4b: Partial combo with different button (should not trigger)
+      inputSource.buttons.set({
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
+      assert.equal(result.ComboButtons, undefined)
+      assert.equal(result.SingleButton, undefined)
 
-      it('... has all the expected keys for the "xr-standard" mapping', () => {
-        setComponent(testEntity, InputSourceComponent, getDummyMapping('xr-standard'))
-        const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result.FollowCameraZoomScroll, undefined)
-        assert.notEqual(result.FollowCameraShoulderCamScroll, undefined)
-        assert.notEqual(result.XRStandardGamepadTouchpadX, undefined)
-        assert.notEqual(result.XRStandardGamepadTouchpadY, undefined)
-        assert.notEqual(result.XRStandardGamepadThumbstickX, undefined)
-        assert.notEqual(result.XRStandardGamepadThumbstickY, undefined)
+      // Test case 5: Full combo pressed - first entity context
+      getMutableComponent(testEntity, InputSourceComponent).buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
+      assert.ok(result.ComboButtons?.down)
+      assert.ok(result.ComboButtons?.down, 'Same entity context should be able to access consumed buttons')
 
-      it('... has all the expected keys for the given `@param inputAlias`', () => {
-        // Create the `@param inputAlias` object
-        const SomeAliasList = {
-          SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll],
-          SomeAxisTwo: [
-            XRStandardGamepadAxes.XRStandardGamepadTouchpadX,
-            XRStandardGamepadAxes.XRStandardGamepadTouchpadY
-          ]
-        }
-        setComponent(testEntity, InputSourceComponent)
-        const result = InputComponent.getMergedAxesForInputSources([testEntity], SomeAliasList)
-        assert.notEqual(result.SomeAxisOne, undefined)
-        assert.notEqual(result.SomeAxisTwo, undefined)
+      // Test case 5b: Different entity context cannot access consumed combo
+      const entity2 = createEntity()
+      setComponent(entity2, InputComponent, { inputSources: [testEntity] })
+      const result2 = InputComponent.getMergedButtons(entity2, buttonAlias)
+      assert.equal(
+        result2.ComboButtons,
+        undefined,
+        'Different entity context should not be able to access consumed buttons'
+      )
+
+      // Test case 5c: Same entity context can access the combo again after input refresh
+      ClientInputFunctions.refreshInputs()
+      assert.ok(result.ComboButtons?.down)
+
+      // Test case 6: Full combo with mixed states
+      getMutableComponent(testEntity, InputSourceComponent).buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
       })
-    })
+      assert.ok(result.ComboButtons?.down, 'Combo should only be down if all buttons are donw')
+      assert.ok(result.ComboButtons?.touched)
+      assert.ok(!result.ComboButtons?.pressed, 'Combo should only be pressed if all buttons are pressed')
 
-    it('should never return an undefined value when the keys passed in the inputAlias do not exist', () => {
-      // Create the incorrect `@param inputAlias` object
-      const DoesNotExist = { one: 41, two: 42, three: 43, four: 44 }
-      const SomeAliasList = {
-        SomeAxisOne: [DoesNotExist.one, DoesNotExist.two],
-        SomeAxisTwo: [DoesNotExist.three, DoesNotExist.four]
-      }
-      setComponent(testEntity, InputSourceComponent)
-      const result = InputComponent.getMergedAxesForInputSources([testEntity], SomeAliasList)
-      assert.notEqual(result.SomeAxisOne, undefined)
-      assert.notEqual(result.SomeAxisTwo, undefined)
-    })
+      // Test case 7: Full combo with dragging/rotating states
+      getMutableComponent(testEntity, InputSourceComponent).buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true, consumed: false }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true, consumed: false })
+      })
+      assert.ok(result.ComboButtons?.down)
+      assert.ok(result.ComboButtons?.dragging)
+      assert.ok(result.ComboButtons?.rotating)
 
-    it('should return a value of 0 for the keys passed in the inputAlias that do not exist', () => {
-      // Create the incorrect `@param inputAlias` object
-      const DoesNotExist = { one: 41, two: 42, three: 43, four: 44 }
-      const SomeAliasList = {
-        SomeAxisOne: [DoesNotExist.one, DoesNotExist.two],
-        SomeAxisTwo: [DoesNotExist.three, DoesNotExist.four]
-      }
-      setComponent(testEntity, InputSourceComponent)
-      const result = InputComponent.getMergedAxesForInputSources([testEntity], SomeAliasList)
-      assert.equal(result.SomeAxisOne, 0)
-      assert.equal(result.SomeAxisTwo, 0)
-    })
-
-    it('should collapse the values of each `inputAlias` field into the single absolute largest value of all keys described by that field, into the result.field of that same name', () => {
-      // Create the `@param inputAlias` object
-      const SomeAliasList = {
-        SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll],
-        SomeWrongAxis: [2, 3]
-      }
-      const VerticalScroll = 0.42
-      const HorizontalScroll = -0.41
-      const WrongBigger = 42
-      const WrongOther = 21
-      setComponent(testEntity, InputSourceComponent)
-      const DummyAxes = [HorizontalScroll, VerticalScroll, WrongBigger, WrongOther] as Axes
-      // mock reference space
-      // @ts-ignore
-      ReferenceSpace.viewer = {}
-      setComponent(testEntity, InputSourceComponent, getDummyAxes(DummyAxes))
-      const result = InputComponent.getMergedAxesForInputSources([testEntity], SomeAliasList)
-      assert.notEqual(result.SomeAxisOne, undefined)
-      assert.notEqual(result.SomeWrongAxis, undefined)
-      assert.equal(result.SomeAxisOne, VerticalScroll)
-      assert.notEqual(result.SomeAxisOne, HorizontalScroll)
-      assert.equal(result.SomeWrongAxis, WrongBigger)
-      assert.notEqual(result.SomeWrongAxis, WrongOther)
+      // Test case 8: Full combo with different values
+      getMutableComponent(testEntity, InputSourceComponent).buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5, consumed: false }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8, consumed: false })
+      })
+      assert.ok(result.ComboButtons?.down)
+      assert.equal(result.ComboButtons?.value, 0.8, 'Combo should use max value from all buttons')
     })
   })
 
@@ -845,6 +536,12 @@ describe('InputComponent', () => {
     beforeEach(async () => {
       createEngine()
       testEntity = createEntity()
+
+      // Initialize ReferenceSpaceState with required entities
+      const localFloorEntity = createEntity()
+      const viewerEntity = createEntity()
+      getMutableState(ReferenceSpaceState).localFloorEntity.set(localFloorEntity)
+      getMutableState(ReferenceSpaceState).viewerEntity.set(viewerEntity)
     })
 
     afterEach(() => {
@@ -852,7 +549,12 @@ describe('InputComponent', () => {
       return destroyEngine()
     })
 
-    it('should collapse the state of all axes held by the entities returned by getInputSourceEntities for the given `@param entityContext`, into the resulting object (including the fields described by `@param inputAlias`)', () => {
+    it('should merge axes from input sources', () => {
+      // Create test entity and components
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
+      setComponent(testEntity, InputSourceComponent)
+
       // Create the `@param inputAlias` object
       const SomeAliasList = {
         SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll],
@@ -867,30 +569,71 @@ describe('InputComponent', () => {
       const BiggerY = 41
       const BiggerZ = 42
       const BiggerW = 43
+
       // Set the dummy input source entities
       const one = createEntity() // will be set in the sink
       const two = createEntity() // will be set in the parent
+
+      // Set up input source components
       setComponent(one, InputSourceComponent)
       setComponent(two, InputSourceComponent)
-      const DummyAxes1 = [BiggerX, OtherY, BiggerZ, OtherW] as Axes
-      const DummyAxes2 = [OtherX, BiggerY, OtherZ, BiggerW] as Axes
-      setComponent(one, InputSourceComponent, getDummyAxes(DummyAxes1))
-      setComponent(two, InputSourceComponent, getDummyAxes(DummyAxes2))
+      getMutableComponent(one, InputSourceComponent).source.set({
+        handedness: 'none',
+        targetRayMode: 'screen',
+        gripSpace: undefined,
+        gamepad: {
+          axes: [BiggerX, OtherY, BiggerZ, OtherW],
+          buttons: [],
+          connected: true,
+          hapticActuators: [],
+          id: 'test-gamepad-1',
+          index: 0,
+          mapping: 'standard' as GamepadMappingType,
+          timestamp: performance.now(),
+          vibrationActuator: null
+        } as unknown as Gamepad,
+        profiles: [],
+        hand: undefined
+      } as unknown as XRInputSource)
+
+      getMutableComponent(two, InputSourceComponent).source.set({
+        handedness: 'none',
+        targetRayMode: 'screen',
+        gripSpace: undefined,
+        gamepad: {
+          axes: [OtherX, BiggerY, OtherZ, BiggerW],
+          buttons: [],
+          connected: true,
+          hapticActuators: [],
+          id: 'test-gamepad-2',
+          index: 0,
+          mapping: 'standard' as GamepadMappingType,
+          timestamp: performance.now(),
+          vibrationActuator: null
+        } as unknown as Gamepad,
+        profiles: [],
+        hand: undefined
+      } as unknown as XRInputSource)
+
       // Create an inputSink entity that holds entity source one
       const sinkEntity = createEntity()
       setComponent(sinkEntity, InputComponent)
       getMutableComponent(sinkEntity, InputComponent).inputSources.set([one])
-      // Set the parent as an input entity that holds entity source two and the input sink that contains input source one
+
+      // Set the parent as an input entity that holds entity source two
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
       getMutableComponent(parentEntity, InputComponent).inputSources.set([two])
       setComponent(parentEntity, InputSinkComponent)
       getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set([sinkEntity])
+
       // Set the parent as the parent of testEntity
       setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+
       // Run the code to get the result
       const merged = InputComponent.getMergedAxes(testEntity, SomeAliasList)
       const resultArray = [merged[0], merged[1], merged[2], merged[3]] as Axes
+
       // Check that the result is what we expect it to be
       const Expected = [BiggerX, BiggerY, BiggerZ, BiggerW] as Axes
       assertArray.eq(resultArray, Expected)
@@ -929,9 +672,7 @@ describe('InputComponent', () => {
       assert.ok(reactorSpy.notCalled)
       assert.ok(effectSpy.notCalled)
 
-      // Create a reactor root to run the hook's reactor. Goal:
-      //   Be able to use useEntityContext without calling `executeSystems`,
-      //   which deletes the sources from the entity on every frame
+      // Create a reactor root to run the hook's reactor
       const root = startReactor(() => {
         return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
       }) as ReactorRoot
@@ -942,17 +683,17 @@ describe('InputComponent', () => {
       assert.ok(effectSpy.called) // Called when we start the reactor
 
       // Set the testEntity input sources
-      //  We should react on these changes, and the useHasFocus spy should increment
       const inputSourceEntity = createEntity()
       setComponent(inputSourceEntity, InputSourceComponent)
       getMutableComponent(testEntity, InputComponent).inputSources.set([inputSourceEntity])
 
-      // Extract the useExecute system out of the global list of SystemDefinitions array
+      // Extract the useExecute system out of the global list
       const list = Array.from(SystemDefinitions.entries())
       const [uuid, syst] = list[list.length - 1]
       syst.execute()
       root.run()
-      // Check that we have run the correct number of times, after having reacted to the inputSources change
+
+      // Check that we have run the correct number of times
       assert.equal(reactorSpy.callCount, 4)
       assert.equal(effectSpy.callCount, 2)
       const afterOne = InputComponent.getInputSourceEntities(testEntity)
@@ -998,7 +739,7 @@ describe('InputComponent', () => {
       return destroyEngine()
     })
 
-    // Define the top-level cases. Will run all sub-cases once for each of these conditions
+    // Define the top-level cases
     const orders = [
       InputExecutionOrder.Before,
       InputExecutionOrder.With,
@@ -1008,7 +749,6 @@ describe('InputComponent', () => {
     // Create the test case variations
     type CaseData = { executeWhenEditing: boolean; isEditing: boolean; notAncestor: boolean }
     const args = 3 // Amount of separate arguments/conditions that we are testing
-    // Populate the test cases variations
     const cases = [] as CaseData[]
     for (let id = 0; id < 1 << args; ++id) {
       cases[id] = {
@@ -1019,11 +759,9 @@ describe('InputComponent', () => {
     }
 
     // Run all tests once for every InputExecutionOrder
-    orders.forEach(function (data_order: InputExecutionOrder) {
+    orders.forEach((data_order: InputExecutionOrder) => {
       let OrderName = ''
-      switch (
-        data_order // small hack to get the name of the enum string back
-      ) {
+      switch (data_order) {
         case InputExecutionOrder.Before:
           OrderName = 'Before'
           break
@@ -1036,18 +774,12 @@ describe('InputComponent', () => {
       }
 
       // Run a test for every condition we defined in the test cases matrix
-      cases.forEach(function (data: CaseData) {
-        // if (!executeWhenEditing && getState(EngineState).isEditing) return
+      cases.forEach((data: CaseData) => {
         const ConditionOne = !data.executeWhenEditing && data.isEditing
-        // if (!isAncestor(getState(InputState).capturingEntity, entity, true)) return
         const ConditionAncestor = data.notAncestor
-        const MakeAncestor = !data.notAncestor // Unconfuse the double negative into a readable name for the rest of the test
-        // Expected condition for whether we should run the execute or not
-        // This mirrors the condition checked internally inside the function that we are testing
-        const ShouldRun = !(ConditionOne || ConditionAncestor) // Inverted for readability. Too many double negatives
+        const MakeAncestor = !data.notAncestor
+        const ShouldRun = !(ConditionOne || ConditionAncestor)
 
-        // Generate the name of the current iteration for the test
-        //   These variables will be used to programmatically generate the `it( ... )` statement name for each individual condition
         const run = ShouldRun ? 'run' : 'not run'
         const want = data.executeWhenEditing ? 'want' : 'dont want'
         const editing = data.isEditing ? 'editing' : 'not editing'
@@ -1055,107 +787,43 @@ describe('InputComponent', () => {
         const orderIs = `order is set to InputExecutionOrder.${OrderName}`
 
         it(`should ${run} the executeOnInput function when (we ${want} to executeWhenEditing and we are ${editing}) or (the entity is ${ancestor} of the entityContext) and ${orderIs}`, () => {
-          // Create the function spies
           const executeSpy = sinon.spy()
           const reactorSpy = sinon.spy()
-          // Create the Reactor setup
+
           const Reactor = () => {
             reactorSpy()
-            InputComponent.useExecuteWithInput(executeSpy, data.executeWhenEditing, data_order) // omitted defaults: (_, false, With)
-            // useEffect(() => {
-            // }, []) // Mount it once, so that only one useExecute is created
+            InputComponent.useExecuteWithInput(executeSpy, data.executeWhenEditing, data_order)
             return null
           }
+
           assert.equal(reactorSpy.callCount, 0)
           assert.ok(!executeSpy.called)
 
-          // Create a reactor root to run the hook's reactor. Goal:
-          //   Set an entityContext for useEntityContext within this UnitTest, and being able to access it from here too
           const root = startReactor(() => {
             return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
           }) as ReactorRoot
+
           assert.equal(reactorSpy.callCount, 2)
           assert.ok(!executeSpy.called)
           root.run()
-          // Extract the useExecute system out of the global list of SystemDefinitions array
+
           const list = Array.from(SystemDefinitions.entries())
           const [_, syst] = list[list.length - 1]
-          // Setup the expected state of EngineState.isEditing for this case
+
           getMutableState(EngineState).isEditing.set(data.isEditing)
-          // Setup the expected state of isAncestor::InputState.capturingEntity for this case
           getMutableState(InputState).capturingEntity.set(MakeAncestor ? testEntity : UndefinedEntity)
 
-          // Run the execute
           syst.execute()
 
-          // Sanity check the multi-test setup
           assert.equal(getState(EngineState).isEditing, data.isEditing)
           assert.equal(ConditionAncestor, !isAncestor(getState(InputState).capturingEntity, testEntity, true))
 
-          // Check the test
           assert.equal(reactorSpy.callCount, 3)
-          // assert.equal(executeSpy.called, ShouldRun)
+          assert.equal(executeSpy.called, ShouldRun)
         })
       })
     })
-
-    //....................
-    // Usage references
-    // ref: ProductModelReactor
-    // ref: InteractableComponent
-    // ref: TransformGizmoSystem
-    //....................
-
-    // it("should not run `@param executeOnInput` when InputState.capturingEntity is a valid entity and an ancestor (or self) of the entity is currently set as useEntityContext", () => {})
-    // it("should run `@param executeOnInput` when we want to execute when editing, and we are currently editing", () => {})
-
-    //______________________________________
-    // Logic Table   (sketch, incomplete)
-    //____________________________
-    // !true                and   true
-    // !executeWhenEditing  and  isEditing
-    // we are editing, and we want to run when editing:   don't return early
-    //____________________________
-    // !false               and   true
-    // !executeWhenEditing  and  isEditing
-    // we are editing, but don't want to run when editing:   return early
-    //
-    //____________________________
-    // true             and  true
-    // capturingEntity  and !isAncestor(capturingEntity, entity, true))
-    // we have a capturingEntity
-    //   but that entity is not an ancestor of the current entityContext
-    //   : return early
-    //____________________________
-    // false            and  true
-    // capturingEntity  and !isAncestor(capturingEntity, entity, true))
-    // we don't have a capturingEntity
-    //   :  return early
-    //____________________________
-    // true             and  false
-    // capturingEntity  and !isAncestor(capturingEntity, entity, true))
-    // we have a capturingEntity
-    //   and that entity is an ancestor of the current entityContext
-    //   :  don't return early
   })
-
-  // useExecuteWithInput(
-  //   executeOnInput: () => void,
-  //   executeWhenEditing = false,
-  //   order: InputExecutionOrder = InputExecutionOrder.With
-  // ) {
-  //   const entity = useEntityContext()
-  //
-  //   return useExecute(() => {
-  //     const capturingEntity = getState(InputState).capturingEntity
-  //     if (
-  //       (!executeWhenEditing && getState(EngineState).isEditing) ||
-  //       (capturingEntity && !isAncestor(capturingEntity, entity, true))
-  //     )
-  //       return
-  //     executeOnInput()
-  //   }, getInputExecutionInsert(order))
-  // },
 
   describe('reactor', () => {
     beforeEach(() => {
@@ -1167,7 +835,7 @@ describe('InputComponent', () => {
       return destroyEngine()
     })
 
-    it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true', async () => {
+    it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true`', async () => {
       const entity = getState(ReferenceSpaceState).localFloorEntity
 
       const Expected = { highlight: true, grow: true }

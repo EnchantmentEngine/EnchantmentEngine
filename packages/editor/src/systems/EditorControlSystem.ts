@@ -86,7 +86,7 @@ import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
 import { ObjectGridSnapState } from './ObjectGridSnapSystem'
 
-export const EditorButtonAlias = {
+export const EditorButtonBindings = {
   Undo: [[KeyboardButton.ControlLeft, KeyboardButton.KeyZ]],
   Redo: [[KeyboardButton.ControlLeft, KeyboardButton.ShiftLeft, KeyboardButton.KeyZ]],
   ObjectGridSnap: [KeyboardButton.KeyB],
@@ -112,9 +112,9 @@ const onObjectGridSnap = () => {
 }
 
 const onCameraFocus = () => {
-  getMutableComponent(Engine.instance.cameraEntity, CameraOrbitComponent).focusedEntities.set(
-    SelectionState.getSelectedEntities()
-  )
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+  if (!viewerEntity) return
+  getMutableComponent(viewerEntity, CameraOrbitComponent).focusedEntities.set(SelectionState.getSelectedEntities())
 }
 
 const onCancelSelection = () => {
@@ -271,12 +271,10 @@ const execute = () => {
   if (entity) return
 
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-  const buttons = InputComponent.getMergedButtons(viewerEntity, EditorButtonAlias)
-  const selectedEntities = SelectionState.getSelectedEntities()
-
   if (hasComponent(viewerEntity, FlyControlComponent)) return
 
-  const inputSources = inputQuery()
+  const buttons = InputComponent.getMergedButtons(viewerEntity, EditorButtonBindings)
+  const selectedEntities = SelectionState.getSelectedEntities()
 
   if (buttons.ObjectGridSnap?.down) onObjectGridSnap()
   if (buttons.TransformModeRotate?.down) onTransformModeRotate()
@@ -316,11 +314,10 @@ const execute = () => {
       distance: Infinity
     }
     if (buttons.PrimaryClick?.down) {
-      for (const inputSourceEntity of inputSources) {
-        const intersection = InputSourceComponent.getClosestIntersection(inputSourceEntity)
-        if (intersection && intersection.distance < closestIntersection.distance) {
-          closestIntersection = intersection
-        }
+      buttons.PrimaryClick.inputSourceEntity
+      const intersection = InputSourceComponent.getClosestIntersection(inputSourceEntity)
+      if (intersection && intersection.distance < closestIntersection.distance) {
+        closestIntersection = intersection
       }
 
       // Get top most parent entity from the GLTF document
