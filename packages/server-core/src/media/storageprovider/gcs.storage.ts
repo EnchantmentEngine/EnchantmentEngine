@@ -195,11 +195,12 @@ export class GCSStorage implements StorageProviderInterface {
     if (!invalidationItems || invalidationItems.length === 0) return
     invalidationItems = invalidationItems.map(item => item[0] !== '/' ? `/${item}` : item)
     if (useMediaCDN) {
-      return await axios
-          .post(`https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
-              {
-                path: invalidationItems[0]
-              })
+      return Promise.resolve()
+      // return await axios
+      //     .post(`https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
+      //         {
+      //           path: invalidationItems[0]
+      //         })
       // const request = {
       //   parent: `projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}`,
       //   resource: {
