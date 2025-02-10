@@ -391,15 +391,6 @@ export const defineComponent = <
 
   Component.storageSize = 0
 
-  if (Component.reactor) {
-    const root = startReactor(() => {
-      return React.createElement(QueryReactor, { Components: [Component], ChildEntityReactor: React.createElement(Component.reactor, {}) })
-    }) as ReactorRoot
-    root['component'] = Component.name
-    Component.reactorRoot = root
-    root.run()
-  }
-
   return Component
 }
 
@@ -552,6 +543,14 @@ export const setComponent = <C extends Component>(
 
   /** @todo this might be unnecessayr now that we have propagation via the store */
   LayerFunctions.propagateLayer(entity, component)
+
+  if (component.reactor && !component.reactorRoot) {
+    const root = startReactor(() => {
+      return React.createElement(QueryReactor, { Components: [component], ChildEntityReactor: component.reactor })
+    }) as ReactorRoot
+    root['component'] = component.name
+    component.reactorRoot = root
+  }
 }
 
 export const hasComponent = <C extends Component>(entity: Entity, component: C): boolean => {
