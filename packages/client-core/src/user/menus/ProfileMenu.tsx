@@ -77,6 +77,7 @@ import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
+import { LocationState } from '../../social/services/LocationService'
 import { clientContextParams } from '../../util/ClientContextState'
 import { AuthService, AuthState } from '../services/AuthService'
 import { AvatarService } from '../services/AvatarService'
@@ -130,6 +131,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
   const originallyAgeVerified = useHookstate(checked18OrOver)
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
+  const currentLocation = getMutableState(LocationState).currentLocation.location
 
   const submitAgeVerified = () => {
     if (!originallyAgeVerified.value && !checked18OrOver) {
@@ -431,7 +433,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1 text-text-primary-button"
-                onClick={() => PopoverState.showPopupover(<ReportMenu type={'World'} showBackButton />)}
+                onClick={() =>
+                  PopoverState.showPopupover(
+                    <ReportMenu type="World" locationId={currentLocation.id.value} showBackButton />
+                  )
+                }
               >
                 <ReportWebsiteDefaullg />
                 {t('user:usermenu.profile.reportWorld')}

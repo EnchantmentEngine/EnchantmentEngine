@@ -343,6 +343,7 @@ export const useUserMediaWindowHook = ({ peerID, type }: Props) => {
 
 export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
   const {
+    selfUser,
     isPiP,
     volume,
     isScreen,
@@ -460,7 +461,9 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 borderRadius: '10px',
                 backgroundColor: 'red'
               }}
-              onClick={() => PopoverState.showPopupover(<ReportMenu type={'User'} showBackButton />)}
+              onClick={() =>
+                PopoverState.showPopupover(<ReportMenu type={'User'} userId={selfUser.id} showBackButton />)
+              }
             >
               <Icon
                 type="Report"

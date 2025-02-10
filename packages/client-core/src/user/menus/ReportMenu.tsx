@@ -25,7 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { LocationID } from '@ir-engine/common/src/schema.type.module'
+import { useHookstate, UserID } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -34,12 +35,14 @@ import { t } from 'i18next'
 import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
 import { PopoverState } from '../../common/services/PopoverState'
-import { AuthState } from '../services/AuthService'
 
-type ReportMenuProps = {
-  type: 'User' | 'World'
+type BaseReportMenuProps = {
   showBackButton: boolean
 }
+
+type ReportMenuProps =
+  | ({ type: 'User'; userId: UserID } & BaseReportMenuProps)
+  | ({ type: 'World'; locationId: LocationID } & BaseReportMenuProps)
 
 const ReportSuccessReportModal = ({ handleClose }) => (
   <Modal
@@ -59,9 +62,6 @@ const ReportSuccessReportModal = ({ handleClose }) => (
 )
 
 const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
-  const authState = useMutableState(AuthState)
-  const userId = authState.user?.id?.value
-
   const handleClose = async () => {
     PopoverState.hidePopupover()
   }
@@ -132,7 +132,7 @@ const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
       hideFooter={true}
       rawChildren={
         <div className="flex w-full flex-col">
-          <div className="flex h-14 items-center justify-between border-b border-b-theme-primary px-8">
+          <div className="border-b-theme-primary flex h-14 items-center justify-between border-b px-8">
             {showBackButton && (
               <Button
                 data-testid="edit-report-menu-button"
