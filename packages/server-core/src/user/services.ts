@@ -24,6 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import ModerationAttachment from '../moderation/moderation-attachment/moderation-attachment'
+import ModerationBan from '../moderation/moderation-ban/moderation-ban'
 import ModerationUpload from '../moderation/moderation-file-upload/moderation-file-upload'
 import Moderation from '../moderation/moderation/moderation'
 import AcceptInvite from '../user/accept-invite/accept-invite'
@@ -56,6 +57,7 @@ export default [
   Moderation,
   ModerationUpload,
   ModerationAttachment,
+  ModerationBan,
   UserSettings,
   UserKick,
   UserLogin,
