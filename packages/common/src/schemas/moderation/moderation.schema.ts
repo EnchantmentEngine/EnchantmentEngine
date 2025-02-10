@@ -40,7 +40,7 @@ export const moderationMethods = ['find', 'create', 'patch', 'remove'] as const
 
 export type ModerationID = OpaqueType<'ModerationID'> & string
 
-const abuseReasons = [
+export const abuseReasons = [
   'Nudity',
   'Fake News & Scams',
   'Disturbing/Inappropriate',

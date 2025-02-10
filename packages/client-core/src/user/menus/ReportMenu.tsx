@@ -25,8 +25,11 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 
+import { useMutation } from '@ir-engine/common'
 import { LocationID } from '@ir-engine/common/src/schema.type.module'
-import { useHookstate, UserID } from '@ir-engine/hyperflux'
+import { moderationFileUploadPath } from '@ir-engine/common/src/schemas/moderation/moderation-file-upload.schema'
+import { abuseReasons, moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
+import { getMutableState, useHookstate, UserID } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -34,14 +37,17 @@ import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
 import { t } from 'i18next'
 import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
+import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
+import { uploadToFeathersService } from '../../util/upload'
+import { AuthState } from '../services/AuthService'
 
 type BaseReportMenuProps = {
   showBackButton: boolean
 }
 
 type ReportMenuProps =
-  | ({ type: 'User'; userId: UserID } & BaseReportMenuProps)
+  | ({ type: 'Person'; userId: UserID } & BaseReportMenuProps)
   | ({ type: 'World'; locationId: LocationID } & BaseReportMenuProps)
 
 const ReportSuccessReportModal = ({ handleClose }) => (
@@ -61,13 +67,18 @@ const ReportSuccessReportModal = ({ handleClose }) => (
   />
 )
 
-const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
+const ReportMenu = (props: ReportMenuProps) => {
+  const { showBackButton, type } = props
+  const reportedUserId = type === 'Person' ? props.userId : undefined
+  const reportedLocationId = type === 'World' ? props.locationId : undefined
+  const userReportsMutation = useMutation(moderationPath)
+  const selfUser = useHookstate(getMutableState(AuthState).user)
   const handleClose = async () => {
     PopoverState.hidePopupover()
   }
 
   const formData = useHookstate({
-    abuseType: 'null',
+    abuseType: 'null' as (typeof abuseReasons)[number],
     details: '',
     files: [] as File[]
   })
@@ -103,26 +114,45 @@ const ReportMenu = ({ showBackButton, type }: ReportMenuProps) => {
     }
   }
 
-  const abuseTypes = [
-    { label: 'Select One', value: 'null' },
-    { label: 'Harassment', value: 'harassment' },
-    { label: 'Hate Speech', value: 'hate_speech' },
-    { label: 'Inappropriate Content', value: 'inappropriate' },
-    { label: 'Other', value: 'other' }
-  ]
-
+  const abuseTypes = abuseReasons.map((abuseReason) => ({
+    value: abuseReason,
+    label: abuseReason
+  }))
   const handleChange = (newValue: string, name: string) => {
     formData[name].set(newValue)
     fieldOptions[name].validate(newValue)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!fieldOptions.abuseType.validate(formData.value.abuseType) || !fieldOptions.details.validate()) {
       return
     }
-    console.log(formData)
-    handleClose()
-    PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
+    try {
+      const report = await userReportsMutation.create({
+        type,
+        abuseReason: formData.abuseType.value,
+        reportDetails: formData.details.value,
+        reportedUserId,
+        reportingUserId: selfUser.id.value,
+        reportedLocationId
+      })
+      const args = [
+        {
+          moderationId: report.id
+        }
+      ]
+      if (formData.files && formData.files.value.length > 0) {
+        await uploadToFeathersService(moderationFileUploadPath, [...formData.files.value], { args }).promise
+      }
+      handleClose()
+      PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
+    } catch (error) {
+      handleClose()
+      NotificationService.dispatchNotify('Something went wrong', {
+        variant: 'error'
+      })
+      console.error('Error uploading file', error.message)
+    }
   }
 
   return (

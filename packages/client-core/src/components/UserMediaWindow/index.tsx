@@ -462,7 +462,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 backgroundColor: 'red'
               }}
               onClick={() =>
-                PopoverState.showPopupover(<ReportMenu type={'User'} userId={selfUser.id} showBackButton />)
+                PopoverState.showPopupover(<ReportMenu type={'Person'} userId={selfUser.id} showBackButton />)
               }
             >
               <Icon
