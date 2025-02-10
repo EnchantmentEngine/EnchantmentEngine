@@ -34,7 +34,7 @@ import FilesLoaders, { FileUploadProgress } from '../files/loaders'
 import FilesToolbar from '../files/toolbar'
 import CategoriesList, { VerticalDivider } from './categories'
 import { AssetsQueryProvider } from './hooks'
-import Resources from './resources'
+import Resources, { ResourceType } from './resources'
 import Topbar from './topbar'
 
 const AssetsPanelTitle = () => {
@@ -76,7 +76,20 @@ function AssetsContainer() {
     ) : (
       <Topbar />
     )
-  const rightChildren = sidebarType.value === SidebarType.FILES ? <FileBrowser /> : <Resources />
+
+  let rightChildren
+
+  if (sidebarType.value === SidebarType.FILES) {
+    rightChildren = <FileBrowser />
+  }
+
+  if (sidebarType.value === SidebarType.ASSETS) {
+    rightChildren = <Resources type={ResourceType.ALL} />
+  }
+
+  if (sidebarType.value === SidebarType.FAVORITES) {
+    rightChildren = <Resources type={ResourceType.FAVORITE} />
+  }
 
   const handleSidebarChange = (category) => {
     sidebarType.set(category)

@@ -369,12 +369,12 @@ export function PanelToolbar({
 
   // todo: add this to either static resource or filesstate
   const addToFavorites = async () => {
-    updateTag(['Favorite'])
+    updateTag(['myFavorite'])
   }
 
   // todo: add this to filestate?
   const addToAssets = async () => {
-    updateTag(['Asset'])
+    updateTag(['myAsset'])
   }
 
   const updateTag = async (tags: string[]) => {

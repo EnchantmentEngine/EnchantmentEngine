@@ -351,9 +351,9 @@ function BottomPaginationNavBar({ handleScrollToPage }) {
   )
 }
 
-function ResourceItems() {
+function ResourceItems({ resources }) {
   const { t } = useTranslation()
-  const { resources, staticResourcesPagination } = useAssetsQuery()
+  const { staticResourcesPagination } = useAssetsQuery()
   const pages = Math.ceil(resources.length / (ASSETS_PAGE_LIMIT + calculateItemsToFetch()))
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]) // Create a ref array
 
@@ -416,8 +416,17 @@ function ResourceItems() {
   )
 }
 
-export default function Resources() {
-  const { resourcesLoading, staticResourcesPagination, refetchResources } = useAssetsQuery()
+export enum ResourceType {
+  ALL = 'all',
+  FAVORITE = 'favrorite'
+}
+
+export default function Resources({ type = ResourceType.ALL }: { type: ResourceType }) {
+  const { resourcesLoading, staticResourcesPagination, refetchResources, resources, categorizedAssets } =
+    useAssetsQuery()
+
+  const resourceItems = type === ResourceType.ALL ? resources : categorizedAssets.myFavorite
+  console.log('cat', categorizedAssets)
 
   return (
     <div id="asset-panel" className="relative flex h-full w-full flex-col overflow-auto bg-surface-1">
@@ -432,7 +441,7 @@ export default function Resources() {
           className="relative mt-auto flex h-full w-full flex-wrap gap-2"
           data-testid="assets-panel-resource-items-container"
         >
-          <ResourceItems />
+          {resourceItems.length > 0 && <ResourceItems resources={resourceItems} />}
         </div>
         {resourcesLoading && <LoadingView spinnerOnly className="h-6 w-6" />}
       </InfiniteScroll>

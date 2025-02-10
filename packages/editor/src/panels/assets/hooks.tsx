@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { API, useFind } from '@ir-engine/common'
-import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
+import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
@@ -35,7 +35,13 @@ import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from '.
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
   resources: [] as StaticResourceType[],
-  favoriteAssets: [] as StaticResourceType[],
+  categorizedAssets: {
+    myFavorite: [],
+    myAsset: []
+  } as {
+    myFavorite: StaticResourceType[]
+    myAsset: StaticResourceType[]
+  },
   refetchResources: () => {},
   resourcesLoading: false,
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
@@ -52,7 +58,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const staticResourcesPagination = useHookstate({ total: 0, skip: 0 })
   const resources = useHookstate<StaticResourceType[]>([])
   const resourcesLoading = useHookstate(false)
-
   const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
 
   const categories = useHookstate<AssetCategoryNode[]>([])
@@ -68,50 +73,18 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     const performFetch = () => {
       const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.children)] : []
 
-      let query = {} as StaticResourceQuery
-      if (selectedCategory?.name === MyAssetCategory) {
-        const selfUser = getState(AuthState).user
-        query = {
-          key: {
-            $like: `%${search.query.value}%`
-          },
-          type: {
-            $or: [{ type: 'asset' }]
-          },
-          userId: selfUser.id,
-          $sort: { name: 1 },
-          $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
-          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
-        } as StaticResourceQuery
-      } else {
-        query = {
-          key: {
-            $like: `%${search.query.value}%`
-          },
-          type: {
-            $or: [{ type: 'asset' }]
-          },
-          tags: selectedCategory
-            ? {
-                $or: tags.flatMap((tag) => [
-                  { tags: { $like: `%${tag.toLowerCase()}%` } },
-                  { tags: { $like: `%${tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}%` } },
-                  {
-                    tags: {
-                      $like: `%${tag
-                        .split(' ')
-                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                        .join(' ')}%`
-                    }
-                  }
-                ])
-              }
-            : undefined,
-          $sort: { name: 1 },
-          $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
-          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
-        } as StaticResourceQuery
+      const baseQuery = {
+        key: { $like: `%${search.query.value}%` },
+        type: { $or: [{ type: 'asset' }] },
+        $sort: { name: 1 },
+        $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
+        $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
       }
+
+      const query =
+        selectedCategory?.name === MyAssetCategory
+          ? { ...baseQuery, userId: getState(AuthState).user.id }
+          : { ...baseQuery, tags: selectedCategory ? formatTags(tags) : undefined }
 
       API.instance
         .service(staticResourcePath)
@@ -124,10 +97,25 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
           } else {
             resources.set(fetchedResources.data)
           }
+
           staticResourcesPagination.merge({ total: resources.length })
           resourcesLoading.set(false)
         })
     }
+
+    const formatTags = (tags) => ({
+      $or: tags.flatMap((tag) => {
+        const formattedTag = capitalize(tag)
+        return [
+          { tags: { $like: `%${tag.toLowerCase()}%` } },
+          { tags: { $like: `%${formattedTag}%` } },
+          { tags: { $like: `%${capitalizeWords(tag)}%` } }
+        ]
+      })
+    })
+
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+    const capitalizeWords = (str) => str.split(' ').map(capitalize).join(' ')
 
     performFetch()
 
@@ -158,17 +146,25 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     categories.set(convertToHierarchy(AssetsPanelCategories.initial))
   }, [])
 
-  const favoriteAssets = useFind(staticResourcePath, {
+  const { data: assets } = useFind(staticResourcePath, {
     query: {
-      tags: { $like: '%Favorite%' }
+      $or: [{ tags: { $like: '%Favorite%' } }, { tags: { $like: '%Asset%' } }]
     }
   })
+
+  const categorizedAssets = React.useMemo(
+    () => ({
+      myFavorite: assets?.filter((asset) => asset.tags?.includes('myFavorite')) || [],
+      myAsset: assets?.filter((asset) => asset.tags?.includes('myAsset')) || []
+    }),
+    [assets]
+  )
 
   return (
     <AssetsQueryContext.Provider
       value={{
         search,
-        favoriteAssets: favoriteAssets.data as StaticResourceType[],
+        categorizedAssets,
         resources: resources.value as StaticResourceType[],
         refetchResources: staticResourcesFindApi,
         resourcesLoading: resourcesLoading.value,
