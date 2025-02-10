@@ -50,7 +50,7 @@ import {
 import { ECSState } from './ECSState'
 import { Easing, EasingFunction } from './EasingFunctions'
 import { Entity, UndefinedEntity } from './Entity'
-import { defineQuery, removeQuery } from './QueryFunctions'
+import { QueryReactor, defineQuery, removeQuery } from './QueryFunctions'
 import { defineSystem } from './SystemFunctions'
 import { PresentationSystemGroup } from './SystemGroups'
 import { Transitionable, TransitionableTypes, getTransitionableKeyForType } from './Transitionable'
@@ -190,8 +190,8 @@ export interface Component<
   onSet: (entity: Entity, component: State<ComponentType>, json?: SetJSON) => void
   onRemove: (entity: Entity, component: State<ComponentType>) => void
   reactor?: any
+  reactorRoot?: ReactorRoot
   storage?: StorageType
-  reactorMap: Map<Entity, ReactorRoot>
   stateMap: Record<Entity, State<ComponentType>>
   valueMap: Record<Entity, ComponentType>
   errors: ErrorTypes[]
@@ -353,7 +353,6 @@ export const defineComponent = <
   }
 
   if (Component.reactor) Object.defineProperty(Component.reactor, 'name', { value: `Internal${Component.name}Reactor` })
-  Component.reactorMap = new Map()
   // We have to create an stateful existence map in order to reactively track which entities have a given component.
   // Unfortunately, we can't simply use a single shared state because hookstate will (incorrectly) invalidate other nested states when a single component
   // instance is added/removed, so each component instance has to be isolated from the others.
@@ -391,6 +390,15 @@ export const defineComponent = <
   Component.setTransition = setTransition
 
   Component.storageSize = 0
+
+  if (Component.reactor) {
+    const root = startReactor(() => {
+      return React.createElement(QueryReactor, { Components: [Component], ChildEntityReactor: React.createElement(Component.reactor, {}) })
+    }) as ReactorRoot
+    root['component'] = Component.name
+    Component.reactorRoot = root
+    root.run()
+  }
 
   return Component
 }
@@ -544,19 +552,6 @@ export const setComponent = <C extends Component>(
 
   /** @todo this might be unnecessayr now that we have propagation via the store */
   LayerFunctions.propagateLayer(entity, component)
-
-  if (component.reactor && !component.reactorMap.has(entity) && LayerComponent.get(entity) === Layers.Simulation) {
-    const root = startReactor(() => {
-      return React.createElement(EntityContext.Provider, { value: entity }, React.createElement(component.reactor, {}))
-    }) as ReactorRoot
-    root['entity'] = entity
-    root['component'] = component.name
-    component.reactorMap.set(entity, root)
-    root.run()
-  }
-
-  const root = component.reactorMap.get(entity)
-  root?.run()
 }
 
 export const hasComponent = <C extends Component>(entity: Entity, component: C): boolean => {
@@ -604,9 +599,6 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
 
   bitECS.removeComponent(HyperFlux.store, entity, component)
   component.onRemove(entity, component.stateMap[entity]!)
-  const root = component.reactorMap.get(entity)
-  component.reactorMap.delete(entity)
-  if (root?.isRunning) root.stop()
   /** clear state data after reactor stops, to ensure hookstate is still referenceable */
   component.stateMap[entity]?.set(none)
   destroy(component.stateMap[entity])
