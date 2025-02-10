@@ -467,6 +467,7 @@ describe('InputComponent', () => {
       assert.equal(result.ComboButtons, undefined)
 
       // Test case 4: Partial combo pressed (should not trigger)
+      ClientInputFunctions.refreshInputs()
       inputSource.buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
@@ -474,6 +475,7 @@ describe('InputComponent', () => {
       assert.ok(result.SingleButton?.down)
 
       // Test case 4b: Partial combo with different button (should not trigger)
+      ClientInputFunctions.refreshInputs()
       inputSource.buttons.set({
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
@@ -481,6 +483,7 @@ describe('InputComponent', () => {
       assert.equal(result.SingleButton, undefined)
 
       // Test case 5: Full combo pressed - first entity context
+      ClientInputFunctions.refreshInputs()
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
@@ -500,9 +503,10 @@ describe('InputComponent', () => {
 
       // Test case 5c: Same entity context can access the combo again after input refresh
       ClientInputFunctions.refreshInputs()
-      assert.ok(result.ComboButtons?.down)
+      assert.ok(result2.ComboButtons?.pressed)
 
       // Test case 6: Full combo with mixed states
+      ClientInputFunctions.refreshInputs()
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
@@ -512,6 +516,7 @@ describe('InputComponent', () => {
       assert.ok(!result.ComboButtons?.pressed, 'Combo should only be pressed if all buttons are pressed')
 
       // Test case 7: Full combo with dragging/rotating states
+      ClientInputFunctions.refreshInputs()
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true, consumed: false })
@@ -521,6 +526,7 @@ describe('InputComponent', () => {
       assert.ok(result.ComboButtons?.rotating)
 
       // Test case 8: Full combo with different values
+      ClientInputFunctions.refreshInputs()
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8, consumed: false })
