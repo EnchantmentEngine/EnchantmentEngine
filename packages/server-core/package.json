@@ -61,6 +61,7 @@
     "@ffprobe-installer/ffprobe": "^2.0.0",
     "@google-cloud/artifact-registry": "^3.5.0",
     "@google-cloud/compute": "^4.11.0",
+    "@google-cloud/networkservices": "^0.7.0",
     "@google-cloud/storage": "^7.15.0",
     "@ir-engine/common": "^1.6.0",
     "@ir-engine/engine": "^1.6.0",

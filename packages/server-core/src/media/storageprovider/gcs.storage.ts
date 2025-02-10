@@ -41,6 +41,7 @@ import {
 import axios from 'axios'
 import {GetSignedUrlConfig, Storage} from '@google-cloud/storage'
 import { UrlMapsClient } from '@google-cloud/compute'
+import { NetworkServicesClient } from "@google-cloud/networkservices";
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
@@ -71,6 +72,8 @@ export class GCSStorage implements StorageProviderInterface {
   private bucketAssetURL = `https://storage.googleapis.com/download/storage/v1/b/${this.bucket}/o/`
 
   private urlMaps = new UrlMapsClient()
+
+  private networkServicesClient = new NetworkServicesClient()
 
   /**
    * Get the instance of GCS storage provider.
@@ -190,20 +193,28 @@ export class GCSStorage implements StorageProviderInterface {
 
   async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
     if (!invalidationItems || invalidationItems.length === 0) return
-    let invalidationItem = invalidationItems[0]
-    if (invalidationItem[0] !== '/') invalidationItem = `/${invalidationItem}`
-    if (useMediaCDN)
+    invalidationItems = invalidationItems.map(item => item[0] !== '/' ? `/${item}` : item)
+    if (useMediaCDN) {
       return await axios
           .post(`https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
               {
-                host: this.cacheDomain,
                 path: invalidationItems[0]
               })
+      // const request = {
+      //   parent: `projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}`,
+      //   resource: {
+      //     name: `test-${v4()}`,
+      //     description: 'Invalidating assets',
+      //     invalidationPatterns: [invalidationItems]
+      //   }
+      // }
+      // return this.networkServicesClient.createEdgeCacheInvalidation(request)
+    }
     else
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
-          path: invalidationItem
+          path: invalidationItems[0]
         },
         project: config.gcp.project as string,
         urlMap: config.gcp.gcs.urlMap as string
