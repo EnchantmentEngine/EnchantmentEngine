@@ -29,6 +29,7 @@ import { OpaqueType } from '@ir-engine/common/src/interfaces/OpaqueType'
 import { dataValidator, queryValidator } from '../validators'
 
 import { TypedString } from '../../types/TypeboxUtils'
+import { LocationID } from '../social/location.schema'
 import { UserID } from '../user/user.schema'
 import { abuseReasons } from './moderation.schema'
 
@@ -46,6 +47,9 @@ export const moderationBanSchema = Type.Object(
         format: 'uuid'
       })
     ),
+    reportedLocationId: TypedString<LocationID>({
+      format: 'uuid'
+    }),
     banReason: StringEnum([...abuseReasons]),
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
     reportedAt: Type.String({ format: 'date-time' }),
@@ -63,7 +67,7 @@ export interface ModerationBanType extends Static<typeof moderationBanSchema> {}
 // Schema for creating new entries
 export const moderationBanDataSchema = Type.Pick(
   moderationBanSchema,
-  ['banUserId', 'banReason', 'ipAddress', 'reportedAt', 'banned'],
+  ['banUserId', 'banReason', 'ipAddress', 'reportedAt', 'banned', 'reportedLocationId'],
   { $id: 'ModerationBanData' }
 )
 export interface ModerationBanData extends Static<typeof moderationBanDataSchema> {}
