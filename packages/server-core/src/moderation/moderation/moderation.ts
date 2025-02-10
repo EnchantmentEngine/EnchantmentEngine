@@ -27,7 +27,7 @@ import { moderationMethods, moderationPath } from '@ir-engine/common/src/schemas
 
 import { Application } from '../../../declarations'
 import { ModerationService } from './moderation.class'
-import userReportsDocs from './moderation.docs'
+import moderationDocs from './moderation.docs'
 import hooks from './moderation.hooks'
 
 declare module '@ir-engine/common/declarations' {
@@ -49,7 +49,7 @@ export default (app: Application): void => {
     methods: moderationMethods,
     // You can add additional custom events to be sent to client here
     events: [],
-    docs: userReportsDocs
+    docs: moderationDocs
   })
 
   const service = app.service(moderationPath)
