@@ -68,7 +68,7 @@ describe('WebGl Renderer System', () => {
   let nestedVisibleEntity: Entity
   let nestedInvisibleEntity: Entity
 
-  beforeEach(() => {
+  beforeEach(async () => {
     createEngine()
     const timer = Timer((time, xrFrame) => {})
     getMutableState(ECSState).timer.set(timer)
@@ -111,6 +111,8 @@ describe('WebGl Renderer System', () => {
     setComponent(invisibleEntity, SceneComponent)
 
     setComponent(rootEntity, RendererComponent, { scenes: [visibleEntity, invisibleEntity] })
+
+    await act(() => render(null))
   })
 
   afterEach(() => {

@@ -50,6 +50,7 @@ import { ColliderComponent } from './ColliderComponent'
 import { ColliderComponentDefaults, assertColliderComponentEquals } from './ColliderComponent.test'
 import { RigidBodyComponent } from './RigidBodyComponent'
 import { TriggerComponent } from './TriggerComponent'
+import { act, render } from '@testing-library/react'
 
 const TriggerComponentDefaults = {
   triggers: [] as Array<{
@@ -180,7 +181,7 @@ describe('TriggerComponent', () => {
       return destroyEngine()
     })
 
-    it("should call Physics.setTrigger on the entity's collider when a new ColliderComponent is set", () => {
+    it("should call Physics.setTrigger on the entity's collider when a new ColliderComponent is set", async () => {
       assertColliderComponentEquals(getComponent(testEntity, ColliderComponent), ColliderComponentDefaults)
       removeComponent(testEntity, ColliderComponent)
       const ColliderComponentData = {
@@ -194,8 +195,7 @@ describe('TriggerComponent', () => {
       }
       setComponent(testEntity, ColliderComponent, ColliderComponentData)
       assertColliderComponentEquals(getComponent(testEntity, ColliderComponent), ColliderComponentData)
-      const reactor = ColliderComponent.reactorMap.get(testEntity)!
-      assert.ok(reactor.isRunning)
+      await act(() => render(null))
       const collider = physicsWorld.Colliders.get(testEntity)!
       assert.ok(collider)
       assert.ok(collider.isSensor())
