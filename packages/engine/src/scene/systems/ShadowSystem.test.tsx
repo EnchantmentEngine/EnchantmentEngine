@@ -109,15 +109,191 @@ describe('ShadowSystemState', () => {
   }) //:: initial
 }) //:: ShadowSystemState
 
+describe('EntityChildCSMReactor', () => {
+  describe('on change [shadowComponent.receive, csm]', () => {
+    it.todo(
+      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
+      () => {}
+    )
+    it.todo('should not do anything (return early) if entityContext.ShadowComponent.receive is falsy', () => {})
+    it.todo('should not do anything (return early) if entityContext.ObjectComponent is falsy', () => {})
+    it.todo(
+      'should call `@param props.rendererEntity`.RendererComponent.csm.setupMaterial if entityContext.ObjectComponent.material is truthy',
+      () => {}
+    )
+    describe('on cleanup ..', () => {
+      it.todo(
+        '.. should call `@param props.rendererEntity`.RendererComponent.csm.teardownMaterial if entityContext.ObjectComponent.material is truthy',
+        () => {}
+      )
+    })
+  })
+}) //:: EntityChildCSMReactor
+
+describe('EntityCSMReactor', () => {
+  describe('on change [directionalLight, directionalLightComponent?.castShadow.value]', () => {
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy',
+      () => {}
+    )
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy',
+      () => {}
+    )
+    it.todo(
+      'should call `@param props.rendererEntity`.RendererComponent.csm.set with a newly created CSM instance',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.light to `@param props.entity`.DirectionalLightComponent.light',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.shadowMapSize to RendererState.shadowMapResolution',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.shadowBias to `@param props.entity`.DirectionalLightComponent.shadowBias',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.maxFar to `@param props.entity`.DirectionalLightComponent.cameraFar',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.lightIntensity to `@param props.entity`.DirectionalLightComponent.intensity',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.lightColor to `@param props.entity`.DirectionalLightComponent.color',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.cascades to `@param props.renderSettingsEntity`.RenderSettingsComponent.cascades',
+      () => {}
+    )
+    describe('on cleanup ..', () => {
+      it.todo('.. should dispose of `@param props.rendererEntity`.RendererComponent.csm and set it to `null`', () => {})
+    })
+  })
+
+  describe('after SceneObjectSystem ..', () => {
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy',
+      () => {}
+    )
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy',
+      () => {}
+    )
+    it.todo('should set `@param props.entity`.DirectionalLightComponent.light.visible to false', () => {})
+  })
+
+  describe('on change [ rendererComponent.csm, shadowMapResolution, directionalLight, directionalLightComponent.shadowBias, directionalLightComponent.intensity, directionalLightComponent.color, directionalLightComponent.castShadow, directionalLightComponent.shadowRadius, directionalLightComponent.cameraFar ]', () => {
+    it.todo(
+      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
+      () => {}
+    )
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy',
+      () => {}
+    )
+    it.todo(
+      'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.shadowBias to `@param props.entity`.DirectionalLightComponent.light.shadow.bias',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.maxFar to `@param props.entity`.DirectionalLightComponent.cameraFar',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.shadowMapSize to RendererState.shadowMapResolution',
+      () => {}
+    )
+    describe('for every light in the `@param props.rendererEntity`.RendererComponent.csm.lights list ..', () => {
+      it.todo(
+        '.. should set light.color to a new color from `@param props.entity`.DirectionalLightComponent.color',
+        () => {}
+      )
+      it.todo('.. should set light.intensity to `@param props.entity`.DirectionalLightComponent.intensity', () => {})
+      it.todo('.. should set all components of light.shadow.mapSize to RendererState.shadowMapResolution', () => {})
+      it.todo(
+        '.. should set light.shadow.radius to `@param props.entity`.DirectionalLightComponent.shadowRadius',
+        () => {}
+      )
+    })
+    it.todo('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {})
+  })
+
+  describe('on change [csm, renderSettingsComponent.cascades]', () => {
+    it.todo(
+      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.rendererEntity`.RendererComponent.csm.cascades to `@param props.renderSettingsEntity`.RenderSettingsComponent.cascades',
+      () => {}
+    )
+    it.todo('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {})
+  })
+
+  describe('on cleanup ..', () => {
+    it.todo(
+      'should call EntityChildCSMReactor for every entity with components [ShadowComponent, ObjectComponent] and `@param props.rendererEntity` as a props argument',
+      () => {}
+    )
+  })
+}) //:: EntityCSMReactor
+
 describe('CSMReactor', () => {
-  describe('EntityCSMReactor', () => {}) //:: EntityCSMReactor
-  describe('EntityChildCSMReactor', () => {}) //:: EntityChildCSMReactor
+  describe('on change [xrLightProbeEntity.value, renderSettingsComponent.primaryLight]', () => {
+    it.todo(
+      'should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to XRLightProbeState.directionalLightEntity if `@param props.renderEntity` is ReferenceSpaceState.viewerEntity and XRLightProbeState.directionalLightEntity is truthy',
+      () => {}
+    )
+    it.todo(
+      '?? should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to ???itself??? if `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight is truthy',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to UndefinedEntity otherwise',
+      () => {}
+    )
+  })
+
+  describe('on cleanup', () => {
+    it.todo('should call EntityCSMReactor with (key,entity,rendererEntity,renderSettingsEntity)', () => {})
+  })
 }) //:: CSMReactor
 
-describe('RenderSettingsQueryReactor', () => {}) //:: RenderSettingsQueryReactor
+describe('RenderSettingsQueryReactor', () => {
+  it.todo('should return null if RendererEntity is falsy', () => {})
+  it.todo('should return null if RendererEntity is not ReferenceSpaceState.viewerEntity', () => {})
+  it.todo('should return null if RendererState.renderMode is RenderModes.UNLIT', () => {})
+  it.todo('should return null if RendererState.renderMode is RenderModes.LIT', () => {})
+  it.todo('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {})
+}) //:: RenderSettingsQueryReactor
+
+/** @todo Drop Shadows do not currently work */
 describe('DropShadowReactor', () => {}) //:: DropShadowReactor
-describe('updateDropShadowTransforms', () => {}) //:: updateDropShadowTransforms
-describe('RendererShadowReactor', () => {}) //:: RendererShadowReactor
+
+describe('RendererShadowReactor', () => {
+  describe('on change [useShadows, rendererComponent.renderer]', () => {
+    it.todo('should not do anything (return early) if RendererComponent.renderer is falsy', () => {})
+    it.todo(
+      'should set entityContext.RendererComponent.shadowMap.enabled to the value of (use/get)ShadowsEnabled',
+      () => {}
+    )
+    it.todo(
+      'should set entityContext.RendererComponent.shadowMap.autoUpdate to the value of (use/get)ShadowsEnabled',
+      () => {}
+    )
+  })
+}) //:: RendererShadowReactor
 
 describe('ShadowSystem', () => {
   const System = SystemDefinitions.get(ShadowSystem)!
