@@ -28,6 +28,7 @@ import { API, useFind } from '@ir-engine/common'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
+import { ResourceType } from '.'
 import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
 import { AssetCategoryNode } from './categories'
 import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from './helpers'
@@ -35,18 +36,13 @@ import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from '.
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
   resources: [] as StaticResourceType[],
-  categorizedAssets: {
-    myFavorite: [],
-    myAsset: []
-  } as {
-    myFavorite: StaticResourceType[]
-    myAsset: StaticResourceType[]
-  },
   refetchResources: () => {},
   resourcesLoading: false,
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
 
   category: {
+    activeTab: null! as State<ResourceType>,
+    assets: [] as StaticResourceType[],
     currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
     categories: null! as State<AssetCategoryNode[]>,
     sidebarWidth: null! as State<number>
@@ -63,6 +59,8 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const categories = useHookstate<AssetCategoryNode[]>([])
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
+
+  const activeTab = useHookstate<ResourceType>(ResourceType.FAVORITES)
 
   const staticResourcesFindApi = () => {
     const abortController = new AbortController()
@@ -148,28 +146,31 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: assets } = useFind(staticResourcePath, {
     query: {
-      $or: [{ tags: { $like: '%Favorite%' } }, { tags: { $like: '%Asset%' } }]
+      ...(activeTab.value === ResourceType.FAVORITES && {
+        query: {
+          tags: { $like: '%myFavorite%' }
+        }
+      }),
+      ...(activeTab.value === ResourceType.MY_ASSETS && {
+        query: {
+          tags: { $like: '%myAsset%' }
+        }
+      })
     }
   })
-
-  const categorizedAssets = React.useMemo(
-    () => ({
-      myFavorite: assets?.filter((asset) => asset.tags?.includes('myFavorite')) || [],
-      myAsset: assets?.filter((asset) => asset.tags?.includes('myAsset')) || []
-    }),
-    [assets]
-  )
+  console.log(activeTab.value, assets)
 
   return (
     <AssetsQueryContext.Provider
       value={{
         search,
-        categorizedAssets,
         resources: resources.value as StaticResourceType[],
         refetchResources: staticResourcesFindApi,
         resourcesLoading: resourcesLoading.value,
         staticResourcesPagination,
         category: {
+          activeTab,
+          assets: assets as StaticResourceType[],
           categories,
           currentCategoryPath,
           sidebarWidth: categorySidbarWidth

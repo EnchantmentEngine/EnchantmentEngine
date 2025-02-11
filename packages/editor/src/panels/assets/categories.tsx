@@ -30,6 +30,7 @@ import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icon
 import React, { ReactNode } from 'react'
 import { RxHamburgerMenu } from 'react-icons/rx'
 import { twMerge } from 'tailwind-merge'
+import { ResourceType } from '.'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
@@ -80,11 +81,16 @@ function FolderCategory({ item }: { item: AssetCategoryNode }) {
 function AssetCategory({ item }: { item: AssetCategoryNode }) {
   const { currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
-
+  const { activeTab } = useAssetsCategory()
   const handleClickCategory = (item) => {
-    currentCategoryPath.set(item)
-    staticResourcesPagination.skip.set(0)
-    refetchResources()
+    if (item.name === 'Project Assets') {
+      activeTab.set(ResourceType.MY_ASSETS)
+    } else {
+      currentCategoryPath.set(item)
+      staticResourcesPagination.skip.set(0)
+      refetchResources()
+      activeTab.set(ResourceType.ASSETS)
+    }
   }
 
   return <NodeHierarchyItem node={item} onClick={handleClickCategory} />
@@ -97,12 +103,14 @@ const SideBarIcons = {
 }
 
 function SidebarSection({ Icon, label, items, onClick, isActive }) {
+  const { activeTab } = useAssetsCategory()
   const [isHover, setIsHover] = React.useState(false)
   const toggleDropdown = () => {
     if (isActive) {
       onClick(undefined)
     } else {
       onClick(label)
+      activeTab.set(label)
     }
   }
 
@@ -146,7 +154,7 @@ function SidebarSection({ Icon, label, items, onClick, isActive }) {
 }
 
 export default function CategoriesList({ selected, onClick }) {
-  const { sidebarWidth, categories: asseteCategories } = useAssetsCategory()
+  const { sidebarWidth, categories: asseteCategories, activeTab } = useAssetsCategory()
   const { files, categories: folderCategories } = useCurrentFiles()
 
   // todo: rename sidebar section to sidebar or find a better name

@@ -38,12 +38,13 @@ import { DragPreviewImage, useDrag } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
+import { ResourceType } from '.'
 import { FilesViewModeSettings } from '../../services/FilesState'
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { FileIcon } from '../files/fileicon'
 import DeleteFileModal from '../files/modals/DeleteFileModal'
 import { ASSETS_PAGE_LIMIT, calculateItemsToFetch } from './helpers'
-import { useAssetsQuery } from './hooks'
+import { useAssetsCategory, useAssetsQuery } from './hooks'
 
 interface MetadataTableRowProps {
   label: string
@@ -416,22 +417,16 @@ function ResourceItems({ resources }) {
   )
 }
 
-export enum ResourceType {
-  ALL = 'all',
-  FAVORITE = 'favrorite'
-}
+export default function Resources() {
+  const { resourcesLoading, staticResourcesPagination, refetchResources, resources } = useAssetsQuery()
+  const { activeTab, assets } = useAssetsCategory()
 
-export default function Resources({ type = ResourceType.ALL }: { type: ResourceType }) {
-  const { resourcesLoading, staticResourcesPagination, refetchResources, resources, categorizedAssets } =
-    useAssetsQuery()
-
-  const resourceItems = type === ResourceType.ALL ? resources : categorizedAssets.myFavorite
-  console.log('cat', categorizedAssets)
+  const canLoadMore = staticResourcesPagination.skip.value < staticResourcesPagination.total.value
 
   return (
     <div id="asset-panel" className="relative flex h-full w-full flex-col overflow-auto bg-surface-1">
       <InfiniteScroll
-        disableEvent={staticResourcesPagination.skip.value >= staticResourcesPagination.total.value || resourcesLoading}
+        disableEvent={!canLoadMore || resourcesLoading}
         onScrollBottom={() => {
           staticResourcesPagination.skip.set((prevSkip) => prevSkip + ASSETS_PAGE_LIMIT + calculateItemsToFetch())
           refetchResources()
@@ -441,7 +436,9 @@ export default function Resources({ type = ResourceType.ALL }: { type: ResourceT
           className="relative mt-auto flex h-full w-full flex-wrap gap-2"
           data-testid="assets-panel-resource-items-container"
         >
-          {resourceItems.length > 0 && <ResourceItems resources={resourceItems} />}
+          {resources.length ? (
+            <ResourceItems resources={activeTab.value === ResourceType.ASSETS ? resources : assets} />
+          ) : null}
         </div>
         {resourcesLoading && <LoadingView spinnerOnly className="h-6 w-6" />}
       </InfiniteScroll>

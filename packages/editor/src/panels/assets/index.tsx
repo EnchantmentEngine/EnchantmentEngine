@@ -30,11 +30,11 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import FileBrowser from '../files/filebrowser'
 import { CurrentFilesQueryProvider } from '../files/helpers'
-import FilesLoaders, { FileUploadProgress } from '../files/loaders'
+import { FileUploadProgress } from '../files/loaders'
 import FilesToolbar from '../files/toolbar'
 import CategoriesList, { VerticalDivider } from './categories'
 import { AssetsQueryProvider } from './hooks'
-import Resources, { ResourceType } from './resources'
+import Resources from './resources'
 import Topbar from './topbar'
 
 const AssetsPanelTitle = () => {
@@ -58,42 +58,25 @@ export const AssetsPanelTab: TabData = {
   content: <AssetsContainer />
 }
 
-enum SidebarType {
+export enum ResourceType {
   FAVORITES = 'favorites',
+  MY_ASSETS = 'my_assets',
   ASSETS = 'assets',
-  FILES = 'files'
+  FILES = 'files',
+  ALL = 'all'
 }
 
 function AssetsContainer() {
-  const sidebarType = useHookstate(undefined)
-
-  const toolbar =
-    sidebarType.value === SidebarType.FILES ? (
-      <>
-        <FilesToolbar />
-        <FilesLoaders />
-      </>
-    ) : (
-      <Topbar />
-    )
-
-  let rightChildren
-
-  if (sidebarType.value === SidebarType.FILES) {
-    rightChildren = <FileBrowser />
+  const activeTab = useHookstate(ResourceType.ALL)
+  const resourceComponents = {
+    [ResourceType.FILES]: <FileBrowser />
   }
 
-  if (sidebarType.value === SidebarType.ASSETS) {
-    rightChildren = <Resources type={ResourceType.ALL} />
-  }
+  const rightChildren = resourceComponents[activeTab.value] || <Resources />
 
-  if (sidebarType.value === SidebarType.FAVORITES) {
-    rightChildren = <Resources type={ResourceType.FAVORITE} />
-  }
+  const toolbar = activeTab.value === ResourceType.FILES ? <FilesToolbar /> : <Topbar />
 
-  const handleSidebarChange = (category) => {
-    sidebarType.set(category)
-  }
+  const handleSidebarChange = (category) => activeTab.set(category)
 
   return (
     <div className="flex h-full flex-col">
@@ -102,7 +85,7 @@ function AssetsContainer() {
           {toolbar}
           <FileUploadProgress />
           <VerticalDivider
-            leftChildren={<CategoriesList selected={sidebarType.value} onClick={handleSidebarChange} />}
+            leftChildren={<CategoriesList selected={activeTab.value} onClick={handleSidebarChange} />}
             rightChildren={rightChildren}
           />
         </AssetsQueryProvider>
