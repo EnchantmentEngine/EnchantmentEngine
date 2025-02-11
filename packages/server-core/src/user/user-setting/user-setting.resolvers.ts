@@ -38,7 +38,7 @@ import type { HookContext } from '@ir-engine/server-core/declarations'
 
 export const userDbToSchema = (rawData: UserSettingDatabaseType): UserSettingType => {
   let themeModes
-  if (typeof rawData.themeModes !== 'object') themeModes = JSON.parse(rawData.themeModes) as Record<string, string>
+  if (rawData.themeModes && typeof rawData.themeModes !== 'object') themeModes = JSON.parse(rawData.themeModes) as Record<string, string>
 
   // Usually above JSON.parse should be enough. But since our pre-feathers 5 data
   // was serialized multiple times, therefore we need to parse it twice.
@@ -51,6 +51,7 @@ export const userDbToSchema = (rawData: UserSettingDatabaseType): UserSettingTyp
     }
   }
 
+  console.log('returning from userDbToSchema')
   return {
     ...rawData,
     themeModes
@@ -66,6 +67,7 @@ export const userSettingResolver = resolve<UserSettingType, HookContext>(
     // Convert the raw data into a new structure before running property resolvers
     converter: async (rawData, context) => {
       console.log('raw userSetting data to resolve', rawData)
+      console.log('context of user setting call', context.method, context)
       return userDbToSchema(rawData)
     }
   }
