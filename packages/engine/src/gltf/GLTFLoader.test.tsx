@@ -114,6 +114,7 @@ describe('GLTF Loader', async () => {
     setComponent(entity, GLTFComponent, { src: duck_gltf })
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -142,6 +143,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -174,6 +176,7 @@ describe('GLTF Loader', async () => {
     setComponent(entity, GLTFComponent, { src: draco_gltf })
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const loader = getState(AssetLoaderState).gltfLoader
     loadDRACODecoderNode()
@@ -210,6 +213,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -247,6 +251,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -284,6 +289,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
     const nodes = document!.nodes
@@ -342,6 +348,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     await vi.waitFor(
       async () => {
@@ -364,6 +371,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     await vi.waitFor(
       () => {
@@ -390,6 +398,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -412,6 +421,7 @@ describe('GLTF Loader', async () => {
     setComponent(entity, GLTFComponent, { src: skinned_gltf })
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     await vi.waitFor(
       () => {
@@ -449,6 +459,7 @@ describe('GLTF Loader', async () => {
 
     const system = SystemDefinitions.get(GLTFLoadSystem)!
     startReactor(system.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(entity, GLTFComponent).document
 
@@ -494,8 +505,10 @@ describe('GLTF Loader', async () => {
     setComponent(testEntity, GLTFComponent, { src: khr_light_gltf })
 
     startReactor(System.reactor!)
+    await act(async () => render(null))
     // @todo @important This line makes the test pass, but only intermitently
     startReactor(KHRLightsPunctualComponent.reactor!)
+    await act(async () => render(null))
 
     const document = getComponent(testEntity, GLTFComponent).document
 
@@ -551,6 +564,7 @@ describe('GLTF Loader', async () => {
     setComponent(testEntity, GLTFComponent, { src: instanced_gltf })
 
     startReactor(System.reactor!)
+    await act(async () => render(null))
 
     await vi.waitFor(
       () => {
