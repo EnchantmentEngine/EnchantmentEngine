@@ -511,7 +511,7 @@ describe('InputComponent', () => {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
       })
-      assert.ok(result.ComboButtons?.down, 'Combo should only be down if all buttons are donw')
+      assert.ok(result.ComboButtons?.down, 'Combo should only be down if all buttons are down')
       assert.ok(result.ComboButtons?.touched)
       assert.ok(!result.ComboButtons?.pressed, 'Combo should only be pressed if all buttons are pressed')
 
