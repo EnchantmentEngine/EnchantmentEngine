@@ -51,6 +51,10 @@ export const abuseReasons = [
   'Child Exploitation',
   'Something Else'
 ] as const
+export type AbuseReasonsType = (typeof abuseReasons)[number]
+
+const moderationTypes = ['Person', 'Location'] as const
+export type ModerationTypeType = (typeof moderationTypes)[number]
 
 // Main data model schema
 export const moderationSchema = Type.Object(
@@ -58,7 +62,7 @@ export const moderationSchema = Type.Object(
     id: Type.String({
       format: 'uuid'
     }),
-    type: StringEnum(['Person', 'Location']),
+    type: StringEnum([...moderationTypes]),
     abuseReason: StringEnum([...abuseReasons]),
     reportedUserId: Type.Optional(
       TypedString<UserID>({

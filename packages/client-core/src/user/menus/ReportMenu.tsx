@@ -28,7 +28,12 @@ import React from 'react'
 import { useMutation } from '@ir-engine/common'
 import { LocationID } from '@ir-engine/common/src/schema.type.module'
 import { moderationFileUploadPath } from '@ir-engine/common/src/schemas/moderation/moderation-file-upload.schema'
-import { abuseReasons, moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
+import {
+  abuseReasons,
+  type AbuseReasonsType,
+  moderationPath,
+  type ModerationTypeType
+} from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import { getMutableState, useHookstate, UserID } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
@@ -42,7 +47,7 @@ import { PopoverState } from '../../common/services/PopoverState'
 import { uploadToFeathersService } from '../../util/upload'
 import { AuthState } from '../services/AuthService'
 
-type ReportMenuProps = { type: 'Person'; userId: UserID } | { type: 'Scene'; locationId: LocationID }
+type ReportMenuProps = { type: ModerationTypeType; userId?: UserID; locationId?: LocationID }
 
 const ReportSuccessReportModal = ({ handleClose }) => (
   <Modal
@@ -64,7 +69,7 @@ const ReportSuccessReportModal = ({ handleClose }) => (
 const ReportMenu = (props: ReportMenuProps) => {
   const { type } = props
   const reportedUserId = type === 'Person' ? props.userId : undefined
-  const reportedLocationId = type === 'Scene' ? props.locationId : undefined
+  const reportedLocationId = type === 'Location' ? props.locationId : undefined
   const userReportsMutation = useMutation(moderationPath)
   const selfUser = useHookstate(getMutableState(AuthState).user)
   const handleClose = async () => {
@@ -72,7 +77,7 @@ const ReportMenu = (props: ReportMenuProps) => {
   }
 
   const formData = useHookstate({
-    abuseType: 'null' as (typeof abuseReasons)[number],
+    abuseType: 'null' as AbuseReasonsType,
     details: '',
     files: [] as File[]
   })

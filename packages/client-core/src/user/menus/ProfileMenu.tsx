@@ -419,9 +419,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             <CogLg className="h-10 w-10 text-text-primary" />
           </button>
 
-          {
-            // TODO: uncomment this when the PR is ready
-            // initialized &&
+          {initialized && (
             <div className="col-span-2 grid grid-cols-1 gap-y-2">
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#616161] p-1 text-text-primary-button"
@@ -434,14 +432,14 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1 text-text-primary-button"
                 onClick={() =>
-                  PopoverState.showPopupover(<ReportMenu type="Scene" locationId={currentLocation.id.value} />)
+                  PopoverState.showPopupover(<ReportMenu type="Location" locationId={currentLocation.id.value} />)
                 }
               >
                 <ReportWebsiteDefaullg />
                 {t('user:usermenu.profile.reportWorld')}
               </button>
             </div>
-          }
+          )}
         </div>
       </div>
 
