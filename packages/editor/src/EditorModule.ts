@@ -30,11 +30,12 @@ import { PositionalAudioSystem } from '@ir-engine/client-core/src/systems/Positi
 import { CameraGizmoSystem } from './systems/CameraGizmoSystem'
 import { ClickPlacementSystem } from './systems/ClickPlacementSystem'
 import { EditorControlSystem } from './systems/EditorControlSystem'
-import { HighlightSystem } from './systems/HighlightSystem'
+import { HelperActiveSystem } from './systems/HelperActiveSystem'
 import { ModelHandlingSystem } from './systems/ModelHandlingSystem'
 import { ModelLoadingSpinnerSystem } from './systems/ModelLoadingSpinnerSystem'
 import { ObjectGridSnapSystem } from './systems/ObjectGridSnapSystem'
 import { RenderMonitorSystem } from './systems/RenderMonitorSystem'
+import { SelectionHighlightSystem } from './systems/SelectionHighlightSystem'
 import { TransformGizmoSystem } from './systems/TransformGizmoSystem'
 import { UploadRequestSystem } from './systems/UploadRequestSystem'
 
@@ -43,13 +44,14 @@ export {
   CameraGizmoSystem,
   ClickPlacementSystem,
   EditorControlSystem,
-  HighlightSystem,
+  HelperActiveSystem,
   ModelHandlingSystem,
   ModelLoadingSpinnerSystem,
   ObjectGridSnapSystem,
   PositionalAudioSystem,
   RenderInfoSystem,
   RenderMonitorSystem,
+  SelectionHighlightSystem,
   // EditorInstanceNetworkingSystem,
   TransformGizmoSystem,
   UploadRequestSystem

@@ -23,21 +23,21 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Types } from 'bitecs'
 import { AxesHelper, Quaternion, Vector3 } from 'three'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { S, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { UserID, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent } from '@ir-engine/network'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
 
@@ -53,18 +53,18 @@ export type AvatarIKTargetsType = {
 
 export const AvatarIKTargetComponent = defineComponent({
   name: 'AvatarIKTargetComponent',
-  schema: { blendWeight: Types.f64 },
+  storage: { blendWeight: createResizableTypeArray(Float64Array) },
 
   reactor: function () {
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).avatarDebug)
 
-    useHelperEntity(entity, () => new AxesHelper(0.5), debugEnabled.value, ObjectLayerMasks.AvatarHelper)
+    useHelperEntity(entity, () => new AxesHelper(0.125), debugEnabled.value, ObjectLayerMasks.AvatarHelper)
 
     return null
   },
 
-  getTargetEntity: (ownerID: UserID, targetName: (typeof ikTargets)[keyof typeof ikTargets]) => {
+  getTargetEntity: (ownerID: EntityUUID, targetName: (typeof ikTargets)[keyof typeof ikTargets]) => {
     return UUIDComponent.getEntityByUUID((ownerID + targetName) as EntityUUID)
   }
 })
@@ -83,7 +83,7 @@ type HandTargetReturn = { position: Vector3; rotation: Quaternion } | null
 export const getHandTarget = (entity: Entity, hand: XRHandedness): HandTargetReturn => {
   const networkComponent = getComponent(entity, NetworkObjectComponent)
 
-  const targetEntity = NameComponent.entitiesByName[networkComponent.ownerId + '_' + hand]?.[0] // todo, how should be choose which one to use?
+  const targetEntity = NameComponent.getEntitiesByName(networkComponent.ownerId + '_' + hand)[0] // todo, how should be choose which one to use?
   if (targetEntity && AvatarIKTargetComponent.blendWeight[targetEntity] > 0)
     return getComponent(targetEntity, TransformComponent)
 
@@ -110,3 +110,16 @@ export const getHandTarget = (entity: Entity, hand: XRHandedness): HandTargetRet
       }
   }
 }
+
+export const IKMatrixComponent = defineComponent({
+  name: 'IKMatricesComponent',
+  schema: S.Object({
+    /** contains ik solve data */
+    local: T.Mat4(),
+    world: T.Mat4()
+  })
+})
+
+export const AvatarIKComponent = defineComponent({
+  name: 'AvatarIKComponent'
+})

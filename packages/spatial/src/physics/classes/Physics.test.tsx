@@ -29,6 +29,7 @@ import sinon from 'sinon'
 import { BoxGeometry, Mesh, Quaternion, SphereGeometry, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity } from '@ir-engine/ecs'
 import {
   getComponent,
   getMutableComponent,
@@ -38,7 +39,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { getState } from '@ir-engine/hyperflux'
 
 import { ObjectDirection, Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
@@ -67,7 +67,7 @@ import {
 import { NetworkObjectComponent } from '@ir-engine/network'
 import { act, render } from '@testing-library/react'
 import React from 'react'
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry'
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { Epsilon, assertFloat, assertVec } from '../../../tests/util/assert'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
@@ -624,7 +624,7 @@ describe('Physics : Rapier->ECS API', () => {
 
       it("shouldn't mark the entity transform as dirty", () => {
         Physics.createRigidBody(physicsWorld, testEntity)
-        assert.ok(TransformComponent.dirtyTransforms[testEntity] == false)
+        assert.ok(TransformComponent.dirty[testEntity] === 0)
       })
 
       it('should assign the correct RigidBodyType enum', () => {

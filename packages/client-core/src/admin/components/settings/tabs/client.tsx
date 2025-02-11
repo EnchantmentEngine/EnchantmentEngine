@@ -216,16 +216,6 @@ const ClientTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRef
           value={settings.siteDescription.value || ''}
           onChange={(e) => settings.siteDescription.set(e.target.value)}
         />
-
-        <Input
-          fullWidth
-          labelProps={{
-            text: t('admin:components.setting.googleAnalyticsMeasurementId'),
-            position: 'top'
-          }}
-          value={settings.gaMeasurementId.value || ''}
-          onChange={(e) => settings.gaMeasurementId.set(e.target.value)}
-        />
         <Input
           fullWidth
           labelProps={{
@@ -512,7 +502,7 @@ const ClientTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRef
       </div>
 
       <div className="mt-6 grid grid-cols-8 gap-6">
-        <Button size="sm" className="text-primary col-span-1 bg-theme-highlight" onClick={handleCancel} fullWidth>
+        <Button size="sm" className="text-primary col-span-1 " onClick={handleCancel} fullWidth>
           {t('admin:components.common.reset')}
         </Button>
         <Button size="sm" variant="primary" className="col-span-1" onClick={handleSubmit} fullWidth>
