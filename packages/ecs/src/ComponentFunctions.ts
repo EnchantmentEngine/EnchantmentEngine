@@ -548,6 +548,9 @@ export const setComponent = <C extends Component>(
     const root = startReactor(() => {
       return React.createElement(QueryReactor, { Components: [component], ChildEntityReactor: component.reactor })
     }) as ReactorRoot
+    root.cleanupFunctions.add(() => {
+      component.reactorRoot = undefined
+    })
     root['component'] = component.name
     component.reactorRoot = root
   }
