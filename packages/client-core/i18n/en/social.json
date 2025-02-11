@@ -186,7 +186,8 @@
     "back": "Back"
   },
   "user": {
-    "reportUser": "Report User"
+    "reportUser": "Report User",
+    "block-user": "Block User"
   },
   "terms": {
     "confirmTerms": "I agree to Terms of Service",

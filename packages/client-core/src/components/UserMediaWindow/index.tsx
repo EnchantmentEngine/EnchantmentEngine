@@ -50,10 +50,12 @@ import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 
 import { useTranslation } from 'react-i18next'
+import { PopoverState } from '../../common/services/PopoverState'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
 import { MediaStreamState } from '../../media/MediaStreamState'
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '../../media/PeerMediaChannelState'
+import ReportMenu from '../../user/menus/ReportMenu'
 import Draggable from './Draggable'
 import styles from './index.module.scss'
 
@@ -341,6 +343,7 @@ export const useUserMediaWindowHook = ({ peerID, type }: Props) => {
 
 export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
   const {
+    selfUser,
     isPiP,
     volume,
     isScreen,
@@ -456,7 +459,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 borderRadius: '10px',
                 backgroundColor: 'red'
               }}
-              onClick={openChat}
+              onClick={() => PopoverState.showPopupover(<ReportMenu type={'Person'} userId={selfUser.id} />)}
             >
               <Icon
                 type="Report"
