@@ -443,9 +443,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
         <span key={peerID + '-' + type + '-audio-container'} id={peerID + '-' + type + '-audio-container'} />
         <div className={styles['user-controls']}>
           <div className={styles['username']}>{username}</div>
-          {
-            // TODO: uncomment this when the PR is ready
-            /* initialized && isPiP && !isSelf && */
+          {initialized && isPiP && !isSelf && (
             <button
               style={{
                 display: 'flex',
@@ -461,9 +459,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 borderRadius: '10px',
                 backgroundColor: 'red'
               }}
-              onClick={() =>
-                PopoverState.showPopupover(<ReportMenu type={'Person'} userId={selfUser.id} showBackButton />)
-              }
+              onClick={() => PopoverState.showPopupover(<ReportMenu type={'Person'} userId={selfUser.id} />)}
             >
               <Icon
                 type="Report"
@@ -486,7 +482,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 {t('social:user.reportUser')}
               </Text>
             </button>
-          }
+          )}
           <div className={styles['controls']}>
             <div className={styles['mute-controls']}>
               {videoMediaStream && (

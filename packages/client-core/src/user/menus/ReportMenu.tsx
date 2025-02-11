@@ -35,20 +35,14 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
 import { t } from 'i18next'
-import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
+import { IoCloseOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
 import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
 import { uploadToFeathersService } from '../../util/upload'
 import { AuthState } from '../services/AuthService'
 
-type BaseReportMenuProps = {
-  showBackButton: boolean
-}
-
-type ReportMenuProps =
-  | ({ type: 'Person'; userId: UserID } & BaseReportMenuProps)
-  | ({ type: 'World'; locationId: LocationID } & BaseReportMenuProps)
+type ReportMenuProps = { type: 'Person'; userId: UserID } | { type: 'Scene'; locationId: LocationID }
 
 const ReportSuccessReportModal = ({ handleClose }) => (
   <Modal
@@ -68,9 +62,9 @@ const ReportSuccessReportModal = ({ handleClose }) => (
 )
 
 const ReportMenu = (props: ReportMenuProps) => {
-  const { showBackButton, type } = props
+  const { type } = props
   const reportedUserId = type === 'Person' ? props.userId : undefined
-  const reportedLocationId = type === 'World' ? props.locationId : undefined
+  const reportedLocationId = type === 'Scene' ? props.locationId : undefined
   const userReportsMutation = useMutation(moderationPath)
   const selfUser = useHookstate(getMutableState(AuthState).user)
   const handleClose = async () => {
@@ -114,10 +108,16 @@ const ReportMenu = (props: ReportMenuProps) => {
     }
   }
 
-  const abuseTypes = abuseReasons.map((abuseReason) => ({
-    value: abuseReason,
-    label: abuseReason
-  }))
+  const abuseTypes = [
+    {
+      value: 'null',
+      label: t('user:usermenu.profile.selectOne') as string
+    },
+    ...abuseReasons.map((abuseReason) => ({
+      value: abuseReason,
+      label: abuseReason
+    }))
+  ]
   const handleChange = (newValue: string, name: string) => {
     formData[name].set(newValue)
     fieldOptions[name].validate(newValue)
@@ -134,7 +134,7 @@ const ReportMenu = (props: ReportMenuProps) => {
         reportDetails: formData.details.value,
         reportedUserId,
         reportingUserId: selfUser.id.value,
-        reportedLocationId
+        reportedLocationId: reportedLocationId!
       })
       const args = [
         {
@@ -163,15 +163,6 @@ const ReportMenu = (props: ReportMenuProps) => {
       rawChildren={
         <div className="flex w-full flex-col">
           <div className="border-b-theme-primary flex h-14 items-center justify-between border-b px-8">
-            {showBackButton && (
-              <Button
-                data-testid="edit-report-menu-button"
-                className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
-                onClick={handleClose}
-              >
-                <IoArrowBackOutline size={16} />
-              </Button>
-            )}
             <Text className="flex-1 text-center">{t('user:usermenu.profile.report', { type }) as string}</Text>
             <Button
               data-testid="close-button"

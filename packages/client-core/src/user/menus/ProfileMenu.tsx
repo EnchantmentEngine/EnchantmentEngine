@@ -434,9 +434,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               <button
                 className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1 text-text-primary-button"
                 onClick={() =>
-                  PopoverState.showPopupover(
-                    <ReportMenu type="World" locationId={currentLocation.id.value} showBackButton />
-                  )
+                  PopoverState.showPopupover(<ReportMenu type="Scene" locationId={currentLocation.id.value} />)
                 }
               >
                 <ReportWebsiteDefaullg />
