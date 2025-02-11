@@ -65,6 +65,7 @@ export const userSettingResolver = resolve<UserSettingType, HookContext>(
   {
     // Convert the raw data into a new structure before running property resolvers
     converter: async (rawData, context) => {
+      console.log('raw userSetting data to resolve', rawData)
       return userDbToSchema(rawData)
     }
   }
