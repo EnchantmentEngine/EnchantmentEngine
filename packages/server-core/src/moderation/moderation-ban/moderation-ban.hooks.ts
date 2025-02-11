@@ -38,7 +38,10 @@ import {
 } from './moderation-ban.resolvers'
 
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
-import { iff, isProvider } from 'feathers-hooks-common'
+import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
+import isAction from '../../hooks/is-action'
+import persistQuery from '../../hooks/persist-query'
+import setLoggedinUserInQuery from '../../hooks/set-loggedin-user-in-query'
 
 export default {
   around: {
@@ -47,14 +50,20 @@ export default {
   before: {
     all: [schemaHooks.validateQuery(moderationBanQueryValidator), schemaHooks.resolveQuery(moderationBanQueryResolver)],
     find: [
-      iff(isProvider('external'), verifyScope('moderation', 'read')),
-      schemaHooks.validateQuery(moderationBanQueryValidator),
-      schemaHooks.resolveQuery(moderationBanQueryResolver)
+      persistQuery,
+      iff(
+        isProvider('external'),
+        iffElse(isAction('admin'), verifyScope('moderation', 'read'), setLoggedinUserInQuery('banUserId')),
+        discardQuery('action')
+      )
     ],
     get: [
-      iff(isProvider('external'), verifyScope('moderation', 'read')),
-      schemaHooks.validateQuery(moderationBanQueryValidator),
-      schemaHooks.resolveQuery(moderationBanQueryResolver)
+      persistQuery,
+      iff(
+        isProvider('external'),
+        iffElse(isAction('admin'), verifyScope('moderation', 'read'), setLoggedinUserInQuery('banUserId')),
+        discardQuery('action')
+      )
     ],
     create: [schemaHooks.validateData(moderationBanDataValidator), schemaHooks.resolveData(moderationBanDataResolver)],
     patch: [
