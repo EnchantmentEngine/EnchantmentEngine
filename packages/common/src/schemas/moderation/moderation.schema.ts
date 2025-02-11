@@ -58,7 +58,7 @@ export const moderationSchema = Type.Object(
     id: Type.String({
       format: 'uuid'
     }),
-    type: StringEnum(['Person', 'Scene']),
+    type: StringEnum(['Person', 'Location']),
     abuseReason: StringEnum([...abuseReasons]),
     reportedUserId: Type.Optional(
       TypedString<UserID>({
