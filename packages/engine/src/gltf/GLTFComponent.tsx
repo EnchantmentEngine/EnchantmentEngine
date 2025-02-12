@@ -31,16 +31,16 @@ import {
   ComponentJSONIDMap,
   defineComponent,
   Entity,
+  EntityTreeComponent,
   EntityUUID,
   generateEntityUUID,
   getComponent,
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
-  isAncestor,
   Layers,
   removeComponent,
-  removeEntity,
+  removeEntityNodeRecursively,
   setComponent,
   UndefinedEntity,
   useComponent,
@@ -235,8 +235,11 @@ export const GLTFComponentReactor = () => {
     const unloadEntities = () => {
       if (loadedEntities) {
         // only remove entities that are still children of the root entity
-        const loadedAndStillChildEntities = loadedEntities.filter((child) => isAncestor(entity, child, false))
-        for (const entity of loadedAndStillChildEntities) removeEntity(entity)
+        const immediateChildren = loadedEntities.filter(
+          (child) => getComponent(child, EntityTreeComponent).parentEntity === entity
+        )
+        // parent entity may no longer exist, so get immediate children and remove recursively
+        for (const entity of immediateChildren) removeEntityNodeRecursively(entity)
       }
     }
 
