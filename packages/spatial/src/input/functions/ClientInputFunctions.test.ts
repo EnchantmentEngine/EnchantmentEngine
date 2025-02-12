@@ -31,7 +31,6 @@ import {
   EntityTreeComponent,
   getComponent,
   getMutableComponent,
-  removeEntity,
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
@@ -145,16 +144,6 @@ describe('ClientInputFunctions', () => {
   })
 
   describe('setInputSources', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      testEntity = createEntity()
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-    })
-
     it('should add the `@param inputSources` to the `InputComponent.inputSources` of each entity in the ancestor.InputComponent.inputSinks list', () => {
       const sourceOne = createEntity()
       const sourceTwo = createEntity()
@@ -164,6 +153,7 @@ describe('ClientInputFunctions', () => {
 
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
+      const testEntity = createEntity()
       setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
 
       // Sanity check before running
@@ -437,32 +427,19 @@ describe('ClientInputFunctions', () => {
   })
 
   describe('updateGamepadInput', () => {
-    let testEntity: Entity
-
-    beforeEach(async () => {
-      testEntity = createEntity()
-      setComponent(testEntity, InputSourceComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-    })
-
-    function setupGamepadButton(buttonState: Partial<ButtonState>, gamepadState: Partial<ButtonState>) {
+    function setupGamepadButton(entity: Entity, buttonState: Partial<ButtonState>, gamepadState: Partial<ButtonState>) {
       const buttons = {}
       const gamepadButtons = [] as ButtonState[]
       const buttonIndex = 0 as AnyButton
 
-      buttons[buttonIndex] = createInitialButtonState(testEntity, buttonState)
+      buttons[buttonIndex] = createInitialButtonState(entity, buttonState)
       gamepadButtons[buttonIndex] = gamepadState as ButtonState
 
-      getMutableComponent(testEntity, InputSourceComponent).merge({
-        buttons: buttons,
-        source: {
-          gamepad: {
-            buttons: gamepadButtons
-          } as unknown as Gamepad
-        } as XRInputSource
+      setComponent(entity, InputSourceComponent, {
+        buttons,
+        gamepad: {
+          buttons: gamepadButtons
+        } as unknown as Gamepad
       })
 
       return buttons[buttonIndex]
@@ -470,9 +447,9 @@ describe('ClientInputFunctions', () => {
 
     describe('on first frame (buttonState.pressed=false, gamepadButton.pressed=true)', () => {
       it('should set down=true and copy pressed/touched/value from gamepad', () => {
-        const buttonState = setupGamepadButton({ pressed: false }, { pressed: true, touched: true, value: 0.5 })
-
-        ClientInputFunctions.updateGamepadInput(testEntity)
+        const entity = createEntity()
+        const buttonState = setupGamepadButton(entity, { pressed: false }, { pressed: true, touched: true, value: 0.5 })
+        ClientInputFunctions.updateGamepadInput(entity)
 
         assert.equal(buttonState.down, true)
         assert.equal(buttonState.pressed, true)
@@ -482,21 +459,22 @@ describe('ClientInputFunctions', () => {
 
       it('should set downPosition from transform when XRSpace component exists', () => {
         const expectedPos = new Vector3(1, 2, 3)
+        const testEntity = createEntity()
         setComponent(testEntity, TransformComponent, { position: expectedPos })
         setComponent(testEntity, XRSpaceComponent, { space: {} as XRSpace, baseSpace: {} as XRSpace })
 
-        const buttonState = setupGamepadButton({ pressed: false }, { pressed: true, touched: true })
-
+        const buttonState = setupGamepadButton(testEntity, { pressed: false }, { pressed: true, touched: true })
         ClientInputFunctions.updateGamepadInput(testEntity)
         assertVec.approxEq(buttonState.downPosition!, expectedPos, 3)
       })
 
       it('should set downRotation from transform when XRSpace component exists', () => {
         const expectedRot = new Quaternion(0, 1, 0, 0)
+        const testEntity = createEntity()
         setComponent(testEntity, TransformComponent, { rotation: expectedRot })
         setComponent(testEntity, XRSpaceComponent, { space: {} as XRSpace, baseSpace: {} as XRSpace })
 
-        const buttonState = setupGamepadButton({ pressed: false }, { pressed: true, touched: true })
+        const buttonState = setupGamepadButton(testEntity, { pressed: false }, { pressed: true, touched: true })
 
         ClientInputFunctions.updateGamepadInput(testEntity)
         assertVec.approxEq(buttonState.downRotation!, expectedRot, 4)
@@ -505,6 +483,7 @@ describe('ClientInputFunctions', () => {
 
     describe('dragging behavior', () => {
       it('should enable dragging when pointer moves beyond threshold', () => {
+        const testEntity = createEntity()
         setComponent(testEntity, InputPointerComponent, {
           cameraEntity: createEntity(),
           pointerId: 1,
@@ -512,6 +491,7 @@ describe('ClientInputFunctions', () => {
         })
 
         const buttonState = setupGamepadButton(
+          testEntity,
           {
             pressed: true,
             downPointerPosition: new Vector2(0, 0),
@@ -525,6 +505,7 @@ describe('ClientInputFunctions', () => {
       })
 
       it('should not enable dragging when movement is below threshold', () => {
+        const testEntity = createEntity()
         setComponent(testEntity, InputPointerComponent, {
           cameraEntity: createEntity(),
           pointerId: 1,
@@ -532,6 +513,7 @@ describe('ClientInputFunctions', () => {
         })
 
         const buttonState = setupGamepadButton(
+          testEntity,
           {
             pressed: true,
             downPointerPosition: new Vector2(0, 0),
@@ -547,7 +529,12 @@ describe('ClientInputFunctions', () => {
 
     describe('button release', () => {
       it('should set up=true when button is released', () => {
-        const buttonState = setupGamepadButton({ pressed: true, up: false }, { pressed: false, touched: false })
+        const testEntity = createEntity()
+        const buttonState = setupGamepadButton(
+          testEntity,
+          { pressed: true, up: false },
+          { pressed: false, touched: false }
+        )
 
         ClientInputFunctions.updateGamepadInput(testEntity)
         assert.equal(buttonState.up, true)
@@ -555,13 +542,15 @@ describe('ClientInputFunctions', () => {
     })
 
     it('should do nothing if gamepad is not present', () => {
-      const buttonState = createInitialButtonState(testEntity, {
-        pressed: true,
-        up: false
-      })
+      const testEntity = createEntity()
+      const buttonState = setupGamepadButton(
+        testEntity,
+        { pressed: true, up: false },
+        { pressed: false, touched: false }
+      )
 
       const buttonIndex = 0 as AnyButton
-      getMutableComponent(testEntity, InputSourceComponent).merge({
+      setComponent(testEntity, InputSourceComponent, {
         buttons: { [buttonIndex]: buttonState },
         source: {
           gamepad: undefined
