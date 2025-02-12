@@ -86,17 +86,15 @@ const execute = () => {
 
   /** Since we have nothing that specifies whether we should use orbit/fly controls or not, just tie it to the camera orbit component for the studio */
   for (const entity of cameraQuery()) {
-    const inputPointerEntities = InputPointerComponent.getPointersForCamera(entity)
-    if (!inputPointerEntities) continue
     if (hasComponent(entity, CameraOrbitComponent)) {
-      const buttons = InputComponent.getMergedButtonsForInputSources(inputPointerEntities)
+      const buttons = InputComponent.getButtons(entity)
       if (buttons.SecondaryClick?.down) onSecondaryClick(entity)
       if (buttons.SecondaryClick?.up) onSecondaryReleased(entity)
     }
   }
 
   for (const entity of flyControlQuery()) {
-    const buttons = InputComponent.getMergedButtonsForInputSources(inputSourceEntities)
+    const buttons = InputComponent.getButtons(entity)
 
     const flyControlComponent = getComponent(entity, FlyControlComponent)
     const transform = getComponent(entity, TransformComponent)

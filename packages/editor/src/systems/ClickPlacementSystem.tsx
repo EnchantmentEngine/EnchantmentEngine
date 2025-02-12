@@ -271,7 +271,7 @@ export const ClickPlacementSystem = defineSystem({
     const mouseEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
     if (!mouseEntity) return
 
-    const buttons = InputComponent.getMergedButtons(viewerEntity)
+    const buttons = InputComponent.getButtons(viewerEntity)
     const axes = InputComponent.getMergedAxes(viewerEntity)
 
     const zoom = axes[MouseScroll.VerticalScroll]

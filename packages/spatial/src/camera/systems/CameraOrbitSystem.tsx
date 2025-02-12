@@ -86,7 +86,7 @@ const execute = () => {
       )
         continue
 
-      const buttons = InputComponent.getMergedButtons(cameraEid)
+      const buttons = InputComponent.getButtons(cameraEid)
       const axes = InputComponent.getMergedAxes(cameraEid)
 
       if (buttons.PrimaryClick?.pressed && buttons.PrimaryClick?.dragging) {

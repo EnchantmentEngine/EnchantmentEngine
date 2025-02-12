@@ -203,8 +203,8 @@ export const TransformGizmoControlComponent = defineComponent({
 
         onPointerHover(gizmoControlEntity)
 
-        const pickerButtons = InputComponent.getMergedButtons(pickerEntity)
-        const planeButtons = InputComponent.getMergedButtons(gizmoControlComponent.planeEntity)
+        const pickerButtons = InputComponent.getButtons(pickerEntity)
+        const planeButtons = InputComponent.getButtons(gizmoControlComponent.planeEntity)
 
         if (
           (pickerButtons?.PrimaryClick?.pressed || planeButtons?.PrimaryClick?.pressed) &&

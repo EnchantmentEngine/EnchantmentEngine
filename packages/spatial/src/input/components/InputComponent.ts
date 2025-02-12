@@ -35,9 +35,15 @@ import {
   useEntityContext,
   useExecute
 } from '@ir-engine/ecs'
-import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  getMutableComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getState, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -53,6 +59,7 @@ import {
   KeyboardButton,
   MouseButton,
   MouseScroll,
+  StandardGamepadButton,
   XRStandardGamepadAxes,
   XRStandardGamepadButton
 } from '../state/ButtonState'
@@ -82,10 +89,12 @@ export const DefaultAxisBindings = {
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
 } satisfies InputAxisBindings
 
-// Add these type definitions before the InputComponent definition
-export type ButtonStateProxy = {
-  cachedResults: ButtonStateMap<any>
-} & ButtonStateMap<any>
+const ButtonSchema = S.Union([
+  S.Enum(KeyboardButton),
+  S.Enum(MouseButton),
+  S.Enum(StandardGamepadButton),
+  S.Enum(XRStandardGamepadButton)
+])
 
 export const InputComponent = defineComponent({
   name: 'InputComponent',
@@ -96,10 +105,99 @@ export const InputComponent = defineComponent({
     activationDistance: S.Number(2),
     highlight: S.Bool(false),
     grow: S.Bool(false),
-
+    buttonBindings: S.Record(S.String(), S.Array(S.Union([ButtonSchema, S.Array(ButtonSchema)])), {
+      ...DefaultButtonBindings
+    }),
     //internal
     /** populated automatically by ClientInputSystem */
-    inputSources: S.NonSerialized(S.Array(S.Entity()))
+    inputSources: S.NonSerialized(S.Array(S.Entity())),
+    cachedButtons: S.NonSerialized(S.Type<ButtonStateMap<any>>({})),
+    buttons: S.NonSerialized(
+      S.SerializedClass((entity) => {
+        // Helper function to find first unconsumed button state
+        const findButtonState = (button: AnyButton): ButtonState | undefined => {
+          const inputComponent = getComponent(entity, InputComponent)
+          for (const sourceEntity of inputComponent.inputSources) {
+            const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
+            if (!inputSourceComponent) continue
+            const state = inputSourceComponent.buttons[button]
+            if (state && !state.consumed) {
+              return state
+            }
+          }
+          return undefined
+        }
+
+        return new Proxy(
+          {},
+          {
+            get: (target: ButtonStateMap<any>, prop: string) => {
+              if (typeof prop === 'symbol') {
+                return target[prop]
+              }
+
+              // Check cache first
+              const inputComponent = getComponent(entity, InputComponent)
+              const cachedButtons = inputComponent.cachedButtons
+              if (Object.hasOwn(cachedButtons, prop)) {
+                if (!cachedButtons[prop]) return undefined
+                if (cachedButtons[prop] && cachedButtons[prop].consumed) return cachedButtons[prop]
+              }
+
+              let result = cachedButtons[prop]
+
+              // First check mapped button states since they define the mapping from alias to actual buttons
+              const buttonBindings = inputComponent.buttonBindings
+              if (buttonBindings && prop in buttonBindings) {
+                const bindings = buttonBindings[prop]
+                for (const b of bindings) {
+                  if (Array.isArray(b)) {
+                    // For combo buttons, check if all buttons in the combo are available
+                    const states = b.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
+
+                    const isActive = states.length === b.length
+
+                    if (!result && isActive) {
+                      // All buttons in combo are active and not consumed, consume them and set the result
+                      states.forEach((s) => (s.consumed = true))
+                      result = cachedButtons[prop] = createInitialButtonState(states[0].inputSourceEntity)
+                    }
+
+                    if (result && isActive) {
+                      result.down = states.every((s) => s.down)
+                      result.pressed = states.every((s) => s.pressed)
+                      result.touched = states.every((s) => s.touched)
+                      result.value = Math.max(...states.map((s) => s.value))
+                      result.dragging = states.some((s) => s.dragging)
+                      result.rotating = states.some((s) => s.rotating)
+                      result.up = false
+                      result.consumed = true
+                      return result
+                    } else if (result) {
+                      result.up = true
+                      result.consumed = true
+                    }
+                  } else {
+                    // For single button bindings, just return that button
+                    result = cachedButtons[prop] = findButtonState(b)
+                    if (result) result.consumed = true
+                    return result
+                  }
+
+                  // If we get here, the button in the binding is not available, so set the state to undefined
+                  return (cachedButtons[prop] = undefined)
+                }
+              }
+
+              // Otherwise check if this exact button exists and is not consumed
+              const rawState = (cachedButtons[prop] = findButtonState(prop as AnyButton))
+              if (rawState) rawState.consumed = true
+              return rawState
+            }
+          }
+        )
+      }, {})
+    )
   }),
 
   useExecuteWithInput(
@@ -124,132 +222,36 @@ export const InputComponent = defineComponent({
     }, getInputExecutionInsert(order))
   },
 
-  getInputEntities(entityContext: Entity): Entity[] {
-    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent], true, true)
+  getInputEntity(entityContext: Entity): Entity {
     const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent], true, true)
-    const inputSinkInputEntities = getOptionalComponent(inputSinkEntity, InputSinkComponent)?.inputEntities ?? []
-    const inputEntities = [closestInputEntity, ...inputSinkInputEntities]
-    return Array.from(new Set(inputEntities.filter((entity) => entity !== UndefinedEntity))) // remove duplicates
+    if (closestInputEntity) return closestInputEntity
+    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent], true, true)
+    const inputSinkInputEntity = getOptionalComponent(inputSinkEntity, InputSinkComponent)?.inputEntity
+    return inputSinkInputEntity ?? UndefinedEntity
   },
 
   getInputSourceEntities(entityContext: Entity) {
-    const inputEntities = InputComponent.getInputEntities(entityContext)
-    return Array.from(
-      new Set(
-        inputEntities.reduce<Entity[]>((prev, eid) => {
-          return [...prev, ...getComponent(eid, InputComponent).inputSources]
-        }, [])
-      )
-    )
+    const inputEntity = InputComponent.getInputEntity(entityContext)
+    if (inputEntity === UndefinedEntity) return []
+    return getComponent(inputEntity, InputComponent).inputSources
   },
 
-  getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
+  getButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
-    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
+    inputBindings?: BindingsType
   ) {
-    const entityButtonStates = getState(InputState).entityButtonStates
-    if (!entityButtonStates.has(entityContext)) {
-      const buttonStates = {} as ButtonStateProxy
-      const cachedResults = (buttonStates.cachedResults = {} as ButtonStateMap<any>)
-
-      const proxy = new Proxy(buttonStates, {
-        get: (target: ButtonStateProxy, prop: string) => {
-          if (prop === 'cachedResults') {
-            return target[prop]
-          }
-          if (typeof prop === 'symbol') {
-            return target[prop]
-          }
-
-          // Check cache first
-          if (Object.hasOwn(cachedResults, prop)) {
-            if (!cachedResults[prop]) return undefined
-            if (cachedResults[prop] && cachedResults[prop].consumed) return cachedResults[prop]
-          }
-
-          let result = cachedResults[prop]
-
-          // Get all input source entities
-          const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
-          console.log('Checking button:', prop)
-          console.log('Input source entities:', inputSourceEntities)
-
-          // Helper function to find first unconsumed button state
-          const findButtonState = (button: AnyButton): ButtonState | undefined => {
-            console.log('Looking for button:', button)
-            for (const sourceEntity of inputSourceEntities) {
-              const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
-              if (!inputSourceComponent) continue
-              const state = inputSourceComponent.buttons[button]
-              console.log('Found state:', state)
-              if (state && !state.consumed) {
-                return state
-              }
-            }
-            return undefined
-          }
-
-          // First check mapped button states since they define the mapping from alias to actual buttons
-          if (inputBindings && prop in inputBindings) {
-            console.log('Found in bindings:', inputBindings[prop])
-            const bindings = inputBindings[prop]
-            for (const binding of bindings) {
-              if (Array.isArray(binding)) {
-                // For combo buttons, check if all buttons in the combo are available
-                const states = binding.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
-                console.log('Combo states:', states)
-
-                const isActive = states.length === binding.length
-
-                if (!result && isActive) {
-                  // All buttons in combo are active and not consumed, consume them and set the result
-                  states.forEach((s) => (s.consumed = true))
-                  result = cachedResults[prop] = createInitialButtonState(states[0].inputSourceEntity)
-                }
-
-                if (result && isActive) {
-                  result.down = states.every((s) => s.down)
-                  result.pressed = states.every((s) => s.pressed)
-                  result.touched = states.every((s) => s.touched)
-                  result.value = Math.max(...states.map((s) => s.value))
-                  result.dragging = states.some((s) => s.dragging)
-                  result.rotating = states.some((s) => s.rotating)
-                  result.up = false
-                  result.consumed = true
-                  return result
-                } else if (result) {
-                  result.up = true
-                  result.consumed = true
-                }
-              } else {
-                // For single button bindings, just return that button
-                result = cachedResults[prop] = findButtonState(binding)
-                console.log('Single button state:', result)
-                if (result) result.consumed = true
-                return result
-              }
-
-              // If we get here, the button in the binding is not available, so set the state to undefined
-              return (cachedResults[prop] = undefined)
-            }
-          }
-
-          // Otherwise check if this exact button exists and is not consumed
-          const rawState = findButtonState(prop as AnyButton)
-          console.log('Raw state:', rawState)
-          cachedResults[prop] = rawState
-          if (rawState) rawState.consumed = true
-          return rawState
-        }
-      })
-
-      entityButtonStates.set(entityContext, proxy)
+    const inputEntity = InputComponent.getInputEntity(entityContext)
+    if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
+    const input = getMutableComponent(inputEntity, InputComponent)
+    if (inputBindings) {
+      for (const binding of Object.keys(inputBindings)) {
+        if (!input.buttonBindings[binding].value) input.buttonBindings[binding].set(inputBindings[binding] as any)
+      }
     }
-
-    return entityButtonStates.get(entityContext)!
+    return input.buttons.get(NO_PROXY_STEALTH) as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
-  getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
+  getAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
   ) {
@@ -282,6 +284,22 @@ export const InputComponent = defineComponent({
     }
 
     return axes as AxisValueMap<BindingsType>
+  },
+
+  // @deprecated use getButtons instead
+  getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
+    entityContext: Entity,
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
+  ) {
+    return InputComponent.getButtons(entityContext, inputBindings)
+  },
+
+  // @deprecated use getAxes instead
+  getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
+    entityContext: Entity,
+    inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
+  ) {
+    return InputComponent.getAxes(entityContext, inputBindings)
   },
 
   useHasFocus() {

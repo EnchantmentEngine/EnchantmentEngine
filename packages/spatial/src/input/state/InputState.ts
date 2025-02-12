@@ -27,7 +27,6 @@ import { Raycaster, Vector2 } from 'three'
 
 import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { defineState, getMutableState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
-import { ButtonStateProxy } from '../components/InputComponent'
 
 export const InputState = defineState({
   name: 'InputState',
@@ -39,8 +38,7 @@ export const InputState = defineState({
     capturingEntity: UndefinedEntity,
     inputMeshes: new Set<Entity>(),
     inputBoundingBoxes: new Set<Entity>(),
-    capturingCameraOrbitEnabled: true,
-    entityButtonStates: new Map<Entity, ButtonStateProxy>()
+    capturingCameraOrbitEnabled: true
   }),
   extension: syncStateWithLocalStorage(['preferredHand']),
   setCapturingEntity: (entity: Entity, force = false) => {

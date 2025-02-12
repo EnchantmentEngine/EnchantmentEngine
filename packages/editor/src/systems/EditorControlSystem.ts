@@ -273,9 +273,11 @@ const execute = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (hasComponent(viewerEntity, FlyControlComponent)) return
 
-  const buttons = InputComponent.getMergedButtons(viewerEntity, EditorButtonBindings)
+  const buttons = InputComponent.getButtons(viewerEntity, EditorButtonBindings)
   const selectedEntities = SelectionState.getSelectedEntities()
 
+  if (buttons.Undo?.down) onUndo()
+  if (buttons.Redo?.down) onRedo()
   if (buttons.ObjectGridSnap?.down) onObjectGridSnap()
   if (buttons.TransformModeRotate?.down) onTransformModeRotate()
   if (buttons.TogglePlacementMode?.down) onTogglePlacementMode()
@@ -285,8 +287,6 @@ const execute = () => {
   if (buttons.ToggleTransformPivot?.down) onToggleTransformPivot()
   if (buttons.ToggleTransformSpace?.down) onToggleTransformSpace()
   if (buttons.CameraFocus?.down) onCameraFocus()
-  if (buttons.Undo?.down) onUndo()
-  if (buttons.Redo?.down) onRedo()
   if (buttons.IncreaseGridHeight?.down) onIncreaseGridHeight()
   if (buttons.DecreaseGridHeight?.down) onDecreaseGridHeight()
   if (buttons.CancelSelection?.down) onCancelSelection()
@@ -314,8 +314,7 @@ const execute = () => {
       distance: Infinity
     }
     if (buttons.PrimaryClick?.down) {
-      buttons.PrimaryClick.inputSourceEntity
-      const intersection = InputSourceComponent.getClosestIntersection(inputSourceEntity)
+      const intersection = InputSourceComponent.getClosestIntersection(buttons.PrimaryClick.inputSourceEntity)
       if (intersection && intersection.distance < closestIntersection.distance) {
         closestIntersection = intersection
       }

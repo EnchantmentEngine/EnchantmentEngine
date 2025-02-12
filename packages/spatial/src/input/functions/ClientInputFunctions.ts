@@ -43,6 +43,7 @@ import {
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { PI } from '../../common/constants/MathConstants'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { TransformComponent, TransformGizmoTagComponent } from '../../transform/components/TransformComponent'
 import { XRSpaceComponent } from '../../xr/XRComponents'
 import { XRUIComponent } from '../../xrui/components/XRUIComponent'
@@ -50,7 +51,6 @@ import { DefaultButtonBindings, InputComponent } from '../components/InputCompon
 import { InputPointerComponent } from '../components/InputPointerComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
 import { ButtonState, ButtonStateMap, createInitialButtonState, MouseButton } from '../state/ButtonState'
-import { InputState } from '../state/InputState'
 import { findProximity, findRaycastedInput, IntersectionData } from './ClientInputHeuristics'
 
 /** radian threshold for rotating state*/
@@ -251,8 +251,12 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   if (capturedEntity !== UndefinedEntity) {
     ClientInputFunctions.setInputSources(capturedEntity, finalInputSources)
   } else {
-    for (const intersection of sortedIntersections) {
-      ClientInputFunctions.setInputSources(intersection.entity, finalInputSources)
+    if (!sortedIntersections.length) {
+      ClientInputFunctions.setInputSources(getState(ReferenceSpaceState).viewerEntity, finalInputSources)
+    } else {
+      for (const intersection of sortedIntersections) {
+        ClientInputFunctions.setInputSources(intersection.entity, finalInputSources)
+      }
     }
   }
 }
@@ -266,12 +270,9 @@ export function refreshInputs(hasFocus = typeof globalThis.document === 'undefin
       ;(source.source.gamepad!.axes as number[]).fill(0)
     }
   }
-
-  const inputState = getState(InputState)
-  const entityButtonStates = inputState.entityButtonStates
-
-  for (const buttonStates of entityButtonStates.values()) {
-    _refreshButtonState(buttonStates.cachedResults, hasFocus)
+  for (const eid of query([InputComponent])) {
+    const inputComponent = getComponent(eid, InputComponent)
+    _refreshButtonState(inputComponent.cachedButtons, hasFocus)
   }
 }
 

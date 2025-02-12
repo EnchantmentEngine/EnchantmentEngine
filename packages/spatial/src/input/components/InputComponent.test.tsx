@@ -33,7 +33,6 @@ import {
   getComponent,
   getMutableComponent,
   hasComponent,
-  removeComponent,
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -224,159 +223,98 @@ describe('InputComponent', () => {
     })
   })
 
-  describe('getInputEntities', () => {
-    let testEntity = UndefinedEntity
-
+  describe('getInputEntity', () => {
     beforeEach(async () => {
       createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
     })
 
     afterEach(() => {
-      removeEntity(testEntity)
       return destroyEngine()
     })
 
-    it('should return an empty list when the entity does not have an InputComponent or an InputSinkComponent', () => {
-      removeComponent(testEntity, InputComponent)
-      const result = InputComponent.getInputEntities(testEntity)
-      assert.ok(Array.isArray(result))
-      assert.equal(result.length, 0)
+    it('should return UndefinedEntity when the entity does not have an InputComponent or an InputSinkComponent', () => {
+      const testEntity = createEntity()
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, UndefinedEntity)
     })
 
-    it('should return a list containing itself when the entity has an InputComponent, but no InputSinkComponent', () => {
-      const result = InputComponent.getInputEntities(testEntity)
-      assert.ok(Array.isArray(result))
-      assert.equal(result.length, 1)
-      assert.equal(result[0], testEntity)
+    it('should return the entity itself when the entity has an InputComponent, but no InputSinkComponent', () => {
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, testEntity)
     })
 
-    it('should return a list containing only the closest ancestor that has an InputComponent, even if the entity itself has no InputComponent', () => {
-      removeComponent(testEntity, InputComponent)
+    it('should return the closest ancestor that has an InputComponent, even if the entity itself has no InputComponent', () => {
+      const testEntity = createEntity()
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      const result = InputComponent.getInputEntities(testEntity)
-      assert.ok(Array.isArray(result))
-      assert.equal(result.length, 1)
-      assert.equal(result[0], parentEntity)
+      setComponent(testEntity, EntityTreeComponent, { parentEntity })
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, parentEntity)
     })
 
-    it('should return a list containing the entity itself if it has an InputComponent, even if its closest ancestor also has an InputComponent', () => {
+    it('should return the entity itself if it has an InputComponent, even if its closest ancestor also has an InputComponent', () => {
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      const result = InputComponent.getInputEntities(testEntity)
-      assert.ok(Array.isArray(result))
-      assert.equal(result.length, 1)
-      assert.ok(result.includes(testEntity))
-      assert.ok(!result.includes(parentEntity))
+      setComponent(testEntity, EntityTreeComponent, { parentEntity })
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, testEntity)
     })
 
-    it('should return a de-duplicated list of Input Entities, taken from the InputSinkComponent.inputEntities of the closest ancestor of the given entity', () => {
-      removeComponent(testEntity, InputComponent)
+    it('should return the closest ancestor that has an InputComponent, even if the entity itself has no InputComponent', () => {
+      const testEntity = createEntity()
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
       setComponent(parentEntity, InputSinkComponent)
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      const DummyList = [
-        12345 as Entity,
-        12345 as Entity,
-        12345 as Entity,
-        54321 as Entity,
-        54321 as Entity,
-        parentEntity,
-        parentEntity
-      ]
-      assertArray.hasDuplicates(DummyList)
-      getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set(DummyList)
-      const result = InputComponent.getInputEntities(testEntity)
-      assertArray.hasNoDuplicates(result)
-      assert.ok(
-        !result.includes(testEntity),
-        'the result should not contain the given entity if it does not have an InputComponent'
-      )
-      assert.ok(
-        result.includes(parentEntity),
-        'the result should contain the parent entity if it has an InputComponent'
-      )
+      setComponent(testEntity, EntityTreeComponent, { parentEntity })
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, parentEntity)
+    })
+
+    it('should return the input component via the the closest ancestor InputSinkComponent', () => {
+      const testEntity = createEntity()
+      const parentEntity = createEntity()
+      const inputEntity = createEntity()
+      setComponent(inputEntity, InputComponent)
+      setComponent(parentEntity, InputSinkComponent, { inputEntity })
+      setComponent(testEntity, EntityTreeComponent, { parentEntity })
+      const result = InputComponent.getInputEntity(testEntity)
+      assert.equal(result, inputEntity)
     })
   })
 
   describe('getInputSourceEntities', () => {
-    let testEntity = UndefinedEntity
-
     beforeEach(async () => {
       createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
     })
 
     afterEach(() => {
-      removeEntity(testEntity)
       return destroyEngine()
     })
 
-    /**
-     * @note
-     * This test's setup is a bit complex, but it does test what the code is supposed to do.
-     * The notes are left for reference, since the setup can be confusing. */
-    it('should return a combined list of all entities contained in the InputComponent.inputSources of all entities returned by InputComponent.getInputEntities(entityContext)', () => {
-      removeComponent(testEntity, InputComponent)
-      const parentEntity = createEntity()
-      setComponent(parentEntity, InputComponent)
-      // `one`, `two`, `three` and `four` are valid entities that have an all-defaults InputComponent
-      const one = createDummyEntity()
-      const two = createDummyEntity()
-      const three = createDummyEntity()
-      const four = createDummyEntity()
-      const DummyList0 = [12345 as Entity, 54321 as Entity, one, two] as Entity[]
-      // DummyList0 is added to parentEntity.InputComponent.inputSources
-      getMutableComponent(parentEntity, InputComponent).inputSources.set(DummyList0)
-      // DummyList3 is added to three.InputComponent.inputSources
-      const DummyList3 = [98765 as Entity, 55544 as Entity] as Entity[]
-      getMutableComponent(three, InputComponent).inputSources.set(DummyList3)
-      // DummyList4 is added to four.InputComponent.inputSources
-      const DummyList4 = [42424 as Entity, 21212 as Entity] as Entity[]
-      getMutableComponent(four, InputComponent).inputSources.set(DummyList4)
-      // SinkList is created with entities `three` and `four`
-      // We will retrieve DummyList3 and DummyList4 from their inputSources in the result call
-      const SinkList = [three, four] as Entity[]
-      // SinkList is set as parentEntity.InputSinkComponent.inputEntities
-      setComponent(parentEntity, InputSinkComponent)
-      getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set(SinkList)
-      // parentEntity is set as the parent of testEntity
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      // The result should contain all other lists combined
-      const Expected = DummyList0.concat(DummyList3).concat(DummyList4)
-      // 1. We retrieve DummyList0 from parentEntity's inputSources
-      // 2. We retrieve DummyList3 from the inputSources of entity `three`, which are accessed from the parentEntity.InputSinkComponent
-      // 3. We retrieve DummyList4 from the inputSources of entity `four`, which are accessed from the parentEntity.InputSinkComponent
+    it('should return a combined list of all entities contained in the InputComponent.inputSources of the entity returned by InputComponent.getInputEntity(entityContext)', () => {
+      const inputEntity = createEntity()
+      const testEntity = createEntity()
+      const sourceEntity1 = createEntity()
+      const sourceEntity2 = createEntity()
+      setComponent(sourceEntity1, InputSourceComponent)
+      setComponent(sourceEntity2, InputSourceComponent)
+      setComponent(inputEntity, InputComponent, { inputSources: [sourceEntity1, sourceEntity2] })
+      setComponent(testEntity, EntityTreeComponent, { parentEntity: inputEntity })
       const result = InputComponent.getInputSourceEntities(testEntity)
-      assert.ok(result.length > 0, 'The result should not be empty')
-      assertArray.eq(
-        result,
-        Expected,
-        'The result should contain the expected lists of inputSources combined, no matter what their values are'
-      )
+      assertArray.eq(result, [sourceEntity1, sourceEntity2])
     })
   })
 
-  describe('getMergedButtons', () => {
-    let testEntity = UndefinedEntity
-    let parentEntity = UndefinedEntity
-
+  describe('getButtons', () => {
     beforeEach(async () => {
       createEngine()
-      testEntity = createEntity()
-      parentEntity = createEntity()
-      setComponent(parentEntity, InputComponent)
     })
 
     afterEach(() => {
-      removeEntity(testEntity)
-      removeEntity(parentEntity)
       return destroyEngine()
     })
 
@@ -404,18 +342,15 @@ describe('InputComponent', () => {
       getMutableComponent(three, InputSourceComponent).buttons.set(Buttons3)
       // Create the entity that the InputSink will reference
       const inputEntity = createEntity()
-      setComponent(inputEntity, InputComponent)
-      getMutableComponent(inputEntity, InputComponent).inputSources.set([two, three])
-      // Set the parentEntity as both an Input and an InputSink
-      setComponent(parentEntity, InputComponent)
-      getMutableComponent(parentEntity, InputComponent).inputSources.set([one])
+      setComponent(inputEntity, InputComponent, { inputSources: [one, two, three] })
       // The parentEntity is the InputSink where we get the inputs from
-      setComponent(parentEntity, InputSinkComponent)
-      getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set([inputEntity])
+      const parentEntity = createEntity()
+      setComponent(parentEntity, InputSinkComponent, { inputEntity })
       // parentEntity is set as the parent of testEntity
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+      const testEntity = createEntity()
+      setComponent(testEntity, EntityTreeComponent, { parentEntity })
       // The result should contain the buttons listed by all entities combined
-      const result = InputComponent.getMergedButtons(testEntity)
+      const result = InputComponent.getButtons(testEntity)
       for (const key of Expected) {
         assert.ok(result[key] !== undefined, 'Expected key: ' + key + ' should be contained in the result')
       }
@@ -436,7 +371,7 @@ describe('InputComponent', () => {
 
       // Test case 1: No buttons
       inputSource.buttons.set({})
-      let result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      let result = InputComponent.getButtons(testEntity, buttonAlias)
 
       assert.ok(!result.SingleButton)
       assert.ok(!result.ComboButtons)
@@ -448,7 +383,7 @@ describe('InputComponent', () => {
           pressed: true
         })
       })
-      result = InputComponent.getMergedButtons(testEntity, buttonAlias) // this is only necessary for reseting the type inference
+      result = InputComponent.getButtons(testEntity, buttonAlias) // this is only necessary for reseting the type inference
       assert.ok(result.SingleButton?.pressed)
       assert.ok(result.SingleButton?.down, 'SingleButton.down should be true')
       assert.ok(!result.ComboButtons)
@@ -486,7 +421,7 @@ describe('InputComponent', () => {
 
       // Test case 5: Full combo pressed - first entity context
       ClientInputFunctions.refreshInputs(true)
-      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
@@ -502,7 +437,7 @@ describe('InputComponent', () => {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
-      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      result = InputComponent.getButtons(testEntity, buttonAlias)
       assert.ok(result.SingleButton?.down)
       assert.ok(!result.KeyA, 'KeyA should not be available, as it is consumed by the alias')
       assert.ok(result.KeyB?.down)
@@ -511,7 +446,7 @@ describe('InputComponent', () => {
       // Test case 5b: Different entity context cannot access consumed combo
       const entity2 = createEntity()
       setComponent(entity2, InputComponent, { inputSources: [testEntity] })
-      const result2 = InputComponent.getMergedButtons(entity2, buttonAlias)
+      const result2 = InputComponent.getButtons(entity2, buttonAlias)
       assert.equal(
         result2.ComboButtons,
         undefined,
@@ -524,7 +459,7 @@ describe('InputComponent', () => {
 
       // Test case 6: Full combo with mixed states
       ClientInputFunctions.refreshInputs(true)
-      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
@@ -535,7 +470,7 @@ describe('InputComponent', () => {
 
       // Test case 7: Full combo with dragging/rotating states
       ClientInputFunctions.refreshInputs(true)
-      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true, consumed: false })
@@ -646,7 +581,7 @@ describe('InputComponent', () => {
       // Create an inputSink entity that holds entity source one
       const sinkEntity = createEntity()
       setComponent(sinkEntity, InputSinkComponent)
-      getMutableComponent(sinkEntity, InputSinkComponent).inputEntities.set([inputEntity])
+      getMutableComponent(sinkEntity, InputSinkComponent).inputEntity.set(inputEntity)
 
       // Set the child entity as a child of the sink
       const childEntity = createEntity()

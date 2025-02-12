@@ -115,7 +115,7 @@ export const CameraGizmoComponent = defineComponent({
 
         onPointerHover(entity)
 
-        const pickerButtons = InputComponent.getMergedButtons(
+        const pickerButtons = InputComponent.getButtons(
           getComponent(cameraGizmoComponent.visualEntity.value, CameraGizmoVisualComponent).picker
         )
 
