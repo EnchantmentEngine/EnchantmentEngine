@@ -236,7 +236,7 @@ export const GLTFComponentReactor = () => {
       if (loadedEntities) {
         // only remove entities that are still children of the root entity
         const immediateChildren = loadedEntities.filter(
-          (child) => getComponent(child, EntityTreeComponent).parentEntity === entity
+          (child) => getOptionalComponent(child, EntityTreeComponent)?.parentEntity === entity
         )
         // parent entity may no longer exist, so get immediate children and remove recursively
         for (const entity of immediateChildren) removeEntityNodeRecursively(entity)
