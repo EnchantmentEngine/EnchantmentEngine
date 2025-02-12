@@ -124,7 +124,7 @@ const execute = () => {
 
   for (const cameraEntity of rendererQuery()) {
     const buttons = InputComponent.getButtons(cameraEntity)
-    const axes = InputComponent.getMergedAxes(cameraEntity)
+    const axes = InputComponent.getAxes(cameraEntity)
 
     const inputPointerEntities = InputPointerComponent.getPointersForCamera(cameraEntity)
     const inputState = getState(InputState)

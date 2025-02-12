@@ -490,7 +490,7 @@ describe('InputComponent', () => {
     })
   })
 
-  describe('getMergedAxes', () => {
+  describe('getAxes', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
@@ -588,7 +588,7 @@ describe('InputComponent', () => {
       setComponent(childEntity, EntityTreeComponent, { parentEntity: sinkEntity })
 
       // Run the code to get the result
-      const merged = InputComponent.getMergedAxes(childEntity, SomeAliasList)
+      const merged = InputComponent.getAxes(childEntity, SomeAliasList)
       const resultArray = [merged[0], merged[1], merged[2], merged[3]] as Axes
 
       // Check that the result is what we expect it to be
