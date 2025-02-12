@@ -47,7 +47,7 @@ export class BuilderInfoService implements ServiceInterface<BuilderInfoType> {
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
       const builderJob = await k8BatchClient.listNamespacedJob(
-        'default',
+        config.server.namespace,
         undefined,
         false,
         undefined,
@@ -62,7 +62,7 @@ export class BuilderInfoService implements ServiceInterface<BuilderInfoType> {
         )
       } else {
         const builderDeployment = await k8AppsClient.listNamespacedDeployment(
-          'default',
+          config.server.namespace,
           'false',
           false,
           undefined,

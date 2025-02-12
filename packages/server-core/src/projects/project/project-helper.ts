@@ -182,7 +182,7 @@ export const updateBuilder = async (
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
       const builderJob = await k8BatchClient.listNamespacedJob(
-        'default',
+        config.server.namespace,
         undefined,
         false,
         undefined,
@@ -191,7 +191,7 @@ export const updateBuilder = async (
       )
 
       const builderDeployments = await k8sAppsClient.listNamespacedDeployment(
-        'default',
+        config.server.namespace,
         undefined,
         false,
         undefined,
@@ -252,7 +252,7 @@ export const checkBuilderService = async (
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
       const builderJob = await k8BatchClient.listNamespacedJob(
-        'default',
+        config.server.namespace,
         undefined,
         false,
         undefined,
@@ -271,7 +271,7 @@ export const checkBuilderService = async (
         const containerName = 'ir-engine-builder'
 
         const builderPods = await k8DefaultClient.listNamespacedPod(
-          'default',
+            config.server.namespace,
           undefined,
           false,
           undefined,
@@ -288,7 +288,7 @@ export const checkBuilderService = async (
 
           const builderLogs = await k8DefaultClient.readNamespacedPodLog(
             podName!,
-            'default',
+              config.server.namespace,
             containerName,
             undefined,
             false,
@@ -1229,7 +1229,7 @@ export const createOrUpdateProjectUpdateJob = async (app: Application, projectNa
     try {
       await k8BatchClient.patchNamespacedCronJob(
         getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        'default',
+          config.server.namespace,
         getCronJobBody(project, image),
         undefined,
         undefined,
@@ -1244,7 +1244,7 @@ export const createOrUpdateProjectUpdateJob = async (app: Application, projectNa
       )
     } catch (err) {
       logger.error('Could not find cronjob %o', err)
-      await k8BatchClient.createNamespacedCronJob('default', getCronJobBody(project, image))
+      await k8BatchClient.createNamespacedCronJob(config.server.namespace, getCronJobBody(project, image))
     }
   }
 }
@@ -1255,7 +1255,7 @@ export const removeProjectUpdateJob = async (app: Application, projectName: stri
     if (k8BatchClient)
       await k8BatchClient.deleteNamespacedCronJob(
         getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        'default'
+          config.server.namespace
       )
   } catch (err) {
     logger.error('Failed to remove project update cronjob %o', err)

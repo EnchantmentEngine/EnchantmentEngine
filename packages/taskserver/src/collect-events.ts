@@ -42,7 +42,7 @@ const collectLogs = async () => {
 
   if (k8DefaultClient) {
     try {
-      const namespace = 'default' // Replace with your target namespace
+      const namespace = config.server.namespace // Replace with your target namespace
       const currentTimestamp = new Date().toISOString()
       let eventMessages: any[] = []
 

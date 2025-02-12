@@ -55,7 +55,7 @@ const ECR_PAGE_LIMIT = 10
 
 const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => {
   const matchingPods = await k8Client.listNamespacedPod(
-    'default',
+    config.server.namespace,
     'false',
     false,
     continueValue,

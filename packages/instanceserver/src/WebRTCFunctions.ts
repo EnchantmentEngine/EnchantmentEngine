@@ -450,7 +450,7 @@ export async function handleWebRtcTransportCreate(
       const serverResult = await serverState.k8AgonesClient.listNamespacedCustomObject(
         'agones.dev',
         'v1',
-        'default',
+        config.server.namespace,
         'gameservers'
       )
       const thisGs = (serverResult?.body as any).items.find(

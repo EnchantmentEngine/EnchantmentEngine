@@ -44,12 +44,12 @@ export const createExecutorJob = async (
 
   const name = jobBody.metadata!.name!
   try {
-    await k8BatchClient.deleteNamespacedJob(name, 'default', undefined, undefined, 0, undefined, 'Background')
+    await k8BatchClient.deleteNamespacedJob(name, config.server.namespace, undefined, undefined, 0, undefined, 'Background')
   } catch (err) {
     console.log('Old job did not exist, continuing...')
   }
 
-  await k8BatchClient.createNamespacedJob('default', jobBody)
+  await k8BatchClient.createNamespacedJob(config.server.namespace, jobBody)
   let counter = 0
   return new Promise((resolve, reject) => {
     if (!waitForFinish) resolve({})

@@ -123,7 +123,7 @@ export const removePod = async (app: Application, podName: string) => {
 
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (k8DefaultClient) {
-      const podsResponse = await k8DefaultClient.deleteNamespacedPod(podName, 'default')
+      const podsResponse = await k8DefaultClient.deleteNamespacedPod(podName, config.server.namespace)
       return getServerPodInfo(podsResponse.body)
     }
   } catch (e) {
@@ -144,7 +144,7 @@ export const getPodsData = async (
   try {
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     const podsResponse = await k8DefaultClient.listNamespacedPod(
-      'default',
+      config.server.namespace,
       undefined,
       false,
       undefined,
@@ -177,7 +177,7 @@ const getGameserversData = async (labelSelector: string, id: string, label: stri
     const gameserversResponse = await k8AgonesClient.listNamespacedCustomObject(
       'agones.dev',
       'v1',
-      'default',
+      config.server.namespace,
       'gameservers',
       undefined,
       false,
@@ -305,7 +305,7 @@ export const getServerLogs = async (podName: string, containerName: string, app:
     if (k8DefaultClient) {
       const podLogs = await k8DefaultClient.readNamespacedPodLog(
         podName,
-        'default',
+        config.server.namespace,
         containerName,
         undefined,
         false,

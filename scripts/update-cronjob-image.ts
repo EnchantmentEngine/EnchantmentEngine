@@ -32,6 +32,7 @@ import dotenv from 'dotenv-flow'
 
 import { projectPath, ProjectType } from '@ir-engine/common/src/schema.type.module'
 import { getState } from '@ir-engine/hyperflux'
+import config from '@ir-engine/server-core/src/appconfig'
 import { createFeathersKoaApp, serverJobPipe } from '@ir-engine/server-core/src/createApp'
 import { getValidPodName } from '@ir-engine/server-core/src/k8s-job-helper'
 import { getCronJobBody } from '@ir-engine/server-core/src/projects/project/project-helper'
@@ -87,7 +88,7 @@ cli.main(async () => {
         try {
           await k8BatchClient.patchNamespacedCronJob(
             getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${project.name}`),
-            'default',
+            config.server.namespace,
             getCronJobBody(project, `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`),
             undefined,
             undefined,
@@ -102,7 +103,7 @@ cli.main(async () => {
           )
         } catch (err) {
           await k8BatchClient.createNamespacedCronJob(
-            'default',
+            config.server.namespace,
             getCronJobBody(project, `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`)
           )
         }

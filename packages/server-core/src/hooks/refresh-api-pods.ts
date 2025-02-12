@@ -39,7 +39,7 @@ export default async () => {
       logger.info('Attempting to refresh API pods')
       const refreshApiPodResponse = await k8AppsClient.patchNamespacedDeployment(
         `${config.server.releaseName}-ir-engine-api`,
-        'default',
+        config.server.namespace,
         {
           spec: {
             template: {

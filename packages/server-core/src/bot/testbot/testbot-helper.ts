@@ -36,7 +36,7 @@ export const getTestbotPod = async (app: Application) => {
   if (k8DefaultClient) {
     try {
       const jobName = `${config.server.releaseName}-ir-engine-testbot`
-      const podsResult = await k8DefaultClient.listNamespacedPod('default')
+      const podsResult = await k8DefaultClient.listNamespacedPod(config.server.namespace)
       let pods: TestBot[] = []
       for (const pod of podsResult.body.items) {
         let labels = pod.metadata!.labels
@@ -67,7 +67,7 @@ export const runTestbotJob = async (app: Application): Promise<SpawnTestBot> => 
   if (k8BatchClient) {
     try {
       const jobName = `${config.server.releaseName}-ir-engine-testbot`
-      const oldJobResult = await k8BatchClient.readNamespacedJob(jobName, 'default')
+      const oldJobResult = await k8BatchClient.readNamespacedJob(jobName, config.server.namespace)
 
       if (oldJobResult && oldJobResult.body) {
         // Removed unused properties
@@ -80,7 +80,7 @@ export const runTestbotJob = async (app: Application): Promise<SpawnTestBot> => 
 
         const deleteJobResult = await k8BatchClient.deleteNamespacedJob(
           jobName,
-          'default',
+          config.server.namespace,
           undefined,
           undefined,
           0,
@@ -89,7 +89,7 @@ export const runTestbotJob = async (app: Application): Promise<SpawnTestBot> => 
         )
 
         if (deleteJobResult.body.status === 'Success') {
-          await k8BatchClient.createNamespacedJob('default', oldJobResult.body)
+          await k8BatchClient.createNamespacedJob(config.server.namespace, oldJobResult.body)
 
           return { status: true, message: 'Bot spawned successfully' }
         }
