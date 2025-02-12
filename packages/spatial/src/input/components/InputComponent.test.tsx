@@ -49,14 +49,13 @@ import {
   SystemDefinitions,
   UndefinedEntity,
   createEntity,
-  isAncestor,
-  removeEntity
+  isAncestor
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { Raycaster } from 'three'
 import { assertArray } from '../../../tests/util/assert'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
-import { initializeSpatialEngine } from '../../initializeEngine'
+import { initializeSpatialEngine, initializeSpatialViewer } from '../../initializeEngine'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import ClientInputFunctions from '../functions/ClientInputFunctions'
 import {
@@ -144,6 +143,16 @@ export function getBoolAtPositionForIndex(id: number, pos: number): boolean {
 }
 
 describe('InputComponent', () => {
+  beforeEach(async () => {
+    createEngine()
+    initializeSpatialEngine()
+    initializeSpatialViewer()
+  })
+
+  afterEach(() => {
+    return destroyEngine()
+  })
+
   describe('IDs', () => {
     it('should initialize the InputComponent.name field with the expected value', () => {
       assert.equal(InputComponent.name, 'InputComponent')
@@ -151,40 +160,18 @@ describe('InputComponent', () => {
   })
 
   describe('onInit', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     it('should initialize the component with the expected default values', () => {
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
       const data = getComponent(testEntity, InputComponent)
       assertInputComponentEq(data, InputComponentDefaults)
     })
   }) // << onInit
 
   describe('onSet', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     it('should change the values of an initialized InputComponent', () => {
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
       const before = getComponent(testEntity, InputComponent)
       assertInputComponentEq(before, InputComponentDefaults)
       const Expected = {
@@ -201,20 +188,9 @@ describe('InputComponent', () => {
   }) // << onSet
 
   describe('toJSON', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     it("should serialize the component's default data as expected", () => {
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
       const json = serializeComponent(testEntity, InputComponent)
       assert.ok(Array.isArray(json.inputSinks))
       assert.equal(json.inputSinks, 'Self')
@@ -223,14 +199,6 @@ describe('InputComponent', () => {
   })
 
   describe('getInputEntity', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     it('should return UndefinedEntity when the entity does not have an InputComponent or an InputSinkComponent', () => {
       const testEntity = createEntity()
       const result = InputComponent.getInputEntity(testEntity)
@@ -286,14 +254,6 @@ describe('InputComponent', () => {
   })
 
   describe('getInputSourceEntities', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     it('should return a combined list of all entities contained in the InputComponent.inputSources of the entity returned by InputComponent.getInputEntity(entityContext)', () => {
       const inputEntity = createEntity()
       const testEntity = createEntity()
@@ -309,14 +269,6 @@ describe('InputComponent', () => {
   })
 
   describe('getButtons', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     it('should return a proxy that checks button states from input sources', () => {
       const Expected = [MouseButton.PrimaryClick, MouseButton.SecondaryClick, MouseButton.AuxiliaryClick]
       const Down = { down: true }
@@ -490,24 +442,6 @@ describe('InputComponent', () => {
   })
 
   describe('getAxes', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-
-      // Initialize ReferenceSpaceState with required entities
-      const localFloorEntity = createEntity()
-      const viewerEntity = createEntity()
-      getMutableState(ReferenceSpaceState).localFloorEntity.set(localFloorEntity)
-      getMutableState(ReferenceSpaceState).viewerEntity.set(viewerEntity)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     it('should merge axes from input sources', () => {
       // Create test entity and components
       const testEntity = createEntity()
@@ -601,19 +535,6 @@ describe('InputComponent', () => {
   })
 
   describe('useHasFocus', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     it('should update its state to true whenever the ammount of entities returned by InputComponent.getInputSourceEntities is bigger than 0', () => {
       const effectSpy = sinon.spy()
       const reactorSpy = sinon.spy()
@@ -625,6 +546,8 @@ describe('InputComponent', () => {
       }
 
       // Check the data before
+      const testEntity = createEntity()
+      setComponent(testEntity, InputComponent)
       const before = InputComponent.getInputSourceEntities(testEntity).length == 0
       assert.ok(before)
       assert.ok(reactorSpy.notCalled)
@@ -684,19 +607,6 @@ describe('InputComponent', () => {
   /** @note This `describe` block is testing a function that creates a matrix of 4*4*3 different branches.
    *  As such, it is programatically creating a total of 48 different unit test cases. */
   describe('useExecuteWithInput', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, InputComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
     // Define the top-level cases
     const orders = [
       InputExecutionOrder.Before,
@@ -757,6 +667,8 @@ describe('InputComponent', () => {
           assert.equal(reactorSpy.callCount, 0)
           assert.ok(!executeSpy.called)
 
+          const testEntity = createEntity()
+          setComponent(testEntity, InputComponent)
           const root = startReactor(() => {
             return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
           }) as ReactorRoot
@@ -784,15 +696,6 @@ describe('InputComponent', () => {
   })
 
   describe('reactor', () => {
-    beforeEach(() => {
-      createEngine()
-      initializeSpatialEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true`', async () => {
       const entity = getState(ReferenceSpaceState).localFloorEntity
 
