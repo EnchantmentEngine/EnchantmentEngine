@@ -157,7 +157,6 @@ describe('InputComponent', () => {
       createEngine()
       testEntity = createEntity()
       setComponent(testEntity, InputComponent)
-      document.body.focus() // make sure inputs are not discarded when refreshing input
     })
 
     afterEach(() => {

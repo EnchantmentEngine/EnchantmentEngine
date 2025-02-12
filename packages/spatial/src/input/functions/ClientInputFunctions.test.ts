@@ -46,28 +46,19 @@ import { XRSpaceComponent } from '../../xr/XRComponents'
 import { InputComponent } from '../components/InputComponent'
 import { InputPointerComponent } from '../components/InputPointerComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
-import { AnyButton, ButtonState, ButtonStateMap, createInitialButtonState, MouseButton } from '../state/ButtonState'
+import { AnyButton, ButtonState, createInitialButtonState, MouseButton } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
 import ClientInputFunctions from './ClientInputFunctions'
 
 describe('ClientInputFunctions', () => {
-  beforeEach(async () => {
-    try {
-      await destroyEngine()
-    } catch (e) {
-      // Ignore errors from destroying non-existent engine
-    }
+  beforeEach(() => {
     createEngine()
     // Initialize InputState
     getMutableState(InputState).capturingEntity.set(UndefinedEntity)
   })
 
-  afterEach(async () => {
-    try {
-      await destroyEngine()
-    } catch (e) {
-      // Ignore errors from destroying non-existent engine
-    }
+  afterEach(() => {
+    return destroyEngine()
   })
 
   describe('preventDefault', () => {
@@ -157,13 +148,11 @@ describe('ClientInputFunctions', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      createEngine()
       testEntity = createEntity()
     })
 
     afterEach(() => {
       removeEntity(testEntity)
-      return destroyEngine()
     })
 
     it('should add the `@param inputSources` to the `InputComponent.inputSources` of each entity in the ancestor.InputComponent.inputSinks list', () => {
@@ -193,40 +182,36 @@ describe('ClientInputFunctions', () => {
   })
 
   describe('cleanupButtonState', () => {
-    type ButtonData = ButtonStateMap<Partial<Record<string | number | symbol, ButtonState | undefined>>>
-
     it("should make the button's .down property false when it is true", () => {
-      const data = { key1: { down: true } as ButtonState } as ButtonData
-      assert.equal(data.key1?.down, true)
-      ClientInputFunctions.cleanupButtonState(data)
-      assert.equal(data.key1?.down, false)
+      const sourceEntity = createEntity()
+      const buttons = { key1: createInitialButtonState(sourceEntity, { down: true }) }
+      setComponent(sourceEntity, InputSourceComponent, { buttons })
+      assert.equal(buttons.key1?.down, true)
+      ClientInputFunctions.refreshInputs(true)
+      assert.equal(buttons.key1?.down, false)
     })
 
     it('should remove the button with the given `@param key` from the `@param buttons` list if `@param hasFocus` is false', () => {
-      const data = { key1: { down: true } as ButtonState } as ButtonData
-      assert.notEqual(data.key1, undefined)
-      ClientInputFunctions.cleanupButtonState(data)
-      assert.equal(data.key1, undefined)
+      const sourceEntity = createEntity()
+      const buttons = { key1: createInitialButtonState(sourceEntity, { down: true }) }
+      assert.notEqual(buttons.key1, undefined)
+      setComponent(sourceEntity, InputSourceComponent, { buttons })
+      ClientInputFunctions.refreshInputs(false)
+      assert.equal(buttons.key1, undefined)
     })
 
     it('should remove the button with the given `@param key` from the `@param buttons` list if the button is up', () => {
-      const data = { key1: { down: false, up: true } as ButtonState } as ButtonData
-      assert.notEqual(data.key1, undefined)
-      assert.equal(data.key1?.up, true)
-      ClientInputFunctions.cleanupButtonState(data)
-      assert.equal(data.key1, undefined)
+      const sourceEntity = createEntity()
+      const buttons = { key1: createInitialButtonState(sourceEntity, { down: false, up: true }) }
+      setComponent(sourceEntity, InputSourceComponent, { buttons })
+      assert.notEqual(buttons.key1, undefined)
+      assert.equal(buttons.key1?.up, true)
+      ClientInputFunctions.refreshInputs(true)
+      assert.equal(buttons.key1, undefined)
     })
   })
 
   describe('assignInputSources', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     it("should add the `@param sourceEid` entity, and entities that have an InputSourceComponent but no TransformComponent, to the list of InputComponent.inputSources of sourceEid's parent, when capturedEntity is undefined", () => {
       const parentEntity = createEntity()
       setComponent(parentEntity, InputComponent)
@@ -281,14 +266,6 @@ describe('ClientInputFunctions', () => {
   })
 
   describe('updatePointerDragging', () => {
-    beforeEach(async () => {
-      createEngine()
-    })
-
-    afterEach(() => {
-      return destroyEngine()
-    })
-
     describe('when the `@param pointerEntity` does not have an InputPointerComponent', () => {
       it('should not modify the dragging property', () => {
         const Btn = MouseButton.PrimaryClick
@@ -463,14 +440,12 @@ describe('ClientInputFunctions', () => {
     let testEntity: Entity
 
     beforeEach(async () => {
-      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, InputSourceComponent)
     })
 
     afterEach(() => {
       removeEntity(testEntity)
-      return destroyEngine()
     })
 
     function setupGamepadButton(buttonState: Partial<ButtonState>, gamepadState: Partial<ButtonState>) {

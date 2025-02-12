@@ -52,7 +52,11 @@ export const InputSourceComponent = defineComponent({
     )
   }),
 
-  onSet: (entity, component, args: { source?: XRInputSource; gamepad?: Gamepad } = {}) => {
+  onSet: (
+    entity,
+    component,
+    args: { buttons?: ButtonStateMap<any>; source?: XRInputSource; gamepad?: Gamepad } = {}
+  ) => {
     const source =
       args.source ??
       ({
@@ -91,6 +95,10 @@ export const InputSourceComponent = defineComponent({
 
     if (source.hand) {
       setComponent(entity, XRHandComponent)
+    }
+
+    if (args.buttons) {
+      component.buttons.set(args.buttons)
     }
   },
 
