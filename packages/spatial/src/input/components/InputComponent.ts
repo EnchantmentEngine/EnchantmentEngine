@@ -163,8 +163,8 @@ export const InputComponent = defineComponent({
 
           // Check cache first
           if (Object.hasOwn(cachedResults, prop)) {
+            if (!cachedResults[prop]) return undefined
             if (cachedResults[prop] && cachedResults[prop].consumed) return cachedResults[prop]
-            return undefined
           }
 
           let result = cachedResults[prop]
@@ -223,7 +223,7 @@ export const InputComponent = defineComponent({
                 }
               } else {
                 // For single button bindings, just return that button
-                result = cachedResults[prop] = result ?? findButtonState(binding)
+                result = cachedResults[prop] = findButtonState(binding)
                 console.log('Single button state:', result)
                 if (result) result.consumed = true
                 return result

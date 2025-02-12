@@ -51,7 +51,14 @@ import { XRState } from '../../xr/XRState'
 import { DefaultButtonBindings, InputComponent } from '../components/InputComponent'
 import { InputPointerComponent } from '../components/InputPointerComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
-import { AnyButton, ButtonState, ButtonStateMap, createInitialButtonState, MouseButton } from '../state/ButtonState'
+import {
+  AnyButton,
+  ButtonState,
+  ButtonStateMap,
+  createInitialButtonState,
+  MouseButton,
+  MouseScroll
+} from '../state/ButtonState'
 import { InputState } from '../state/InputState'
 import ClientInputFunctions from './ClientInputFunctions'
 import normalizeWheel from './normalizeWheel'
@@ -319,8 +326,8 @@ export const CanvasInputReactor = () => {
       const inputSourceComponent = getComponent(pointer, InputSourceComponent)
       const normalizedValues = normalizeWheel(event)
       const axes = inputSourceComponent.source.gamepad!.axes as number[]
-      axes[0] = normalizedValues.spinX
-      axes[1] = normalizedValues.spinY
+      axes[MouseScroll.HorizontalScroll] = normalizedValues.spinX
+      axes[MouseScroll.VerticalScroll] = normalizedValues.spinY
     }
 
     canvas.addEventListener('dragstart', ClientInputFunctions.preventDefault, false)

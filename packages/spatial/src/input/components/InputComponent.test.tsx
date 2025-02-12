@@ -158,6 +158,7 @@ describe('InputComponent', () => {
       createEngine()
       testEntity = createEntity()
       setComponent(testEntity, InputComponent)
+      document.body.focus() // make sure inputs are not discarded when refreshing input
     })
 
     afterEach(() => {
@@ -435,61 +436,77 @@ describe('InputComponent', () => {
 
       // Test case 1: No buttons
       inputSource.buttons.set({})
-      const result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      let result = InputComponent.getMergedButtons(testEntity, buttonAlias)
 
-      assert.equal(result.SingleButton, undefined)
-      assert.equal(result.ComboButtons, undefined)
+      assert.ok(!result.SingleButton)
+      assert.ok(!result.ComboButtons)
 
       // Test case 2: Single button pressed (not consumed)
+      ClientInputFunctions.refreshInputs(true)
       inputSource.buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, {
           pressed: true
         })
       })
-      ClientInputFunctions.refreshInputs()
+      result = InputComponent.getMergedButtons(testEntity, buttonAlias) // this is only necessary for reseting the type inference
       assert.ok(result.SingleButton?.pressed)
       assert.ok(result.SingleButton?.down, 'SingleButton.down should be true')
-      assert.equal(result.ComboButtons, undefined)
+      assert.ok(!result.ComboButtons)
 
       // Test case 2b: next input frame, button should not be down
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       assert.ok(result.SingleButton?.pressed)
       assert.ok(!result.SingleButton?.down, 'SingleButton.down should be false')
-      assert.equal(result.ComboButtons, undefined)
+      assert.ok(!result.ComboButtons)
 
       // Test case 3: Single button touched (should trigger touch state)
       inputSource.buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { touched: true, consumed: false })
       })
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       assert.ok(result.SingleButton?.touched)
       assert.ok(!result.SingleButton?.down)
-      assert.equal(result.ComboButtons, undefined)
+      assert.ok(!result.ComboButtons)
 
       // Test case 4: Partial combo pressed (should not trigger)
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       inputSource.buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
-      assert.equal(result.ComboButtons, undefined)
+      assert.ok(!result.ComboButtons)
       assert.ok(result.SingleButton?.down)
 
       // Test case 4b: Partial combo with different button (should not trigger)
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       inputSource.buttons.set({
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
-      assert.equal(result.ComboButtons, undefined)
-      assert.equal(result.SingleButton, undefined)
+      assert.ok(!result.ComboButtons)
+      assert.ok(!result.SingleButton)
 
       // Test case 5: Full combo pressed - first entity context
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
+      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
       })
       assert.ok(result.ComboButtons?.down)
-      assert.ok(result.ComboButtons?.down, 'Same entity context should be able to access consumed buttons')
+      assert.ok(result.ComboButtons?.pressed)
+      assert.ok(!result.SingleButton, 'SingleButton should not be available, as it is consumed')
+      assert.ok(!result.KeyA, 'KeyA should not be available, as it is consumed')
+      assert.ok(!result.KeyB, 'KeyB should not be available, as it is consumed')
+
+      ClientInputFunctions.refreshInputs(true)
+      getMutableComponent(testEntity, InputSourceComponent).buttons.set({
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
+      })
+      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
+      assert.ok(result.SingleButton?.down)
+      assert.ok(!result.KeyA, 'KeyA should not be available, as it is consumed by the alias')
+      assert.ok(result.KeyB?.down)
+      assert.ok(!result.ComboButtons, 'ComboButtons should not be available, as buttons are consumed')
 
       // Test case 5b: Different entity context cannot access consumed combo
       const entity2 = createEntity()
@@ -502,21 +519,23 @@ describe('InputComponent', () => {
       )
 
       // Test case 5c: Same entity context can access the combo again after input refresh
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       assert.ok(result2.ComboButtons?.pressed)
 
       // Test case 6: Full combo with mixed states
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
+      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
       })
-      assert.ok(result.ComboButtons?.down, 'Combo should only be down if all buttons are down')
+      assert.ok(result.ComboButtons?.down)
+      assert.ok(result.ComboButtons?.pressed)
       assert.ok(result.ComboButtons?.touched)
-      assert.ok(!result.ComboButtons?.pressed, 'Combo should only be pressed if all buttons are pressed')
 
       // Test case 7: Full combo with dragging/rotating states
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
+      result = InputComponent.getMergedButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true, consumed: false })
@@ -526,7 +545,7 @@ describe('InputComponent', () => {
       assert.ok(result.ComboButtons?.rotating)
 
       // Test case 8: Full combo with different values
-      ClientInputFunctions.refreshInputs()
+      ClientInputFunctions.refreshInputs(true)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5, consumed: false }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8, consumed: false })
@@ -564,7 +583,7 @@ describe('InputComponent', () => {
       // Create the `@param inputAlias` object
       const SomeAliasList = {
         SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll],
-        SomeWrongAxis: [2, 3]
+        SomeWrongAxis: [10]
       }
       // Set the low and high values
       const OtherX = 2.0
@@ -594,7 +613,7 @@ describe('InputComponent', () => {
           hapticActuators: [],
           id: 'test-gamepad-1',
           index: 0,
-          mapping: 'standard' as GamepadMappingType,
+          mapping: '' as GamepadMappingType,
           timestamp: performance.now(),
           vibrationActuator: null
         } as unknown as Gamepad,
@@ -613,7 +632,7 @@ describe('InputComponent', () => {
           hapticActuators: [],
           id: 'test-gamepad-2',
           index: 0,
-          mapping: 'standard' as GamepadMappingType,
+          mapping: '' as GamepadMappingType,
           timestamp: performance.now(),
           vibrationActuator: null
         } as unknown as Gamepad,
@@ -621,23 +640,20 @@ describe('InputComponent', () => {
         hand: undefined
       } as unknown as XRInputSource)
 
+      const inputEntity = createEntity()
+      setComponent(inputEntity, InputComponent, { inputSources: [one, two] })
+
       // Create an inputSink entity that holds entity source one
       const sinkEntity = createEntity()
-      setComponent(sinkEntity, InputComponent)
-      getMutableComponent(sinkEntity, InputComponent).inputSources.set([one])
+      setComponent(sinkEntity, InputSinkComponent)
+      getMutableComponent(sinkEntity, InputSinkComponent).inputEntities.set([inputEntity])
 
-      // Set the parent as an input entity that holds entity source two
-      const parentEntity = createEntity()
-      setComponent(parentEntity, InputComponent)
-      getMutableComponent(parentEntity, InputComponent).inputSources.set([two])
-      setComponent(parentEntity, InputSinkComponent)
-      getMutableComponent(parentEntity, InputSinkComponent).inputEntities.set([sinkEntity])
-
-      // Set the parent as the parent of testEntity
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+      // Set the child entity as a child of the sink
+      const childEntity = createEntity()
+      setComponent(childEntity, EntityTreeComponent, { parentEntity: sinkEntity })
 
       // Run the code to get the result
-      const merged = InputComponent.getMergedAxes(testEntity, SomeAliasList)
+      const merged = InputComponent.getMergedAxes(childEntity, SomeAliasList)
       const resultArray = [merged[0], merged[1], merged[2], merged[3]] as Axes
 
       // Check that the result is what we expect it to be
@@ -645,6 +661,8 @@ describe('InputComponent', () => {
       assertArray.eq(resultArray, Expected)
       assert.equal(merged.HorizontalScroll, Expected[MouseScroll.HorizontalScroll])
       assert.equal(merged.VerticalScroll, Expected[MouseScroll.VerticalScroll])
+      assert.equal(merged.SomeAxisOne, BiggerY)
+      assert.equal(merged.SomeWrongAxis, 0)
     })
   })
 

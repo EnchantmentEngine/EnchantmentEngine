@@ -257,10 +257,8 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   }
 }
 
-export function refreshInputs() {
-  const hasFocus = typeof globalThis.document === 'undefined' ? true : document.hasFocus()
-
-  for (const eid of query([[InputSourceComponent]])) {
+export function refreshInputs(hasFocus = typeof globalThis.document === 'undefined' ? true : document.hasFocus()) {
+  for (const eid of query([InputSourceComponent])) {
     const source = getComponent(eid, InputSourceComponent)
     _refreshButtonState(source.buttons, hasFocus)
     // clear non-spatial emulated axes data end of each frame
