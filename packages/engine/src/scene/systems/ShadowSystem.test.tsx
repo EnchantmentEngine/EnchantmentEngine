@@ -33,6 +33,7 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
+  EntityContext,
   getComponent,
   getMutableComponent,
   removeEntity,
@@ -41,9 +42,10 @@ import {
   SystemUUID,
   UndefinedEntity
 } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, ReactorRoot, startReactor } from '@ir-engine/hyperflux'
 import { TransformComponent, TransformSystem } from '@ir-engine/spatial'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { destroySpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -52,6 +54,8 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { CSM } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { getShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
+import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
+import React from 'react'
 import { BoxGeometry, Material, Mesh, Quaternion, Raycaster, Vector3 } from 'three'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import {
@@ -59,6 +63,7 @@ import {
   ShadowSystem,
   ShadowSystemData,
   ShadowSystemFunctions,
+  ShadowSystemReactors,
   ShadowSystemState
 } from './ShadowSystem'
 
@@ -110,17 +115,59 @@ describe('ShadowSystemState', () => {
 }) //:: ShadowSystemState
 
 describe('EntityChildCSMReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on change [shadowComponent.receive, csm]', () => {
     it.todo(
       'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
       () => {}
     )
+
     it.todo('should not do anything (return early) if entityContext.ShadowComponent.receive is falsy', () => {})
     it.todo('should not do anything (return early) if entityContext.ObjectComponent is falsy', () => {})
+
+    /** @todo How to get the reactor to run ?? */
     it.todo(
       'should call `@param props.rendererEntity`.RendererComponent.csm.setupMaterial if entityContext.ObjectComponent.material is truthy',
-      () => {}
+      () => {
+        const Expected = false
+        // Set input & dependencies data
+        const resultSpy = vi.fn()
+        const csm = new CSM({})
+        csm.setupMaterial = resultSpy
+        const rendererEntity = createEntity()
+        setComponent(rendererEntity, RendererComponent, { csm: csm })
+        // Sanity check (input & dependencies)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run the process
+        const result = true
+        const root = startReactor(() => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
+          )
+        }) as ReactorRoot
+        root.run()
+        // Check the result (output)
+        expect(resultSpy).toHaveBeenCalledTimes(1)
+        expect(result).toBe(Expected)
+        // Cleanup (dependencies)
+      }
     )
+
     describe('on cleanup ..', () => {
       it.todo(
         '.. should call `@param props.rendererEntity`.RendererComponent.csm.teardownMaterial if entityContext.ObjectComponent.material is truthy',

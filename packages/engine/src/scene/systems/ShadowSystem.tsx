@@ -481,6 +481,7 @@ export const ShadowSystemFunctions = {
 }
 
 export const ShadowSystemReactors = {
+  EntityChildCSMReactor,
   RenderSettingsQueryReactor,
   DropShadowReactor,
   RendererShadowReactor
