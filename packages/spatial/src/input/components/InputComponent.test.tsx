@@ -52,27 +52,14 @@ import {
   isAncestor
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
-import { Raycaster } from 'three'
 import { assertArray } from '../../../tests/util/assert'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialEngine, initializeSpatialViewer } from '../../initializeEngine'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import ClientInputFunctions from '../functions/ClientInputFunctions'
-import {
-  ButtonStateMap,
-  KeyboardButton,
-  MouseButton,
-  MouseScroll,
-  createInitialButtonState
-} from '../state/ButtonState'
+import { KeyboardButton, MouseButton, MouseScroll, createInitialButtonState } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
-import {
-  DefaultButtonBindings,
-  InputButtonBindings,
-  InputComponent,
-  InputExecutionOrder,
-  InputExecutionSystemGroup
-} from './InputComponent'
+import { InputButtonBindings, InputComponent, InputExecutionOrder, InputExecutionSystemGroup } from './InputComponent'
 import { InputSinkComponent } from './InputSinkComponent'
 import { InputSourceComponent } from './InputSourceComponent'
 
@@ -101,39 +88,6 @@ function assertInputComponentEq(A: InputComponentData, B: InputComponentData): v
   assert.equal(A.highlight, B.highlight)
   assert.equal(A.grow, B.grow)
   assertArray.eq(A.inputSources, B.inputSources)
-}
-
-/** @description Alias to create a dummy entity with an InputComponent. Used for syntax ergonomics. */
-function createDummyEntity(): Entity {
-  const result = createEntity()
-  setComponent(result, InputComponent)
-  return result
-}
-
-/** @description Returns a dummy XRInputSource object containing the given `@param axes` */
-function getDummyAxes(axes: Axes) {
-  return {
-    source: {
-      gamepad: {
-        axes: axes,
-        buttons: [],
-        connected: true,
-        hapticActuators: [],
-        index: 0,
-        mapping: '' as GamepadMappingType,
-        vibrationActuator: null
-      },
-      gripSpace: undefined,
-      hand: undefined,
-      handedness: 'none',
-      profiles: [],
-      targetRayMode: 'screen',
-      targetRaySpace: {}
-    } as unknown as XRInputSource,
-    buttons: {} as Readonly<ButtonStateMap<typeof DefaultButtonBindings>>,
-    raycaster: new Raycaster(),
-    intersections: [] as Array<{ entity: Entity; distance: number }>
-  }
 }
 
 /** @description Returns whether or not the given `@param pos` should be true for the given `@param id` iteration index
