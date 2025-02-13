@@ -1125,7 +1125,7 @@ export async function getProjectPushJobBody(
 export const getCronJobBody = (project: ProjectType, image: string): object => {
   const projectJobName = cleanProjectName(project.name)
 
-  const jobSpec: k8s.V1Job = {
+  const jobSpec = {
     metadata: {
       name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectJobName}`),
       labels: {
@@ -1176,23 +1176,20 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
 
   // Only add cloud sql auth proxy if GOOGLE_PROJECT_ID is not an empty string
   if (process.env.GOOGLE_PROJECT_ID) {
-    jobSpec.spec.jobTemplate.spec.template.spec.initContainers = [
-      {
-        name: 'cloud-sql-proxy',
-        image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
-        restartPolicy: 'Always',
-        args: [
-          '--private-ip',
-          '--structured-logs',
-          '--port=3306',
-          '--auto-iam-authn',
-          `${process.env.GOOGLE_PROJECT_ID}:us-central1:${process.env.NAMESPACE}-mysql`
-        ],
-        securityContext: {
-          runAsNonRoot: true
-        }
+    jobSpec.spec.jobTemplate.spec.template.spec.containers.push({
+      name: 'cloud-sql-proxy',
+      image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
+      args: [
+        '--private-ip',
+        '--structured-logs',
+        '--port=3306',
+        '--auto-iam-authn',
+        `${process.env.GOOGLE_PROJECT_ID}:us-central1:${process.env.NAMESPACE}-mysql`
+      ],
+      securityContext: {
+        runAsNonRoot: true
       }
-    ]
+    })
   }
 
   return jobSpec
