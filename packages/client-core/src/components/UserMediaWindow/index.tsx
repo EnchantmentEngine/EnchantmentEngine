@@ -322,6 +322,7 @@ export const useUserMediaWindowHook = ({ peerID, type }: Props) => {
     isPiP: isPiP.value,
     volume,
     isScreen,
+    userId,
     username,
     selfUser,
     isSelf,
@@ -344,6 +345,7 @@ export const useUserMediaWindowHook = ({ peerID, type }: Props) => {
 
 export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
   const {
+    userId,
     selfUser,
     isPiP,
     volume,
@@ -462,7 +464,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
               }}
               onClick={() =>
                 PopoverState.showPopupover(
-                  <ReportMenu type={'Person'} userId={selfUser.id} locationId={currentLocation.id.value} />
+                  <ReportMenu type={'Person'} userId={userId} locationId={currentLocation.id.value} />
                 )
               }
             >
