@@ -31,7 +31,6 @@ import {
   ComponentJSONIDMap,
   defineComponent,
   Entity,
-  EntityTreeComponent,
   EntityUUID,
   generateEntityUUID,
   getComponent,
@@ -40,7 +39,7 @@ import {
   hasComponent,
   Layers,
   removeComponent,
-  removeEntityNodeRecursively,
+  removeEntity,
   setComponent,
   UndefinedEntity,
   useComponent,
@@ -229,23 +228,18 @@ export const GLTFComponentReactor = () => {
 
     const sceneIndex = options.document.scene || 0
     let aborted = false
-    let loadedEntities = null as Entity[] | null
     removeComponent(entity, AnimationComponent)
 
+    const sourceID = GLTFComponent.getInstanceID(entity)
+
     const unloadEntities = () => {
-      if (loadedEntities) {
-        // only remove entities that are still children of the root entity
-        const immediateChildren = loadedEntities.filter(
-          (child) => getOptionalComponent(child, EntityTreeComponent)?.parentEntity === entity
-        )
-        // parent entity may no longer exist, so get immediate children and remove recursively
-        for (const entity of immediateChildren) removeEntityNodeRecursively(entity)
-      }
+      // only remove entities that are still children of the gltf entity and were loaded as part of the model
+      const loadedEntities = SourceComponent.getEntitiesBySource(sourceID)
+      for (const entity of loadedEntities) removeEntity(entity)
     }
 
     GLTFLoaderFunctions.loadScene(options, sceneIndex).then(() => {
       documentLoaded.set(true)
-      loadedEntities = SourceComponent.getEntitiesBySource(entity)
 
       // force transform update for all entities in the model.
       // required to propagate dirty update auth to sim layers

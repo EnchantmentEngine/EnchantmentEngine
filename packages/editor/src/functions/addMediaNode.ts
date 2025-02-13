@@ -145,8 +145,9 @@ export async function addMediaNode(
        */
       AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
         (entity) => {
-          const entities = SourceComponent.getEntitiesBySource(entity)
           const rootEntity = getState(EditorState).rootEntity
+          const currentSource = GLTFComponent.getInstanceID(rootEntity)
+          const entities = SourceComponent.getEntitiesBySource(currentSource)
           const newSource = GLTFComponent.getInstanceID(rootEntity)
           for (const entity of entities) {
             setComponent(entity, SourceComponent, newSource)

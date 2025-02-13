@@ -23,13 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { iterateEntityNode } from '@ir-engine/ecs'
-import { defineComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { hookstate, none, useHookstate } from '@ir-engine/hyperflux'
 import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 const entitiesBySource = {} as Record<string, Entity[]>
 
@@ -70,21 +68,12 @@ export const SourceComponent = defineComponent({
     }
   },
 
-  useEntitiesBySource: (rootEntity: Entity) => {
-    const source = GLTFComponent.useInstanceID(rootEntity)
+  useEntitiesBySource: (source: string) => {
     return useHookstate(SourceComponent.entitiesBySourceState[source]).value as Entity[]
   },
 
-  getEntitiesBySource: (rootEntity: Entity) => {
-    const source = GLTFComponent.getInstanceID(rootEntity)
-    const entities = [] as Entity[]
-    iterateEntityNode(rootEntity, (childEntity) => {
-      if (rootEntity === childEntity) return
-      const src = getOptionalComponent(childEntity, SourceComponent)
-      if (src !== source) return
-      entities.push(childEntity)
-    })
-    return entities
+  getEntitiesBySource: (source: string) => {
+    return SourceComponent.entitiesBySourceState[source].value as Entity[]
   },
 
   entitiesBySourceState: hookstate(entitiesBySource),
