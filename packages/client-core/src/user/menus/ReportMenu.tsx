@@ -69,7 +69,7 @@ const ReportSuccessReportModal = ({ handleClose }) => (
 const ReportMenu = (props: ReportMenuProps) => {
   const { type } = props
   const reportedUserId = type === 'Person' ? props.userId : undefined
-  const reportedLocationId = type === 'Location' ? props.locationId : undefined
+  const reportedLocationId = props.locationId
   const userReportsMutation = useMutation(moderationPath)
   const selfUser = useHookstate(getMutableState(AuthState).user)
   const handleClose = async () => {

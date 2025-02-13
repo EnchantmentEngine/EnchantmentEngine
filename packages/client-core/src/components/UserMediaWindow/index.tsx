@@ -55,6 +55,7 @@ import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
 import { MediaStreamState } from '../../media/MediaStreamState'
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '../../media/PeerMediaChannelState'
+import { LocationState } from '../../social/services/LocationService'
 import ReportMenu from '../../user/menus/ReportMenu'
 import Draggable from './Draggable'
 import styles from './index.module.scss'
@@ -363,7 +364,7 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
   } = useUserMediaWindowHook({ peerID, type })
 
   const { t } = useTranslation()
-
+  const currentLocation = getMutableState(LocationState).currentLocation.location
   const { initialized, openChat } = useZendesk()
 
   const peerMediaChannelState = useHookstate(
@@ -459,7 +460,11 @@ export const UserMediaWindow = ({ peerID, type }: Props): JSX.Element => {
                 borderRadius: '10px',
                 backgroundColor: 'red'
               }}
-              onClick={() => PopoverState.showPopupover(<ReportMenu type={'Person'} userId={selfUser.id} />)}
+              onClick={() =>
+                PopoverState.showPopupover(
+                  <ReportMenu type={'Person'} userId={selfUser.id} locationId={currentLocation.id.value} />
+                )
+              }
             >
               <Icon
                 type="Report"
