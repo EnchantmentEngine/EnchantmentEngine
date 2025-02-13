@@ -159,9 +159,10 @@ describe('EntityChildCSMReactor', () => {
             { value: testEntity },
             React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
           )
-        }) as ReactorRoot
+        }, false) as ReactorRoot //Disabled auto start on reactor
         root.run()
         // Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(resultSpy).toHaveBeenCalledTimes(1)
         expect(result).toBe(Expected)
         // Cleanup (dependencies)

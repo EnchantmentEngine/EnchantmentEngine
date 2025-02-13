@@ -25,8 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { hookstate, State } from '@hookstate/core'
 import React, { Suspense, useTransition } from 'react'
-import Reconciler from 'react-reconciler'
+import Reconciler, { Fiber, FiberRoot } from 'react-reconciler'
 import { ConcurrentRoot, DefaultEventPriority } from 'react-reconciler/constants'
+import { isFiberSuspenseAndTimedOut } from 'react-reconciler/reflection'
 
 import { isDev } from './EnvironmentConstants'
 import { HyperFlux } from './StoreFunctions'
@@ -74,8 +75,12 @@ ReactorReconciler.injectIntoDevTools({
   version: '18.2.0'
 })
 
+export type ReflectionData = {
+  hasSuspendedOrTimeoutInTree: boolean
+}
+
 export type ReactorRoot = {
-  fiber: any
+  fiber: FiberRoot
   Reactor: React.FC
   ReactorContainer: React.FC
   isRunning: State<boolean>
@@ -84,6 +89,7 @@ export type ReactorRoot = {
   cleanupFunctions: Set<() => void>
   run: () => void
   stop: () => void
+  reflection: () => ReflectionData
 }
 
 type ErrorHandler = (error: Error, info: React.ErrorInfo) => void
@@ -130,6 +136,14 @@ export const ReactorErrorBoundary = createErrorBoundary<{ children: React.ReactN
   }
 )
 
+export const hasSuspendedOrTimeoutInTree = (fiber: Fiber, check = false) => {
+  check = check || isFiberSuspenseAndTimedOut(fiber)
+  if (check || fiber?.child == undefined) {
+    return check
+  }
+  return hasSuspendedOrTimeoutInTree(fiber.child, check)
+}
+
 export const ErrorBoundary = createErrorBoundary(function error(props, error?: Error) {
   if (error) {
     return null
@@ -144,7 +158,7 @@ export function useReactorRootContext(): ReactorRoot {
   return React.useContext(ReactorRootContext)
 }
 
-export function startReactor(Reactor: React.FC): ReactorRoot {
+export function startReactor(Reactor: React.FC, autoStart = true): ReactorRoot {
   const isStrictMode = false
   const concurrentUpdatesByDefaultOverride = true
   const identifierPrefix = ''
@@ -195,6 +209,12 @@ export function startReactor(Reactor: React.FC): ReactorRoot {
     reactorRoot.cleanupFunctions.clear()
   }
 
+  const reflection = () => {
+    return {
+      hasSuspendedOrTimeoutInTree: hasSuspendedOrTimeoutInTree(fiberRoot.current)
+    }
+  }
+
   const reactorRoot = {
     fiber: fiberRoot,
     Reactor,
@@ -205,10 +225,11 @@ export function startReactor(Reactor: React.FC): ReactorRoot {
     ReactorContainer: ReactorContainer as React.FC,
     promise: undefined!,
     run,
-    stop
+    stop,
+    reflection
   } as ReactorRoot
 
-  reactorRoot.run()
+  if (autoStart) reactorRoot.run()
 
   return reactorRoot
 }
