@@ -145,6 +145,7 @@ export const getPodsData = async (
     console.log('getPodsData', config.server, config.server.namespace)
     console.log('labelSelector', labelSelector)
     const k8DefaultClient = getState(ServerState).k8DefaultClient
+    console.log('k8DefaultClient', k8DefaultClient)
     const podsResponse = await k8DefaultClient.listNamespacedPod(
       config.server.namespace,
       undefined,
@@ -167,6 +168,7 @@ export const getPodsData = async (
 
     pods = getServerPodsInfo(items)
   } catch (err) {
+    console.log('error getting namespaced pod', err)
     logger.error('Failed to get pods info.', err)
   }
 
