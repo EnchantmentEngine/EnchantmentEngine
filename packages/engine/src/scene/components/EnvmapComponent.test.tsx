@@ -23,19 +23,62 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
+import { BoxProjectionPlugin, EnvMapComponent } from './EnvmapComponent'
 
 describe('EnvMapComponent', () => {
   describe('Fields', () => {
-    // name
-    // jsonID
+    it('should have the expected name', () => {
+      const result = EnvMapComponent.name
+      expect(result).toBeTruthy()
+      expect(result).toBe('EnvMapComponent')
+    })
+
+    it('should respect the naming convention for Components', () => {
+      const result = EnvMapComponent.name
+      expect(result).toBeTruthy()
+      expect(result.endsWith('Component')).toBeTruthy()
+    })
+
+    it('should initialize the *Component.jsonID field with the expected value', () => {
+      expect(EnvMapComponent.jsonID).toBe('EE_envmap')
+    })
   }) //:: Fields
-  describe('errors', () => {}) //:: errors
+
+  describe('errors', () => {
+    it('should contain the expected number of errors', () => {
+      expect(EnvMapComponent.errors.length).toBe(1)
+    })
+
+    it('should contain the expected error at id [0]', () => {
+      expect(EnvMapComponent.errors[0]).toBe('MISSING_FILE')
+    })
+  }) //:: errors
 }) //:: EnvMapComponent
 
 describe('BoxProjectionPlugin', () => {
   describe('Fields', () => {
-    // name
+    it('should have the expected name', () => {
+      const result = BoxProjectionPlugin.name
+      expect(result).toBeTruthy()
+      expect(result).toBe('BoxProjectionPluginComponent')
+    })
+
+    it('should respect the naming convention for Components', () => {
+      const result = BoxProjectionPlugin.name
+      expect(result).toBeTruthy()
+      expect(result.endsWith('Component')).toBeTruthy()
+    })
   }) //:: Fields
-  describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('reactor', () => {
+    describe('on mount', () => {
+      it.todo('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {})
+      describe('on cleanup', () => {
+        it.todo('.. should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {})
+      })
+    })
+  }) //:: reactor
 }) //:: BoxProjectionPlugin
