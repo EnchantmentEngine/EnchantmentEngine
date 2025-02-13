@@ -142,6 +142,8 @@ export const getPodsData = async (
   let pods: ServerPodInfoType[] = []
 
   try {
+    console.log('getPodsData', config.server, config.server.namespace)
+    console.log('labelSelector', labelSelector)
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     const podsResponse = await k8DefaultClient.listNamespacedPod(
       config.server.namespace,
@@ -151,10 +153,16 @@ export const getPodsData = async (
       undefined,
       labelSelector
     )
+    console.log('podsResponse', podsResponse)
 
     let items = podsResponse.body.items
+    console.log('items', items)
+    console.log('nameFilter', nameFilter)
     if (nameFilter) {
-      items = items.filter((item) => item.metadata?.name?.startsWith(nameFilter))
+      items = items.filter((item) => {
+        console.log('item', item, item.metadata, item.metadata?.name)
+        return item.metadata?.name?.startsWith(nameFilter)
+      })
     }
 
     pods = getServerPodsInfo(items)
