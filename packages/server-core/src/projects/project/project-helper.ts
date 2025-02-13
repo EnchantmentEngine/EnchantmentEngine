@@ -271,7 +271,7 @@ export const checkBuilderService = async (
         const containerName = 'ir-engine-builder'
 
         const builderPods = await k8DefaultClient.listNamespacedPod(
-            config.server.namespace,
+          config.server.namespace,
           undefined,
           false,
           undefined,
@@ -288,7 +288,7 @@ export const checkBuilderService = async (
 
           const builderLogs = await k8DefaultClient.readNamespacedPodLog(
             podName!,
-              config.server.namespace,
+            config.server.namespace,
             containerName,
             undefined,
             false,
@@ -708,8 +708,8 @@ export const getBranches = async (app: Application, url: string, params?: Projec
               branch.name === repoResponse.data.default_branch
                 ? 'main'
                 : branch.name === `${config.server.releaseName}-deployment`
-                ? 'deployment'
-                : 'generic'
+                  ? 'deployment'
+                  : 'generic'
           }
         })
       )
@@ -1124,7 +1124,8 @@ export async function getProjectPushJobBody(
 
 export const getCronJobBody = (project: ProjectType, image: string): object => {
   const projectJobName = cleanProjectName(project.name)
-  return {
+
+  const jobSpec: k8s.V1Job = {
     metadata: {
       name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectJobName}`),
       labels: {
@@ -1172,6 +1173,29 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
       }
     }
   }
+
+  // Only add cloud sql auth proxy if GOOGLE_PROJECT_ID is not an empty string
+  if (process.env.GOOGLE_PROJECT_ID) {
+    jobSpec.spec.jobTemplate.spec.template.spec.initContainers = [
+      {
+        name: 'cloud-sql-proxy',
+        image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
+        restartPolicy: 'Always',
+        args: [
+          '--private-ip',
+          '--structured-logs',
+          '--port=3306',
+          '--auto-iam-authn',
+          `${process.env.GOOGLE_PROJECT_ID}:us-central1:${process.env.NAMESPACE}-mysql`
+        ],
+        securityContext: {
+          runAsNonRoot: true
+        }
+      }
+    ]
+  }
+
+  return jobSpec
 }
 
 export async function getDirectoryArchiveJobBody(
@@ -1229,7 +1253,7 @@ export const createOrUpdateProjectUpdateJob = async (app: Application, projectNa
     try {
       await k8BatchClient.patchNamespacedCronJob(
         getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-          config.server.namespace,
+        config.server.namespace,
         getCronJobBody(project, image),
         undefined,
         undefined,
@@ -1255,7 +1279,7 @@ export const removeProjectUpdateJob = async (app: Application, projectName: stri
     if (k8BatchClient)
       await k8BatchClient.deleteNamespacedCronJob(
         getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-          config.server.namespace
+        config.server.namespace
       )
   } catch (err) {
     logger.error('Failed to remove project update cronjob %o', err)

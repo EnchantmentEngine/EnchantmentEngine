@@ -95,7 +95,7 @@ export async function getJobBody(
 
   name = getValidPodName(name)
 
-  return {
+  const jobSpec: k8s.V1Job = {
     metadata: {
       name,
       labels
@@ -124,6 +124,29 @@ export async function getJobBody(
       }
     }
   }
+
+  // Only add cloud sql auth proxy if GOOGLE_PROJECT_ID is not an empty string 
+  if (process.env.GOOGLE_PROJECT_ID) {
+    jobSpec.spec.template.spec.initContainers = [
+      {
+        name: 'cloud-sql-proxy',
+        image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
+        restartPolicy: 'Always',
+        args: [
+          '--private-ip',
+          '--structured-logs',
+          '--port=3306',
+          '--auto-iam-authn',
+          `${process.env.GOOGLE_PROJECT_ID}:us-central1:${process.env.NAMESPACE}-mysql`
+        ],
+        securityContext: {
+          runAsNonRoot: true
+        }
+      }
+    ]
+  }
+
+  return jobSpec
 }
 
 /**
