@@ -23,12 +23,31 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
+import { EnvMapBakeComponent } from './EnvMapBakeComponent'
 
 describe('EnvMapBakeComponent', () => {
   describe('Fields', () => {
-    // name
-    // jsonID
+    it('should have the expected name', () => {
+      const result = EnvMapBakeComponent.name
+      expect(result).toBeTruthy()
+      expect(result).toBe('EnvMapBakeComponent')
+    })
+
+    it('should respect the naming convention for Components', () => {
+      const result = EnvMapBakeComponent.name
+      expect(result).toBeTruthy()
+      expect(result.endsWith('Component')).toBeTruthy()
+    })
+
+    it('should initialize the *Component.jsonID field with the expected value', () => {
+      expect(EnvMapBakeComponent.jsonID).toBe('EE_envmapbake')
+    })
   }) //:: Fields
-  describe('reactor', () => {}) //:: reactor
+
+  /** @todo */
+  describe('reactor', () => {
+    it.todo('should call useHelperEntity with (entityContext, helperFactory) as arguments', () => {})
+  }) //:: reactor
 }) //:: EnvMapBakeComponent
