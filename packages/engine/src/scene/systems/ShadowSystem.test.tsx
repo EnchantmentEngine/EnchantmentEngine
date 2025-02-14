@@ -36,6 +36,7 @@ import {
   EntityContext,
   getComponent,
   getMutableComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   SystemDefinitions,
@@ -58,6 +59,7 @@ import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngi
 import React from 'react'
 import { BoxGeometry, Material, Mesh, Quaternion, Raycaster, Vector3 } from 'three'
 import { DropShadowComponent } from '../components/DropShadowComponent'
+import { ShadowComponent } from '../components/ShadowComponent'
 import {
   DropShadowSystem,
   ShadowSystem,
@@ -130,50 +132,168 @@ describe('EntityChildCSMReactor', () => {
   })
 
   describe('on change [shadowComponent.receive, csm]', () => {
-    it.todo(
-      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
-      () => {}
-    )
+    it('should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
+      // Set input & dependencies data
+      const resultSpy = vi.fn()
+      const csm = new CSM({})
+      csm.setupMaterial = resultSpy
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: csm })
+      getMutableComponent(rendererEntity, RendererComponent).csm.set(null)
+      setComponent(testEntity, ShadowComponent)
+      setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
+        )
+      }, false) as ReactorRoot
+      // Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
+      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run the process
+      root.run()
+      // Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+    })
 
-    it.todo('should not do anything (return early) if entityContext.ShadowComponent.receive is falsy', () => {})
-    it.todo('should not do anything (return early) if entityContext.ObjectComponent is falsy', () => {})
+    it('should not do anything (return early) if entityContext.ShadowComponent.receive is falsy', () => {
+      // Set input & dependencies data
+      const resultSpy = vi.fn()
+      const csm = new CSM({})
+      csm.setupMaterial = resultSpy
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: csm })
+      setComponent(testEntity, ShadowComponent, { receive: false })
+      setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
+        )
+      }, false) as ReactorRoot
+      // Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
+      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run the process
+      root.run()
+      // Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+    })
 
-    /** @todo How to get the reactor to run ?? */
-    it.todo(
-      'should call `@param props.rendererEntity`.RendererComponent.csm.setupMaterial if entityContext.ObjectComponent.material is truthy',
-      () => {
-        const Expected = false
+    it('should not do anything (return early) if entityContext.ObjectComponent is falsy', () => {
+      // Set input & dependencies data
+      const resultSpy = vi.fn()
+      const csm = new CSM({})
+      csm.setupMaterial = resultSpy
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: csm })
+      setComponent(testEntity, ShadowComponent, { receive: false })
+      setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
+      getMutableComponent(testEntity, ObjectComponent).set(null as unknown as Mesh)
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
+        )
+      }, false) as ReactorRoot
+      // Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
+      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ObjectComponent)).toBeFalsy()
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run the process
+      root.run()
+      // Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+    })
+
+    it('should call `@param props.rendererEntity`.RendererComponent.csm.setupMaterial if entityContext.ObjectComponent.material is truthy', () => {
+      // Set input & dependencies data
+      const resultSpy = vi.fn()
+      const csm = new CSM({})
+      csm.setupMaterial = resultSpy
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: csm })
+      setComponent(testEntity, ShadowComponent)
+      setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
+        )
+      }, false) as ReactorRoot
+      // Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
+      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
+      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run the process
+      root.run()
+      // Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+    })
+
+    describe('on cleanup ..', () => {
+      it('.. should call `@param props.rendererEntity`.RendererComponent.csm.teardownMaterial if entityContext.ObjectComponent.material is truthy', () => {
         // Set input & dependencies data
         const resultSpy = vi.fn()
         const csm = new CSM({})
-        csm.setupMaterial = resultSpy
+        csm.teardownMaterial = resultSpy
         const rendererEntity = createEntity()
         setComponent(rendererEntity, RendererComponent, { csm: csm })
-        // Sanity check (input & dependencies)
-        expect(resultSpy).not.toHaveBeenCalled()
-        // Run the process
-        const result = true
+        setComponent(testEntity, ShadowComponent)
+        setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
         const root = startReactor(() => {
           return React.createElement(
             EntityContext.Provider,
             { value: testEntity },
             React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
           )
-        }, false) as ReactorRoot //Disabled auto start on reactor
+        }, false) as ReactorRoot
+        // Sanity check (input & dependencies)
+        expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
+        expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
+        expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
+        expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
+        expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
+        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+        expect(resultSpy).not.toHaveBeenCalled()
+        // Run the process
         root.run()
+        root.stop()
         // Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(resultSpy).toHaveBeenCalledTimes(1)
-        expect(result).toBe(Expected)
-        // Cleanup (dependencies)
-      }
-    )
-
-    describe('on cleanup ..', () => {
-      it.todo(
-        '.. should call `@param props.rendererEntity`.RendererComponent.csm.teardownMaterial if entityContext.ObjectComponent.material is truthy',
-        () => {}
-      )
+      })
     })
   })
 }) //:: EntityChildCSMReactor
