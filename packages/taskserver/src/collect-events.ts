@@ -47,11 +47,13 @@ const collectLogs = async () => {
       let eventMessages: any[] = []
 
       // Fetch all events in the namespace
-      const eventsResponse = await k8DefaultClient.listNamespacedEvent(namespace)
+      const eventsResponse = await k8DefaultClient.listNamespacedEvent({
+        namespace
+      })
 
-      logger.info(eventsResponse.body.items.length)
+      logger.info(eventsResponse.items.length)
       if (lastTimestamp) {
-        eventMessages = eventsResponse.body.items
+        eventMessages = eventsResponse.items
           .filter((event) => {
             if (event.firstTimestamp) {
               new Date(event.firstTimestamp) > new Date(lastTimestamp)
@@ -63,7 +65,7 @@ const collectLogs = async () => {
             timestamp: event.firstTimestamp
           }))
       } else {
-        eventMessages = eventsResponse.body.items.map((event) => ({
+        eventMessages = eventsResponse.items.map((event) => ({
           name: event.involvedObject.name,
           message: event.message,
           timestamp: event.firstTimestamp

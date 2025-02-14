@@ -115,12 +115,12 @@ export async function cleanupOldInstanceservers(app: Application): Promise<void>
     },
     paginate: false
   })) as any as InstanceType[]
-  const instanceservers = await serverState.k8AgonesClient.listNamespacedCustomObject(
-    'agones.dev',
-    'v1',
-    config.server.namespace,
-    'gameservers'
-  )
+  const instanceservers = await serverState.k8AgonesClient.listNamespacedCustomObject({
+    group: 'agones.dev',
+    version: 'v1',
+    namespace: config.server.namespace,
+    plural: 'gameservers'
+  })
 
   await Promise.all(
     instances.map((instance) => {

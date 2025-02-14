@@ -174,39 +174,30 @@ export const updateBuilder = async (
   const helmMain = helmSettings.find((setting) => setting.key === EngineSettings.Helm.Builder)?.value
 
   const builderDeploymentName = `${config.server.releaseName}-builder`
-  const k8sAppsClient = getState(ServerState).k8AppsClient
+  const k8AppsClient = getState(ServerState).k8AppsClient
   const k8BatchClient = getState(ServerState).k8BatchClient
 
   if (k8BatchClient && config.server.releaseName !== 'local') {
     try {
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
-      const builderJob = await k8BatchClient.listNamespacedJob(
-        config.server.namespace,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderJob = await k8BatchClient.listNamespacedJob({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      const builderDeployments = await k8sAppsClient.listNamespacedDeployment(
-        config.server.namespace,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderDeployments = await k8AppsClient.listNamespacedDeployment({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      const isJob = builderJob && builderJob.body.items.length > 0
-      const isDeployment = builderDeployments && builderDeployments.body.items.length > 0
+      const isJob = builderJob && builderJob.items.length > 0
+      const isDeployment = builderDeployments && builderDeployments.items.length > 0
 
-      if (isJob)
-        await execAsync(`kubectl delete job --ignore-not-found=true ${builderJob.body.items[0].metadata!.name}`)
+      if (isJob) await execAsync(`kubectl delete job --ignore-not-found=true ${builderJob.items[0].metadata!.name}`)
       else if (isDeployment)
         await execAsync(
-          `kubectl delete deployment --ignore-not-found=true ${builderDeployments.body.items[0].metadata!.name}`
+          `kubectl delete deployment --ignore-not-found=true ${builderDeployments.items[0].metadata!.name}`
         )
 
       if (helmSettings.length > 0 && helmBuilder && helmBuilder.length > 0)
@@ -251,57 +242,39 @@ export const checkBuilderService = async (
 
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
-      const builderJob = await k8BatchClient.listNamespacedJob(
-        config.server.namespace,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderJob = await k8BatchClient.listNamespacedJob({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      if (builderJob && builderJob.body.items.length > 0) {
-        const succeeded = builderJob.body.items.filter((item) => item.status && item.status.succeeded === 1)
-        const failed = builderJob.body.items.filter((item) => item.status && item.status.failed === 1)
-        const running = builderJob.body.items.filter((item) => item.status && item.status.active === 1)
+      if (builderJob && builderJob.items.length > 0) {
+        const succeeded = builderJob.items.filter((item) => item.status && item.status.succeeded === 1)
+        const failed = builderJob.items.filter((item) => item.status && item.status.failed === 1)
+        const running = builderJob.items.filter((item) => item.status && item.status.active === 1)
         jobStatus.succeeded = succeeded.length > 0
         jobStatus.failed = failed.length > 0
         jobStatus.running = running.length > 0
       } else {
         const containerName = 'ir-engine-builder'
 
-        const builderPods = await k8DefaultClient.listNamespacedPod(
-          config.server.namespace,
-          undefined,
-          false,
-          undefined,
-          undefined,
-          builderLabelSelector
-        )
+        const builderPods = await k8DefaultClient.listNamespacedPod({
+          namespace: config.server.namespace,
+          labelSelector: builderLabelSelector
+        })
 
-        const runningBuilderPods = builderPods.body.items.filter(
-          (item) => item.status && item.status.phase === 'Running'
-        )
+        const runningBuilderPods = builderPods.items.filter((item) => item.status && item.status.phase === 'Running')
 
         if (runningBuilderPods.length > 0) {
           const podName = runningBuilderPods[0].metadata?.name
 
-          const builderLogs = await k8DefaultClient.readNamespacedPodLog(
-            podName!,
-            config.server.namespace,
-            containerName,
-            undefined,
-            false,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )
+          const builderLogs = await k8DefaultClient.readNamespacedPodLog({
+            name: podName!,
+            namespace: config.server.namespace,
+            container: containerName,
+            insecureSkipTLSVerifyBackend: false
+          })
 
-          jobStatus.succeeded = builderLogs.body.includes('sleep infinity')
+          jobStatus.succeeded = builderLogs.includes('sleep infinity')
           jobStatus.running = true
         }
       }
@@ -708,8 +681,8 @@ export const getBranches = async (app: Application, url: string, params?: Projec
               branch.name === repoResponse.data.default_branch
                 ? 'main'
                 : branch.name === `${config.server.releaseName}-deployment`
-                  ? 'deployment'
-                  : 'generic'
+                ? 'deployment'
+                : 'generic'
           }
         })
       )
@@ -1125,7 +1098,7 @@ export async function getProjectPushJobBody(
 export const getCronJobBody = (project: ProjectType, image: string): object => {
   const projectJobName = cleanProjectName(project.name)
 
-  const jobSpec: k8s.V1Job = {
+  const jobSpec: k8s.V1CronJob = {
     metadata: {
       name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectJobName}`),
       labels: {
@@ -1133,11 +1106,11 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
         'ir-engine/autoUpdate': 'true',
         'ir-engine/projectField': projectJobName,
         'ir-engine/projectId': project.id,
-        'ir-engine/release': process.env.RELEASE_NAME
+        'ir-engine/release': process.env.RELEASE_NAME!
       }
     },
     spec: {
-      schedule: project.updateSchedule,
+      schedule: project.updateSchedule!,
       concurrencyPolicy: 'Replace',
       successfulJobsHistoryLimit: 1,
       failedJobsHistoryLimit: 2,
@@ -1150,7 +1123,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
                 'ir-engine/autoUpdate': 'true',
                 'ir-engine/projectField': projectJobName,
                 'ir-engine/projectId': project.id,
-                'ir-engine/release': process.env.RELEASE_NAME
+                'ir-engine/release': process.env.RELEASE_NAME!
               }
             },
             spec: {
@@ -1176,7 +1149,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
 
   // Only add cloud sql auth proxy if GOOGLE_PROJECT_ID is not an empty string
   if (process.env.GOOGLE_PROJECT_ID) {
-    jobSpec.spec.jobTemplate.spec.template.spec.initContainers = [
+    jobSpec.spec!.jobTemplate.spec!.template.spec!.initContainers = [
       {
         name: 'cloud-sql-proxy',
         image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
@@ -1251,24 +1224,17 @@ export const createOrUpdateProjectUpdateJob = async (app: Application, projectNa
 
   if (k8BatchClient) {
     try {
-      await k8BatchClient.patchNamespacedCronJob(
-        getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        config.server.namespace,
-        getCronJobBody(project, image),
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        {
-          headers: {
-            'content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH
-          }
-        }
-      )
+      await k8BatchClient.patchNamespacedCronJob({
+        name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
+        namespace: config.server.namespace,
+        body: getCronJobBody(project, image)
+      })
     } catch (err) {
       logger.error('Could not find cronjob %o', err)
-      await k8BatchClient.createNamespacedCronJob(config.server.namespace, getCronJobBody(project, image))
+      await k8BatchClient.createNamespacedCronJob({
+        namespace: config.server.namespace,
+        body: getCronJobBody(project, image)
+      })
     }
   }
 }
@@ -1277,10 +1243,10 @@ export const removeProjectUpdateJob = async (app: Application, projectName: stri
   try {
     const k8BatchClient = getState(ServerState).k8BatchClient
     if (k8BatchClient)
-      await k8BatchClient.deleteNamespacedCronJob(
-        getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        config.server.namespace
-      )
+      await k8BatchClient.deleteNamespacedCronJob({
+        name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
+        namespace: config.server.namespace
+      })
   } catch (err) {
     logger.error('Failed to remove project update cronjob %o', err)
   }

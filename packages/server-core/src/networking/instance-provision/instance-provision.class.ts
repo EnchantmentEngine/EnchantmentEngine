@@ -110,7 +110,12 @@ export async function getFreeInstanceserver({
   }
   logger.info('Getting free instanceserver')
   const k8AgonesClient = getState(ServerState).k8AgonesClient
-  const serverResult = await k8AgonesClient.listNamespacedCustomObject('agones.dev', 'v1', config.server.namespace, 'gameservers')
+  const serverResult = await k8AgonesClient.listNamespacedCustomObject({
+    group: 'agones.dev',
+    version: 'v1',
+    namespace: config.server.namespace,
+    plural: 'gameservers'
+  })
   const readyServers = _.filter((serverResult.body as any).items, (server: any) => {
     const releaseMatch = releaseRegex.exec(server.metadata.name)
     let returned = server.status.state === 'Ready'
@@ -426,7 +431,10 @@ export async function checkForDuplicatedAssignments({
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (config.kubernetes.enabled)
       try {
-        k8DefaultClient.deleteNamespacedPod(assignResult.podName, config.server.namespace)
+        k8DefaultClient.deleteNamespacedPod({
+          name: assignResult.podName,
+          namespace: config.server.namespace
+        })
       } catch (err) {
         //
       }
@@ -644,12 +652,12 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
 
   async isCleanup(instance: InstanceType): Promise<boolean> {
     const k8AgonesClient = getState(ServerState).k8AgonesClient
-    const instanceservers = await k8AgonesClient.listNamespacedCustomObject(
-      'agones.dev',
-      'v1',
-      config.server.namespace,
-      'gameservers'
-    )
+    const instanceservers = await k8AgonesClient.listNamespacedCustomObject({
+      group: 'agones.dev',
+      version: 'v1',
+      namespace: config.server.namespace,
+      plural: 'gameservers'
+    })
     const isIds = (instanceservers?.body as any)?.items.map((is) =>
       isNameRegex.exec(is.metadata.name) != null ? isNameRegex.exec(is.metadata.name)![1] : null!
     )

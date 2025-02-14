@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { v1 } from '@google-cloud/artifact-registry'
-import * as k8s from '@kubernetes/client-node'
 import config from '@ir-engine/server-core/src/appconfig'
+import * as k8s from '@kubernetes/client-node'
 import cli from 'cli'
 
 cli.enable('status')
@@ -45,15 +45,13 @@ const K8S_PAGE_LIMIT = 50
 const ARTIFACT_REGISTRY_BATCH_DELETE_PAGE_SIZE = 50
 
 const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => {
-  const matchingPods = await k8Client.listNamespacedPod(
-    config.server.namespace,
-    'false',
-    false,
-    continueValue,
-    undefined,
+  const matchingPods = await k8Client.listNamespacedPod({
+    namespace: config.server.namespace,
+    pretty: 'false',
+    _continue: continueValue,
     labelSelector,
-    K8S_PAGE_LIMIT
-  )
+    limit: K8S_PAGE_LIMIT
+  })
   if (matchingPods?.body?.items) pods = pods.concat(matchingPods.body.items)
   if (matchingPods.body.metadata?._continue)
     return await getAllPods(k8Client, matchingPods.body.metadata._continue, labelSelector, pods)

@@ -37,6 +37,7 @@ import { createFeathersKoaApp, serverJobPipe } from '@ir-engine/server-core/src/
 import { getValidPodName } from '@ir-engine/server-core/src/k8s-job-helper'
 import { getCronJobBody } from '@ir-engine/server-core/src/projects/project/project-helper'
 import { ServerMode, ServerState } from '@ir-engine/server-core/src/ServerState'
+import * as k8s from '@kubernetes/client-node'
 
 dotenv.config({
   path: appRootPath.path,
@@ -86,26 +87,37 @@ cli.main(async () => {
     if (k8BatchClient)
       for (const project of autoUpdateProjects) {
         try {
+          const headerPatchMiddleware = new PromiseMiddlewareWrapper({
+            pre: async (requestContext) => {
+              requestContext.setHeaderParam('Content-type', 'application/merge-patch+json')
+              return requestContext
+            },
+            post: async (responseContext) => responseContext
+          })
+
+          const configuration = new k8s.createConfiguration({
+            // uncomment once https://github.com/kubernetes-client/javascript/issues/2160 is resolved
+            // middleware: [headerPatchMiddleware],
+          })
           await k8BatchClient.patchNamespacedCronJob(
-            getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${project.name}`),
-            config.server.namespace,
-            getCronJobBody(project, `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`),
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
             {
-              headers: {
-                'content-type': 'application/merge-patch+json'
-              }
-            }
+              name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${project.name}`),
+              namespace: config.server.namespace,
+              body: getCronJobBody(
+                project,
+                `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`
+              )
+            },
+            configuration
           )
         } catch (err) {
-          await k8BatchClient.createNamespacedCronJob(
-            config.server.namespace,
-            getCronJobBody(project, `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`)
-          )
+          await k8BatchClient.createNamespacedCronJob({
+            namespace: config.server.namespace,
+            body: getCronJobBody(
+              project,
+              `${options.repoUrl}/${options.repoName}-api:${options.tag}__${options.startTime}`
+            )
+          })
         }
       }
     cli.exit(0)

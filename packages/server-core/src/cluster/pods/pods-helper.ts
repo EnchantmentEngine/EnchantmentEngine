@@ -123,8 +123,11 @@ export const removePod = async (app: Application, podName: string) => {
 
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (k8DefaultClient) {
-      const podsResponse = await k8DefaultClient.deleteNamespacedPod(podName, config.server.namespace)
-      return getServerPodInfo(podsResponse.body)
+      const podsResponse = await k8DefaultClient.deleteNamespacedPod({
+        name: podName,
+        namespace: config.server.namespace
+      })
+      return getServerPodInfo(podsResponse)
     }
   } catch (e) {
     logger.error(e)
@@ -146,17 +149,13 @@ export const getPodsData = async (
     console.log('labelSelector', labelSelector)
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     console.log('k8DefaultClient', k8DefaultClient)
-    const podsResponse = await k8DefaultClient.listNamespacedPod(
-      config.server.namespace,
-      undefined,
-      false,
-      undefined,
-      undefined,
+    const podsResponse = await k8DefaultClient.listNamespacedPod({
+      namespace: config.server.namespace,
       labelSelector
-    )
+    })
     console.log('podsResponse', podsResponse)
 
-    let items = podsResponse.body.items
+    let items = podsResponse.items
     console.log('items', items)
     console.log('nameFilter', nameFilter)
     if (nameFilter) {
@@ -184,18 +183,14 @@ const getGameserversData = async (labelSelector: string, id: string, label: stri
 
   try {
     const k8AgonesClient = getState(ServerState).k8AgonesClient
-    const gameserversResponse = await k8AgonesClient.listNamespacedCustomObject(
-      'agones.dev',
-      'v1',
-      config.server.namespace,
-      'gameservers',
-      undefined,
-      false,
-      undefined,
-      undefined,
+    const gameserversResponse = await k8AgonesClient.listNamespacedCustomObject({
+      group: 'agones.dev',
+      version: 'v1',
+      namespace: config.server.namespace,
+      plural: 'gameservers',
       labelSelector
-    )
-    gameservers = getServerPodsInfo((gameserversResponse.body as any).items)
+    })
+    gameservers = getServerPodsInfo((gameserversResponse as any).items)
   } catch (err) {
     logger.error('Failed to get pods info.', err)
   }
@@ -313,22 +308,12 @@ export const getServerLogs = async (podName: string, containerName: string, app:
 
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (k8DefaultClient) {
-      const podLogs = await k8DefaultClient.readNamespacedPodLog(
-        podName,
-        config.server.namespace,
-        containerName,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )
-
-      serverLogs = podLogs.body
+      serverLogs = await k8DefaultClient.readNamespacedPodLog({
+        name: podName,
+        namespace: config.server.namespace,
+        container: containerName,
+        insecureSkipTLSVerifyBackend: false
+      })
     }
   } catch (e) {
     logger.error(e)

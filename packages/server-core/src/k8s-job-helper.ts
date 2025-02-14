@@ -44,12 +44,17 @@ export const createExecutorJob = async (
 
   const name = jobBody.metadata!.name!
   try {
-    await k8BatchClient.deleteNamespacedJob(name, config.server.namespace, undefined, undefined, 0, undefined, 'Background')
+    await k8BatchClient.deleteNamespacedJob({
+      name,
+      namespace: config.server.namespace,
+      gracePeriodSeconds: 0,
+      propagationPolicy: 'Background'
+    })
   } catch (err) {
     console.log('Old job did not exist, continuing...')
   }
 
-  await k8BatchClient.createNamespacedJob(config.server.namespace, jobBody)
+  await k8BatchClient.createNamespacedJob({ namespace: config.server.namespace, body: jobBody })
   let counter = 0
   return new Promise((resolve, reject) => {
     if (!waitForFinish) resolve({})
@@ -118,8 +123,7 @@ export async function getJobBody(
                 return { name: key, value: value }
               })
             }
-          ],
-          restartPolicy: 'Never'
+          ]
         }
       }
     }
@@ -127,7 +131,7 @@ export async function getJobBody(
 
   // Only add initContainer if GOOGLE_PROJECT_ID is not an empty string
   if (process.env.GOOGLE_PROJECT_ID) {
-    jobSpec.spec.template.spec.initContainers = [
+    jobSpec.spec!.template.spec!.initContainers = [
       {
         name: 'cloud-sql-proxy',
         image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
