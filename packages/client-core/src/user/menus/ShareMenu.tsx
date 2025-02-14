@@ -34,8 +34,9 @@ import { InviteCode, InviteData, authenticationSettingPath } from '@ir-engine/co
 import { useMutableState } from '@ir-engine/hyperflux'
 
 import { useFind } from '@ir-engine/common'
-import { Checkbox, Input } from '@ir-engine/ui'
-import { Copy03Lg, Send01Lg } from '@ir-engine/ui/src/icons'
+import { Button, Input } from '@ir-engine/ui'
+import { Copy03Lg, Send01Lg, Share06Sm } from '@ir-engine/ui/src/icons'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { InviteService } from '../../social/services/InviteService'
 import { AuthState } from '../services/AuthService'
 
@@ -149,15 +150,7 @@ const ShareMenu = (): JSX.Element => {
   const { t } = useTranslation()
   const refLink = useRef() as React.MutableRefObject<HTMLInputElement>
 
-  const {
-    copyLinkToClipboard,
-    packageInvite,
-    handleChangeToken,
-    token,
-    shareLink,
-    isSpectatorMode,
-    toggleSpectatorMode
-  } = useShareMenuHooks({
+  const { copyLinkToClipboard, packageInvite, handleChangeToken, token, shareLink } = useShareMenuHooks({
     refLink
   })
 
@@ -178,13 +171,13 @@ const ShareMenu = (): JSX.Element => {
   const authSetting = useFind(authenticationSettingPath).data.at(0)
 
   const getConnectPlaceholder = () => {
-    let smsMagicLink,
+    let smsMagicLink = false,
       emailMagicLink = false
 
     if (authSetting?.authStrategies) {
-      for (let item of authSetting.authStrategies) {
-        if (item.smsMagicLink) smsMagicLink = true
-        if (item.emailMagicLink) emailMagicLink = true
+      for (const authStrategies of authSetting.authStrategies) {
+        if (authStrategies.smsMagicLink) smsMagicLink = true
+        if (authStrategies.emailMagicLink) emailMagicLink = true
       }
 
       if (emailMagicLink && smsMagicLink) {
@@ -200,25 +193,13 @@ const ShareMenu = (): JSX.Element => {
   }
 
   return (
-    <div className="relative z-50 h-fit max-h-[90vh] min-w-[720px] overflow-y-auto rounded-2xl bg-surface-1 p-6 mdh:max-h-[60vh] mdh:w-[50vw] mdh:max-w-2xl mdh:p-10">
-      <div className="grid grid-cols-3 gap-x-3 gap-y-3">
+    <div className="relative z-50 h-fit max-h-[90vh] min-w-[720px] rounded-2xl bg-surface-1 pt-[16.5px] mdh:max-h-[60vh] mdh:w-[50vw] mdh:max-w-2xl">
+      <div className="mx-8 grid grid-cols-3 gap-x-3 gap-y-3">
         <div className="col-span-1 mdh:col-span-full">
-          <div className="mb-3 flex w-full items-center justify-center">
-            <div className="flex justify-center gap-x-4">
-              <button
-                className="rounded-3xl bg-gray-800 px-6 py-2"
-                onClick={() => window.open(questShareLink, '_blank')}
-              >
-                {t('user:usermenu.share.shareQuest')}
-              </button>
-
-              <button
-                className="text-text-secondary hover:text-text-primary"
-                onClick={() => copyToClipboard(questShareLink.toString())}
-              >
-                <Copy03Lg />
-              </button>
-            </div>
+          <div className="mb-[16.5px] flex w-full items-center justify-center">
+            <Text fontWeight="medium" className="text-text-primary">
+              Share this location
+            </Text>
           </div>
 
           <div className="flex w-full items-center justify-center ">
@@ -229,12 +210,6 @@ const ShareMenu = (): JSX.Element => {
         </div>
 
         <div className="col-span-2 grid grid-cols-1 gap-y-3 mdh:col-span-full">
-          <Checkbox
-            label={t('user:usermenu.share.lbl-spectator-mode')}
-            checked={isSpectatorMode}
-            onChange={toggleSpectatorMode}
-          />
-
           <Input
             readOnly
             value={shareLink}
@@ -292,6 +267,12 @@ const ShareMenu = (): JSX.Element => {
             }}
           />
         </div>
+      </div>
+      <div className="mt-4 flex w-full items-center justify-center border-t-[0.5px] border-[#212226] py-[11px]">
+        <Button variant="secondary" size="l">
+          <Share06Sm />
+          {t('user:usermenu.share.lbl-share')}
+        </Button>
       </div>
     </div>
   )
