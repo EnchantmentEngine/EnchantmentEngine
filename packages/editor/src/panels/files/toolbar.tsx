@@ -348,7 +348,7 @@ export function PanelToolbar({
   utilsComponent?: React.ReactNode
 }) {
   const { t } = useTranslation()
-  const { createNewFolder } = useCurrentFiles()
+  const { createNewFolder, refreshDirectory } = useCurrentFiles()
 
   const files = useMutableState(SelectedFilesState).value.filter((file) => !file.isFolder)
 
@@ -377,6 +377,7 @@ export function PanelToolbar({
       const resourceTag = resource.tags
       await API.instance.service(staticResourcePath).patch(resource.id, { tags: [...resourceTag, ...tags] })
     }
+    refreshDirectory()
   }
 
   return (

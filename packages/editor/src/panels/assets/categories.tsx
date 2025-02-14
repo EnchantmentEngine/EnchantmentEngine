@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React from 'react'
@@ -181,7 +181,7 @@ export default function CategoriesList({ selected, onClick }) {
     if (files.length) {
       setSidebarSections({
         ...sidebarSections,
-        files: [...folderCategories.get({ noproxy: true })] as AssetCategoryNode[]
+        files: [...folderCategories.get(NO_PROXY)] as AssetCategoryNode[]
       })
     }
   }, [assetCategories, folderCategories.value])

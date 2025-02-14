@@ -48,7 +48,8 @@ const AssetsQueryContext = createContext({
   }
 })
 
-export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
+const START_DEPTH = 1
+export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial, START_DEPTH)
 
 export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const search = useHookstate({ local: '', query: '' })
