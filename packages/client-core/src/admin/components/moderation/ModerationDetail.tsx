@@ -50,6 +50,13 @@ export const ModerationDetail = ({
   const { t } = useTranslation()
   const moderationMutation = useMutation(moderationPath)
   const moderationBanMutation = useMutation(moderationBanPath)
+  const moderationBanQuery = useFind(moderationBanPath, {
+    query: {
+      action: 'admin',
+      banUserId: report.reportedUserId
+    }
+  })
+
   const handleMarkAsHandled = () => {
     const result = moderationMutation.patch(report.id, {
       status: 'Resolved'
@@ -68,24 +75,40 @@ export const ModerationDetail = ({
   }
 
   const handleBanUser = () => {
-    moderationBanMutation
-      .create({
-        banUserId: report.reportedUserId,
-        banned: true,
-        banReason: report.abuseReason,
-        reportedAt: report.reportedAt,
-        ipAddress: report.ipAddress,
-        reportedLocationId: report.reportedLocationId
-      })
-      .then((_value) => {
-        NotificationService.dispatchNotify(t('admin:components.moderation.userBanned'), {
-          variant: 'success'
+    if (moderationBanQuery.data.length > 0) {
+      moderationBanMutation
+        .patch(moderationBanQuery.data[0].id, {
+          banned: true
         })
-      })
-      .catch((error) => {
-        NotificationService.dispatchNotify(error.message, { variant: 'error' })
-        console.error(error)
-      })
+        .then(() => {
+          NotificationService.dispatchNotify(t('admin:components.moderation.userBanned'), {
+            variant: 'success'
+          })
+        })
+        .catch((error) => {
+          NotificationService.dispatchNotify(error.message, { variant: 'error' })
+          console.error(error)
+        })
+    } else {
+      moderationBanMutation
+        .create({
+          banUserId: report.reportedUserId,
+          banned: true,
+          banReason: report.abuseReason,
+          reportedAt: report.reportedAt,
+          ipAddress: report.ipAddress,
+          reportedLocationId: report.reportedLocationId
+        })
+        .then((_value) => {
+          NotificationService.dispatchNotify(t('admin:components.moderation.userBanned'), {
+            variant: 'success'
+          })
+        })
+        .catch((error) => {
+          NotificationService.dispatchNotify(error.message, { variant: 'error' })
+          console.error(error)
+        })
+    }
   }
 
   const usersQuery =
@@ -261,8 +284,8 @@ export const ModerationDetail = ({
             >
               {t('admin:components.moderation.resolveIssue')}
             </Button>
-            {isPersonModeration && (
-              <Button variant="red" onClick={handleBanUser} className="rounded bg-red-500 px-4 py-2 ">
+            {isPersonModeration && !moderationBanQuery.data[0].banned && (
+              <Button variant="red" onClick={handleBanUser} className="rounded bg-red-500 px-4 py-2">
                 {t('admin:components.moderation.banUser')}
               </Button>
             )}
