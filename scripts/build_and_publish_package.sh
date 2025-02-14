@@ -14,9 +14,17 @@ PRIVATE_REPO=$8
 DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE
 SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root
 
+
+
 if [ "$SOURCE_REPO_PROVIDER" == "gcp" ]; then
   SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root
+  
+  # Check if APP_HOST contains "ir-engine-mt" and append `mt` to repo name if it does
+  if [[ "${APP_HOST}" == *"ir-engine-mt"* ]]; then
+      SOURCE_REPO_NAME="${SOURCE_REPO_NAME_STEM}-root-mt/${SOURCE_REPO_NAME_STEM}-root"
+  fi
 fi
+
 
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   if [ "$PRIVATE_REPO" = "true" ]; then
@@ -29,6 +37,11 @@ if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
   DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
+
+  # Check if APP_HOST contains "ir-engine-mt" and append `mt` to repo name if it does
+  if [[ "${APP_HOST}" == *"ir-engine-mt"* ]]; then
+      DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE-mt/$DESTINATION_REPO_NAME_STEM-$PACKAGE
+  fi
   gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
   # Insert GCP credentials fetching here, and apply that to docker login
 else
