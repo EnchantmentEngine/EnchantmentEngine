@@ -29,6 +29,7 @@ import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
+import { ResourceType } from '.'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
@@ -57,6 +58,7 @@ function NodeHierarchyItem({ node, onClick }: { node: AssetCategoryNode; onClick
         collapsed={!isOpen}
         onClick={handleClick}
         style={{ paddingLeft: `${32 * node.depth}px` }}
+        hasChildren={node.children.length > 0}
       />
 
       {isOpen &&
