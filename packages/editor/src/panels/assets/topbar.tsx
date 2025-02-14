@@ -58,7 +58,7 @@ export const uploadFiles = () => {
 }
 
 export function AssetsBreadcrumbs() {
-  const { categories, currentCategoryPath } = useAssetsCategory()
+  const { currentCategoryPath } = useAssetsCategory()
   const { refetchResources } = useAssetsQuery()
   const currentCategory = currentCategoryPath.get({ noproxy: true }) as AssetCategoryNode
 

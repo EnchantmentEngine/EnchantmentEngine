@@ -364,12 +364,10 @@ export function PanelToolbar({
     }
   })
 
-  // todo: add this to either static resource or filesstate
   const addToFavorites = async () => {
     updateTag(['myFavorite'])
   }
 
-  // todo: add this to filestate?
   const addToAssets = async () => {
     updateTag(['myAsset'])
   }
