@@ -38,10 +38,10 @@ import {
   StorageProviderInterface
 } from './storageprovider.interface'
 
-import axios from 'axios'
-import {GetSignedUrlConfig, Storage} from '@google-cloud/storage'
 import { UrlMapsClient } from '@google-cloud/compute'
-import { NetworkServicesClient } from "@google-cloud/networkservices";
+import { NetworkServicesClient } from '@google-cloud/networkservices'
+import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
+import axios from 'axios'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
@@ -194,13 +194,14 @@ export class GCSStorage implements StorageProviderInterface {
   async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
     return Promise.resolve()
     if (!invalidationItems || invalidationItems.length === 0) return
-    invalidationItems = invalidationItems.map(item => item[0] !== '/' ? `/${item}` : item)
+    invalidationItems = invalidationItems.map((item) => (item[0] !== '/' ? `/${item}` : item))
     if (useMediaCDN) {
-      return await axios
-          .post(`https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
-              {
-                path: invalidationItems[0]
-              })
+      return await axios.post(
+        `https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
+        {
+          path: invalidationItems[0]
+        }
+      )
       // const request = {
       //   parent: `projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}`,
       //   resource: {
@@ -210,8 +211,7 @@ export class GCSStorage implements StorageProviderInterface {
       //   }
       // }
       // return this.networkServicesClient.createEdgeCacheInvalidation(request)
-    }
-    else
+    } else
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
@@ -292,7 +292,7 @@ export class GCSStorage implements StorageProviderInterface {
     const promises: Promise<FileBrowserContentType>[] = []
 
     const files = response[2] as {
-      items?: { mediaLink: string, name: string, size: string }[]
+      items?: { mediaLink: string; name: string; size: string }[]
       prefixes?: string[]
     }
     console.log('files', files)

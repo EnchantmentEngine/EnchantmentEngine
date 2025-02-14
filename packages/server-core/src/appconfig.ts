@@ -172,7 +172,7 @@ const server = {
   instanceserverUnreachableTimeoutSeconds: process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS
     ? parseInt(process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS)
     : 10,
-  namespace: process.env.NAMESPACE as string || 'default'
+  namespace: (process.env.NAMESPACE as string) || 'default'
 }
 const obj = kubernetesEnabled ? { protocol: 'https', hostname: server.hostname } : { protocol: 'https', ...server }
 server.url = process.env.SERVER_URL || url.format(obj)
@@ -375,9 +375,7 @@ const aws = {
   },
   cloudfront: {
     domain:
-      process.env.SERVE_CLIENT_FROM_STORAGE_PROVIDER === 'true'
-        ? server.clientHost
-        : process.env.STORAGE_CDN_DOMAIN!,
+      process.env.SERVE_CLIENT_FROM_STORAGE_PROVIDER === 'true' ? server.clientHost : process.env.STORAGE_CDN_DOMAIN!,
     distributionId: process.env.STORAGE_CLOUDFRONT_DISTRIBUTION_ID!,
     region: process.env.STORAGE_CLOUDFRONT_REGION || process.env.STORAGE_REGION
   },

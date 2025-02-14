@@ -54,15 +54,13 @@ const K8S_PAGE_LIMIT = 1
 const ECR_PAGE_LIMIT = 10
 
 const getAllPods = async (k8Client, continueValue, labelSelector, pods = []) => {
-  const matchingPods = await k8Client.listNamespacedPod(
-    config.server.namespace,
-    'false',
-    false,
-    continueValue,
-    undefined,
+  const matchingPods = await k8Client.listNamespacedPod({
+    namespace: config.server.namespace,
+    pretty: 'false',
+    _continue: continueValue,
     labelSelector,
-    K8S_PAGE_LIMIT
-  )
+    limit: K8S_PAGE_LIMIT
+  })
   if (matchingPods?.body?.items) pods = pods.concat(matchingPods.body.items)
   if (matchingPods.body.metadata?._continue)
     return await getAllPods(k8Client, matchingPods.body.metadata._continue, labelSelector, pods)
