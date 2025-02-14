@@ -284,7 +284,7 @@ export const ModerationDetail = ({
             >
               {t('admin:components.moderation.resolveIssue')}
             </Button>
-            {isPersonModeration && !moderationBanQuery.data[0].banned && (
+            {isPersonModeration && !moderationBanQuery?.data[0]?.banned && (
               <Button variant="red" onClick={handleBanUser} className="rounded bg-red-500 px-4 py-2">
                 {t('admin:components.moderation.banUser')}
               </Button>
