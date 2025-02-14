@@ -261,7 +261,7 @@ export const ModerationDetail = ({
             {reportAttachments.data.map((attachment) => (
               <p>
                 <a
-                  href={`https://localhost:9000/ir-engine-static-resources/` + attachment.filePath}
+                  href={attachment.filePath}
                   className="cursor-pointer border-none bg-transparent px-0 py-0 text-blue-500 underline"
                   target="_blank"
                 >

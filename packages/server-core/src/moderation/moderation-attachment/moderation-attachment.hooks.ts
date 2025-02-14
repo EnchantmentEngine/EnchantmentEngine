@@ -23,12 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { HookContext } from '@feathersjs/feathers'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import {
   moderationAttachmentDataValidator,
   moderationAttachmentPatchValidator,
   moderationAttachmentQueryValidator
 } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import config from '@ir-engine/server-core/src/appconfig'
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
 import { iff, isProvider } from 'feathers-hooks-common'
 import {
@@ -38,6 +40,23 @@ import {
   moderationAttachmentQueryResolver,
   moderationAttachmentResolver
 } from './moderation-attachment.resolvers'
+
+const baseUrl = config.aws.s3.endpoint
+const bucketName = config.aws.s3.staticResourceBucket
+
+export const appendBaseUrl = (baseUrl: string, bucketName: string) => {
+  return async (context: HookContext) => {
+    if (context.result) {
+      if (Array.isArray(context.result.data)) {
+        context.result = context.result.data.map((item) => ({
+          ...item,
+          filePath: `${baseUrl}/${bucketName}${item.filePath}`
+        }))
+      }
+    }
+    return context
+  }
+}
 export default {
   around: {
     all: [
@@ -73,8 +92,8 @@ export default {
   },
   after: {
     all: [],
-    find: [],
-    get: [],
+    find: [appendBaseUrl(baseUrl, bucketName)],
+    get: [appendBaseUrl(baseUrl, bucketName)],
     create: [],
     update: [],
     patch: [],
