@@ -134,7 +134,6 @@ export function Browser() {
   const FileItems = () => (
     <>
       {sortedFiles.map((file, idx) => {
-        const backgroundColor = idx % 2 === 0 ? '#111113' : '#191B1F'
         return (
           <FileItem
             file={{ ...file, ...staticResourceData.value[file?.key] }}
@@ -148,7 +147,7 @@ export function Browser() {
             }}
             key={file.key}
             data-testid="files-panel-file-item"
-            className={`${isListView ? `bg-[${backgroundColor}]` : ''}`}
+            className={`${isListView ? `bg-surface-1` : ''}`}
           />
         )
       })}

@@ -174,7 +174,7 @@ export function FileCard({
         <div
           className={twMerge(
             `box-border rounded border border-0 font-figtree`,
-            isSelected ? 'rounded border border-[#375DAF] bg-[#2C2E30]' : 'group-hover:bg-[#202225]'
+            isSelected ? 'border-ui-select-primary bg-ui-select-quadrary' : 'group-hover:bg-ui-hover-tertiary'
           )}
           style={{
             height: iconSize,
@@ -188,11 +188,10 @@ export function FileCard({
 
         <Tooltip content={name} position="bottom">
           <Text
-            theme="secondary"
             fontSize="sm"
             className={twMerge(
-              'mt-2 w-24 overflow-hidden text-ellipsis whitespace-nowrap px-2',
-              isSelected ? 'rounded bg-[#375DAF]' : 'rounded group-hover:bg-[#2F3137]'
+              'mt-2 w-24 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-text-secondary',
+              isSelected ? 'rounded bg-ui-select-primary text-white' : 'rounded group-hover:bg-ui-hover-quadrary'
             )}
             data-testid={dataTestIdJson?.fileNameId}
           >

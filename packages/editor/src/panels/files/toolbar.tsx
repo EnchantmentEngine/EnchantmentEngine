@@ -267,7 +267,7 @@ export default function FilesToolbar() {
               id="downloadProject"
             />
           </Tooltip>
-          <div className="flex h-7 items-center gap-2 rounded p-2">
+          <div className="flex h-7 items-center gap-x-1 rounded">
             <button className="p-1 text-text-secondary hover:text-text-primary">
               <FaList
                 className={twMerge('h-5 w-5', filesViewMode.value === 'list' ? 'cursor-auto text-ui-primary' : '')}
@@ -386,36 +386,38 @@ export function PanelToolbar({
     >
       {/* Tools */}
       <div className="flex items-center gap-x-1 divide-x divide-ui-outline">
-        <div className="flex items-center">
-          <div>
-            <Tooltip content={t('editor:layout.filebrowser.back')}>
-              <ViewportButton data-testid={dataTestIdJson?.backButtonId} onClick={onBackDirectory} icon={ArrowLeftSm} />
-            </Tooltip>
-          </div>
-          <div>
-            <Tooltip content={t('editor:layout.filebrowser.refresh')}>
-              <ViewportButton
-                data-testid={dataTestIdJson?.refreshButtonId}
-                onClick={onRefreshDirectory}
-                icon={Refresh1Sm}
-              />
-            </Tooltip>
-          </div>
+        <div className="flex items-center gap-x-1">
+          <Tooltip content={t('editor:layout.filebrowser.back')}>
+            <ViewportButton data-testid={dataTestIdJson?.backButtonId} onClick={onBackDirectory} icon={ArrowLeftSm} />
+          </Tooltip>
+
+          <Tooltip content={t('editor:layout.filebrowser.refresh')}>
+            <ViewportButton
+              data-testid={dataTestIdJson?.refreshButtonId}
+              onClick={onRefreshDirectory}
+              icon={Refresh1Sm}
+            />
+          </Tooltip>
+
           <Tooltip content={t('editor:layout.filebrowser.addNewFolder')}>
             <ViewportButton onClick={createNewFolder} icon={FolderPlusSm} />
           </Tooltip>
+
           <ViewModeSettings />
-          <div className="flex h-6 items-center">
-            <Tooltip content={t('editor:layout.filebrowser.pin')}>
-              <ViewportButton onClick={addToFavorites} icon={Pin02Sm} />
-            </Tooltip>
-            <Tooltip content={t('editor:layout.filebrowser.addToAssets')}>
-              <ViewportButton onClick={addToAssets} icon={ArchiveSm} />
-            </Tooltip>
-          </div>
         </div>
+
+        <div className="flex h-6 items-center">
+          <Tooltip content={t('editor:layout.filebrowser.addToFavorites')}>
+            <ViewportButton onClick={addToFavorites} icon={Pin02Sm} />
+          </Tooltip>
+          <Tooltip content={t('editor:layout.filebrowser.addToAssets')}>
+            <ViewportButton onClick={addToAssets} icon={ArchiveSm} />
+          </Tooltip>
+        </div>
+
         {utilsComponent && <div className="flex h-6 items-center">{utilsComponent}</div>}
-        <div className="flex h-6 items-center">{uploadButton}</div>
+
+        <div className="flex h-6 items-center pl-2">{uploadButton}</div>
       </div>
 
       {/* Breadcrumb */}
