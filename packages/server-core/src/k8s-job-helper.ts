@@ -113,6 +113,7 @@ export async function getJobBody(
         },
         spec: {
           serviceAccountName: `${process.env.RELEASE_NAME}-ir-engine-api`,
+          restartPolicy: 'Never',
           containers: [
             {
               name,
