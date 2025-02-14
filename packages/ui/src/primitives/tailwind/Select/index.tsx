@@ -269,7 +269,7 @@ const Select = ({
           <div
             tabIndex={0}
             className={twMerge(
-              `relative flex w-full items-center gap-x-2 rounded-md bg-ui-background text-text-tertiary ${heights[inputHeight]} transition-colors duration-300`,
+              `relative flex w-full items-center gap-x-2 rounded-md border border-ui-outline bg-ui-background text-text-tertiary ${heights[inputHeight]} transition-colors duration-300`,
               disabled
                 ? 'cursor-not-allowed bg-ui-inactive-background text-ui-inactive-outline'
                 : 'hover:text-text-primary',
