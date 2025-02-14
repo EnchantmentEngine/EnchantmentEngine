@@ -27,14 +27,12 @@ import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLe
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import EditorDropdownItem from '@ir-engine/ui/src/components/editor/DropdownItem'
 import { CubeOutlineLg, File04Lg, Folder, Pin02Lg } from '@ir-engine/ui/src/icons'
-import React, { ReactNode } from 'react'
-import { RxHamburgerMenu } from 'react-icons/rx'
+import React from 'react'
 import { twMerge } from 'tailwind-merge'
-import { ResourceType } from '.'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
-import { useAssetsCategory, useAssetsQuery } from './hooks'
+import { assetCategories, useAssetsCategory, useAssetsQuery } from './hooks'
 
 export type AssetCategoryNode = {
   name: string
@@ -55,7 +53,7 @@ function NodeHierarchyItem({ node, onClick }: { node: AssetCategoryNode; onClick
     <>
       <EditorDropdownItem
         label={node.name}
-        ItemIcon={Folder}
+        ItemIcon={({ className }: { className: string }) => <Folder className={className} />}
         collapsed={!isOpen}
         onClick={handleClick}
         style={{ paddingLeft: `${32 * node.depth}px` }}
@@ -79,9 +77,9 @@ function FolderCategory({ item }: { item: AssetCategoryNode }) {
 }
 
 function AssetCategory({ item }: { item: AssetCategoryNode }) {
-  const { currentCategoryPath } = useAssetsCategory()
+  const { currentCategoryPath, activeTab } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
-  const { activeTab } = useAssetsCategory()
+
   const handleClickCategory = (item) => {
     if (item.name === 'Project Assets') {
       activeTab.set(ResourceType.MY_ASSETS)
@@ -103,8 +101,9 @@ const SideBarIcons = {
 }
 
 function SidebarSection({ Icon, label, items, onClick, isActive }) {
-  const { activeTab } = useAssetsCategory()
   const [isHover, setIsHover] = React.useState(false)
+  const { activeTab } = useAssetsCategory()
+
   const toggleDropdown = () => {
     if (isActive) {
       onClick(undefined)
@@ -129,7 +128,7 @@ function SidebarSection({ Icon, label, items, onClick, isActive }) {
       <div
         className={twMerge(
           'overflow-hidden rounded bg-surface-1 p-2 text-text-secondary',
-          'border border-2',
+          'border-2',
           isActive ? 'border-[#375DAF]' : 'border-transparent'
         )}
         onMouseEnter={() => setIsHover(true)}
@@ -140,7 +139,6 @@ function SidebarSection({ Icon, label, items, onClick, isActive }) {
             <Icon />
             <span>{capitalizeFirstLetter(label)}</span>
           </div>
-          {isHover && <RxHamburgerMenu />}
         </button>
       </div>
 
@@ -154,10 +152,9 @@ function SidebarSection({ Icon, label, items, onClick, isActive }) {
 }
 
 export default function CategoriesList({ selected, onClick }) {
-  const { sidebarWidth, categories: asseteCategories, activeTab } = useAssetsCategory()
+  const { sidebarWidth } = useAssetsCategory()
   const { files, categories: folderCategories } = useCurrentFiles()
 
-  // todo: rename sidebar section to sidebar or find a better name
   const [sidebarSections, setSidebarSections] = React.useState<{
     favorites: AssetCategoryNode[]
     assets: AssetCategoryNode[]
@@ -169,12 +166,12 @@ export default function CategoriesList({ selected, onClick }) {
   })
 
   React.useEffect(() => {
-    if (asseteCategories.value) {
+    if (assetCategories) {
       setSidebarSections({
         ...sidebarSections,
         assets: [
           { name: 'Project Assets', path: '', depth: 0, children: [] },
-          { name: 'iR Studio Assets', path: '', depth: 0, children: [...asseteCategories.get({ noproxy: true })] }
+          { name: 'iR Studio Assets', path: '', depth: 0, children: [...assetCategories] }
         ] as AssetCategoryNode[]
       })
     }
@@ -185,7 +182,7 @@ export default function CategoriesList({ selected, onClick }) {
         files: [...folderCategories.get({ noproxy: true })] as AssetCategoryNode[]
       })
     }
-  }, [asseteCategories.value, folderCategories.value])
+  }, [assetCategories, folderCategories.value])
 
   const filesState = useMutableState(FilesState)
 
@@ -221,8 +218,8 @@ export function VerticalDivider({
   leftChildren,
   rightChildren
 }: {
-  leftChildren: ReactNode
-  rightChildren: ReactNode
+  leftChildren: React.ReactNode
+  rightChildren: React.ReactNode
 }) {
   const { sidebarWidth } = useAssetsCategory()
   const isDragging = useHookstate(false)
@@ -249,10 +246,11 @@ export function VerticalDivider({
         {leftChildren}
       </div>
 
-      <div className="flex w-2 cursor-pointer items-center bg-surface-1" data-testid="assets-panel-vertical-divider">
+      {/* Divider */}
+      <div className="flex w-2 cursor-ew-resize items-center bg-surface-1" data-testid="assets-panel-vertical-divider">
         <div
           onMouseDown={handleMouseDown}
-          className={twMerge('h-full w-full cursor-grab text-white', isDragging.value && 'cursor-grabbing')}
+          className={twMerge('h-full w-full cursor-ew-resize text-white', isDragging.value && 'cursor-grabbing')}
         />
       </div>
 

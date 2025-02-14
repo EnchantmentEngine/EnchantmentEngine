@@ -31,7 +31,7 @@ import React, { ReactNode, createContext, useContext, useEffect } from 'react'
 import { ResourceType } from '.'
 import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
 import { AssetCategoryNode } from './categories'
-import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from './helpers'
+import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, convertToHierarchy, iterativelyListTags } from './helpers'
 
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
@@ -44,10 +44,11 @@ const AssetsQueryContext = createContext({
     activeTab: null! as State<ResourceType>,
     assets: [] as StaticResourceType[],
     currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
-    categories: null! as State<AssetCategoryNode[]>,
     sidebarWidth: null! as State<number>
   }
 })
+
+export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
 
 export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const search = useHookstate({ local: '', query: '' })
@@ -56,7 +57,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const resourcesLoading = useHookstate(false)
   const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
 
-  const categories = useHookstate<AssetCategoryNode[]>([])
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
 
@@ -127,23 +127,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
-  function convertToHierarchy(obj: Record<string, any>, depth = 0, parentPath = ''): AssetCategoryNode[] {
-    return Object.entries(obj).map(([key, value]) => {
-      const currentPath = parentPath ? `${parentPath}/${key}` : key
-
-      return {
-        name: key,
-        path: currentPath,
-        depth,
-        children: convertToHierarchy(value, depth + 1, currentPath)
-      }
-    })
-  }
-
-  useEffect(() => {
-    categories.set(convertToHierarchy(AssetsPanelCategories.initial))
-  }, [])
-
   const { data: assets } = useFind(staticResourcePath, {
     query: {
       ...(activeTab.value === ResourceType.FAVORITES && {
@@ -158,7 +141,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
       })
     }
   })
-  console.log(activeTab.value, assets)
 
   return (
     <AssetsQueryContext.Provider
@@ -171,7 +153,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
         category: {
           activeTab,
           assets: assets as StaticResourceType[],
-          categories,
           currentCategoryPath,
           sidebarWidth: categorySidbarWidth
         }
