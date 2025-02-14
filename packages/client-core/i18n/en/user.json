@@ -338,7 +338,8 @@
     "server": "Server",
     "recordings": "Recordings",
     "channels": "Channels",
-    "crashReport": "Crash Report"
+    "crashReport": "Crash Report",
+    "moderation": "Moderation"
   },
   "resource": {
     "createResource": "Create Resource"
