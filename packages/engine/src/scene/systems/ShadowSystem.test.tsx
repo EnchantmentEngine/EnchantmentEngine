@@ -734,18 +734,130 @@ describe('EntityCSMReactor', () => {
       'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy',
       () => {}
     )
+
+    /* @todo Run by triggering only this useEffect */
     it.todo(
       'should set `@param props.rendererEntity`.RendererComponent.csm.shadowBias to `@param props.entity`.DirectionalLightComponent.light.shadow.bias',
-      () => {}
+      () => {
+        const Expected = 42_000
+        const Initial = 21_000
+        // Set input & dependencies data
+        const csm = new CSM({ shadowBias: Initial })
+        const rendererEntity = createEntity()
+        setComponent(rendererEntity, RendererComponent, { csm: csm })
+        const renderSettingsEntity = createEntity()
+        setComponent(renderSettingsEntity, RenderSettingsComponent)
+        setComponent(testEntity, DirectionalLightComponent, { castShadow: true, shadowBias: Expected })
+        const root = startReactor(() => {
+          return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+            entity: testEntity,
+            rendererEntity: rendererEntity,
+            renderSettingsEntity: renderSettingsEntity
+          })
+        }, false) as ReactorRoot
+        // Sanity check (input & dependencies)
+        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
+        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
+        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
+        expect(getState(RendererState).shadowMapResolution).toBeDefined()
+        const before = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run the process
+        root.run()
+        // Check the result (output)
+        const result = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      }
     )
+
+    /* @todo Run by triggering only this useEffect */
     it.todo(
       'should set `@param props.rendererEntity`.RendererComponent.csm.maxFar to `@param props.entity`.DirectionalLightComponent.cameraFar',
-      () => {}
+      () => {
+        const Expected = 42_000
+        const Initial = 21_000
+        // Set input & dependencies data
+        const csm = new CSM({ maxFar: Initial })
+        const rendererEntity = createEntity()
+        setComponent(rendererEntity, RendererComponent, { csm: csm })
+        const renderSettingsEntity = createEntity()
+        setComponent(renderSettingsEntity, RenderSettingsComponent)
+        setComponent(testEntity, DirectionalLightComponent, { castShadow: true, cameraFar: Expected })
+        const root = startReactor(() => {
+          return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+            entity: testEntity,
+            rendererEntity: rendererEntity,
+            renderSettingsEntity: renderSettingsEntity
+          })
+        }, false) as ReactorRoot
+        // Sanity check (input & dependencies)
+        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
+        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
+        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
+        expect(getState(RendererState).shadowMapResolution).toBeDefined()
+        const before = getComponent(rendererEntity, RendererComponent).csm?.maxFar
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run the process
+        root.run()
+        // Check the result (output)
+        const result = getComponent(rendererEntity, RendererComponent).csm?.maxFar
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      }
     )
+
+    /* @todo Run by triggering only this useEffect */
     it.todo(
       'should set `@param props.rendererEntity`.RendererComponent.csm.shadowMapSize to RendererState.shadowMapResolution',
-      () => {}
+      () => {
+        const Expected = getState(RendererState).shadowMapResolution
+        const Initial = 42_000
+        // Set input & dependencies data
+        const csm = new CSM({ shadowMapSize: Initial })
+        const rendererEntity = createEntity()
+        setComponent(rendererEntity, RendererComponent, { csm: csm })
+        const renderSettingsEntity = createEntity()
+        setComponent(renderSettingsEntity, RenderSettingsComponent)
+        setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
+        const root = startReactor(() => {
+          return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+            entity: testEntity,
+            rendererEntity: rendererEntity,
+            renderSettingsEntity: renderSettingsEntity
+          })
+        }, false) as ReactorRoot
+        // Sanity check (input & dependencies)
+        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
+        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
+        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
+        expect(getState(RendererState).shadowMapResolution).toBeDefined()
+        const before = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // Run the process
+        root.run()
+        // Check the result (output)
+        const result = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      }
     )
+
     describe('for every light in the `@param props.rendererEntity`.RendererComponent.csm.lights list ..', () => {
       it.todo(
         '.. should set light.color to a new color from `@param props.entity`.DirectionalLightComponent.color',
