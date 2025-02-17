@@ -75,6 +75,7 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { initialAuthState, initialOAuthConnectedState } from '../../common/initialAuthState'
 import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
+import ToS from '../../components/modals/ToS'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
 import { clientContextParams } from '../../util/ClientContextState'
@@ -441,11 +442,23 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
       <div className="mt-5 grid w-full grid-cols-1 gap-y-4">
         {isGuest && !originallyAcceptedTOS && (
           <>
-            <Checkbox
-              checked={checkedTOS.value}
-              onChange={() => checkedTOS.set((v) => !v)}
-              label={t('user:usermenu.profile.agreeTOS')}
-            />
+            <div className="row flex gap-2">
+              <Checkbox
+                checked={checkedTOS.value}
+                onChange={() => checkedTOS.set((v) => !v)}
+                label={t('user:usermenu.profile.agreeTOS')}
+              />
+              <span
+                onClick={() => {
+                  PopoverState.showPopupover(
+                    <ToS onDecline={() => checkedTOS.set(false)} onAccept={() => checkedTOS.set(true)} />
+                  )
+                }}
+                className="link mt-auto cursor-pointer text-sm text-gray-300 underline"
+              >
+                {t('user:usermenu.profile.termsOfService')}*
+              </span>
+            </div>
             <Checkbox
               checked={checked13OrOver.value}
               onChange={() => checked13OrOver.set((v) => !v)}
