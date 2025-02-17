@@ -48,10 +48,12 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaList } from 'react-icons/fa'
+import { LuPinOff } from 'react-icons/lu'
 import { twMerge } from 'tailwind-merge'
 import { handleUploadFiles, inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState, FilesViewModeSettings, FilesViewModeState, SelectedFilesState } from '../../services/FilesState'
+import { useAssetsCategory } from '../assets/hooks'
 import { availableTableColumns, useCurrentFiles } from './helpers'
 import { handleDownloadProject } from './loaders'
 
@@ -349,36 +351,44 @@ export function PanelToolbar({
 }) {
   const { t } = useTranslation()
   const { createNewFolder, refreshDirectory } = useCurrentFiles()
+  const { refetchFavorites } = useAssetsCategory()
 
   const files = useMutableState(SelectedFilesState).value.filter((file) => !file.isFolder)
 
-  const resources = useFind(staticResourcePath, {
-    query: {
+  const query = React.useMemo(
+    () => ({
       key: {
-        $like: undefined,
-        $or: files.map(({ key }) => ({
-          key
-        }))
+        $in: files.map(({ key }) => key)
       },
       $limit: 10000
-    }
+    }),
+    [files]
+  )
+
+  const { data: resources } = useFind(staticResourcePath, {
+    query
   })
 
-  const addToFavorites = async () => {
-    updateTag(['myFavorite'])
+  const toggleFavorite = async () => {
+    toggleTag('myFavorite')
   }
 
-  const addToAssets = async () => {
-    updateTag(['myAsset'])
+  const toggleAsset = async () => {
+    toggleTag('myAsset')
   }
 
-  const updateTag = async (tags: string[]) => {
-    for (const resource of resources.data) {
-      const resourceTag = resource.tags
-      await API.instance.service(staticResourcePath).patch(resource.id, { tags: [...resourceTag, ...tags] })
+  const toggleTag = async (tag: string) => {
+    console.log(resources)
+    for (const resource of resources) {
+      const hasTag = resource.tags.includes(tag)
+      const updatedTags = hasTag ? resource.tags.filter((existingTag) => existingTag !== tag) : [...resource.tags, tag]
+
+      await API.instance.service(staticResourcePath).patch(resource.id, { tags: updatedTags })
     }
-    refreshDirectory()
+    refetchFavorites()
   }
+
+  const hasMyFavoriteTag = resources.some((resource) => resource.tags?.includes('myFavorite'))
 
   return (
     <div
@@ -409,10 +419,10 @@ export function PanelToolbar({
 
         <div className="flex h-6 items-center">
           <Tooltip content={t('editor:layout.filebrowser.addToFavorites')}>
-            <ViewportButton onClick={addToFavorites} icon={Pin02Sm} />
+            <ViewportButton onClick={toggleFavorite} icon={hasMyFavoriteTag ? LuPinOff : Pin02Sm} />
           </Tooltip>
           <Tooltip content={t('editor:layout.filebrowser.addToAssets')}>
-            <ViewportButton onClick={addToAssets} icon={ArchiveSm} />
+            <ViewportButton onClick={toggleAsset} icon={ArchiveSm} />
           </Tooltip>
         </div>
 

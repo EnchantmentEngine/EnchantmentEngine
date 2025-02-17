@@ -407,7 +407,7 @@ function ResourceItems({ resources }) {
 
 export default function Resources() {
   const { resourcesLoading, staticResourcesPagination, refetchResources, resources } = useAssetsQuery()
-  const { activeTab, assets } = useAssetsCategory()
+  const { activeTab, assets: myAssets } = useAssetsCategory()
 
   const canLoadMore = staticResourcesPagination.skip.value < staticResourcesPagination.total.value
 
@@ -425,7 +425,7 @@ export default function Resources() {
           data-testid="assets-panel-resource-items-container"
         >
           {resources.length ? (
-            <ResourceItems resources={activeTab.value === ResourceType.ASSETS ? resources : assets} />
+            <ResourceItems resources={activeTab.value === ResourceType.ASSETS ? resources : myAssets} />
           ) : null}
         </div>
         {resourcesLoading && <LoadingView spinnerOnly className="h-6 w-6" />}
