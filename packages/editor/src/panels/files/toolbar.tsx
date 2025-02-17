@@ -284,7 +284,7 @@ export default function FilesToolbar() {
         </>
       }
       uploadButton={
-        <>
+        <div className="flex flex-row gap-2">
           <Button
             size="l"
             disabled={!showUploadButtons}
@@ -324,7 +324,7 @@ export default function FilesToolbar() {
             <PlusCircleSm />
             <span className="text-nowrap">{t('editor:layout.filebrowser.uploadFolder')}</span>
           </Button>
-        </>
+        </div>
       }
     />
   )
