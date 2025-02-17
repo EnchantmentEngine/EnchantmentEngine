@@ -89,7 +89,6 @@ import PrimitiveGeometryNodeEditor from '@ir-engine/ui/src/components/editor/pro
 import GLTFNodeEditor from '@ir-engine/ui/src/components/editor/properties/gltf/loader'
 import GrabbableComponentNodeEditor from '@ir-engine/ui/src/components/editor/properties/grab'
 import GroundPlaneNodeEditor from '@ir-engine/ui/src/components/editor/properties/groundPlane'
-import IFrameNodeEditor from '@ir-engine/ui/src/components/editor/properties/iframe'
 import ImageNodeEditor from '@ir-engine/ui/src/components/editor/properties/image'
 import InputComponentNodeEditor from '@ir-engine/ui/src/components/editor/properties/input'
 import InstancingNodeEditor from '@ir-engine/ui/src/components/editor/properties/instance'
@@ -104,6 +103,7 @@ import LookAtNodeEditor from '@ir-engine/ui/src/components/editor/properties/loo
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
 import MeshNodeEditor from '@ir-engine/ui/src/components/editor/properties/mesh'
 import MountPointNodeEditor from '@ir-engine/ui/src/components/editor/properties/mountPoint'
+import OverlayNodeEditor from '@ir-engine/ui/src/components/editor/properties/overlay'
 import ParticleSystemNodeEditor from '@ir-engine/ui/src/components/editor/properties/particle'
 import PortalNodeEditor from '@ir-engine/ui/src/components/editor/properties/portal'
 import PostProcessingSettingsEditor from '@ir-engine/ui/src/components/editor/properties/postProcessing'
@@ -120,8 +120,8 @@ import SpawnPointNodeEditor from '@ir-engine/ui/src/components/editor/properties
 import SplineNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline'
 
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
-import { IFrameComponent } from '@ir-engine/engine/src/scene/components/IFrameComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
+import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
@@ -184,7 +184,7 @@ export const ComponentEditorsState = defineState({
       [SplineTrackComponent.name]: SplineTrackNodeEditor,
       [VisualScriptComponent.name]: VisualScriptNodeEditor,
       [LinkComponent.name]: LinkNodeEditor,
-      [IFrameComponent.name]: IFrameNodeEditor,
+      [OverlayComponent.name]: OverlayNodeEditor,
       [InteractableComponent.name]: InteractableComponentNodeEditor,
       [InputComponent.name]: InputComponentNodeEditor,
       [GrabbableComponent.name]: GrabbableComponentNodeEditor,
