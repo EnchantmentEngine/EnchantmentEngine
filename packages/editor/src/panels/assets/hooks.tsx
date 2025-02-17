@@ -43,7 +43,6 @@ const AssetsQueryContext = createContext({
   category: {
     activeTab: null! as State<ResourceType>,
     assets: [] as StaticResourceType[],
-    refetchFavorites: () => {},
     currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
     sidebarWidth: null! as State<number>
   }
@@ -129,13 +128,16 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
-  const { data: assets, refetch: refetchFavorites } = useFind(staticResourcePath, {
-    query:
-      activeTab.value === ResourceType.FAVORITES
-        ? { tags: { $like: '%myFavorite%' } }
-        : activeTab.value === ResourceType.MY_ASSETS
-        ? { tags: { $like: '%myAsset%' } }
-        : {}
+  const query = React.useMemo(() => {
+    return activeTab.value === ResourceType.FAVORITES
+      ? { tags: { $like: '%myFavorite%' } }
+      : activeTab.value === ResourceType.MY_ASSETS
+      ? { tags: { $like: '%myAsset%' } }
+      : {}
+  }, [activeTab.value])
+
+  const { data: assets } = useFind(staticResourcePath, {
+    query
   })
 
   return (
@@ -149,7 +151,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
         category: {
           activeTab,
           assets: assets as StaticResourceType[],
-          refetchFavorites,
           currentCategoryPath,
           sidebarWidth: categorySidbarWidth
         }

@@ -53,7 +53,7 @@ import { twMerge } from 'tailwind-merge'
 import { handleUploadFiles, inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState, FilesViewModeSettings, FilesViewModeState, SelectedFilesState } from '../../services/FilesState'
-import { useAssetsCategory } from '../assets/hooks'
+import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { availableTableColumns, useCurrentFiles } from './helpers'
 import { handleDownloadProject } from './loaders'
 
@@ -351,18 +351,25 @@ export function PanelToolbar({
 }) {
   const { t } = useTranslation()
   const { createNewFolder, refreshDirectory } = useCurrentFiles()
-  const { refetchFavorites } = useAssetsCategory()
 
   const files = useMutableState(SelectedFilesState).value.filter((file) => !file.isFolder)
+  const assetUrl = useMutableState(ClickPlacementState).selectedAsset.value
 
   const query = React.useMemo(
     () => ({
-      key: {
-        $in: files.map(({ key }) => key)
-      },
+      $or: [
+        {
+          key: {
+            $in: files.map(({ key }) => key)
+          }
+        },
+        {
+          key: assetUrl && assetUrl.split(`/`)[3].split('?')[0]
+        }
+      ],
       $limit: 10000
     }),
-    [files]
+    [files, assetUrl]
   )
 
   const { data: resources } = useFind(staticResourcePath, {
@@ -385,7 +392,7 @@ export function PanelToolbar({
 
       await API.instance.service(staticResourcePath).patch(resource.id, { tags: updatedTags })
     }
-    refetchFavorites()
+    refreshDirectory()
   }
 
   const hasMyFavoriteTag = resources.some((resource) => resource.tags?.includes('myFavorite'))
