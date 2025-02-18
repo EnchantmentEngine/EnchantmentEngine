@@ -198,7 +198,7 @@ const ShareMenu = (): JSX.Element => {
         <div className="col-span-1 mdh:col-span-full">
           <div className="mb-[16.5px] flex w-full items-center justify-center">
             <Text fontWeight="medium" className="text-text-primary">
-              Share this location
+              {t('user:usermenu.share.description-share')}
             </Text>
           </div>
 
@@ -269,7 +269,7 @@ const ShareMenu = (): JSX.Element => {
         </div>
       </div>
       <div className="mt-4 flex w-full items-center justify-center border-t-[0.5px] border-[#212226] py-[11px]">
-        <Button variant="secondary" size="l">
+        <Button variant="secondary" size="l" onClick={() => window.open(questShareLink, '_blank')}>
           <Share06Sm />
           {t('user:usermenu.share.lbl-share')}
         </Button>
