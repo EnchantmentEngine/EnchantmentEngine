@@ -54,7 +54,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'clap'
+    stateName: 'clap',
+    description: 'Clap Hands'
   },
   {
     icon: (props: HTMLProps<SVGGElement>) => (
@@ -69,7 +70,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'wave'
+    stateName: 'wave',
+    description: 'Wave hand'
   },
 
   {
@@ -89,7 +91,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'dance4'
+    stateName: 'dance4',
+    description: 'Dances - Running Man'
   },
 
   {
@@ -109,7 +112,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'dance1'
+    stateName: 'dance1',
+    description: 'Dances - Cabbage Patch'
   },
 
   {
@@ -129,7 +133,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'dance3'
+    stateName: 'dance3',
+    description: 'Dances - Twist and Shout Dance'
   },
 
   {
@@ -149,7 +154,8 @@ const iconItems = [
         />
       </g>
     ),
-    stateName: 'dance2'
+    stateName: 'dance2',
+    description: 'Dances - Macarena'
   },
 
   {
@@ -273,7 +279,7 @@ const EmoteMenu = (): JSX.Element => {
 
         {iconItems
           .slice(currentIconsPage.value * 6, (currentIconsPage.value + 1) * 6)
-          .map(({ icon: Icon, stateName }, index) => (
+          .map(({ icon: Icon, stateName, description }, index) => (
             <Icon
               className="cursor-pointer"
               style={{
@@ -284,7 +290,7 @@ const EmoteMenu = (): JSX.Element => {
               onMouseLeave={onMouseLeave}
               onMouseMove={(event) => {
                 onMouseMove(event)
-                tooltipContent.set(stateName)
+                tooltipContent.set(description || stateName)
               }}
               onClick={() => {
                 playAnimation(emoteAnimations[stateName])
