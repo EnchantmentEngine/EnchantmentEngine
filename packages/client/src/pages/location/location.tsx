@@ -36,6 +36,7 @@ import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { useEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEngineCanvas'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
+import { useUserBannedCheck } from '@ir-engine/client-core/src/hooks/useUserBanned'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { useMutableState } from '@ir-engine/hyperflux'
 import '../mui.styles.scss' /** @todo Remove when MUI is removed */
@@ -48,6 +49,7 @@ const LocationRoutes = () => {
   useSpatialEngine()
   useEngineCanvas(ref)
   useBrowserCheck()
+  useUserBannedCheck()
 
   return (
     <Suspense>
