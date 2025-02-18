@@ -106,9 +106,7 @@ function AudioTab() {
       <div className="mx-auto flex w-3/4 justify-center">
         <Checkbox
           variantTextPlacement="right"
-          label={
-            (<label className="text-text-secondary">{t('user:usermenu.setting.use-positional-media')}</label>) as any
-          }
+          label={t('user:usermenu.setting.use-positional-media')}
           checked={audioState.positionalMedia.value}
           onChange={(value: boolean) => {
             audioState.positionalMedia.set(value)
@@ -217,7 +215,8 @@ function GraphicsTab() {
   }
   return (
     <div className="h-full w-full">
-      <div className="mx-auto my-1 w-3/4">
+      <div className="mx-auto grid grid-cols-[1fr_2fr] items-center gap-x-4 lg:w-3/4">
+        <div className="mt-2 text-right text-sm text-text-primary">{t('user:usermenu.setting.lbl-quality')}</div>
         <Slider
           max={5}
           min={0}
@@ -225,12 +224,10 @@ function GraphicsTab() {
           value={rendererState.qualityLevel.value}
           onChange={handleQualityLevelChange}
           onRelease={() => {}}
-          label={
-            (<div className="whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-quality')}</div>) as any
-          }
+          label=""
         />
       </div>
-      <div className="flex w-3/4 justify-center">
+      <div className="ml-auto mt-4 w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.usePostProcessing.set(!rendererState.usePostProcessing.value)
@@ -239,12 +236,10 @@ function GraphicsTab() {
             logger.info({ event_name: `automatic_qp`, event_value: false })
           }}
           checked={rendererState.usePostProcessing.value}
-          label={
-            (<div className="w-4 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-pp')}</div>) as any
-          }
+          label={t('user:usermenu.setting.lbl-pp')}
         />
       </div>
-      <div className="flex w-3/4 justify-center">
+      <div className="ml-auto w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.useShadows.set(!rendererState.useShadows.value)
@@ -253,23 +248,17 @@ function GraphicsTab() {
             logger.info({ event_name: `automatic_qp`, event_value: false })
           }}
           checked={rendererState.useShadows.value}
-          label={
-            (<div className="w-4 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-shadow')}</div>) as any
-          }
+          label={t('user:usermenu.setting.lbl-shadow')}
         />
       </div>
-      <div className="flex w-3/4 justify-center">
+      <div className="ml-auto w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.automatic.set(!rendererState.automatic.value)
             logger.info({ event_name: `automatic_qp`, event_value: rendererState.automatic.value })
           }}
           checked={rendererState.automatic.value}
-          label={
-            (
-              <div className="w-4 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-automatic')}</div>
-            ) as any
-          }
+          label={t('user:usermenu.setting.lbl-automatic')}
         />
       </div>
       <div className="mx-auto my-1 w-3/4">
@@ -294,19 +283,18 @@ function GraphicsTab() {
           }}
         />
       </div>
-      <div className="flex w-3/4 justify-center">
+      <div className="ml-auto w-3/4">
         <Checkbox
           onChange={() => xruiNameplateState.isVisible.set(!xruiNameplateState.isVisible.value)}
           checked={xruiNameplateState.isVisible.value}
-          label={
-            (
-              <div className="w-4 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-isVisible')}</div>
-            ) as any
-          }
+          label={t('user:usermenu.setting.lbl-isVisible')}
         />
       </div>
       {xruiNameplateState.isVisible.value && (
-        <div className="mx-auto my-1 w-3/4">
+        <div className="mx-auto grid grid-cols-[1fr_2fr] items-center gap-x-4 lg:w-3/4">
+          <div className="mt-2 text-right text-sm text-text-primary">
+            {t('user:usermenu.setting.lbl-triggerDistance')}
+          </div>
           <Slider
             max={100}
             min={0}
@@ -314,11 +302,7 @@ function GraphicsTab() {
             value={xruiNameplateState.triggerDistance.value}
             onChange={(value) => xruiNameplateState.triggerDistance.set(value)}
             onRelease={() => {}}
-            label={
-              (
-                <div className="whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-triggerDistance')}</div>
-              ) as any
-            }
+            label=""
           />
         </div>
       )}
