@@ -23,16 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { HTMLProps, useLayoutEffect, useState } from 'react'
-
 import { UUIDComponent } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { emoteAnimations, preloadedAnimations } from '@ir-engine/engine/src/avatar/animation/Util'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import { dispatchAction } from '@ir-engine/hyperflux'
+import { dispatchAction, useHookstate } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { ChevronLeftLg, ChevronRightLg } from '@ir-engine/ui/src/icons'
+import React, { HTMLProps, useLayoutEffect, useRef } from 'react'
 import { PopoverState } from '../../common/services/PopoverState'
 
 const iconItems = [
@@ -240,13 +239,15 @@ const EmoteMenu = (): JSX.Element => {
     PopoverState.hidePopupover()
   }
 
-  const [currentIconsPage, setCurrentIconsPage] = useState(0)
+  const currentIconsPage = useHookstate(0)
+  const dimensions = useHookstate({ width: 474, height: 440 })
+  const tooltipContent = useHookstate('')
 
-  const [dimensions, setDimensions] = useState({ width: 474, height: 440 })
+  const { TooltipInjection, onMouseEnter, onMouseLeave, onMouseMove } = useMovingTooltip()
 
   useLayoutEffect(() => {
     if (isMobile) {
-      setDimensions((prev) => ({
+      dimensions.set((prev) => ({
         width: prev.width * 0.75,
         height: prev.height * 0.75
       }))
@@ -254,70 +255,125 @@ const EmoteMenu = (): JSX.Element => {
   }, [])
 
   return (
-    <svg
-      className="pointer-events-auto"
-      width={dimensions.width}
-      height={dimensions.height}
-      viewBox="0 0 474 440"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M90.454 423.273C35.368 379.876 0 312.568 0 236.999c0-130.891 106.108-237 237-237 130.891 0 237 106.109 237 237 0 75.569-35.368 142.877-90.454 186.274-13.952 10.991-33.554 10.231-48.435.535-10.823-7.052-17.511-19.199-17.511-32.117 0-15.468 8.252-29.5 19.783-39.81 31.008-27.725 50.525-68.035 50.525-112.903 0-83.452-67.518-151.135-150.908-151.402-83.39.267-150.908 67.95-150.908 151.402 0 44.868 19.517 85.178 50.525 112.903 11.531 10.31 19.783 24.342 19.783 39.81 0 12.918-6.688 25.065-17.511 32.117-14.881 9.696-34.483 10.456-48.435-.535"
-        fill="#D3D5D9"
-      />
-
-      {iconItems.slice(currentIconsPage * 6, (currentIconsPage + 1) * 6).map(({ icon: Icon, stateName }, index) => (
-        <Icon
-          className="cursor-pointer"
-          style={{
-            // @ts-ignore: This is not supported by tailwind. And this value is only supported by SVGs, hence incorrecly flagged by TS
-            pointerEvents: 'bounding-box'
-          }}
-          onClick={() => {
-            playAnimation(emoteAnimations[stateName])
-          }}
-          key={index}
+    <>
+      <svg
+        className="pointer-events-auto"
+        width={dimensions.width.value}
+        height={dimensions.height.value}
+        viewBox="0 0 474 440"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M90.454 423.273C35.368 379.876 0 312.568 0 236.999c0-130.891 106.108-237 237-237 130.891 0 237 106.109 237 237 0 75.569-35.368 142.877-90.454 186.274-13.952 10.991-33.554 10.231-48.435.535-10.823-7.052-17.511-19.199-17.511-32.117 0-15.468 8.252-29.5 19.783-39.81 31.008-27.725 50.525-68.035 50.525-112.903 0-83.452-67.518-151.135-150.908-151.402-83.39.267-150.908 67.95-150.908 151.402 0 44.868 19.517 85.178 50.525 112.903 11.531 10.31 19.783 24.342 19.783 39.81 0 12.918-6.688 25.065-17.511 32.117-14.881 9.696-34.483 10.456-48.435-.535"
+          fill="#D3D5D9"
         />
-      ))}
 
-      <svg
-        x="90"
-        y="375"
-        width="2.5rem"
-        height="2.5rem"
-        className="cursor-pointer"
-        onClick={() => {
-          if (currentIconsPage > 0) {
-            setCurrentIconsPage(currentIconsPage - 1)
-          }
-        }}
-      >
-        <circle cx="50%" cy="50%" r="20" fill="transparent" className="hover:fill-gray-200" />
+        {iconItems
+          .slice(currentIconsPage.value * 6, (currentIconsPage.value + 1) * 6)
+          .map(({ icon: Icon, stateName }, index) => (
+            <Icon
+              className="cursor-pointer"
+              style={{
+                // @ts-ignore: This is not supported by tailwind. And this value is only supported by SVGs, hence incorrecly flagged by TS
+                pointerEvents: 'bounding-box'
+              }}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+              onMouseMove={(event) => {
+                onMouseMove(event)
+                tooltipContent.set(stateName)
+              }}
+              onClick={() => {
+                playAnimation(emoteAnimations[stateName])
+              }}
+              key={index}
+            />
+          ))}
 
-        <ChevronLeftLg width="100%" height="100%" />
+        <svg
+          x="90"
+          y="375"
+          width="2.5rem"
+          height="2.5rem"
+          className="cursor-pointer"
+          onClick={() => {
+            if (currentIconsPage.value > 0) {
+              currentIconsPage.set(currentIconsPage.value - 1)
+            }
+          }}
+        >
+          <circle cx="50%" cy="50%" r="20" fill="transparent" className="hover:fill-gray-200" />
+
+          <ChevronLeftLg width="100%" height="100%" />
+        </svg>
+
+        <svg
+          x="345"
+          y="375"
+          width="2.5rem"
+          height="2.5rem"
+          className="cursor-pointer"
+          onClick={() => {
+            if (currentIconsPage.value < Math.floor(iconItems.length / 6)) {
+              currentIconsPage.set(currentIconsPage.value + 1)
+            }
+          }}
+        >
+          <circle cx="50%" cy="50%" r="20" fill="transparent" className="hover:fill-gray-200" />
+
+          <ChevronRightLg width="100%" height="100%" />
+        </svg>
       </svg>
-
-      <svg
-        x="345"
-        y="375"
-        width="2.5rem"
-        height="2.5rem"
-        className="cursor-pointer"
-        onClick={() => {
-          if (currentIconsPage < Math.floor(iconItems.length / 6)) {
-            setCurrentIconsPage(currentIconsPage + 1)
-          }
-        }}
-      >
-        <circle cx="50%" cy="50%" r="20" fill="transparent" className="hover:fill-gray-200" />
-
-        <ChevronRightLg width="100%" height="100%" />
-      </svg>
-    </svg>
+      <TooltipInjection content={tooltipContent.value} />
+    </>
   )
+}
+
+const useMovingTooltip = () => {
+  const isTooltipVisible = useHookstate(false)
+  const tooltipPosition = useHookstate({ x: 0, y: 0 })
+
+  const tooltipRef = useRef<HTMLDivElement>(null)
+
+  const onMouseMove = (event: React.MouseEvent) => {
+    const tooltipX = event.clientX + 24,
+      tooltipY = event.clientY - 24
+    tooltipPosition.set({ x: tooltipX, y: tooltipY })
+  }
+
+  const onMouseEnter = () => {
+    isTooltipVisible.set(true)
+  }
+
+  const onMouseLeave = () => {
+    isTooltipVisible.set(false)
+  }
+
+  const TooltipInjection = ({ content }: { content: string }) => {
+    return (
+      <div className={isTooltipVisible.value ? 'block' : 'hidden'}>
+        {isTooltipVisible.value && (
+          <div
+            ref={tooltipRef}
+            className={`fixed z-50 bg-black p-4 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25),_0px_2px_8px_0px_rgba(0,0,0,0.04),_0px_8px_16px_0px_rgba(0,0,0,0.08)] ${
+              content ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              top: tooltipPosition.y.value,
+              left: tooltipPosition.x.value
+            }}
+          >
+            {content}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return { onMouseMove, onMouseEnter, onMouseLeave, TooltipInjection }
 }
 
 export default EmoteMenu
