@@ -94,7 +94,6 @@ function GeneralTab() {
 function AudioTab() {
   const { t } = useTranslation()
   const audioState = useMutableState(AudioState)
-  console.log('debug1 the audiostate', audioState)
 
   return (
     <div className="h-full w-full">
@@ -104,10 +103,12 @@ function AudioTab() {
           <span className="font-bold underline">chrome://flags/#chrome-wide-echo-cancellation</span>
         </div>
       )}
-      <div className="flex w-3/4 justify-center">
+      <div className="mx-auto flex w-3/4 justify-center">
         <Checkbox
           variantTextPlacement="right"
-          label={(<label className="text-[#080808]">{t('user:usermenu.setting.use-positional-media')}</label>) as any}
+          label={
+            (<label className="text-text-secondary">{t('user:usermenu.setting.use-positional-media')}</label>) as any
+          }
           checked={audioState.positionalMedia.value}
           onChange={(value: boolean) => {
             audioState.positionalMedia.set(value)
@@ -115,7 +116,8 @@ function AudioTab() {
           }}
         />
       </div>
-      <div className="mx-auto my-1 w-3/4">
+      <div className="mx-auto grid grid-cols-[1fr_2fr] items-center gap-x-4 lg:w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">{t('user:usermenu.setting.lbl-volume')}</div>
         <Slider
           max={1}
           min={0}
@@ -126,14 +128,9 @@ function AudioTab() {
             logger.info({ event_name: `set_total_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-volume')}</div>
-            ) as any
-          }
+          label=""
         />
-      </div>
-      <div className="mx-auto my-1 w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">{t('user:usermenu.setting.lbl-microphone')}</div>
         <Slider
           max={1}
           min={0}
@@ -144,14 +141,11 @@ function AudioTab() {
             logger.info({ event_name: `set_microphone_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-microphone')}</div>
-            ) as any
-          }
+          label=""
         />
-      </div>
-      <div className="mx-auto my-1 w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">
+          {t('user:usermenu.setting.lbl-media-instance')}
+        </div>
         <Slider
           max={1}
           min={0}
@@ -162,16 +156,9 @@ function AudioTab() {
             logger.info({ event_name: `set_user_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">
-                {t('user:usermenu.setting.lbl-media-instance')}
-              </div>
-            ) as any
-          }
+          label=""
         />
-      </div>
-      <div className="mx-auto my-1 w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">{t('user:usermenu.setting.lbl-notification')}</div>
         <Slider
           max={1}
           min={0}
@@ -182,14 +169,9 @@ function AudioTab() {
             logger.info({ event_name: `set_notification_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-notification')}</div>
-            ) as any
-          }
+          label=""
         />
-      </div>
-      <div className="mx-auto my-1 w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">{t('user:usermenu.setting.lbl-sound-effect')}</div>
         <Slider
           max={1}
           min={0}
@@ -200,14 +182,11 @@ function AudioTab() {
             logger.info({ event_name: `set_scene_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">{t('user:usermenu.setting.lbl-sound-effect')}</div>
-            ) as any
-          }
+          label=""
         />
-      </div>
-      <div className="mx-auto my-1 w-3/4">
+        <div className="mt-2 text-right text-sm text-text-tertiary">
+          {t('user:usermenu.setting.lbl-background-music-volume')}
+        </div>
         <Slider
           max={1}
           min={0}
@@ -218,13 +197,7 @@ function AudioTab() {
             logger.info({ event_name: `set_music_volume`, event_value: value })
           }}
           onRelease={() => {}}
-          label={
-            (
-              <div className="w-32 whitespace-nowrap text-[#080808]">
-                {t('user:usermenu.setting.lbl-background-music-volume')}
-              </div>
-            ) as any
-          }
+          label=""
         />
       </div>
     </div>
@@ -357,7 +330,7 @@ export default function SettingsMenu() {
   const { t } = useTranslation()
 
   return (
-    <div className="absolute z-50 h-fit max-h-[90vh] min-h-[50vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-1 p-6 text-text-secondary mdh:max-h-[60vh] mdh:p-10">
+    <div className="absolute z-50 h-fit max-h-[90vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-1 p-6 text-text-secondary mdh:max-h-[60vh] mdh:p-10">
       <div className="mb-[17px]">
         <button onClick={() => PopoverState.hidePopupover()}>
           <ArrowLeftLg />
