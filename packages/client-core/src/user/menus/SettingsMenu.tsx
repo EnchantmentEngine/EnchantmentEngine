@@ -38,6 +38,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { PopoverState } from '../../common/services/PopoverState'
 import { XruiNameplateState } from '../../social/XruiNameplateState'
+import ControllerMappingImage from './images/controller-mapping.png'
+import KeyboardMappingImage from './images/keyboard-mapping.png'
+import MouseMappingImage from './images/mouse-mapping.png'
 
 const isChromeDesktop = !isMobile && /chrome/i.test(navigator.userAgent)
 const logger = multiLogger.child({ component: 'system:settings-menu' })
@@ -69,19 +72,13 @@ function GeneralTab() {
   const xrSupported = xrSupportedModes['immersive-ar'].value || xrSupportedModes['immersive-vr'].value
 
   return (
-    <div className="h-full w-full">
+    <div>
       {!isMobile && !xrSupported && (
         <>
-          <div className="m-2 rounded-md bg-[#191B1F]">
-            <img src="/static/Desktop_Tutorial_Keyboard.png" alt="Desktop Controls" className="m-auto" />
-          </div>
-          <div className="flex">
-            <div className="m-2 flex-1 rounded-md bg-[#191B1F]">
-              <img src="/static/Controller_Tutorial.png" alt="Controller Controls" className="m-auto" />
-            </div>
-            <div className="m-2 flex-1 rounded-md bg-[#191B1F]">
-              <img src="/static/Desktop_Tutorial_Mouse.png" alt="Controller Controls" className="m-auto" />
-            </div>
+          <img src={KeyboardMappingImage} alt="Desktop Controls" className="mx-auto" />
+          <div className="mx-auto grid grid-cols-2">
+            <img src={ControllerMappingImage} alt="Controller Controls" className="col-span-1" />
+            <img src={MouseMappingImage} alt="Controller Controls" className="col-span-1" />
           </div>
         </>
       )}
