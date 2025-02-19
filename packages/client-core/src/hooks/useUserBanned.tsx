@@ -37,7 +37,8 @@ export const useUserBannedCheck = () => {
   const selfUser = useMutableState(AuthState).user.get(NO_PROXY)
   const { data } = useFind(moderationBanPath, {
     query: {
-      banUserId: selfUser?.id
+      banUserId: selfUser?.id,
+      banned: true
     }
   })
 
