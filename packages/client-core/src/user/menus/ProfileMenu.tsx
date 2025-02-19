@@ -27,7 +27,6 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 
-import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
 import { useFind } from '@ir-engine/common'
 import { validateEmail, validatePhoneNumber } from '@ir-engine/common/src/config'
 import multiLogger from '@ir-engine/common/src/logger'
@@ -52,7 +51,7 @@ import {
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
-import { Checkbox, Input, Tooltip } from '@ir-engine/ui'
+import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import {
   CheckLg,
@@ -74,6 +73,7 @@ import {
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { FaApple } from 'react-icons/fa'
+import { twMerge } from 'tailwind-merge'
 import { initialAuthState, initialOAuthConnectedState } from '../../common/initialAuthState'
 import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
@@ -363,9 +363,9 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const enableConnect = authState?.value?.emailMagicLink || authState?.value?.smsMagicLink
 
   return (
-    <div className="absolute z-50 h-fit max-h-[90vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-1 p-6 mdh:max-h-[60vh] mdh:p-10">
-      <div className="grid w-full grid-cols-2 gap-x-2">
-        <div className="grid grid-cols-3 gap-x-2">
+    <div className="absolute z-50 h-fit max-h-[90vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-4 p-6 mdh:max-h-[60vh] mdh:px-8 mdh:py-6">
+      <div className="relative grid w-full grid-cols-5 gap-x-2">
+        <div className="col-span-3 grid grid-cols-3 gap-x-2">
           <div className="relative col-span-1 h-[3.75rem] w-[3.75rem]">
             <AvatarImage size="fill" src={avatarThumbnail} />
             <button
@@ -378,21 +378,15 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             </button>
           </div>
 
-          <div className="col-span-2 grid grid-cols-1 gap-y-1">
+          <div className="col-span-2 flex flex-col">
             <Text fontSize="xl" fontWeight="semibold" className="text-text-primary">
               {hasAdminAccess ? t('user:usermenu.profile.youAreAn') : t('user:usermenu.profile.youAreA')}
-              <span className={commonStyles.bold}>{hasAdminAccess ? ' Admin' : isGuest ? ' Guest' : ' User'}</span>.
+              <span>{hasAdminAccess ? ' Admin' : isGuest ? ' Guest' : ' User'}</span>
             </Text>
-
-            {acceptedTOS && selfUser?.inviteCode.value && (
-              <Text fontSize="sm" className="text-text-secondary">
-                {t('user:usermenu.profile.inviteCode')}: {selfUser.inviteCode.value}
-              </Text>
-            )}
 
             {acceptedTOS && (
               <button className="w-fit" onClick={() => showUserId.set(!showUserId.value)}>
-                <Text fontSize="sm" className="text-text-secondary">
+                <Text fontSize="sm" className="text-text-primary">
                   {showUserId.value ? t('user:usermenu.profile.hideUserId') : t('user:usermenu.profile.showUserId')}
                 </Text>
               </button>
@@ -408,41 +402,42 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-x-2">
+        <div className="col-span-2 grid grid-cols-3 gap-x-3">
           <button
-            className="col-span-1 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-surface-0 p-2"
+            className={twMerge(
+              'col-span-1 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-ui-secondary p-2 text-text-primary-button hover:bg-ui-hover-secondary focus:bg-ui-select-secondary',
+              initialized ? 'justify-self-end' : 'col-start-3'
+            )}
             onClick={() => {
               PopoverState.showPopupover(<SettingsMenu />)
             }}
           >
-            <CogLg className="h-10 w-10 text-text-primary" />
+            <CogLg className="h-[1.875rem] w-[1.875rem]" />
           </button>
 
           {initialized && (
-            <div className="col-span-2 grid grid-cols-1 gap-y-1 mdh:gap-y-2">
-              <button
-                className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#616161] p-1 text-text-primary-button"
-                onClick={openChat}
-              >
+            <div className="col-span-2 flex w-full flex-col gap-y-1 mdh:gap-y-2">
+              <Button variant="secondary" fullWidth onClick={openChat}>
                 <HelpIconLg />
                 {t('user:usermenu.profile.helpChat')}
-              </button>
+              </Button>
 
-              <button
-                className="flex w-full items-center justify-center gap-x-2 rounded-md bg-[#C3324B] p-1 text-text-primary-button"
-                onClick={openChat}
-              >
+              <Button variant="red" fullWidth onClick={openChat}>
                 <ReportWebsiteDefaullg />
                 {t('user:usermenu.profile.reportWorld')}
-              </button>
+              </Button>
             </div>
           )}
         </div>
-      </div>
 
-      <div className="mt-1 grid w-full grid-cols-1 gap-y-4 mdh:mt-5">
         {isGuest && !originallyAcceptedTOS && (
-          <>
+          <div
+            className={twMerge(
+              'absolute left-[6.5rem] flex flex-col gap-y-2',
+              acceptedTOS ? 'top-16' : 'top-11',
+              initialized ? 'top-[4.5rem]' : ''
+            )}
+          >
             <div className="flex w-full items-center justify-start gap-x-1">
               <Checkbox
                 checked={checkedTOS.value}
@@ -462,9 +457,15 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               onChange={() => checked13OrOver.set((v) => !v)}
               label={t('user:usermenu.profile.confirmAge13')}
             />
-          </>
+          </div>
         )}
-
+      </div>
+      <div
+        className={twMerge(
+          'mt-1 grid w-full grid-cols-1 gap-y-1',
+          isGuest && !originallyAcceptedTOS ? 'mt-7 mdh:mt-16' : 'mt-1 mdh:mt-5'
+        )}
+      >
         {!isGuest && !originallyAgeVerified.value && (
           <Checkbox
             checked={checked18OrOver}
@@ -603,147 +604,150 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         </div>
       )}
 
-      <hr className="mb-1 mt-1 border-ui-outline mdh:mb-5 mdh:mt-5" />
+      <hr className="mb-1 mt-1 border-ui-outline mdh:mb-1 mdh:mt-4" />
 
       {!hideLogin && acceptedTOS && enableSocial && (
-        <div className="flex w-full items-center justify-center gap-x-2">
-          {authState?.value?.facebook && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.facebook.value ? 'unlink' : 'link'} your Facebook account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.facebook.value) {
-                    handleRemoveOAuthServiceClick('facebook')
-                  } else {
-                    handleOAuthServiceClick('facebook')
-                  }
-                }}
+        <div className="flex w-full items-center justify-between gap-x-4">
+          <div className="flex items-center gap-x-4">
+            {authState?.value?.facebook && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.facebook.value ? 'unlink' : 'link'} your Facebook account`}
               >
-                <FacebookOriginalFalse className="h-10 w-10" />
-                {oauthConnectedState.facebook.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
-          {authState?.value?.twitter && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.twitter.value ? 'unlink' : 'link'} your Twitter account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.twitter.value) {
-                    handleRemoveOAuthServiceClick('twitter')
-                  } else {
-                    handleOAuthServiceClick('twitter')
-                  }
-                }}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.facebook.value) {
+                      handleRemoveOAuthServiceClick('facebook')
+                    } else {
+                      handleOAuthServiceClick('facebook')
+                    }
+                  }}
+                >
+                  <FacebookOriginalFalse className="h-8 w-8" />
+                  {oauthConnectedState.facebook.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {authState?.value?.twitter && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.twitter.value ? 'unlink' : 'link'} your Twitter account`}
               >
-                <TwitterOriginalFalse className="h-10 w-10" />
-                {oauthConnectedState.twitter.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
-          {authState?.value?.google && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.google.value ? 'unlink' : 'link'} your Google account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.google.value) {
-                    handleRemoveOAuthServiceClick('google')
-                  } else {
-                    handleOAuthServiceClick('google')
-                  }
-                }}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.twitter.value) {
+                      handleRemoveOAuthServiceClick('twitter')
+                    } else {
+                      handleOAuthServiceClick('twitter')
+                    }
+                  }}
+                >
+                  <TwitterOriginalFalse className="h-8 w-8" />
+                  {oauthConnectedState.twitter.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {authState?.value?.google && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.google.value ? 'unlink' : 'link'} your Google account`}
               >
-                <GoogleOriginalFalse className="h-10 w-10" />
-                {oauthConnectedState.google.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
-          {authState?.value?.apple && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.apple.value ? 'unlink' : 'link'} your Apple account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.apple.value) {
-                    handleRemoveOAuthServiceClick('apple')
-                  } else {
-                    handleOAuthServiceClick('apple')
-                  }
-                }}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.google.value) {
+                      handleRemoveOAuthServiceClick('google')
+                    } else {
+                      handleOAuthServiceClick('google')
+                    }
+                  }}
+                >
+                  <GoogleOriginalFalse className="h-8 w-8" />
+                  {oauthConnectedState.google.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {authState?.value?.apple && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.apple.value ? 'unlink' : 'link'} your Apple account`}
               >
-                <FaApple className="h-10 w-10 text-text-primary" />
-                {oauthConnectedState.apple.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
-          {authState?.value?.github && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.github.value ? 'unlink' : 'link'} your Github account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.github.value) {
-                    handleRemoveOAuthServiceClick('github')
-                  } else {
-                    handleOAuthServiceClick('github')
-                  }
-                }}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.apple.value) {
+                      handleRemoveOAuthServiceClick('apple')
+                    } else {
+                      handleOAuthServiceClick('apple')
+                    }
+                  }}
+                >
+                  <FaApple className="h-8 w-8 text-text-primary" />
+                  {oauthConnectedState.apple.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {authState?.value?.github && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.github.value ? 'unlink' : 'link'} your Github account`}
               >
-                <GithubOriginalFalse className="h-10 w-10" />
-                {oauthConnectedState.github.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
-          {authState?.value?.discord && (
-            <Tooltip
-              position="top"
-              content={`Click to ${oauthConnectedState.discord.value ? 'unlink' : 'link'} your Discord account`}
-            >
-              <button
-                className="relative h-10 w-10"
-                onClick={() => {
-                  if (oauthConnectedState.discord.value) {
-                    handleRemoveOAuthServiceClick('discord')
-                  } else {
-                    handleOAuthServiceClick('discord')
-                  }
-                }}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.github.value) {
+                      handleRemoveOAuthServiceClick('github')
+                    } else {
+                      handleOAuthServiceClick('github')
+                    }
+                  }}
+                >
+                  <GithubOriginalFalse className="h-8 w-8" />
+                  {oauthConnectedState.github.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {authState?.value?.discord && (
+              <Tooltip
+                position="top"
+                content={`Click to ${oauthConnectedState.discord.value ? 'unlink' : 'link'} your Discord account`}
               >
-                <DiscordOriginalFalse className="h-10 w-10" />
-                {oauthConnectedState.discord.value && (
-                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
-                )}
-              </button>
-            </Tooltip>
-          )}
+                <button
+                  className="relative h-8 w-8"
+                  onClick={() => {
+                    if (oauthConnectedState.discord.value) {
+                      handleRemoveOAuthServiceClick('discord')
+                    } else {
+                      handleOAuthServiceClick('discord')
+                    }
+                  }}
+                >
+                  <DiscordOriginalFalse className="h-8 w-8" />
+                  {oauthConnectedState.discord.value && (
+                    <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+          </div>
+          <span className="text-sm text-text-primary">{t('user:usermenu.profile.addSocial')}</span>
         </div>
       )}
 
       <a href={clientSetting?.privacyPolicy} target="_blank">
-        <Text className="mt-1 w-full text-center text-text-tertiary mdh:mt-5" fontSize="sm">
+        <Text className="mt-1 w-full text-center text-text-primary mdh:mt-5" fontSize="sm">
           {t('user:usermenu.profile.privacyPolicy')}
         </Text>
       </a>
