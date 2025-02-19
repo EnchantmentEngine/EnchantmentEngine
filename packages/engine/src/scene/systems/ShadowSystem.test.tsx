@@ -981,7 +981,7 @@ describe('EntityCSMReactor', () => {
         expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
         expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
         expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const before = light.color.getHex()
           expect(before).toBe(Initial)
           expect(before).not.toBe(Expected)
@@ -992,7 +992,7 @@ describe('EntityCSMReactor', () => {
         root.run()
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.color.getHex()
           expect(result).not.toBe(Initial)
           expect(result).toBe(Expected)
@@ -1025,7 +1025,7 @@ describe('EntityCSMReactor', () => {
         expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
         expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
         expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const before = light.intensity
           expect(before).toBe(Initial)
           expect(before).not.toBe(Expected)
@@ -1036,7 +1036,7 @@ describe('EntityCSMReactor', () => {
         root.run()
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.intensity
           expect(result).not.toBe(Initial)
           expect(result).toBe(Expected)
@@ -1070,7 +1070,7 @@ describe('EntityCSMReactor', () => {
         expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
         expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
         expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const before = light.shadow.mapSize
           expect(before).toEqual(new Vector2(Initial, Initial))
           expect(before).not.toEqual(new Vector2(Expected, Expected))
@@ -1081,7 +1081,7 @@ describe('EntityCSMReactor', () => {
         root.run()
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.shadow.mapSize
           expect(result).not.toEqual(new Vector2(Initial, Initial))
           expect(result).toEqual(new Vector2(Expected, Expected))
@@ -1114,7 +1114,7 @@ describe('EntityCSMReactor', () => {
         expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
         expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
         expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const before = light.shadow.radius
           expect(before).toBe(Initial)
           expect(before).not.toBe(Expected)
@@ -1125,7 +1125,7 @@ describe('EntityCSMReactor', () => {
         root.run()
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm?.lights!) {
+        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.shadow.radius
           expect(result).not.toBe(Initial)
           expect(result).toBe(Expected)
