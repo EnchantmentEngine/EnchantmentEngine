@@ -100,20 +100,21 @@ describe('ShadowSystemState', () => {
     /** @todo How to change the value of isMobileXRHeadset to true */
     it.todo('should have an accumulationBudget of 4 when isMobileXRHeadset is truthy', async () => {
       const Expected = 4
-      // Set the data as expected
-      // 1. Sanity check before running
+      // 1. Sanity check (input & dependencies)
       expect(isMobileXRHeadset).toBeTruthy()
-      // Run and Check the result
+      // 2. Run the process
       const result = (await ShadowSystemState.initial()).priorityQueue.accumulationBudget
+      // 4. Check the result (output)
       expect(result).toEqual(Expected)
     })
 
     it('should have an accumulationBudget of 20 when isMobileXRHeadset is falsy', async () => {
       const Expected = 20
-      // 1. Sanity check before running
+      // 1. Sanity check (input & dependencies)
       expect(isMobileXRHeadset).toBeFalsy()
-      // Run and Check the result
+      // 2. Run the process
       const result = (await ShadowSystemState.initial()).priorityQueue.accumulationBudget
+      // 4. Check the result (output)
       expect(result).toEqual(Expected)
     })
   }) //:: initial
@@ -1382,34 +1383,6 @@ describe('RenderSettingsQueryReactor', () => {
     destroyEngine()
   })
 
-  it.skip('arstrast', () => {
-    // 3. Set input & dependencies data
-    const csm = new CSM({})
-    const rendererEntity = createEntity()
-    setComponent(rendererEntity, RendererComponent, { csm: csm })
-    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-    const renderSettingsEntity = createEntity()
-    const directionalLightNodeID = undefined
-    setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-    const directionalLightEntity = createEntity()
-    setComponent(directionalLightEntity, DirectionalLightComponent)
-    getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
-    const root = startReactor(() => {
-      return React.createElement(ShadowSystemReactors.CSMReactor, {
-        rendererEntity: rendererEntity,
-        renderSettingsEntity: renderSettingsEntity
-      })
-    }, false) as ReactorRoot
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-    expect(getState(XRLightProbeState).directionalLightEntity).toBeDefined()
-    expect(getState(XRLightProbeState).directionalLightEntity).not.toBe(UndefinedEntity)
-    expect(hasComponent(directionalLightEntity, DirectionalLightComponent)).toBeTruthy()
-    // 2. Run the process
-    root.run()
-  })
-
   it('should not call CSMReactor (return null) if RendererEntity is falsy', () => {
     // 3. Set input & dependencies data
     const rendererEntity = UndefinedEntity
@@ -1602,7 +1575,7 @@ describe('ShadowSystem', () => {
     })
 
     it('should not do anything if the result of getShadowsEnabled is falsy', () => {
-      // Set the data as expected
+      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       setComponent(testEntity, RendererComponent)
       const csm = { update: resultSpy as any } as CSM
@@ -1611,23 +1584,25 @@ describe('ShadowSystem', () => {
       // 1. Sanity check before running
       expect(getShadowsEnabled()).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // Run and Check the result
+      // 2. Run the process
       System.execute()
+      // 4. Check the result (output)
       expect(resultSpy).not.toHaveBeenCalled()
     })
 
     describe('for every entity that has a RendererComponent', () => {
       it('should call entity.RendererComponent.csm.update if entity.RendererComponent.csm is truthy', () => {
-        // Set the data as expected
+        // 3. Set input & dependencies data
         const resultSpy = vi.fn()
         setComponent(testEntity, RendererComponent)
         const csm = { update: resultSpy as any } as CSM
         getMutableComponent(testEntity, RendererComponent).csm.set(csm)
-        // 1. Sanity check before running
+        // 1. Sanity check (input & dependencies)
         expect(getShadowsEnabled()).toBeTruthy()
         expect(resultSpy).not.toHaveBeenCalled()
-        // Run and Check the result
+        // 2. Run the process
         System.execute()
+        // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
         expect(resultSpy).toHaveBeenCalledTimes(1)
       })
@@ -1637,7 +1612,7 @@ describe('ShadowSystem', () => {
          * Can't test that the function wasn't called if csm is falsy,
          * because assigning the function makes csm truthy.
          * */
-        // Set the data as expected
+        // 3. Set input & dependencies data
         const resultSpy = vi.fn()
         setComponent(testEntity, RendererComponent)
         const csm = null
@@ -1645,8 +1620,9 @@ describe('ShadowSystem', () => {
         // 1. Sanity check before running
         expect(getShadowsEnabled()).toBeTruthy()
         expect(resultSpy).not.toHaveBeenCalled()
-        // Run and Check the result
+        // 2. Run the process
         System.execute()
+        // 4. Check the result (output)
         expect(resultSpy).not.toHaveBeenCalled()
       })
     })
@@ -1708,26 +1684,28 @@ describe('DropShadowSystem', () => {
     })
 
     it('should call ShadowSystemFunctions.updateDropShadowTransforms when the result of getShadowsEnabled is falsy', () => {
-      // Set the data as expected
+      // 3. Set input & dependencies data
       const resultSpy = vi.spyOn(ShadowSystemFunctions, 'updateDropShadowTransforms')
       getMutableState(RendererState).useShadows.set(false)
-      // 1. Sanity check before running
+      // 1. Sanity check (input & dependencies)
       expect(getShadowsEnabled()).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // Run and Check the result
+      // 2. Run the process
       System.execute()
+      // 4. Check the result (output)
       expect(resultSpy).toHaveBeenCalled()
       expect(resultSpy).toHaveBeenCalledTimes(1)
     })
 
     it('should not call ShadowSystemFunctions.updateDropShadowTransforms when the result of getShadowsEnabled is truthy', () => {
-      // Set the data as expected
+      // 3. Set input & dependencies data
       const resultSpy = vi.spyOn(ShadowSystemFunctions, 'updateDropShadowTransforms')
-      // 1. Sanity check before running
+      // 1. Sanity check (input & dependencies)
       expect(getShadowsEnabled()).toBeTruthy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // Run and Check the result
+      // 2. Run the process
       System.execute()
+      // 4. Check the result (output)
       expect(resultSpy).not.toHaveBeenCalled()
     })
   }) //:: execute
