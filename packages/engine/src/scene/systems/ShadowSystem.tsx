@@ -198,7 +198,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   return (
     <QueryReactor
       Components={[ShadowComponent, ObjectComponent]}
-      ChildEntityReactor={EntityChildCSMReactor}
+      ChildEntityReactor={ShadowSystemReactors.EntityChildCSMReactor}
       props={{ rendererEntity: rendererEntity }}
     />
   )
