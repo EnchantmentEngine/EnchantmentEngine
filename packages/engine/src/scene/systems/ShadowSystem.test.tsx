@@ -44,7 +44,7 @@ import {
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { getMutableState, getState, ReactorRoot, startReactor } from '@ir-engine/hyperflux'
-import { DirectionalLightComponent, TransformComponent, TransformSystem } from '@ir-engine/spatial'
+import { DirectionalLightComponent, ReferenceSpaceState, TransformComponent, TransformSystem } from '@ir-engine/spatial'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { destroySpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
@@ -52,6 +52,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRenderer
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
 import { CSM } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { getShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
@@ -1367,11 +1368,188 @@ describe('CSMReactor', () => {
 }) //:: CSMReactor
 
 describe('RenderSettingsQueryReactor', () => {
-  it.todo('should return null if RendererEntity is falsy', () => {})
-  it.todo('should return null if RendererEntity is not ReferenceSpaceState.viewerEntity', () => {})
-  it.todo('should return null if RendererState.renderMode is RenderModes.UNLIT', () => {})
-  it.todo('should return null if RendererState.renderMode is RenderModes.LIT', () => {})
-  it.todo('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {})
+  let testEntity = UndefinedEntity
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
+  it.skip('arstrast', () => {
+    // 3. Set input & dependencies data
+    const csm = new CSM({})
+    const rendererEntity = createEntity()
+    setComponent(rendererEntity, RendererComponent, { csm: csm })
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    const renderSettingsEntity = createEntity()
+    const directionalLightNodeID = undefined
+    setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+    const directionalLightEntity = createEntity()
+    setComponent(directionalLightEntity, DirectionalLightComponent)
+    getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+    const root = startReactor(() => {
+      return React.createElement(ShadowSystemReactors.CSMReactor, {
+        rendererEntity: rendererEntity,
+        renderSettingsEntity: renderSettingsEntity
+      })
+    }, false) as ReactorRoot
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+    expect(getState(XRLightProbeState).directionalLightEntity).toBeDefined()
+    expect(getState(XRLightProbeState).directionalLightEntity).not.toBe(UndefinedEntity)
+    expect(hasComponent(directionalLightEntity, DirectionalLightComponent)).toBeTruthy()
+    // 2. Run the process
+    root.run()
+  })
+
+  it('should not call CSMReactor (return null) if RendererEntity is falsy', () => {
+    // 3. Set input & dependencies data
+    const rendererEntity = UndefinedEntity
+    const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, RenderSettingsComponent)
+    const root = startReactor(() => {
+      return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
+        rendererEntity: rendererEntity,
+        renderSettingsEntity: renderSettingsEntity
+      })
+    }, false) as ReactorRoot
+    const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
+    // 1. Sanity check (input & dependencies)
+    expect(rendererEntity).toBeFalsy()
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    root.run()
+    // 4. Check the result (output)
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    expect(resultSpy).not.toHaveBeenCalled()
+  })
+
+  it('should not call CSMReactor (return null) if RendererEntity is not ReferenceSpaceState.viewerEntity', () => {
+    // 3. Set input & dependencies data
+    const rendererEntity = createEntity()
+    const csm = new CSM({})
+    setComponent(rendererEntity, RendererComponent, { csm: csm })
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, RenderSettingsComponent)
+    const root = startReactor(() => {
+      return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
+        rendererEntity: rendererEntity,
+        renderSettingsEntity: renderSettingsEntity
+      })
+    }, false) as ReactorRoot
+    const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
+    // 1. Sanity check (input & dependencies)
+    expect(rendererEntity).toBeTruthy()
+    expect(rendererEntity).not.toBe(getState(ReferenceSpaceState).viewerEntity)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    root.run()
+    // 4. Check the result (output)
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    expect(resultSpy).not.toHaveBeenCalled()
+  })
+
+  it('should not call CSMReactor (return null) if RendererState.renderMode is RenderModes.UNLIT', () => {
+    // 3. Set input & dependencies data
+    const rendererEntity = createEntity()
+    const csm = new CSM({})
+    setComponent(rendererEntity, RendererComponent, { csm: csm })
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, RenderSettingsComponent)
+    const root = startReactor(() => {
+      return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
+        rendererEntity: rendererEntity,
+        renderSettingsEntity: renderSettingsEntity
+      })
+    }, false) as ReactorRoot
+    getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
+    getMutableState(RendererState).renderMode.set(RenderModes.UNLIT)
+    const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
+    // 1. Sanity check (input & dependencies)
+    expect(rendererEntity).toBeTruthy()
+    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
+    expect(getState(RendererState).renderMode).toBe(RenderModes.UNLIT)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    root.run()
+    // 4. Check the result (output)
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    expect(resultSpy).not.toHaveBeenCalled()
+  })
+
+  it('should not call CSMReactor (return null) if RendererState.renderMode is RenderModes.LIT', () => {
+    // 3. Set input & dependencies data
+    const rendererEntity = createEntity()
+    const csm = new CSM({})
+    setComponent(rendererEntity, RendererComponent, { csm: csm })
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, RenderSettingsComponent)
+    const root = startReactor(() => {
+      return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
+        rendererEntity: rendererEntity,
+        renderSettingsEntity: renderSettingsEntity
+      })
+    }, false) as ReactorRoot
+    getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
+    getMutableState(RendererState).renderMode.set(RenderModes.LIT)
+    const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
+    // 1. Sanity check (input & dependencies)
+    expect(rendererEntity).toBeTruthy()
+    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
+    expect(getState(RendererState).renderMode).toBe(RenderModes.LIT)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    root.run()
+    // 4. Check the result (output)
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    expect(resultSpy).not.toHaveBeenCalled()
+  })
+
+  /* @todo Setup the connection between rendererEntity and testEntity */
+  it.todo('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {
+    // 3. Set input & dependencies data
+    const rendererEntity = createEntity()
+    const csm = new CSM({})
+    setComponent(rendererEntity, RendererComponent, { csm: csm })
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, RenderSettingsComponent)
+    const root = startReactor(() => {
+      return React.createElement(
+        EntityContext.Provider,
+        { value: testEntity },
+        React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor)
+      )
+    }, false) as ReactorRoot
+    getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
+    const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
+    // 1. Sanity check (input & dependencies)
+    expect(rendererEntity).toBeTruthy()
+    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
+    expect(getState(RendererState).renderMode).not.toBe(RenderModes.UNLIT)
+    expect(getState(RendererState).renderMode).not.toBe(RenderModes.LIT)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    root.run()
+    // 4. Check the result (output)
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    expect(resultSpy).toHaveBeenCalled()
+  })
 }) //:: RenderSettingsQueryReactor
 
 /** @todo Drop Shadows do not currently work */
