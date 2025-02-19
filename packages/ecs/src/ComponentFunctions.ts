@@ -1083,7 +1083,23 @@ export const LayerComponent = defineComponent({
 })
 
 export function getAuthoringCounterpart(entity: Entity) {
-  return LayerComponents[Layers.Authoring].refs[entity]
+  return LayerComponents[Layers.Simulation].refs[entity]
+}
+
+export function getSimulationCounterpart(entity: Entity) {
+  const layer = LayerComponent.get(entity)
+  if (layer === Layers.Simulation) {
+    return entity
+  }
+  const relations = LayerFunctions.getLayerRelationsEntities(entity)
+  if (!relations) return UndefinedEntity
+  const entityLayer = LayerComponent.get(entity)
+  for (const [linkedLayer, linkedEntity] of relations) {
+    if (linkedLayer === Layers.Simulation) {
+      return linkedEntity
+    }
+  }
+  return UndefinedEntity
 }
 
 /**
@@ -1339,6 +1355,7 @@ export const entityExists = (entity: Entity) => {
 
 export const EntityContext = React.createContext(UndefinedEntity)
 
+/** @deprecated entity is now passed in as a prop 'entity' to query and array child reactors */
 export const useEntityContext = () => {
   return React.useContext(EntityContext)
 }

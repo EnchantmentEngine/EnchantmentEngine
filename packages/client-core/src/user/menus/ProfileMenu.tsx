@@ -62,6 +62,7 @@ import {
   Edit01Lg,
   FacebookOriginalFalse,
   GithubOriginalFalse,
+  GoogleOriginalFalse,
   HelpIconLg,
   LogIn01Lg,
   Refresh1Lg,
@@ -72,6 +73,7 @@ import {
 } from '@ir-engine/ui/src/icons'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { FaApple } from 'react-icons/fa'
 import { initialAuthState, initialOAuthConnectedState } from '../../common/initialAuthState'
 import { NotificationService } from '../../common/services/NotificationService'
 import { PopoverState } from '../../common/services/PopoverState'
@@ -361,7 +363,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const enableConnect = authState?.value?.emailMagicLink || authState?.value?.smsMagicLink
 
   return (
-    <div className="relative z-50 h-fit max-h-[60vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-1 p-10">
+    <div className="absolute z-50 h-fit max-h-[60vh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-1 p-10">
       <div className="grid w-full grid-cols-2 gap-x-2">
         <div className="grid grid-cols-3 gap-x-2">
           <div className="relative col-span-1 h-[3.75rem] w-[3.75rem]">
@@ -635,6 +637,50 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <TwitterOriginalFalse className="h-10 w-10" />
                 {oauthConnectedState.twitter.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {authState?.value?.google && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.google.value ? 'unlink' : 'link'} your Google account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.google.value) {
+                    handleRemoveOAuthServiceClick('google')
+                  } else {
+                    handleOAuthServiceClick('google')
+                  }
+                }}
+              >
+                <GoogleOriginalFalse className="h-10 w-10" />
+                {oauthConnectedState.google.value && (
+                  <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {authState?.value?.apple && (
+            <Tooltip
+              position="top"
+              content={`Click to ${oauthConnectedState.apple.value ? 'unlink' : 'link'} your Apple account`}
+            >
+              <button
+                className="relative h-10 w-10"
+                onClick={() => {
+                  if (oauthConnectedState.apple.value) {
+                    handleRemoveOAuthServiceClick('apple')
+                  } else {
+                    handleOAuthServiceClick('apple')
+                  }
+                }}
+              >
+                <FaApple className="h-10 w-10" />
+                {oauthConnectedState.apple.value && (
                   <CheckLg className="absolute -right-1 -top-1 font-semibold text-green-400" />
                 )}
               </button>

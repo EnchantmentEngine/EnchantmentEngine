@@ -23,35 +23,25 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import React from 'react'
+import { MdOutlineHeatPump, MdOutlineWatch, MdOutlineWindPower } from 'react-icons/md'
+import SegmentedControl, { SegmentedControlProps } from '../../../../primitives/tailwind/SegmentedControl'
 
-export default function useClickAway(cb: (e: Event) => void, isTopMost: boolean) {
-  const ref = useRef(null)
-  const refCb = useRef(cb)
-
-  useLayoutEffect(() => {
-    refCb.current = cb
-  })
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      if (!isTopMost) {
-        return
-      }
-      const element = ref.current
-      if (element && !(element as any).contains(e.target)) {
-        refCb.current(e)
-      }
-    }
-
-    document.addEventListener('mousedown', handler)
-    document.addEventListener('touchstart', handler)
-
-    return () => {
-      document.removeEventListener('mousedown', handler)
-      document.removeEventListener('touchstart', handler)
-    }
-  }, [isTopMost])
-
-  return ref
+/**Tailwind `Select` styled for studio */
+const SegmentedControlInput = (props: SegmentedControlProps) => {
+  return <SegmentedControl {...props} />
 }
+
+SegmentedControlInput.displayName = 'SegmentedControlInput'
+SegmentedControlInput.defaultProps = {
+  options: [
+    { label: 'Cuboid', value: 'a', icon: <MdOutlineWatch /> },
+    { label: 'Cylinder', value: 'b', icon: <MdOutlineHeatPump /> },
+    { label: 'Cube', value: 'c', icon: <MdOutlineWindPower /> }
+  ],
+  value: 'a',
+  onChange: () => {},
+  width: 'full'
+}
+
+export default SegmentedControlInput
