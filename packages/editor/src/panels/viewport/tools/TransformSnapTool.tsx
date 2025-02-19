@@ -98,6 +98,7 @@ const TransformSnapTool = () => {
 
       <ToolbarDropdown
         tooltipContent={t('editor:toolbar.transformSnapTool.info-translate')}
+        tooltipPosition="right"
         onChange={onChangeTranslationSnap}
         options={translationSnapOptions}
         value={editorHelperState.translationSnap.value}
@@ -108,6 +109,7 @@ const TransformSnapTool = () => {
 
       <ToolbarDropdown
         tooltipContent={t('editor:toolbar.transformSnapTool.info-rotate')}
+        tooltipPosition="right"
         onChange={onChangeRotationSnap}
         options={rotationSnapOptions}
         value={editorHelperState.rotationSnap.value}

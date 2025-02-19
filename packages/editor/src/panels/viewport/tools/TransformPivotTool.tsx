@@ -72,6 +72,7 @@ const TransformPivotTool = () => {
         tooltipContent={
           transformPivotOptions.find((pivot) => pivot.value === editorHelperState.transformPivot.value)?.description
         }
+        tooltipPosition="right"
         onChange={setTransformPivot}
         options={transformPivotOptions}
         value={editorHelperState.transformPivot.value}

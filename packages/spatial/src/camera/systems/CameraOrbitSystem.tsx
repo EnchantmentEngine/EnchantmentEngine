@@ -29,6 +29,7 @@ import {
   defineSystem,
   getComponent,
   getMutableComponent,
+  getOptionalComponent,
   InputSystemGroup,
   query,
   UndefinedEntity
@@ -85,7 +86,7 @@ const execute = () => {
     const camera = getComponent(cameraEid, CameraComponent)
 
     const inputSourceEntity = orbiting?.inputSourceEntity ?? panning?.inputSourceEntity ?? UndefinedEntity
-    const inputPointer = getComponent(inputSourceEntity, InputPointerComponent)
+    const inputPointer = getOptionalComponent(inputSourceEntity, InputPointerComponent)
     if (inputPointer?.movement) {
       cameraOrbit.cursorDeltaX.set(inputPointer.movement.x)
       cameraOrbit.cursorDeltaY.set(inputPointer.movement.y)
