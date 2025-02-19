@@ -46,7 +46,7 @@ export const moderationDataResolver = resolve<ModerationType, HookContext>({
   },
   reportedAt: getDateTimeSql,
   ipAddress: async (_, __, context) => {
-    return context.params.forwarded?.ip || null
+    return context.params.forwarded?.ip || '::1'
   },
   updatedBy: async (_, __, context) => {
     return context.params?.user?.id || null
