@@ -100,7 +100,7 @@ function AudioTab() {
           <span className="font-bold underline">chrome://flags/#chrome-wide-echo-cancellation</span>
         </div>
       )}
-      <div className="mx-auto flex w-3/4 justify-center">
+      {/* <div className="mx-auto flex w-3/4 justify-center">
         <Checkbox
           variantTextPlacement="right"
           label={t('user:usermenu.setting.use-positional-media')}
@@ -110,7 +110,7 @@ function AudioTab() {
             logger.info({ event_name: `spatial_user_av`, event_value: value })
           }}
         />
-      </div>
+      </div> */}
       <div className="mx-auto grid grid-cols-[1fr_2fr] items-center gap-x-4 lg:w-3/4">
         <div className="mt-2 text-right text-sm text-text-tertiary">{t('user:usermenu.setting.lbl-volume')}</div>
         <Slider
