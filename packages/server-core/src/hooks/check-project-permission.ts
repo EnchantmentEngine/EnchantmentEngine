@@ -23,26 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { useEffect, useRef } from 'react'
+import { HookContext } from '@feathersjs/feathers'
 
-const ClickAwayListener = ({ onClickAway, children }) => {
-  const wrapperRef = useRef(null)
+import { Application } from '../../declarations'
+import verifyProjectPermission from './verify-project-permission'
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !(wrapperRef.current! as HTMLElement).contains(event.target)) {
-        onClickAway()
-      }
+export default (types: string[]) => {
+  return async (context: HookContext<Application>) => {
+    try {
+      await verifyProjectPermission(types)(context)
+
+      return true
+    } catch {
+      return false
     }
-
-    document.addEventListener('mousedown', handleClickOutside)
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [onClickAway])
-
-  return <div ref={wrapperRef}>{children}</div>
+  }
 }
-
-export default ClickAwayListener

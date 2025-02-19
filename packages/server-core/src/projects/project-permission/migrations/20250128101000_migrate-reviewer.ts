@@ -23,15 +23,28 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-export const LookAtComponent = defineComponent({
-  name: 'LookAtComponent',
-  jsonID: 'IR_lookAt',
+import type { Knex } from 'knex'
 
-  schema: S.Object({
-    target: S.EntityUUID(),
-    xAxis: S.Bool(true),
-    yAxis: S.Bool(true)
-  })
-})
+import { projectPermissionPath } from '@ir-engine/common/src/schemas/projects/project-permission.schema'
+
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  const tableExists = await knex.schema.hasTable(projectPermissionPath)
+
+  if (tableExists) {
+    await knex(projectPermissionPath).where({ type: 'reviewer' }).update({ type: 'editor' })
+  }
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
+
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+export async function down(knex: Knex): Promise<void> {}

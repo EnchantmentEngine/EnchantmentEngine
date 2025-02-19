@@ -23,35 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { defineComponent } from '@ir-engine/ecs'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { NodeIDSchema } from '../../gltf/NodeIDComponent'
 
-export default function useClickAway(cb: (e: Event) => void, isTopMost: boolean) {
-  const ref = useRef(null)
-  const refCb = useRef(cb)
+export const LookAtComponent = defineComponent({
+  name: 'LookAtComponent',
+  jsonID: 'IR_lookAt',
 
-  useLayoutEffect(() => {
-    refCb.current = cb
+  schema: S.Object({
+    target: NodeIDSchema(),
+    xAxis: S.Bool(true),
+    yAxis: S.Bool(true)
   })
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      if (!isTopMost) {
-        return
-      }
-      const element = ref.current
-      if (element && !(element as any).contains(e.target)) {
-        refCb.current(e)
-      }
-    }
-
-    document.addEventListener('mousedown', handler)
-    document.addEventListener('touchstart', handler)
-
-    return () => {
-      document.removeEventListener('mousedown', handler)
-      document.removeEventListener('touchstart', handler)
-    }
-  }, [isTopMost])
-
-  return ref
-}
+})
