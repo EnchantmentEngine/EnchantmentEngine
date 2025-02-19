@@ -27,17 +27,13 @@ import { Box3, Matrix3, Sphere, Spherical, Vector3 } from 'three'
 
 import {
   defineSystem,
-  Engine,
-  EngineState,
   getComponent,
   getMutableComponent,
-  getOptionalComponent,
   InputSystemGroup,
   query,
-  setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
-import { getState, isClient } from '@ir-engine/hyperflux'
+import { isClient } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -45,11 +41,9 @@ import { InputComponent } from '../../input/components/InputComponent'
 import { InputPointerComponent } from '../../input/components/InputPointerComponent'
 import { MouseScroll } from '../../input/state/ButtonState'
 import { InputState } from '../../input/state/InputState'
-import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 const ZOOM_SPEED = 0.1
-const MAX_FOCUS_DISTANCE = 1000
 const PAN_SPEED = 1
 const ORBIT_SPEED = 5
 
@@ -71,125 +65,62 @@ const execute = () => {
    * assign active orbit camera based on which input source registers input
    */
   for (const cameraEid of query(orbitCameraQueryTerms)) {
-    if (getState(InputState).capturingCameraOrbitEnabled) {
-      const inputPointerEntity = InputPointerComponent.getPointersForCamera(cameraEid)[0]
+    const cameraOrbit = getMutableComponent(cameraEid, CameraOrbitComponent)
+    if (cameraOrbit.disabled.value) continue
 
-      const cameraOrbit = getMutableComponent(cameraEid, CameraOrbitComponent)
+    const buttons = InputComponent.getButtons(cameraEid)
+    const axes = InputComponent.getAxes(cameraEid)
 
-      if (!inputPointerEntity && !cameraOrbit.refocus.value) continue
+    const orbiting = buttons.PrimaryClick
+    const panning = buttons.AuxiliaryClick
+    const zoom = axes[MouseScroll.VerticalScroll]
 
-      // TODO: replace w/ EnabledComponent or DisabledComponent in query
-      if (
-        cameraOrbit.disabled.value ||
-        getState(InputState).capturingEntity !== UndefinedEntity ||
-        (cameraEid == Engine.instance.viewerEntity && !getState(EngineState).isEditing)
-      )
-        continue
+    if (orbiting?.pressed || panning?.pressed || zoom) {
+      InputState.setCapturingEntity(cameraEid)
+    }
 
-      const buttons = InputComponent.getButtons(cameraEid)
-      const axes = InputComponent.getAxes(cameraEid)
+    const transform = getComponent(cameraEid, TransformComponent)
+    const editorCameraCenter = cameraOrbit.cameraOrbitCenter.value
+    const distance = transform.position.distanceTo(editorCameraCenter)
+    const camera = getComponent(cameraEid, CameraComponent)
 
-      if (buttons.PrimaryClick?.pressed && buttons.PrimaryClick?.dragging) {
-        InputState.setCapturingEntity(cameraEid)
-        cameraOrbit.isOrbiting.set(true)
-      }
+    const inputSourceEntity = orbiting?.inputSourceEntity ?? panning?.inputSourceEntity ?? UndefinedEntity
+    const inputPointer = getComponent(inputSourceEntity, InputPointerComponent)
+    if (inputPointer?.movement) {
+      cameraOrbit.cursorDeltaX.set(inputPointer.movement.x)
+      cameraOrbit.cursorDeltaY.set(inputPointer.movement.y)
+    }
 
-      const selecting = buttons.PrimaryClick?.pressed
-      const zoom = axes[MouseScroll.VerticalScroll]
-      const panning = buttons.AuxiliaryClick?.pressed
-
-      const transform = getComponent(cameraEid, TransformComponent)
-      const editorCameraCenter = cameraOrbit.cameraOrbitCenter.value
-      const distance = transform.position.distanceTo(editorCameraCenter)
-      const camera = getComponent(cameraEid, CameraComponent)
-
-      if (buttons.KeyF?.down || distance < cameraOrbit.minimumZoom.value) {
-        cameraOrbit.refocus.set(true)
-      }
-      if (inputPointerEntity) {
-        const inputPointer = getComponent(inputPointerEntity, InputPointerComponent)
-        if (selecting) {
-          cameraOrbit.isOrbiting.set(true)
-          const mouseMovement = inputPointer.movement
-          if (mouseMovement) {
-            cameraOrbit.cursorDeltaX.set(mouseMovement.x)
-            cameraOrbit.cursorDeltaY.set(mouseMovement.y)
-          }
-        } else if (panning) {
-          cameraOrbit.isPanning.set(true)
-          const mouseMovement = inputPointer.movement
-          if (mouseMovement) {
-            cameraOrbit.cursorDeltaX.set(mouseMovement.x)
-            cameraOrbit.cursorDeltaY.set(mouseMovement.y)
-          }
-        }
-      }
-
-      if (zoom) {
-        delta.set(0, 0, zoom * distance * ZOOM_SPEED)
-        if (delta.length() < distance) {
-          delta.applyMatrix3(normalMatrix.getNormalMatrix(camera.matrixWorld))
-          transform.position.add(delta)
-        }
-      }
-
-      if (cameraOrbit.refocus.value) {
-        let distance = cameraOrbit.minimumZoom.value
-        if (cameraOrbit.focusedEntities.length === 0) {
-          editorCameraCenter.set(0, 0, 0)
-          distance = 10
-        } else {
-          box.makeEmpty()
-          for (const object of cameraOrbit.focusedEntities.value) {
-            const obj = getOptionalComponent(object, ObjectComponent)
-            if (obj) box.expandByObject(obj)
-          }
-          if (box.isEmpty()) {
-            const entity = cameraOrbit.focusedEntities[0].value
-            const position = getComponent(entity, TransformComponent).position
-            editorCameraCenter.copy(position)
-          } else {
-            box.getCenter(editorCameraCenter)
-            distance = box.getBoundingSphere(sphere).radius
-          }
-        }
-
-        delta
-          .set(0, 0, 1)
-          .applyQuaternion(transform.rotation)
-          .multiplyScalar(Math.min(distance, MAX_FOCUS_DISTANCE) * 2)
-        transform.position.copy(editorCameraCenter).add(delta)
-
-        setComponent(cameraEid, CameraOrbitComponent, { focusedEntities: [], refocus: false })
-      }
-
-      if (cameraOrbit.isPanning.value) {
-        const distance = transform.position.distanceTo(editorCameraCenter)
-        delta
-          .set(-cameraOrbit.cursorDeltaX.value, -cameraOrbit.cursorDeltaY.value, 0)
-          .multiplyScalar(Math.max(distance, 1) * PAN_SPEED)
-          .applyMatrix3(normalMatrix.getNormalMatrix(camera.matrix))
+    if (zoom) {
+      delta.set(0, 0, zoom * distance * ZOOM_SPEED)
+      if (delta.length() < distance) {
+        delta.applyMatrix3(normalMatrix.getNormalMatrix(camera.matrixWorld))
         transform.position.add(delta)
-        editorCameraCenter.add(delta)
-
-        getMutableComponent(cameraEid, CameraOrbitComponent).isPanning.set(false)
       }
+    }
 
-      if (cameraOrbit.isOrbiting.value) {
-        delta.copy(transform.position).sub(editorCameraCenter)
+    if (panning?.dragging) {
+      const distance = transform.position.distanceTo(editorCameraCenter)
+      delta
+        .set(-cameraOrbit.cursorDeltaX.value, -cameraOrbit.cursorDeltaY.value, 0)
+        .multiplyScalar(Math.max(distance, 1) * PAN_SPEED)
+        .applyMatrix3(normalMatrix.getNormalMatrix(camera.matrix))
+      transform.position.add(delta)
+      editorCameraCenter.add(delta)
+    }
 
-        spherical.setFromVector3(delta)
-        spherical.theta -= cameraOrbit.cursorDeltaX.value * ORBIT_SPEED
-        spherical.phi += cameraOrbit.cursorDeltaY.value * ORBIT_SPEED
-        spherical.makeSafe()
-        delta.setFromSpherical(spherical)
+    if (orbiting?.dragging) {
+      delta.copy(transform.position).sub(editorCameraCenter)
 
-        transform.position.copy(editorCameraCenter).add(delta)
-        transform.matrix.lookAt(transform.position, editorCameraCenter, Vector3_Up)
-        transform.rotation.setFromRotationMatrix(transform.matrix)
+      spherical.setFromVector3(delta)
+      spherical.theta -= cameraOrbit.cursorDeltaX.value * ORBIT_SPEED
+      spherical.phi += cameraOrbit.cursorDeltaY.value * ORBIT_SPEED
+      spherical.makeSafe()
+      delta.setFromSpherical(spherical)
 
-        getMutableComponent(cameraEid, CameraOrbitComponent).isOrbiting.set(false)
-      }
+      transform.position.copy(editorCameraCenter).add(delta)
+      transform.matrix.lookAt(transform.position, editorCameraCenter, Vector3_Up)
+      transform.rotation.setFromRotationMatrix(transform.matrix)
     }
   }
 }
@@ -197,9 +128,5 @@ const execute = () => {
 export const CameraOrbitSystem = defineSystem({
   uuid: 'ee.engine.CameraOrbitSystem',
   insert: { after: InputSystemGroup },
-  execute,
-  reactor: () => {
-    const cameraOrbits = useQuery(orbitCameraQuery)
-    return null
-  }
+  execute
 })

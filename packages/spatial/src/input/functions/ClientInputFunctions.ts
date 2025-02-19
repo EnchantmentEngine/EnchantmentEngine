@@ -174,8 +174,10 @@ function _refreshButton(
   const button = buttons[key]
   if (button) {
     if (button.down) button.down = false
-    if (button.consumed) button.consumed = false
-    if (button.up || !hasFocus) {
+    if (button.consumed) button.consumed = UndefinedEntity
+    if (!button.up && !hasFocus) {
+      button.up = true
+    } else if (button.up || !hasFocus) {
       delete buttons[key]
     }
   } else {

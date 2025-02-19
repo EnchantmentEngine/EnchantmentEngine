@@ -235,9 +235,9 @@ describe('InputComponent', () => {
       const two = createEntity()
       const three = createEntity()
       // Set the state of the buttons
-      Buttons1[Expected[0]] = createInitialButtonState(one, { down: true, consumed: false })
-      Buttons2[Expected[1]] = createInitialButtonState(two, { down: false, consumed: false })
-      Buttons3[Expected[2]] = createInitialButtonState(three, { down: true, consumed: false })
+      Buttons1[Expected[0]] = createInitialButtonState(one, { down: true })
+      Buttons2[Expected[1]] = createInitialButtonState(two, { down: false })
+      Buttons3[Expected[2]] = createInitialButtonState(three, { down: true })
       // We add the key sources to each entity
       setComponent(one, InputSourceComponent)
       setComponent(two, InputSourceComponent)
@@ -301,7 +301,7 @@ describe('InputComponent', () => {
 
       // Test case 3: Single button touched (should trigger touch state)
       inputSource.buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { touched: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { touched: true })
       })
       ClientInputFunctions.refreshInputs(true)
       assert.ok(result.SingleButton?.touched)
@@ -311,7 +311,7 @@ describe('InputComponent', () => {
       // Test case 4: Partial combo pressed (should not trigger)
       ClientInputFunctions.refreshInputs(true)
       inputSource.buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true })
       })
       assert.ok(!result.ComboButtons)
       assert.ok(result.SingleButton?.down)
@@ -319,7 +319,7 @@ describe('InputComponent', () => {
       // Test case 4b: Partial combo with different button (should not trigger)
       ClientInputFunctions.refreshInputs(true)
       inputSource.buttons.set({
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true })
       })
       assert.ok(!result.ComboButtons)
       assert.ok(!result.SingleButton)
@@ -328,8 +328,8 @@ describe('InputComponent', () => {
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true })
       })
       assert.ok(result.ComboButtons?.down)
       assert.ok(result.ComboButtons?.pressed)
@@ -339,8 +339,8 @@ describe('InputComponent', () => {
 
       ClientInputFunctions.refreshInputs(true)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, consumed: false }),
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true })
       })
       result = InputComponent.getButtons(testEntity, buttonAlias)
       assert.ok(result.SingleButton?.down)
@@ -366,8 +366,8 @@ describe('InputComponent', () => {
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true, consumed: false }),
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true })
       })
       assert.ok(result.ComboButtons?.down)
       assert.ok(result.ComboButtons?.pressed)
@@ -377,8 +377,8 @@ describe('InputComponent', () => {
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true, consumed: false }),
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true })
       })
       assert.ok(result.ComboButtons?.down)
       assert.ok(result.ComboButtons?.dragging)
@@ -387,8 +387,8 @@ describe('InputComponent', () => {
       // Test case 8: Full combo with different values
       ClientInputFunctions.refreshInputs(true)
       getMutableComponent(testEntity, InputSourceComponent).buttons.set({
-        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5, consumed: false }),
-        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8, consumed: false })
+        [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5 }),
+        [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8 })
       })
       assert.ok(result.ComboButtons?.down)
       assert.equal(result.ComboButtons?.value, 0.8, 'Combo should use max value from all buttons')

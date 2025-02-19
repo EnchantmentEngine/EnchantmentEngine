@@ -159,7 +159,7 @@ export const InputComponent = defineComponent({
 
                     if (!result && isActive) {
                       // All buttons in combo are active and not consumed, consume them and set the result
-                      states.forEach((s) => (s.consumed = true))
+                      states.forEach((s) => (s.consumed = entity))
                       result = cachedButtons[prop] = createInitialButtonState(states[0].inputSourceEntity)
                     }
 
@@ -171,16 +171,16 @@ export const InputComponent = defineComponent({
                       result.dragging = states.some((s) => s.dragging)
                       result.rotating = states.some((s) => s.rotating)
                       result.up = false
-                      result.consumed = true
+                      result.consumed = entity
                       return result
                     } else if (result) {
                       result.up = true
-                      result.consumed = true
+                      result.consumed = entity
                     }
                   } else {
                     // For single button bindings, just return that button
                     result = cachedButtons[prop] = findButtonState(b)
-                    if (result) result.consumed = true
+                    if (result) result.consumed = entity
                     return result
                   }
 
@@ -191,7 +191,7 @@ export const InputComponent = defineComponent({
 
               // Otherwise check if this exact button exists and is not consumed
               const rawState = (cachedButtons[prop] = findButtonState(prop as AnyButton))
-              if (rawState) rawState.consumed = true
+              if (rawState) rawState.consumed = entity
               return rawState
             }
           }
@@ -214,7 +214,7 @@ export const InputComponent = defineComponent({
       // Don't execute if:
       // 1. We don't want to execute when editing and we are editing
       // 2. The entity is not an ancestor of the capturing entity
-      if ((!executeWhenEditing && isEditing) || !isAncestor(capturingEntity, entity, true)) {
+      if ((!executeWhenEditing && isEditing) || (capturingEntity && !isAncestor(capturingEntity, entity, true))) {
         return
       }
 
@@ -238,7 +238,7 @@ export const InputComponent = defineComponent({
 
   getButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
-    inputBindings?: BindingsType
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>

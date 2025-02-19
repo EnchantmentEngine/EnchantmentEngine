@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Box3, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
+import { Box3, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
 import {
   createEntity,
@@ -41,13 +41,14 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
+import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import {
   TransformAxis,
   TransformMode,
   TransformPivot,
   TransformSpace
-} from '@ir-engine/engine/src/scene/constants/transformConstants'
-import { getState, useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+} from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { useTransformPivot } from '@ir-engine/spatial/src/common/functions/useTransformPivot'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -123,13 +124,13 @@ export const TransformGizmoControlComponent = defineComponent({
       setComponent(gizmoVisualEntity, TransformGizmoTagComponent)
       setComponent(gizmoVisualEntity, VisibleComponent)
       setComponent(gizmoVisualEntity, TransformComponent)
+      setComponent(gizmoVisualEntity, InputComponent)
       ObjectLayerMaskComponent.setLayer(gizmoVisualEntity, ObjectLayers.TransformGizmo)
 
       const gizmoPlaneEntity = createEntity()
       setComponent(gizmoPlaneEntity, EntityTreeComponent, { parentEntity: originEntity })
       setComponent(gizmoPlaneEntity, NameComponent, 'gizmoPlaneEntity')
       setComponent(gizmoPlaneEntity, TransformComponent)
-      setComponent(gizmoPlaneEntity, InputComponent)
       setComponent(gizmoPlaneEntity, VisibleComponent)
 
       const gizmoPlane = new Mesh(
@@ -148,13 +149,21 @@ export const TransformGizmoControlComponent = defineComponent({
       setComponent(gizmoPlaneEntity, TransformGizmoTagComponent)
       ObjectLayerMaskComponent.setLayer(gizmoPlaneEntity, ObjectLayers.TransformGizmo)
 
+      const pivotEntity = createEntity()
+      setComponent(pivotEntity, NameComponent, 'gizmoPivotEntity')
+      setComponent(pivotEntity, TransformComponent)
+      setComponent(pivotEntity, VisibleComponent)
+      setComponent(pivotEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+      setComponent(pivotEntity, TransformGizmoTagComponent)
+
       const gizmoControlEntity = createEntity()
       setComponent(gizmoControlEntity, EntityTreeComponent, { parentEntity: originEntity })
       setComponent(gizmoControlEntity, NameComponent, 'gizmoControlEntity')
       setComponent(gizmoControlEntity, TransformGizmoControlComponent, {
         controlledEntities: controlledEntities,
         visualEntity: gizmoVisualEntity,
-        planeEntity: gizmoPlaneEntity
+        planeEntity: gizmoPlaneEntity,
+        pivotEntity: pivotEntity
       })
       setComponent(gizmoControlEntity, TransformGizmoTagComponent)
       setComponent(gizmoControlEntity, VisibleComponent)
@@ -166,6 +175,7 @@ export const TransformGizmoControlComponent = defineComponent({
         removeEntity(gizmoControlEntity)
         removeEntity(gizmoVisualEntity)
         removeEntity(gizmoPlaneEntity)
+        removeEntity(pivotEntity)
       }
     }, [!!originEntity, controlledEntities.join(',')]) // .join is a hack because SelectionState.useSelectedEntities creates a new array each time
   },
@@ -204,12 +214,8 @@ export const TransformGizmoControlComponent = defineComponent({
         onPointerHover(gizmoControlEntity)
 
         const pickerButtons = InputComponent.getButtons(pickerEntity)
-        const planeButtons = InputComponent.getButtons(gizmoControlComponent.planeEntity)
 
-        if (
-          (pickerButtons?.PrimaryClick?.pressed || planeButtons?.PrimaryClick?.pressed) &&
-          getState(InputState).capturingEntity === UndefinedEntity
-        ) {
+        if (pickerButtons?.PrimaryClick?.pressed && getState(InputState).capturingEntity === UndefinedEntity) {
           InputState.setCapturingEntity(pickerEntity)
           onPointerMove(gizmoControlEntity)
 
@@ -219,7 +225,7 @@ export const TransformGizmoControlComponent = defineComponent({
             onPointerDown(gizmoControlEntity)
           }
 
-          if (planeButtons?.PrimaryClick?.up || pickerButtons?.PrimaryClick?.up) {
+          if (pickerButtons?.PrimaryClick?.up) {
             onPointerUp(gizmoControlEntity)
             onPointerLost(gizmoControlEntity)
             removeComponent(gizmoControlComponent.planeEntity, VisibleComponent)
@@ -230,75 +236,16 @@ export const TransformGizmoControlComponent = defineComponent({
       InputExecutionOrder.Before
     )
 
-    const pivotEntity = useHookstate(() => {
-      const pivotEntity = createEntity()
-      setComponent(pivotEntity, NameComponent, 'gizmoPivotEntity')
-      setComponent(pivotEntity, TransformComponent)
-      setComponent(pivotEntity, VisibleComponent)
-      setComponent(pivotEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-      setComponent(pivotEntity, TransformGizmoTagComponent)
-
-      /*addObjectToGroup(
-        pivotEntity,
-        new Mesh(new SphereGeometry(1.5, 32, 32), new MeshBasicMaterial({ color: 0xff0000 }))
-      )*/
-      // useful for debug so leaving it here
-      return pivotEntity
-    }).value
-
-    useEffect(() => {
-      return () => {
-        removeEntity(pivotEntity)
-      }
-    }, [])
-
     const controlledEntities = gizmoControlComponent.controlledEntities.value as Entity[]
 
-    useEffect(() => {
-      if (controlledEntities.length <= 1) return
+    const pivot = useTransformPivot(controlledEntities, gizmoControlComponent.transformPivot.value)
 
-      const newPosition = new Vector3()
-      TransformComponent.getWorldPosition(pivotEntity, newPosition)
-
-      switch (gizmoControlComponent.transformPivot.value) {
-        case TransformPivot.Origin:
-          newPosition.setScalar(0)
-          break
-        case TransformPivot.FirstSelected:
-          TransformComponent.getWorldPosition(controlledEntities[0], newPosition)
-          break
-        case TransformPivot.Center:
-          getMidpointWorldPosition(controlledEntities, newPosition)
-          break
-        case TransformPivot.BoundingBox:
-        case TransformPivot.BoundingBoxBottom:
-          box.makeEmpty()
-
-          for (let i = 0; i < controlledEntities.length; i++) {
-            const parentEnt = controlledEntities[i]
-            box.expandByPoint(getComponent(parentEnt, TransformComponent).position)
-          }
-          box.getCenter(newPosition)
-
-          if (gizmoControlComponent.transformPivot.value === TransformPivot.BoundingBoxBottom) newPosition.y = box.min.y
-          break
-      }
-
-      setComponent(pivotEntity, TransformComponent, { position: newPosition })
-    }, [gizmoControlComponent.transformPivot, controlledEntities])
+    useImmediateEffect(() => {
+      setComponent(gizmoControlComponent.pivotEntity.value, TransformComponent, { position: pivot.position })
+    }, [pivot])
 
     return null
   }
 })
-
-const getMidpointWorldPosition = (entities: Entity[], outVec3: Vector3) => {
-  outVec3.set(0, 0, 0)
-  const position = new Vector3()
-  for (const entity of entities) {
-    TransformComponent.getWorldPosition(entity, position)
-    outVec3.add(position)
-  }
-  outVec3.divideScalar(entities.length)
-}
 
 const box = new Box3()

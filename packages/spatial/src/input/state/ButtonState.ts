@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity } from '@ir-engine/ecs'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { Quaternion, Vector2, Vector3 } from 'three'
 
 /**
@@ -64,7 +64,7 @@ export type ButtonState = {
   inputSourceEntity: Entity
 
   /** indicates if this button is consumed for the current frame */
-  consumed: boolean
+  consumed: Entity
 }
 
 /**
@@ -306,6 +306,6 @@ export const createInitialButtonState = (
     downPosition: initial.downPosition ?? undefined,
     downRotation: initial.downRotation ?? undefined,
     downPointerPosition: initial.downPointerPosition ?? undefined,
-    consumed: false
+    consumed: UndefinedEntity
   } as ButtonState
 }
