@@ -54,6 +54,7 @@ import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/Obje
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { CSM } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { getShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
+import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
 import React from 'react'
@@ -1298,11 +1299,58 @@ describe('EntityCSMReactor', () => {
 }) //:: EntityCSMReactor
 
 describe('CSMReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
+  /** @todo How to setup a valid value for directionalLightNodeID ?? */
   describe('on change [xrLightProbeEntity.value, renderSettingsComponent.primaryLight]', () => {
     it.todo(
       'should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to XRLightProbeState.directionalLightEntity if `@param props.renderEntity` is ReferenceSpaceState.viewerEntity and XRLightProbeState.directionalLightEntity is truthy',
-      () => {}
+      () => {
+        const Expected = false
+        // 3. Set input & dependencies data
+        const csm = new CSM({})
+        const rendererEntity = createEntity()
+        setComponent(rendererEntity, RendererComponent, { csm: csm })
+        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+        const renderSettingsEntity = createEntity()
+        const directionalLightNodeID = undefined
+        setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+        const directionalLightEntity = createEntity()
+        setComponent(directionalLightEntity, DirectionalLightComponent)
+        getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+        const root = startReactor(() => {
+          return React.createElement(ShadowSystemReactors.CSMReactor, {
+            rendererEntity: rendererEntity,
+            renderSettingsEntity: renderSettingsEntity
+          })
+        }, false) as ReactorRoot
+        // 1. Sanity check (input & dependencies)
+        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+        expect(getState(XRLightProbeState).directionalLightEntity).toBeDefined()
+        expect(getState(XRLightProbeState).directionalLightEntity).not.toBe(UndefinedEntity)
+        expect(hasComponent(directionalLightEntity, DirectionalLightComponent)).toBeTruthy()
+        // 2. Run the process
+        root.run()
+        const result = true
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      }
     )
+
     it.todo(
       '?? should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to ???itself??? if `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight is truthy',
       () => {}
