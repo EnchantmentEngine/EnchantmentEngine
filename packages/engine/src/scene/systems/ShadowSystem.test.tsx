@@ -1538,16 +1538,77 @@ describe('RenderSettingsQueryReactor', () => {
 describe('DropShadowReactor', () => {}) //:: DropShadowReactor
 
 describe('RendererShadowReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(async () => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on change [useShadows, rendererComponent.renderer]', () => {
+    /* @todo ?? How to check that nothing happened, when this reactor only changes .renderer properties, but this case wants it falsy ?? */
     it.todo('should not do anything (return early) if RendererComponent.renderer is falsy', () => {})
-    it.todo(
-      'should set entityContext.RendererComponent.shadowMap.enabled to the value of (use/get)ShadowsEnabled',
-      () => {}
-    )
-    it.todo(
-      'should set entityContext.RendererComponent.shadowMap.autoUpdate to the value of (use/get)ShadowsEnabled',
-      () => {}
-    )
+
+    it('should set entityContext.RendererComponent.shadowMap.enabled to the value of (use/get)ShadowsEnabled', () => {
+      const Expected = getShadowsEnabled()
+      const Initial = !Expected
+      // 3. Set input & dependencies data
+      setComponent(testEntity, RendererComponent)
+      getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { enabled: Initial } })
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.RendererShadowReactor)
+        )
+      }, false) as ReactorRoot
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
+      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      root.run()
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set entityContext.RendererComponent.shadowMap.autoUpdate to the value of (use/get)ShadowsEnabled', () => {
+      const Expected = getShadowsEnabled()
+      const Initial = !Expected
+      // 3. Set input & dependencies data
+      setComponent(testEntity, RendererComponent)
+      getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { autoUpdate: Initial } })
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.RendererShadowReactor)
+        )
+      }, false) as ReactorRoot
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
+      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      root.run()
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
   })
 }) //:: RendererShadowReactor
 
