@@ -170,7 +170,7 @@ const server = {
   local: process.env.LOCAL === 'true',
   releaseName: process.env.RELEASE_NAME || 'local',
   matchmakerEmulationMode: process.env.MATCHMAKER_EMULATION_MODE === 'true',
-  edgeCachingEnabled: process.env.STORAGE_PROVIDER! === 's3' && process.env.S3_DEV_MODE! !== 'local',
+  edgeCachingEnabled: (process.env.STORAGE_PROVIDER! === 's3' && process.env.S3_DEV_MODE! !== 'local') || process.env.STORAGE_PROVIDER === 'gcs',
   instanceserverUnreachableTimeoutSeconds: process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS
     ? parseInt(process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS)
     : 10,
