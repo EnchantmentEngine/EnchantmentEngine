@@ -138,7 +138,7 @@
     },
     "transformPivot": {
       "toggleTransformPivot": "[X] Toggle Transform Pivot",
-      "lbl-selection": "First Selection",
+      "lbl-selection": "Selection",
       "info-selection": "The center pivot of the first entity you selected in the sequence.",
       "lbl-center": "Center",
       "info-center": "A pivot that uses the center point of a bounding box containing all selected entities' positions.",

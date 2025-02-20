@@ -631,11 +631,14 @@ describe('InputComponent', () => {
           assert.ok(!executeSpy.called)
           root.run()
 
+          // Extract the useExecute system out of the global list of SystemDefinitions array
           const list = Array.from(SystemDefinitions.entries())
           const [_, syst] = list[list.length - 1]
 
+          const capturingEntity = MakeAncestor ? testEntity : createEntity()
+
           getMutableState(EngineState).isEditing.set(data.isEditing)
-          getMutableState(InputState).capturingEntity.set(MakeAncestor ? testEntity : UndefinedEntity)
+          getMutableState(InputState).capturingEntity.set(capturingEntity)
 
           syst.execute()
 
