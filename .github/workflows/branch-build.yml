@@ -113,7 +113,7 @@ jobs:
           key: dir-${{github.sha}}
       - run: mkdir -p packages_moved/hyperflux/
       - run: mv packages/hyperflux packages_moved/
-      - run: rm -rf packages
+      - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: cd packages/hyperflux && npm run test
 
@@ -132,7 +132,7 @@ jobs:
       - run: mkdir -p packages_moved/ecs/
       - run: mv packages/hyperflux packages_moved/
       - run: mv packages/ecs packages_moved/
-      - run: rm -rf packages
+      - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
       - run: cd packages/ecs && npm run test
@@ -154,7 +154,7 @@ jobs:
       - run: mv packages/hyperflux packages_moved/
       - run: mv packages/ecs packages_moved/
       - run: mv packages/network packages_moved/
-      - run: rm -rf packages
+      - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
       - run: mv packages_moved/network packages/
@@ -181,7 +181,7 @@ jobs:
       - run: mv packages/network packages_moved/
       - run: mv packages/xrui packages_moved/
       - run: mv packages/spatial packages_moved/
-      - run: rm -rf packages
+      - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
       - run: mv packages_moved/network packages/
@@ -212,7 +212,7 @@ jobs:
       - run: mv packages/xrui packages_moved/
       - run: mv packages/spatial packages_moved/
       - run: mv packages/engine packages_moved/
-      - run: rm -rf packages
+      - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
       - run: mv packages_moved/network packages/
