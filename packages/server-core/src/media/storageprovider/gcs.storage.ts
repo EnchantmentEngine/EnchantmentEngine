@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { exec } from 'child_process'
 import path from 'path/posix'
 import S3BlobStore from 's3-blob-store'
 
@@ -41,7 +42,8 @@ import {
 import { UrlMapsClient } from '@google-cloud/compute'
 import { NetworkServicesClient } from '@google-cloud/networkservices'
 import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
-import axios from 'axios'
+
+import logger from '../../ServerLogger'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
@@ -192,16 +194,24 @@ export class GCSStorage implements StorageProviderInterface {
   }
 
   async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
-    return Promise.resolve()
     if (!invalidationItems || invalidationItems.length === 0) return
     invalidationItems = invalidationItems.map((item) => (item[0] !== '/' ? `/${item}` : item))
+    console.log('invalidationItems', invalidationItems)
+    console.log('useMediaCDN', useMediaCDN)
     if (useMediaCDN) {
-      return await axios.post(
-        `https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
-        {
-          path: invalidationItems[0]
-        }
-      )
+      try {
+        console.log('invalidating Media CDN cache for', config.gcp.gcs.edgeCacheService)
+        return exec(`gcloud edge-cache services invalidate-cache test ${config.gcp.gcs.edgeCacheService}`)
+      } catch(err) {
+        logger.error('Error invalidating Media CDN cache for %s', config.gcp.gcs.edgeCacheService)
+        logger.error(err)
+      }
+      // return await axios.post(
+      //   `https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
+      //   {
+      //     path: invalidationItems[0]
+      //   }
+      // )
       // const request = {
       //   parent: `projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}`,
       //   resource: {
@@ -211,7 +221,8 @@ export class GCSStorage implements StorageProviderInterface {
       //   }
       // }
       // return this.networkServicesClient.createEdgeCacheInvalidation(request)
-    } else
+    } else {
+      console.log('Invalidating Cloud CDN for host', config.server.clientHost, 'path', invalidationItems[0], 'project', config.gcp.project, 'urlMap', config.gcp.gcs.urlMap)
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
@@ -220,6 +231,7 @@ export class GCSStorage implements StorageProviderInterface {
         project: config.gcp.project as string,
         urlMap: config.gcp.gcs.urlMap as string
       })
+    }
   }
 
   associateWithFunction = async (): Promise<any> => Promise.resolve()
