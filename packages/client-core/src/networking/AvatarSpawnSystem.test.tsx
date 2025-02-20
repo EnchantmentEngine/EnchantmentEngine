@@ -23,8 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
+import  '@ir-engine/spatial/tests/webxr/emulator'
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
@@ -62,6 +64,7 @@ import { v4 } from 'uuid'
 import { SearchParamState } from '../common/services/RouterService'
 import { LocationState } from '../social/services/LocationService'
 import { AvatarSpawnSystem } from './AvatarSpawnSystem'
+import '@ir-engine/engine/src/avatar/state/AvatarNetworkState'
 
 const system = SystemDefinitions.get(AvatarSpawnSystem)!
 
@@ -168,6 +171,8 @@ describe('AvatarSpawnSystem', async () => {
     )
 
     applyIncomingActions()
+
+    await act(async () => render(null))
   })
 
   afterEach(() => {
