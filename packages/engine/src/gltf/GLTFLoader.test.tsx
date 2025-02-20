@@ -50,6 +50,7 @@ import {
   MaterialInstanceComponent,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import '@ir-engine/spatial/tests/webxr/emulator'
 import React from 'react'
 import { InstancedMesh, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
