@@ -50,7 +50,7 @@ import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObject
 import { loadEmptyScene } from '../../tests/util/loadEmptyScene'
 import { AvatarNetworkAction } from '../avatar/state/AvatarNetworkActions'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { act, render } from '@testing-library/react'
 import React from 'react'
@@ -69,7 +69,7 @@ describe('GrabbableSystem', () => {
 
     sceneEntity = loadEmptyScene()
     setComponent(sceneEntity, SceneComponent)
-    const physicsWorld = Physics.createWorld(getComponent(sceneEntity, UUIDComponent))
+    const physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
   })
 
@@ -173,8 +173,10 @@ describe('GrabbableSystem', () => {
     await act(async () => rerender(<></>))
 
     // should now have authority
-    assert.equal(getComponent(grabbableEntity, NetworkObjectComponent).authorityPeerID, peerID)
-    assert.ok(hasComponent(grabbableEntity, GrabbedComponent))
+    await vi.waitFor(() => {
+      assert.equal(getComponent(grabbableEntity, NetworkObjectComponent).authorityPeerID, peerID)
+      assert.ok(hasComponent(grabbableEntity, GrabbedComponent))
+    })
 
     /** @todo test transforms */
 

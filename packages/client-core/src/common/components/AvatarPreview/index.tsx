@@ -29,9 +29,9 @@ import { useTranslation } from 'react-i18next'
 
 import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
 import Text from '@ir-engine/client-core/src/common/components/Text'
-import { useRender3DPanelSystem } from '@ir-engine/client-core/src/user/components/Panel3D/useRender3DPanelSystem'
 import {
   createEntity,
+  EntityTreeComponent,
   getOptionalComponent,
   removeComponent,
   removeEntity,
@@ -39,13 +39,12 @@ import {
   UndefinedEntity,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { EnvmapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
+import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { EnvMapSourceType } from '@ir-engine/engine/src/scene/constants/EnvMapEnum'
 import { AmbientLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { AssetPreviewCameraComponent } from '@ir-engine/spatial/src/camera/components/AssetPreviewCameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
@@ -59,6 +58,7 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { AnimationClip } from 'three'
+import { useRender3DPanelSystem } from '../../../hooks/useRender3DPanelSystem'
 import styles from './index.module.scss'
 
 interface Props {
@@ -80,7 +80,7 @@ const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: P
     if (!avatarUrl) return
 
     setComponent(sceneEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(sceneEntity, EnvmapComponent, { type: EnvMapSourceType.Skybox })
+    setComponent(sceneEntity, EnvMapComponent, { type: EnvMapSourceType.Skybox })
     setComponent(sceneEntity, AvatarComponent)
     setComponent(sceneEntity, GLTFComponent, { src: avatarUrl })
     setComponent(sceneEntity, AvatarAnimationComponent)

@@ -24,8 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { API, useFind, useGet } from '@ir-engine/common'
+import { IceServer } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
 import {
-  IceServerType,
   InstanceAttendanceType,
   InstanceID,
   InstanceType,
@@ -114,7 +114,7 @@ const NetworkReactor = (props: { id: InstanceID }) => {
 
 const ConnectionReactor = (props: { instance: InstanceType }) => {
   const instanceID = props.instance.id
-  const joinResponse = useHookstate<null | { index: number; iceServers: IceServerType[] }>(null)
+  const joinResponse = useHookstate<null | { index: number; iceServers: IceServer[] }>(null)
 
   useEffect(() => {
     const abortController = new AbortController()
@@ -196,6 +196,15 @@ const PeersReactor = (props: { instance: InstanceType }) => {
       }
     }
   })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      instanceAttendanceQuery.refetch()
+    }, 5000)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
 
   const otherPeers = useHookstate<InstanceAttendanceType[]>([])
 

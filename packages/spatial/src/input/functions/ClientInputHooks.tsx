@@ -32,10 +32,12 @@ import {
   createEntity,
   Engine,
   Entity,
+  EntityTreeComponent,
   getComponent,
   getOptionalComponent,
   removeEntity,
   setComponent,
+  useAncestorWithComponents,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
@@ -44,7 +46,6 @@ import { useEffect } from 'react'
 import { Vector3 } from 'three'
 import { NameComponent } from '../../common/NameComponent'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
-import { EntityTreeComponent, useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { XRState } from '../../xr/XRState'
 import { DefaultButtonAlias, InputComponent } from '../components/InputComponent'
@@ -128,7 +129,7 @@ export const useGamepadInputSources = () => {
     }
     const removeGamepad = (e: GamepadEvent) => {
       console.log('[ClientInputSystem] lost gamepad', e.gamepad)
-      NameComponent.entitiesByName['InputSource-gamepad-' + e.gamepad.id]?.forEach(removeEntity)
+      NameComponent.getEntitiesByName('InputSource-gamepad-' + e.gamepad.id).forEach(removeEntity)
     }
     window.addEventListener('gamepadconnected', addGamepad)
     window.addEventListener('gamepaddisconnected', removeGamepad)

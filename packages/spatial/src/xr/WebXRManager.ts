@@ -39,16 +39,16 @@ import {
   WebGLRenderTargetOptions
 } from 'three'
 
-import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs'
 import { defineState, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 
 import { createAnimationLoop, ECSState } from '@ir-engine/ecs'
 import { CameraComponent } from '../camera/components/CameraComponent'
-import { EngineState } from '../EngineState'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { XRState } from './XRState'
 
 // augment PerspectiveCamera
-declare module 'three/src/cameras/PerspectiveCamera' {
+declare module 'three/src/cameras/PerspectiveCamera.js' {
   interface PerspectiveCamera {
     /**
      * viewport used for XR rendering
@@ -57,7 +57,7 @@ declare module 'three/src/cameras/PerspectiveCamera' {
   }
 }
 
-declare module 'three/src/renderers/WebGLRenderer' {
+declare module 'three/src/renderers/WebGLRenderer.js' {
   interface WebGLRenderer {
     animation: WebGLAnimation
   }
@@ -148,7 +148,7 @@ function getEnvironmentBlendMode() {
  * @description Member function of the {@link WebXRManager} class-like object
  * */
 function getCamera() {
-  return getComponent(getState(EngineState).viewerEntity, CameraComponent)
+  return getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 }
 
 /**

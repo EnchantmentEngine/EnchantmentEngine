@@ -24,24 +24,28 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  EngineState,
+  Entity,
+  EntityTreeComponent,
+  S,
+  UndefinedEntity,
+  createEntity,
   defineComponent,
   getComponent,
   hasComponent,
+  iterateEntityNode,
   removeComponent,
+  removeEntity,
   setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
 import { getMutableState, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { LineSegmentComponent } from '@ir-engine/spatial/src/renderer/components/LineSegmentComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { useEffect } from 'react'

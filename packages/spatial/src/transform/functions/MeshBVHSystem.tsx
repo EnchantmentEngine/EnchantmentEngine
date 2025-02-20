@@ -42,9 +42,11 @@ import { computeBoundsTree, disposeBoundsTree, MeshBVHHelper } from 'three-mesh-
 import {
   createEntity,
   defineSystem,
+  EntityTreeComponent,
   PresentationSystemGroup,
   QueryReactor,
   removeEntity,
+  removeEntityNodeRecursively,
   useEntityContext
 } from '@ir-engine/ecs'
 import { getComponent, setComponent, useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -60,12 +62,8 @@ import {
 } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  EntityTreeComponent,
-  removeEntityNodeRecursively
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '../components/TransformComponent'
-import { generateMeshBVH } from '../functions/bvhWorkerPool'
+import { generateMeshBVH } from './bvhWorkerPool'
 
 declare module 'three-mesh-bvh' {
   export interface MeshBVHHelper {
@@ -220,6 +218,7 @@ const MeshBVHReactor = () => {
 export const MeshBVHSystem = defineSystem({
   uuid: 'ee.engine.MeshBVHSystem',
   insert: { after: PresentationSystemGroup },
+  /** @todo this breaks the studio currently */
   reactor: () => <QueryReactor Components={[MeshComponent]} ChildEntityReactor={MeshBVHReactor} />
 })
 
@@ -247,8 +246,8 @@ MeshBVHHelper.prototype.add = function (object: Object3D) {
 }
 
 MeshBVHHelper.prototype.remove = function (object: Object3D) {
-  if (!this.entity) return this
-  const entity = object.entity
+  if (!this.entity || !object.entity) return this
+  const entity = object.entity!
   removeEntity(entity)
   return this
 }

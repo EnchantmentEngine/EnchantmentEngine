@@ -30,6 +30,8 @@ import {
   defineComponent,
   Engine,
   Entity,
+  EntityTreeComponent,
+  removeEntityNodeRecursively,
   setComponent,
   useComponent,
   useEntityContext
@@ -43,10 +45,6 @@ import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/compon
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
-  EntityTreeComponent,
-  removeEntityNodeRecursively
-} from '@ir-engine/spatial/src/transform/components/EntityTree'
-import {
   TransformComponent,
   TransformGizmoTagComponent
 } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -55,7 +53,7 @@ import { gizmo, helper, picker, setupGizmo } from '../../../constants/GizmoPrese
 import { EditorHelperState } from '../../../services/EditorHelperState'
 
 export const TransformGizmoVisualComponent = defineComponent({
-  name: 'TransformGizmoVisual',
+  name: 'TransformGizmoVisualComponent',
 
   schema: S.Object({
     gizmo: S.Entity(),
@@ -78,7 +76,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(gizmoEntity, TransformComponent)
       setComponent(gizmoEntity, VisibleComponent)
       setComponent(gizmoEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-      setupGizmo(gizmoEntity, gizmo[mode])
+      setupGizmo(gizmoEntity, gizmo[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(gizmoEntity, ObjectLayers.TransformGizmo)
       visualComponent.gizmo.set(gizmoEntity)
       entities.push(gizmoEntity)
@@ -90,8 +88,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(helperEntity, VisibleComponent)
       setComponent(helperEntity, TransformComponent)
       setComponent(helperEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-      setupGizmo(helperEntity, helper[mode])
-      ObjectLayerMaskComponent.setLayer(helperEntity, ObjectLayers.TransformGizmo)
+      setupGizmo(helperEntity, helper[mode], ObjectLayers.TransformGizmo)
       visualComponent.helper.set(helperEntity)
       entities.push(helperEntity)
 
@@ -103,7 +100,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(pickerEntity, TransformComponent)
       setComponent(pickerEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
       setComponent(pickerEntity, InputComponent)
-      setupGizmo(pickerEntity, picker[mode])
+      setupGizmo(pickerEntity, picker[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(pickerEntity, ObjectLayers.TransformGizmo)
       visualComponent.picker.set(pickerEntity)
       entities.push(pickerEntity)

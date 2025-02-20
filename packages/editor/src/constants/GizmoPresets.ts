@@ -23,14 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, createEntity, setComponent } from '@ir-engine/ecs'
+import { Entity, EntityTreeComponent, createEntity, setComponent } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import {
   BoxGeometry,
   BufferGeometry,
@@ -406,7 +405,7 @@ const _rotation = new Quaternion()
 const _scale = new Vector3()
 const matrix4 = new Matrix4()
 
-function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition) {
+function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer: number = ObjectLayers.Gizmos) {
   for (const name in gizmoMap) {
     for (let i = 0; i < gizmoMap[name].length; i++) {
       const object = gizmoMap[name][i][0].clone() as Mesh
@@ -433,7 +432,7 @@ function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition) {
       setComponent(entity, MeshComponent, object)
       setComponent(entity, VisibleComponent)
       object.renderOrder = Infinity
-      ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.TransformGizmo)
+      ObjectLayerMaskComponent.setLayer(entity, gizmoLayer)
     }
   }
 }

@@ -27,20 +27,23 @@ import { useEffect } from 'react'
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D, ShadowMaterial } from 'three'
 import matches from 'ts-matches'
 
-import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import {
+  Engine,
+  EntityTreeComponent,
+  EntityUUID,
+  S,
+  UUIDComponent,
+  createEntity,
   defineComponent,
   getComponent,
+  removeEntity,
   setComponent,
   useComponent,
+  useEntityContext,
   useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+} from '@ir-engine/ecs'
 import { defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../common/NameComponent'
 import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
 import { MeshComponent } from '../renderer/components/MeshComponent'
@@ -95,13 +98,13 @@ function PersistentAnchorReactor() {
     const originalParent = getComponent(getComponent(entity, EntityTreeComponent).parentEntity, UUIDComponent)
     originalParentEntityUUID.set(originalParent)
     setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
-    TransformComponent.dirtyTransforms[entity] = true
+    TransformComponent.dirty[entity] = 1
 
     const wireframe = anchor.wireframe.value
 
     const shadowMesh = new Mesh().copy(obj, true)
     shadowMesh.material = shadowMat
-    const parentEntity = getComponent(obj.entity, EntityTreeComponent).parentEntity!
+    const parentEntity = getComponent(obj.entity!, EntityTreeComponent).parentEntity!
     const shadowEntity = createEntity()
     setComponent(shadowEntity, NameComponent, obj.name + '_shadow')
     setComponent(shadowEntity, TransformComponent, {
@@ -123,7 +126,7 @@ function PersistentAnchorReactor() {
       /** add back to the scene */
       const originalParent = UUIDComponent.getEntityByUUID(originalParentEntityUUID.value)
       setComponent(entity, EntityTreeComponent, { parentEntity: originalParent })
-      TransformComponent.dirtyTransforms[entity] = true
+      TransformComponent.dirty[entity] = 1
 
       if (typeof wireframe === 'boolean') {
         obj.material.wireframe = wireframe

@@ -37,6 +37,7 @@ import {
 import {
   createEntity,
   defineComponent,
+  EntityTreeComponent,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -48,11 +49,10 @@ import {
   useEntityContext,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { getMutableState, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { NameComponent } from '../../common/NameComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { ObjectLayers } from '../constants/ObjectLayers'
 import { RendererState } from '../RendererState'
@@ -66,16 +66,19 @@ export const SkinnedMeshComponent = defineComponent({
   name: 'SkinnedMeshComponent',
   schema: S.Required(S.Type<SkinnedMesh>()),
 
+  onSet(entity, component, json) {
+    component.set(json as SkinnedMesh)
+    setComponent(entity, MeshComponent, json as SkinnedMesh)
+  },
+
+  onRemove(entity, component) {
+    removeComponent(entity, MeshComponent)
+  },
+
+  /** @todo move this to a system */
   reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, SkinnedMeshComponent)
-
-    useImmediateEffect(() => {
-      setComponent(entity, MeshComponent, getComponent(entity, SkinnedMeshComponent))
-      return () => {
-        removeComponent(entity, MeshComponent)
-      }
-    }, [])
 
     const debugEnabled = useHookstate(getMutableState(RendererState).avatarDebug)
     const visible = useOptionalComponent(entity, VisibleComponent)
@@ -97,7 +100,7 @@ export const SkinnedMeshComponent = defineComponent({
       for (let i = 0; i < bones.length; i++) {
         const bone = bones[i]
 
-        const boneParentEntity = getComponent(bone.entity, EntityTreeComponent).parentEntity
+        const boneParentEntity = getComponent(bone.entity!, EntityTreeComponent).parentEntity
         const boneParentComponent = hasComponent(boneParentEntity, BoneComponent)
 
         if (boneParentComponent) {
@@ -141,7 +144,7 @@ export const SkinnedMeshComponent = defineComponent({
           for (let i = 0, j = 0; i < bones.length; i++) {
             const bone = bones[i]
 
-            const boneParentEntity = getComponent(bone.entity, EntityTreeComponent).parentEntity
+            const boneParentEntity = getComponent(bone.entity!, EntityTreeComponent).parentEntity
             const boneParentComponent = getOptionalComponent(boneParentEntity, BoneComponent)
 
             if (boneParentComponent) {

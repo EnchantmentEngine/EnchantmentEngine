@@ -43,6 +43,7 @@ import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identit
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
 import { HookContext } from '@feathersjs/feathers'
+import { defaultWebRTCSettings } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
 import { EngineSettingType, instanceSignalingPath, projectsPath } from '@ir-engine/common/src/schema.type.module'
 import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
 import { parseValue } from '@ir-engine/common/src/utils/dataTypeUtils'
@@ -137,6 +138,8 @@ const server = {
   hostname: process.env.SERVER_HOST!,
   port: process.env.SERVER_PORT!,
   clientHost: process.env.APP_HOST!,
+  // DNS Provider Config
+  dnsProvider: process.env.DNS_PROVIDER || 'aws',
   // Public directory (used for favicon.ico, logo, etc)
   rootDir:
     process.env.BUILD_MODE! === 'individual'
@@ -170,7 +173,9 @@ const server = {
   edgeCachingEnabled: process.env.STORAGE_PROVIDER! === 's3' && process.env.S3_DEV_MODE! !== 'local',
   instanceserverUnreachableTimeoutSeconds: process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS
     ? parseInt(process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS)
-    : 10
+    : 10,
+  requireAgeVerification:
+    typeof process.env.REQUIRE_AGE_VERIFICATION === 'string' ? process.env.REQUIRE_AGE_VERIFICATION === 'true' : true
 }
 const obj = kubernetesEnabled ? { protocol: 'https', hostname: server.hostname } : { protocol: 'https', ...server }
 server.url = process.env.SERVER_URL || url.format(obj)
@@ -210,6 +215,9 @@ const instanceserver = {
   locationName: process.env.PRELOAD_LOCATION_NAME!,
   shutdownDelayMs: parseInt(process.env.INSTANCESERVER_SHUTDOWN_DELAY_MS!) || 0
 }
+const instanceServerWebRtc = {
+  webRTCSettings: defaultWebRTCSettings
+}
 
 /**
  * Task server generator
@@ -232,10 +240,8 @@ const email = {
       pass: process.env.SMTP_PASS!
     }
   },
-  // Name and email of default sender (for login emails, etc)
   from: `${process.env.SMTP_FROM_NAME}` + ` <${process.env.SMTP_FROM_EMAIL}>`,
   subject: {
-    // Subject of the Login Link email
     'new-user': 'IR Engine Signup',
     location: 'IR Engine Location invitation',
     instance: 'IR Engine Location invitation',
@@ -245,6 +251,7 @@ const email = {
   },
   smsNameCharacterLimit: 20
 }
+export type EmailConfigType = typeof email
 
 type WhiteListItem = {
   path: string
@@ -390,6 +397,7 @@ const aws = {
     secretAccessKey: process.env.AWS_SMS_SECRET_ACCESS_KEY!
   }
 }
+export type AwsConfig = typeof aws
 
 const chargebee = {
   url: process.env.CHARGEBEE_SITE + '.chargebee.com' || 'dummy.not-chargebee.com',
@@ -419,10 +427,6 @@ const blockchain = {
   blockchainUrlSecret: process.env.BLOCKCHAIN_URL_SECRET
 }
 
-const ipfs = {
-  enabled: process.env.USE_IPFS
-}
-
 const zendesk = {
   name: process.env.ZENDESK_KEY_NAME,
   secret: process.env.ZENDESK_SECRET,
@@ -448,8 +452,8 @@ const config = {
   coil,
   db,
   email,
-  instanceserver,
-  ipfs,
+  'instance-server': instanceserver,
+  'instance-server-webrtc': instanceServerWebRtc,
   server,
   'task-server': taskserver,
   redis,

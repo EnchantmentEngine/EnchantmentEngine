@@ -27,15 +27,15 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Group } from 'three'
 
+import { EntityContext, createEntity } from '@ir-engine/ecs'
 import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { EntityContext, createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { State, getState, isClient } from '@ir-engine/hyperflux'
 import { WebContainer3D } from '@ir-engine/xrui/core/three/WebContainer3D'
 import { WebLayerManager } from '@ir-engine/xrui/core/three/WebLayerManager'
 
 import { AssetLoaderState } from '@ir-engine/engine/src/assets/state/AssetLoaderState'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -75,7 +75,7 @@ export function createXRUI<S extends State<any> | null>(
   )
 
   if (!WebLayerManager.instance) {
-    const viewerEntity = getState(EngineState).viewerEntity
+    const viewerEntity = getState(ReferenceSpaceState).viewerEntity
     const renderer = getComponent(viewerEntity, RendererComponent)
     const gltfLoader = getState(AssetLoaderState).gltfLoader
     WebLayerManager.initialize(renderer.renderer!, gltfLoader.ktx2Loader!)

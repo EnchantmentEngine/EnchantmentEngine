@@ -27,21 +27,25 @@ import { useEffect } from 'react'
 import { BufferGeometry, DirectionalLight, Float32BufferAttribute } from 'three'
 
 import {
+  EntityTreeComponent,
+  S,
+  UndefinedEntity,
+  createEntity,
   defineComponent,
   getMutableComponent,
+  hasComponent,
   removeComponent,
+  removeEntity,
   setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+  useComponent,
+  useEntityContext,
+  useOptionalComponent
+} from '@ir-engine/ecs'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { UndefinedEntity } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { ActiveHelperComponent } from '../../../common/ActiveHelperComponent'
 import { mergeBufferGeometries } from '../../../common/classes/BufferGeometryUtils'
-import { useDisposable } from '../../../resources/resourceHooks'
 import { T } from '../../../schema/schemaFunctions'
-import { EntityTreeComponent } from '../../../transform/components/EntityTree'
 import { RendererState } from '../../RendererState'
 import { LineSegmentComponent } from '../LineSegmentComponent'
 import { ObjectComponent } from '../ObjectComponent'
@@ -120,15 +124,17 @@ export const DirectionalLightComponent = defineComponent({
   reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
+    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
     const debugEnabled = renderState.nodeHelperVisibility
     const directionalLightComponent = useComponent(entity, DirectionalLightComponent)
-    const [light] = useDisposable(DirectionalLight, entity)
+    const light = useHookstate(() => new DirectionalLight()).value as DirectionalLight
     const helperEntity = useHookstate(UndefinedEntity)
 
-    useImmediateEffect(() => {
+    useEffect(() => {
       setComponent(entity, LightTagComponent)
-      directionalLightComponent.light.set(light)
+      getMutableComponent(entity, DirectionalLightComponent).light.set(light)
       setComponent(entity, ObjectComponent, light)
+
       return () => {
         removeComponent(entity, ObjectComponent)
       }
@@ -172,7 +178,7 @@ export const DirectionalLightComponent = defineComponent({
     }, [renderState.shadowMapResolution])
 
     useEffect(() => {
-      if (!debugEnabled.value) return
+      if (!debugEnabled.value && !hasComponent(entity, ActiveHelperComponent)) return
       helperEntity.set(createEntity())
       setComponent(helperEntity.value, EntityTreeComponent, { parentEntity: entity })
       setComponent(helperEntity.value, LineSegmentComponent, {
@@ -186,7 +192,7 @@ export const DirectionalLightComponent = defineComponent({
         removeEntity(helperEntity.value)
         helperEntity.set(UndefinedEntity)
       }
-    }, [debugEnabled])
+    }, [debugEnabled, activeHelperComponent])
 
     return null
   }

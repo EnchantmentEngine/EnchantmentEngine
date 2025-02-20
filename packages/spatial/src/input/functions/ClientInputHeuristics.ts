@@ -29,6 +29,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   defineQuery,
+  EngineState,
   Entity,
   EntityUUID,
   getComponent,
@@ -42,7 +43,6 @@ import { defineState, getState } from '@ir-engine/hyperflux'
 import { Quaternion, Ray, Raycaster, Vector3 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { ObjectDirection } from '../../common/constants/MathConstants'
-import { EngineState } from '../../EngineState'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
@@ -178,7 +178,7 @@ export function meshHeuristic(intersectionData: Set<IntersectionData>, position:
 
   const hits = _raycaster.intersectObjects(objects, true)
   for (const hit of hits) {
-    intersectionData.add({ entity: hit.object.entity, distance: hit.distance })
+    intersectionData.add({ entity: hit.object.entity!, distance: hit.distance })
   }
 }
 

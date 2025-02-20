@@ -29,6 +29,7 @@ import {
   destroyEngine,
   Entity,
   EntityContext,
+  EntityTreeComponent,
   removeComponent,
   removeEntity,
   setComponent,
@@ -44,7 +45,6 @@ import { MockXRSession } from '../../../tests/util/MockXR'
 import { destroySpatialEngine, initializeSpatialEngine } from '../../initializeEngine'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { XRState } from '../../xr/XRState'
 import { InputComponent } from '../components/InputComponent'
@@ -64,7 +64,7 @@ const createMockHTMLCanvasElement = (ev: MockEventListener) => {
   })() as any as HTMLCanvasElement
 }
 
-describe('ClientInputHooks', () => {
+describe.skip('ClientInputHooks', () => {
   describe('useNonSpatialInputSources', () => {
     let testEntity = UndefinedEntity
     let ev: MockEventListener

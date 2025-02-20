@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Box3, Box3Helper, BufferGeometry, Mesh } from 'three'
 
+import { EntityTreeComponent, createEntity, iterateEntityNode, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -35,9 +36,7 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
@@ -80,7 +79,7 @@ export const BoundingBoxComponent = defineComponent({
       ObjectLayerMaskComponent.setLayer(helperEntity, ObjectLayers.NodeHelper)
       boundingBox.helper.set(helperEntity)
 
-      TransformComponent.dirtyTransforms[entity] = true //used to dirty trasform and set the appropate bounding box
+      TransformComponent.dirty[entity] = 1 //used to dirty trasform and set the appropate bounding box
       updateBoundingBox(entity)
 
       return () => {

@@ -28,145 +28,138 @@ import '../../threejsPatches'
 import { Object3D } from 'three'
 
 import {
+  EntityTreeComponent,
+  UUIDComponent,
   defineComponent,
   getComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+} from '@ir-engine/ecs'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { useImmediateEffect } from '@ir-engine/hyperflux'
+import { none } from '@ir-engine/hyperflux'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { removeCallback, setCallback } from '../../common/CallbackComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Layer } from './ObjectLayerComponent'
 import { VisibleComponent } from './VisibleComponent'
 
-declare module 'three/src/core/Object3D' {
-  interface Object3D {
-    /** @deprecated */
-    preserveChildren?: boolean
-    /** @deprecated */
-    readonly isProxified: true | undefined
-  }
-}
-
-export type Object3DWithEntity = Object3D & { entity: Entity }
-
 export const ObjectComponent = defineComponent({
   name: 'ObjectComponent',
-  jsonID: 'EE_object3d',
-  schema: S.Required(S.Type<Object3DWithEntity>()),
 
-  reactor: () => {
-    const entity = useEntityContext()
+  schema: S.Required(S.Type<Object3D>()),
 
-    useImmediateEffect(() => {
-      const obj = getComponent(entity, ObjectComponent) as Object3DWithEntity
-      setComponent(entity, TransformComponent)
+  onSet(entity, component, obj: Object3D) {
+    if (!obj?.isObject3D) throw new Error('ObjectComponent requires an Object3D')
 
-      obj.entity = entity
+    setComponent(entity, TransformComponent)
 
-      const transform = getComponent(entity, TransformComponent)
-      obj.position.copy(transform.position)
-      obj.quaternion.copy(transform.rotation)
-      obj.scale.copy(transform.scale)
-      obj.matrixAutoUpdate = false
-      obj.matrixWorldAutoUpdate = false
-      obj.matrix = transform.matrix
-      obj.matrixWorld = transform.matrixWorld
-      obj.layers = new Layer(entity)
+    obj.entity = entity
+    if (obj.rotation) obj.rotation._onChangeCallback = () => {}
+    obj.quaternion._onChangeCallback = () => {}
 
-      obj.frustumCulled = false
+    const transform = getComponent(entity, TransformComponent)
+    obj.position.copy(transform.position)
+    obj.quaternion.copy(transform.rotation)
+    obj.scale.copy(transform.scale)
+    obj.matrixAutoUpdate = false
+    obj.matrixWorldAutoUpdate = false
+    obj.matrix = transform.matrix
+    obj.matrixWorld = transform.matrixWorld
+    obj.layers = new Layer(entity)
 
-      /** until all three hierarchies are replaced with ECS, we need to preserve this in a few cases  */
-      if (!obj.preserveChildren) {
-        Object.defineProperties(obj, {
-          parent: {
-            get() {
-              if (ObjectComponent.activeRender) return null // hack to check if renderer is rendering
-              if (getOptionalComponent(entity, EntityTreeComponent)?.parentEntity) {
-                const result = getOptionalComponent(
-                  getComponent(entity, EntityTreeComponent).parentEntity!,
-                  ObjectComponent
-                )
-                return result ?? null
-              }
-              return null
-            },
-            set(value) {
-              if (value != undefined) throw new Error('Cannot set parent of proxified object')
-              console.warn('Setting to nil value is not supported ObjectComponent.ts')
-            }
-          },
-          children: {
-            get() {
-              if (ObjectComponent.activeRender) return [] // hack to check if renderer is rendering
-              if (hasComponent(entity, EntityTreeComponent)) {
-                const childEntities = getComponent(entity, EntityTreeComponent).children
-                const result: Object3D[] = []
-                for (const childEntity of childEntities) {
-                  if (hasComponent(childEntity, ObjectComponent)) {
-                    result.push(getComponent(childEntity, ObjectComponent))
-                  }
-                }
-                return result
-              } else {
-                return []
-              }
-            },
-            set(value) {
-              if (value != undefined) throw new Error('Cannot set children of proxified object')
-              console.warn('Setting to nil value is not supported ObjectComponent.ts')
-            }
-          },
-          isProxified: {
-            value: true
+    obj.frustumCulled = false
+
+    /** until all three hierarchies are replaced with ECS, we need to preserve this in a few cases  */
+    if (!obj.preserveChildren) {
+      Object.defineProperties(obj, {
+        uuid: {
+          get() {
+            return getComponent(entity, UUIDComponent)
           }
-        })
-        Object.assign(obj, {
-          get name() {
-            return getOptionalComponent(entity, NameComponent)
+        },
+        rotation: {
+          get() {},
+          set(value) {}
+        },
+        parent: {
+          get() {
+            if (ObjectComponent.activeRender) return null // hack to check if renderer is rendering
+            if (getOptionalComponent(entity, EntityTreeComponent)?.parentEntity) {
+              const result = getOptionalComponent(
+                getComponent(entity, EntityTreeComponent).parentEntity!,
+                ObjectComponent
+              )
+              return result ?? null
+            }
+            return null
           },
-          set name(value) {
-            if (value != undefined) throw new Error('Cannot set name of proxified object')
+          set(value) {
+            if (value != undefined) throw new Error('Cannot set parent of proxified object')
+            console.warn('Setting to nil value is not supported ObjectComponent.ts')
+          }
+        },
+        children: {
+          get() {
+            if (ObjectComponent.activeRender) return [] // hack to check if renderer is rendering
+            if (hasComponent(entity, EntityTreeComponent)) {
+              const childEntities = getComponent(entity, EntityTreeComponent).children
+              const result: Object3D[] = []
+              for (const childEntity of childEntities) {
+                if (hasComponent(childEntity, ObjectComponent)) {
+                  result.push(getComponent(childEntity, ObjectComponent))
+                }
+              }
+              return result
+            } else {
+              return []
+            }
           },
-          updateWorldMatrix: () => {}
-        })
-      }
-
-      // sometimes it's convenient to update the entity transform via the Object3D,
-      // so allow people to do that via proxies
-      proxifyVector3WithDirty(TransformComponent.position, entity, TransformComponent.dirtyTransforms, obj.position)
-      proxifyQuaternionWithDirty(
-        TransformComponent.rotation,
-        entity,
-        TransformComponent.dirtyTransforms,
-        obj.quaternion
-      )
-      proxifyVector3WithDirty(TransformComponent.scale, entity, TransformComponent.dirtyTransforms, obj.scale)
-
-      setCallback(entity, 'setVisible', () => {
-        setComponent(entity, VisibleComponent, true)
+          set(value) {
+            if (value != undefined) throw new Error('Cannot set children of proxified object')
+            console.warn('Setting to nil value is not supported ObjectComponent.ts')
+          }
+        },
+        isProxified: {
+          value: true
+        }
       })
-
-      setCallback(entity, 'setInvisible', () => {
-        removeComponent(entity, VisibleComponent)
+      Object.assign(obj, {
+        get name() {
+          return getOptionalComponent(entity, NameComponent)
+        },
+        set name(value) {
+          if (value != undefined) throw new Error('Cannot set name of proxified object')
+        },
+        updateWorldMatrix: () => {}
       })
+    }
 
-      return () => {
-        removeCallback(entity, 'setVisible')
-        removeCallback(entity, 'setInvisible')
-      }
-    }, [])
+    // sometimes it's convenient to update the entity transform via the Object3D,
+    // so allow people to do that via proxies
+    proxifyVector3WithDirty(TransformComponent.position, entity, TransformComponent.dirty, obj.position)
+    proxifyQuaternionWithDirty(TransformComponent.rotation, entity, TransformComponent.dirty, obj.quaternion)
+    proxifyVector3WithDirty(TransformComponent.scale, entity, TransformComponent.dirty, obj.scale)
 
-    return null
+    setCallback(entity, 'setVisible', () => {
+      setComponent(entity, VisibleComponent, true)
+    })
+
+    setCallback(entity, 'setInvisible', () => {
+      removeComponent(entity, VisibleComponent)
+    })
+
+    component.set(obj)
+  },
+
+  onRemove(entity: Entity, component) {
+    component.set(none)
+    removeCallback(entity, 'setVisible')
+    removeCallback(entity, 'setInvisible')
   },
 
   /**

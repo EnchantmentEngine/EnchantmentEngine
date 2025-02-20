@@ -49,7 +49,7 @@ import {
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { AuthState } from '../../user/services/AuthService'
 
 const logger = multiLogger.child({ component: 'client-core:world' })
@@ -67,7 +67,7 @@ export const useEngineInjection = () => {
         loaded.set(true)
         logger.error('Failed to load engine injection', e)
       })
-  }, [projects.data])
+  }, projects.data)
   return loaded.value
 }
 
