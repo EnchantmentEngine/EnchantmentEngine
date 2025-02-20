@@ -42,6 +42,7 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AnimationComponent } from './AnimationComponent'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
 
+import { act, render } from '@testing-library/react'
 import { createTestGLTFEntity, mockAnimatedAvatar, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 
@@ -63,6 +64,8 @@ describe('AnimationComponent', () => {
 
       setComponent(entity, UUIDComponent, generateEntityUUID())
       setComponent(entity, GLTFComponent, { src: rings_gltf })
+
+      await act(() => render(null))
 
       //extra wait for animation component to prevent race conditions
       await vi.waitFor(
@@ -103,6 +106,8 @@ describe('AnimationComponent', () => {
 
     it('should bind animation tracks to rig entities based on VRM schema', async () => {
       const vrmEntity = await mockAnimatedAvatar()
+
+      await act(() => render(null))
 
       const rig = getComponent(vrmEntity, AvatarRigComponent).entitiesToBones
 

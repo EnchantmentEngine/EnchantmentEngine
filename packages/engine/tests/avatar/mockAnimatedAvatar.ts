@@ -39,6 +39,7 @@ import { AnimationComponent } from '../../src/avatar/components/AnimationCompone
 import { AvatarAnimationComponent, AvatarRigComponent } from '../../src/avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '../../src/avatar/components/AvatarComponent'
 
+import { act, render } from '@testing-library/react'
 import { setupMixamoAnimation } from '../../src/avatar/systems/AvatarAnimationSystem'
 import { GLTFComponent } from '../../src/gltf/GLTFComponent'
 
@@ -71,6 +72,8 @@ export const mockAnimatedAvatar = async () => {
   setComponent(vrmEntity, AvatarRigComponent)
   setComponent(vrmEntity, AvatarAnimationComponent)
   setComponent(vrmEntity, AvatarComponent)
+
+  await act(() => render(null))
 
   //extra wait for animation component to prevent race conditions
   await vi.waitUntil(

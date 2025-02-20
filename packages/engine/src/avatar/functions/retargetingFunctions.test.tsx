@@ -75,7 +75,8 @@ describe('retargetingFunctions', () => {
 
       //extra wait for animation component to prevent race conditions
       await vi.waitFor(
-        () => {
+        async () => {
+          await act(() => render(null))
           expect(getOptionalComponent(entity, AnimationComponent)).toBeTruthy()
         },
         { timeout: 20000 }
