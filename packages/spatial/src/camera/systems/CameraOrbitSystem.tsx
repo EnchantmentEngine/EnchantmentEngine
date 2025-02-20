@@ -31,8 +31,7 @@ import {
   getMutableComponent,
   getOptionalComponent,
   InputSystemGroup,
-  query,
-  UndefinedEntity
+  query
 } from '@ir-engine/ecs'
 import { isClient } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -85,13 +84,6 @@ const execute = () => {
     const distance = transform.position.distanceTo(editorCameraCenter)
     const camera = getComponent(cameraEid, CameraComponent)
 
-    const inputSourceEntity = orbiting?.inputSourceEntity ?? panning?.inputSourceEntity ?? UndefinedEntity
-    const inputPointer = getOptionalComponent(inputSourceEntity, InputPointerComponent)
-    if (inputPointer?.movement) {
-      cameraOrbit.cursorDeltaX.set(inputPointer.movement.x)
-      cameraOrbit.cursorDeltaY.set(inputPointer.movement.y)
-    }
-
     if (zoom) {
       delta.set(0, 0, zoom * distance * ZOOM_SPEED)
       if (delta.length() < distance) {
@@ -101,27 +93,33 @@ const execute = () => {
     }
 
     if (panning?.dragging) {
-      const distance = transform.position.distanceTo(editorCameraCenter)
-      delta
-        .set(-cameraOrbit.cursorDeltaX.value, -cameraOrbit.cursorDeltaY.value, 0)
-        .multiplyScalar(Math.max(distance, 1) * PAN_SPEED)
-        .applyMatrix3(normalMatrix.getNormalMatrix(camera.matrix))
-      transform.position.add(delta)
-      editorCameraCenter.add(delta)
+      const inputPointer = getOptionalComponent(panning.inputSourceEntity, InputPointerComponent)
+      const movement = inputPointer?.movement
+      if (movement) {
+        const distance = transform.position.distanceTo(editorCameraCenter)
+        delta
+          .set(-movement.x, -movement.y, 0)
+          .multiplyScalar(Math.max(distance, 1) * PAN_SPEED)
+          .applyMatrix3(normalMatrix.getNormalMatrix(camera.matrix))
+        transform.position.add(delta)
+        editorCameraCenter.add(delta)
+      }
     }
 
     if (orbiting?.dragging) {
-      delta.copy(transform.position).sub(editorCameraCenter)
-
-      spherical.setFromVector3(delta)
-      spherical.theta -= cameraOrbit.cursorDeltaX.value * ORBIT_SPEED
-      spherical.phi += cameraOrbit.cursorDeltaY.value * ORBIT_SPEED
-      spherical.makeSafe()
-      delta.setFromSpherical(spherical)
-
-      transform.position.copy(editorCameraCenter).add(delta)
-      transform.matrix.lookAt(transform.position, editorCameraCenter, Vector3_Up)
-      transform.rotation.setFromRotationMatrix(transform.matrix)
+      const inputPointer = getOptionalComponent(orbiting.inputSourceEntity, InputPointerComponent)
+      const movement = inputPointer?.movement
+      if (movement) {
+        delta.copy(transform.position).sub(editorCameraCenter)
+        spherical.setFromVector3(delta)
+        spherical.theta -= movement.x * ORBIT_SPEED
+        spherical.phi += movement.y * ORBIT_SPEED
+        spherical.makeSafe()
+        delta.setFromSpherical(spherical)
+        transform.position.copy(editorCameraCenter).add(delta)
+        transform.matrix.lookAt(transform.position, editorCameraCenter, Vector3_Up)
+        transform.rotation.setFromRotationMatrix(transform.matrix)
+      }
     }
   }
 }

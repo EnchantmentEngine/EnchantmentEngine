@@ -41,8 +41,6 @@ export const CameraOrbitComponent = defineComponent({
   schema: S.Object({
     focusedEntities: S.Array(S.Entity()),
     transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.Origin),
-    cursorDeltaX: S.Number(0),
-    cursorDeltaY: S.Number(0),
     minimumZoom: S.Number(0.1),
     cameraOrbitCenter: T.Vec3(),
     disabled: S.Bool(false)

@@ -36,7 +36,6 @@ import {
 } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -439,9 +438,6 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
   else {
     SelectionState.updateSelection([getComponent(clickedEntity, UUIDComponent)])
   }
-  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-  const cameraOrbit = getMutableComponent(viewerEntity, CameraOrbitComponent)
-  cameraOrbit.focusedEntities.set(SelectionState.getSelectedEntities())
 }
 
 const reactor = () => {

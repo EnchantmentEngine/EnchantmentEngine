@@ -43,7 +43,7 @@ import {
 } from '@ir-engine/ecs'
 import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
-import { Vector3 } from 'three'
+import { Vector2 } from 'three'
 import { NameComponent } from '../../common/NameComponent'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -274,7 +274,7 @@ export const CanvasInputReactor = () => {
 
         const pointer = getOptionalComponent(pointerEntity, InputPointerComponent)
         if (pointer) {
-          state[button]!.downPosition = new Vector3(pointer.position.x, pointer.position.y, 0)
+          state[button]!.downPointerPosition = new Vector2(pointer.position.x, pointer.position.y)
           //rotation will never be defined for the mouse or touch
         }
       } else if (state[button]) {
