@@ -34,6 +34,7 @@ import {
   createEntity,
   destroyEngine,
   EntityContext,
+  EntityTreeComponent,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -712,6 +713,7 @@ describe('EntityCSMReactor', () => {
     })
   })
 
+  /* @todo How to check this kind of effect/dependency ?? */
   describe('after SceneObjectSystem ..', () => {
     it.todo(
       'should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy',
@@ -1492,14 +1494,21 @@ describe('RenderSettingsQueryReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
-  /* @todo Setup the connection between rendererEntity and testEntity */
+  /* @todo How to setup the connection between rendererEntity and testEntity */
   it.todo('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {
     // 3. Set input & dependencies data
-    const rendererEntity = createEntity()
     const csm = new CSM({})
+
+    const rendererEntity = createEntity()
     setComponent(rendererEntity, RendererComponent, { csm: csm })
+
+    // @note Crashes the reactor, but this should be the way to achieve this goal
+    // const rendererEntity = defineQuery([RendererComponent])()[0]
+    // getMutableComponent(rendererEntity, RendererComponent).csm.set(csm)
+
     expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    setComponent(testEntity, EntityTreeComponent, { parentEntity: rendererEntity }) // Connect them for useRendererEntity
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
     const root = startReactor(() => {
