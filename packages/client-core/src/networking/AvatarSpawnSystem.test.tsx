@@ -25,6 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
+import '@ir-engine/spatial/tests/webxr/emulator'
+
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
@@ -57,7 +59,6 @@ import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
 import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
-import '@ir-engine/spatial/tests/webxr/emulator'
 import { act, render } from '@testing-library/react'
 import { Cache } from 'three'
 import { v4 } from 'uuid'
