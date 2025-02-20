@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { exec } from 'child_process'
+import execa from 'execa'
 import path from 'path/posix'
 import S3BlobStore from 's3-blob-store'
 
@@ -201,7 +201,14 @@ export class GCSStorage implements StorageProviderInterface {
     if (useMediaCDN) {
       try {
         console.log('invalidating Media CDN cache for', config.gcp.gcs.edgeCacheService)
-        return exec(`gcloud edge-cache services invalidate-cache test ${config.gcp.gcs.edgeCacheService}`)
+        return Promise.all(invalidationItems.map(item => {
+          console.log('Invalidating', item)
+          try {
+            return execa(`gcloud edge-cache services invalidate-cache ${config.gcp.gcs.edgeCacheService} --path ${item}`)
+          } catch(err) {
+            console.error('error invalidating', item, err)
+          }
+        }))
       } catch(err) {
         logger.error('Error invalidating Media CDN cache for %s', config.gcp.gcs.edgeCacheService)
         logger.error(err)
