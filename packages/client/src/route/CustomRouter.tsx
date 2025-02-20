@@ -33,6 +33,7 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
 import $404 from '../pages/404'
 import $503 from '../pages/503'
+import $banned from '../pages/_banned'
 
 function CustomRouter() {
   const customRoutes = useCustomRoutes()
@@ -61,6 +62,7 @@ function CustomRouter() {
           })}
           {/* if no index page has been provided, indicate this as obviously as possible */}
           {!customRoutes.find((route) => route.route === '/') && <Route key={'/503'} path={'/'} element={<$503 />} />}
+          <Route key="banned" path="/banned" element={<$banned />} />
           <Route key={'404'} path="*" element={<$404 />} />
         </Routes>
       </Suspense>

@@ -26,14 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 import { useFind } from '@ir-engine/common'
 import { moderationBanPath } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
-import React, { useEffect } from 'react'
-import { PopoverState } from '../common/services/PopoverState'
-import { UserBanned } from '../components/modals/UserBanned'
-import { LoadingUISystemState } from '../systems/LoadingUISystem'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AuthState } from '../user/services/AuthService'
 
 export const useUserBannedCheck = () => {
-  const ready = useMutableState(LoadingUISystemState).value.ready
+  const navigate = useNavigate()
   const selfUser = useMutableState(AuthState).user.get(NO_PROXY)
   const { data } = useFind(moderationBanPath, {
     query: {
@@ -43,9 +41,9 @@ export const useUserBannedCheck = () => {
   })
 
   useEffect(() => {
-    if (ready && data?.length > 0) {
-      PopoverState.showPopupover(<UserBanned />)
+    if (data?.length > 0) {
+      navigate('/banned')
       return
     }
-  }, [data, ready])
+  }, [data])
 }

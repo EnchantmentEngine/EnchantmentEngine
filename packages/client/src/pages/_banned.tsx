@@ -29,9 +29,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdWarning } from 'react-icons/md'
 
-export const UserBanned = () => {
+export default function UserBanned() {
   const { t } = useTranslation()
-
   return (
     <>
       <div className="fixed inset-0 z-[9999] bg-black/50" />
