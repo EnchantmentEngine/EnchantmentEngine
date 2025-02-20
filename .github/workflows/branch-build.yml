@@ -111,9 +111,9 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: mv packages/hyperflux packages_moved/hyperflux
+      - run: mv packages/hyperflux/* packages_moved/hyperflux/
       - run: rm -rf packages
-      - run: mv packages_moved/hyperflux packages/hyperflux 
+      - run: mv packages_moved/hyperflux/* packages/hyperflux/
       - run: cd packages/${{ matrix.package }} && npm run test
 
   test_ecs:
@@ -127,11 +127,11 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: mv packages/hyperflux packages_moved/hyperflux
-      - run: mv packages/ecs packages_moved/ecs
+      - run: mv packages/hyperflux/* packages_moved/hyperflux/
+      - run: mv packages/ecs/* packages_moved/ecs/
       - run: rm -rf packages
-      - run: mv packages_moved/hyperflux packages/hyperflux
-      - run: mv packages_moved/ecs packages/ecs
+      - run: mv packages_moved/hyperflux/* packages/hyperflux/
+      - run: mv packages_moved/ecs/* packages/ecs/
       - run: cd packages/ecs && npm run test
 
   test_network:
@@ -145,13 +145,13 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: mv packages/hyperflux packages_moved/hyperflux
-      - run: mv packages/ecs packages_moved/ecs
-      - run: mv packages/network packages_moved/network
+      - run: mv packages/hyperflux/* packages_moved/hyperflux/
+      - run: mv packages/ecs/* packages_moved/ecs/
+      - run: mv packages/network/* packages_moved/network/
       - run: rm -rf packages
-      - run: mv packages_moved/hyperflux packages/hyperflux
-      - run: mv packages_moved/ecs packages/ecs
-      - run: mv packages_moved/network packages/network
+      - run: mv packages_moved/hyperflux/* packages/hyperflux/
+      - run: mv packages_moved/ecs/* packages/ecs/
+      - run: mv packages_moved/network/* packages/network/
       - run: cd packages/network && npm run test
 
   test_spatial:
@@ -165,17 +165,17 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: mv packages/hyperflux packages_moved/hyperflux
-      - run: mv packages/ecs packages_moved/ecs
-      - run: mv packages/network packages_moved/network
-      - run: mv packages/xrui packages_moved/xrui
-      - run: mv packages/spatial packages_moved/spatial
+      - run: mv packages/hyperflux/* packages_moved/hyperflux/
+      - run: mv packages/ecs/* packages_moved/ecs/
+      - run: mv packages/network/* packages_moved/network/
+      - run: mv packages/xrui/* packages_moved/xrui/
+      - run: mv packages/spatial/* packages_moved/spatial/
       - run: rm -rf packages
-      - run: mv packages_moved/hyperflux packages/hyperflux
-      - run: mv packages_moved/ecs packages/ecs
-      - run: mv packages_moved/network packages/network
-      - run: mv packages_moved/xrui packages/xrui
-      - run: mv packages_moved/spatial packages/spatial
+      - run: mv packages_moved/hyperflux/* packages/hyperflux/
+      - run: mv packages_moved/ecs/* packages/ecs/
+      - run: mv packages_moved/network/* packages/network/
+      - run: mv packages_moved/xrui/* packages/xrui/
+      - run: mv packages_moved/spatial/* packages/spatial/
       - run: cd packages/spatial && npm run test
 
   test_engine:
@@ -189,19 +189,19 @@ jobs:
         with:
           path: .
           key: dir-${{github.sha}}
-      - run: mv packages/hyperflux packages_moved/hyperflux
-      - run: mv packages/ecs packages_moved/ecs
-      - run: mv packages/network packages_moved/network
-      - run: mv packages/xrui packages_moved/xrui
-      - run: mv packages/spatial packages_moved/spatial
-      - run: mv packages/engine packages_moved/engine
+      - run: mv packages/hyperflux/* packages_moved/hyperflux/
+      - run: mv packages/ecs/* packages_moved/ecs/
+      - run: mv packages/network/* packages_moved/network/
+      - run: mv packages/xrui/* packages_moved/xrui/
+      - run: mv packages/spatial/* packages_moved/spatial/
+      - run: mv packages/engine/* packages_moved/engine/
       - run: rm -rf packages
-      - run: mv packages_moved/hyperflux packages/hyperflux
-      - run: mv packages_moved/ecs packages/ecs
-      - run: mv packages_moved/network packages/network
-      - run: mv packages_moved/xrui packages/xrui
-      - run: mv packages_moved/spatial packages/spatial
-      - run: mv packages_moved/engine packages/engine
+      - run: mv packages_moved/hyperflux/* packages/hyperflux/
+      - run: mv packages_moved/ecs/* packages/ecs/
+      - run: mv packages_moved/network/* packages/network/
+      - run: mv packages_moved/xrui/* packages/xrui/
+      - run: mv packages_moved/spatial/* packages/spatial/
+      - run: mv packages_moved/engine/* packages/engine/
       - run: cd packages/engine && npm run test
 
   test_client:
