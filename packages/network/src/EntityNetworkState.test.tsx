@@ -38,7 +38,6 @@ import { Network, NetworkTopics } from './Network'
 import './EntityNetworkState'
 
 import { EngineState } from '@ir-engine/ecs'
-import React from 'react'
 import { EntityNetworkState } from './EntityNetworkState'
 import { WorldNetworkAction } from './functions/WorldNetworkAction'
 import { NetworkObjectComponent, NetworkObjectOwnedTag } from './NetworkObjectComponent'
@@ -938,16 +937,13 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
-    const { rerender, unmount } = render(<></>)
-    await act(async () => rerender(<></>))
+    await act(() => render(null))
 
     const networkObjectEntitiesAfter = networkObjectQuery()
 
     assert.equal(networkObjectEntitiesAfter.length, 1)
     assert.equal(getComponent(networkObjectEntitiesAfter[0], NetworkObjectComponent).networkId, 0)
     assert.equal(getComponent(networkObjectEntitiesAfter[0], NetworkObjectComponent).authorityPeerID, peerID)
-
-    unmount()
   })
 
   it('should transfer authority of object we own but our other peer disconnects', async () => {
@@ -1008,8 +1004,7 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
-    const { rerender, unmount } = render(<></>)
-    await act(async () => rerender(<></>))
+    await act(() => render(null))
 
     applyIncomingActions()
 
@@ -1021,8 +1016,6 @@ describe('EntityNetworkState', () => {
 
     assert.equal(networkObjectEntitiesAfter.length, 1)
     assert.equal(getComponent(networkObjectEntitiesAfter[0], NetworkObjectComponent).authorityPeerID, peerID2)
-
-    unmount()
   })
 
   it('should not transfer authority of object we do not own when authority peer disconnects', async () => {
@@ -1084,8 +1077,7 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
-    const { rerender, unmount } = render(<></>)
-    await act(async () => rerender(<></>))
+    await act(() => render(null))
 
     applyIncomingActions()
 
@@ -1097,8 +1089,6 @@ describe('EntityNetworkState', () => {
 
     // entity should be removed
     assert.equal(networkObjectEntitiesAfter.length, 0)
-
-    unmount()
   })
 
   it('should not transfer authority of scene object when authority peer disconnects', async () => {
@@ -1162,8 +1152,7 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
-    const { rerender, unmount } = render(<></>)
-    await act(async () => rerender(<></>))
+    await act(() => render(null))
 
     applyIncomingActions()
 
@@ -1176,8 +1165,6 @@ describe('EntityNetworkState', () => {
 
     assert.equal(networkObjectEntitiesAfter.length, 1)
     // assert.equal(getComponent(networkObjectEntitiesAfter[0], NetworkObjectComponent).authorityPeerID, ScenePeer)
-
-    unmount()
   })
 
   it.skip('benchmark 1000 entities spawn', async () => {

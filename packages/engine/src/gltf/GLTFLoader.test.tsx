@@ -52,7 +52,6 @@ import {
   MaterialInstanceComponent,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import React from 'react'
 import { InstancedMesh, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
 import { overrideFileLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
@@ -581,9 +580,11 @@ describe('GLTF Loader', async () => {
     setComponent(entity2, UUIDComponent, UUIDComponent.generateUUID())
     setComponent(entity2, GLTFComponent, { src: duck_gltf })
 
-    const { rerender, unmount } = render(<></>)
+    await act(() => render(null))
+
     applyIncomingActions()
-    await act(async () => rerender(<></>))
+
+    await act(() => render(null))
 
     const instanceID = GLTFComponent.getInstanceID(entity)
     const instanceID2 = GLTFComponent.getInstanceID(entity2)
@@ -594,7 +595,5 @@ describe('GLTF Loader', async () => {
     const meshEntities2 = getChildrenWithComponents(entity2, [MeshComponent])
 
     expect(meshEntities.length).toBe(meshEntities2.length)
-
-    unmount()
   })
 })
