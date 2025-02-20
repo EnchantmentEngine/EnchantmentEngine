@@ -32,12 +32,13 @@ const threshold = 80
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    maxConcurrency: 1,
+    maxConcurrency: 0,
     passWithNoTests: true,
     testTimeout: 10000,
     hookTimeout: 10000,
     reporters: reporters,
     slowTestThreshold: 1000,
+    fileParallelism: false,
     coverage: {
       reporter: ['html'],
       provider: 'istanbul',
