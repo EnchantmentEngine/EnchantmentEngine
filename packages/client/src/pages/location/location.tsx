@@ -36,6 +36,7 @@ import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { useEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEngineCanvas'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
+import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { useUserBannedCheck } from '@ir-engine/client-core/src/hooks/useUserBanned'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { useMutableState } from '@ir-engine/hyperflux'
@@ -51,9 +52,11 @@ const LocationRoutes = () => {
   useBrowserCheck()
   useUserBannedCheck()
 
+  const projectsLoaded = useEngineInjection()
+
   return (
     <Suspense>
-      {!ready && (
+      {!ready && !projectsLoaded && (
         <div className="flex h-screen w-screen items-center justify-center bg-white" style={{ zIndex: 1000000 }}>
           <LoadingView
             fullScreen
