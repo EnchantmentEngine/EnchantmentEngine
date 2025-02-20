@@ -26,6 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { act, render } from '@testing-library/react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import '@ir-engine/spatial/tests/webxr/emulator'
+
 import { GLTF } from '@gltf-transform/core/dist/types/gltf'
 import {
   createEntity,
@@ -50,7 +52,6 @@ import {
   MaterialInstanceComponent,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import '@ir-engine/spatial/tests/webxr/emulator'
 import React from 'react'
 import { InstancedMesh, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
