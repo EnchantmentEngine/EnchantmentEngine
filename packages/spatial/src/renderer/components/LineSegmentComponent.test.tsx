@@ -56,6 +56,7 @@ import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 
 import { startReactor } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import { assertColor } from '../../../tests/util/assert'
 import { NameComponent } from '../../common/NameComponent'
 import { ObjectLayerMasks, ObjectLayers } from '../constants/ObjectLayers'
@@ -63,7 +64,6 @@ import { LineSegmentComponent } from './LineSegmentComponent'
 import { ObjectComponent } from './ObjectComponent'
 import { ObjectLayerComponents, ObjectLayerMaskComponent } from './ObjectLayerComponent'
 import { VisibleComponent } from './VisibleComponent'
-import { act, render } from '@testing-library/react'
 
 type LineSegmentComponentData = {
   name: string

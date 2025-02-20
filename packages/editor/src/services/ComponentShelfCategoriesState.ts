@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { Component } from '@ir-engine/ecs'
-import { VisualScriptComponent } from '@ir-engine/engine'
+import { VisualScriptComponent } from '@ir-engine/engine/src/visualscript/components/VisualScriptComponent'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
