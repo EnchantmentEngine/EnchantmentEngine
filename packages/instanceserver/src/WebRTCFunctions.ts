@@ -453,7 +453,7 @@ export async function handleWebRtcTransportCreate(
         namespace: config.server.namespace,
         plural: 'gameservers'
       })
-      const thisGs = (serverResult?.body as any).items.find(
+      const thisGs = serverResult.items.find(
         (server) => server.metadata.name === instanceServerState.instanceServer.objectMeta.name
       )
 

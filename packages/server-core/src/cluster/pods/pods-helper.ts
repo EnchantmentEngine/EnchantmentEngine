@@ -190,7 +190,7 @@ const getGameserversData = async (labelSelector: string, id: string, label: stri
       plural: 'gameservers',
       labelSelector
     })
-    gameservers = getServerPodsInfo((gameserversResponse as any).items)
+    gameservers = getServerPodsInfo(gameserversResponse.items)
   } catch (err) {
     logger.error('Failed to get pods info.', err)
   }
