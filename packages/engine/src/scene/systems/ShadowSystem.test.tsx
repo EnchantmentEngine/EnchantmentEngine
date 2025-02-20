@@ -147,13 +147,13 @@ describe('EntityChildCSMReactor', () => {
       getMutableComponent(rendererEntity, RendererComponent).csm.set(null)
       setComponent(testEntity, ShadowComponent)
       setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
       expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
@@ -164,7 +164,7 @@ describe('EntityChildCSMReactor', () => {
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor) as ReactorRoot
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
@@ -179,13 +179,13 @@ describe('EntityChildCSMReactor', () => {
       setComponent(rendererEntity, RendererComponent, { csm: csm })
       setComponent(testEntity, ShadowComponent, { receive: false })
       setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
       expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
@@ -196,7 +196,7 @@ describe('EntityChildCSMReactor', () => {
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor) as ReactorRoot
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
@@ -212,13 +212,13 @@ describe('EntityChildCSMReactor', () => {
       setComponent(testEntity, ShadowComponent, { receive: false })
       setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
       getMutableComponent(testEntity, ObjectComponent).set(null as unknown as Mesh)
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
       expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
@@ -228,7 +228,7 @@ describe('EntityChildCSMReactor', () => {
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
@@ -243,13 +243,13 @@ describe('EntityChildCSMReactor', () => {
       setComponent(rendererEntity, RendererComponent, { csm: csm })
       setComponent(testEntity, ShadowComponent)
       setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
       expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
@@ -260,7 +260,7 @@ describe('EntityChildCSMReactor', () => {
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(1)
@@ -276,13 +276,13 @@ describe('EntityChildCSMReactor', () => {
         setComponent(rendererEntity, RendererComponent, { csm: csm })
         setComponent(testEntity, ShadowComponent)
         setComponent(testEntity, ObjectComponent, new Mesh(new BoxGeometry()))
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(
             EntityContext.Provider,
             { value: testEntity },
             React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
           )
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
         expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
@@ -293,7 +293,7 @@ describe('EntityChildCSMReactor', () => {
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
         expect(resultSpy).not.toHaveBeenCalled()
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         root.stop()
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -328,13 +328,13 @@ describe('EntityCSMReactor', () => {
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
       getMutableComponent(testEntity, DirectionalLightComponent).light.set(null as any)
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -344,7 +344,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -359,13 +359,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: false })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -377,7 +377,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -392,13 +392,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -410,7 +410,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -426,13 +426,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, light: Initial })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -444,7 +444,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm?.sourceLight
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.sourceLight
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -461,13 +461,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -480,7 +480,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -498,13 +498,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, shadowBias: Expected })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -517,7 +517,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -535,13 +535,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, cameraFar: Expected })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -554,7 +554,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.maxFar
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -572,13 +572,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, intensity: Expected })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -591,7 +591,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.lightIntensity
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -609,13 +609,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, color: Expected })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -628,7 +628,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toEqual(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.lightColor
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -646,13 +646,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent, { cascades: Expected })
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -665,7 +665,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toEqual(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.cascades
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -683,13 +683,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -702,7 +702,7 @@ describe('EntityCSMReactor', () => {
         expect(before).toBe(Initial)
         expect(before).not.toEqual(Expected)
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         root.stop()
         // 4. Check the result (output)
         const result = getComponent(rendererEntity, RendererComponent).csm
@@ -738,13 +738,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
@@ -756,7 +756,7 @@ describe('EntityCSMReactor', () => {
         const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
         expect(before).toBe(Initial)
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         setComponent(rendererEntity, RendererComponent, { csm: undefined })
         root.run()
         // 4. Check the result (output)
@@ -777,13 +777,13 @@ describe('EntityCSMReactor', () => {
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
       getMutableComponent(testEntity, DirectionalLightComponent).light.set(null as any) // Coerce the light to be falsy
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -795,7 +795,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       getMutableComponent(rendererEntity, RendererComponent).csm.merge({ needsUpdate: Initial })
       root.run()
       // 4. Check the result (output)
@@ -814,13 +814,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: false })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -832,7 +832,7 @@ describe('EntityCSMReactor', () => {
       const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(before).toBe(Initial)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       getMutableComponent(rendererEntity, RendererComponent).csm.merge({ needsUpdate: Initial })
       root.run()
       // 4. Check the result (output)
@@ -851,13 +851,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, shadowBias: Initial })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -870,7 +870,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       setComponent(testEntity, DirectionalLightComponent, { shadowBias: Expected })
       root.run()
       // 4. Check the result (output)
@@ -890,13 +890,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, cameraFar: Initial })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -909,7 +909,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       setComponent(testEntity, DirectionalLightComponent, { cameraFar: Expected })
       root.run()
       // 4. Check the result (output)
@@ -930,13 +930,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -949,7 +949,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       getMutableState(RendererState).shadowMapResolution.set(Expected)
       root.run()
       // 4. Check the result (output)
@@ -971,13 +971,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -992,7 +992,7 @@ describe('EntityCSMReactor', () => {
           expect(before).not.toBe(Expected)
         }
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { color: Expected })
         root.run()
         // 4. Check the result (output)
@@ -1015,13 +1015,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1036,7 +1036,7 @@ describe('EntityCSMReactor', () => {
           expect(before).not.toBe(Expected)
         }
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { intensity: Expected })
         root.run()
         // 4. Check the result (output)
@@ -1060,13 +1060,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1081,7 +1081,7 @@ describe('EntityCSMReactor', () => {
           expect(before).not.toEqual(new Vector2(Expected, Expected))
         }
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         getMutableState(RendererState).shadowMapResolution.set(Expected)
         root.run()
         // 4. Check the result (output)
@@ -1104,13 +1104,13 @@ describe('EntityCSMReactor', () => {
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent)
         setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
             entity: testEntity,
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
         expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1125,7 +1125,7 @@ describe('EntityCSMReactor', () => {
           expect(before).not.toBe(Expected)
         }
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { shadowRadius: Expected })
         root.run()
         // 4. Check the result (output)
@@ -1149,13 +1149,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1168,7 +1168,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
@@ -1194,13 +1194,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1211,7 +1211,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       setComponent(renderSettingsEntity, RenderSettingsComponent, { cascades: Expected })
       root.run()
       // 4. Check the result (output)
@@ -1232,13 +1232,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
       expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
@@ -1251,7 +1251,7 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       const cascades = 42
       setComponent(renderSettingsEntity, RenderSettingsComponent, { cascades: cascades })
       root.run()
@@ -1272,13 +1272,13 @@ describe('EntityCSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
           rendererEntity: rendererEntity,
           renderSettingsEntity: renderSettingsEntity
         })
-      }, false) as ReactorRoot
+      }
       const entities = [createEntity(), createEntity()]
       for (const entity of entities) {
         setComponent(entity, ShadowComponent)
@@ -1293,7 +1293,7 @@ describe('EntityCSMReactor', () => {
       expect(getState(RendererState).shadowMapResolution).toBeDefined()
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       root.stop()
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -1335,21 +1335,22 @@ describe('CSMReactor', () => {
         const directionalLightEntity = createEntity()
         setComponent(directionalLightEntity, DirectionalLightComponent)
         getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(ShadowSystemReactors.CSMReactor, {
             rendererEntity: rendererEntity,
             renderSettingsEntity: renderSettingsEntity
           })
-        }, false) as ReactorRoot
+        }
         // 1. Sanity check (input & dependencies)
         expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
         expect(getState(XRLightProbeState).directionalLightEntity).toBeDefined()
         expect(getState(XRLightProbeState).directionalLightEntity).not.toBe(UndefinedEntity)
         expect(hasComponent(directionalLightEntity, DirectionalLightComponent)).toBeTruthy()
         // 2. Run the process
-        root.run()
+        const root = startReactor(Reactor)
         const result = true
         // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).toBe(Expected)
         // 5? Cleanup (dependencies)
       }
@@ -1390,18 +1391,18 @@ describe('RenderSettingsQueryReactor', () => {
     const rendererEntity = UndefinedEntity
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
-    const root = startReactor(() => {
+    const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
         rendererEntity: rendererEntity,
         renderSettingsEntity: renderSettingsEntity
       })
-    }, false) as ReactorRoot
+    }
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
     // 1. Sanity check (input & dependencies)
     expect(rendererEntity).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
-    root.run()
+    const root = startReactor(Reactor)
     // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
@@ -1416,19 +1417,19 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
-    const root = startReactor(() => {
+    const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
         rendererEntity: rendererEntity,
         renderSettingsEntity: renderSettingsEntity
       })
-    }, false) as ReactorRoot
+    }
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
     // 1. Sanity check (input & dependencies)
     expect(rendererEntity).toBeTruthy()
     expect(rendererEntity).not.toBe(getState(ReferenceSpaceState).viewerEntity)
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
-    root.run()
+    const root = startReactor(Reactor)
     // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
@@ -1443,12 +1444,12 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
-    const root = startReactor(() => {
+    const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
         rendererEntity: rendererEntity,
         renderSettingsEntity: renderSettingsEntity
       })
-    }, false) as ReactorRoot
+    }
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     getMutableState(RendererState).renderMode.set(RenderModes.UNLIT)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
@@ -1458,7 +1459,7 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getState(RendererState).renderMode).toBe(RenderModes.UNLIT)
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
-    root.run()
+    const root = startReactor(Reactor)
     // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
@@ -1473,12 +1474,12 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
-    const root = startReactor(() => {
+    const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
         rendererEntity: rendererEntity,
         renderSettingsEntity: renderSettingsEntity
       })
-    }, false) as ReactorRoot
+    }
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     getMutableState(RendererState).renderMode.set(RenderModes.LIT)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
@@ -1488,7 +1489,7 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getState(RendererState).renderMode).toBe(RenderModes.LIT)
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
-    root.run()
+    const root = startReactor(Reactor)
     // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
@@ -1511,13 +1512,13 @@ describe('RenderSettingsQueryReactor', () => {
     setComponent(testEntity, EntityTreeComponent, { parentEntity: rendererEntity }) // Connect them for useRendererEntity
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
-    const root = startReactor(() => {
+    const Reactor = () => {
       return React.createElement(
         EntityContext.Provider,
         { value: testEntity },
         React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor)
       )
-    }, false) as ReactorRoot
+    }
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
     // 1. Sanity check (input & dependencies)
@@ -1527,7 +1528,7 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getState(RendererState).renderMode).not.toBe(RenderModes.LIT)
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
-    root.run()
+    const root = startReactor(Reactor)
     // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).toHaveBeenCalled()
@@ -1562,20 +1563,20 @@ describe('RendererShadowReactor', () => {
       // 3. Set input & dependencies data
       setComponent(testEntity, RendererComponent)
       getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { enabled: Initial } })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.RendererShadowReactor)
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
       const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
@@ -1589,20 +1590,20 @@ describe('RendererShadowReactor', () => {
       // 3. Set input & dependencies data
       setComponent(testEntity, RendererComponent)
       getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { autoUpdate: Initial } })
-      const root = startReactor(() => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(ShadowSystemReactors.RendererShadowReactor)
         )
-      }, false) as ReactorRoot
+      }
       // 1. Sanity check (input & dependencies)
       expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
       const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
       expect(before).toBe(Initial)
       expect(before).not.toBe(Expected)
       // 2. Run the process
-      root.run()
+      const root = startReactor(Reactor)
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
@@ -1700,11 +1701,17 @@ describe('ShadowSystem', () => {
 
   /** @todo */
   describe('reactor', () => {
+    let testEntity = UndefinedEntity
+
     beforeEach(async () => {
       createEngine()
+      mockSpatialEngine()
+      testEntity = createEntity()
     })
 
     afterEach(() => {
+      removeEntity(testEntity)
+      destroySpatialEngine()
       destroyEngine()
     })
 
@@ -1713,15 +1720,17 @@ describe('ShadowSystem', () => {
       it.todo('.. should set _shadowMaterial.map to shadowTexture', () => {})
       it.todo('.. should set _shadowMaterial.needsUpdate to true', () => {})
     })
+
     it.todo(
-      'should render the RenderSettingsQueryReactor once for every entity that has a RenderSettingsComponent when useShadowsEnabled is truthy',
+      'should call RenderSettingsQueryReactor once for every entity that has a RenderSettingsComponent when useShadowsEnabled is truthy',
+      async () => {}
+    )
+
+    it.todo(
+      'should call DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy',
       () => {}
     )
-    it.todo(
-      'should render the DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy',
-      () => {}
-    )
-    it.todo('should render the RendererShadowReactor once for every entity that has a RendererComponent', () => {})
+    it.todo('should call RendererShadowReactor once for every entity that has a RendererComponent', () => {})
   }) //:: reactor
 }) //:: ShadowSystem
 

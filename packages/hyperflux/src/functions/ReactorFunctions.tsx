@@ -162,7 +162,7 @@ export function useReactorRootContext(): ReactorRoot {
   return React.useContext(ReactorRootContext)
 }
 
-export function startReactor(Reactor: React.FC, autoStart = true): ReactorRoot {
+export function startReactor(Reactor: React.FC): ReactorRoot {
   const isStrictMode = false
   const concurrentUpdatesByDefaultOverride = true
   const identifierPrefix = ''
@@ -233,7 +233,7 @@ export function startReactor(Reactor: React.FC, autoStart = true): ReactorRoot {
     reflection
   } as ReactorRoot
 
-  if (autoStart) reactorRoot.run()
+  reactorRoot.run()
 
   return reactorRoot
 }
