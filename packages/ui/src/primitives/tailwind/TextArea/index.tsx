@@ -65,6 +65,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
       variant = 'outlined',
       labelClassname,
       errorBorder,
+      required,
       ...props
     },
     ref
@@ -102,7 +103,12 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 
     return (
       <div className={twcontainerClassName}>
-        {label && <Label className={twMerge(`self-stretch ${labelClass}`, labelClassname)}>{label}</Label>}
+        {label && (
+          <Label className={twMerge(`self-stretch ${labelClass}`, labelClassname)}>
+            {required && <span className="text-xs text-ui-error">*</span>}
+            {label}
+          </Label>
+        )}
         <div className={containerClass}>
           {startComponent && (
             <div className="pointer-events-auto absolute inset-y-0 start-0 flex items-center ps-3.5">

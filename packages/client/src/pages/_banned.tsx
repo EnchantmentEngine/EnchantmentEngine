@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
-import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdWarning } from 'react-icons/md'
@@ -32,22 +31,21 @@ import { MdWarning } from 'react-icons/md'
 export default function UserBanned() {
   const { t } = useTranslation()
   return (
-    <>
-      <div className="fixed inset-0 z-[9999] bg-black/50" />
-      <Modal
-        id="user-banned-modal"
-        className="pointer-events-auto fixed inset-0 z-[10000] m-auto flex h-[250px] w-[600px] rounded-xl bg-surface-1 [&>div]:flex [&>div]:w-full [&>div]:flex-col"
-        hideFooter={true}
-        rawChildren={
-          <div className="flex w-full flex-col items-center gap-6 p-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white">
-              <MdWarning />
-            </div>
-            <Text className="text-center">{t('user:common.userBannedMessage') as string}</Text>
-            <Text className="text-center">{t('user:common.userBannedMessageDescription') as string}</Text>
+    <Modal
+      id="user-banned-modal"
+      className="pointer-events-auto fixed inset-0 z-[10000] m-auto flex h-[250px] w-[600px] rounded-xl bg-surface-1 [&>div]:flex [&>div]:w-full [&>div]:flex-col"
+      hideFooter={true}
+      rawChildren={
+        <div className="flex w-full flex-col items-center gap-6 p-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white">
+            <MdWarning />
           </div>
-        }
-      />
-    </>
+          <span className="text-center text-text-secondary">{t('user:common.userBannedMessage') as string}</span>
+          <span className="text-center text-text-secondary">
+            {t('user:common.userBannedMessageDescription') as string}
+          </span>
+        </div>
+      }
+    />
   )
 }

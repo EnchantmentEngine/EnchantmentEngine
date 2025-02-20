@@ -37,7 +37,6 @@ import {
 import { getMutableState, useHookstate, UserID } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
-import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
 import { t } from 'i18next'
 import { IoCloseOutline } from 'react-icons/io5'
@@ -52,14 +51,16 @@ type ReportMenuProps = { type: ModerationTypeType; userId?: UserID; locationId?:
 const ReportSuccessReportModal = ({ handleClose }) => (
   <Modal
     id="report-success-modal"
-    className="pointer-events-auto m-auto flex h-auto w-[400px] rounded-xl bg-[#080808] [&>div]:flex [&>div]:w-full [&>div]:flex-col"
+    className="pointer-events-auto m-auto flex h-auto w-[750px] rounded-xl bg-surface-1 [&>div]:flex [&>div]:w-full [&>div]:flex-col"
     hideFooter={true}
     rawChildren={
       <div className="flex w-full flex-col items-center gap-6 p-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white">
-          <span className="text-2xl">✓</span>
+        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-400">
+          <span className="text-2xl text-text-secondary">✓</span>
         </div>
-        <Text className="text-center">{t('user:usermenu.profile.reportSuccessMessage') as string}</Text>
+        <span className="text-center text-text-secondary">
+          {t('user:usermenu.profile.reportSuccessMessage') as string}
+        </span>
         <Button onClick={handleClose}>Close</Button>
       </div>
     }
@@ -163,31 +164,34 @@ const ReportMenu = (props: ReportMenuProps) => {
   return (
     <Modal
       id="select-report-menu-modal"
-      className="pointer-events-auto m-auto flex h-auto w-[600px] rounded-xl bg-[#080808] [&>div]:flex [&>div]:w-full [&>div]:flex-col"
+      className="pointer-events-auto m-auto flex h-auto w-[750px] rounded-xl bg-surface-1 [&>div]:flex [&>div]:w-full [&>div]:flex-col"
       hideFooter={true}
       rawChildren={
         <div className="flex w-full flex-col">
           <div className="border-b-theme-primary flex h-14 items-center justify-between border-b px-8">
-            <Text className="flex-1 text-center">{t('user:usermenu.profile.report', { type }) as string}</Text>
+            <span className="flex-1 text-center text-text-secondary">
+              {t('user:usermenu.profile.report', { type }) as string}
+            </span>
             <Button
               data-testid="close-button"
               className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
               onClick={handleClose}
             >
               <span>
-                <IoCloseOutline size={16} />
+                <IoCloseOutline className="text-text-secondary" size={20} />
               </span>
             </Button>
           </div>
 
           <div className="flex flex-col gap-6 p-8">
             <div className="flex flex-col gap-2">
-              <Text className="text-sm">
-                {fieldOptions.abuseType.label} <span className="text-[#FF0000]">*</span>
-              </Text>
               <Select
                 required
                 width="full"
+                labelProps={{
+                  position: 'top',
+                  text: fieldOptions.abuseType.label
+                }}
                 value={formData.abuseType.value}
                 options={abuseTypes}
                 state={errors.abuseType.value ? 'error' : undefined}
@@ -197,11 +201,11 @@ const ReportMenu = (props: ReportMenuProps) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Text className="text-sm">
-                {fieldOptions.details.label} <span className="text-[#FF0000]">*</span>
-              </Text>
               <TextArea
                 required
+                containerClassName="text-text-secondary"
+                labelClassname="text-xs text-text-secondary"
+                label={fieldOptions.details.label}
                 value={formData.details.value || ''}
                 onChange={(e) => handleChange(e.target.value, 'details')}
                 placeholder={fieldOptions.details.placeholder}
@@ -211,7 +215,7 @@ const ReportMenu = (props: ReportMenuProps) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Text className="text-sm">Attachments (optional)</Text>
+              <span className="text-xs text-text-secondary">Attachments (optional)</span>
               <div className="flex items-center gap-2">
                 <input
                   required
@@ -226,7 +230,7 @@ const ReportMenu = (props: ReportMenuProps) => {
                 />
                 <Button onClick={() => document.getElementById('file-upload')?.click()}>Upload</Button>
                 {formData.files.length > 0 && (
-                  <Text className="text-sm text-gray-500">{formData.files.length} file(s) selected</Text>
+                  <span className="text-sm text-text-secondary">{formData.files.length} file(s) selected</span>
                 )}
               </div>
             </div>
