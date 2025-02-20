@@ -8,18 +8,18 @@ FROM ${REPO_URL}/${REPO_NAME}:${TAG} as builder
 WORKDIR /app
 
 # Install debugging tools (vim and default-mysql-client) and gcloud prerequisites
-RUN apt-get update && \
+RUN if [[ "$STORAGE_PROVIDER" == "gcs" ]]; then apt-get update && \
   apt-get install -y vim default-mysql-client apt-transport-https ca-certificates gnupg curl && \
   apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+  rm -rf /var/lib/apt/lists/*; fi
 
 # Install gcloud for Debian: https://cloud.google.com/sdk/docs/install
-RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+RUN if [[ "$STORAGE_PROVIDER" == "gcs" ]]; then echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
   | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
   && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
   | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
   && apt-get update -y \
-  && apt-get install google-cloud-cli -y
+  && apt-get install google-cloud-cli -y; fi
 
 COPY project-package-jsons ./
 COPY packages/server/package.json ./packages/server/
