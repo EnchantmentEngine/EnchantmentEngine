@@ -115,7 +115,7 @@ jobs:
       - run: mv packages/hyperflux packages_moved/
       - run: rm -rf packages
       - run: mv packages_moved/hyperflux packages/
-      - run: cd packages/${{ matrix.package }} && npm run test
+      - run: cd packages/hyperflux && npm run test
 
   test_ecs:
     needs: install-modules

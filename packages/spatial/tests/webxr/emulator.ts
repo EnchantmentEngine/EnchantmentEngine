@@ -28,6 +28,7 @@ Infinite Reality Engine. All Rights Reserved.
  * Exports the tools most used in unit tests from the webxr-emulator.
  * @why Ergonomics. Allows all imports to come from a single file.
  * */
+import '../util/patchNode'
 
 import { PRIVATE as XRSESSION_SYMBOL } from 'webxr-polyfill/src/api/XRSession'
 import { PRIVATE as XRWEBGLLAYER_SYMBOL } from 'webxr-polyfill/src/api/XRWebGLLayer'
