@@ -337,6 +337,52 @@ export const uploadImageFile = ({
     el.click()
   })
 
+// opens a file input (allowing the user to select an video file), uploads the video, and returns the url
+export const uploadVideoFile = ({
+  projectName,
+  directoryPath,
+  preserveDirectory
+}: {
+  projectName: string
+  directoryPath: string
+  preserveDirectory?: boolean
+}): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const el = document.createElement('input')
+    el.type = 'file'
+    if (preserveDirectory) {
+      el.setAttribute('webkitdirectory', 'webkitdirectory')
+    }
+    el.multiple = false
+    el.accept = 'video/mp4,.mp4' // currently only supporting MP4 files
+    el.style.display = 'none'
+
+    el.onchange = async () => {
+      try {
+        if (el.files?.length) {
+          const newFiles = sanitizeFiles(el.files)
+          const uniqueFiles = await filterExistingFiles(projectName, directoryPath, newFiles)
+          const [uploadedFileUrl] = await handleUploadFiles(projectName, directoryPath, uniqueFiles)
+
+          if (uploadedFileUrl) {
+            resolve(uploadedFileUrl)
+          } else {
+            reject(new Error('No file was uploaded'))
+          }
+        } else {
+          reject(new Error('No file selected'))
+        }
+        API.instance.service(fileBrowserPath).emit('created')
+      } catch (err) {
+        reject(err)
+      } finally {
+        el.remove()
+      }
+    }
+
+    el.click()
+  })
+
 export const uploadProjectFiles = (projectName: string, files: File[], paths: string[], args?: object[]) => {
   const promises: CancelableUploadPromiseReturnType<string>[] = []
 
