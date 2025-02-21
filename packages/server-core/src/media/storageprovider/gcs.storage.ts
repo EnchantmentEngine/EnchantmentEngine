@@ -90,8 +90,8 @@ export class GCSStorage implements StorageProviderInterface {
    * @param directoryPath Directory of file in the storage.
    */
   async doesExist(fileName: string, directoryPath: string): Promise<boolean> {
-    console.log('doesExist check', fileName, directoryPath, `${directoryPath}/${fileName}`)
-    const file = this.provider.bucket(this.bucket).file(`${directoryPath}/${fileName}`)
+    console.log('doesExist check', fileName, directoryPath, path.join(directoryPath, fileName))
+    const file = this.provider.bucket(this.bucket).file(path.join(directoryPath, fileName))
     const response = await file.exists()
     console.log('exists response', response)
     return response[0]
