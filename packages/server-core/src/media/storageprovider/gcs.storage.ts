@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import execa from 'execa'
 import path from 'path/posix'
 import S3BlobStore from 's3-blob-store'
 
@@ -41,7 +42,8 @@ import {
 import { UrlMapsClient } from '@google-cloud/compute'
 import { NetworkServicesClient } from '@google-cloud/networkservices'
 import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
-import axios from 'axios'
+
+import logger from '../../ServerLogger'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
@@ -88,8 +90,10 @@ export class GCSStorage implements StorageProviderInterface {
    * @param directoryPath Directory of file in the storage.
    */
   async doesExist(fileName: string, directoryPath: string): Promise<boolean> {
-    const file = this.provider.bucket(this.bucket).file(`${directoryPath}/${fileName}`)
+    console.log('doesExist check', fileName, directoryPath, path.join(directoryPath, fileName))
+    const file = this.provider.bucket(this.bucket).file(path.join(directoryPath, fileName))
     const response = await file.exists()
+    console.log('exists response', response)
     return response[0]
   }
   /**
@@ -98,13 +102,25 @@ export class GCSStorage implements StorageProviderInterface {
    * @param directoryPath Directory of file in the storage.
    */
   async isDirectory(fileName: string, directoryPath: string): Promise<boolean> {
+    const joinedPath = path.join(directoryPath, fileName, '/')
+    console.log('run isDirectory', directoryPath, fileName, joinedPath)
     const response = await this.provider.bucket(this.bucket).getFiles({
-      prefix: path.join(directoryPath, fileName, '/'),
+      prefix: joinedPath,
       maxResults: 1
     })
+    console.log('isDirectory response', response, (response[2] as any).items)
 
-    // Directories in GCS don't exists and are emulated based on file path.
-    return response[0][0]?.metadata?.size === '0'
+    const files = response[2] as {
+      items?: { mediaLink: string; name: string; size: string }[]
+      prefixes?: string[]
+    }
+    const item0 = files.items?.[0]
+    console.log('item0', item0)
+    // Directories in GCS don't exist and are emulated based on file path.
+    return item0
+      ? (item0.name === path.join(directoryPath, fileName, '/') && item0.size === '0') ||
+          item0.name.indexOf(joinedPath) === 0
+      : false
   }
 
   /**
@@ -143,10 +159,18 @@ export class GCSStorage implements StorageProviderInterface {
    * @param prefix Path relative to root in order to list objects.
    * @param recursive If true it will list content from sub folders as well. Default is true.
    * @param continuationToken It indicates that the list is being continued with a token. Used for certain providers like GCS.
+   * @param isDirectory
    * @returns {Promise<StorageListObjectInterface>}
    */
-  async listObjects(prefix: string, recursive = true, continuationToken?: string): Promise<StorageListObjectInterface> {
-    const files = await this.listFolderContent(prefix, recursive)
+  async listObjects(
+    prefix: string,
+    recursive = true,
+    continuationToken?: string,
+    isDirectory?: boolean
+  ): Promise<StorageListObjectInterface> {
+    console.log('listObjects', prefix, recursive)
+    const files = await this.listFolderContent(prefix, recursive, isDirectory)
+    console.log('files', files)
     return {
       Contents: files.map((file) => {
         return {
@@ -192,16 +216,35 @@ export class GCSStorage implements StorageProviderInterface {
   }
 
   async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
-    return Promise.resolve()
     if (!invalidationItems || invalidationItems.length === 0) return
     invalidationItems = invalidationItems.map((item) => (item[0] !== '/' ? `/${item}` : item))
+    console.log('invalidationItems', invalidationItems)
+    console.log('useMediaCDN', useMediaCDN)
     if (useMediaCDN) {
-      return await axios.post(
-        `https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
-        {
-          path: invalidationItems[0]
-        }
-      )
+      try {
+        console.log('invalidating Media CDN cache for', config.gcp.gcs.edgeCacheService)
+        return Promise.all(
+          invalidationItems.map((item) => {
+            console.log('Invalidating', item)
+            try {
+              return execa(
+                `gcloud edge-cache services invalidate-cache ${config.gcp.gcs.edgeCacheService} --path ${item}`
+              )
+            } catch (err) {
+              console.error('error invalidating', item, err)
+            }
+          })
+        )
+      } catch (err) {
+        logger.error('Error invalidating Media CDN cache for %s', config.gcp.gcs.edgeCacheService)
+        logger.error(err)
+      }
+      // return await axios.post(
+      //   `https://networkservices.googleapis.com/v1/projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}:invalidateCache`,
+      //   {
+      //     path: invalidationItems[0]
+      //   }
+      // )
       // const request = {
       //   parent: `projects/${config.gcp.project}/locations/global/edgeCacheServices/${config.gcp.gcs.edgeCacheService}`,
       //   resource: {
@@ -211,7 +254,17 @@ export class GCSStorage implements StorageProviderInterface {
       //   }
       // }
       // return this.networkServicesClient.createEdgeCacheInvalidation(request)
-    } else
+    } else {
+      console.log(
+        'Invalidating Cloud CDN for host',
+        config.server.clientHost,
+        'path',
+        invalidationItems[0],
+        'project',
+        config.gcp.project,
+        'urlMap',
+        config.gcp.gcs.urlMap
+      )
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
@@ -220,6 +273,7 @@ export class GCSStorage implements StorageProviderInterface {
         project: config.gcp.project as string,
         urlMap: config.gcp.gcs.urlMap as string
       })
+    }
   }
 
   associateWithFunction = async (): Promise<any> => Promise.resolve()
@@ -281,14 +335,22 @@ export class GCSStorage implements StorageProviderInterface {
    * List all the files/folders in the directory.
    * @param folderName Name of folder in the storage.
    * @param recursive If true it will list content from sub folders as well.
+   * @param isDirectory
    */
-  async listFolderContent(folderName: string, recursive = false): Promise<FileBrowserContentType[]> {
-    const prefix = folderName.endsWith('/') ? folderName : folderName + '/'
+  async listFolderContent(
+    folderName: string,
+    recursive = false,
+    isDirectory = true
+  ): Promise<FileBrowserContentType[]> {
+    console.log('listFolderContent', folderName, recursive)
+    const prefix = folderName.endsWith('/') || !isDirectory ? folderName : folderName + '/'
+    console.log('prefix', prefix)
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
       delimiter: recursive ? undefined : '/'
     })
 
+    console.log('getFiles response', response)
     const promises: Promise<FileBrowserContentType>[] = []
 
     const files = response[2] as {
@@ -355,20 +417,38 @@ export class GCSStorage implements StorageProviderInterface {
    * @param isCopy If true it will create a copy of object.
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
+    console.log('gcs moveObject', oldName, newName, oldPath, newPath, isCopy)
     const isDirectory = await this.isDirectory(oldName, oldPath)
+    console.log('isDirectory', isDirectory)
     const oldFilePath = path.join(oldPath, oldName)
+    console.log('oldFilePath', oldFilePath)
     const newFilePath = path.join(newPath, newName)
-    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false)
+    console.log('newFilePath', newFilePath)
+    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
+    console.log('listResponse for', oldFilePath + (isDirectory ? '/' : ''))
+    console.log(listResponse, listResponse.Contents)
 
-    return await Promise.all([
-      ...listResponse.Contents.map(async (file) => {
-        const relativePath = file.Key.replace(oldFilePath, '')
-        const key = newFilePath + relativePath
+    if (listResponse.Contents.length > 0)
+      return await Promise.all([
+        ...listResponse.Contents.map(async (file) => {
+          console.log('file to move', file)
+          const relativePath = file.Key.replace(oldFilePath, '')
+          console.log('relativePath', relativePath)
+          const key = newFilePath + relativePath
+          console.log('key', key)
 
-        if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
-        else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
-      })
-    ])
+          console.log('moving/copying', file.Key, 'to', key)
+          if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
+          else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
+        })
+      ])
+    else {
+      console.log('Moving empty folder', oldFilePath, newFilePath)
+      const oldPath = path.join(oldFilePath, '/')
+      const newPath = path.join(newFilePath, '/')
+      if (isCopy) return await this.provider.bucket(this.bucket).file(oldPath).copy(newPath, {})
+      else return await this.provider.bucket(this.bucket).file(oldPath).move(newPath, {})
+    }
   }
 }
 

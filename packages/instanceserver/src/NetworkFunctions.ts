@@ -126,7 +126,7 @@ export async function cleanupOldInstanceservers(app: Application): Promise<void>
     instances.map((instance) => {
       if (!instance.ipAddress) return false
       const [ip, port] = instance.ipAddress.split(':')
-      const match = (instanceservers?.body! as any).items.find((is) => {
+      const match = instanceservers.items.find((is) => {
         if (is.status.ports == null || is.status.address === '') return false
         const inputPort = is.status.ports.find((port) => port.name === 'default')
         return is.status.address === ip && inputPort.port.toString() === port
@@ -137,10 +137,6 @@ export async function cleanupOldInstanceservers(app: Application): Promise<void>
           })
         : Promise.resolve()
     })
-  )
-
-  const isIds = (instanceservers?.body! as any).items.map((is) =>
-    isNameRegex.exec(is.metadata.name) != null ? isNameRegex.exec(is.metadata.name)![1] : null
   )
   return
 }
