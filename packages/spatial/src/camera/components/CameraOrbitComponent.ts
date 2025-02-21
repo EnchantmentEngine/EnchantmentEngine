@@ -40,7 +40,7 @@ export const CameraOrbitComponent = defineComponent({
 
   schema: S.Object({
     focusedEntities: S.Array(S.Entity()),
-    transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.Origin),
+    transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.FirstSelected),
     minimumZoom: S.Number(0.1),
     cameraOrbitCenter: T.Vec3(),
     disabled: S.Bool(false)
@@ -51,13 +51,11 @@ export const CameraOrbitComponent = defineComponent({
     const cameraOrbit = useComponent(entity, CameraOrbitComponent)
     const pivot = useTransformPivot(cameraOrbit.focusedEntities.value, cameraOrbit.transformPivot.value)
     useImmediateEffect(() => {
-      const zoom = Math.max(cameraOrbit.minimumZoom.value, pivot.bounds.getSize(new Vector3()).length())
+      if (!pivot.position) return
+      const zoom = Math.max(cameraOrbit.minimumZoom.value * 10, pivot.bounds.getSize(new Vector3()).length())
       const transform = getComponent(entity, TransformComponent)
       cameraOrbit.cameraOrbitCenter.value.copy(pivot.position)
-      delta
-        .set(0, 0, 1)
-        .applyQuaternion(transform.rotation)
-        .multiplyScalar(Math.min(zoom * 2, MAX_ZOOM_DISTANCE))
+      delta.set(0, 0, 1).applyQuaternion(transform.rotation).multiplyScalar(Math.min(zoom, MAX_ZOOM_DISTANCE))
       transform.position.copy(pivot.position).add(delta)
     }, [pivot])
     return null

@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity } from '@ir-engine/ecs'
+import { Entity, hasComponent } from '@ir-engine/ecs'
 import { useMemo } from 'react'
 import { Vector3 } from 'three'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -34,23 +34,25 @@ export function useTransformPivot(entities: readonly Entity[], transformPivot: T
   const bounds = useWorldBounds(entities)
 
   const position = useMemo(() => {
-    const p = new Vector3()
     switch (transformPivot) {
       case TransformPivot.Origin:
-        p.setScalar(0)
-        break
+        return new Vector3(0, 0, 0)
       case TransformPivot.FirstSelected:
-        TransformComponent.getWorldPosition(entities[0], p)
-        break
+        if (hasComponent(entities[0], TransformComponent)) {
+          return TransformComponent.getWorldPosition(entities[0], new Vector3())
+        }
+        return undefined
       case TransformPivot.Center:
-        bounds.getCenter(p)
-        break
-      case TransformPivot.Bottom:
-        bounds.getCenter(p)
-        p.setY(bounds.min.y)
-        break
+        if (bounds.isEmpty()) return undefined
+        return bounds.getCenter(new Vector3())
+      case TransformPivot.Bottom: {
+        if (bounds.isEmpty()) return undefined
+        const position = new Vector3()
+        bounds.getCenter(position)
+        position.y = bounds.min.y
+        return position
+      }
     }
-    return p
   }, [bounds, transformPivot])
 
   return useMemo(

@@ -81,7 +81,7 @@ const execute = () => {
 
     const transform = getComponent(cameraEid, TransformComponent)
     const editorCameraCenter = cameraOrbit.cameraOrbitCenter.value
-    const distance = transform.position.distanceTo(editorCameraCenter)
+    const distance = Math.max(cameraOrbit.minimumZoom.value, transform.position.distanceTo(editorCameraCenter))
     const camera = getComponent(cameraEid, CameraComponent)
 
     if (zoom) {

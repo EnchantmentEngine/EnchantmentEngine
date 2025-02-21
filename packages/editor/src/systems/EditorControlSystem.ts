@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Intersection, Layers, MathUtils, Object3D, Raycaster, Vector3 } from 'three'
+import { Intersection, Layers, MathUtils, Object3D, Quaternion, Raycaster, Vector3 } from 'three'
 
 import {
   Entity,
@@ -37,10 +37,10 @@ import {
 import {
   getComponent,
   getOptionalComponent,
+  getOptionalMutableComponent,
   hasComponent,
   removeComponent,
-  setComponent,
-  useOptionalComponent
+  setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -174,9 +174,16 @@ const onDeleteSelection = () => {
   EditorControlFunctions.removeObject(SelectionState.getSelectedEntities())
 }
 
+let lastDistanceToCenter = 10
+
 const onFlyControlModeBegin = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
+  const cameraOrbit = getOptionalComponent(viewerEntity, CameraOrbitComponent)
+  if (cameraOrbit) {
+    const position = TransformComponent.getWorldPosition(viewerEntity, new Vector3())
+    lastDistanceToCenter = cameraOrbit.cameraOrbitCenter.distanceTo(position)
+  }
   removeComponent(viewerEntity, CameraOrbitComponent)
   setComponent(viewerEntity, FlyControlComponent, {
     boostSpeed: 4,
@@ -186,18 +193,15 @@ const onFlyControlModeBegin = () => {
   })
 }
 
-const center = new Vector3()
 const directionToCenter = new Vector3()
 const onFlyControlModeEnd = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   removeComponent(viewerEntity, FlyControlComponent)
   setComponent(viewerEntity, CameraOrbitComponent)
-  const transform = getComponent(viewerEntity, TransformComponent)
+  const position = TransformComponent.getWorldPosition(viewerEntity, new Vector3())
+  const rotation = TransformComponent.getWorldRotation(viewerEntity, new Quaternion())
   const editorCameraCenter = getComponent(viewerEntity, CameraOrbitComponent).cameraOrbitCenter
-  center.subVectors(transform.position, editorCameraCenter)
-  const centerLength = center.length()
-  editorCameraCenter.copy(transform.position)
-  editorCameraCenter.add(directionToCenter.set(0, 0, -centerLength).applyQuaternion(transform.rotation))
+  editorCameraCenter.copy(position).add(directionToCenter.set(0, 0, -lastDistanceToCenter).applyQuaternion(rotation))
 }
 
 function copy(event) {
@@ -477,12 +481,11 @@ const reactor = () => {
     }
   }, [viewerEntity])
 
-  const cameraOrbit = useOptionalComponent(viewerEntity, CameraOrbitComponent)
   const selectedEntities = SelectionState.useSelectedEntities()
   useEffect(() => {
-    if (!cameraOrbit) return
-    cameraOrbit.focusedEntities.set(selectedEntities)
-  }, [cameraOrbit, selectedEntities])
+    const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
+    cameraOrbit?.focusedEntities.set(selectedEntities)
+  }, [selectedEntities])
 
   useEffect(() => {
     hierarchyFeatureFlagEnabled = flag[0]

@@ -86,7 +86,7 @@ export const TransformGizmoControlComponent = defineComponent({
     axis: S.Nullable(S.LiteralUnion(Object.values(TransformAxis)), null),
     space: S.LiteralUnion(Object.values(TransformSpace), TransformSpace.world),
     mode: S.LiteralUnion(Object.values(TransformMode), TransformMode.translate),
-    transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.Origin),
+    transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.FirstSelected),
     translationSnap: S.Nullable(S.Number(), null),
     rotationSnap: S.Nullable(S.Number(), null),
     scaleSnap: S.Nullable(S.Number(), null),

@@ -80,7 +80,7 @@ export function computeWorldBounds(entities: readonly Entity[], boundingBox: Box
 export function useWorldBounds(entities: readonly Entity[], live: boolean = false) {
   const box = useMemo(() => {
     const boundingBox = new Box3()
-    if (!live) return boundingBox
+    if (live) return boundingBox
     return computeWorldBounds(entities, boundingBox)
   }, [JSON.stringify(entities)])
   if (live) computeWorldBounds(entities, box)

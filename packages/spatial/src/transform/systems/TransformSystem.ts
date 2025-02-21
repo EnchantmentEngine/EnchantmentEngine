@@ -76,7 +76,7 @@ export const computeTransformMatrix = (entity: Entity) => {
 }
 
 export const computeTransformMatrixWithChildren = (entity: Entity) => {
-  computeTransformMatrix(entity)
+  hasComponent(entity, TransformComponent) && computeTransformMatrix(entity)
   for (const child of getOptionalComponent(entity, EntityTreeComponent)?.children ?? []) {
     computeTransformMatrixWithChildren(child)
   }
