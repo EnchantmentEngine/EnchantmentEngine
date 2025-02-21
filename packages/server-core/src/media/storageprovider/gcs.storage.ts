@@ -117,7 +117,10 @@ export class GCSStorage implements StorageProviderInterface {
     const item0 = files.items?.[0]
     console.log('item0', item0)
     // Directories in GCS don't exist and are emulated based on file path.
-    return item0 ? (item0.name === path.join(directoryPath, fileName, '/') && item0.size === '0') || (item0.name.indexOf(joinedPath) === 0) : false
+    return item0
+      ? (item0.name === path.join(directoryPath, fileName, '/') && item0.size === '0') ||
+          item0.name.indexOf(joinedPath) === 0
+      : false
   }
 
   /**
@@ -159,7 +162,12 @@ export class GCSStorage implements StorageProviderInterface {
    * @param isDirectory
    * @returns {Promise<StorageListObjectInterface>}
    */
-  async listObjects(prefix: string, recursive = true, continuationToken?: string, isDirectory?: boolean): Promise<StorageListObjectInterface> {
+  async listObjects(
+    prefix: string,
+    recursive = true,
+    continuationToken?: string,
+    isDirectory?: boolean
+  ): Promise<StorageListObjectInterface> {
     console.log('listObjects', prefix, recursive)
     const files = await this.listFolderContent(prefix, recursive, isDirectory)
     console.log('files', files)
@@ -215,15 +223,19 @@ export class GCSStorage implements StorageProviderInterface {
     if (useMediaCDN) {
       try {
         console.log('invalidating Media CDN cache for', config.gcp.gcs.edgeCacheService)
-        return Promise.all(invalidationItems.map(item => {
-          console.log('Invalidating', item)
-          try {
-            return execa(`gcloud edge-cache services invalidate-cache ${config.gcp.gcs.edgeCacheService} --path ${item}`)
-          } catch(err) {
-            console.error('error invalidating', item, err)
-          }
-        }))
-      } catch(err) {
+        return Promise.all(
+          invalidationItems.map((item) => {
+            console.log('Invalidating', item)
+            try {
+              return execa(
+                `gcloud edge-cache services invalidate-cache ${config.gcp.gcs.edgeCacheService} --path ${item}`
+              )
+            } catch (err) {
+              console.error('error invalidating', item, err)
+            }
+          })
+        )
+      } catch (err) {
         logger.error('Error invalidating Media CDN cache for %s', config.gcp.gcs.edgeCacheService)
         logger.error(err)
       }
@@ -243,7 +255,16 @@ export class GCSStorage implements StorageProviderInterface {
       // }
       // return this.networkServicesClient.createEdgeCacheInvalidation(request)
     } else {
-      console.log('Invalidating Cloud CDN for host', config.server.clientHost, 'path', invalidationItems[0], 'project', config.gcp.project, 'urlMap', config.gcp.gcs.urlMap)
+      console.log(
+        'Invalidating Cloud CDN for host',
+        config.server.clientHost,
+        'path',
+        invalidationItems[0],
+        'project',
+        config.gcp.project,
+        'urlMap',
+        config.gcp.gcs.urlMap
+      )
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
@@ -316,9 +337,13 @@ export class GCSStorage implements StorageProviderInterface {
    * @param recursive If true it will list content from sub folders as well.
    * @param isDirectory
    */
-  async listFolderContent(folderName: string, recursive = false, isDirectory=true): Promise<FileBrowserContentType[]> {
+  async listFolderContent(
+    folderName: string,
+    recursive = false,
+    isDirectory = true
+  ): Promise<FileBrowserContentType[]> {
     console.log('listFolderContent', folderName, recursive)
-    const prefix = (folderName.endsWith('/') || !isDirectory) ? folderName : folderName + '/'
+    const prefix = folderName.endsWith('/') || !isDirectory ? folderName : folderName + '/'
     console.log('prefix', prefix)
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
@@ -405,18 +430,18 @@ export class GCSStorage implements StorageProviderInterface {
 
     if (listResponse.Contents.length > 0)
       return await Promise.all([
-      ...listResponse.Contents.map(async (file) => {
-        console.log('file to move', file)
-        const relativePath = file.Key.replace(oldFilePath, '')
-        console.log('relativePath', relativePath)
-        const key = newFilePath + relativePath
-        console.log('key', key)
+        ...listResponse.Contents.map(async (file) => {
+          console.log('file to move', file)
+          const relativePath = file.Key.replace(oldFilePath, '')
+          console.log('relativePath', relativePath)
+          const key = newFilePath + relativePath
+          console.log('key', key)
 
-        console.log('moving/copying', file.Key, 'to', key)
-        if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
-        else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
-      })
-    ])
+          console.log('moving/copying', file.Key, 'to', key)
+          if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
+          else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
+        })
+      ])
     else {
       console.log('Moving empty folder', oldFilePath, newFilePath)
       const oldPath = path.join(oldFilePath, '/')
