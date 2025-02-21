@@ -2,7 +2,6 @@ ARG REPO_URL
 ARG REPO_NAME
 ARG STAGE
 ARG TAG
-ARG STORAGE_PROVIDER
 FROM ${REPO_URL}/${REPO_NAME}:${TAG} as builder
 
 # Create app directory
@@ -29,6 +28,8 @@ WORKDIR /app
 COPY --from=builder /app ./
 
 RUN bash ./scripts/setup_helm.sh
+
+ARG STORAGE_PROVIDER
 
 # Install debugging tools (vim and default-mysql-client) and gcloud prerequisites
 RUN if [[ "$STORAGE_PROVIDER" == "gcs" ]]; then apt-get update && \

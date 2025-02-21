@@ -148,6 +148,8 @@ COPY --from=clientBuilder /app/packages/client ./packages/client
 
 RUN bash ./scripts/setup_helm.sh
 
+ARG STORAGE_PROVIDER
+
 # Install debugging tools (vim and default-mysql-client) and gcloud prerequisites
 RUN if [[ "$STORAGE_PROVIDER" == "gcs" ]]; then apt-get update && \
   apt-get install -y vim default-mysql-client apt-transport-https ca-certificates gnupg curl && \
