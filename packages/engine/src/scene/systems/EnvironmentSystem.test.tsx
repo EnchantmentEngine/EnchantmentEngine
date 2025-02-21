@@ -28,7 +28,15 @@ import { describe, expect, it } from 'vitest'
 import { PresentationSystemGroup, SystemDefinitions, SystemUUID } from '@ir-engine/ecs'
 import { EnvironmentSystem } from './EnvironmentSystem'
 
-describe('IntensityReactor', () => {}) //:: IntensityReactor
+describe('IntensityReactor', () => {
+  describe('on change [envMapComponent.envMapIntensity.value, material.uuid.value]', () => {
+    it.todo(
+      'should set `@param props.entity`.MaterialStateComponent.material.envMapIntensity to `@param props.rootEntity`.EnvMapComponent.envMapIntensity',
+      () => {}
+    )
+  })
+}) //:: IntensityReactor
+
 describe('EnvMapSkyboxReactor', () => {
   describe('on change [backgroundQuery, materialComponent.material.uuid.value]', () => {
     it.todo(
