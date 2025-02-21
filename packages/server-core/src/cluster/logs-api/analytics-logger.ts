@@ -81,6 +81,7 @@ export const logToBigQuery = async (event: LogParamsObject) => {
   }
 
   try {
+    console.log('attempting to insert to BigQuery, datasetId', datasetId, 'tableId', tableId, 'row', row)
     // Retrieve the dataset and table from BigQuery.
     const dataset = bigquery.dataset(datasetId)
     const table = dataset.table(tableId)
@@ -89,6 +90,7 @@ export const logToBigQuery = async (event: LogParamsObject) => {
     await table.insert(row)
     console.log(`Logged event to BigQuery: ${event.event_name}`)
   } catch (error) {
-    console.error('Error inserting row into BigQuery:', error)
+    console.error('Error inserting row into BigQuery:', error, error.errors, error.errors?.[0])
+    console.error('insertErrorts', error.response.insertErrors?.[0]?.[0])
   }
 }
