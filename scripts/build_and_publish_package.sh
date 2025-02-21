@@ -23,6 +23,11 @@ if [ "$SOURCE_REPO_PROVIDER" == "gcp" ]; then
   if [[ "$APP_HOST" =~ "ir-engine-mt" ]]; then
       SOURCE_REPO_NAME="$SOURCE_REPO_NAME_STEM-root-mt/$SOURCE_REPO_NAME_STEM-root"
   fi
+
+  # Check if APP_HOST contains "ir-engine-qat" and append `qat` to repo name if it does
+if [[ "$APP_HOST" =~ "ir-engine-qat" ]]; then
+    SOURCE_REPO_NAME="$SOURCE_REPO_NAME_STEM-root-qat/$SOURCE_REPO_NAME_STEM-root"
+fi
 fi
 
 
@@ -42,6 +47,12 @@ elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   if [[ "$APP_HOST" =~ "ir-engine-mt" ]]; then
       DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE-mt/$DESTINATION_REPO_NAME_STEM-$PACKAGE
   fi
+
+  # Check if APP_HOST contains "ir-engine-qat" and append `qat` to repo name if it does
+  if [[ "$APP_HOST" =~ "ir-engine-qat" ]]; then
+      DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE-qat/$DESTINATION_REPO_NAME_STEM-$PACKAGE
+  fi
+  
   gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
   # Insert GCP credentials fetching here, and apply that to docker login
 else
