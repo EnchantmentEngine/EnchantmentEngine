@@ -32,6 +32,7 @@ import {
   AnimationSystemGroup,
   createEngine,
   createEntity,
+  defineQuery,
   destroyEngine,
   EntityContext,
   EntityTreeComponent,
@@ -61,6 +62,8 @@ import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
 import React from 'react'
 import { BoxGeometry, Color, Material, Mesh, Quaternion, Raycaster, Vector2, Vector3 } from 'three'
+import { getTextureAsync } from '../../assets/functions/resourceLoaderHooks'
+import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
 import { ShadowComponent } from '../components/ShadowComponent'
@@ -1699,7 +1702,6 @@ describe('ShadowSystem', () => {
     })
   }) //:: execute
 
-  /** @todo */
   describe('reactor', () => {
     let testEntity = UndefinedEntity
 
@@ -1715,22 +1717,135 @@ describe('ShadowSystem', () => {
       destroyEngine()
     })
 
+    /** @todo How to change the values of _shadowMaterial ??
+     * They should change, in theory, but they actually dont */
     describe('when shadowTexture changes ..', () => {
       it.todo('.. should not do anything (return) if shadowTexture is falsy', () => {})
       it.todo('.. should set _shadowMaterial.map to shadowTexture', () => {})
-      it.todo('.. should set _shadowMaterial.needsUpdate to true', () => {})
+
+      it.todo('.. should set _shadowMaterial.needsUpdate to true', () => {
+        console.log(ShadowSystemData._shadowMaterial.needsUpdate) // Should not be undefined. The code initializes it
+
+        const Expected = true
+        const Initial = !Expected
+        // 3. Set input & dependencies data
+        const previous = ShadowSystemData._shadowMaterial.needsUpdate
+        ShadowSystemData._shadowMaterial.needsUpdate = Initial
+        console.log(ShadowSystemData._shadowMaterial.needsUpdate) // Should not be undefined, we just set it up
+
+        const rendererEntity = defineQuery([RendererComponent])()[0]
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: rendererEntity },
+            React.createElement(System.reactor!)
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        const before = ShadowSystemData._shadowMaterial.needsUpdate
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        const result = ShadowSystemData._shadowMaterial.needsUpdate
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+        ShadowSystemData._shadowMaterial.needsUpdate = previous
+      })
     })
 
-    it.todo(
-      'should call RenderSettingsQueryReactor once for every entity that has a RenderSettingsComponent when useShadowsEnabled is truthy',
-      async () => {}
-    )
+    it('should call RenderSettingsQueryReactor once for every entity that has a RenderSettingsComponent when useShadowsEnabled is truthy', async () => {
+      // 3. Set input & dependencies data
+      const textureURL = `${
+        getState(DomainConfigState).cloudDomain
+      }/projects/ir-engine/default-project/assets/drop-shadow.png`
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      const entities = defineQuery([RenderSettingsComponent])()
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: rendererEntity },
+          React.createElement(System.reactor!)
+        )
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'RenderSettingsQueryReactor')
+      // 1. Sanity check (input & dependencies)
+      expect(getShadowsEnabled()).toBeTruthy()
+      expect(await getTextureAsync(textureURL)).not.toBeNull()
+      expect(entities.length).not.toBe(0)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalledTimes(entities.length * 2)
+    })
 
-    it.todo(
-      'should call DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy',
-      () => {}
-    )
-    it.todo('should call RendererShadowReactor once for every entity that has a RendererComponent', () => {})
+    it('should call DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy', async () => {
+      // 3. Set input & dependencies data
+      const textureURL = `${
+        getState(DomainConfigState).cloudDomain
+      }/projects/ir-engine/default-project/assets/drop-shadow.png`
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      setComponent(testEntity, VisibleComponent)
+      setComponent(testEntity, ShadowComponent)
+      const entities = defineQuery([VisibleComponent, ShadowComponent])()
+      getMutableState(RendererState).useShadows.set(false)
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: rendererEntity },
+          React.createElement(System.reactor!)
+        )
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'DropShadowReactor')
+      // 1. Sanity check (input & dependencies)
+      expect(getShadowsEnabled()).toBeFalsy()
+      expect(await getTextureAsync(textureURL)).not.toBeNull()
+      expect(entities.length).not.toBe(0)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalledTimes(entities.length * 3)
+    })
+
+    it('should call RendererShadowReactor once for every entity that has a RendererComponent', async () => {
+      // 3. Set input & dependencies data
+      const textureURL = `${
+        getState(DomainConfigState).cloudDomain
+      }/projects/ir-engine/default-project/assets/drop-shadow.png`
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      const entities = defineQuery([RendererComponent])()
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: rendererEntity },
+          React.createElement(System.reactor!)
+        )
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'RendererShadowReactor')
+      // 1. Sanity check (input & dependencies)
+      expect(getShadowsEnabled()).toBeTruthy()
+      expect(await getTextureAsync(textureURL)).not.toBeNull()
+      expect(entities.length).not.toBe(0)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalledTimes(entities.length)
+    })
   }) //:: reactor
 }) //:: ShadowSystem
 
