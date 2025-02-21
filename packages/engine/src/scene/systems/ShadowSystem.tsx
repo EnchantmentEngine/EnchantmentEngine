@@ -456,11 +456,17 @@ const reactor = () => {
   return (
     <>
       {useShadows ? (
-        <QueryReactor Components={[RenderSettingsComponent]} ChildEntityReactor={RenderSettingsQueryReactor} />
+        <QueryReactor
+          Components={[RenderSettingsComponent]}
+          ChildEntityReactor={ShadowSystemReactors.RenderSettingsQueryReactor}
+        />
       ) : shadowTexture ? (
-        <QueryReactor Components={[VisibleComponent, ShadowComponent]} ChildEntityReactor={DropShadowReactor} />
+        <QueryReactor
+          Components={[VisibleComponent, ShadowComponent]}
+          ChildEntityReactor={ShadowSystemReactors.DropShadowReactor}
+        />
       ) : null}
-      <QueryReactor Components={[RendererComponent]} ChildEntityReactor={RendererShadowReactor} />
+      <QueryReactor Components={[RendererComponent]} ChildEntityReactor={ShadowSystemReactors.RendererShadowReactor} />
     </>
   )
 }
