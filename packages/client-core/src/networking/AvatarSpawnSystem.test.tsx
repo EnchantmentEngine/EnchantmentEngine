@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
-import '@ir-engine/spatial/tests/webxr/emulator'
+import '@ir-engine/engine'
 
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
