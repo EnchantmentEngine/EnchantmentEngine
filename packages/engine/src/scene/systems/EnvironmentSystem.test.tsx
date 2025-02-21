@@ -31,7 +31,28 @@ import { EnvironmentSystem } from './EnvironmentSystem'
 describe('IntensityReactor', () => {}) //:: IntensityReactor
 describe('EnvMapSkyboxReactor', () => {}) //:: EnvMapSkyboxReactor
 describe('EnvMapCubemapReactor', () => {}) //:: EnvMapCubemapReactor
-describe('EnvmapProbesReactor', () => {}) //:: EnvmapProbesReactor
+
+describe('EnvmapProbesReactor', () => {
+  describe('on mount', () => {
+    describe('on cleanup', () => {
+      it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
+    })
+  })
+
+  describe('on change [probeQuery]', () => {
+    it.todo(
+      'should set `@param props.entity`.MaterialStateComponent.material.envMap to a new texture created from createReflectionProbeRenderTarget',
+      () => {}
+    )
+    describe('on cleanup', () => {})
+    it.todo('should call the `unload` function returned by createReflectionProbeRenderTarget', () => {})
+  })
+
+  it.todo(
+    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
+    () => {}
+  )
+}) //:: EnvmapProbesReactor
 
 describe('EnvMapEquirectangularReactor', () => {
   describe('on mount', () => {
@@ -58,10 +79,9 @@ describe('EnvMapEquirectangularReactor', () => {
     )
   })
 
-  /** @todo Revisit these statements. They are temporary (copy/pasted) and partially incorrect */
   describe('on change [error]', () => {
     it.todo(
-      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceEntityUUID.EnvMapBakeComponent.envMapOrigin.error is falsy',
+      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.error is falsy',
       () => {}
     )
     it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
