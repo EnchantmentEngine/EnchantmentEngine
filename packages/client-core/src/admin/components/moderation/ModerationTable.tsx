@@ -66,29 +66,29 @@ export default function ModerationTable() {
   }
 
   const createRows = (rows: ModerationType[]) =>
-    rows.map((report) => {
+    rows.map((moderation) => {
       return {
-        id: report.id,
-        type: <span>{report.type}</span>,
+        id: moderation.id,
+        type: <span>{moderation.type == 'Location' ? t('admin:components.moderation.scene') : moderation.type}</span>,
         username: (
           <span>
-            <UserDisplayName userId={report.reportedUserId} />
+            <UserDisplayName userId={moderation.reportedUserId} />
           </span>
         ),
-        reason: <span>{report.abuseReason}</span>,
-        dateReported: <span>{toDisplayDateTime(report.createdAt)}</span>,
+        reason: <span>{moderation.abuseReason}</span>,
+        dateReported: <span>{toDisplayDateTime(moderation.createdAt)}</span>,
         status: (
           <span
             className={`rounded px-2 py-1 ${
-              report.status === 'Open' ? 'bg-[#10b981] text-white' : 'bg-[#2f3137] text-white'
+              moderation.status === 'Open' ? 'bg-[#10b981] text-white' : 'bg-[#2f3137] text-white'
             }`}
           >
-            {report.status}
+            {moderation.status}
           </span>
         ),
         action: (
           <button
-            onClick={() => handleViewDetails(report)}
+            onClick={() => handleViewDetails(moderation)}
             className="flex cursor-pointer items-center border-none bg-transparent px-0 py-0 text-blue-500"
           >
             {t('admin:components.moderation.viewDetails')} <IoArrowForward className="ml-2" />

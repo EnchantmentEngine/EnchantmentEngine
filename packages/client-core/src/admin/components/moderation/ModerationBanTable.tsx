@@ -38,7 +38,7 @@ const moderationBanColumns: ITableHeadCell[] = [
   { id: 'username', label: t('admin:components.moderation.username') },
   { id: 'UID', label: t('admin:components.moderation.uid') },
   { id: 'reason', label: t('admin:components.moderation.reason') },
-  { id: 'World', label: t('admin:components.moderation.world') },
+  { id: 'scene', label: t('admin:components.moderation.scene') },
   { id: 'IpAddress', label: t('admin:components.moderation.ipAddress') },
   { id: 'DateReported', label: t('admin:components.moderation.dateReported') },
   { id: 'action', label: t('admin:components.moderation.action') }
@@ -79,7 +79,7 @@ export default function ModerationBanTable() {
       id: row.id,
       username: <UserDisplayName userId={row.banUserId} />,
       UID: row.banUserId,
-      World: row.reportedLocationId ? <LocationLabel locationId={row.reportedLocationId} /> : 'N/A',
+      scene: row.reportedLocationId ? <LocationLabel locationId={row.reportedLocationId} /> : 'N/A',
       reason: row.banReason,
       IpAddress: row.ipAddress,
       DateReported: <span>{toDisplayDateTime(row.createdAt)}</span>,

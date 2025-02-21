@@ -69,6 +69,7 @@ export const UserSearchInput = ({ onSelect }) => {
         searchMode="substring"
         width="full"
         inputHeight="l"
+        helperText={t('admin:components.moderation.userBannedSelectUserHelperText')}
       />
     </div>
   )

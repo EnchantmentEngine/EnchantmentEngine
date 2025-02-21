@@ -23,26 +23,24 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useFind, useMutation } from '@ir-engine/common'
+import { API, useFind, useMutation } from '@ir-engine/common'
 import { moderationBanPath, ModerationBanType } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
 import { AbuseReasonsType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import { UserType } from '@ir-engine/common/src/schemas/user/user.schema'
 import { Button } from '@ir-engine/ui'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import React, { useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaPlus } from 'react-icons/fa'
 import { IoArrowBack } from 'react-icons/io5'
 import { LuUserMinus } from 'react-icons/lu'
 import { NotificationService } from '../../../common/services/NotificationService'
+import { PopoverState } from '../../../common/services/PopoverState'
 import { BanUsersModal } from './BanUsersModal'
 import ModerationBanTable from './ModerationBanTable'
 
 export const ModerationBanContainer = ({ onBack }) => {
   const { t } = useTranslation()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const handleModalOpen = () => setIsModalOpen(true)
-  const handleModalClose = () => setIsModalOpen(false)
   const moderationBanMutation = useMutation(moderationBanPath)
 
   const onBanBack = () => {
@@ -55,31 +53,40 @@ export const ModerationBanContainer = ({ onBack }) => {
       banReason: formData?.reason as AbuseReasonsType
     } as ModerationBanType
 
-    moderationBanMutation
-      .create(banUser)
-      .then(() => {
-        NotificationService.dispatchNotify(
-          banUser.banned ? t('admin:components.moderation.userBanned') : t('admin:components.moderation.userUnBanned'),
-          {
-            variant: 'success'
-          }
-        )
+    API.instance
+      .service(moderationBanPath)
+      .find({
+        query: {
+          action: 'admin',
+          banUserId: banUser.banUserId,
+          $limit: 1
+        }
       })
-      .catch((error) => {
-        NotificationService.dispatchNotify(error.message, { variant: 'error' })
-        console.error(error)
+      .then((response) => {
+        if (response.data.length > 0) {
+          NotificationService.dispatchNotify(t('admin:components.moderation.userAlreadyBanned'), { variant: 'error' })
+          return
+        } else {
+          moderationBanMutation
+            .create(banUser)
+            .then(() => {
+              NotificationService.dispatchNotify(
+                banUser.banned
+                  ? t('admin:components.moderation.userBanned')
+                  : t('admin:components.moderation.userUnBanned'),
+                {
+                  variant: 'success'
+                }
+              )
+            })
+            .catch((error) => {
+              NotificationService.dispatchNotify(error.message, { variant: 'error' })
+              console.error(error)
+            })
+        }
       })
 
-    handleModalClose()
-  }
-  const unUpdateBanUser = (user) => {
-    moderationBanMutation
-      .patch(user.id, { banned: user.banned ? false : true })
-      .then(() => {})
-      .catch((error) => {
-        NotificationService.dispatchNotify(error.message, { variant: 'error' })
-        console.error(error)
-      })
+    PopoverState.hidePopupover()
   }
   const moderationBanQuery = useFind(moderationBanPath, {
     query: {
@@ -91,7 +98,7 @@ export const ModerationBanContainer = ({ onBack }) => {
   if (moderationBanQuery.status !== 'success') {
     return <LoadingView fullScreen className="block h-12 w-12" title={t('admin:components.moderation.loading')} />
   }
-  console.log(moderationBanQuery.status == 'success' && moderationBanQuery.data.length == 0)
+
   return (
     <>
       <button onClick={onBanBack} className="flex items-center">
@@ -109,7 +116,7 @@ export const ModerationBanContainer = ({ onBack }) => {
             <p className="mb-6 text-gray-400">{t('admin:components.moderation.manageAccess')}</p>
             <Button
               variant="primary"
-              onClick={handleModalOpen}
+              onClick={() => PopoverState.showPopupover(<BanUsersModal onSubmit={handleBanUser} />)}
               className="mx-auto flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
             >
               <FaPlus className="mr-2" />
@@ -122,7 +129,7 @@ export const ModerationBanContainer = ({ onBack }) => {
           <div className="mb-4 flex items-center justify-between">
             <Button
               variant="primary"
-              onClick={handleModalOpen}
+              onClick={() => PopoverState.showPopupover(<BanUsersModal onSubmit={handleBanUser} />)}
               className="flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
             >
               <FaPlus className="mr-2" />
@@ -132,8 +139,6 @@ export const ModerationBanContainer = ({ onBack }) => {
           <ModerationBanTable />
         </div>
       )}
-
-      <BanUsersModal isOpen={isModalOpen} onClose={handleModalClose} onSubmit={handleBanUser} />
     </>
   )
 }

@@ -29,58 +29,68 @@ import { Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { PopoverState } from '../../../common/services/PopoverState'
 import { UserSearchInput } from './common/UserSearchInput'
 
-export const BanUsersModal = ({ isOpen, onClose, onSubmit }) => {
+export const BanUsersModal = ({ onSubmit }) => {
   const { t } = useTranslation()
   const [selectedUser, setSelectedUser] = useState<UserType | undefined>(undefined)
   const [reason, setReason] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = () => {
+    if (!selectedUser) {
+      setError(t('admin:components.moderation.bannedSelectUserError'))
+      return
+    }
+    if (!reason) {
+      setError(t('admin:components.moderation.bannedUserReasonError'))
+      return
+    }
     onSubmit({
       selectedUser,
       reason
     })
-    onClose()
     setReason('')
+    setError(null)
   }
 
-  if (!isOpen) return null
+  const isFormValid = selectedUser && reason
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="transform overflow-hidden rounded-lg shadow-xl transition-all sm:w-full sm:max-w-lg">
-        <Modal
-          title={t('admin:components.moderation.addUser')}
-          onClose={onClose}
-          closeButtonText={t('admin:components.moderation.cancel')}
-          submitButtonText={t('admin:components.moderation.banUser')}
-          onSubmit={handleSubmit}
-        >
-          <div className="space-y-4">
-            <UserSearchInput onSelect={setSelectedUser} />
-            <div>
-              <label className="mb-1 block text-sm text-gray-400">{t('admin:components.moderation.uid')}</label>
-              <input
-                type="text"
-                disabled={!!selectedUser}
-                className="w-full rounded-lg bg-[#191b1f] px-3 py-2 text-white focus:outline-none focus:ring focus:ring-blue-500"
-                placeholder={t('admin:components.moderation.uidPlaceholder')}
-                value={selectedUser ? selectedUser?.id : ''}
-              />
-            </div>
-            <div>
-              <Select
-                labelProps={{ text: t('admin:components.moderation.reason'), position: 'top' }}
-                options={abuseReasons.map((reason) => ({ label: reason, value: reason }))}
-                onChange={(e) => setReason(e as string)}
-                width="full"
-                value={reason}
-              />
-            </div>
-          </div>
-        </Modal>
+    <Modal
+      title={t('admin:components.moderation.addUser')}
+      className="w-[50vw] max-w-2xl"
+      onClose={PopoverState.hidePopupover}
+      closeButtonText={t('admin:components.moderation.cancel')}
+      submitButtonText={t('admin:components.moderation.banUser')}
+      onSubmit={handleSubmit}
+      submitButtonDisabled={!isFormValid}
+    >
+      <div className="space-y-4">
+        {error && <div className="text-red-500">{error}</div>}
+        <UserSearchInput onSelect={setSelectedUser} />
+        <div>
+          <label className="mb-1 block text-sm text-gray-400">{t('admin:components.moderation.uid')}</label>
+          <input
+            type="text"
+            disabled={!!selectedUser}
+            className="w-full rounded-lg bg-[#191b1f] px-3 py-2 text-white focus:outline-none focus:ring focus:ring-blue-500"
+            placeholder={t('admin:components.moderation.uidPlaceholder')}
+            value={selectedUser ? selectedUser?.id : ''}
+          />
+        </div>
+        <div>
+          <Select
+            labelProps={{ text: t('admin:components.moderation.reason'), position: 'top' }}
+            options={abuseReasons.map((reason) => ({ label: reason, value: reason }))}
+            onChange={(e) => setReason(e as string)}
+            width="full"
+            helperText={t('admin:components.moderation.userBannedSelectReasonHelperText')}
+            value={reason}
+          />
+        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
