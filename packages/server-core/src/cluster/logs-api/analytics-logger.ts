@@ -68,8 +68,8 @@ export const logToBigQuery = async (event: LogParamsObject) => {
     event_value: event.event_value || '',
     event_properties: event.event_properties || {},
     event_time: Date.now(),
-    tenant: event.tenant,
-    project: event.project,
+    tenant: event.tenant || 'unknown',
+    project: event.project || 'unknown',
     user_id: event.user_id,
     session_id: event.session_id,
     environment: event.environment,
@@ -91,6 +91,6 @@ export const logToBigQuery = async (event: LogParamsObject) => {
     console.log(`Logged event to BigQuery: ${event.event_name}`)
   } catch (error) {
     console.error('Error inserting row into BigQuery:', error, error.errors, error.errors?.[0])
-    console.error('insertErrorts', error.response.insertErrors?.[0]?.[0])
+    console.error('insertErrors', error.response.insertErrors?.[0]?.[0])
   }
 }

@@ -65,7 +65,7 @@ export class LogsApiService implements ServiceInterface<void, any, LogsApiParams
     delete logItem.action
 
     if (action === 'analytics') {
-      await logToBigQuery({ ...logItem })
+      await logToBigQuery({ ...logItem, userId })
       return
     }
 
