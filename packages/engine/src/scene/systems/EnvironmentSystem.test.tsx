@@ -30,7 +30,25 @@ import { EnvironmentSystem } from './EnvironmentSystem'
 
 describe('IntensityReactor', () => {}) //:: IntensityReactor
 describe('EnvMapSkyboxReactor', () => {}) //:: EnvMapSkyboxReactor
-describe('EnvMapCubemapReactor', () => {}) //:: EnvMapCubemapReactor
+describe('EnvMapCubemapReactor', () => {
+  describe('on mount', () => {
+    describe('on cleanup', () => {
+      it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
+    })
+  })
+
+  describe('on change [envMapComponent.envMapCubemapURL])', () => {
+    it.todo(
+      'should call loadCubeMapTexture with (`@param props.rootEntity`.EnvMapComponent.envMapCubemapURL, fn, undefined, fn)',
+      () => {}
+    )
+  })
+
+  it.todo(
+    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
+    () => {}
+  )
+}) //:: EnvMapCubemapReactor
 
 describe('EnvmapProbesReactor', () => {
   describe('on mount', () => {
