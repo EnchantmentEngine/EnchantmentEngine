@@ -90,8 +90,10 @@ export class GCSStorage implements StorageProviderInterface {
    * @param directoryPath Directory of file in the storage.
    */
   async doesExist(fileName: string, directoryPath: string): Promise<boolean> {
+    console.log('doesExist check', fileName, directoryPath, `${directoryPath}/${fileName}`)
     const file = this.provider.bucket(this.bucket).file(`${directoryPath}/${fileName}`)
     const response = await file.exists()
+    console.log('exists response', response)
     return response[0]
   }
   /**
@@ -374,16 +376,26 @@ export class GCSStorage implements StorageProviderInterface {
    * @param isCopy If true it will create a copy of object.
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
+    console.log('gcs moveObject', oldName, newName, oldPath, newPath, isCopy)
     const isDirectory = await this.isDirectory(oldName, oldPath)
+    console.log('isDirectory', isDirectory)
     const oldFilePath = path.join(oldPath, oldName)
+    console.log('oldFilePath', oldFilePath)
     const newFilePath = path.join(newPath, newName)
+    console.log('newFilePath', newFilePath)
     const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false)
+    console.log('listResponse for', oldFilePath + (isDirectory ? '/' : ''))
+    console.log(listResponse, listResponse.Contents)
 
     return await Promise.all([
       ...listResponse.Contents.map(async (file) => {
+        console.log('file to move', file)
         const relativePath = file.Key.replace(oldFilePath, '')
+        console.log('relativePath', relativePath)
         const key = newFilePath + relativePath
+        console.log('key', key)
 
+        console.log('moving/copying', file.Key, 'to', key)
         if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
         else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
       })
