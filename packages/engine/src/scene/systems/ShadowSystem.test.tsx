@@ -730,44 +730,40 @@ describe('EntityCSMReactor', () => {
   })
 
   describe('on change [ rendererComponent.csm, shadowMapResolution, directionalLight, directionalLightComponent.shadowBias, directionalLightComponent.intensity, directionalLightComponent.color, directionalLightComponent.castShadow, directionalLightComponent.shadowRadius, directionalLightComponent.cameraFar ]', () => {
-    /* @todo ?? How to check that nothing happened, when this reactor only changes .csm properties, but this case wants it falsy ?? */
-    it.todo(
-      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
-      () => {
-        const Initial = undefined
-        // 3. Set input & dependencies data
-        const rendererEntity = createEntity()
-        setComponent(rendererEntity, RendererComponent, { csm: undefined })
-        const renderSettingsEntity = createEntity()
-        setComponent(renderSettingsEntity, RenderSettingsComponent)
-        setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-        const Reactor = () => {
-          return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
-            entity: testEntity,
-            rendererEntity: rendererEntity,
-            renderSettingsEntity: renderSettingsEntity
-          })
-        }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-        expect(before).toBe(Initial)
-        // 2. Run the process
-        const root = startReactor(Reactor)
-        setComponent(rendererEntity, RendererComponent, { csm: undefined })
-        root.run()
-        // 4. Check the result (output)
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-        expect(result).toBe(Initial)
+    it('should not do anything (return early) and not crash if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
+      const Initial = undefined
+      // 3. Set input & dependencies data
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: undefined })
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+          entity: testEntity,
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
       }
-    )
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
+      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
+      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
+      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
+      expect(getState(RendererState).shadowMapResolution).toBeDefined()
+      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      setComponent(rendererEntity, RendererComponent, { csm: undefined })
+      root.run()
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
+      expect(result).toBe(Initial)
+    })
 
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', () => {
       const Initial = false
@@ -1181,11 +1177,34 @@ describe('EntityCSMReactor', () => {
   })
 
   describe('on change [csm, renderSettingsComponent.cascades]', () => {
-    /* @todo ?? How to check that nothing happened, when this reactor only changes .csm properties, but this case wants it falsy ?? */
-    it.todo(
-      'should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy',
-      () => {}
-    )
+    it('should not do anything (return early) and not crash if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
+      const Initial = undefined
+      // 2. Set input & dependencies data
+      const rendererEntity = createEntity()
+      setComponent(rendererEntity, RendererComponent, { csm: undefined })
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+          entity: testEntity,
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
+      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
+      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
+      expect(getState(RendererState).shadowMapResolution).toBeDefined()
+      const before = getComponent(rendererEntity, RendererComponent).csm?.cascades
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    })
 
     it('should set `@param props.rendererEntity`.RendererComponent.csm.cascades to `@param props.renderSettingsEntity`.RenderSettingsComponent.cascades', () => {
       const Expected = 42
@@ -1557,8 +1576,30 @@ describe('RendererShadowReactor', () => {
   })
 
   describe('on change [useShadows, rendererComponent.renderer]', () => {
-    /* @todo ?? How to check that nothing happened, when this reactor only changes .renderer properties, but this case wants it falsy ?? */
-    it.todo('should not do anything (return early) if RendererComponent.renderer is falsy', () => {})
+    it('should not do anything (return early) and not crash if RendererComponent.renderer is falsy', () => {
+      const Initial = undefined
+      // 3. Set input & dependencies data
+      setComponent(testEntity, RendererComponent)
+      getMutableComponent(testEntity, RendererComponent).renderer.set(null)
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(ShadowSystemReactors.RendererShadowReactor)
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
+      expect(getComponent(testEntity, RendererComponent).renderer).toBeFalsy()
+      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
+      expect(result).toBe(Initial)
+    })
 
     it('should set entityContext.RendererComponent.shadowMap.enabled to the value of (use/get)ShadowsEnabled', () => {
       const Expected = getShadowsEnabled()
