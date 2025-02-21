@@ -2,6 +2,7 @@ ARG REPO_URL
 ARG REPO_NAME
 ARG STAGE
 ARG TAG
+ARG STORAGE_PROVIDER
 FROM ${REPO_URL}/${REPO_NAME}:${TAG} as builder
 
 # Create app directory
