@@ -29,7 +29,23 @@ import { PresentationSystemGroup, SystemDefinitions, SystemUUID } from '@ir-engi
 import { EnvironmentSystem } from './EnvironmentSystem'
 
 describe('IntensityReactor', () => {}) //:: IntensityReactor
-describe('EnvMapSkyboxReactor', () => {}) //:: EnvMapSkyboxReactor
+describe('EnvMapSkyboxReactor', () => {
+  describe('on change [backgroundQuery, materialComponent.material.uuid.value]', () => {
+    it.todo(
+      'should not do anything if the first backgroundQuery[backgroundID] entity found does not have a BackgroundComponent or its value is falsy',
+      () => {}
+    )
+    it.todo(
+      'should set `@param props.entity`.MaterialStateComponent.material.envMap to backgroundQuery[backgroundID].BackgroundComponent',
+      () => {}
+    )
+  })
+  it.todo(
+    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
+    () => {}
+  )
+}) //:: EnvMapSkyboxReactor
+
 describe('EnvMapCubemapReactor', () => {
   describe('on mount', () => {
     describe('on cleanup', () => {
