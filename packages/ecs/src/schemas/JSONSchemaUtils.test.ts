@@ -63,20 +63,20 @@ describe('HasSchemaDeserializers', () => {
 
   describe('inputs.invalid', () => {
     it('should not error if `@param schema` is coerced from a type that does not match the Schema interface', () => {
-      // @ts-expect-error Coerce number into Schema
       expect(() => {
+        // @ts-expect-error Coerce string into Schema
         HasSchemaDeserializers(42)
       }).not.toThrowError()
-      // @ts-expect-error Coerce string into Schema
       expect(() => {
+        // @ts-expect-error Coerce string into Schema
         HasSchemaDeserializers('TestString')
       }).not.toThrowError()
-      // @ts-expect-error Coerce object into Schema
       expect(() => {
+        // @ts-expect-error Coerce string into Schema
         HasSchemaDeserializers({ thing: 42 })
       }).not.toThrowError()
-      // @ts-expect-error Coerce function into Schema
       expect(() => {
+        // @ts-expect-error Coerce string into Schema
         HasSchemaDeserializers(() => true)
       }).not.toThrowError()
     })
