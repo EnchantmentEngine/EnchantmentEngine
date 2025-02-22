@@ -23,9 +23,102 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-describe('HasSchemaDeserializers', () => {}) //:: HasSchemaDeserializers
+import { Schema } from './JSONSchemaTypes'
+import { HasSchemaDeserializers } from './JSONSchemaUtils'
+
+/**
+ * @description Returns an object nested to `@param depth` levels of depth.
+ * Adds the given `@param value` to each level of the object with fieldname `nested`
+ * */
+export function createDeeplyNestedObject<T extends object>(depth: number, value?: T): T {
+  /* @todo Move out of this file into tests/utils */
+  let result = { nested: value } as T
+  for (let level = 0; level < depth; ++level) {
+    let current = result
+    for (let field = 0; field <= level; ++field) {
+      current[field] = current[field] || {}
+      current = current[field]
+    }
+    current['nested'] = value
+  }
+  return result
+}
+
+describe('HasSchemaDeserializers', () => {
+  const nested = {
+    depth: 1_000, // depth=2000 runs in ~200ms
+    timeout: 2_000 // waitUntil timeout is 1000ms (default)
+  }
+  async function checkNestedSchema(schema: Schema, depth = nested.depth, timeout = nested.timeout) {
+    return vi.waitUntil(
+      () => {
+        HasSchemaDeserializers(createDeeplyNestedObject(depth, schema))
+        return true
+      },
+      { timeout: timeout }
+    )
+  }
+
+  describe('inputs.invalid', () => {
+    it('should not error if `@param schema` is coerced from a type that does not match the Schema interface', () => {
+      // @ts-expect-error Coerce number into Schema
+      expect(() => {
+        HasSchemaDeserializers(42)
+      }).not.toThrowError()
+      // @ts-expect-error Coerce string into Schema
+      expect(() => {
+        HasSchemaDeserializers('TestString')
+      }).not.toThrowError()
+      // @ts-expect-error Coerce object into Schema
+      expect(() => {
+        HasSchemaDeserializers({ thing: 42 })
+      }).not.toThrowError()
+      // @ts-expect-error Coerce function into Schema
+      expect(() => {
+        HasSchemaDeserializers(() => true)
+      }).not.toThrowError()
+    })
+  }) //:: HasSchemaDeserializers.inputs.invalid
+
+  describe('process.recursion', () => {
+    it('should not fall into infinite recursion', async () => {
+      const emptySchema = {} as Schema
+      const validSchema = { options: { deserialize: (_, __) => {} } } as Schema
+      await checkNestedSchema(emptySchema)
+      await checkNestedSchema(validSchema)
+    })
+  }) //:: HasSchemaDeserializers.process.recursion
+
+  describe('output.expected', () => {
+    it('should return true if the toplevel of the `@param schema` object has a truthy .options?.deserialize field', () => {
+      const Expected = true
+      const emptySchema = {} as Schema
+      // 3. Set input & dependencies data
+      const schema = createDeeplyNestedObject(nested.depth, emptySchema)
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = HasSchemaDeserializers(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+    it.todo(
+      'should return false if the toplevel of the `@param schema` object has a falsy .options?.deserialize field and has no children',
+      () => {}
+    )
+    it.todo(
+      'should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field but has a children where it is truthy',
+      () => {}
+    )
+    it.todo(
+      'should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field, all its children have no such field, but has a deeply nested children where it is truthy',
+      () => {}
+    )
+  }) //:: HasSchemaDeserializers.output.expected
+}) //:: HasSchemaDeserializers
+
 describe('DeserializeSchemaValue', () => {}) //:: DeserializeSchemaValue
 describe('HasRequiredSchema', () => {}) //:: HasRequiredSchema
 describe('HasRequiredSchemaValues', () => {}) //:: HasRequiredSchemaValues
