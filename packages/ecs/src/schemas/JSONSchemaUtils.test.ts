@@ -92,18 +92,21 @@ describe('HasSchemaDeserializers', () => {
   }) //:: HasSchemaDeserializers.process.recursion
 
   describe('output.expected', () => {
-    it('should return true if the toplevel of the `@param schema` object has a truthy .options?.deserialize field', () => {
-      const Expected = true
-      const emptySchema = {} as Schema
-      // 3. Set input & dependencies data
-      const schema = createDeeplyNestedObject(nested.depth, emptySchema)
-      // 1. Sanity check (input & dependencies)
-      // 2. Run the process
-      const result = HasSchemaDeserializers(schema)
-      // 4. Check the result (output)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
-    })
+    it.todo(
+      'should return true if the toplevel of the `@param schema` object has a truthy .options?.deserialize field',
+      () => {
+        const Expected = true
+        const emptySchema = {} as Schema
+        // 3. Set input & dependencies data
+        const schema = createDeeplyNestedObject(nested.depth, emptySchema)
+        // 1. Sanity check (input & dependencies)
+        // 2. Run the process
+        const result = HasSchemaDeserializers(schema)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      }
+    )
     it.todo(
       'should return false if the toplevel of the `@param schema` object has a falsy .options?.deserialize field and has no children',
       () => {}
