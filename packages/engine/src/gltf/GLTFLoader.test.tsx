@@ -26,8 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { act, render } from '@testing-library/react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import '@ir-engine/spatial/tests/webxr/emulator'
-
 import { GLTF } from '@gltf-transform/core/dist/types/gltf'
 import {
   createEntity,

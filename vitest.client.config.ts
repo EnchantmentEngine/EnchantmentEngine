@@ -42,7 +42,6 @@ export default defineConfig({
     hookTimeout: 10000,
     reporters: reporters,
     slowTestThreshold: 1000,
-    fileParallelism: false,
     coverage: {
       reporter: ['html'],
       provider: 'istanbul',
