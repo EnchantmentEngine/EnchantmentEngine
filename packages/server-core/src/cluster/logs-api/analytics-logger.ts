@@ -31,7 +31,7 @@ interface BigQueryRow {
   event_name: string
   event_id: string
   event_value: string
-  event_properties2: any
+  event_properties3: any
   event_time: number
   tenant: string
   project: string
@@ -66,7 +66,7 @@ export const logToBigQuery = async (event: LogParamsObject) => {
     event_name: event.event_name,
     event_id: event.event_id || uuidv4(),
     event_value: event.event_value || '',
-    event_properties2: typeof event.event_properties === 'object' ? JSON.stringify(event.event_properties) : event.event_properties || JSON.stringify({}),
+    event_properties3: event.event_properties || [{}],
     event_time: Date.now(),
     tenant: event.tenant || 'unknown',
     project: event.project || 'unknown',
