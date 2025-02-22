@@ -701,6 +701,10 @@ describe('ComponentFunctions', async () => {
   })
 })
 
+/** @todo */
+describe('serializeComponent', () => {}) //:: serializeComponent
+describe('deserializeComponent', () => {}) //:: deserializeComponent
+
 describe('ComponentFunctions Hooks', async () => {
   describe('useComponent', async () => {
     type ResultType = undefined | string
