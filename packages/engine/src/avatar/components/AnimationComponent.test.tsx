@@ -37,19 +37,17 @@ import {
 import { TransformComponent } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
-import { overrideFileLoaderLoad, overrideTextureLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AnimationComponent } from './AnimationComponent'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
 
 import { createTestGLTFEntity, mockAnimatedAvatar, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
-import { ErrorComponent } from '../../scene/components/ErrorComponent'
 
 describe('AnimationComponent', () => {
   describe('ECS PropertyBinding', () => {
     overrideFileLoaderLoad()
-    overrideTextureLoaderLoad()
 
     beforeEach(() => {
       createEngine()
@@ -69,15 +67,6 @@ describe('AnimationComponent', () => {
       //extra wait for animation component to prevent race conditions
       await vi.waitFor(
         () => {
-          console.log('ANIMATION COMPONENT TEST')
-          console.log('errors:', getOptionalComponent(entity, ErrorComponent))
-          console.log('hsaDocument:', !!getComponent(entity, GLTFComponent).document)
-          console.log(
-            'progress:',
-            getComponent(entity, GLTFComponent).progress,
-            'dependencies: ',
-            getComponent(entity, GLTFComponent).dependencies
-          )
           expect(getOptionalComponent(entity, AnimationComponent)).toBeTruthy()
         },
         { timeout: 20000 }
