@@ -26,20 +26,20 @@ Infinite Reality Engine. All Rights Reserved.
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { Engine, UUIDComponent, destroyEngine, getComponent, hasComponent } from '@ir-engine/ecs'
+import { Engine, EngineState, UUIDComponent, destroyEngine, getComponent, hasComponent } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { UserID, applyIncomingActions, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
 import { Network, NetworkState, NetworkTopics } from '@ir-engine/network'
 import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialViewer } from '../../initializeEngine'
 import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
 import './CameraSystem'
 
-describe('CameraSystem', async () => {
-  describe('CameraEntityState', async () => {
-    beforeEach(async () => {
+describe('CameraSystem', () => {
+  describe('CameraEntityState', () => {
+    beforeEach(() => {
       createEngine()
       Engine.instance.store.defaultDispatchDelay = () => 0
       initializeSpatialViewer()
@@ -49,7 +49,7 @@ describe('CameraSystem', async () => {
       return destroyEngine()
     })
 
-    it('should create a camera entity and apply a CameraComponent to that entity', async () => {
+    it('should create a camera entity and apply a CameraComponent to that entity', () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = Engine.instance.store.peerID
 
@@ -62,7 +62,7 @@ describe('CameraSystem', async () => {
 
       dispatchAction(
         CameraActions.spawnCamera({
-          parentUUID: getComponent(getState(EngineState).viewerEntity, UUIDComponent),
+          parentUUID: getComponent(getState(ReferenceSpaceState).viewerEntity, UUIDComponent),
           entityUUID: cameraUUID,
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,

@@ -25,7 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Engine,
+  EngineState,
   Entity,
+  EntityTreeComponent,
   EntityUUID,
   UUIDComponent,
   UndefinedEntity,
@@ -46,17 +48,15 @@ import {
   getState
 } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
-import { ArrowHelperComponent } from '@ir-engine/spatial/src/common/debug/ArrowHelperComponent'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { Physics, PhysicsWorld } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { act, render } from '@testing-library/react'
 import React from 'react'
 import { Quaternion, Vector3 } from 'three'
@@ -94,6 +94,7 @@ describe('MountPointComponent.ts', async () => {
     setComponent(mountPointTestEntity, TransformComponent)
     setComponent(mountPointTestEntity, InteractableComponent)
     setComponent(mountPointTestEntity, MountPointComponent)
+    setComponent(mountPointTestEntity, EntityTreeComponent)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
@@ -123,13 +124,14 @@ describe('MountPointComponent.ts', async () => {
     })
 
     it('Should set the mount point component initial data', () => {
-      const customData = setComponent(mountPointTestEntity, MountPointComponent, {
-        type: 'seat',
+      const customData = {
+        type: 'seat' as const,
         dismountOffset: new Vector3(0, 0, 0.75),
         forceDismountPosition: true
-      })
+      }
+      setComponent(mountPointTestEntity, MountPointComponent, customData)
       const componentData = getComponent(mountPointTestEntity, MountPointComponent)
-      assert.equal(componentData, customData)
+      assert.deepEqual(componentData, customData)
     })
     describe('Reactor', () => {
       it('Should set mountEntity as callback to entity', () => {
@@ -169,7 +171,8 @@ describe('MountPointComponent.ts', async () => {
       it('Should add an arrow helper component if debug is enabled', () => {
         // Retrieve node helper visibility state from renderer state
         const debugFalse = getState(RendererState).nodeHelperVisibility
-        const arrowComponent = getOptionalComponent(mountPointTestEntity, ArrowHelperComponent)
+        const helperEntity = getOptionalComponent(mountPointTestEntity, EntityTreeComponent)!.children[0]
+        const arrowComponent = getOptionalComponent(helperEntity, ObjectComponent)
         assert.equal(!!arrowComponent, false)
         // Change it to true and check if the arrow component was added
         const debugTrue = debugFalse == true
@@ -292,8 +295,7 @@ describe('MountPointComponent.ts', async () => {
       setComponent(physicsWorldEntity, UUIDComponent, v4() as EntityUUID)
       setComponent(physicsWorldEntity, SceneComponent)
       setComponent(physicsWorldEntity, TransformComponent)
-      const physicsWorldUUID = getComponent(physicsWorldEntity, UUIDComponent)
-      physicsWorld = Physics.createWorld(physicsWorldUUID)
+      physicsWorld = Physics.createWorld(physicsWorldEntity)
       physicsWorld.timestep = 1 / 60
       setComponent(avatarTestEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })
       setComponent(mountPointTestEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })

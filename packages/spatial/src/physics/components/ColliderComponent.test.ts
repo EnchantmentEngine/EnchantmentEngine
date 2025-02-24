@@ -39,11 +39,11 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 
+import { EntityTreeComponent, getAncestorWithComponents } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { Vector3 } from 'three'
 import { assertVec } from '../../../tests/util/assert'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { EntityTreeComponent, getAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Physics, PhysicsWorld } from '../classes/Physics'
 import { CollisionGroups, DefaultCollisionMask } from '../enums/CollisionGroups'
@@ -98,7 +98,7 @@ describe('ColliderComponent', () => {
       await Physics.load()
       physicsWorldEntity = createEntity()
       setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
-      physicsWorld = Physics.createWorld(getComponent(physicsWorldEntity, UUIDComponent))
+      physicsWorld = Physics.createWorld(physicsWorldEntity)
       setComponent(physicsWorldEntity, SceneComponent)
       setComponent(physicsWorldEntity, TransformComponent)
       setComponent(physicsWorldEntity, EntityTreeComponent)
@@ -255,7 +255,7 @@ describe('ColliderComponent', () => {
       await Physics.load()
       physicsWorldEntity = createEntity()
       setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
-      physicsWorld = Physics.createWorld(getComponent(physicsWorldEntity, UUIDComponent))
+      physicsWorld = Physics.createWorld(physicsWorldEntity)
       setComponent(physicsWorldEntity, SceneComponent)
       setComponent(physicsWorldEntity, TransformComponent)
       setComponent(physicsWorldEntity, EntityTreeComponent)

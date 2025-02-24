@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useFind, useMutation } from '@ir-engine/common'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { EngineSettingData, EngineSettingType, engineSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { getDataType } from '@ir-engine/common/src/utils/dataTypeUtils'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import PasswordInput from '@ir-engine/ui/src/components/tailwind/PasswordInput'
@@ -33,7 +34,6 @@ import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import React, { forwardRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 
 const MetabaseTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefObject<HTMLDivElement>) => {
   const { t } = useTranslation()
@@ -97,6 +97,7 @@ const MetabaseTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
             key,
             category: 'metabase',
             value: setting[key],
+            dataType: getDataType(setting[key]),
             type: 'private'
           })
         } else if (settingInDb.value !== setting[key]) {
@@ -105,6 +106,7 @@ const MetabaseTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
               key,
               category: 'metabase',
               value: setting[key],
+              dataType: getDataType(setting[key]),
               type: 'private'
             })
           )
@@ -137,8 +139,6 @@ const MetabaseTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
     <Accordion
       title={t('admin:components.setting.metabase.header')}
       subtitle={t('admin:components.setting.metabase.subtitle')}
-      expandIcon={<HiPlusSmall />}
-      shrinkIcon={<HiMinus />}
       ref={ref}
       open={open}
     >
@@ -196,7 +196,7 @@ const MetabaseTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableR
       </div>
 
       <div className="grid grid-cols-8 gap-6">
-        <Button size="sm" className="text-primary col-span-1 bg-theme-highlight" fullWidth onClick={handleCancel}>
+        <Button size="sm" className="text-primary col-span-1 " fullWidth onClick={handleCancel}>
           {t('admin:components.common.reset')}
         </Button>
         <Button size="sm" variant="primary" className="col-span-1" fullWidth onClick={handleSubmit}>
