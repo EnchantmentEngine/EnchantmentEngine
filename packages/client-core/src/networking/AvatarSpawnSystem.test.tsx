@@ -171,8 +171,6 @@ describe('AvatarSpawnSystem', async () => {
     )
 
     applyIncomingActions()
-
-    await act(async () => render(null))
   })
 
   afterEach(() => {
