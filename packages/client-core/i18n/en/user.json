@@ -284,15 +284,19 @@
       "refreshApiKey": "Refresh API Key",
       "privacyPolicy": "Privacy Policy",
       "helpChat": "Help Chat",
-      "reportWorld": "Report World",
+      "reportWorld": "Report Space",
       "report": "Report a {{type}}",
       "typeAbuse": "Type of abuse",
       "selectAbuseTypeRequired": "Please select the type of abuse",
       "selectOne": "Select One",
       "reportDetails": "Report details",
       "reportDetailsRequired": "Please enter report details",
-      "reportDetailsPlaceholder": "In your own words, help us understand what went wrong",
-      "reportSuccessMessage": "Your report has been submitted."
+      "reportDetailsPlaceholder": "Use this section to include the necessary details for your report. Note that the upload attachment field below is required, so please be sure to attach any evidence you think is helpful to your report.",
+      "reportFileLabel": "Attachments",
+      "reportFileRequired": "Please attach at least one file",
+      "reportSuccessMessage": "Your report has been submitted.",
+      "cancelReport": "Cancel",
+      "submit": "Submit"
     },
     "oauth": {
       "authenticating": "Authenticating..."

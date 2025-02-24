@@ -70,6 +70,7 @@ const ReportSuccessReportModal = ({ handleClose }) => (
 const ReportMenu = (props: ReportMenuProps) => {
   const { type } = props
   const reportedUserId = type === 'Person' ? props.userId : undefined
+  const typeReport = type === 'Person' ? 'User' : 'Space'
   const reportedLocationId = props.locationId
   const userReportsMutation = useMutation(moderationPath)
   const selfUser = useHookstate(getMutableState(AuthState).user)
@@ -85,7 +86,8 @@ const ReportMenu = (props: ReportMenuProps) => {
 
   const errors = useHookstate({
     abuseType: '',
-    details: ''
+    details: '',
+    files: ''
   })
 
   const fieldOptions = {
@@ -111,6 +113,18 @@ const ReportMenu = (props: ReportMenuProps) => {
         errors.details.set('')
         return true
       }
+    },
+    files: {
+      buttonLabel: t('user:common.upload'),
+      label: t('user:usermenu.profile.reportFileLabel'),
+      validate: () => {
+        if (formData.files.value.length === 0) {
+          errors.files.set(t('user:usermenu.profile.reportFileRequired'))
+          return false
+        }
+        errors.files.set('')
+        return true
+      }
     }
   }
 
@@ -130,7 +144,11 @@ const ReportMenu = (props: ReportMenuProps) => {
   }
 
   const handleSubmit = async () => {
-    if (!fieldOptions.abuseType.validate(formData.value.abuseType) || !fieldOptions.details.validate()) {
+    if (
+      !fieldOptions.abuseType.validate(formData.value.abuseType) ||
+      !fieldOptions.details.validate() ||
+      !fieldOptions.files.validate()
+    ) {
       return
     }
     try {
@@ -170,7 +188,7 @@ const ReportMenu = (props: ReportMenuProps) => {
         <div className="flex w-full flex-col">
           <div className="border-b-theme-primary flex h-14 items-center justify-between border-b px-8">
             <span className="flex-1 text-center text-text-secondary">
-              {t('user:usermenu.profile.report', { type }) as string}
+              {t('user:usermenu.profile.report', { type: typeReport }) as string}
             </span>
             <Button
               data-testid="close-button"
@@ -215,7 +233,10 @@ const ReportMenu = (props: ReportMenuProps) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-text-secondary">Attachments (optional)</span>
+              <span className="text-xs text-text-secondary">
+                <span className="text-red-700">*</span>
+                {fieldOptions.files.label}
+              </span>
               <div className="flex items-center gap-2">
                 <input
                   required
@@ -225,21 +246,26 @@ const ReportMenu = (props: ReportMenuProps) => {
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files || [])
+                    fieldOptions.files.validate()
                     formData.files.set(files)
                   }}
                 />
-                <Button onClick={() => document.getElementById('file-upload')?.click()}>Upload</Button>
+                <Button onClick={() => document.getElementById('file-upload')?.click()}>
+                  {fieldOptions.files.buttonLabel}
+                </Button>
+
                 {formData.files.length > 0 && (
                   <span className="text-sm text-text-secondary">{formData.files.length} file(s) selected</span>
                 )}
+                {errors.files.value && <span className="text-xs text-[#C3324B]">{errors.files.value}</span>}
               </div>
             </div>
 
             <div className="flex justify-between gap-4 pt-4">
               <Button variant="secondary" onClick={handleClose}>
-                Cancel
+                {t('user:usermenu.profile.cancelReport') as string}
               </Button>
-              <Button onClick={handleSubmit}>Submit</Button>
+              <Button onClick={handleSubmit}>{t('user:usermenu.profile.submit') as string}</Button>
             </div>
           </div>
         </div>
