@@ -815,7 +815,7 @@
       "reportCsvFilename": "report.csv",
       "reportDetails": "Report Details",
       "reasonForAbuse": "Reason for abuse",
-      "scene": "Scene",
+      "space": "Space",
       "ipAddress": "IP address",
       "uploadedFiles": "Uploaded files",
       "exportReport": "Export report",

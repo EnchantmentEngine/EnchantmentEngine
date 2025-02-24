@@ -69,7 +69,7 @@ export default function ModerationTable() {
     rows.map((moderation) => {
       return {
         id: moderation.id,
-        type: <span>{moderation.type == 'Location' ? t('admin:components.moderation.scene') : moderation.type}</span>,
+        type: <span>{moderation.type == 'Location' ? t('admin:components.moderation.space') : moderation.type}</span>,
         username: (
           <span>
             <UserDisplayName userId={moderation.reportedUserId} />

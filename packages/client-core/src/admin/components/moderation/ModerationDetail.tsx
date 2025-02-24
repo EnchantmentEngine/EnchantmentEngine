@@ -190,7 +190,7 @@ export const ModerationDetail = ({
             <p className="text-[#a3a3a3]">{t('admin:components.moderation.type')}</p>
           </div>
           <div className="mb-4">
-            <p>{report.type == 'Location' ? t('admin:components.moderation.scene') : report.type}</p>
+            <p>{report.type == 'Location' ? t('admin:components.moderation.space') : report.type}</p>
           </div>
           {isPersonModeration && (
             <>
@@ -233,7 +233,7 @@ export const ModerationDetail = ({
             </p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.scene')}</p>
+            <p className="text-[#a3a3a3]">{t('admin:components.moderation.space')}</p>
           </div>
           <div className="mb-4">
             <p>
