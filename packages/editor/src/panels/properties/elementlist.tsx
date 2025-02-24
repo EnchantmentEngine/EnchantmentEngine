@@ -36,7 +36,7 @@ import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { Button } from '@ir-engine/ui'
+import { TransformComponent } from '@ir-engine/spatial'
 import StringInput from '@ir-engine/ui/src/components/editor/input/String'
 import { PlusCircleSm } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -64,53 +64,50 @@ const ComponentListItem = ({ item, onSelect }: { item: Component; onSelect: () =
   const jsonName = item.jsonID?.split('_').slice(1).join('-') || item.name
 
   return (
-    <Button
-      fullWidth
-      className="w-full bg-[#2C2E33] p-2 text-[#B2B5BD]"
+    <button
+      className="flex w-full items-center justify-center gap-1 rounded-md bg-ui-background p-2 text-text-secondary hover:bg-ui-hover-primary hover:text-text-primary-button"
       onClick={() => {
         const entities = SelectionState.getSelectedEntities()
         EditorControlFunctions.addOrRemoveComponent(entities, item, true)
         onSelect()
       }}
     >
-      <Icon className="h-4 w-4 text-[#B2B5BD]" />
+      <Icon className="h-4 w-4" />
       <div className="ml-4 w-full">
-        <Text className="mb-1 block text-left text-sm text-[#B2B5BD]">
-          {startCase(jsonName.replace('-', ' ').toLowerCase())}
-        </Text>
-        <Text component="p" className="block text-left text-xs text-theme-secondary">
+        <Text className="mb-1 block text-left text-sm">{startCase(jsonName.replace('-', ' ').toLowerCase())}</Text>
+        <Text component="p" className="block text-left text-xs ">
           {t(`editor:layout.assetGrid.component-detail.${jsonName}`, '')}
         </Text>
       </div>
-    </Button>
+    </button>
   )
 }
 
 const PrefabListItem = ({ item, onSelect }: { item: PrefabShelfItem; onSelect: () => void }) => {
   return (
     <button
-      className="flex w-full items-center justify-center gap-1 rounded-md bg-[#2C2E33] p-2 text-[#B2B5BD] hover:bg-[#214AA6]"
+      className="flex w-full items-center justify-center gap-1 rounded-md bg-ui-background p-2 text-text-secondary hover:bg-ui-hover-primary hover:text-text-primary-button"
       data-testid="prefabs-category-item"
       onClick={() => {
         const url = item.url
         if (!url.length) {
-          EditorControlFunctions.createObjectFromSceneElement()
+          EditorControlFunctions.createObjectFromSceneElement([
+            {
+              name: TransformComponent.jsonID
+            }
+          ])
         } else {
           addMediaNode(url)
         }
         onSelect()
       }}
     >
-      <PlusCircleSm className="text-[#B2B5BD]" />
+      <PlusCircleSm />
       <div className="ml-4 w-full">
-        <Text className="mb-1 block text-left text-sm text-[#B2B5BD]" data-testid="prefabs-category-item-name">
+        <Text className="mb-1 block text-left text-sm" data-testid="prefabs-category-item-name">
           {item.name}
         </Text>
-        <Text
-          component="p"
-          className="block text-left text-xs text-theme-secondary"
-          data-testid="prefabs-category-item-detail"
-        >
+        <Text component="p" className="block text-left text-xs " data-testid="prefabs-category-item-detail">
           {item.detail}
         </Text>
       </div>
@@ -130,21 +127,21 @@ const SceneElementListItem = ({
   return (
     <button
       className={twMerge(
-        'gap-1 rounded-xl border-[1px] border-[#212226] bg-[#212226] px-3 py-2.5 text-sm font-medium',
-        selected ? 'border-[#42454D] bg-[#2C2E33]' : 'text-[#B2B5BD]'
+        'flex flex-col items-center justify-center gap-1 rounded-xl border border-ui-outline bg-ui-background px-3 py-2.5 text-sm font-medium',
+        selected
+          ? 'border-ui-select-outline bg-ui-select-primary text-text-primary-button'
+          : 'text-text-secondary hover:bg-ui-hover-background hover:text-text-primary'
       )}
       data-testid="prefabs-category"
       onClick={onClick}
     >
-      <div className="flex flex-col items-center justify-center">
-        <PrefabIcon categoryTitle={categoryTitle} isSelected={selected ?? false} />
-        <span
-          className="max-w-full overflow-hidden truncate whitespace-nowrap text-nowrap"
-          data-testid="prefabs-category-title"
-        >
-          {categoryTitle}
-        </span>
-      </div>
+      <PrefabIcon categoryTitle={categoryTitle} isSelected={selected ?? false} />
+      <span
+        className="max-w-full overflow-hidden truncate whitespace-nowrap text-nowrap"
+        data-testid="prefabs-category-title"
+      >
+        {categoryTitle}
+      </span>
     </button>
   )
 }
@@ -163,21 +160,23 @@ const useComponentShelfCategories = (search: string) => {
     return [category, filteredComponents]
   }
 
-  if (!search) {
+  const filteredCategories = useMemo(() => {
+    if (!search) {
+      return Object.entries(getState(ComponentShelfCategoriesState))
+        .map(mapSettingsComponents)
+        .filter(([_, items]) => !!items.length)
+    }
+
     return Object.entries(getState(ComponentShelfCategoriesState))
+      .map(([category, items]) => {
+        const filteredItems = items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+        return [category, filteredItems] as [string, Component[]]
+      })
       .map(mapSettingsComponents)
       .filter(([_, items]) => !!items.length)
-  }
+  }, [search])
 
-  const searchString = search.toLowerCase()
-
-  return Object.entries(getState(ComponentShelfCategoriesState))
-    .map(([category, items]) => {
-      const filteredItems = items.filter((item) => item.name.toLowerCase().includes(searchString))
-      return [category, filteredItems] as [string, Component[]]
-    })
-    .map(mapSettingsComponents)
-    .filter(([_, items]) => !!items.length)
+  return filteredCategories
 }
 
 const usePrefabShelfCategories = (search: string): [string, PrefabShelfItem[]][] => {
@@ -199,18 +198,19 @@ const usePrefabShelfCategories = (search: string): [string, PrefabShelfItem[]][]
     return shelves
   }, [prefabState])
 
-  if (!search) {
+  const filteredCategories = useMemo(() => {
+    if (!search) {
+      return Object.entries(prefabShelves)
+    }
     return Object.entries(prefabShelves)
-  }
+      .map(([category, items]) => {
+        const filteredItems = items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+        return [category, filteredItems] as [string, PrefabShelfItem[]]
+      })
+      .filter(([_, items]) => !!items.length)
+  }, [search])
 
-  const searchString = search.toLowerCase()
-
-  return Object.entries(prefabShelves)
-    .map(([category, items]) => {
-      const filteredItems = items.filter((item) => item.name.toLowerCase().includes(searchString))
-      return [category, filteredItems] as [string, PrefabShelfItem[]]
-    })
-    .filter(([_, items]) => !!items.length)
+  return filteredCategories
 }
 
 export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: () => void }) {
@@ -218,7 +218,6 @@ export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: 
   const search = useHookstate({ local: '', query: '' })
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedCategories = useHookstate([] as number[])
-  const isInSearchMode = useHookstate(false)
   const prevSearchQuery = useRef('')
 
   const onClickCategory = (index: number) => {
@@ -238,26 +237,22 @@ export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: 
       : usePrefabShelfCategories(search.query.value)
   const inputReference = useRef<HTMLInputElement>(null)
 
-  const allCategories: number[] = useMemo(() => {
-    return Array.from({ length: shelves.length }, (_, index) => index)
-  }, [shelves])
-
   useEffect(() => {
     inputReference.current?.focus()
   }, [])
 
+  const isInSearchMode = search.query.value.length > 0
+
   useEffect(() => {
     if (!search.query.value) {
-      isInSearchMode.set(false)
       if (prevSearchQuery.current) {
         selectedCategories.set([])
       }
     } else {
-      isInSearchMode.set(true)
-      selectedCategories.set(allCategories)
+      selectedCategories.set(Array.from({ length: shelves.length }, (_, index) => index))
     }
     prevSearchQuery.current = search.query.value
-  }, [search.query, allCategories])
+  }, [search.query, shelves])
 
   const onSearch = (text: string) => {
     search.local.set(text)
@@ -268,9 +263,11 @@ export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: 
   }
 
   return (
-    <div className="rounded-xl bg-[#191B1F] p-4">
+    <div className="rounded-xl border border-ui-outline bg-surface-1 p-4">
       <div className="h-auto w-full overflow-hidden p-2">
-        <Text className="mb-1.5 w-full text-center uppercase text-white">{t(`editor:layout.assetGrid.${type}`)}</Text>
+        <Text className="mb-1.5 w-full text-center uppercase text-text-primary">
+          {t(`editor:layout.assetGrid.${type}`)}
+        </Text>
         <StringInput
           placeholder={t(`editor:layout.assetGrid.${type}-search`)}
           value={search.local.value}
@@ -281,7 +278,7 @@ export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: 
         />
       </div>
 
-      {!isInSearchMode.value && (
+      {!isInSearchMode && (
         <div className="grid grid-cols-4 gap-1">
           {shelves.map(([category, _items], index) => (
             <SceneElementListItem
@@ -294,9 +291,9 @@ export function ElementList({ type, onSelect }: { type: ElementsType; onSelect: 
         </div>
       )}
 
-      {(isInSearchMode.value || selectedCategories.value.length > 0) && (
+      {(isInSearchMode || selectedCategories.value.length > 0) && (
         <ul className="flex w-full flex-col space-y-1 pt-3" data-testid="prefabs-category-item-list">
-          {shelves.flatMap(([_, items], index) =>
+          {shelves.flatMap(([_, items], index: number) =>
             selectedCategories.value.includes(index)
               ? items.map((item: Component | PrefabShelfItem) =>
                   type === 'components' ? (

@@ -41,7 +41,7 @@ import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spa
 import { Physics, PhysicsWorld } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -61,7 +61,7 @@ describe('moveAvatar function tests', () => {
     sceneEntity = loadEmptyScene()
 
     setComponent(sceneEntity, SceneComponent)
-    physicsWorld = Physics.createWorld(getComponent(sceneEntity, UUIDComponent))
+    physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
 
     createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, Engine.instance.userID)
@@ -71,7 +71,7 @@ describe('moveAvatar function tests', () => {
     return destroyEngine()
   })
 
-  const avatarUrl = 'packages/projects/default-project/assets/avatars/male_01.vrm'
+  const avatarUrl = 'packages/projects/default-project/assets/avatars/irRobot.vrm'
 
   it('should apply world.fixedDelta @ 60 tick to avatar movement, consistent with physics simulation', async () => {
     const ecsState = getMutableState(ECSState)

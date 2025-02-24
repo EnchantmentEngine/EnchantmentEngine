@@ -32,11 +32,11 @@ import { getState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { getAncestorWithComponents } from '@ir-engine/ecs'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { getAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { Matrix4, Vector3 } from 'three'
-import { SceneDynamicLoadTagComponent } from '../components/SceneDynamicLoadTagComponent'
+import { SceneDynamicLoadComponent } from '../components/SceneDynamicLoadComponent'
 
 const _cameraMat4 = new Matrix4()
 const _sceneMat4 = new Matrix4()
@@ -47,7 +47,7 @@ let accumulator = 0
 
 const distanceMultiplier = isMobile ? 0.5 : 1
 
-const dynamicLoadQuery = defineQuery([SceneDynamicLoadTagComponent])
+const dynamicLoadQuery = defineQuery([SceneDynamicLoadComponent])
 
 const execute = () => {
   accumulator += getState(ECSState).deltaSeconds
@@ -58,13 +58,13 @@ const execute = () => {
 
   accumulator = 0
 
-  const viewerEntity = getState(EngineState).viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const viewerTransform = getOptionalComponent(viewerEntity, TransformComponent)
   if (!viewerTransform) return
   const viewerWorldMatrix = viewerTransform.matrixWorld
 
   for (const entity of dynamicLoadQuery()) {
-    const dynamicComponent = getComponent(entity, SceneDynamicLoadTagComponent)
+    const dynamicComponent = getComponent(entity, SceneDynamicLoadComponent)
     if (dynamicComponent.mode !== 'distance') continue
 
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
@@ -79,7 +79,7 @@ const execute = () => {
     const distanceToAvatar = _cameraVec3.distanceToSquared(objectPosition)
     const loadDistance = dynamicComponent.distance * dynamicComponent.distance * distanceMultiplier
 
-    getMutableComponent(entity, SceneDynamicLoadTagComponent).loaded.set(distanceToAvatar < loadDistance)
+    getMutableComponent(entity, SceneDynamicLoadComponent).loaded.set(distanceToAvatar < loadDistance)
   }
 }
 

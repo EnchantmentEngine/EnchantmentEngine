@@ -44,7 +44,7 @@ import {
 } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 import { AvatarAnimationComponent } from '../components/AvatarAnimationComponent'
@@ -52,7 +52,7 @@ import { AvatarComponent } from '../components/AvatarComponent'
 import { AvatarControllerComponent } from '../components/AvatarControllerComponent'
 import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
 
-const avatarUrl = 'packages/projects/default-project/assets/avatars/male_01.vrm'
+const avatarUrl = 'packages/projects/default-project/assets/avatars/irRobot.vrm'
 
 describe('spawnAvatarReceptor', () => {
   let sceneEntity: Entity
@@ -65,7 +65,7 @@ describe('spawnAvatarReceptor', () => {
     sceneEntity = loadEmptyScene()
 
     setComponent(sceneEntity, SceneComponent)
-    const physicsWorld = Physics.createWorld(getComponent(sceneEntity, UUIDComponent))
+    const physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
 
     createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, Engine.instance.userID)

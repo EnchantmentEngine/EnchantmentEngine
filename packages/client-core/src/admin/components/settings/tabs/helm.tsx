@@ -25,11 +25,11 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { forwardRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 
 import { useFind, useMutation } from '@ir-engine/common'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { engineSettingPath, helmVersionPath } from '@ir-engine/common/src/schema.type.module'
+import { getDataType } from '@ir-engine/common/src/utils/dataTypeUtils'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
@@ -99,6 +99,7 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
         return helmMutation.create({
           key,
           category: 'helm',
+          dataType: getDataType(setting[key]),
           value: setting[key],
           type: 'private'
         })
@@ -136,8 +137,6 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
     <Accordion
       title={t('admin:components.setting.helm.header')}
       subtitle={t('admin:components.setting.helm.subtitle')}
-      expandIcon={<HiPlusSmall />}
-      shrinkIcon={<HiMinus />}
       ref={ref}
       open={open}
     >
@@ -171,7 +170,7 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
         />
 
         <div className="col-span-1 mt-6 grid grid-cols-4 gap-6">
-          <Button size="sm" className="text-primary col-span-1 bg-theme-highlight" onClick={handleCancel} fullWidth>
+          <Button size="sm" className="text-primary col-span-1 " onClick={handleCancel} fullWidth>
             {t('admin:components.common.reset')}
           </Button>
 

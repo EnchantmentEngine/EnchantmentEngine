@@ -25,37 +25,27 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   createEngine,
-  createEntity,
   destroyEngine,
   generateEntityUUID,
   getComponent,
   getOptionalComponent,
   setComponent,
+  traverseEntityNode,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { applyIncomingActions } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { EntityTreeComponent, traverseEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTestGLTFEntity } from '../../../tests/avatar/mockAnimatedAvatar'
+import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { mixamoVRMRigMap } from '../AvatarBoneMatching'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { retargetAnimationClips } from './retargetingFunctions'
-
-const setupEntity = () => {
-  const parent = createEntity()
-  setComponent(parent, SceneComponent)
-  setComponent(parent, EntityTreeComponent)
-  setComponent(parent, UUIDComponent, generateEntityUUID())
-  const entity = createEntity()
-  setComponent(entity, EntityTreeComponent, { parentEntity: parent })
-  return entity
-}
 
 const default_url = 'packages/projects/default-project/assets'
 const animation_pack = default_url + '/animations/emotes.glb'
@@ -66,6 +56,7 @@ describe('retargetingFunctions', () => {
 
     beforeEach(() => {
       createEngine()
+      startEngineReactor()
     })
 
     afterEach(() => {
@@ -73,7 +64,7 @@ describe('retargetingFunctions', () => {
     })
 
     it('should bind animation tracks to rig entities based on VRM schema', async () => {
-      const entity = setupEntity()
+      const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, generateEntityUUID())
       setComponent(entity, GLTFComponent, { src: animation_pack })
