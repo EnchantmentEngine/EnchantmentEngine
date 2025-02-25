@@ -156,7 +156,101 @@ describe('HasSchemaDeserializers', () => {
   }) //:: HasSchemaDeserializers.output.expected
 }) //:: HasSchemaDeserializers
 
-describe('DeserializeSchemaValue', () => {}) //:: DeserializeSchemaValue
+describe('DeserializeSchemaValue', () => {
+  it.todo(
+    'should return the result of `@param schema.options.deserialize` with (`@param curr`, `@param value`) as args when `@param value` is not null or undefined, and deserialize is truthy',
+    () => {}
+  )
+  describe('case: Kind.Number', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'number'", () => {})
+    it.todo("should return `@param value` when its typeof is 'number'", () => {})
+  }) //:: Kind.Number
+
+  describe('case: Kind.Bool', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'boolean'", () => {})
+    it.todo("should return `@param value` when its typeof is 'boolean'", () => {})
+  }) //:: Kind.Bool
+
+  describe('case: Kind.String', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'string'", () => {})
+    it.todo("should return undefined when `@param value` is '__proto__'", () => {})
+    it.todo(
+      "should return `@param value` when it is not null/undefined, its typeof is 'string' and its value is not '__proto__'",
+      () => {}
+    )
+  }) //:: Kind.String
+
+  describe('case: Kind.Enum', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when `@param value` is not contained in the enum's schema", () => {})
+    it.todo("should return `@param value` when its value contained in the enum's schema", () => {})
+  }) //:: Kind.Enum
+
+  describe('case: Kind.Literal', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when `@param value` is not equal to `@param schema`.properties', () => {})
+    it.todo('should return `@param value` when its value is equal to `@param schema`.properties', () => {})
+  }) //:: Kind.Literal
+
+  describe('case: Kind.Array', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
+    // TODO: valid return cases for Kind.Array
+  }) //:: Kind.Array
+
+  describe('case: Kind.Tuple', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
+    // TODO: valid return cases for Kind.Tuple
+  }) //:: Kind.Tuple
+
+  describe('case: Kind.Object', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined if typeof `@param value` when is not 'object'", () => {})
+    // TODO: valid return cases for Kind.Object
+  }) //:: Kind.Object
+
+  describe('case: Kind.Class', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    // TODO: valid return cases for Kind.Class
+  }) //:: Kind.Class
+
+  describe('case: Kind.Required', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.Required
+
+  describe('case: Kind.Proxy', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.Proxy
+
+  describe('case: Kind.NonSerialized', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.NonSerialized
+
+  describe('case: Kind.Partial', () => {
+    it.todo(
+      'should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value',
+      () => {}
+    )
+  }) //:: Kind.Partial
+
+  describe('case: Kind -> default', () => {
+    it.todo('should return `@param value` for any other Kind', () => {})
+  }) //:: Kind -> default
+}) //:: DeserializeSchemaValue
+
 describe('HasRequiredSchema', () => {}) //:: HasRequiredSchema
 describe('HasRequiredSchemaValues', () => {}) //:: HasRequiredSchemaValues
 describe('HasSchemaValidators', () => {}) //:: HasSchemaValidators
