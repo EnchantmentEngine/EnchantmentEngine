@@ -38,6 +38,7 @@ import { ModerationBanContainer } from './ModerationBanContainer'
 import { ModerationDetail } from './ModerationDetail'
 
 const moderationTableColumns: ITableHeadCell[] = [
+  { id: 'id', label: t('admin:components.moderation.id') },
   { id: 'type', label: t('admin:components.moderation.type') },
   { id: 'username', label: t('admin:components.moderation.usernameBeingReported') },
   { id: 'reason', label: t('admin:components.moderation.reason') },

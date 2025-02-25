@@ -838,6 +838,7 @@
       "ban": "Ban",
       "cancel": "Cancel",
       "loading": "Loading",
+      "id": "Id",
       "bannedSelectUserError": "Please select a user to ban",
       "bannedUserReasonError": "Please select a reason for banning the user",
       "userAlreadyBanned": "User is already banned",

@@ -28,7 +28,7 @@ import { userPath } from '@ir-engine/common/src/schema.type.module'
 import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
 import { moderationBanPath } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
 import { moderationPath, ModerationType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
-import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
+import { toDisplayDateTime, toDisplayDateTimeUtc } from '@ir-engine/common/src/utils/datetime-sql'
 import { Button } from '@ir-engine/ui'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import React from 'react'
@@ -36,7 +36,7 @@ import { useTranslation } from 'react-i18next'
 import { IoArrowBack } from 'react-icons/io5'
 import { NotificationService } from '../../../common/services/NotificationService'
 import { LocationLabel } from './common/LocationLabel'
-import { UserLastLoginInfo } from './common/UserLastLoginInfo'
+import { UserInfo } from './common/UserInfo'
 
 export const ModerationDetail = ({
   report,
@@ -198,16 +198,7 @@ export const ModerationDetail = ({
                 <p className="text-[#a3a3a3]">{t('admin:components.moderation.usernameBeingReported')}</p>
               </div>
               <div className="mb-4">
-                <p>
-                  {usersQuery.data.find((user) => user.id == report.reportedUserId)?.name}{' '}
-                  <UserLastLoginInfo userId={report.reportedUserId} />
-                </p>
-              </div>
-              <div className="mb-4">
-                <p className="text-[#a3a3a3]">{t('admin:components.moderation.uid')}</p>
-              </div>
-              <div className="mb-4">
-                <p>{report.reportedUserId} </p>
+                <UserInfo userId={report.reportedUserId} usersQuery={usersQuery} />
               </div>
             </>
           )}
@@ -221,16 +212,13 @@ export const ModerationDetail = ({
             <p className="text-[#a3a3a3]">{t('admin:components.moderation.dateReported')}</p>
           </div>
           <div className="mb-4">
-            <p>{toDisplayDateTime(report?.createdAt)}</p>
+            <p>{toDisplayDateTimeUtc(report?.reportedAt)} UTC</p>
           </div>
           <div className="mb-4">
             <p className="text-[#a3a3a3]">{t('admin:components.moderation.reporter')}</p>
           </div>
           <div className="mb-4">
-            <p className="">
-              {usersQuery.data.find((user) => user.id == report.reportingUserId)?.name}
-              <UserLastLoginInfo userId={report.reportingUserId} />
-            </p>
+            <UserInfo userId={report.reportingUserId} usersQuery={usersQuery} />
           </div>
           <div className="mb-4">
             <p className="text-[#a3a3a3]">{t('admin:components.moderation.space')}</p>
