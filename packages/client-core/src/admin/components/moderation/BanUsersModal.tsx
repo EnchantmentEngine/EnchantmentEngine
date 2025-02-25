@@ -62,7 +62,7 @@ export const BanUsersModal = ({ onSubmit }) => {
       title={t('admin:components.moderation.addUser')}
       className="w-[50vw] max-w-2xl"
       onClose={PopoverState.hidePopupover}
-      closeButtonText={t('admin:components.moderation.cancel')}
+      closeButtonText={t('common:components.cancel')}
       submitButtonText={t('admin:components.moderation.banUser')}
       onSubmit={handleSubmit}
       submitButtonDisabled={!isFormValid}
