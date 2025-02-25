@@ -167,22 +167,17 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
     }
     case 'Object': {
       if (!validValue(value)) return value
-
-      if (schema.options?.deserialize) return schema.options?.deserialize(curr, value) as Val
-
-      if (!value || typeof value !== 'object') return
+      if (typeof value !== 'object') return undefined
 
       const newValue = {} as Val
-
       const valueKeys = Object.keys(value as object)
-
       const props = schema.properties as TProperties
 
       for (const key of valueKeys) {
         if (!props[key]) continue
         newValue[key] = curr[key]
-        if (validValue(value[key])) {
-          const deserializedValue = DeserializeSchemaValue(entity, props[key], curr[key], value[key])
+        if (validValue(value![key])) {
+          const deserializedValue = DeserializeSchemaValue(entity, props[key], curr[key], value![key])
           if (typeof deserializedValue !== 'undefined') newValue[key] = deserializedValue
         }
       }
@@ -192,8 +187,6 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
 
     case 'Class': {
       if (!validValue(value)) return value
-
-      if (schema.options?.deserialize) return schema.options?.deserialize(curr, value) as Val
 
       const props = schema.properties as TProperties
       const propKeys = Object.keys(props)
