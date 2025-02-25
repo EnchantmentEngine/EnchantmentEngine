@@ -263,9 +263,9 @@ const ReportMenu = (props: ReportMenuProps) => {
 
             <div className="flex justify-between gap-4 pt-4">
               <Button variant="secondary" onClick={handleClose}>
-                {t('user:usermenu.profile.cancelReport') as string}
+                {t('common:components.cancel') as string}
               </Button>
-              <Button onClick={handleSubmit}>{t('user:usermenu.profile.submit') as string}</Button>
+              <Button onClick={handleSubmit}>{t('common:components.submit') as string}</Button>
             </div>
           </div>
         </div>
