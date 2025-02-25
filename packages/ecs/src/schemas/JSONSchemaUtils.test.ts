@@ -48,6 +48,101 @@ export function createDeeplyNestedObject<T extends object>(depth: number, value?
   return result
 }
 
+describe('DeserializeSchemaValue', () => {
+  it.todo(
+    'should return the result of `@param schema.options.deserialize` with (`@param curr`, `@param value`) as args when `@param value` is not null or undefined, and deserialize is truthy',
+    () => {}
+  )
+  describe('case: Kind.Number', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'number'", () => {})
+    it.todo("should return `@param value` when its typeof is 'number'", () => {})
+  }) //:: Kind.Number
+
+  describe('case: Kind.Bool', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'boolean'", () => {})
+    it.todo("should return `@param value` when its typeof is 'boolean'", () => {})
+  }) //:: Kind.Bool
+
+  describe('case: Kind.String', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when typeof `@param value` is not 'string'", () => {})
+    it.todo("should return undefined when `@param value` is '__proto__'", () => {})
+    it.todo(
+      "should return `@param value` when it is not null/undefined, its typeof is 'string' and its value is not '__proto__'",
+      () => {}
+    )
+  }) //:: Kind.String
+
+  describe('case: Kind.Enum', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined when `@param value` is not contained in the enum's schema", () => {})
+    it.todo("should return `@param value` when its value contained in the enum's schema", () => {})
+  }) //:: Kind.Enum
+
+  describe('case: Kind.Literal', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when `@param value` is not equal to `@param schema`.properties', () => {})
+    it.todo('should return `@param value` when its value is equal to `@param schema`.properties', () => {})
+  }) //:: Kind.Literal
+
+  describe('case: Kind.Array', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
+    // TODO: valid return cases for Kind.Array
+  }) //:: Kind.Array
+
+  describe('case: Kind.Tuple', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
+    // TODO: valid return cases for Kind.Tuple
+  }) //:: Kind.Tuple
+
+  describe('case: Kind.Object', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    it.todo("should return undefined if typeof `@param value` when is not 'object'", () => {})
+    // TODO: valid return cases for Kind.Object
+  }) //:: Kind.Object
+
+  describe('case: Kind.Class', () => {
+    it.todo('should return `@param value` when it is null', () => {})
+    it.todo('should return `@param value` when it is undefined', () => {})
+    // TODO: valid return cases for Kind.Class
+  }) //:: Kind.Class
+
+  describe('case: Kind.Required', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.Required
+
+  describe('case: Kind.Proxy', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.Proxy
+
+  describe('case: Kind.NonSerialized', () => {
+    // TODO: -- fallthrough
+  }) //:: Kind.NonSerialized
+
+  describe('case: Kind.Partial', () => {
+    it.todo(
+      'should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value',
+      () => {}
+    )
+  }) //:: Kind.Partial
+
+  describe('case: Kind -> default', () => {
+    it.todo('should return `@param value` for any other Kind', () => {})
+  }) //:: Kind -> default
+}) //:: DeserializeSchemaValue
+
 describe('HasSchemaDeserializers', () => {
   const nested = {
     depth: 1_000, // depth=2000 runs in ~200ms
@@ -156,107 +251,96 @@ describe('HasSchemaDeserializers', () => {
   }) //:: HasSchemaDeserializers.output.expected
 }) //:: HasSchemaDeserializers
 
-describe('DeserializeSchemaValue', () => {
+describe('HasRequiredSchema', () => {
+  it.todo('should return false if `@param schema` has no children and does not have a Kind.Required field', () => {})
   it.todo(
-    'should return the result of `@param schema.options.deserialize` with (`@param curr`, `@param value`) as args when `@param value` is not null or undefined, and deserialize is truthy',
+    'should return false if `@param schema` has children, does not have a Kind.Required field and none of its children have it either',
     () => {}
   )
-  describe('case: Kind.Number', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo("should return undefined when typeof `@param value` is not 'number'", () => {})
-    it.todo("should return `@param value` when its typeof is 'number'", () => {})
-  }) //:: Kind.Number
+  it.todo('should return true if `@param schema` has a Kind.Required field', () => {})
+  it.todo(
+    'should return true if `@param schema` has children, does not have a Kind.Required field and at least one of its children have a Kind.Required field ',
+    () => {}
+  )
+}) //:: HasRequiredSchema
 
-  describe('case: Kind.Bool', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo("should return undefined when typeof `@param value` is not 'boolean'", () => {})
-    it.todo("should return `@param value` when its typeof is 'boolean'", () => {})
-  }) //:: Kind.Bool
+describe('HasSchemaValidators', () => {
+  it.todo(
+    'should return false if `@param schema` has no children and does not have an .options.validate field',
+    () => {}
+  )
+  it.todo(
+    'should return false if `@param schema` has children, does not have an .options.validate field and none of its children have it either',
+    () => {}
+  )
+  it.todo('should return true if `@param schema` has an .options.validate field', () => {})
+  it.todo(
+    'should return true if `@param schema` has children, does not have an .options.validate field and at least one of its children have an .options.validate field ',
+    () => {}
+  )
+}) //:: HasSchemaValidators
 
-  describe('case: Kind.String', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo("should return undefined when typeof `@param value` is not 'string'", () => {})
-    it.todo("should return undefined when `@param value` is '__proto__'", () => {})
+describe('requiresDeserialization', () => {
+  it.todo(
+    'should return false if `@param schema` has no children and does not have an .options.deserialize field',
+    () => {}
+  )
+  it.todo(
+    'should return false if `@param schema` has children, does not have an .options.deserialize field and none of its children have it either',
+    () => {}
+  )
+  it.todo('should return true if `@param schema` has an .options.deserialize field', () => {})
+  it.todo(
+    'should return true if `@param schema` has children, does not have an .options.deserialize field and at least one of its children have an .options.deserialize field ',
+    () => {}
+  )
+}) //:: requiresDeserialization
+
+describe('IsSingleValueSchema', () => {
+  it.todo('should return false if `@param schema` is falsy', () => {})
+  it.todo('should return false if `@param schema`[Kind] is falsy', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Null', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Undefined', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Void', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Number', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Bool', () => {})
+  it.todo('should return true if `@param schema`[Kind] is String', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Enum', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Literal', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Class', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Array', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Tuple', () => {})
+  it.todo('should return true if `@param schema`[Kind] is Func', () => {})
+  it.todo('should return false if `@param schema`[Kind] is Any', () => {})
+  it.todo('should return false if `@param schema`[Kind] is Object', () => {})
+  it.todo('should return false if `@param schema`[Kind] is Record', () => {})
+  it.todo('should return false if `@param schema`[Kind] is Partial', () => {})
+
+  describe('case: Kind.Union', () => {
+    it.todo('should return false when `@param schema`.properties has no values', () => {})
+    it.todo('should return false if any of the `@param schema`.properties is not a single value schema', () => {})
     it.todo(
-      "should return `@param value` when it is not null/undefined, its typeof is 'string' and its value is not '__proto__'",
+      'should return true if `@param schema`.properties has values and all of them are single value schemas',
       () => {}
     )
-  }) //:: Kind.String
+  }) //:: Kind.Union
+  it.todo(
+    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is NonSerialized',
+    () => {}
+  )
+  it.todo(
+    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is Required',
+    () => {}
+  )
+  it.todo(
+    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is Proxy',
+    () => {}
+  )
+  it.todo('should return false if `@param schema`[Kind] is a value that is not mapped', () => {})
+}) //:: IsSingleValueSchema
 
-  describe('case: Kind.Enum', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo("should return undefined when `@param value` is not contained in the enum's schema", () => {})
-    it.todo("should return `@param value` when its value contained in the enum's schema", () => {})
-  }) //:: Kind.Enum
-
-  describe('case: Kind.Literal', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo('should return undefined when `@param value` is not equal to `@param schema`.properties', () => {})
-    it.todo('should return `@param value` when its value is equal to `@param schema`.properties', () => {})
-  }) //:: Kind.Literal
-
-  describe('case: Kind.Array', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
-    // TODO: valid return cases for Kind.Array
-  }) //:: Kind.Array
-
-  describe('case: Kind.Tuple', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo('should return undefined when Array.isArray( `@param value` ) is falsy', () => {})
-    // TODO: valid return cases for Kind.Tuple
-  }) //:: Kind.Tuple
-
-  describe('case: Kind.Object', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    it.todo("should return undefined if typeof `@param value` when is not 'object'", () => {})
-    // TODO: valid return cases for Kind.Object
-  }) //:: Kind.Object
-
-  describe('case: Kind.Class', () => {
-    it.todo('should return `@param value` when it is null', () => {})
-    it.todo('should return `@param value` when it is undefined', () => {})
-    // TODO: valid return cases for Kind.Class
-  }) //:: Kind.Class
-
-  describe('case: Kind.Required', () => {
-    // TODO: -- fallthrough
-  }) //:: Kind.Required
-
-  describe('case: Kind.Proxy', () => {
-    // TODO: -- fallthrough
-  }) //:: Kind.Proxy
-
-  describe('case: Kind.NonSerialized', () => {
-    // TODO: -- fallthrough
-  }) //:: Kind.NonSerialized
-
-  describe('case: Kind.Partial', () => {
-    it.todo(
-      'should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value',
-      () => {}
-    )
-  }) //:: Kind.Partial
-
-  describe('case: Kind -> default', () => {
-    it.todo('should return `@param value` for any other Kind', () => {})
-  }) //:: Kind -> default
-}) //:: DeserializeSchemaValue
-
-describe('HasRequiredSchema', () => {}) //:: HasRequiredSchema
 describe('HasRequiredSchemaValues', () => {}) //:: HasRequiredSchemaValues
-describe('HasSchemaValidators', () => {}) //:: HasSchemaValidators
 describe('HasValidSchemaValues', () => {}) //:: HasValidSchemaValues
-describe('requiresDeserialization', () => {}) //:: requiresDeserialization
-describe('IsSingleValueSchema', () => {}) //:: IsSingleValueSchema
 describe('CreateSchemaValue', () => {}) //:: CreateSchemaValue
 describe('CloneSerializable', () => {}) //:: CloneSerializable
 describe('CheckSchemaValue', () => {}) //:: CheckSchemaValue
