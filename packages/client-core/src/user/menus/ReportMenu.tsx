@@ -245,9 +245,12 @@ const ReportMenu = (props: ReportMenuProps) => {
                   className="hidden"
                   multiple
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    fieldOptions.files.validate()
+                    if (e.target.files && e.target.files.length > 2) {
+                      NotificationService.dispatchNotify('Maximum 2 files allowed', { variant: 'warning' })
+                    }
+                    const files = Array.from(e.target.files || []).slice(0, 2) // Limit to first 2 files
                     formData.files.set(files)
+                    fieldOptions.files.validate()
                   }}
                 />
                 <Button onClick={() => document.getElementById('file-upload')?.click()}>
