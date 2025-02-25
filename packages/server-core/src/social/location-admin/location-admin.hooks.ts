@@ -55,7 +55,7 @@ export default {
       persistQuery,
       iff(
         isProvider('external'),
-        iffElse(isAction('admin'), verifyScope('moderation', 'read'), attachOwnerIdInQuery('banUserId')),
+        iffElse(isAction('admin'), verifyScope('moderation', 'read'), attachOwnerIdInQuery('userId')),
         discardQuery('action')
       )
     ],
