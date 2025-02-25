@@ -55,10 +55,10 @@ const execute = () => {
     if (!gizmoControlComponent.enabled) return
 
     if (!gizmoControlComponent.visualEntity) return
-    gizmoUpdate(gizmoEntity)
     if (!gizmoControlComponent.planeEntity) return
-    planeUpdate(gizmoEntity)
     controlUpdate(gizmoEntity)
+    gizmoUpdate(gizmoEntity)
+    planeUpdate(gizmoEntity)
   }
 }
 
@@ -110,7 +110,7 @@ export function editorInputHeuristic(intersectionData: Set<IntersectionData>, po
 const useGizmoControl = (entities: Entity[]) => {
   TransformGizmoControlComponent.useControlEntities(entities)
 
-  const controlledEntity = entities[entities.length - 1]
+  const controlledEntity = entities[0]
 
   const gizmoControlledComponent = useOptionalComponent(controlledEntity, TransformGizmoControlledComponent)
   const gizmoControlComponent = useOptionalComponent(

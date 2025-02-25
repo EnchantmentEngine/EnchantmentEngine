@@ -44,6 +44,8 @@ import {
 import { getState } from '@ir-engine/hyperflux'
 import { PI } from '../../common/constants/MathConstants'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
+import { SceneComponent } from '../../renderer/components/SceneComponents'
+import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent, TransformGizmoTagComponent } from '../../transform/components/TransformComponent'
 import { XRSpaceComponent } from '../../xr/XRComponents'
 import { XRUIComponent } from '../../xrui/components/XRUIComponent'
@@ -241,9 +243,8 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   }
 
   const inputPointerComponent = getOptionalComponent(sourceEid, InputPointerComponent)
-  if (inputPointerComponent) {
-    sortedIntersections.push({ entity: inputPointerComponent.cameraEntity, distance: 0 })
-  }
+  const viewerEntity = inputPointerComponent?.cameraEntity ?? getState(ReferenceSpaceState).viewerEntity
+  sortedIntersections.push({ entity: viewerEntity, distance: 0 })
 
   sourceState.intersections.set(sortedIntersections)
 
@@ -254,7 +255,7 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
     ClientInputFunctions.setInputSources(capturedEntity, finalInputSources)
   } else {
     if (!sortedIntersections.length) {
-      ClientInputFunctions.setInputSources(getState(ReferenceSpaceState).viewerEntity, finalInputSources)
+      ClientInputFunctions.setInputSources(viewerEntity, finalInputSources)
     } else {
       for (const intersection of sortedIntersections) {
         ClientInputFunctions.setInputSources(intersection.entity, finalInputSources)
@@ -289,3 +290,9 @@ export const ClientInputFunctions = {
   assignInputSources
 }
 export default ClientInputFunctions
+
+function filterEntitiesByViewer(entity: Entity, viewerEntity = getState(ReferenceSpaceState).viewerEntity) {
+  const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+  if (!sceneEntity) return false
+  return getComponent(viewerEntity, RendererComponent).scenes.includes(sceneEntity)
+}

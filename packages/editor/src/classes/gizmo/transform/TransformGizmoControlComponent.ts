@@ -111,7 +111,7 @@ export const TransformGizmoControlComponent = defineComponent({
     useEffect(() => {
       if (!originEntity) return
 
-      const controlledEntity = controlledEntities[controlledEntities.length - 1]
+      const controlledEntity = controlledEntities[0]
       if (!controlledEntity) return
 
       // we dont want a transform gizmo on non spatial entities, like materials
