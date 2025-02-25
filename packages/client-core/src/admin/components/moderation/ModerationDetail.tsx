@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useFind, useMutation } from '@ir-engine/common'
-import { userPath } from '@ir-engine/common/src/schema.type.module'
+import { locationAdminPath, userPath } from '@ir-engine/common/src/schema.type.module'
 import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
 import { moderationBanPath } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
 import { moderationPath, ModerationType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
@@ -47,15 +47,27 @@ export const ModerationDetail = ({
   onBack: () => void
   onResloved: (report: ModerationType) => void
 }) => {
+  const isPersonModeration = report.type == 'Person'
   const { t } = useTranslation()
   const moderationMutation = useMutation(moderationPath)
   const moderationBanMutation = useMutation(moderationBanPath)
+
   const moderationBanQuery = useFind(moderationBanPath, {
     query: {
       action: 'admin',
       banUserId: report.reportedUserId
     }
   })
+
+  const locationAdminQuery = isPersonModeration
+    ? useFind(locationAdminPath, {
+        query: {
+          action: 'admin',
+          userId: report.reportedUserId,
+          locationId: report.reportedLocationId
+        }
+      })
+    : null
 
   const handleMarkAsHandled = () => {
     const result = moderationMutation.patch(report.id, {
@@ -175,7 +187,6 @@ export const ModerationDetail = ({
     return <LoadingView fullScreen className="block h-12 w-12" title={t('admin:components.moderation.loading')} />
   }
 
-  const isPersonModeration = report.type == 'Person'
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center">
@@ -199,6 +210,16 @@ export const ModerationDetail = ({
               </div>
               <div className="mb-4">
                 <UserInfo userId={report.reportedUserId} usersQuery={usersQuery} />
+              </div>
+              <div className="mb-4">
+                <p className="text-[#a3a3a3]">{t('admin:components.moderation.accountType')}</p>
+              </div>
+              <div className="mb-4">
+                <p>
+                  {locationAdminQuery && locationAdminQuery.status == 'success' && locationAdminQuery.data.length > 0
+                    ? t('admin:components.moderation.owner')
+                    : t('admin:components.moderation.user')}
+                </p>
               </div>
             </>
           )}
