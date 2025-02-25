@@ -51,7 +51,6 @@ export default {
 
   before: {
     all: [schemaHooks.validateQuery(locationAdminQueryValidator), schemaHooks.resolveQuery(locationAdminQueryResolver)],
-    // find: [iff(isProvider('external'), attachOwnerIdInQuery('userId'))],
     find: [
       persistQuery,
       iff(
