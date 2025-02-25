@@ -166,7 +166,11 @@ const ReportMenu = (props: ReportMenuProps) => {
         }
       ]
       if (formData.files && formData.files.value.length > 0) {
-        await uploadToFeathersService(moderationFileUploadPath, [...formData.files.value], { args }).promise
+        await Promise.all(
+          formData.files.value.map(
+            (file) => uploadToFeathersService(moderationFileUploadPath, [file], { args }).promise
+          )
+        )
       }
       handleClose()
       PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
