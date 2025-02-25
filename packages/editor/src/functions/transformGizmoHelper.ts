@@ -448,11 +448,7 @@ export function planeUpdate(gizmoEntity) {
 export function controlUpdate(gizmoEntity: Entity) {
   const gizmoControl = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
   if (gizmoControl.controlledEntities.value.length > 1 && gizmoControl.pivotEntity.value === UndefinedEntity) return // need pivot Entity if more than one entity is controlled
-  const targetEntity =
-    gizmoControl.controlledEntities.value.length > 1
-      ? gizmoControl.pivotEntity.value
-      : gizmoControl.controlledEntities.get(NO_PROXY)[0]
-  if (targetEntity === UndefinedEntity) return
+  const targetEntity = gizmoControl.pivotEntity.value
 
   const parentEntity = getOptionalComponent(targetEntity, EntityTreeComponent)?.parentEntity
 
