@@ -25,23 +25,25 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { Schema } from './JSONSchemaTypes'
+import { Kind, Schema } from './JSONSchemaTypes'
 import { HasSchemaDeserializers } from './JSONSchemaUtils'
 
 /**
  * @description Returns an object nested to `@param depth` levels of depth.
- * Adds the given `@param value` to each level of the object with fieldname `nested`
+ * Adds the given `@param value` to each level of the object with fieldname `properties`
  * */
 export function createDeeplyNestedObject<T extends object>(depth: number, value?: T): T {
   /* @todo Move out of this file into tests/utils */
-  let result = { nested: value } as T
+  const result = { properties: value } as T
   for (let level = 0; level < depth; ++level) {
     let current = result
     for (let field = 0; field <= level; ++field) {
       current[field] = current[field] || {}
       current = current[field]
     }
-    current['nested'] = value
+    current[Kind] = 'Object'
+    current['options'] = { deserialize: undefined }
+    current['properties'] = value
   }
   return result
 }
@@ -92,33 +94,65 @@ describe('HasSchemaDeserializers', () => {
   }) //:: HasSchemaDeserializers.process.recursion
 
   describe('output.expected', () => {
-    it.todo(
-      'should return true if the toplevel of the `@param schema` object has a truthy .options?.deserialize field',
-      () => {
-        const Expected = true
-        const emptySchema = {} as Schema
-        // 3. Set input & dependencies data
-        const schema = createDeeplyNestedObject(nested.depth, emptySchema)
-        // 1. Sanity check (input & dependencies)
-        // 2. Run the process
-        const result = HasSchemaDeserializers(schema)
-        // 4. Check the result (output)
-        expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
+    it('should return true if the toplevel of the `@param schema` object has a truthy .options?.deserialize field', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const emptySchema = {} as Schema
+      const schema = createDeeplyNestedObject(nested.depth, emptySchema)
+      schema.options = { deserialize: (_, __) => {} }
+      // 1. Sanity check (input & dependencies)
+      expect(schema.options?.deserialize).toBeTruthy()
+      // 2. Run the process
+      const result = HasSchemaDeserializers(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+    })
+
+    it('should return false if the toplevel of the `@param schema` object has a falsy .options?.deserialize field and has no children', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const schema = { options: { deserialize: undefined } } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.options?.deserialize).toBeFalsy()
+      // 2. Run the process
+      const result = HasSchemaDeserializers(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+    })
+
+    it('should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field but has a child where it is truthy', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const child = { testField: { options: { deserialize: (_, __) => {} } } as Schema }
+      const schema = { [Kind]: 'Object', options: { deserialize: undefined }, properties: child } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(((schema.properties! as any).testField as Schema).options!.deserialize).toBeTruthy()
+      // 2. Run the process
+      const result = HasSchemaDeserializers(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+    })
+
+    it('should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field, all its children have no such field, but has a deeply nested children where it is truthy', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const deepChild = { testField: { options: { deserialize: (_, __) => {} } } as Schema }
+      const child3 = {
+        schema: { [Kind]: 'Object', options: { deserialize: undefined }, properties: deepChild } as Schema
       }
-    )
-    it.todo(
-      'should return false if the toplevel of the `@param schema` object has a falsy .options?.deserialize field and has no children',
-      () => {}
-    )
-    it.todo(
-      'should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field but has a children where it is truthy',
-      () => {}
-    )
-    it.todo(
-      'should return true if the toplevel of the `@param schema` object has a falsy .options?.deserialize field, all its children have no such field, but has a deeply nested children where it is truthy',
-      () => {}
-    )
+      const child2 = { schema: { [Kind]: 'Object', options: { deserialize: undefined }, properties: child3 } as Schema }
+      const child1 = { schema: { [Kind]: 'Object', options: { deserialize: undefined }, properties: child2 } as Schema }
+      const child0 = { schema: { [Kind]: 'Object', options: { deserialize: undefined }, properties: child1 } as Schema }
+      const schema = { [Kind]: 'Object', options: { deserialize: undefined }, properties: child0 } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(((schema.properties! as any).testField as Schema)?.options?.deserialize).toBeFalsy()
+      // 2. Run the process
+      const result = HasSchemaDeserializers(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+    })
   }) //:: HasSchemaDeserializers.output.expected
 }) //:: HasSchemaDeserializers
 
