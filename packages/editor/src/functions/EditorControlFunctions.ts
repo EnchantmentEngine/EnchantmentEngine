@@ -23,16 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
+import { Euler, Material, Matrix4, Quaternion, Vector3 } from 'three'
 
 import {
-  createEntity,
   EntityTreeComponent,
   EntityUUID,
   findRootAncestors,
   generateEntityUUID,
   getAncestorWithComponents,
   getChildrenWithComponents,
+  iterateEntityNode,
   removeEntityNodeRecursively,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -43,8 +43,9 @@ import {
   deserializeComponent,
   getComponent,
   getMutableComponent,
+  getOptionalMutableComponent,
   hasComponent,
-  LayerComponent,
+  LayerFunctions,
   Layers,
   removeComponent,
   serializeComponent,
@@ -61,14 +62,20 @@ import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 import { getMutableState, getState, setNestedObject } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { getMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import {
+  MaterialPrototypeDefinitions,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { extractDefaults } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -117,7 +124,6 @@ const modifyProperty = <C extends Component<any, any>>(
     for (const [key, val] of Object.entries(properties)) {
       if (key.includes('.')) {
         setNestedObject(currentComponent, key, val)
-        console.log(currentComponent, key, val)
       } else {
         currentComponent[key] = val
       }
@@ -127,11 +133,54 @@ const modifyProperty = <C extends Component<any, any>>(
   }
 }
 
+/**Updates the materialEntity's threejs material using the the newPrototype to look up the new constructor */
+const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) => {
+  const materialComponent = getOptionalMutableComponent(materialEntity, MaterialStateComponent)
+  if (!materialComponent) return
+  const material = materialComponent.material.value
+
+  if (!material || newPrototype === material.type) return
+  const prototype = getState(MaterialPrototypeDefinitions)[newPrototype]
+  if (!prototype) return
+  const fullParameters = { ...extractDefaults(prototype.arguments) }
+  if (!prototype) return
+  const newMaterial = new prototype.prototypeConstructor(fullParameters) as Material
+
+  if (newMaterial.plugins) {
+    newMaterial.customProgramCacheKey = () =>
+      (newMaterial.shader ? newMaterial.shader.fragmentShader + newMaterial.shader.vertexShader : '') +
+      newMaterial.plugins!.map((plugin) => plugin?.toString() ?? '').reduce((x, y) => x + y, '')
+  }
+  newMaterial.uuid = material.uuid
+  if (material.defines?.['USE_COLOR']) {
+    newMaterial.defines = newMaterial.defines ?? {}
+    newMaterial.defines!['USE_COLOR'] = material.defines!['USE_COLOR']
+  }
+  if (material.userData) {
+    newMaterial.userData = {
+      ...newMaterial.userData,
+      ...Object.fromEntries(Object.entries(material.userData).filter(([k, _v]) => k !== 'type'))
+    }
+  }
+  newMaterial.type = newPrototype
+  newMaterial.name = material.name
+
+  materialComponent.material.set(newMaterial)
+  materialComponent.parameters.set({})
+  for (const key in prototype.arguments) materialComponent.parameters[key].set(prototype.arguments[key].default)
+
+  const sceneID = getComponent(materialEntity, SourceComponent)
+  getMutableState(AssetModifiedState)[sceneID].set(true)
+
+  return newMaterial
+}
+
 const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [_: string]: any }[]) => {
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
     if (typeof node !== 'string') return
-    const material = getMaterial(materialId)
+    const materialEntity = UUIDComponent.getEntityByUUID(materialId, Layers.Authoring)
+    const material = getComponent(materialEntity, MaterialStateComponent).material
     if (!material) return
     const props = properties[i] ?? properties[0]
     Object.entries(props).map(([k, v]) => {
@@ -146,11 +195,14 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
       } else {
         material[k] = v
       }
+      getMutableComponent(materialEntity, MaterialStateComponent).parameters[k].set(v)
     })
-    const materialEntity = UUIDComponent.getEntityByUUID(materialId, Layers.Authoring)
     const sceneID = getComponent(materialEntity, SourceComponent)
+    getMutableComponent(
+      LayerFunctions.getLayerRelationsEntities(materialEntity)![0][1],
+      MaterialStateComponent
+    ).material.plugins.set(material.plugins)
     getMutableState(AssetModifiedState)[sceneID].set(true)
-    material.needsUpdate = true
   }
 }
 
@@ -162,7 +214,6 @@ const lookDevComponent: Component[] = [
 ]
 
 const overwriteLookdevObject = (
-  beforeComponentJson: ComponentJsonType[] = [],
   componentJson: ComponentJsonType[] = [],
   parentEntity = getState(EditorState).rootEntity,
   beforeEntity?: Entity
@@ -173,7 +224,7 @@ const overwriteLookdevObject = (
     if (!lookDevComp) continue
     const sceneEntitiesWithComponent = getChildrenWithComponents(parentEntity, [lookDevComp])
     if (sceneEntitiesWithComponent.length) {
-      setComponent(sceneEntitiesWithComponent[0], lookDevComp, componentJson)
+      deserializeComponent(sceneEntitiesWithComponent[0], lookDevComp, props)
       EditorState.markModifiedScene(parentEntity)
     } else {
       createObjectFromSceneElement(componentJson, parentEntity, beforeEntity)
@@ -187,8 +238,8 @@ const createObjectFromSceneElement = (
   beforeEntity?: Entity,
   requestedName?: string
 ): { entityUUID: EntityUUID; sourceID: string } => {
-  const entityUUID: EntityUUID =
-    componentJson.find((comp) => comp.name === UUIDComponent.jsonID)?.props.uuid ?? generateEntityUUID()
+  const nodeID: NodeID =
+    componentJson.find((comp) => comp.name === NodeIDComponent.jsonID)?.props.uuid ?? generateEntityUUID()
 
   const gltfEntity = getAncestorWithComponents(parentEntity, [GLTFComponent])
   const sourceID = GLTFComponent.getInstanceID(gltfEntity)
@@ -204,18 +255,16 @@ const createObjectFromSceneElement = (
       ...comp.props
     }
   }
-  if (!extensions[UUIDComponent.jsonID]) {
-    extensions[UUIDComponent.jsonID] = entityUUID
+  if (!extensions[NodeIDComponent.jsonID]) {
+    extensions[NodeIDComponent.jsonID] = nodeID
   }
   if (!extensions[VisibleComponent.jsonID]) {
     extensions[VisibleComponent.jsonID] = true
   }
 
-  const entity = UUIDComponent.getOrCreateEntityByUUID(entityUUID, Layers.Authoring)
+  const entity = NodeIDComponent.create(sourceID, nodeID, Layers.Authoring)
 
   setComponent(entity, NameComponent, name)
-
-  setComponent(entity, SourceComponent, sourceID)
 
   if (extensions[TransformComponent.jsonID]) {
     const comp = {
@@ -234,7 +283,7 @@ const createObjectFromSceneElement = (
 
   EditorState.markModifiedScene(gltfEntity)
 
-  return { entityUUID, sourceID }
+  return { entityUUID: getComponent(entity, UUIDComponent), sourceID }
 }
 
 /**
@@ -248,16 +297,15 @@ const duplicateObject = (entities: Entity[]) => {
     const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
     const entityUUID = getComponent(entity, UUIDComponent)
     const parentUUID = getComponent(parentEntity, UUIDComponent)
-    const entityData = serializeEntity(entity).filter((c) => c.name !== UUIDComponent.jsonID)
+    const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
     const newUUID = generateEntityUUID()
-    const layer = LayerComponent.get(entity)
     const originalSource = getComponent(entity, SourceComponent)
-    const newEntity = createEntity(layer)
+
+    const newEntity = NodeIDComponent.create(originalSource, NodeIDComponent.generate(), Layers.Authoring)
+
     const name = getComponent(entity, NameComponent)
     setComponent(newEntity, VisibleComponent)
     setComponent(newEntity, NameComponent, name)
-    setComponent(newEntity, UUIDComponent, newUUID)
-    setComponent(newEntity, SourceComponent, originalSource)
     for (const component of entityData) {
       deserializeComponent(newEntity, ComponentJSONIDMap.get(component.name)!, component.props)
     }
@@ -320,6 +368,7 @@ const positionObject = (
 
     setComponent(entity, TransformComponent, { position: transform.position })
     getMutableComponent(entity, TransformComponent).position.set((v) => v)
+    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -355,6 +404,7 @@ const rotateObject = (nodes: Entity[], rotations: Quaternion[], space = getState
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
+    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -382,6 +432,7 @@ const rotateAround = (entities: Entity[], axis: Vector3, angle: number, pivot: V
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
+    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -408,6 +459,7 @@ const scaleObject = (entities: Entity[], scales: Vector3[], overrideScale = fals
 
     setComponent(entity, TransformComponent, { scale: transformComponent.scale })
     getMutableComponent(entity, TransformComponent).scale.set((v) => v)
+    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -444,16 +496,13 @@ const groupObjects = (entities: Entity[]) => {
   const firstEntity = entities[0]
   if (hasComponent(firstEntity, SceneComponent)) return
   const parentEntity = getComponent(firstEntity, EntityTreeComponent).parentEntity
-  const layer = LayerComponent.get(firstEntity)
-  const newParent = createEntity(layer)
-  setComponent(newParent, UUIDComponent, generateEntityUUID())
+  const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent])
+  const sourceID = GLTFComponent.getInstanceID(gltfEntity)
+  const newParent = NodeIDComponent.create(sourceID, NodeIDComponent.generate(), Layers.Authoring)
   setComponent(newParent, NameComponent, 'New Group')
   setComponent(newParent, EntityTreeComponent, { parentEntity })
   setComponent(newParent, VisibleComponent)
   setComponent(newParent, TransformComponent, { position: new Vector3(0, 0, 0) })
-  const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent])
-  const sourceID = GLTFComponent.getInstanceID(gltfEntity)
-  setComponent(newParent, SourceComponent, sourceID)
 
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
@@ -468,8 +517,8 @@ const removeObject = (entities: Entity[]) => {
 
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
-    removeEntityNodeRecursively(entity)
     EditorState.markModifiedScene(entity)
+    removeEntityNodeRecursively(entity)
   }
 }
 
@@ -524,6 +573,7 @@ export const EditorControlFunctions = {
   modifyProperty,
   modifyName,
   modifyMaterial,
+  updateMaterialPrototype,
   createObjectFromSceneElement,
   duplicateObject,
   positionObject,

@@ -42,6 +42,7 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { GeneralAudioComponent } from '@ir-engine/engine/src/audio/components/GeneralAudioComponent'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -79,7 +80,6 @@ export async function addMediaNode(
 ): Promise<EntityUUID | null> {
   const contentType = (await getContentType(url)) || ''
   const { hostname } = new URL(url)
-  console.log(contentType)
 
   if (contentType.startsWith('model/')) {
     if (contentType.startsWith('model/material')) {
@@ -130,12 +130,7 @@ export async function addMediaNode(
         (entity) => {
           const firstChild = getComponent(entity, EntityTreeComponent).children[0]
           const json = serializeEntity(firstChild)
-          EditorControlFunctions.overwriteLookdevObject(
-            [{ name: GLTFComponent.jsonID, props: { src: url } }, ...extraComponentJson],
-            json,
-            parent!,
-            before
-          )
+          EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
           removeEntity(entity)
         }
       )
@@ -145,7 +140,8 @@ export async function addMediaNode(
        */
       AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
         (entity) => {
-          const entities = SourceComponent.getEntitiesBySource(entity)
+          const currentSource = GLTFComponent.getInstanceID(entity)
+          const entities = SourceComponent.getEntitiesBySource(currentSource)
           const rootEntity = getState(EditorState).rootEntity
           const newSource = GLTFComponent.getInstanceID(rootEntity)
           for (const entity of entities) {
@@ -195,7 +191,7 @@ export async function addMediaNode(
   } else if (contentType.startsWith('audio/')) {
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
       [
-        { name: PositionalAudioComponent.jsonID },
+        { name: GeneralAudioComponent.jsonID },
         { name: MediaComponent.jsonID, props: { resources: [url] } },
         ...extraComponentJson
       ],

@@ -541,7 +541,6 @@ export const setComponent = <C extends Component>(
     component.onSet(entity, state, args)
   }
 
-  /** @todo this might be unnecessayr now that we have propagation via the store */
   LayerFunctions.propagateLayer(entity, component)
 
   if (component.reactor && !component.reactorRoot) {
@@ -816,7 +815,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
   const layer = LayerComponent.get(entity)
   const createArgs = (schema: TTypedSchema<C>, key: string | number, data: any) => {
     const obj = key === '' ? data : data[key]
-    if (obj === undefined || obj === null || obj === UndefinedEntity) return obj
+    if (typeof obj === 'undefined') return
     switch (schema[Kind] as any) {
       case 'Null':
       case 'Undefined':
@@ -828,6 +827,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         return obj
       }
       case 'Number': {
+        if (obj === UndefinedEntity) return obj
         if ((schema[Kind] as any) === 'Number' && schema?.options?.['id'] === 'Entity') {
           const referencedEntity = obj as Entity
 
@@ -841,6 +841,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         }
       }
       case 'Any': {
+        if (!obj) return
         if (typeof obj === 'object' && 'clone' in obj && typeof obj.clone === 'function') {
           return obj.clone()
         } else if (Array.isArray(obj)) {
@@ -850,6 +851,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         }
       }
       case 'Class': {
+        if (!obj) return
         if ('clone' in obj && typeof obj.clone === 'function') {
           return obj.clone()
         } else {
@@ -867,6 +869,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         }
       }
       case 'Object': {
+        if (!obj) return
         const props = schema.properties as any
         const args = {} as any
         for (const k in props) {
@@ -877,6 +880,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         return args
       }
       case 'Record': {
+        if (!obj) return
         const { key, value } = schema.properties as { key: any; value: any }
         const args = {} as any
         for (const k in obj) {
@@ -887,6 +891,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         return args
       }
       case 'Array': {
+        if (!obj) return
         const props = schema.properties as any
         const args = [] as any[]
         for (let i = 0; i < obj.length; i++) {
@@ -896,6 +901,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         return args
       }
       case 'Tuple': {
+        if (!obj) return
         const props = schema.properties as any
         const args = [] as any[]
         for (let i = 0; i < props.length; i++) {
@@ -908,14 +914,16 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
         const props = schema.properties as any
         for (const prop of props) {
           const parsed = createArgs(prop, '', obj)
-          if (parsed) return parsed
+          if (typeof parsed !== 'undefined') return parsed
         }
         return null
+      }
+      case 'NonSerialized': {
+        return
       }
       case 'Partial':
       case 'Required':
       case 'Proxy':
-      case 'NonSerialized':
       default: {
         let props = schema.properties as any
         if (!props) {
@@ -1069,7 +1077,23 @@ export const LayerComponent = defineComponent({
 })
 
 export function getAuthoringCounterpart(entity: Entity) {
-  return LayerComponents[Layers.Authoring].refs[entity]
+  return LayerComponents[Layers.Simulation].refs[entity]
+}
+
+export function getSimulationCounterpart(entity: Entity) {
+  const layer = LayerComponent.get(entity)
+  if (layer === Layers.Simulation) {
+    return entity
+  }
+  const relations = LayerFunctions.getLayerRelationsEntities(entity)
+  if (!relations) return UndefinedEntity
+  const entityLayer = LayerComponent.get(entity)
+  for (const [linkedLayer, linkedEntity] of relations) {
+    if (linkedLayer === Layers.Simulation) {
+      return linkedEntity
+    }
+  }
+  return UndefinedEntity
 }
 
 /**
@@ -1325,6 +1349,7 @@ export const entityExists = (entity: Entity) => {
 
 export const EntityContext = React.createContext(UndefinedEntity)
 
+/** @deprecated entity is now passed in as a prop 'entity' to query and array child reactors */
 export const useEntityContext = () => {
   return React.useContext(EntityContext)
 }

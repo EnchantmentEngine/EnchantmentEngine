@@ -340,7 +340,7 @@ describe('PhysicsSerialization', () => {
           setComponent(physicsWorldEntity, SceneComponent)
           setComponent(physicsWorldEntity, TransformComponent)
           setComponent(physicsWorldEntity, EntityTreeComponent)
-          physicsWorld = Physics.createWorld(getComponent(physicsWorldEntity, UUIDComponent))
+          physicsWorld = Physics.createWorld(physicsWorldEntity)
           physicsWorld.timestep = 1 / 60
           await act(() => render(null))
         })
