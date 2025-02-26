@@ -37,26 +37,16 @@ export const moderationAttachmentResolver = resolve<ModerationAttachmentsType, H
 
 export const moderationAttachmentExternalResolver = resolve<ModerationAttachmentsType, HookContext>({})
 
-export const moderationAttachmentDataResolver = resolve<ModerationAttachmentsType, HookContext>(
-  {
-    id: async () => {
-      return uuidv4()
-    },
-    updatedBy: async (_, __, context) => {
-      return context.params?.user?.id || null
-    },
-    createdAt: getDateTimeSql,
-    updatedAt: getDateTimeSql
+export const moderationAttachmentDataResolver = resolve<ModerationAttachmentsType, HookContext>({
+  id: async () => {
+    return uuidv4()
   },
-  {
-    // Convert the raw data into a new structure before running property resolvers
-    converter: async (rawData, context) => {
-      return {
-        ...rawData
-      }
-    }
-  }
-)
+  updatedBy: async (_, __, context) => {
+    return context.params?.user?.id || null
+  },
+  createdAt: getDateTimeSql,
+  updatedAt: getDateTimeSql
+})
 
 export const moderationAttachmentPatchResolver = resolve<ModerationAttachmentsType, HookContext>({
   updatedBy: async (_, __, context) => {
