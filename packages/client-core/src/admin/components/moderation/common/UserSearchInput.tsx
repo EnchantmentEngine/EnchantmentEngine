@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useFind } from '@ir-engine/common'
-import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
+import { userPath } from '@ir-engine/common/src/schema.type.module'
 import { Select } from '@ir-engine/ui'
 import { OptionType } from '@ir-engine/ui/src/primitives/tailwind/Select'
 import { debounce } from 'lodash'

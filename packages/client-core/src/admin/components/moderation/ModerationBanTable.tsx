@@ -24,27 +24,28 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import DataTable, { ITableHeadCell } from '@ir-engine/client-core/src/admin/common/Table'
-import { useFind, useMutation } from '@ir-engine/common'
-import { moderationBanPath, ModerationBanType } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
+import { useFind, useMutation, useSearch } from '@ir-engine/common'
+import { moderationBanPath, ModerationBanType } from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
 import { t } from 'i18next'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { validate as isValidUUID } from 'uuid'
 import { NotificationService } from '../../../common/services/NotificationService'
 import { LocationLabel } from './common/LocationLabel'
 import { UserDisplayName } from './common/UserDisplayName'
 
 const moderationBanColumns: ITableHeadCell[] = [
   { id: 'username', label: t('admin:components.moderation.username') },
-  { id: 'UID', label: t('admin:components.moderation.uid') },
+  { id: 'userId', label: t('admin:components.moderation.uid') },
   { id: 'reason', label: t('admin:components.moderation.reason') },
   { id: 'space', label: t('admin:components.moderation.space') },
-  { id: 'IpAddress', label: t('admin:components.moderation.ipAddress') },
-  { id: 'DateReported', label: t('admin:components.moderation.dateReported') },
+  { id: 'ipAddress', label: t('admin:components.moderation.ipAddress') },
+  { id: 'dateReported', label: t('admin:components.moderation.dateReported') },
   { id: 'action', label: t('admin:components.moderation.action') }
 ]
 
-export default function ModerationBanTable() {
+export default function ModerationBanTable({ search }) {
   const { t } = useTranslation()
   const moderationBanMutation = useMutation(moderationBanPath)
 
@@ -74,15 +75,32 @@ export default function ModerationBanTable() {
     }
   })
 
+  useSearch(
+    moderationBanQuery,
+    {
+      $or: [
+        {
+          banUserId: isValidUUID(search) ? search : undefined
+        },
+        {
+          banReason: {
+            $like: `%${search}%`
+          }
+        }
+      ]
+    },
+    search
+  )
+
   const createRows = (rows: ModerationBanType[]) =>
     rows.map((row) => ({
       id: row.id,
       username: <UserDisplayName userId={row.banUserId} />,
-      UID: row.banUserId,
+      userId: row.banUserId,
       space: row.reportedLocationId ? <LocationLabel locationId={row.reportedLocationId} /> : 'N/A',
       reason: row.banReason,
-      IpAddress: row.ipAddress,
-      DateReported: <span>{toDisplayDateTime(row.createdAt)}</span>,
+      ipAddress: row.ipAddress,
+      dateReported: <span>{toDisplayDateTime(row.createdAt)}</span>,
       action: (
         <button
           onClick={() => updateBanUser(row)}

@@ -120,9 +120,22 @@ export const moderationQueryProperties = Type.Pick(moderationSchema, [
 ])
 export const moderationQuerySchema = Type.Intersect(
   [
-    querySyntax(moderationQueryProperties),
+    querySyntax(moderationQueryProperties, {
+      type: {
+        $like: Type.String()
+      },
+      abuseReason: {
+        $like: Type.String()
+      }
+    }),
     // Add additional query properties here
-    Type.Object({}, { additionalProperties: false })
+    Type.Object(
+      {
+        action: Type.Optional(Type.String()),
+        search: Type.Optional(Type.String())
+      },
+      { additionalProperties: false }
+    )
   ],
   { additionalProperties: false }
 )

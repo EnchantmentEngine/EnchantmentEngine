@@ -28,7 +28,7 @@ import { Application } from '@feathersjs/koa'
 import {
   moderationAttachmentMethods,
   moderationAttachmentPath
-} from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+} from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import { ModerationAttachmentService } from './moderation-attachment.class'
 import moderationAttachmentDocs from './moderation-attachment.docs'
 import hooks from './moderation-attachment.hooks'

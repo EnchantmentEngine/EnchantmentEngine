@@ -24,17 +24,16 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import DataTable, { ITableHeadCell } from '@ir-engine/client-core/src/admin/common/Table'
-import { useFind } from '@ir-engine/common'
-import { moderationPath, ModerationType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
+import { useFind, useSearch } from '@ir-engine/common'
+import { moderationPath, ModerationType } from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { Button, Select } from '@ir-engine/ui'
-import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
+import { Select } from '@ir-engine/ui'
 import { t } from 'i18next'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoArrowForward } from 'react-icons/io5'
+import { validate as isValidUUID } from 'uuid'
 import { UserDisplayName } from './common/UserDisplayName'
-import { ModerationBanContainer } from './ModerationBanContainer'
 import { ModerationDetail } from './ModerationDetail'
 
 const moderationTableColumns: ITableHeadCell[] = [
@@ -47,11 +46,10 @@ const moderationTableColumns: ITableHeadCell[] = [
   { id: 'action', label: t('admin:components.moderation.action') }
 ]
 
-export default function ModerationTable() {
+export default function ModerationTable({ search }) {
   const { t } = useTranslation()
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedReport, setSelectedReport] = useState<ModerationType>()
-  const [showBanUsers, setShowBanUsers] = useState(false)
 
   const handleViewDetails = (report) => {
     setSelectedReport(report)
@@ -59,12 +57,42 @@ export default function ModerationTable() {
   const handleBackToTable = () => {
     setSelectedReport(undefined)
   }
-  const handleManageBansClick = () => {
-    setShowBanUsers(true)
-  }
   const handleReportResolve = (report: ModerationType) => {
     setSelectedReport(userReportsQuery.data[userReportsQuery.data.findIndex((r) => r.id === report.id) + 1])
   }
+  const userReportsQuery =
+    statusFilter == 'All'
+      ? useFind(moderationPath, {
+          query: {
+            $limit: 12
+          }
+        })
+      : useFind(moderationPath, {
+          query: {
+            status: statusFilter,
+            $limit: 12
+          }
+        })
+
+  useSearch(
+    userReportsQuery,
+    {
+      $or: [
+        {
+          id: isValidUUID(search) ? search : undefined
+        },
+        {
+          type: search == 'Space' ? 'Location' : search == 'Person' ? 'Person' : undefined
+        },
+        {
+          abuseReason: {
+            $like: `%${search}%`
+          }
+        }
+      ]
+    },
+    search
+  )
 
   const createRows = (rows: ModerationType[]) =>
     rows.map((moderation) => {
@@ -98,65 +126,27 @@ export default function ModerationTable() {
       }
     })
 
-  const userReportsQuery =
-    statusFilter == 'All'
-      ? useFind(moderationPath, {
-          query: {
-            $limit: 12
-          }
-        })
-      : useFind(moderationPath, {
-          query: {
-            status: statusFilter,
-            $limit: 12
-          }
-        })
-
-  if (userReportsQuery.status !== 'success') {
-    return <LoadingView fullScreen className="block h-12 w-12" title={t('admin:components.moderation.loading')} />
-  }
-
   return (
     <div className="h-full w-full">
       {selectedReport ? (
         <ModerationDetail report={selectedReport} onBack={handleBackToTable} onResloved={handleReportResolve} />
       ) : (
         <>
-          {showBanUsers ? (
-            <ModerationBanContainer onBack={() => setShowBanUsers(false)} />
-          ) : (
-            <>
-              <h2 className="mb-5 text-2xl">{t('admin:components.moderation:header')}</h2>
-              <div className="mb-4 rounded-lg p-4 shadow" style={{ backgroundColor: '#212226' }}>
-                <div className="mb-2 flex items-center justify-between">
-                  <h1 className="text-xl text-[#a3a3a3]">{t('admin:components.moderation.bannedUsers')}</h1>
-                  <Button
-                    variant="primary"
-                    className="col-span-1 mt-4 rounded bg-blue-500 px-4 py-2 text-white"
-                    onClick={handleManageBansClick}
-                  >
-                    {t('admin:components.moderation.manageBans')}
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-600">{t('admin:components.moderation.manageAccess')}</p>
-              </div>
-              <div className="w-50 mb-4 mt-5 flex items-center space-x-2">
-                <Select
-                  labelProps={{ text: t('admin:components.moderation.statusFilter'), position: 'left' }}
-                  options={['All', 'Open', 'Resolved'].map((option) => {
-                    return { label: option, value: option }
-                  })}
-                  value={statusFilter}
-                  onChange={(selected) => setStatusFilter(selected as string)}
-                />
-              </div>
-              <DataTable
-                query={userReportsQuery}
-                columns={moderationTableColumns}
-                rows={createRows([...userReportsQuery.data])}
-              />
-            </>
-          )}
+          <div className="w-50 mb-4 mt-5 flex items-center space-x-2">
+            <Select
+              labelProps={{ text: t('admin:components.moderation.statusFilter'), position: 'left' }}
+              options={['All', 'Open', 'Resolved'].map((option) => {
+                return { label: option, value: option }
+              })}
+              value={statusFilter}
+              onChange={(selected) => setStatusFilter(selected as string)}
+            />
+          </div>
+          <DataTable
+            query={userReportsQuery}
+            columns={moderationTableColumns}
+            rows={createRows([...userReportsQuery.data])}
+          />
         </>
       )}
     </div>

@@ -24,9 +24,12 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useFind, useMutation } from '@ir-engine/common'
-import { locationAdminPath, userPath } from '@ir-engine/common/src/schema.type.module'
-import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
-import { moderationBanPath } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
+import {
+  locationAdminPath,
+  moderationAttachmentPath,
+  moderationBanPath,
+  userPath
+} from '@ir-engine/common/src/schema.type.module'
 import { moderationPath, ModerationType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import { toDisplayDateTime, toDisplayDateTimeUtc } from '@ir-engine/common/src/utils/datetime-sql'
 import { Button } from '@ir-engine/ui'
@@ -47,7 +50,7 @@ export const ModerationDetail = ({
   onBack: () => void
   onResloved: (report: ModerationType) => void
 }) => {
-  const isPersonModeration = report.type == 'Person'
+  const isPersonModeration = report.type === 'Person'
   const { t } = useTranslation()
   const moderationMutation = useMutation(moderationPath)
   const moderationBanMutation = useMutation(moderationBanPath)

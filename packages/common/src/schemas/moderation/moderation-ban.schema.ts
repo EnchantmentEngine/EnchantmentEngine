@@ -86,11 +86,19 @@ const moderationBanQueryProperties = Type.Pick(moderationBanSchema, ['id', 'banU
 
 export const moderationBanQuerySchema = Type.Intersect(
   [
-    querySyntax(moderationBanQueryProperties),
+    querySyntax(moderationBanQueryProperties, {
+      banUserId: {
+        $like: Type.String()
+      },
+      banReason: {
+        $like: Type.String()
+      }
+    }),
     // Add additional query properties here
     Type.Object(
       {
-        action: Type.Optional(Type.String())
+        action: Type.Optional(Type.String()),
+        search: Type.Optional(Type.String())
       },
       { additionalProperties: false }
     )

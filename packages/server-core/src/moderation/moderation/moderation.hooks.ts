@@ -58,11 +58,7 @@ export default {
   },
   before: {
     all: [schemaHooks.validateQuery(moderationQueryValidator), schemaHooks.resolveQuery(moderationQueryResolver)],
-    find: [
-      iff(isProvider('external'), verifyScope('moderation', 'read')),
-      schemaHooks.validateQuery(moderationQueryValidator),
-      schemaHooks.resolveQuery(moderationQueryResolver)
-    ],
+    find: [iff(isProvider('external'), verifyScope('moderation', 'read'))],
     get: [
       iff(isProvider('external'), verifyScope('moderation', 'read')),
       schemaHooks.validateQuery(moderationQueryValidator),

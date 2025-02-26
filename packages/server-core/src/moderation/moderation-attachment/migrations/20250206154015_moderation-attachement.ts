@@ -22,7 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import { moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import type { Knex } from 'knex'
 
