@@ -100,9 +100,7 @@ export default function ModerationTable({ search }) {
         id: moderation.id,
         type: <span>{moderation.type == 'Location' ? t('admin:components.moderation.space') : moderation.type}</span>,
         username: (
-          <span>
-            <UserDisplayName userId={moderation.reportedUserId} />
-          </span>
+          <span>{moderation.reportedUserId ? <UserDisplayName userId={moderation.reportedUserId} /> : 'N/A'}</span>
         ),
         reason: <span>{moderation.abuseReason}</span>,
         dateReported: <span>{toDisplayDateTime(moderation.createdAt)}</span>,
