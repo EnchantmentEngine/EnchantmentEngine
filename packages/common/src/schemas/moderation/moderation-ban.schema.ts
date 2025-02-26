@@ -42,11 +42,9 @@ export type ModerationBanID = OpaqueType<'ModerationBanID'> & string
 export const moderationBanSchema = Type.Object(
   {
     id: Type.String({ format: 'uuid' }),
-    banUserId: Type.Optional(
-      TypedString<UserID>({
-        format: 'uuid'
-      })
-    ),
+    banUserId: TypedString<UserID>({
+      format: 'uuid'
+    }),
     reportedLocationId: Type.Optional(
       TypedString<LocationID>({
         format: 'uuid'
