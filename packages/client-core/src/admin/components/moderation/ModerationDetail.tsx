@@ -62,15 +62,13 @@ export const ModerationDetail = ({
     }
   })
 
-  const locationAdminQuery = isPersonModeration
-    ? useFind(locationAdminPath, {
-        query: {
-          action: 'admin',
-          userId: report.reportedUserId,
-          locationId: report.reportedLocationId
-        }
-      })
-    : null
+  const locationAdminQuery = useFind(locationAdminPath, {
+    query: {
+      action: 'admin',
+      userId: report.reportedUserId,
+      locationId: report.reportedLocationId
+    }
+  })
 
   const handleMarkAsHandled = () => {
     const result = moderationMutation.patch(report.id, {
@@ -201,13 +199,13 @@ export const ModerationDetail = ({
       <div className="mb-4 rounded-lg p-4 text-white shadow" style={{ backgroundColor: '#0e0f11' }}>
         <div className="grid grid-cols-[30%_70%] gap-4">
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.id')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.id')}</p>
           </div>
           <div className="mb-4">
             <p>{report.id}</p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.type')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.type')}</p>
           </div>
           <div className="mb-4">
             <p>{report.type == 'Location' ? t('admin:components.moderation.space') : report.type}</p>
@@ -215,13 +213,13 @@ export const ModerationDetail = ({
           {isPersonModeration && (
             <>
               <div className="mb-4">
-                <p className="text-[#a3a3a3]">{t('admin:components.moderation.usernameBeingReported')}</p>
+                <p className="text-text-primary">{t('admin:components.moderation.usernameBeingReported')}</p>
               </div>
               <div className="mb-4">
                 <UserInfo userId={report.reportedUserId} usersQuery={usersQuery} />
               </div>
               <div className="mb-4">
-                <p className="text-[#a3a3a3]">{t('admin:components.moderation.accountType')}</p>
+                <p className="text-text-primary">{t('admin:components.moderation.accountType')}</p>
               </div>
               <div className="mb-4">
                 <p>
@@ -233,25 +231,25 @@ export const ModerationDetail = ({
             </>
           )}
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.reasonForAbuse')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.reasonForAbuse')}</p>
           </div>
           <div className="mb-4">
             <p>{report.abuseReason}</p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.dateReported')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.dateReported')}</p>
           </div>
           <div className="mb-4">
             <p>{toDisplayDateTimeUtc(report?.reportedAt)} UTC</p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.reporter')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.reporter')}</p>
           </div>
           <div className="mb-4">
             <UserInfo userId={report.reportingUserId} usersQuery={usersQuery} />
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.space')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.space')}</p>
           </div>
           <div className="mb-4">
             <p>
@@ -259,13 +257,13 @@ export const ModerationDetail = ({
             </p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.ipAddress')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.ipAddress')}</p>
           </div>
           <div className="mb-4">
             <p>{report.ipAddress}</p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.reportDetails')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.reportDetails')}</p>
           </div>
           <div className="mb-4">
             <p className="mr-4 rounded-lg p-4 font-medium text-gray-300" style={{ backgroundColor: '#191b1f' }}>
@@ -273,15 +271,16 @@ export const ModerationDetail = ({
             </p>
           </div>
           <div className="mb-4">
-            <p className="text-[#a3a3a3]">{t('admin:components.moderation.uploadedFiles')}</p>
+            <p className="text-text-primary">{t('admin:components.moderation.uploadedFiles')}</p>
           </div>
           <div className="mb-4">
             {reportAttachments.data.map((attachment) => (
-              <p>
+              <p key={attachment.id}>
                 <a
                   href={attachment.filePath}
                   className="cursor-pointer border-none bg-transparent px-0 py-0 text-blue-500 underline"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {attachment.fileName}
                 </a>
@@ -290,7 +289,7 @@ export const ModerationDetail = ({
           </div>
         </div>
         <div className="col-span-2 mt-4 flex justify-between">
-          <Button onClick={handleExport} className="rounded bg-blue-500 px-4 py-2 text-sm text-white">
+          <Button onClick={handleExport} className="ui-primary rounded px-4 py-2 text-sm text-text-primary">
             {t('admin:components.moderation.exportReport')}
           </Button>
           <div className="flex space-x-4">
@@ -298,12 +297,12 @@ export const ModerationDetail = ({
               onClick={handleMarkAsHandled}
               disabled={report.status == 'Resolved'}
               variant="green"
-              className="rounded bg-green-500 px-4 py-2 text-sm text-white disabled:text-white"
+              className="ui-success rounded px-4 py-2 text-sm text-text-primary disabled:text-text-primary"
             >
               {t('admin:components.moderation.resolveIssue')}
             </Button>
             {isPersonModeration && !moderationBanQuery?.data[0]?.banned && (
-              <Button variant="red" onClick={handleBanUser} className="rounded bg-red-500 px-4 py-2">
+              <Button variant="red" onClick={handleBanUser} className="ui-danger rounded px-4 py-2">
                 {t('admin:components.moderation.banUser')}
               </Button>
             )}
