@@ -71,7 +71,7 @@ export const BanUsersModal = ({ onSubmit }) => {
         {error && <div className="text-red-500">{error}</div>}
         <UserSearchInput onSelect={setSelectedUser} />
         <div>
-          <label className="mb-1 block text-sm text-gray-400">{t('admin:components.moderation.uid')}</label>
+          <label className="mb-1 block text-sm text-gray-400">{t('admin:components.moderation.userId')}</label>
           <input
             type="text"
             disabled={!!selectedUser}

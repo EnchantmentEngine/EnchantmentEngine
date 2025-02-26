@@ -37,7 +37,7 @@ import { UserDisplayName } from './common/UserDisplayName'
 
 const moderationBanColumns: ITableHeadCell[] = [
   { id: 'username', label: t('admin:components.moderation.username') },
-  { id: 'userId', label: t('admin:components.moderation.uid') },
+  { id: 'userId', label: t('admin:components.moderation.userId') },
   { id: 'reason', label: t('admin:components.moderation.reason') },
   { id: 'space', label: t('admin:components.moderation.space') },
   { id: 'ipAddress', label: t('admin:components.moderation.ipAddress') },

@@ -809,7 +809,7 @@
       "owner": "Owner",
       "user": "User",
       "usernameBeingReported": "Username being reported",
-      "uid": "User Id",
+      "userId": "User Id",
       "reporter": "Reporter",
       "reason": "Reason",
       "status": "Status",

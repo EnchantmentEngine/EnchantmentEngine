@@ -150,7 +150,7 @@ export const ModerationDetail = ({
     const headers = [
       t('admin:components.moderation.type'),
       t('admin:components.moderation.usernameBeingReported'),
-      t('admin:components.moderation.uid'),
+      t('admin:components.moderation.userId'),
       t('admin:components.moderation.reporter'),
       t('admin:components.moderation.reason'),
       t('admin:components.moderation.status'),
