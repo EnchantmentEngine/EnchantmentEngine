@@ -42,15 +42,15 @@ export const useClickOutside = (
 
 export const useTouchOutside = (
   ref: React.RefObject<HTMLElement>,
-  onClickOutsideCallback: (event: TouchEvent) => void
+  onTouchOutsideCallback: (event: TouchEvent) => void
 ) => {
   useEffect(() => {
-    const onClickOutside = (event: TouchEvent) => {
+    const onTouchOutside = (event: TouchEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        onClickOutsideCallback(event)
+        onTouchOutsideCallback(event)
       }
     }
-    document.addEventListener('touchend', onClickOutside)
-    return () => document.removeEventListener('touchend', onClickOutside)
+    document.addEventListener('touchend', onTouchOutside)
+    return () => document.removeEventListener('touchend', onTouchOutside)
   }, [ref.current])
 }
