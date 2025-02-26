@@ -28,14 +28,26 @@ import { userPath } from '@ir-engine/common/src/schema.type.module'
 import React from 'react'
 
 export const UserDisplayName = ({ userId }) => {
-  const { data: userData, status } = useFind(userPath, {
+  const {
+    data: userData,
+    status,
+    error
+  } = useFind(userPath, {
     query: {
       id: userId,
       $limit: 1
     }
   })
 
-  const username = status === 'pending' ? 'Loading...' : userData?.[0]?.name || 'N/A'
+  if (status === 'pending') {
+    return <span>Loading...</span>
+  }
+
+  if (error) {
+    return <span>Error loading user</span>
+  }
+
+  const username = userData?.[0]?.name || 'N/A'
 
   return <span>{username}</span>
 }
