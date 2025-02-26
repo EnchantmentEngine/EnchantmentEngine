@@ -333,26 +333,10 @@ const useUserMediaWindowHook = ({ peerID, type }: Props) => {
 }
 
 export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
-  const {
-    userId,
-    selfUser,
-    isPiP,
-    volume,
-    isScreen,
-    username,
-    isSelf,
-    videoMediaStream,
-    audioMediaStream,
-    avatarThumbnail,
-    videoStreamPaused,
-    audioStreamPaused,
-    soundIndicatorOn,
-    togglePiP,
-    toggleAudio,
-    toggleVideo,
-    adjustVolume,
-    rendered
-  } = useUserMediaWindowHook({ peerID, type })
+  const { isPiP, isScreen, videoMediaStream, avatarThumbnail, videoStreamPaused, togglePiP } = useUserMediaWindowHook({
+    peerID,
+    type
+  })
 
   const { t } = useTranslation()
 
