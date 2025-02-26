@@ -194,85 +194,43 @@ export const ModerationDetail = ({
         <button onClick={onBack} className="flex items-center">
           <IoArrowBack className="mr-2" />
         </button>
-        <h2 className="ml-4">{t('admin:components.moderation.reportDetails')}</h2>
+        <span className="ml-4">{t('admin:components.moderation.reportDetails')}</span>
       </div>
       <div className="mb-4 rounded-lg p-4 text-white shadow" style={{ backgroundColor: '#0e0f11' }}>
         <div className="grid grid-cols-[30%_70%] gap-4">
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.id')}</p>
-          </div>
-          <div className="mb-4">
-            <p>{report.id}</p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.type')}</p>
-          </div>
-          <div className="mb-4">
-            <p>{report.type == 'Location' ? t('admin:components.moderation.space') : report.type}</p>
-          </div>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.id')}</p>
+          <p className="mb-4">{report.id}</p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.type')}</p>
+          <p className="mb-4">{report.type == 'Location' ? t('admin:components.moderation.space') : report.type}</p>
           {isPersonModeration && (
             <>
-              <div className="mb-4">
-                <p className="text-text-primary">{t('admin:components.moderation.usernameBeingReported')}</p>
-              </div>
-              <div className="mb-4">
-                <UserInfo userId={report.reportedUserId} usersQuery={usersQuery} />
-              </div>
-              <div className="mb-4">
-                <p className="text-text-primary">{t('admin:components.moderation.accountType')}</p>
-              </div>
-              <div className="mb-4">
-                <p>
-                  {locationAdminQuery && locationAdminQuery.status == 'success' && locationAdminQuery.data.length > 0
-                    ? t('admin:components.moderation.owner')
-                    : t('admin:components.moderation.user')}
-                </p>
-              </div>
+              <p className="mb-4 text-text-primary">{t('admin:components.moderation.usernameBeingReported')}</p>
+              <UserInfo userId={report.reportedUserId} usersQuery={usersQuery} />
+              <p className="mb-4 text-text-primary">{t('admin:components.moderation.accountType')}</p>
+              <p className="mb-4">
+                {locationAdminQuery && locationAdminQuery.status == 'success' && locationAdminQuery.data.length > 0
+                  ? t('admin:components.moderation.owner')
+                  : t('admin:components.moderation.user')}
+              </p>
             </>
           )}
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.reasonForAbuse')}</p>
-          </div>
-          <div className="mb-4">
-            <p>{report.abuseReason}</p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.dateReported')}</p>
-          </div>
-          <div className="mb-4">
-            <p>{toDisplayDateTimeUtc(report?.reportedAt)} UTC</p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.reporter')}</p>
-          </div>
-          <div className="mb-4">
-            <UserInfo userId={report.reportingUserId} usersQuery={usersQuery} />
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.space')}</p>
-          </div>
-          <div className="mb-4">
-            <p>
-              {report.reportedLocationId && <LocationLabel locationId={report.reportedLocationId} showUrl={true} />}
-            </p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.ipAddress')}</p>
-          </div>
-          <div className="mb-4">
-            <p>{report.ipAddress}</p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.reportDetails')}</p>
-          </div>
-          <div className="mb-4">
-            <p className="mr-4 rounded-lg p-4 font-medium text-gray-300" style={{ backgroundColor: '#191b1f' }}>
-              {report?.reportDetails}
-            </p>
-          </div>
-          <div className="mb-4">
-            <p className="text-text-primary">{t('admin:components.moderation.uploadedFiles')}</p>
-          </div>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.reasonForAbuse')}</p>
+          <p className="mb-4">{report.abuseReason}</p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.dateReported')}</p>
+          <p className="mb-4">{toDisplayDateTimeUtc(report?.reportedAt)} UTC</p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.reporter')}</p>
+          <UserInfo userId={report.reportingUserId} usersQuery={usersQuery} />
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.space')}</p>
+          <p className="mb-4">
+            {report.reportedLocationId && <LocationLabel locationId={report.reportedLocationId} showUrl={true} />}
+          </p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.ipAddress')}</p>
+          <p className="mb-4">{report.ipAddress}</p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.reportDetails')}</p>
+          <p className="mb-4 mr-4 rounded-lg p-4 font-medium text-gray-300" style={{ backgroundColor: '#191b1f' }}>
+            {report?.reportDetails}
+          </p>
+          <p className="mb-4 text-text-primary">{t('admin:components.moderation.uploadedFiles')}</p>
           <div className="mb-4">
             {reportAttachments.data.map((attachment) => (
               <p key={attachment.id}>
