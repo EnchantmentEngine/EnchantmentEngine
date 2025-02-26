@@ -29,7 +29,6 @@ import { State, getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 
-import { useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
 import { Button } from '@ir-engine/ui'
 import { ArrowTopRightOnSquareSm } from '@ir-engine/ui/src/icons'
@@ -60,7 +59,6 @@ export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
   } = useUserMediaWindowHook({ peerID, type })
 
   const { initialized, openChat } = useZendesk()
-  const containerWindowRef = useRef<HTMLDivElement>(null)
   const isMoreButtonVisible = useHookstate(false)
   const peerMediaChannelState = useHookstate(
     getMutableState(PeerMediaChannelState)[peerID][type] as State<PeerMediaStreamInterface>
@@ -93,10 +91,8 @@ export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
     if (canvasRef.current) canvasCtxRef.current = canvasRef.current.getContext('2d')!
   })
 
-  useTouchOutside(containerWindowRef, () => isMoreButtonVisible.set(false))
-
   return (
-    <div className="group/video-window flex items-center gap-x-2" ref={containerWindowRef}>
+    <div className="group/video-window flex items-center gap-x-2">
       <div
         tabIndex={0}
         id={peerID + '_' + type + '_container'}
