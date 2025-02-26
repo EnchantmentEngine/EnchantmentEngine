@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useFind } from '@ir-engine/common'
 import { moderationBanPath } from '@ir-engine/common/src/schemas/moderation/moderation-ban.schema'
-import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthState } from '../user/services/AuthService'
