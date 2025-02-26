@@ -176,7 +176,7 @@ const ReportMenu = (props: ReportMenuProps) => {
       PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
     } catch (error) {
       handleClose()
-      NotificationService.dispatchNotify('Something went wrong', {
+      NotificationService.dispatchNotify(`Something went wrong Reporting a ${typeReport}`, {
         variant: 'error'
       })
       console.error('Error uploading file', error.message)
