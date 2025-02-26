@@ -339,7 +339,39 @@ describe('IsSingleValueSchema', () => {
   it.todo('should return false if `@param schema`[Kind] is a value that is not mapped', () => {})
 }) //:: IsSingleValueSchema
 
-describe('HasRequiredSchemaValues', () => {}) //:: HasRequiredSchemaValues
+describe('HasRequiredSchemaValues', () => {
+  describe.each(['Object', 'Class'])('case: Kind.%s', (kind) => {
+    it.todo(
+      "should call HasRequiredSchemaValues recursively and return [false, 'fieldName'] when one of the fields of `@param schema`.properties or its children does not have a valid value",
+      () => {}
+    )
+    it.todo(
+      "should return [true, ''] when all fields of `@param schema`.properties and its children have valid values",
+      () => {}
+    )
+  }) //:: [Kind.Object, Kind.Class]
+
+  describe.each(['Proxy', 'Partial', 'NonSerialized'])('case: Kind.%s', (kind) => {
+    it.todo(
+      'should return the result of calling HasRequiredSchemaValues with (`@param schema`.properties, `@param value`) as arguments',
+      () => {}
+    )
+  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized]
+
+  describe('case: Kind.Required', () => {
+    it.todo('should return [false, `@param current`] when `@param value` is null', () => {})
+    it.todo('should return [false, `@param current`] when `@param value` is undefined', () => {})
+    it.todo('should return [true, `@param current`] when `@param value` is not null or undefined', () => {})
+  }) //:: Kind.Required
+
+  describe('case: default', () => {
+    it.todo(
+      "should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]",
+      () => {}
+    )
+  }) //:: default
+}) //:: HasRequiredSchemaValues
+
 describe('HasValidSchemaValues', () => {}) //:: HasValidSchemaValues
 describe('CreateSchemaValue', () => {}) //:: CreateSchemaValue
 describe('CloneSerializable', () => {}) //:: CloneSerializable
