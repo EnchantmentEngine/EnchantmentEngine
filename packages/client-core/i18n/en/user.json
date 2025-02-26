@@ -478,5 +478,10 @@
     "wantToChat": "Want to chat with others?",
     "register": "Become a registered user",
     "verifyAge": "Verify your age"
+  },
+  "videoWindows": {
+    "more": "More",
+    "reportUser": "Report User",
+    "blockUser": "Block User"
   }
 }
