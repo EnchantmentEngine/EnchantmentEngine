@@ -42,8 +42,8 @@ import { Button, Input } from '@ir-engine/ui'
 import { UserPlus01Sm } from '@ir-engine/ui/src/icons'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import { HiXMark } from 'react-icons/hi2'
 import { IoArrowBackOutline } from 'react-icons/io5'
+import { MdClose } from 'react-icons/md'
 import { twMerge } from 'tailwind-merge'
 import { PopoverState } from '../../../common/services/PopoverState'
 import { AuthService, AuthState } from '../../services/AuthService'
@@ -155,8 +155,8 @@ const AvatarSelectMenu = ({ showBackButton, previewEnabled = true }: AvatarMenuP
           <div className="grid h-14 w-full grid-cols-[2rem,1fr,2rem] border-b px-8">
             {showBackButton && (
               <button
-                data-testid="edit-avatar-button"
-                className=" h-6 w-6 self-center bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
+                data-testid="back-select-avatar-modal-button"
+                className=" h-6 w-6 cursor-pointer self-center bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
                 onClick={handleClose}
               >
                 <IoArrowBackOutline size={16} />
@@ -165,14 +165,15 @@ const AvatarSelectMenu = ({ showBackButton, previewEnabled = true }: AvatarMenuP
             <Text className="col-start-2 place-self-center self-center text-text-primary">
               {t('user:avatar.titleSelectAvatar')}
             </Text>
-            <Button
-              fullWidth={false}
-              data-testid="edit-avatar-button"
-              className="h-6 w-6 self-center bg-transparent  text-text-primary hover:bg-transparent focus:bg-transparent"
+            <button
+              data-testid="close-select-avatar-modal-button"
+              className="h-6 w-6 cursor-pointer self-center bg-transparent  text-text-primary hover:bg-transparent focus:bg-transparent"
               onClick={handleClose}
             >
-              <HiXMark />
-            </Button>
+              <span>
+                <MdClose size={16} />
+              </span>
+            </button>
           </div>
           <div
             className={twMerge(

@@ -36,7 +36,8 @@ import { Button, Input } from '@ir-engine/ui'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import { IoArrowBackOutline, IoCloseOutline } from 'react-icons/io5'
+import { IoArrowBackOutline } from 'react-icons/io5'
+import { MdClose } from 'react-icons/md'
 import { twMerge } from 'tailwind-merge'
 import AvatarPreview from '../../../common/components/AvatarPreview'
 import { PopoverState } from '../../../common/services/PopoverState'
@@ -261,9 +262,9 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
       rawChildren={
         <div className="flex h-full w-full flex-1 flex-col">
           <div className="grid h-14 w-full grid-cols-[2rem,1fr,2rem] border-b px-8">
-            <Button
-              data-testid="edit-avatar-button"
-              className=" h-6 w-6 self-center  bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
+            <button
+              data-testid="back-create-avatar-modal-button"
+              className=" h-6 w-6 cursor-pointer self-center bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
               onClick={() => {
                 PopoverState.hidePopupover()
               }}
@@ -271,16 +272,15 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
               <span>
                 <IoArrowBackOutline size={16} />
               </span>
-            </Button>
+            </button>
             <Text className="col-start-2  place-self-center self-center text-text-primary">
               {loading.value !== LoadingState.Uploading
                 ? t('user:avatar.titleCustomizeAvatar')
                 : t('user:avatar.savingAvatar', { avatar: avatarName.value })}
             </Text>
-            <Button
-              fullWidth={false}
-              data-testid="edit-avatar-button"
-              className=" h-6 w-6 self-center  bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
+            <button
+              data-testid="close-create-avatar-modal-button"
+              className=" h-6 w-6 cursor-pointer self-center bg-transparent text-text-primary hover:bg-transparent focus:bg-transparent"
               onClick={() =>
                 PopoverState.showPopupover(
                   <DiscardAvatarChangesMenu
@@ -292,10 +292,8 @@ const AvatarCreatorMenu = (selectedSdk: string) => (props: AvatarCreatorMenuProp
                 )
               }
             >
-              <span>
-                <IoCloseOutline size={16} />
-              </span>
-            </Button>
+              <MdClose size={16} />
+            </button>
           </div>
           <div className="grid h-full w-full flex-1 grid-cols-[1fr,50%,1fr] gap-6 px-10 py-2">
             {loading.value === LoadingState.LoadingCreator && (
