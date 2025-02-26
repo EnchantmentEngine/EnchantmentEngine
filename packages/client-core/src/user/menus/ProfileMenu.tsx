@@ -133,7 +133,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
   const originallyAgeVerified = useHookstate(checked18OrOver)
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
-  const currentLocation = getMutableState(LocationState).currentLocation.location
+  const currentLocation = getState(LocationState).currentLocation.location
 
   const submitAgeVerified = () => {
     if (!originallyAgeVerified.value && !checked18OrOver) {
