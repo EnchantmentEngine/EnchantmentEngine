@@ -28,7 +28,7 @@ import { KnexAdapterParams } from '@feathersjs/knex'
 
 import { UploadFile } from '@ir-engine/common/src/interfaces/UploadAssetInterface'
 
-import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import { moderationAttachmentPath } from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import { Application } from '../../../declarations'
 import { getStorageProvider } from '../../media/storageprovider/storageprovider'
 import { StorageObjectInterface } from '../../media/storageprovider/storageprovider.interface'

@@ -30,7 +30,7 @@ import {
   ModerationAttachmentQuery,
   ModerationAttachmentsData,
   ModerationAttachmentsType
-} from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+} from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 export interface ModerationAttachmentParams extends KnexAdapterParams<ModerationAttachmentQuery> {}
 
 export class ModerationAttachmentService<

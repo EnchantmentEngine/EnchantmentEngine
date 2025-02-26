@@ -29,7 +29,7 @@ import {
   moderationAttachmentDataValidator,
   moderationAttachmentPatchValidator,
   moderationAttachmentQueryValidator
-} from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+} from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import config from '@ir-engine/server-core/src/appconfig'
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
 import { iff, isProvider } from 'feathers-hooks-common'

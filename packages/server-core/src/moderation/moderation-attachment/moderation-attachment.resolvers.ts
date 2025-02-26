@@ -29,7 +29,7 @@ import { v4 as uuidv4 } from 'uuid'
 import {
   ModerationAttachmentQuery,
   ModerationAttachmentsType
-} from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+} from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import type { HookContext } from '@ir-engine/server-core/declarations'
 

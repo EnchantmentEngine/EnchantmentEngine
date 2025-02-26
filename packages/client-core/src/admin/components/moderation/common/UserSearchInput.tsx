@@ -27,24 +27,21 @@ import { useFind } from '@ir-engine/common'
 import { userPath } from '@ir-engine/common/src/schema.type.module'
 import { Select } from '@ir-engine/ui'
 import { OptionType } from '@ir-engine/ui/src/primitives/tailwind/Select'
-import { debounce } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export const UserSearchInput = ({ onSelect }) => {
   const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-
-  const debouncedSetSearchTerm = debounce(setDebouncedSearchTerm, 300)
+  const debouncedSearchTermRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    debouncedSetSearchTerm(searchTerm)
-  }, [searchTerm])
+    return () => clearTimeout(debouncedSearchTermRef.current)
+  }, [])
 
   const { data: users, status } = useFind(userPath, {
     query: {
-      name: { $like: `%${debouncedSearchTerm}%` },
+      name: { $like: `%${searchTerm}%` },
       $limit: 10
     }
   })
@@ -65,7 +62,17 @@ export const UserSearchInput = ({ onSelect }) => {
       <Select
         options={options}
         value={searchTerm}
-        onChange={handleSelect}
+        onChange={(value) => {
+          const stringValue = String(value)
+          setSearchTerm(stringValue)
+          if (debouncedSearchTermRef.current) {
+            clearTimeout(debouncedSearchTermRef.current)
+          }
+          debouncedSearchTermRef.current = setTimeout(() => {
+            setSearchTerm(stringValue)
+            handleSelect(stringValue)
+          }, 300)
+        }}
         searchMode="substring"
         width="full"
         inputHeight="l"

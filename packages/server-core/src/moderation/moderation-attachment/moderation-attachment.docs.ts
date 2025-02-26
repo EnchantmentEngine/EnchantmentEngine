@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { moderationAttachmentsDataSchema } from '@ir-engine/common/src/schemas/moderation/moderation-attachments.schema'
+import { moderationAttachmentsDataSchema } from '@ir-engine/common/src/schemas/moderation/moderation-attachment.schema'
 import { createSwaggerServiceOptions } from 'feathers-swagger'
 
 export default createSwaggerServiceOptions({
