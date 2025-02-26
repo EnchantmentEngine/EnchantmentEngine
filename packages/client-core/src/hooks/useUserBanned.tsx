@@ -32,7 +32,7 @@ import { AuthState } from '../user/services/AuthService'
 
 export const useUserBannedCheck = () => {
   const navigate = useNavigate()
-  const selfUser = useMutableState(AuthState).user.get(NO_PROXY)
+  const selfUser = getState(AuthState).user
   const { data } = useFind(moderationBanPath, {
     query: {
       banUserId: selfUser?.id,
