@@ -31,7 +31,7 @@ export default createSwaggerServiceOptions({
     moderationAttachmentDataSchema: moderationAttachmentsDataSchema
   },
   docs: {
-    description: 'Moderation service description',
+    description: 'Moderation attachment service description',
     securities: ['all']
   }
 })
