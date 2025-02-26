@@ -42,6 +42,7 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   labelClassname?: string
   errorBorder?: boolean
   maxLength?: number
+  required?: TextareaHTMLAttributes<HTMLTextAreaElement>['required']
 }
 
 const variants = {
