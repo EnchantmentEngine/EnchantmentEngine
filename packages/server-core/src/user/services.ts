@@ -23,10 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import ModerationAttachment from '../moderation/moderation-attachment/moderation-attachment'
-import ModerationBan from '../moderation/moderation-ban/moderation-ban'
-import ModerationUpload from '../moderation/moderation-file-upload/moderation-file-upload'
-import Moderation from '../moderation/moderation/moderation'
 import AcceptInvite from '../user/accept-invite/accept-invite'
 import Avatar from './avatar/avatar'
 import DiscordBotAuth from './discord-bot-auth/discord-bot-auth'
@@ -54,10 +50,6 @@ export default [
   UserApiKey,
   User,
   UserAvatar,
-  Moderation,
-  ModerationUpload,
-  ModerationAttachment,
-  ModerationBan,
   UserSettings,
   UserKick,
   UserLogin,
