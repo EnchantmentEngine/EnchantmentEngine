@@ -105,7 +105,7 @@ export const ModerationDetail = ({
     } else {
       moderationBanMutation
         .create({
-          banUserId: report.reportedUserId,
+          banUserId: report.reportedUserId!,
           banned: true,
           banReason: report.abuseReason,
           reportedAt: report.reportedAt,
