@@ -166,7 +166,11 @@ const ReportMenu = (props: ReportMenuProps) => {
         }
       ]
       if (formData.files && formData.files.value.length > 0) {
-        await uploadToFeathersService(moderationFileUploadPath, [...formData.files.value], { args }).promise
+        await Promise.all(
+          formData.files.value.map(
+            (file) => uploadToFeathersService(moderationFileUploadPath, [file], { args }).promise
+          )
+        )
       }
       handleClose()
       PopoverState.showPopupover(<ReportSuccessReportModal handleClose={handleClose} />)
@@ -245,9 +249,12 @@ const ReportMenu = (props: ReportMenuProps) => {
                   className="hidden"
                   multiple
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    fieldOptions.files.validate()
+                    if (e.target.files && e.target.files.length > 2) {
+                      NotificationService.dispatchNotify('Maximum 2 files allowed', { variant: 'warning' })
+                    }
+                    const files = Array.from(e.target.files || []).slice(0, 2) // Limit to first 2 files
                     formData.files.set(files)
+                    fieldOptions.files.validate()
                   }}
                 />
                 <Button onClick={() => document.getElementById('file-upload')?.click()}>
