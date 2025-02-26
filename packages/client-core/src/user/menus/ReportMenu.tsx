@@ -37,6 +37,7 @@ import {
 import { getMutableState, useHookstate, UserID } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
 import { t } from 'i18next'
 import { IoCloseOutline } from 'react-icons/io5'
@@ -191,9 +192,9 @@ const ReportMenu = (props: ReportMenuProps) => {
       rawChildren={
         <div className="flex w-full flex-col">
           <div className="border-b-theme-primary flex h-14 items-center justify-between border-b px-8">
-            <span className="flex-1 text-center text-text-secondary">
+            <Text fontSize="sm" fontWeight="semibold" className="flex-1 text-center text-text-secondary">
               {t('user:usermenu.profile.report', { type: typeReport }) as string}
-            </span>
+            </Text>
             <Button
               data-testid="close-button"
               className="h-6 w-6 bg-transparent hover:bg-transparent focus:bg-transparent"
@@ -231,16 +232,16 @@ const ReportMenu = (props: ReportMenuProps) => {
                 value={formData.details.value || ''}
                 onChange={(e) => handleChange(e.target.value, 'details')}
                 placeholder={fieldOptions.details.placeholder}
-                className={twMerge('min-h-[120px] w-full', errors.details.value && 'border-[#C3324B]')}
+                className={twMerge('min-h-[120px] w-full', errors.details.value && 'border-red-700')}
               />
-              {errors.details.value && <span className="text-[#C3324B]">{errors.details.value}</span>}
+              {errors.details.value && <span className="text-red-700">{errors.details.value}</span>}
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-text-secondary">
+              <Text fontSize="xs" className="text-text-secondary">
                 <span className="text-red-700">*</span>
                 {fieldOptions.files.label}
-              </span>
+              </Text>
               <div className="flex items-center gap-2">
                 <input
                   required
@@ -262,9 +263,15 @@ const ReportMenu = (props: ReportMenuProps) => {
                 </Button>
 
                 {formData.files.length > 0 && (
-                  <span className="text-sm text-text-secondary">{formData.files.length} file(s) selected</span>
+                  <Text fontSize="sm" className="text-text-secondary">
+                    {formData.files.length} file(s) selected
+                  </Text>
                 )}
-                {errors.files.value && <span className="text-xs text-[#C3324B]">{errors.files.value}</span>}
+                {errors.files.value && (
+                  <Text fontSize="xs" className="text-red-700">
+                    {errors.files.value}
+                  </Text>
+                )}
               </div>
             </div>
 
