@@ -372,7 +372,33 @@ describe('HasRequiredSchemaValues', () => {
   }) //:: default
 }) //:: HasRequiredSchemaValues
 
-describe('HasValidSchemaValues', () => {}) //:: HasValidSchemaValues
+describe('HasValidSchemaValues', () => {
+  describe.each(['Object', 'Class'])('case: Kind.%s', (kind) => {
+    it.todo(
+      "should call HasValidSchemaValues recursively and return [false, 'fieldName'] when one of the fields of `@param schema`.properties or its children does not have a valid value",
+      () => {}
+    )
+    it.todo(
+      "should return [true, ''] when all fields of `@param schema`.properties and its children have valid values",
+      () => {}
+    )
+  }) //:: [Kind.Object, Kind.Class]
+
+  describe.each(['Proxy', 'Partial', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
+    it.todo(
+      'should return the result of calling HasValidSchemaValues with (`@param schema`.properties, `@param value`, `@param prev`, `@param entity`) as arguments',
+      () => {}
+    )
+  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Partial]
+
+  describe('case: default', () => {
+    it.todo(
+      "should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]",
+      () => {}
+    )
+  }) //:: default
+}) //:: HasValidSchemaValues
+
 describe('CreateSchemaValue', () => {}) //:: CreateSchemaValue
 describe('CloneSerializable', () => {}) //:: CloneSerializable
 describe('CheckSchemaValue', () => {}) //:: CheckSchemaValue
