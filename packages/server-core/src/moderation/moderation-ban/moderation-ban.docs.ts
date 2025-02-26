@@ -40,7 +40,7 @@ export default createSwaggerServiceOptions({
     moderatBanionSchema: moderationBanSchema
   },
   docs: {
-    description: 'Moderation service description',
+    description: 'Moderation ban service description',
     securities: ['all']
   }
 })
