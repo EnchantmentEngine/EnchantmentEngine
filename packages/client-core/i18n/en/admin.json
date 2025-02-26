@@ -825,6 +825,7 @@
       "resolveIssue": "Resolve Issue",
       "banUser": "Ban User",
       "action": "Action",
+      "manageAccess": "Manage who has access to your worlds.",
       "bannedUsers": "Banned Users",
       "statusFilter": "Status Filter",
       "viewDetails": "View Details",

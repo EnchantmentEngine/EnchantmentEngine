@@ -86,13 +86,13 @@ export const ModerationBanContainer = ({ search }) => {
 
   return (
     <>
-      {moderationBanQuery.status == 'success' && moderationBanQuery.data.length == 0 && search !== '' ? (
+      {moderationBanQuery.status == 'success' && moderationBanQuery.data.length == 0 && search == '' ? (
         <div className="flex w-full items-center justify-center text-white">
           <div className="mt-[241px] text-center">
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-800">
               <LuUserMinus className="h-12 w-12 text-gray-400" />
             </div>
-            <h1 className="mb-2 text-2xl font-bold">{t('admin:components.moderation.addUsersToBan')}</h1>
+            <span className="mb-2 text-2xl font-bold">{t('admin:components.moderation.addUsersToBan')}</span>
             <p className="mb-6 text-gray-400">{t('admin:components.moderation.manageAccess')}</p>
             <Button
               variant="primary"
