@@ -4160,7 +4160,7 @@ describe('file-browser.test', () => {
       })
     })
     it('will return exist of the project', async () => {
-      const result = await app.service(fileBrowserPath).get('projects/' + testProjectName + '/public/')
+      const result = await app.service(fileBrowserPath).get('projects/' + testProjectName + '/public')
       assert.ok(result)
     })
   })
