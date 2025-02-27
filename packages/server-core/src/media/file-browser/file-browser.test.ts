@@ -4132,7 +4132,7 @@ describe('file-browser.test', () => {
     const testProjectName = `testorg/${getRandomizedName('directory')}`
     const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
     const invalidKey = getRandomizedName(invalidString, '.txt')
-    let user1
+    let user1, project1
     let project: ProjectType
     beforeAll(async () => {
       const name1 = `Test #${Math.random()}` as UserName
@@ -4142,11 +4142,21 @@ describe('file-browser.test', () => {
         isGuest,
         inviteCode: '' as InviteCode
       })
+      project1 = await app.service(projectPath).create({ name: testProjectName })
+      await app.service(projectPermissionPath)._create({
+        id: v4(),
+        userId: user1.id,
+        projectId: project1.id,
+        type: 'owner',
+        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      } as any)
       app.service(fileBrowserPath).create('projects/' + testProjectName + '/public', {
         user: user1
       })
     })
     afterAll(async () => {
+      await app.service(projectPath).remove(project1.id)
       app.service(fileBrowserPath).remove('projects/' + testProjectName + '/public', {
         user: user1
       })
