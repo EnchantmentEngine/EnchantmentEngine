@@ -175,7 +175,7 @@ function NewMessage() {
     <div className="mt-5 flex w-full items-center justify-end">
       <div
         className={twMerge(
-          'lg:height-[74px] height-[30px] flex items-center justify-between rounded-[37px] bg-ui-background transition-[width,transform] duration-500 lg:ml-[13px] lg:bg-black/50',
+          'height-[30px] lg:height-[74px] mr-4 flex items-center justify-between rounded-[37px] bg-ui-background transition-[width,transform] duration-500 lg:ml-[13px] lg:mr-0 lg:bg-black/50',
           isChatOpen.value ? 'w-full translate-x-0' : 'w-0 translate-x-[100%]'
         )}
       >
