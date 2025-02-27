@@ -4128,4 +4128,26 @@ describe('file-browser.test', () => {
       )
     })
   })
+  describe('get', () => {
+    const testProjectName = `testorg/${getRandomizedName('directory')}`
+    const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
+    const invalidKey = getRandomizedName(invalidString, '.txt')
+    let project: ProjectType
+    beforeAll(async () => {})
+    afterAll(async () => {
+      await app.service(fileBrowserPath).create('projects/' + testProjectName + '/public/test/')
+    })
+    it('will throw an error, if user enter invalid key', async () => {
+      await assert.rejects(async () => {
+        await app.service(fileBrowserPath).get(invalidKey),
+          {
+            message: 'Invalid key'
+          }
+      })
+    })
+    it('will return exist of the project', async () => {
+      const result = await app.service(fileBrowserPath).get('projects/' + testProjectName + '/public/')
+      assert.ok(result)
+    })
+  })
 })
