@@ -152,7 +152,7 @@ export class FileBrowserService
    * Returns the metadata for a single file or directory
    */
   async get(key: string, params?: FileBrowserParams) {
-    key = decodeURIComponent(key)
+    key = decodeURIComponent(key).slice(1)
     if (!key) return false
     const storageProvider = getStorageProvider()
     let [_, directory, file] = /(.*)\/([^\\\/]+$)/.exec(key)!
