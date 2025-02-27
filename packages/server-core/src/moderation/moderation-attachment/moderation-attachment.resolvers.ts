@@ -41,7 +41,7 @@ export const moderationAttachmentDataResolver = resolve<ModerationAttachmentsTyp
   id: async () => {
     return uuidv4()
   },
-  updatedBy: async (_, __, context) => {
+  createdBy: async (_, __, context) => {
     return context.params?.user?.id || null
   },
   createdAt: getDateTimeSql,

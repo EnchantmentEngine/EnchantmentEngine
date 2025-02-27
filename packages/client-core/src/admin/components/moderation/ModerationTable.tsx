@@ -107,10 +107,12 @@ export default function ModerationTable({ search }) {
         status: (
           <span
             className={`rounded px-2 py-1 ${
-              moderation.status === 'Open' ? 'bg-[#10b981] text-text-primary' : 'bg-[#2f3137] text-text-primary'
+              moderation.status === 'open' ? 'bg-[#10b981] text-text-primary' : 'bg-[#2f3137] text-text-primary'
             }`}
           >
-            {moderation.status}
+            {moderation.status === 'open'
+              ? t('admin:components.moderation.open')
+              : t('admin:components.moderation.resolved')}
           </span>
         ),
         action: (

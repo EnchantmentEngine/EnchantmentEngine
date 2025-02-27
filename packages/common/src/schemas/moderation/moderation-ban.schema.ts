@@ -54,6 +54,9 @@ export const moderationBanSchema = Type.Object(
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
     reportedAt: Type.Optional(Type.String({ format: 'date-time' })),
     banned: Type.Boolean(),
+    createdBy: TypedString<UserID>({
+      format: 'uuid'
+    }),
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),

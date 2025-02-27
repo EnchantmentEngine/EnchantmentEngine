@@ -34,28 +34,24 @@ export async function up(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable(moderationAttachmentPath)
 
   if (tableExists === false) {
-    await knex.schema.hasTable(moderationAttachmentPath).then((exists) => {
-      if (!exists) {
-        return knex.schema.createTable(moderationAttachmentPath, (table) => {
-          //@ts-ignore
-          table.uuid('id').collate('utf8mb4_bin').primary()
-          //@ts-ignore
-          table.uuid('moderationId').collate('utf8mb4_bin').index()
-          table.string('filePath')
-          table.string('fileName')
-          //@ts-ignore
-          table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
-          table.dateTime('createdAt').notNullable()
-          table.timestamp('updatedAt')
+    return knex.schema.createTable(moderationAttachmentPath, (table) => {
+      //@ts-ignore
+      table.uuid('id').collate('utf8mb4_bin').primary()
+      //@ts-ignore
+      table.uuid('moderationId').collate('utf8mb4_bin').index()
+      table.string('filePath')
+      table.string('fileName')
+      //@ts-ignore
+      table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
+      //@ts-ignore
+      table.uuid('createdBy', 36).collate('utf8mb4_bin').index()
 
-          table
-            .foreign('moderationId')
-            .references('id')
-            .inTable(moderationPath)
-            .onDelete('SET NULL')
-            .onUpdate('CASCADE')
-        })
-      }
+      table.dateTime('createdAt').notNullable()
+      table.timestamp('updatedAt')
+
+      table.foreign('moderationId').references('id').inTable(moderationPath).onDelete('SET NULL').onUpdate('CASCADE')
+      table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+      table.foreign('createdBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
   }
 }

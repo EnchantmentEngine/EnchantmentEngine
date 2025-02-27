@@ -42,11 +42,13 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('reportingUserId', 36).collate('utf8mb4_bin')
     //@ts-ignore
     table.string('reportedLocationId', 255).collate('utf8mb4_bin')
-    table.string('status', 255).notNullable().defaultTo('Open')
+    table.string('status', 255).notNullable().defaultTo('open')
     table.string('ipAddress', 255).notNullable()
 
     //@ts-ignore
     table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
+    //@ts-ignore
+    table.uuid('createdBy', 36).collate('utf8mb4_bin').index()
 
     table.dateTime('reportedAt').notNullable()
     table.dateTime('createdAt').notNullable()
@@ -56,6 +58,7 @@ export async function up(knex: Knex): Promise<void> {
     table.foreign('reportingUserId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     table.foreign('reportedLocationId').references('id').inTable('location').onDelete('SET NULL').onUpdate('CASCADE')
     table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+    table.foreign('createdBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
   })
 }
 

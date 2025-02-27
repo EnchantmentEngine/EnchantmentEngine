@@ -44,7 +44,7 @@ export const moderationBanDataResolver = resolve<ModerationBanType, HookContext>
     return uuidv4() as ModerationBanID
   },
   reportedAt: getDateTimeSql,
-  updatedBy: async (_, __, context) => {
+  createdBy: async (_, __, context) => {
     return context.params?.user?.id || null
   },
   createdAt: getDateTimeSql,

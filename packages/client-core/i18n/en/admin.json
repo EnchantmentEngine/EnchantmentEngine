@@ -844,7 +844,9 @@
       "bannedUserReasonError": "Please select a reason for banning the user",
       "userAlreadyBanned": "User is already banned",
       "userBannedSelectUserHelperText": "Select a user to ban",
-      "userBannedSelectReasonHelperText": "Select a reason for banning the user"
+      "userBannedSelectReasonHelperText": "Select a reason for banning the user",
+      "open": "Open",
+      "resolved": "Resolved"
     }
   }
 }

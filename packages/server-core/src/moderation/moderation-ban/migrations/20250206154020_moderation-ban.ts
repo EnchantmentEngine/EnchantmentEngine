@@ -44,12 +44,15 @@ export async function up(knex: Knex): Promise<void> {
 
     //@ts-ignore
     table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()
+    //@ts-ignore
+    table.uuid('createdBy', 36).collate('utf8mb4_bin').index()
 
     table.dateTime('createdAt').notNullable()
     table.dateTime('updatedAt').notNullable()
 
     table.foreign('banUserId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+    table.foreign('createdBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     table.foreign('reportedLocationId').references('id').inTable('location').onDelete('SET NULL').onUpdate('CASCADE')
     table.unique(['banUserId'])
   })

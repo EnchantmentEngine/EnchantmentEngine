@@ -42,6 +42,9 @@ export const moderationAttachmentsSchema = Type.Object({
   }),
   filePath: Type.String(),
   fileName: Type.String(),
+  createdBy: TypedString<UserID>({
+    format: 'uuid'
+  }),
   updatedBy: TypedString<UserID>({
     format: 'uuid'
   }),

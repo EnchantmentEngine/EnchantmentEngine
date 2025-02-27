@@ -87,7 +87,7 @@ describe('moderation.test', () => {
     assert.equal(moderation.reportedLocationId, moderationData.reportedLocationId)
     assert.equal(moderation.reportDetails, moderationData.reportDetails)
     assert.equal(moderation.type, moderationData.type)
-    assert.equal(moderation.status, 'Open')
+    assert.equal(moderation.status, 'open')
   })
 
   it('should find moderation entries', async () => {
@@ -116,7 +116,7 @@ describe('moderation.test', () => {
       await app.service(moderationPath).patch(
         moderation.id,
         {
-          status: 'Resolved'
+          status: 'resolved'
         } as ModerationType,
         {
           isInternal: true

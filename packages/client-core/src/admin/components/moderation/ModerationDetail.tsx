@@ -72,7 +72,7 @@ export const ModerationDetail = ({
 
   const handleMarkAsHandled = () => {
     const result = moderationMutation.patch(report.id, {
-      status: 'Resolved'
+      status: 'resolved'
     })
     result
       .then(() => {
@@ -196,7 +196,7 @@ export const ModerationDetail = ({
         </button>
         <span className="ml-4">{t('admin:components.moderation.reportDetails')}</span>
       </div>
-      <div className="mb-4 rounded-lg p-4 text-white shadow" style={{ backgroundColor: '#0e0f11' }}>
+      <div className="mb-4 rounded-lg p-4 shadow">
         <div className="grid grid-cols-[30%_70%] gap-4">
           <p className="mb-4 text-text-primary">{t('admin:components.moderation.id')}</p>
           <p className="mb-4">{report.id}</p>
@@ -227,9 +227,7 @@ export const ModerationDetail = ({
           <p className="mb-4 text-text-primary">{t('admin:components.moderation.ipAddress')}</p>
           <p className="mb-4">{report.ipAddress}</p>
           <p className="mb-4 text-text-primary">{t('admin:components.moderation.reportDetails')}</p>
-          <p className="mb-4 mr-4 rounded-lg p-4 font-medium text-gray-300" style={{ backgroundColor: '#191b1f' }}>
-            {report?.reportDetails}
-          </p>
+          <p className="mb-4 mr-4 rounded-lg p-4 font-medium">{report?.reportDetails}</p>
           <p className="mb-4 text-text-primary">{t('admin:components.moderation.uploadedFiles')}</p>
           <div className="mb-4">
             {reportAttachments.data.map((attachment) => (
@@ -253,7 +251,7 @@ export const ModerationDetail = ({
           <div className="flex space-x-4">
             <Button
               onClick={handleMarkAsHandled}
-              disabled={report.status == 'Resolved'}
+              disabled={report.status == 'resolved'}
               variant="green"
               className="ui-success rounded px-4 py-2 text-sm text-text-primary disabled:text-text-primary"
             >
