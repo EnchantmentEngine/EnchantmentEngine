@@ -451,7 +451,117 @@ describe('CreateSchemaValue', () => {
   it.todo('should return undefined for every other `@param schema`[Kind] (case: default)', () => {})
 }) //:: CreateSchemaValue
 
+describe('CheckSchemaValue', () => {
+  describe('case Kind.Null', () => {
+    it.todo('should return true if `@param value` is null', () => {})
+    it.todo('should return false if `@param value` is not null', () => {})
+  }) //:: Kind.Null
+
+  describe('case Kind.Undefined', () => {
+    it.todo('should return true if `@param value` is undefined', () => {})
+    it.todo('should return false if `@param value` is not undefined', () => {})
+  }) //:: Kind.Undefined
+
+  describe('case Kind.Number', () => {
+    it.todo("should return true if typeof `@param value` is 'number'", () => {})
+    it.todo("should return false if typeof `@param value` is not 'number'", () => {})
+  }) //:: Kind.Number
+
+  describe('case Kind.Bool', () => {
+    it.todo("should return true if typeof `@param value` is 'boolean'", () => {})
+    it.todo("should return false if typeof `@param value` is not 'boolean'", () => {})
+  }) //:: Kind.Bool
+
+  describe('case Kind.String', () => {
+    it.todo("should return true if typeof `@param value` is 'string'", () => {})
+    it.todo("should return false if typeof `@param value` is not 'string'", () => {})
+  }) //:: Kind.String
+
+  describe('case Kind.Enum', () => {
+    it.todo('should return true if `@param schema`.properties includes `@param value`', () => {})
+    it.todo('should return false if `@param schema`.properties does not include `@param value`', () => {})
+  }) //:: Kind.Enum
+
+  describe('case Kind.Literal', () => {
+    it.todo('should return true if `@param schema`.properties is `@param value`', () => {})
+    it.todo('should return false if `@param schema`.properties is not `@param value`', () => {})
+  }) //:: Kind.Literal
+
+  describe.each(['Object', 'Class'])('case Kind.%s', () => {
+    it.todo('should ignore any `@param schema`.properties or their children when they are not serializable', () => {})
+    it.todo('should return false if any of the `@param schema`.properties is not a schema value', () => {})
+    it.todo('should return true if all `@param schema`.properties are schema values', () => {})
+    it.todo('should return true if `@param schema`[Kind] is Kind.Any', () => {})
+  }) //:: [Kind.Object, Kind.Class]
+
+  describe('case Kind.Record', () => {
+    it.todo('should return true if `@param schema`.properties.value is not serializable', () => {})
+    it.todo(
+      "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.keys is not a schema value",
+      () => {}
+    )
+    it.todo(
+      "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.values is not a schema value",
+      () => {}
+    )
+    it.todo(
+      "should return true if `@param schema`.properties.value is serializable, `@param value` is falsy of its typeof is not 'object'",
+      () => {}
+    )
+  }) //:: Kind.Record
+
+  describe('case Kind.Array', () => {
+    it.todo('should return true if `@param schema`.properties is not serializable', () => {})
+    it.todo('should return false if `@param value` is not an array', () => {})
+    it.todo('should return true if `@param value` is an array of length 0', () => {})
+    it.todo(
+      'should return false if `@param value` is an array and at least one of its entries is not a schema value',
+      () => {}
+    )
+    it.todo('should return true if `@param value` is an array and all its entries are schema values', () => {})
+  }) //:: Kind.Array
+
+  describe('case Kind.Tuple', () => {
+    it.todo('should return false if `@param value` is not an array', () => {})
+    it.todo(
+      'should return false if `@param value` is an array and at least one of its entries is not a schema value',
+      () => {}
+    )
+    it.todo('should return true if `@param value` is an array and all its entries are schema values', () => {})
+  }) //:: Kind.Tuple
+
+  describe('case Kind.Union', () => {
+    it.todo('should return false if `@param schema`.properties.length is 0', () => {})
+    it.todo('should ignore (continue) any values of `@param schema`.properties that are not serializable', () => {})
+    it.todo(
+      'should return true if `@param value` is a schema value of any of the `@param schema`.properties fields',
+      () => {}
+    )
+    it.todo(
+      'should return false if `@param schema`.properties.length is not 0 and `@param value` is not a schema value of any of the `@param schema`.properties fields',
+      () => {}
+    )
+  }) //:: Kind.Union
+
+  describe.each(['Required', 'Proxy'])('case Kind.%s', () => {
+    it.todo(
+      'should return true if `@param value` is a schema value of any of the `@param schema`.properties fields',
+      () => {}
+    )
+    it.todo(
+      'should return false if `@param value` is not a schema value of any of the `@param schema`.properties fields',
+      () => {}
+    )
+  }) //:: [Kind.Required, Kind.Proxy]
+
+  it.todo.each(['Partial', 'Func', 'NonSerialized'])(
+    'should return true if `@param schema`[Kind] is Kind.%s',
+    (kind) => {}
+  )
+
+  it.todo('should return false for every other `@param schema`[Kind] value  (case: default)', () => {})
+}) //:: CheckSchemaValue
+
 describe('CloneSerializable', () => {}) //:: CloneSerializable
-describe('CheckSchemaValue', () => {}) //:: CheckSchemaValue
 describe('ConvertToSchema', () => {}) //:: ConvertToSchema
 describe('SerializeSchema', () => {}) //:: SerializeSchema
