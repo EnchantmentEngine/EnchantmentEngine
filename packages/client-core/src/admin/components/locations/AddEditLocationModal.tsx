@@ -118,6 +118,7 @@ export default function AddEditLocationModal(props: {
   inStudio?: boolean
 
   onPublish?: () => Promise<void>
+  onPublishSuccess?: (location: LocationType) => void
 }) {
   const { t } = useTranslation()
   const compressionLoading = useHookstate(false)
@@ -422,6 +423,12 @@ export default function AddEditLocationModal(props: {
   }
 
   const anchorEvent = useHookstate<null | React.MouseEvent<HTMLElement>>(null)
+
+  useEffect(() => {
+    if (location && props.onPublishSuccess) {
+      props.onPublishSuccess(location)
+    }
+  }, [location, props.onPublishSuccess])
 
   return (
     <div className="absolute z-50 bg-surface-2 px-8 pt-6">
