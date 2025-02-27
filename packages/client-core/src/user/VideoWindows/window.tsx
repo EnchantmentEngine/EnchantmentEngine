@@ -23,31 +23,46 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { DrawingUtils } from '@mediapipe/tasks-vision'
-import hark from 'hark'
-import { t } from 'i18next'
+import { UserName, userPath } from '@ir-engine/common/src/schema.type.module'
+import { MotionCaptureSystem, timeSeriesMocapData } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
+import {
+  NO_PROXY,
+  PeerID,
+  State,
+  UserID,
+  getMutableState,
+  getState,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
+import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import { ArrowTopRightOnSquareMd, ArrowTopRightOnSquareSm } from '@ir-engine/ui/src/icons'
 import React, { RefObject, useEffect, useRef } from 'react'
 
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { useGet } from '@ir-engine/common'
-import { UserName, userPath } from '@ir-engine/common/src/schema.type.module'
 import { useExecute } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
-import { MotionCaptureSystem, timeSeriesMocapData } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import { applyScreenshareToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
-import { NO_PROXY, PeerID, State, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
+import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { drawPoseToCanvas } from '@ir-engine/ui/src/pages/Capture'
 import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
+import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
+import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
-
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
-import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { DrawingUtils } from '@mediapipe/tasks-vision'
+import hark from 'hark'
+import { t } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { PopoverState } from '../../common/services/PopoverState'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
+import { LocationState } from '../../social/services/LocationService'
+import ReportMenu from '../menus/ReportMenu'
 
 interface Props {
   peerID: PeerID
@@ -332,11 +347,58 @@ const useUserMediaWindowHook = ({ peerID, type }: Props) => {
   }
 }
 
-export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
-  const { isPiP, isScreen, videoMediaStream, avatarThumbnail, videoStreamPaused, togglePiP } = useUserMediaWindowHook({
+const ReportUserWindow = ({
+  peerID,
+  type,
+  username,
+  reportedUserId
+}: Props & { username: string; reportedUserId: UserID }) => {
+  const { t } = useTranslation()
+  const currentLocation = getState(LocationState).currentLocation.location
+  const { avatarThumbnail } = useUserMediaWindowHook({
     peerID,
     type
   })
+  return (
+    <div className="fixed right-[10%] top-[5%] flex w-[328px] gap-x-4 rounded-xl bg-surface-4 p-4 lg:right-[5%]">
+      <div className="h-[100px] w-[100px]">
+        <AvatarImage size="fill" className="rounded-none" src={avatarThumbnail} />
+      </div>
+      <div className="flex flex-col">
+        <Text className="text-text-primary" fontWeight="semibold" fontSize="sm">
+          {username}
+        </Text>
+        <Button
+          onClick={() => {
+            PopoverState.hidePopupover()
+            PopoverState.showPopupover(
+              <ReportMenu type="Person" userId={reportedUserId} locationId={currentLocation.id} />
+            )
+          }}
+          variant="red"
+          size="sm"
+          fullWidth
+          className="mt-2"
+        >
+          {t('user:videoWindows.reportUser')}
+        </Button>
+      </div>
+      <button
+        className="grid h-10 w-10 rotate-180 place-items-center rounded-full bg-ui-secondary"
+        onClick={() => PopoverState.hidePopupover()}
+      >
+        <ArrowTopRightOnSquareMd />
+      </button>
+    </div>
+  )
+}
+
+export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
+  const { isSelf, isPiP, isScreen, videoMediaStream, avatarThumbnail, videoStreamPaused, togglePiP, username, userId } =
+    useUserMediaWindowHook({
+      peerID,
+      type
+    })
 
   const { t } = useTranslation()
 
@@ -348,6 +410,7 @@ export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const canvasCtxRef = useRef<CanvasRenderingContext2D>()
+  const isMoreButtonVisible = useHookstate(false)
 
   // @todo - currently this adds lots of systems unnecessarily
   // useDrawMocapLandmarks(videoElement, canvasCtxRef, canvasRef, peerID)
@@ -371,26 +434,45 @@ export const SingleVideoWindow = ({ peerID, type }: Props): JSX.Element => {
   })
 
   return (
-    <div
-      tabIndex={0}
-      id={peerID + '_' + type + '_container'}
-      className="pointer-events-auto relative h-[80px] w-[80px] overflow-hidden rounded-[90px] lg:h-[131px] lg:w-[131px]"
-      onClick={() => {
-        if (isScreen && isPiP) togglePiP()
-      }}
-    >
-      {(!videoMediaStream || videoStreamPaused) && (
-        <img src={avatarThumbnail} alt={t('user:avatar.avatar')} crossOrigin="anonymous" draggable={false} />
-      )}
-      <span
-        className="[&>video]:h-full [&>video]:w-full [&>video]:object-cover"
-        key={peerID + '-' + type + '-video-container'}
-        id={peerID + '-' + type + '-video-container'}
-      />
-      <div className="pointer-events-none absolute top-0 h-full w-full">
-        <Canvas ref={canvasRef} />
+    <div className="group/video-window flex items-center gap-x-2">
+      <div
+        tabIndex={0}
+        id={peerID + '_' + type + '_container'}
+        className="pointer-events-auto relative h-[80px] w-[80px] overflow-hidden rounded-[90px] lg:h-[131px] lg:w-[131px]"
+        onClick={() => {
+          if (isScreen && isPiP) togglePiP()
+        }}
+        onMouseOver={() => isMoreButtonVisible.set((prev) => !prev)}
+      >
+        {(!videoMediaStream || videoStreamPaused) && (
+          <img src={avatarThumbnail} alt={t('user:avatar.avatar')} crossOrigin="anonymous" draggable={false} />
+        )}
+        <span
+          className="[&>video]:h-full [&>video]:w-full [&>video]:object-cover"
+          key={peerID + '-' + type + '-video-container'}
+          id={peerID + '-' + type + '-video-container'}
+        />
+        <div className="pointer-events-none absolute top-0 h-full w-full">
+          <Canvas ref={canvasRef} />
+        </div>
+        <span key={peerID + '-' + type + '-audio-container'} id={peerID + '-' + type + '-audio-container'} />
       </div>
-      <span key={peerID + '-' + type + '-audio-container'} id={peerID + '-' + type + '-audio-container'} />
+      {isPiP && !isSelf && (
+        <Button
+          variant="primary"
+          size="sm"
+          className={`hidden lg:group-hover/video-window:flex ${isMoreButtonVisible.value ? 'flex' : ''}`}
+          onClick={() => {
+            isMoreButtonVisible.set(false)
+            PopoverState.showPopupover(
+              <ReportUserWindow peerID={peerID} type={type} reportedUserId={userId} username={username} />
+            )
+          }}
+        >
+          {t('user:videoWindows.more')}
+          <ArrowTopRightOnSquareSm />
+        </Button>
+      )}
     </div>
   )
 }
