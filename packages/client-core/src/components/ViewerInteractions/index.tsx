@@ -63,18 +63,14 @@ export const ViewerInteractions = () => {
 
   if (!userID) return null
 
-  if (isMobile && isPortrait.value) {
-    return (
-      <div className="grid h-screen w-screen place-items-center bg-[#070708]">
-        <div className="flex flex-col items-center justify-center gap-y-4">
-          <span>{t('user:messages.rotateLandscape')}</span>
-          <img src={ScreenRotateImage} className="h-20 w-16" />
-        </div>
+  return isMobile && isPortrait.value ? (
+    <div className="grid h-screen w-screen place-items-center bg-[#070708]">
+      <div className="flex flex-col items-center justify-center gap-y-4">
+        <span>{t('user:messages.rotateLandscape')}</span>
+        <img src={ScreenRotateImage} className="h-20 w-16" />
       </div>
-    )
-  }
-
-  return (
+    </div>
+  ) : (
     <div style={{ opacity: 1 - loadingScreenOpacity.value }} className="relative h-dvh w-full p-6">
       <div className="pointer-events-auto absolute left-0 top-0 h-fit w-full pt-[inherit]">
         <MediaIconsBox />
