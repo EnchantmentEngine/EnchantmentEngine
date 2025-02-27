@@ -4131,7 +4131,6 @@ describe('file-browser.test', () => {
   describe('get', () => {
     const testProjectName = `testorg/${getRandomizedName('directory')}`
     const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
-    const invalidKey = getRandomizedName(invalidString, '.txt')
     let user1, project1
     let project: ProjectType
     beforeAll(async () => {
@@ -4163,9 +4162,9 @@ describe('file-browser.test', () => {
     })
     it('will throw an error, if user enter invalid key', async () => {
       await assert.rejects(async () => {
-        await app.service(fileBrowserPath).get(invalidKey),
+        await app.service(fileBrowserPath).get(invalidString),
           {
-            message: 'Invalid key'
+            message: 'Invalid path: ' + invalidString
           }
       })
     })
