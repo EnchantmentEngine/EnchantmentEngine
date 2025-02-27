@@ -51,6 +51,7 @@ import {
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
+import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import {
@@ -416,13 +417,18 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
           </button>
 
           {initialized && (
-            <div className="col-span-2 flex w-full flex-col gap-y-1 mdh:gap-y-2">
-              <Button variant="secondary" fullWidth onClick={openChat}>
+            <div className="col-span-2 flex w-full flex-col gap-y-4">
+              <Button variant="secondary" className="w-[136px] rounded-[10px] lg:w-full" onClick={openChat}>
                 <HelpIconLg />
                 {t('user:usermenu.profile.helpChat')}
               </Button>
 
-              <Button variant="red" fullWidth onClick={openChat}>
+              <Button
+                variant="red"
+                fullWidth={!isMobile}
+                className="w-[136px] rounded-[10px] lg:w-full"
+                onClick={openChat}
+              >
                 <ReportWebsiteDefaullg />
                 {t('user:usermenu.profile.reportWorld')}
               </Button>
