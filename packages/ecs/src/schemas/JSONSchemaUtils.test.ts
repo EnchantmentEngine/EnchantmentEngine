@@ -562,6 +562,38 @@ describe('CheckSchemaValue', () => {
   it.todo('should return false for every other `@param schema`[Kind] value  (case: default)', () => {})
 }) //:: CheckSchemaValue
 
-describe('CloneSerializable', () => {}) //:: CloneSerializable
+describe('CloneSerializable', () => {
+  it.todo('should return null if typeof `@param value` is undefined', () => {})
+  it.todo('should return `@param value` if its typeof is a value type', () => {})
+  it.todo('should return `@param value` if its null', () => {})
+  it.todo('should return a duplicate of `@param value` if it is an ArrayBuffer', () => {})
+  it.todo(
+    'should return a duplicate of `@param value` without any of its NonSerializable entries if it is an Array',
+    () => {}
+  )
+  it.todo(
+    'should return a new Set containing all the serializable values of `@param value`.entries() if its a Set',
+    () => {}
+  )
+  it.todo(
+    'should return a new Map containing all the serializable values of `@param value`.entries() if its a Map',
+    () => {}
+  )
+  it.todo(
+    "should return a new object containing all the serializable values of `@param value` if its typeof is 'object'",
+    () => {}
+  )
+  it.todo(
+    "should return NonSerializable if typeof `@param value` is not 'undefined', its typeof is not a value type, and it is not null, an ArrayBuffer, an Array, a Set, a Map or an object",
+    () => {}
+  )
+}) //:: CloneSerializable
+
+describe('SerializeSchema', () => {
+  it.todo(
+    'should return a deep clone of `@param value` with all its serializable values converted based on `@param schema`',
+    () => {}
+  )
+}) //:: SerializeSchema
+
 describe('ConvertToSchema', () => {}) //:: ConvertToSchema
-describe('SerializeSchema', () => {}) //:: SerializeSchema
