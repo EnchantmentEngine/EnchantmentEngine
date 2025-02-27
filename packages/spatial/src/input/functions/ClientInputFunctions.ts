@@ -42,6 +42,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
+import { CameraComponent } from '../../camera/components/CameraComponent'
 import { PI } from '../../common/constants/MathConstants'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
@@ -244,14 +245,15 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
 
   const inputPointerComponent = getOptionalComponent(sourceEid, InputPointerComponent)
   const viewerEntity = inputPointerComponent?.cameraEntity ?? getState(ReferenceSpaceState).viewerEntity
-  sortedIntersections.push({ entity: viewerEntity, distance: 0 })
+  const camera = getOptionalComponent(viewerEntity, CameraComponent)
+  sortedIntersections.push({ entity: viewerEntity, distance: camera?.far ?? 1e16 })
 
   sourceState.intersections.set(sortedIntersections)
 
   const finalInputSources = Array.from(new Set([sourceEid, ...nonSpatialInputSource()]))
 
-  //if we have a capturedEntity, only run on the capturedEntity, not the sortedIntersections
   if (capturedEntity !== UndefinedEntity) {
+    //if we have a capturedEntity, only run on the capturedEntity, not the sortedIntersections
     ClientInputFunctions.setInputSources(capturedEntity, finalInputSources)
   } else {
     if (!sortedIntersections.length) {

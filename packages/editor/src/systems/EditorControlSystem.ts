@@ -296,7 +296,6 @@ const execute = () => {
 
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const buttons = InputComponent.getButtons(viewerEntity, EditorButtonBindings)
-  const selectedEntities = SelectionState.getSelectedEntities()
 
   if (buttons.FlyControlMode?.down) onFlyControlModeBegin()
   if (buttons.FlyControlMode?.up) onFlyControlModeEnd()
@@ -317,22 +316,6 @@ const execute = () => {
   if (buttons.DecreaseGridHeight?.down) onDecreaseGridHeight()
   if (buttons.CancelSelection?.down) onCancelSelection()
   if (buttons.DeleteSelection?.down) onDeleteSelection()
-
-  // if (selectedEntities) {
-  //   const lastSelection = selectedEntities[selectedEntities.length - 1]
-  //   if (hasComponent(lastSelection, TransformGizmoControlledComponent)) {
-  //     // dont let use the editor camera while dragging
-  //     const mainOrbitCamera = getOptionalMutableComponent(Engine.instance.cameraEntity, CameraOrbitComponent)
-  //     const controllerEntity = getComponent(lastSelection, TransformGizmoControlledComponent).controller
-  //     if (
-  //       mainOrbitCamera &&
-  //       controllerEntity !== UndefinedEntity &&
-  //       hasComponent(controllerEntity, TransformGizmoControlComponent)
-  //     ) {
-  //       mainOrbitCamera.disabled.set(getComponent(controllerEntity, TransformGizmoControlComponent).dragging)
-  //     }
-  //   }
-  // }
 
   if (buttons.PrimaryClick?.pressed) {
     let closestIntersection = {

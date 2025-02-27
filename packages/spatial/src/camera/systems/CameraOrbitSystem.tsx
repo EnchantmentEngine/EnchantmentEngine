@@ -75,7 +75,7 @@ const execute = () => {
     const panning = buttons.AuxiliaryClick
     const zoom = axes[MouseScroll.VerticalScroll]
 
-    if (orbiting?.pressed || panning?.pressed || zoom) {
+    if (orbiting?.dragging || panning?.dragging || zoom) {
       InputState.setCapturingEntity(cameraEid)
     }
 
