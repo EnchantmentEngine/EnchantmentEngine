@@ -4132,10 +4132,24 @@ describe('file-browser.test', () => {
     const testProjectName = `testorg/${getRandomizedName('directory')}`
     const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
     const invalidKey = getRandomizedName(invalidString, '.txt')
+    let user1
     let project: ProjectType
-    beforeAll(async () => {})
+    beforeAll(async () => {
+      const name1 = `Test #${Math.random()}` as UserName
+      const isGuest = true
+      user1 = await app.service(userPath).create({
+        name: name1,
+        isGuest,
+        inviteCode: '' as InviteCode
+      })
+      app.service(fileBrowserPath).create('projects/' + testProjectName + '/public', {
+        user: user1
+      })
+    })
     afterAll(async () => {
-      await app.service(fileBrowserPath).create('projects/' + testProjectName + '/public/test/')
+      app.service(fileBrowserPath).remove('projects/' + testProjectName + '/public', {
+        user: user1
+      })
     })
     it('will throw an error, if user enter invalid key', async () => {
       await assert.rejects(async () => {

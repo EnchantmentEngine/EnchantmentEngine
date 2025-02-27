@@ -156,7 +156,9 @@ export class FileBrowserService
     if (!key) return false
     if (key[0] === '/') key = key.slice(1)
     const storageProvider = getStorageProvider()
-    let [_, directory, file] = /(.*)\/([^\\\/]+$)/.exec(key)!
+    const result = /(.*)\/([^\\\/]+$)/.exec(key)!
+    if (!result) throw new Error('Invalid path: ' + key)
+    let [, directory, file] = result
     if (directory[0] === '/') directory = directory.slice(1)
 
     ensureProjectsDirectory(directory)
