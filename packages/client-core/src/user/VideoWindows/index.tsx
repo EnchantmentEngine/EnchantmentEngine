@@ -25,17 +25,25 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 
-import { UserID } from '@ir-engine/common/src/schema.type.module'
+import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { NO_PROXY, PeerID, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 
+import { useGet } from '@ir-engine/common'
 import { EngineState } from '@ir-engine/ecs'
 import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
 import { NetworkPeerState } from '@ir-engine/network/src/NetworkPeerState'
+import { Button } from '@ir-engine/ui'
+import { ArrowTopRightOnSquareMd } from '@ir-engine/ui/src/icons'
+import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { useTranslation } from 'react-i18next'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
+import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { FilteredUsersState } from '../../world/FilteredUsersSystem'
 import { AuthState } from '../services/AuthService'
+import { ReportUserProvider, useReportUser } from './hooks'
 import { SingleVideoWindow, SingleVideoWindowWidget } from './window'
 
 type WindowType = { peerID: PeerID; type: 'cam' | 'screen' }
@@ -123,15 +131,52 @@ export const useMediaWindows = () => {
   )
 }
 
+const ReportUserWindow = () => {
+  const { t } = useTranslation()
+  const { reportedUserId, resetUserId } = useReportUser()
+  const avatarThumbnail = useUserAvatarThumbnail(reportedUserId)
+  const reportedUser = useGet(userPath, reportedUserId).data
+
+  if (!reportedUserId || !reportedUser) return null
+
+  return (
+    <div className="fixed right-[10%] top-[5%] flex w-[328px] gap-x-4 rounded-xl bg-surface-4 p-4 lg:right-[5%]">
+      <div className="h-[100px] w-[100px]">
+        <AvatarImage size="fill" className="rounded-none" src={avatarThumbnail} />
+      </div>
+      <div className="flex flex-col">
+        <Text className="text-text-primary" fontWeight="semibold" fontSize="sm">
+          {reportedUser.name}
+        </Text>
+        <Button variant="red" size="sm" fullWidth className="mt-2">
+          {t('user:videoWindows.reportUser')}
+        </Button>
+        <Button variant="red" size="sm" fullWidth className="mt-4">
+          {t('user:videoWindows.blockUser')}
+        </Button>
+      </div>
+      <button
+        className="grid h-10 w-10 rotate-180 place-items-center rounded-full bg-ui-secondary"
+        onClick={() => resetUserId()}
+      >
+        <ArrowTopRightOnSquareMd />
+      </button>
+    </div>
+  )
+}
+
 export const VideoWindows = () => {
   const windows = useMediaWindows()
 
   return (
-    <>
-      {windows.map(({ peerID, type }) => (
-        <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
-      ))}
-    </>
+    <ReportUserProvider>
+      <div className="flex flex-col gap-y-2">
+        {windows.map(({ peerID, type }) => (
+          <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
+        ))}
+      </div>
+      <ReportUserWindow />
+    </ReportUserProvider>
   )
 }
 

@@ -166,7 +166,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const hasAdminAccess = adminScopeQuery.data.length > 0
   const avatarThumbnail = useUserAvatarThumbnail(userId)
 
-  const { initialized, openChat } = useZendesk()
+  const { initialized: zendeskInitialized, openChat } = useZendesk()
 
   useEffect(() => {
     if (authSetting) {
@@ -407,7 +407,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
           <button
             className={twMerge(
               'col-span-1 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-ui-secondary p-2 text-text-primary-button hover:bg-ui-hover-secondary focus:bg-ui-select-secondary',
-              initialized ? 'justify-self-end' : 'col-start-3'
+              zendeskInitialized ? 'justify-self-end' : 'col-start-3'
             )}
             onClick={() => {
               PopoverState.showPopupover(<SettingsMenu />)
@@ -416,9 +416,9 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             <CogLg className="h-[1.875rem] w-[1.875rem]" />
           </button>
 
-          {initialized && (
+          {zendeskInitialized && (
             <div className="col-span-2 flex w-full flex-col gap-y-4">
-              <Button variant="secondary" className="w-[136px] rounded-[10px] lg:w-full" onClick={openChat}>
+              <Button variant="secondary" className="w-[136px] rounded-[10px] lg:w-full" fullWidth onClick={openChat}>
                 <HelpIconLg />
                 {t('user:usermenu.profile.helpChat')}
               </Button>
@@ -440,7 +440,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
           className={twMerge(
             'absolute left-[6.5rem] flex flex-col gap-y-2 !italic',
             acceptedTOS ? 'top-16' : 'top-11',
-            initialized && 'top-[4.5rem]'
+            zendeskInitialized && 'top-[4.5rem]'
           )}
         >
           {isGuest && !originallyAcceptedTOS && (
