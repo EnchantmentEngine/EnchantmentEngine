@@ -191,7 +191,7 @@ function GraphicsTab() {
           label=""
         />
       </div>
-      <div className="ml-auto mt-4 w-3/4">
+      <div className="mb-2.5 ml-auto mt-4 w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.usePostProcessing.set(!rendererState.usePostProcessing.value)
@@ -203,7 +203,7 @@ function GraphicsTab() {
           label={t('user:usermenu.setting.lbl-pp')}
         />
       </div>
-      <div className="ml-auto w-3/4">
+      <div className="mb-2.5 ml-auto w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.useShadows.set(!rendererState.useShadows.value)
@@ -215,7 +215,7 @@ function GraphicsTab() {
           label={t('user:usermenu.setting.lbl-shadow')}
         />
       </div>
-      <div className="ml-auto w-3/4">
+      <div className="mb-3 ml-auto w-3/4">
         <Checkbox
           onChange={() => {
             rendererState.automatic.set(!rendererState.automatic.value)
