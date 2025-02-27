@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
-import { EmoteLg, Send01Lg, Send01Md, User01Lg, User01Md } from '@ir-engine/ui/src/icons'
+import { EmoteLg, EmoteM, Send01Lg, Send01Md, User01Lg, User01Md } from '@ir-engine/ui/src/icons'
 
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
@@ -72,7 +72,7 @@ export default function UserMenus() {
               title: t('user:menu.emote'),
               position: 'top'
             }}
-            icon={EmoteLg}
+            icon={isMobile ? EmoteLg : EmoteM}
             onClick={() => PopoverState.showPopupover(<EmoteMenu />, undefined, 'transparent')}
           />
         )}
