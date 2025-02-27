@@ -112,7 +112,7 @@ const LOCATION_MAX = 10
 
 export default function AddEditLocationModal(props: {
   action: string
-  location?: LocationType & { projectName: string }
+  location?: LocationType
   sceneID?: string | null
   sceneModified?: boolean
   inStudio?: boolean
