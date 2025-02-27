@@ -28,6 +28,7 @@ import { useFind, useSearch } from '@ir-engine/common'
 import { moderationPath, ModerationType } from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
 import { Select } from '@ir-engine/ui'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { t } from 'i18next'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -105,15 +106,15 @@ export default function ModerationTable({ search }) {
         reason: <span>{moderation.abuseReason}</span>,
         dateReported: <span>{toDisplayDateTime(moderation.createdAt)}</span>,
         status: (
-          <span
-            className={`rounded px-2 py-1 ${
-              moderation.status === 'open' ? 'bg-[#10b981] text-text-primary' : 'bg-[#2f3137] text-text-primary'
+          <Text
+            className={`rounded px-2 text-text-primary ${
+              moderation.status === 'open' ? 'bg-[#10b981] ' : 'bg-[#2f3137] '
             }`}
           >
             {moderation.status === 'open'
               ? t('admin:components.moderation.open')
               : t('admin:components.moderation.resolved')}
-          </span>
+          </Text>
         ),
         action: (
           <button
