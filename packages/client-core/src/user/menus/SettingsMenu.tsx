@@ -85,7 +85,6 @@ function GeneralTab() {
         </>
       )}
       {isMobile && <img src={ControllerMappingMobileImage} alt="Mobile Controls" />}
-      {xrSupported && <img src="/static/XR_Tutorial.png" alt="XR Controls" />}
     </div>
   )
 }
@@ -294,7 +293,7 @@ export default function SettingsMenu() {
   useEffect(() => {}, [])
 
   return (
-    <div className="absolute z-50 h-fit max-h-[90dvh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-4 p-6 text-text-secondary mdh:max-h-[60dvh] mdh:p-10">
+    <div className="absolute z-50 h-[90dvh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-4 p-6 text-text-secondary mdh:max-h-[60dvh] mdh:p-10">
       <div className="mb-[17px]">
         <button onClick={() => PopoverState.hidePopupover()}>
           <ArrowLeftLg />
