@@ -176,7 +176,7 @@ function NewMessage() {
       <div
         className={twMerge(
           'height-[30px] lg:height-[74px] mr-4 flex items-center justify-between rounded-[37px] bg-ui-background transition-[width,transform] duration-500 lg:ml-[13px] lg:mr-0 lg:bg-black/50',
-          isChatOpen.value ? 'w-full translate-x-0' : 'w-0 translate-x-[100%]'
+          isChatOpen.value ? 'w-full translate-x-0' : 'hidden'
         )}
       >
         <input
