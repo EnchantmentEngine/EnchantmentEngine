@@ -123,7 +123,7 @@ describe('moderation.test', () => {
         }
       )
       const { status } = await app.service(moderationPath).get(moderation.id)
-      assert.equal(status, 'Resolved')
+      assert.equal(status, 'resolved')
     }
   })
 
