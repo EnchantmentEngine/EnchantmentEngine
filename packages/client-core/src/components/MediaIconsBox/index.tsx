@@ -46,10 +46,13 @@ import { MediaStreamService, MediaStreamState } from '@ir-engine/network/src/med
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import {
   Microphone01Lg,
+  Microphone01Md,
   MicrophoneOff,
   Screenshare,
   VideoRecorderLg,
-  VideoRecorderOffLg
+  VideoRecorderMd,
+  VideoRecorderOffLg,
+  VideoRecorderOffMd
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { IoAccessibility } from 'react-icons/io5'
@@ -152,7 +155,7 @@ export const MediaIconsBox = () => {
           tooltip={{
             title: t('user:menu.toggleMute')
           }}
-          icon={isCamAudioEnabled ? Microphone01Lg : MicrophoneOff}
+          icon={isCamAudioEnabled ? (isMobile ? Microphone01Md : Microphone01Lg) : MicrophoneOff}
           id="UserAudio"
           onClick={MediaStreamState.toggleMicrophonePaused}
         />
@@ -163,7 +166,15 @@ export const MediaIconsBox = () => {
             tooltip={{
               title: t('user:menu.toggleVideo')
             }}
-            icon={isCamVideoEnabled ? VideoRecorderLg : VideoRecorderOffLg}
+            icon={
+              isCamVideoEnabled
+                ? isMobile
+                  ? VideoRecorderMd
+                  : VideoRecorderLg
+                : isMobile
+                ? VideoRecorderOffMd
+                : VideoRecorderOffLg
+            }
             id="UserVideo"
             onClick={() => {
               MediaStreamState.toggleWebcamPaused()
