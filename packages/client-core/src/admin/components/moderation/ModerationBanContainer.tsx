@@ -28,6 +28,7 @@ import { moderationBanPath, ModerationBanType } from '@ir-engine/common/src/sche
 import { AbuseReasonsType } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
 import { UserType } from '@ir-engine/common/src/schemas/user/user.schema'
 import { Button } from '@ir-engine/ui'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaPlus } from 'react-icons/fa'
@@ -92,7 +93,7 @@ export const ModerationBanContainer = ({ search }) => {
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-800">
               <LuUserMinus className="h-12 w-12 text-gray-400" />
             </div>
-            <span className="mb-2 text-2xl font-bold">{t('admin:components.moderation.addUsersToBan')}</span>
+            <Text className="mb-2 text-2xl font-bold">{t('admin:components.moderation.addUsersToBan')}</Text>
             <p className="mb-6 text-gray-400">{t('admin:components.moderation.manageAccess')}</p>
             <Button
               variant="primary"

@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useFind } from '@ir-engine/common'
 import { locationPath } from '@ir-engine/common/src/schema.type.module'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 
 export const LocationLabel = ({ locationId, showUrl = false }) => {
@@ -53,7 +54,7 @@ export const LocationLabel = ({ locationId, showUrl = false }) => {
 
   return (
     <div>
-      <span>{locationName}</span>
+      <Text>{locationName}</Text>
       {showUrl && <div>{locationUrl}</div>}
     </div>
   )

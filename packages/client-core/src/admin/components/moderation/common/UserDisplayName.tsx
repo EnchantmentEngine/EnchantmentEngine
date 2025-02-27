@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useFind } from '@ir-engine/common'
 import { userPath } from '@ir-engine/common/src/schema.type.module'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 
 export const UserDisplayName = ({ userId }) => {
@@ -49,5 +50,5 @@ export const UserDisplayName = ({ userId }) => {
 
   const username = userData?.[0]?.name || 'N/A'
 
-  return <span>{username}</span>
+  return <Text>{username}</Text>
 }
