@@ -28,7 +28,6 @@ import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorCo
 import { setTransformMode } from '@ir-engine/editor/src/functions/transformFunctions'
 import { getMutableState, useMutableState } from '@ir-engine/hyperflux'
 import { TransformMode } from '@ir-engine/spatial/src/common/constants/TransformConstants'
-import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
 import { Cursor03Default, MoveMd, Refresh1Md, Scale02Md, TransformMd } from '@ir-engine/ui/src/icons'
@@ -65,7 +64,6 @@ export default function TransformGizmoTool() {
   const handleClickSelectionBox = () => {
     setIsClickedSelectionBox(!isClickedSelectionBox)
     getMutableState(SelectionBoxState).selectionBoxEnabled.set(!isClickedSelectionBox)
-    getMutableState(InputState).capturingCameraOrbitEnabled.set(isClickedSelectionBox)
     setToolSelected(GizmoTools.selectionBox)
   }
 

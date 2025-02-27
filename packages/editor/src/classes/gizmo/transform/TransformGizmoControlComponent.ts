@@ -107,11 +107,10 @@ export const TransformGizmoControlComponent = defineComponent({
 
   useControlEntities: (controlledEntities: Entity[]) => {
     const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
+    const controlledEntity = controlledEntities[0]
 
     useEffect(() => {
       if (!originEntity) return
-
-      const controlledEntity = controlledEntities[0]
       if (!controlledEntity) return
 
       // we dont want a transform gizmo on non spatial entities, like materials
@@ -177,7 +176,7 @@ export const TransformGizmoControlComponent = defineComponent({
         removeEntity(gizmoPlaneEntity)
         removeEntity(pivotEntity)
       }
-    }, [!!originEntity, controlledEntities.join(',')]) // .join is a hack because SelectionState.useSelectedEntities creates a new array each time
+    }, [originEntity, controlledEntity])
   },
 
   reactor: () => {

@@ -46,7 +46,6 @@ export const EditorHelperState = defineState({
   initial: () => ({
     editorMode: EditorMode.Simple as EditorModeType,
     transformMode: TransformMode.translate as TransformModeType,
-    transformModeOnCancel: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
     transformPivot: TransformPivot.FirstSelected as TransformPivotType,
     gridSnap: SnapMode.Grid as SnapModeType,
