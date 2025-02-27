@@ -71,6 +71,7 @@ import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
+import { get } from 'lodash'
 import { LoaderUtils, Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
 
@@ -111,7 +112,7 @@ const LOCATION_MAX = 10
 
 export default function AddEditLocationModal(props: {
   action: string
-  location?: LocationType
+  location?: LocationType & { projectName: string }
   sceneID?: string | null
   sceneModified?: boolean
   inStudio?: boolean
@@ -169,7 +170,8 @@ export default function AddEditLocationModal(props: {
   const scenes = useFind(staticResourcePath, {
     query: {
       paginate: false,
-      type: 'scene'
+      type: 'scene',
+      project: get(props, 'location.projectName', null)
     }
   })
   const handlePublishFolder = async () => {
