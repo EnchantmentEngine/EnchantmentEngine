@@ -399,7 +399,58 @@ describe('HasValidSchemaValues', () => {
   }) //:: default
 }) //:: HasValidSchemaValues
 
-describe('CreateSchemaValue', () => {}) //:: CreateSchemaValue
+describe('CreateSchemaValue', () => {
+  it.todo(
+    'should return a deepcopy of `@param schema`.options.default when it is not a function, options is truthy and options has a field called default',
+    () => {}
+  )
+  it.todo(
+    'should return the result of `@param schema`.options.default() when it is a function, options is truthy and options has a field called default',
+    () => {}
+  )
+  it.todo("should return null when `@param schema`[Kind] is 'Null'", () => {})
+  it.todo("should return .undefined when `@param schema`[Kind] is 'Undefined'", () => {})
+  it.todo("should return undefined when `@param schema`[Kind] is 'Void'", () => {})
+  it.todo("should return return when `@param schema`[Kind] is 'Number'", () => {})
+  it.todo("should return false when `@param schema`[Kind] is 'Bool'", () => {})
+  it.todo("should return '' when `@param schema`[Kind] is 'String'", () => {})
+  it.todo(
+    "should return the first value that can be represented by the `@param schema`.properties enum when schema[Kind] is 'Enum'",
+    () => {}
+  )
+  it.todo("should return `@param schema`.properties when schema[Kind] is 'Literal'", () => {})
+  it.todo.each(['Object', 'Class'])(
+    'should return a deep clone of `@schema properties` with all proxies flattened (Kind.Proxy) when `@param schema`[Kind] is Kind.%s',
+    (kind) => {}
+  )
+  it.todo.each(['Any', 'Record', 'Partial'])(
+    'should return an empty object when `@param schema`[Kind] is Kind.%s',
+    (kind) => {}
+  )
+  it.todo.each(['Array', 'Tuple'])('should return an empty array when `@param schema`[Kind] is Kind.%s', (kind) => {})
+  it.todo(
+    "should return null when `@param schema`[Kind] is 'Union' and the `@param schema`.properties array has no child schemas ",
+    () => {}
+  )
+  it.todo(
+    "should return the first value representable by `@param schema`.properties when schema[Kind] is 'Union' and the `@param schema`.properties array has at least one child schema",
+    () => {}
+  )
+  it.todo(
+    "should return a new function as represented by `@param schema`.properties.return when schema[Kind] is 'Func'",
+    () => {}
+  )
+  it.todo(
+    "should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is 'Required'",
+    () => {}
+  )
+  it.todo(
+    "should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is 'NonSerialized'",
+    () => {}
+  )
+  it.todo('should return undefined for every other `@param schema`[Kind] (case: default)', () => {})
+}) //:: CreateSchemaValue
+
 describe('CloneSerializable', () => {}) //:: CloneSerializable
 describe('CheckSchemaValue', () => {}) //:: CheckSchemaValue
 describe('ConvertToSchema', () => {}) //:: ConvertToSchema
