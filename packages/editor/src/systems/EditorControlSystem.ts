@@ -46,7 +46,7 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { FlyControlComponent } from '@ir-engine/spatial/src/camera/components/FlyControlComponent'
 import { TransformMode } from '@ir-engine/spatial/src/common/constants/TransformConstants'
@@ -77,6 +77,7 @@ import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { InputButtonBindings } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { KeyboardButton, MouseButton } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { EditorHistoryActions, EditorHistoryFunctions, EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
@@ -151,13 +152,15 @@ const onToggleTransformSpace = () => {
 const onUndo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
-  // undo logic placeholder
+  const sourceID = GLTFComponent.getInstanceID(rootEntity)
+  if (EditorHistoryState.canRedo(sourceID)) dispatchAction(EditorHistoryActions.undo({ sourceID }))
 }
 
 const onRedo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
-  // redo logic placeholder
+  const sourceID = GLTFComponent.getInstanceID(rootEntity)
+  if (EditorHistoryState.canRedo(sourceID)) dispatchAction(EditorHistoryActions.redo({ sourceID }))
 }
 
 const onIncreaseGridHeight = () => {
@@ -172,6 +175,7 @@ const onDecreaseGridHeight = () => {
 
 const onDeleteSelection = () => {
   EditorControlFunctions.removeObject(SelectionState.getSelectedEntities())
+  EditorHistoryFunctions.snapshot()
 }
 
 let lastDistanceToCenter = 10
