@@ -454,6 +454,76 @@ describe('ComponentFunctions', async () => {
       assert(proxiedComponent.position.x === 12)
       assert(proxiedComponent.position.x === ProxyComponent.position.x[entity])
     })
+
+    describe('when `@param def`.schema is falsy ..', () => {
+      it.todo('should set Component.onSet to an empty function', () => {})
+    })
+
+    describe('when `@param def`.schema is truthy ..', () => {
+      describe('.. when `@param def`.schema represents a single value ...', () => {
+        describe('... when `@param def`.schema has a required schema value ....', () => {
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ',
+            () => {}
+          )
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments',
+            () => {}
+          )
+        })
+        describe('... when `@param def`.schema does not have a required schema value ....', () => {
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy",
+            () => {}
+          )
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments',
+            () => {}
+          )
+        })
+      })
+
+      describe('.. when `@param def`.schema represents multiple values ...', () => {
+        describe('... when `@param def`.schema has a required schema value ....', () => {
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ',
+            () => {}
+          )
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an aray',
+            () => {}
+          )
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is 'object'",
+            () => {}
+          )
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'",
+            () => {}
+          )
+        })
+        describe('... when `@param def`.schema does not have a required schema value ....', () => {
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy",
+            () => {}
+          )
+          it.todo(
+            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an aray',
+            () => {}
+          )
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is 'object'",
+            () => {}
+          )
+          it.todo(
+            ".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'",
+            () => {}
+          )
+        })
+      })
+    })
+
+    /** @todo Write the other Non-schema related unit tests for coverage */
   })
 
   describe('setComponent', () => {
