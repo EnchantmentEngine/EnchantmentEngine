@@ -596,4 +596,75 @@ describe('SerializeSchema', () => {
   )
 }) //:: SerializeSchema
 
-describe('ConvertToSchema', () => {}) //:: ConvertToSchema
+describe('ConvertToSchema', () => {
+  describe('when `@param schema`.options.serialize is truthy ..', () => {
+    it.todo(
+      '.. should return the result of calling schema.options.serialize with (`@param value`) as arguments',
+      () => {}
+    )
+  })
+
+  describe('when `@param schema`.options.serialize is falsy ..', () => {
+    it.todo.each(['Null', 'Undefined', 'Void', 'Number', 'Bool', 'String', 'Enum', 'Literal', 'Any'])(
+      "should return `@param value` when `@param schema`[Kind] is '%s'",
+      (kind) => {}
+    )
+    describe.each(['Object', 'Class'])('case: Kind.%s', (kind) => {
+      describe("when schema.properties has keys, `@param value` is truthy and its typeof is 'object' ..", () => {
+        it.todo(
+          '.. should return an object that contains all serializable fields of `@param value` converted to schema values',
+          () => {}
+        )
+      })
+      describe("when schema.properties has no keys, `@param value` is truthy or its typeof is no 'object' ..", () => {
+        it.todo(".. should return null if `@param schema`[Kind] is 'Class'", () => {})
+        it.todo(".. should return `@param value` if `@param schema`[Kind] is not 'Class',", () => {})
+      })
+    }) //:: case: ['Object', 'Class']
+
+    describe("case 'Record'", () => {
+      it.todo('should return null if `@param schema`.properties.value is falsy', () => {})
+      it.todo(
+        "should return a new record object with all the (key:value)s from `@param value` that are not null or undefined converted to schema values if value is truthy and its typeof is 'object'",
+        () => {}
+      )
+      it.todo("should return `@param value` if it is falsy or its typeof is not 'object'", () => {})
+    }) //:: case 'Record'
+
+    describe("case 'Array'", () => {
+      it.todo('should return null if `@param schema`.properties is not serializable', () => {})
+      it.todo(
+        'should return a new array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array',
+        () => {}
+      )
+      it.todo('should return `@param value` if it is not an array', () => {})
+    }) //:: case 'Array'
+
+    describe("case 'Tuple'", () => {
+      it.todo(
+        'should return a new tuple/array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array',
+        () => {}
+      )
+      it.todo('should return `@param value` if it is not an array', () => {})
+    }) //:: case 'Tuple'
+
+    describe("case 'Union'", () => {}) //:: case 'Union'
+    it.todo('should return null if `@param schema`.properties has no values', () => {})
+    it.todo('should ignore (continue) all values of `@param schema`.properties that are not serializable', () => {})
+    it.todo(
+      'should return `@param value` converted to the first entry of `@param schema`.properties that matches its value',
+      () => {}
+    )
+    it.todo('should return null if no entry of `@param schema`.properties that matches `@param value`', () => {})
+
+    describe.each(['Partial', 'Required', 'Proxy'])('case %s', (kind) => {
+      it.todo(
+        'should flatten the schema and return `@param value` converted to the schema defined by `@param schema`.properties',
+        () => {}
+      )
+    }) //:: case: ['Partial', 'Required', 'Proxy']
+
+    it.todo("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {})
+    it.todo('should return null for every other value of `@param schema`[Kind]  (case: default)', () => {})
+  })
+}) //:: ConvertToSchema
