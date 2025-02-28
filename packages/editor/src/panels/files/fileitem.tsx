@@ -268,7 +268,7 @@ export default function FileItem({
 
   const handleFileClick = (event: React.MouseEvent) => {
     if (file.isFolder && event.detail === 2) {
-      const newPath = `${filesState.selectedDirectory.value}${file.name}/`
+      const newPath = `/${file.key}`
       changeDirectoryByPath(newPath)
     } else {
       ClickPlacementState.setSelectedAsset(file.url)
