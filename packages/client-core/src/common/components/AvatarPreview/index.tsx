@@ -45,8 +45,8 @@ import { AmbientLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { AssetPreviewCameraComponent } from '@ir-engine/spatial/src/camera/components/AssetPreviewCameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { HelpIconLg, MouseDefault, MouseLeftClick, MouseRightClick } from '@ir-engine/ui/src/icons'
 import Box from '@ir-engine/ui/src/primitives/mui/Box'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
 
 import { AnimationComponent } from '@ir-engine/engine/src/avatar/components/AnimationComponent'
@@ -144,7 +144,7 @@ const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: P
             </Text>
             <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
               {t('admin:components.avatar.leftClick')}
-              <Icon type="Mouse" fontSize="small" />
+              <MouseLeftClick fontSize="large" />
             </Text>
 
             <br />
@@ -153,7 +153,7 @@ const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: P
               {t('user:avatar.pan')}:
             </Text>
             <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
-              {t('admin:components.avatar.rightClick')} <Icon type="Mouse" fontSize="small" />
+              {t('admin:components.avatar.rightClick')} <MouseRightClick fontSize="large" />
             </Text>
 
             <br />
@@ -162,12 +162,12 @@ const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: P
               {t('admin:components.avatar.zoom')}:
             </Text>
             <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
-              {t('admin:components.avatar.scroll')} <Icon type="Mouse" fontSize="small" />
+              {t('admin:components.avatar.scroll')} <MouseDefault fontSize="large" />
             </Text>
           </Box>
         }
       >
-        <Icon type="Help" sx={{ position: 'absolute', top: 0, right: 0, margin: 1 }} />
+        <HelpIconLg fontSize="larger" style={{ position: 'absolute', top: 0, right: 0, margin: '0.6rem' }} />
       </Tooltip>
     </Box>
   )

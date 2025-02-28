@@ -23,11 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
 import { Tooltip as MuiTooltip, TooltipProps } from '@mui/material'
 import React from 'react'
-
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
-import IconButton from '@ir-engine/ui/src/primitives/mui/IconButton'
+import { Menu01Lg } from '../../../icons'
 
 const Tooltip = ({ children, ...props }: TooltipProps) => (
   <MuiTooltip {...props}>
@@ -38,7 +37,7 @@ const Tooltip = ({ children, ...props }: TooltipProps) => (
 Tooltip.displayName = 'Tooltip'
 
 Tooltip.defaultProps = {
-  children: <IconButton icon={<Icon type="Menu" />} />,
+  children: <IconButton icon={<Menu01Lg />} />,
   title: 'Tooltip'
 }
 

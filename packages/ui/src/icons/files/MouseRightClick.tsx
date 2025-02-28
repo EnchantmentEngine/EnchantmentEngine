@@ -23,38 +23,29 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
-
-import { CheckLg } from '@ir-engine/ui/src/icons'
-import styleString from './index.scss?inline'
-
-type labelPositionVariant = 'start' | 'end' | 'none'
-
-const XRCheckboxButton = (props) => {
-  const {
-    labelPosition = 'end',
-    labelContent,
-    checked,
-    ...inputProps
-  }: { labelPosition: labelPositionVariant; labelContent: any; checked: boolean; inputProps: any } = props
-
-  return (
-    <>
-      <style>{styleString}</style>
-      <div className="checkboxContainer">
-        {labelPosition === 'start' && <span className="label left">{labelContent}</span>}
-        <label className="checkbox">
-          <input type="checkbox" checked={checked} {...inputProps} />
-          {checked && (
-            <span className="checkboxIcon">
-              <CheckLg />
-            </span>
-          )}
-        </label>
-        {labelPosition === 'end' && <span className="label right">{labelContent}</span>}
-      </div>
-    </>
-  )
-}
-
-export default XRCheckboxButton
+import type { SVGProps } from 'react'
+import * as React from 'react'
+import { Ref, forwardRef } from 'react'
+const MouseRightClick = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
+  <svg
+    width="1rem"
+    height="1rem"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    stroke="currentColor"
+    ref={ref}
+    {...props}
+  >
+    <path
+      d="M12 2C8.13401 2 5 5.13401 5 9V15C5 18.866 8.13401 22 12 22C15.866 22 19 18.866 19 15V9M12 2C15.866 2 19 5.13401 19 9M12 2V9L19 9"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path d="M12.5 8.5V2C12.5 2 15.1769 2.64691 16.5 3.5C18.2675 4.63964 18.5 8.5 18.5 8.5H12.5Z" fill="currentColor" />
+  </svg>
+)
+const ForwardRef = forwardRef(MouseRightClick)
+export default ForwardRef
