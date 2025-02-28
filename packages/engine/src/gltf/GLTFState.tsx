@@ -55,6 +55,7 @@ import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/Scene
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import { SourceComponent } from '../scene/components/SourceComponent'
 import { GLTFComponent, GLTFComponentReactor } from './GLTFComponent'
 import './MeshExtensionComponents'
 
@@ -86,6 +87,9 @@ export const SceneState = defineState({
           current.filter((scene) => scene !== simulationEntity)
         )
       }
+      const sourceID = GLTFComponent.getInstanceID(gltfEntity)
+      const loadedEntities = SourceComponent.getEntitiesBySource(sourceID, Layers.Authoring)
+      for (const entity of loadedEntities) removeEntity(entity)
       AssetState.unload(gltfEntity)
       getMutableState(SceneState)[sceneURL].set(gltfEntity)
     }

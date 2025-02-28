@@ -233,9 +233,8 @@ export const GLTFComponentReactor = () => {
     let aborted = false
     removeComponent(entity, AnimationComponent)
 
-    const layer = LayerComponent.get(entity)
-    const unloadEntities = () => {
-      const loadedEntities = SourceComponent.getEntitiesBySource(sourceID, layer)
+    const unloadSimulationEntities = () => {
+      const loadedEntities = SourceComponent.getEntitiesBySource(sourceID)
       for (const entity of loadedEntities) removeEntity(entity)
     }
 
@@ -247,14 +246,14 @@ export const GLTFComponentReactor = () => {
       TransformComponent.dirty[entity] = 1
 
       if (aborted) {
-        unloadEntities()
+        unloadSimulationEntities()
       }
     })
     return () => {
       documentLoaded.set(false)
       GLTFLoaderFunctions.unloadScene(url, entity)
       aborted = true
-      unloadEntities()
+      unloadSimulationEntities()
       if (hasComponent(entity, GLTFComponent)) {
         getMutableComponent(entity, GLTFComponent).progress.set(0)
       }
