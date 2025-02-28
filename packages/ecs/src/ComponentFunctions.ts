@@ -672,13 +672,13 @@ export const deserializeComponent = <C extends Component>(
 ) => {
   if (Component.schema && HasRequiredSchema(Component.schema)) {
     const [valid, key] = HasRequiredSchemaValues(Component.schema as TSchema, json)
-    if (!valid) throw new Error(`${Component.name}:OnSet Missing required value for key ${key}`)
+    if (!valid) throw new Error(`${Component.name}:deserializeComponent Missing required value for key ${key}`)
   }
 
   /** @todo this can be replaced with setComponent rather than just some of the initializers once reactors are not forced to run synchronously */
   if (!hasComponent(entity, Component)) {
-    if (!entity) throw new Error('[setComponent]: entity is undefined')
-    if (!entityExists(entity)) throw new Error('[setComponent]: entity does not exist')
+    if (!entity) throw new Error('[deserializeComponent]: entity is undefined')
+    if (!entityExists(entity)) throw new Error('[deserializeComponent]: entity does not exist')
 
     if (Component.storage) {
       const nextSize = nextPowerOf2(entity + 1)
@@ -698,7 +698,8 @@ export const deserializeComponent = <C extends Component>(
 
   if (Component.schema && HasSchemaValidators(Component.schema)) {
     const [valid, key] = HasValidSchemaValues(Component.schema, args, component, entity)
-    if (!valid) throw new Error(`${component.name}:OnSet Invalid value for key ${key} ${JSON.stringify(args)}`)
+    if (!valid)
+      throw new Error(`${component.name}:deserializeComponent Invalid value for key ${key} ${JSON.stringify(args)}`)
   }
 
   setComponent(entity, Component, args)
