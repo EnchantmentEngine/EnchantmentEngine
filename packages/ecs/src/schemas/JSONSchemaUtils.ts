@@ -667,3 +667,8 @@ export const SerializeSchema = <T extends Schema, Val>(schema: T, value: Val): V
   const converted = ConvertToSchema(schema, value)
   return CloneSerializable(converted)
 }
+
+/** @private Exported for Unit Tests access */
+export const JSONSchemaUtilsFunctions = {
+  ConvertToSchema
+}
