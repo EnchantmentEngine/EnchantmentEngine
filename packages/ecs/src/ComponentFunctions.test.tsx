@@ -702,8 +702,23 @@ describe('ComponentFunctions', async () => {
 })
 
 /** @todo */
-describe('serializeComponent', () => {}) //:: serializeComponent
-describe('deserializeComponent', () => {}) //:: deserializeComponent
+describe('deserializeComponent', () => {
+  it.todo(
+    'should throw an error if `@param Component`.schema is truthy, it has a required schema entry and one of the `@param json` values is not a valid required schema value',
+    () => {}
+  )
+  it.todo('should set the `@param Component` to `@param entity` when that entity does not have the component', () => {})
+  it.todo('should not do anything else (return early) when `@param json` is null', () => {})
+  it.todo('should not do anything else (return early) when `@param json` is undefined', () => {})
+  it.todo(
+    'should throw an error if `@param Component`.schema is truthy, .schema has validators and HasValidSchemaValues returns valid for `@param json`',
+    () => {}
+  )
+  it.todo(
+    'should set a new value for the `@param Component` of `@param entity` using the (deserialized) value of `@param json`',
+    () => {}
+  )
+}) //:: deserializeComponent
 
 describe('ComponentFunctions Hooks', async () => {
   describe('useComponent', async () => {
