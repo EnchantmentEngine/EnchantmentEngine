@@ -943,7 +943,7 @@ function createPropagationArgsRecord<C extends Component>(
   component: C
 ) {
   if (!obj) return undefined
-  const { _, value } = schema.properties as { key: any; value: any }
+  const { key: _, value } = schema.properties as { key: any; value: any }
   const args = {} as any
   for (const k in obj) {
     const parsed = CreatePropagationArgs.Inner(value, k, obj, layer, linkedLayer, entity, component)
