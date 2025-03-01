@@ -322,10 +322,138 @@ describe('LayerFunctions', () => {
     })
   }) //:: getAuthoringCounterpart
 
-  /** @todo */
-  // @note High complexity
-  describe.todo('createLayerPropagationArgs', () => {}) //:: createLayerPropagationArgs
+  describe('createLayerPropagationArgs', () => {
+    it.todo('should return undefined if `@param component`.schema is falsy', () => {})
+    it.todo(
+      'should return the object resulting from calling CreatePropagationArgs.Inner, with all its undefined values removed',
+      () => {}
+    )
+  }) //:: createLayerPropagationArgs
 }) //:: LayerFunctions
+
+/** @todo */
+describe('CreatePropagationArgs', () => {
+  describe('Inner', () => {
+    it.todo("should return undefined when `@param key` is '', and typeof `@param data` is 'undefined'", () => {})
+    it.todo(
+      "should return undefined when `@param key` is not '', and typeof `@param data`[key] is 'undefined'",
+      () => {}
+    )
+    describe.each(['Null', 'Undefined', 'Void', 'Bool', 'String', 'Enum', 'Literal'])('case: Kind.%s', (kind) => {
+      it.todo("should return `@param data` if `@param key` is '' and data is not undefined", () => {})
+      it.todo("should return `@param data`[`@param key`] if `@param key` is not '' and data is not undefined", () => {})
+    })
+    it.todo("should call CreatePropagationArgs.Number when `@param schema`[Kind] is 'Number'", () => {})
+    it.todo("should call CreatePropagationArgs.Any when `@param schema`[Kind] is 'Any'", () => {})
+    it.todo("should call CreatePropagationArgs.Class when `@param schema`[Kind] is 'Class'", () => {})
+    it.todo("should call CreatePropagationArgs.Object when `@param schema`[Kind] is 'Object'", () => {})
+    it.todo("should call CreatePropagationArgs.Record when `@param schema`[Kind] is 'Record'", () => {})
+    it.todo("should call CreatePropagationArgs.Array when `@param schema`[Kind] is 'Array'", () => {})
+    it.todo("should call CreatePropagationArgs.Tuple when `@param schema`[Kind] is 'Tuple'", () => {})
+    it.todo("should call CreatePropagationArgs.Union when `@param schema`[Kind] is 'Union'", () => {})
+    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Partial'", () => {})
+    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Required'", () => {})
+    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Proxy'", () => {})
+    it.todo(
+      'should call CreatePropagationArgs.Default when `@param schema`[Kind] is any other kind  (case: default)',
+      () => {}
+    )
+  }) //:: Inner
+
+  describe('Number', () => {
+    it.todo('should return `@param obj` if it is UndefinedEntity', () => {})
+    describe("when `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is 'Entity' ..", () => {
+      it.todo('should return `@param obj` if LayerComponent.get(obj) is `@param linkedLayer`', () => {})
+      it.todo(
+        'should return the result of getComponent(`@param obj`, LayerComponents[`@param layer`].relations[`@param linkedLayer`]',
+        () => {}
+      )
+    })
+    it.todo(
+      "should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is not 'Entity'",
+      () => {}
+    )
+    it.todo(
+      "should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.['id'] is 'Entity'",
+      () => {}
+    )
+  }) //:: Number
+
+  describe('Any', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      "should return the result of calling `@param obj`.clone if typeof obj is 'object' and obj contains a valid function at .clone",
+      () => {}
+    )
+    it.todo('should return a new array containing all elements of `@param obj` if obj is an array', () => {})
+    it.todo(
+      'should return a deep clone of `@param obj` if it does not have a .clone function and it is not an array',
+      () => {}
+    )
+  }) //:: Any
+
+  describe('Class', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      'should return the result of calling `@param obj`.clone if obj contains a valid function at .clone',
+      () => {}
+    )
+    it.todo('should return a deep copy of `@param obj` when it is a clonable class', () => {})
+    it.todo('should call console.warn and return `@param obj` when obj is not a clonable class', () => {})
+  }) //:: Class
+
+  describe('Object', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      "should return a new object created by recursively calling CreatePropagationArgs.Inner of all the fields of `@param obj`, and ignoring any of its results for which typeof is 'undefined'",
+      () => {}
+    )
+  }) //:: Object
+
+  describe('Record', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      "should return a new record created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`, and ignoring any of its results for which typeof is 'undefined'",
+      () => {}
+    )
+  }) //:: Record
+
+  describe('Array', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      'should return a new array created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`',
+      () => {}
+    )
+  }) //:: Array
+
+  describe('Tuple', () => {
+    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it.todo(
+      'should return a new tuple created by recursively calling CreatePropagationArgs.Inner for all the inner values of `@param obj',
+      () => {}
+    )
+  }) //:: Tuple
+
+  describe('Union', () => {
+    it.todo(
+      'should return result of CreatePropagationArgs.Inner for the first value of `@param schema`.properties that does not return undefined for `@param obj`',
+      () => {}
+    )
+    it.todo(
+      'should return null if none of the values of `@param schema`.properties describe a valid schema for `@param obj`',
+      () => {}
+    )
+  }) //::  Union
+
+  describe('Default', () => {
+    // (TODO:) should return an object that ???? if `@param schema`.properties is falsy and typeof `@param obj` is 'object'
+    it.todo("should return `@param obj` when its typeof is 'number' and `@param schema`.properties is falsy", () => {})
+    it.todo(
+      'should return the result of CreatePropagationArgs.Inner when `@param schema`.properties is truthy',
+      () => {}
+    )
+  }) //:: Default
+}) //:: CreatePropagationArgs
 
 describe('setComponent', () => {
   beforeEach(() => {
