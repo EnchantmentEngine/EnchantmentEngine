@@ -30,10 +30,9 @@ import { useFind, useMutation } from '@ir-engine/common'
 import { ChannelID, messagePath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 
 import { Input } from '@ir-engine/ui'
-import { Send01Lg } from '@ir-engine/ui/src/icons'
+import { ArrowLeftLg, CallEndLg, CallLg, Send01Lg } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { PopoverState } from '../../../common/services/PopoverState'
 import { useUserAvatarThumbnail } from '../../../hooks/useUserAvatarThumbnail'
@@ -184,7 +183,7 @@ const MessagesMenu = (props: { channelID: ChannelID; name: string }): JSX.Elemen
           style={{ position: 'absolute', right: '0px' }}
           variant="iconOnly"
           onClick={() => startMediaCall()}
-          content={<Icon type={inChannelCall ? 'CallEnd' : 'Call'} />}
+          content={inChannelCall ? <CallEndLg /> : <CallLg />}
         />
       </div>
     )
@@ -201,7 +200,7 @@ const MessagesMenu = (props: { channelID: ChannelID; name: string }): JSX.Elemen
         className="iconBlock"
         variant="iconOnly"
         onClick={() => PopoverState.showPopupover(<FriendsMenu />)}
-        content={<Icon type="ArrowBack" />}
+        content={<ArrowLeftLg fontSize="larger" />}
       />
       <div style={{ height: '600px', maxWidth: '100%', overflowX: 'hidden' }}>
         <div

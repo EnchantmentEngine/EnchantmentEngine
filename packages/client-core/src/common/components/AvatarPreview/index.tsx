@@ -28,7 +28,6 @@ import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
-import Text from '@ir-engine/client-core/src/common/components/Text'
 import {
   createEntity,
   EntityTreeComponent,
@@ -46,8 +45,7 @@ import { AssetPreviewCameraComponent } from '@ir-engine/spatial/src/camera/compo
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { HelpIconLg, MouseDefault, MouseLeftClick, MouseRightClick } from '@ir-engine/ui/src/icons'
-import Box from '@ir-engine/ui/src/primitives/mui/Box'
-import Tooltip from '@ir-engine/ui/src/primitives/mui/Tooltip'
+import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 
 import { AnimationComponent } from '@ir-engine/engine/src/avatar/components/AnimationComponent'
 import {
@@ -124,52 +122,51 @@ const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: P
   }, [useOptionalComponent(sceneEntity, AnimationComponent)?.animations])
 
   return (
-    <Box className={`${commonStyles.preview} ${fill ? styles.fill : ''}`} sx={sx}>
+    <div className={`${commonStyles.preview} ${fill ? styles.fill : ''} relative`}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          margin: 10,
+          zIndex: 1
+        }}
+      >
+        <Tooltip
+          position="bottom"
+          content={
+            <div style={{ width: 100 }}>
+              <div style={{ fontWeight: 'bold' }}>{t('user:avatar.rotate')}:</div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {t('admin:components.avatar.leftClick')}
+                <MouseLeftClick fontSize="large" />
+              </div>
+
+              <br />
+
+              <div style={{ fontWeight: 'bold' }}>{t('user:avatar.pan')}:</div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {t('admin:components.avatar.rightClick')} <MouseRightClick fontSize="large" />
+              </div>
+
+              <br />
+
+              <div style={{ fontWeight: 'bold' }}>{t('admin:components.avatar.zoom')}:</div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {t('admin:components.avatar.scroll')} <MouseDefault fontSize="large" />
+              </div>
+            </div>
+          }
+        >
+          <HelpIconLg fontSize="larger" style={{ top: 0, right: 0, margin: 0 }} />
+        </Tooltip>
+      </div>
       <div id="stage" className={`${styles.stage} ${fill ? styles.fill : ''}`}>
         <canvas ref={panelRef} style={{ pointerEvents: 'all' }} />
       </div>
 
-      {!avatarUrl && (
-        <Text className={commonStyles.previewText} variant="body2">
-          {t('admin:components.avatar.avatarPreview')}
-        </Text>
-      )}
-
-      <Tooltip
-        arrow
-        title={
-          <Box sx={{ width: 100 }}>
-            <Text variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              {t('user:avatar.rotate')}:
-            </Text>
-            <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
-              {t('admin:components.avatar.leftClick')}
-              <MouseLeftClick fontSize="large" />
-            </Text>
-
-            <br />
-
-            <Text variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              {t('user:avatar.pan')}:
-            </Text>
-            <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
-              {t('admin:components.avatar.rightClick')} <MouseRightClick fontSize="large" />
-            </Text>
-
-            <br />
-
-            <Text variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              {t('admin:components.avatar.zoom')}:
-            </Text>
-            <Text variant="body2" sx={{ display: 'flex', justifyContent: 'center' }}>
-              {t('admin:components.avatar.scroll')} <MouseDefault fontSize="large" />
-            </Text>
-          </Box>
-        }
-      >
-        <HelpIconLg fontSize="larger" style={{ position: 'absolute', top: 0, right: 0, margin: '0.6rem' }} />
-      </Tooltip>
-    </Box>
+      {!avatarUrl && <div className={commonStyles.previewText}>{t('admin:components.avatar.avatarPreview')}</div>}
+    </div>
   )
 }
 

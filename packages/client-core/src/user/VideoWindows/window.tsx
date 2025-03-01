@@ -40,8 +40,8 @@ import { applyScreenshareToTexture } from '@ir-engine/engine/src/scene/functions
 import { NO_PROXY, PeerID, State, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
+import { Microphone01, MicrophoneOff, VolumeMaxLg, VolumeXLg } from '@ir-engine/ui/src/icons'
 import { drawPoseToCanvas } from '@ir-engine/ui/src/pages/Capture'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
@@ -484,10 +484,17 @@ export const SingleVideoWindowWidget = ({ peerID, type }: Props): JSX.Element =>
       >
         {username}
         <button style={{ margin: 0 }} onClick={toggleAudio} xr-layer="true">
-          <Icon
-            xr-layer="true"
-            type={isSelf ? (audioStreamPaused ? 'MicOff' : 'Mic') : audioStreamPaused ? 'VolumeOff' : 'VolumeUp'}
-          />
+          {isSelf ? (
+            audioStreamPaused ? (
+              <MicrophoneOff />
+            ) : (
+              <Microphone01 />
+            )
+          ) : audioStreamPaused ? (
+            <VolumeXLg />
+          ) : (
+            <VolumeMaxLg fontSize="larger" />
+          )}
         </button>
       </div>
     </div>
