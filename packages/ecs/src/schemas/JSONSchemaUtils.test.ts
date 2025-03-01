@@ -35,7 +35,7 @@ import { DeserializeSchemaValue, HasSchemaDeserializers } from './JSONSchemaUtil
  * @description Returns an object nested to `@param depth` levels of depth.
  * Adds the given `@param value` to each level of the object with fieldname `properties`
  * */
-export function createDeeplyNestedObject<T extends object>(depth: number, value?: T): T {
+export function createDeeplyNestedSchemaObject<T extends object>(depth: number, value?: T): T {
   /* @todo Move out of this file into tests/utils */
   const result = { properties: value } as T
   for (let level = 0; level < depth; ++level) {
@@ -399,7 +399,7 @@ describe('HasSchemaDeserializers', () => {
   async function checkNestedSchema(schema: Schema, depth = nested.depth, timeout = nested.timeout) {
     return vi.waitUntil(
       () => {
-        HasSchemaDeserializers(createDeeplyNestedObject(depth, schema))
+        HasSchemaDeserializers(createDeeplyNestedSchemaObject(depth, schema))
         return true
       },
       { timeout: timeout }
@@ -441,7 +441,7 @@ describe('HasSchemaDeserializers', () => {
       const Expected = true
       // 3. Set input & dependencies data
       const emptySchema = {} as Schema
-      const schema = createDeeplyNestedObject(nested.depth, emptySchema)
+      const schema = createDeeplyNestedSchemaObject(nested.depth, emptySchema)
       schema.options = { deserialize: (_, __) => {} }
       // 1. Sanity check (input & dependencies)
       expect(schema.options?.deserialize).toBeTruthy()
