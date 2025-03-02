@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { SxProps, Theme } from '@mui/material/styles'
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -62,12 +61,11 @@ import styles from './index.module.scss'
 interface Props {
   fill?: boolean
   avatarUrl?: string
-  sx?: SxProps<Theme>
   onAvatarError?: (error: string) => void
   onAvatarLoaded?: () => void
 }
 
-const AvatarPreview = ({ fill, avatarUrl, sx, onAvatarError, onAvatarLoaded }: Props) => {
+const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props) => {
   const { t } = useTranslation()
   const panelRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
   const { sceneEntity, cameraEntity } = useRender3DPanelSystem(panelRef)
