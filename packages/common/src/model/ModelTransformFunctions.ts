@@ -58,9 +58,7 @@ import { $attributes } from 'property-graph'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
 
-import { API } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
-import { fileBrowserPath } from '@ir-engine/common/src/schema.type.module'
 import {
   ExtractedImageTransformParameters,
   extractParameters,
@@ -83,14 +81,14 @@ import {
 } from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
 import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadRequestState'
 import ModelTransformLoader from './ModelTransformLoader'
-
 /**
  * https://ir.world/projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
  * Match 1: projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
  * Group 1: ir-engine/default-project
  * Group 2: collisioncube-LOD0.glb
  */
-export const MATCH_ASSET_PROJECT_FILENAME_REGEX = /projects\/([^/]+\/[^/]+)\/(?:assets|public)\/([\w\d\s\-|_./]*)$/
+export const MATCH_ASSET_PROJECT_FILENAME_REGEX =
+  /projects\/([^/]+\/[^/]+)\/(?:assets|public(?:\/publish)?)\/([\w\d\s\-|_./]*)$/
 
 /**
  *
@@ -727,11 +725,11 @@ const writeFiles = async (
     const { json, resources } = await io.writeJSON(document, { format: Format.GLTF, basename: resourceName })
     const folderURL = resourcePath.replace(config.client.fileServer, '')
 
-    const fileBrowserService = API.instance.service(fileBrowserPath)
-    const folderExists = await fileBrowserService.get(folderURL)
-    if (!folderExists) {
-      await fileBrowserService.create(folderURL)
-    }
+    // const fileBrowserService = API.instance.service(fileBrowserPath)
+    // const folderExists = await fileBrowserService.get(folderURL)
+    // if (!folderExists) {
+    //   await fileBrowserService.create(folderURL)
+    // }
 
     const removeExtension = (uri: string) => {
       const pathSegments = uri.split('/')
