@@ -38,6 +38,7 @@ import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { Engine } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
+  ErrorBoundary,
   PeerID,
   Topic,
   UserID,
@@ -64,7 +65,7 @@ import {
   StunServerState,
   WebRTCTransportFunctions
 } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
-import React, { useEffect } from 'react'
+import React, { Suspense, useEffect } from 'react'
 
 type InstanceType = {
   id: InstanceID
@@ -89,11 +90,15 @@ export const PeerToPeerNetworkState = defineState({
     return (
       <>
         {Object.values(state.value).map((instance) => (
-          <ConnectionReactor
-            key={instance.id}
-            instanceID={instance.id}
-            topic={instance.locationId ? NetworkTopics.world : NetworkTopics.media}
-          />
+          <ErrorBoundary key={instance.id}>
+            <Suspense>
+              <ConnectionReactor
+                key={instance.id}
+                instanceID={instance.id}
+                topic={instance.locationId ? NetworkTopics.world : NetworkTopics.media}
+              />
+            </Suspense>
+          </ErrorBoundary>
         ))}
       </>
     )
@@ -205,13 +210,17 @@ const PeersReactor = (props: { instanceID: InstanceID }) => {
   return (
     <>
       {otherPeers.value.map((peer) => (
-        <PeerReactor
-          key={peer.peerId}
-          peerID={peer.peerId}
-          peerIndex={peer.peerIndex}
-          userID={peer.userId}
-          instanceID={props.instanceID}
-        />
+        <ErrorBoundary key={peer.id}>
+          <Suspense>
+            <PeerReactor
+              key={peer.peerId}
+              peerID={peer.peerId}
+              peerIndex={peer.peerIndex}
+              userID={peer.userId}
+              instanceID={props.instanceID}
+            />
+          </Suspense>
+        </ErrorBoundary>
       ))}
     </>
   )
