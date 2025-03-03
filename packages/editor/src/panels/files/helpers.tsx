@@ -220,23 +220,8 @@ export function useFileBrowserDrop() {
     newPath: string,
     isCopy = false
   ): Promise<void> => {
-    console.log('projectname', filesState.projectName.value)
-    console.log('moving', {
-      oldName,
-      newName,
-      oldPath,
-      newPath,
-      isCopy
-    })
     if (isLoading) return
     if (!isCopy && newPath.startsWith(`${oldPath}/`)) return
-    console.log('moving2', {
-      oldName,
-      newName,
-      oldPath,
-      newPath,
-      isCopy
-    })
     try {
       await fileService.update(null, {
         oldProject: filesState.projectName.value,
@@ -260,13 +245,9 @@ export function useFileBrowserDrop() {
     dropOn?: FileDataType,
     selectedFileKeys?: string[]
   ) => {
-    console.log('data', data)
-    console.log('drop pn folder', dropOn)
-    console.log(selectedFileKeys)
     const destinationPath = dropOn?.isFolder ? `${dropOn.key}` : filesState.selectedDirectory.value
 
     if (isFileDataType(data)) {
-      console.log('dropon', dropOn?.isFolder)
       if (dropOn?.isFolder) {
         const newName = data.isFolder ? data.name : `${data.name}${data.type ? '.' + data.type : ''}`
         await moveContent(data.fullName, newName, data.path, destinationPath, false)
