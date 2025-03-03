@@ -39,7 +39,7 @@ import {
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
-import { getState, State } from '@ir-engine/hyperflux'
+import { getMutableState, getState, State } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { Axis, Q_IDENTITY, Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
