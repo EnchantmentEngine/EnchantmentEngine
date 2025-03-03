@@ -170,7 +170,10 @@ function FileItemCard({
 }: DisplayTypeProps) {
   return (
     <div
-      ref={(ref) => drag(drop(ref))}
+      ref={(ref) => {
+        console.log('ref', ref)
+        return drag(drop(ref))
+      }}
       className={twMerge('group box-border h-min', isOver && 'border-2 border-gray-400', className)}
       onContextMenu={onContextMenu}
     >
@@ -221,12 +224,13 @@ export default function FileItem({
 
   const [{ isOver }, drop] = useDrop({
     accept: [...SupportedFileTypes],
-    drop: (dropItem) =>
-      dropOnFileBrowser(
+    drop: (dropItem) => {
+      return dropOnFileBrowser(
         dropItem as any,
         file,
         selectedFiles.map((selectedFile) => selectedFile.key.value)
-      ),
+      )
+    },
     canDrop: (dropItem: Record<string, unknown>) =>
       file.isFolder &&
       ('key' in dropItem || canDropOnFileBrowser(file.key)) &&

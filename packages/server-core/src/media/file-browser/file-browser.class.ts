@@ -333,8 +333,9 @@ export class FileBrowserService
           data.newProject
       )
 
-    if (data.oldName === data.newName && data.oldPath !== data.newPath && data.newPath.startsWith(data.oldPath))
-      throw new Error('Cannot move a folder into itself')
+    if (data.oldPath !== data.newPath && data.newPath.startsWith(`${data.oldPath}/`)) {
+      throw new Error('Cannot move a folder into itself or its own subfolder')
+    }
 
     const oldDirectory = data.oldPath.endsWith('/')
       ? data.oldPath.split('/').slice(0, -1).join('/')
