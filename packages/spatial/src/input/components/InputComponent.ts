@@ -29,7 +29,6 @@ import {
   defineSystem,
   EngineState,
   getComponent,
-  getOptionalComponent,
   InputSystemGroup,
   UndefinedEntity,
   useEntityContext,
@@ -38,6 +37,7 @@ import {
 import {
   defineComponent,
   getMutableComponent,
+  getOptionalComponent,
   removeComponent,
   setComponent,
   useComponent
@@ -375,6 +375,10 @@ function getLargestMagnitudeNumber(a: number, b: number) {
   return Math.abs(a) > Math.abs(b) ? a : b
 }
 
+function filterInputEntities(entity: Entity, index: number, arr: Entity[]) {
+  return arr.indexOf(entity) === index && entity !== UndefinedEntity
+}
+
 export const enum InputExecutionOrder {
   'Before' = -1,
   'With' = 0,
@@ -397,3 +401,13 @@ export const InputExecutionSystemGroup = defineSystem({
   uuid: 'ee.engine.InputExecutionSystemGroup',
   insert: { with: InputSystemGroup }
 })
+
+const mapInputButtons = (eid: Entity) => getComponent(eid, InputSourceComponent).buttons
+
+const inputSinkComponentQueryComponents = [InputSinkComponent]
+const inputComponentQueryComponents = [InputComponent]
+
+const reduceInputEntities = (prev: Entity[], eid: Entity) => {
+  prev.push(...getComponent(eid, InputComponent).inputSources)
+  return prev
+}

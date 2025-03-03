@@ -63,6 +63,7 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
 import { TransformGizmoVisualComponent } from '../classes/gizmo/transform/TransformGizmoVisualComponent'
 import { GizmoMaterial, gizmoMaterialProperties } from '../constants/GizmoPresets'
+import { SelectionBoxState } from '../panels/viewport/tools/SelectionBoxTool'
 import { EditorHistoryFunctions } from '../services/EditorHistoryState'
 import { ObjectGridSnapState } from '../systems/ObjectGridSnapSystem'
 import { EditorControlFunctions } from './EditorControlFunctions'
@@ -488,6 +489,7 @@ function pointerHover(gizmoEntity: Entity) {
   if (gizmoAxes) {
     gizmoControlComponent.axis.set(gizmoAxes)
   } else {
+    getMutableState(SelectionBoxState).gizmoInControl.set(false)
     gizmoControlComponent.axis.set(null)
   }
 }

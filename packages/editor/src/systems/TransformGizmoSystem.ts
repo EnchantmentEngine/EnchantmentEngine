@@ -31,7 +31,7 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 
 import { EngineState, Entity, UndefinedEntity } from '@ir-engine/ecs'
-import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { SnapMode } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -86,14 +86,17 @@ export function editorInputHeuristic(intersectionData: Set<IntersectionData>, po
 
   raycaster.set(position, direction)
 
-  const [...pickerObj] = gizmoPickerObjectsQuery() // gizmo heuristic
-  const [...cameraGizmo] = cameraGizmoQuery() //camera gizmo heuristic
+  const pickerObj = gizmoPickerObjectsQuery() // gizmo heuristic
+  const cameraGizmo = cameraGizmoQuery() //camera gizmo heuristic
 
   //concatenating cameraGizmo to both pickerObjects(transformGizmo) and inputObjects
-  const allGizmos = cameraGizmo.concat(pickerObj)
-  const inputObj = [...inputObjectsQuery()].concat(cameraGizmo)
+  const inputObj = [] as Entity[]
 
-  const objects = (pickerObj.length > 0 ? allGizmos : inputObj) // gizmo heuristic
+  const objects = (
+    pickerObj.length > 0
+      ? inputObj.concat(cameraGizmo).concat(pickerObj)
+      : inputObj.concat(inputObjectsQuery()).concat(cameraGizmo)
+  ) // gizmo heuristic
     .map((eid) => getComponent(eid, ObjectComponent))
 
   //camera gizmos layer should always be active here, since it doesn't disable based on transformGizmo existing
@@ -176,12 +179,7 @@ const useGizmoControl = (entities: Entity[]) => {
 
 const reactor = () => {
   useEffect(() => {
-    getMutableState(InputHeuristicState).merge([
-      {
-        order: 1,
-        heuristic: editorInputHeuristic
-      }
-    ])
+    InputHeuristicState.addHeuristic(1, editorInputHeuristic)
   }, [])
 
   const selectedEntities = SelectionState.useSelectedEntities()
