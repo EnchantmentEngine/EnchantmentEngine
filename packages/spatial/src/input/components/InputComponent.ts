@@ -47,6 +47,7 @@ import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { NameComponent } from '../../common/NameComponent'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import {
   AnyAxis,
@@ -66,7 +67,6 @@ import {
 import { InputState } from '../state/InputState'
 import { InputSinkComponent } from './InputSinkComponent'
 import { InputSourceComponent } from './InputSourceComponent'
-
 // Types for input bindings
 export type ButtonBinding = AnyButton | AnyButton[]
 export type AxisBinding = AnyAxis
@@ -121,6 +121,12 @@ export const InputComponent = defineComponent({
             const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
             if (!inputSourceComponent) continue
             const state = inputSourceComponent.buttons[button]
+            if (state?.consumed)
+              console.warn(
+                `button ${button} checked by ${entity} - ${getComponent(entity, NameComponent)} consumed by ${
+                  state.consumed
+                } - ${getComponent(state.consumed, NameComponent)}`
+              )
             if (state && !state.consumed) {
               return state
             }
