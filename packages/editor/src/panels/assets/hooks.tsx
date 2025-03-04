@@ -23,11 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { API } from '@ir-engine/common'
 import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
-import { State, useHookstate, usePrevious } from '@ir-engine/hyperflux'
+import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
-import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags, mapCategoriesHelper } from './helpers'
+import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
+import { AssetCategoryNode } from './categories'
+import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, convertToHierarchy, iterativelyListTags } from './helpers'
 
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
@@ -37,12 +40,12 @@ const AssetsQueryContext = createContext({
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
 
   category: {
-    currentCategoryPath: null! as State<Category[]>,
-    categories: null! as State<Category[]>,
-    expandedCategories: {} as State<{ [key: string]: boolean }>,
+    currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
     sidebarWidth: null! as State<number>
   }
 })
+
+export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
 
 export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const search = useHookstate({ local: '', query: '' })
@@ -50,48 +53,64 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const resources = useHookstate<StaticResourceType[]>([])
   const resourcesLoading = useHookstate(false)
 
-  const currentCategoryPath = useHookstate<Category[]>([])
-  const categories = useHookstate<Category[]>([])
-  const expandedCategories = useHookstate({} as { [key: string]: boolean })
+  const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
+
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
 
   const staticResourcesFindApi = () => {
     const abortController = new AbortController()
-    const selectedCategory = currentCategoryPath.at(-1)?.value
+    const selectedCategory = currentCategoryPath.value
 
     resourcesLoading.set(true)
 
     const performFetch = () => {
-      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.object)] : []
+      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.children)] : []
 
-      const query = {
-        key: {
-          $like: `%${search.query.value}%`
-        },
-        type: {
-          $or: [{ type: 'asset' }]
-        },
-        tags: selectedCategory
-          ? {
-              $or: tags.flatMap((tag) => [
-                { tags: { $like: `%${tag.toLowerCase()}%` } },
-                { tags: { $like: `%${tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}%` } },
-                {
-                  tags: {
-                    $like: `%${tag
-                      .split(' ')
-                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                      .join(' ')}%`
+      let query = {} as StaticResourceQuery
+      if (selectedCategory?.name === MyAssetCategory) {
+        const selfUser = getState(AuthState).user
+        query = {
+          key: {
+            $like: `%${search.query.value}%`
+          },
+          type: {
+            $or: [{ type: 'asset' }]
+          },
+          userId: selfUser.id,
+          $sort: { name: 1 },
+          $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
+          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
+        } as StaticResourceQuery
+      } else {
+        query = {
+          key: {
+            $like: `%${search.query.value}%`
+          },
+          type: {
+            $or: [{ type: 'asset' }]
+          },
+          tags: selectedCategory
+            ? {
+                $or: tags.flatMap((tag) => [
+                  { tags: { $like: `%${tag.toLowerCase()}%` } },
+                  { tags: { $like: `%${tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}%` } },
+                  {
+                    tags: {
+                      $like: `%${tag
+                        .split(' ')
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ')}%`
+                    }
                   }
-                }
-              ])
-            }
-          : undefined,
-        $sort: { mimeType: 1 },
-        $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
-        $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
-      } as StaticResourceQuery
+                ])
+              }
+            : undefined,
+          $sort: { name: 1 },
+          $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
+          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
+        } as StaticResourceQuery
+      }
 
       API.instance
         .service(staticResourcePath)
@@ -121,10 +140,6 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
-  useEffect(() => {
-    categories.set(mapCategoriesHelper(expandedCategories.value))
-  }, [expandedCategories])
-
   return (
     <AssetsQueryContext.Provider
       value={{
@@ -134,9 +149,7 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
         resourcesLoading: resourcesLoading.value,
         staticResourcesPagination,
         category: {
-          categories,
           currentCategoryPath,
-          expandedCategories,
           sidebarWidth: categorySidbarWidth
         }
       }}

@@ -23,16 +23,20 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useLayoutEffect } from 'react'
-import { MeshPhysicalMaterial, SphereGeometry } from 'three'
+import { Mesh, MeshPhysicalMaterial, SphereGeometry } from 'three'
 
-import { defineComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { DebugMeshComponent } from '@ir-engine/spatial/src/common/debug/DebugMeshComponent'
+import { useMutableState } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 
+import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
+
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
+import { useEffect } from 'react'
 import { EnvMapBakeRefreshTypes } from '../types/EnvMapBakeRefreshTypes'
 import { EnvMapBakeTypes } from '../types/EnvMapBakeTypes'
 
@@ -44,9 +48,9 @@ export const EnvMapBakeComponent = defineComponent({
   jsonID: 'EE_envmapbake',
 
   schema: S.Object({
-    bakePosition: S.Vec3(),
-    bakePositionOffset: S.Vec3(),
-    bakeScale: S.Vec3({ x: 1, y: 1, z: 1 }),
+    bakePosition: T.Vec3(),
+    bakePositionOffset: T.Vec3(),
+    bakeScale: T.Vec3(Vector3_One),
     bakeType: S.Enum(EnvMapBakeTypes, EnvMapBakeTypes.Baked),
     resolution: S.Number(1024),
     refreshMode: S.Enum(EnvMapBakeRefreshTypes, EnvMapBakeRefreshTypes.OnAwake),
@@ -56,21 +60,17 @@ export const EnvMapBakeComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-    const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
+    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
+    const renderState = useMutableState(RendererState)
+    const debugEnabled =
+      renderState.nodeHelperVisibility.value ||
+      (activeHelperComponent !== undefined && activeHelperComponent.enabled.value)
 
-    useLayoutEffect(() => {
-      if (debugEnabled.value) {
-        setComponent(entity, DebugMeshComponent, {
-          name: 'envmap-bake-helper',
-          geometry: sphereGeometry,
-          material: helperMeshMaterial
-        })
-      }
+    const helperEntity = useHelperEntity(entity, () => new Mesh(sphereGeometry, helperMeshMaterial), debugEnabled)
 
-      return () => {
-        removeComponent(entity, DebugMeshComponent)
-      }
-    }, [debugEnabled])
+    useEffect(() => {
+      activeHelperComponent?.helperSelectedGizmo.set(helperEntity)
+    }, [helperEntity])
 
     return null
   }

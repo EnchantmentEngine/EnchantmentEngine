@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import Groups from '@mui/icons-material/Groups'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -40,16 +39,17 @@ import {
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { ChannelService, ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
+import { useFind } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import { InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
-import { PresentationSystemGroup, defineSystem } from '@ir-engine/ecs'
+import { clientSettingPath, InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
+import { defineSystem, EngineState, PresentationSystemGroup } from '@ir-engine/ecs'
 import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
+import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { FriendService } from '../social/services/FriendService'
 import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
-import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
-import FriendsMenu from '../user/components/UserMenu/menus/FriendsMenu'
-import MessagesMenu from '../user/components/UserMenu/menus/MessagesMenu'
+import { PeerToPeerNetworkState } from '../transports/p2p/PeerToPeerNetworkState'
+import { ViewerMenuState } from '../util/ViewerMenuState'
 
 export const WorldInstanceProvisioning = () => {
   const locationState = useMutableState(LocationState)
@@ -162,14 +162,21 @@ export const WorldInstanceProvisioning = () => {
 export const WorldInstance = ({ id }: { id: InstanceID }) => {
   useEffect(() => {
     const worldInstance = getState(LocationInstanceState).instances[id]
-    return connectToInstance(
-      id,
-      worldInstance.ipAddress,
-      worldInstance.port,
-      worldInstance.locationId,
-      undefined,
-      worldInstance.roomCode
-    )
+    if (worldInstance.p2p) {
+      return PeerToPeerNetworkState.connectToP2PInstance({
+        id,
+        locationId: worldInstance.locationId
+      })
+    } else {
+      return connectToInstance(
+        id,
+        worldInstance.ipAddress!,
+        worldInstance.port!,
+        worldInstance.locationId,
+        undefined,
+        worldInstance.roomCode
+      )
+    }
   }, [])
 
   return null
@@ -187,12 +194,9 @@ export const MediaInstanceProvisioning = () => {
 
   // Once we have the world server, provision the media server
   useEffect(() => {
-    if (mediaInstanceState.keys.length) return
-    if (!channelState.channels.channels?.value.length) return
-    const currentChannel =
-      channelState.targetChannelId.value === ''
-        ? channelState.channels.channels.value.find((channel) => channel.instanceId === worldNetworkId)?.id
-        : channelState.targetChannelId.value
+    if (mediaInstanceState.keys.length || !worldNetwork?.ready?.value) return
+
+    const currentChannel = channelState.targetChannelId.value
     if (!currentChannel) return
 
     MediaInstanceConnectionService.provisionServer(currentChannel, false)
@@ -207,12 +211,7 @@ export const MediaInstanceProvisioning = () => {
     //     mediaInstanceState[id].set(none)
     //   }
     // }
-  }, [
-    channelState.channels.channels?.length,
-    worldNetwork?.ready?.value,
-    mediaInstanceState.keys.length,
-    channelState.targetChannelId.value
-  ])
+  }, [worldNetwork?.ready?.value, mediaInstanceState.keys.length, channelState.targetChannelId.value])
 
   return (
     <>
@@ -226,14 +225,21 @@ export const MediaInstanceProvisioning = () => {
 export const MediaInstance = ({ id }: { id: InstanceID }) => {
   useEffect(() => {
     const mediaInstance = getState(MediaInstanceState).instances[id]
-    return connectToInstance(
-      id,
-      mediaInstance.ipAddress,
-      mediaInstance.port,
-      undefined,
-      mediaInstance.channelId,
-      mediaInstance.roomCode
-    )
+    if (mediaInstance.p2p) {
+      return PeerToPeerNetworkState.connectToP2PInstance({
+        id,
+        channelId: mediaInstance.channelId
+      })
+    } else {
+      return connectToInstance(
+        id,
+        mediaInstance.ipAddress!,
+        mediaInstance.port!,
+        undefined,
+        mediaInstance.channelId,
+        mediaInstance.roomCode
+      )
+    }
   }, [])
 
   return null
@@ -252,25 +258,11 @@ export const FriendMenus = () => {
   useEffect(() => {
     if (!socialsEnabled) return
 
-    const popupMenuState = getMutableState(PopupMenuState)
-    popupMenuState.menus.merge({
-      [SocialMenus.Friends]: FriendsMenu,
-      [SocialMenus.Messages]: MessagesMenu
-    })
-
-    popupMenuState.hotbar.merge({
-      [SocialMenus.Friends]: { icon: <Groups />, tooltip: t('user:menu.friends') }
-    })
+    const viewerMenuState = getMutableState(ViewerMenuState)
+    viewerMenuState.userMenus.friends.set(true)
 
     return () => {
-      popupMenuState.menus.merge({
-        [SocialMenus.Friends]: none,
-        [SocialMenus.Messages]: none
-      })
-
-      popupMenuState.hotbar.merge({
-        [SocialMenus.Friends]: none
-      })
+      viewerMenuState.userMenus.friends.set(false)
     }
   }, [socialsEnabled])
 
@@ -285,6 +277,18 @@ export const FriendMenus = () => {
 
 export const reactor = () => {
   const networkConfigState = useHookstate(getMutableState(NetworkState).config)
+  const userID = useHookstate(getMutableState(EngineState).userID).value
+
+  const clientSettingQuery = useFind(clientSettingPath)
+  const clientSetting = clientSettingQuery.data[0]
+  const maxResolution = clientSetting && (clientSetting.mediaSettings.video.maxResolution as any)
+
+  useEffect(() => {
+    if (!maxResolution) return
+    getMutableState(MediaStreamState).maxResolution.set(maxResolution)
+  }, [])
+
+  if (!userID) return null
 
   return (
     <>

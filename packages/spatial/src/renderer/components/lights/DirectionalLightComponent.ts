@@ -27,22 +27,27 @@ import { useEffect } from 'react'
 import { BufferGeometry, DirectionalLight, Float32BufferAttribute } from 'three'
 
 import {
+  EntityTreeComponent,
+  S,
+  UndefinedEntity,
+  createEntity,
   defineComponent,
+  getMutableComponent,
   removeComponent,
+  removeEntity,
   setComponent,
   useComponent,
+  useEntityContext,
   useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+} from '@ir-engine/ecs'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { ActiveHelperComponent } from '../../../common/ActiveHelperComponent'
 import { mergeBufferGeometries } from '../../../common/classes/BufferGeometryUtils'
-import { useDisposable } from '../../../resources/resourceHooks'
+import { T } from '../../../schema/schemaFunctions'
 import { RendererState } from '../../RendererState'
-import { useUpdateLight } from '../../functions/useUpdateLight'
-import { addObjectToGroup, removeObjectFromGroup } from '../GroupComponent'
 import { LineSegmentComponent } from '../LineSegmentComponent'
+import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
 
 const size = 1
@@ -107,7 +112,7 @@ export const DirectionalLightComponent = defineComponent({
 
   schema: S.Object({
     light: S.NonSerialized(S.Type<DirectionalLight>()),
-    color: S.Color(),
+    color: T.Color(),
     intensity: S.Number(1),
     castShadow: S.Bool(false),
     shadowBias: S.Number(-0.00001),
@@ -118,25 +123,31 @@ export const DirectionalLightComponent = defineComponent({
   reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
+    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
     const debugEnabled = renderState.nodeHelperVisibility
     const directionalLightComponent = useComponent(entity, DirectionalLightComponent)
-    const [light] = useDisposable(DirectionalLight, entity)
-    const lightHelper = useOptionalComponent(entity, LineSegmentComponent)
+    const light = useHookstate(() => new DirectionalLight()).value as DirectionalLight
 
-    useImmediateEffect(() => {
+    useEffect(() => {
       setComponent(entity, LightTagComponent)
-      directionalLightComponent.light.set(light)
-      addObjectToGroup(entity, light)
+      getMutableComponent(entity, DirectionalLightComponent).light.set(light)
+      setComponent(entity, ObjectComponent, light)
+      setComponent(entity, ActiveHelperComponent, { directional: true })
+
       return () => {
-        removeObjectFromGroup(entity, light)
+        removeComponent(entity, ObjectComponent)
       }
     }, [])
 
     useEffect(() => {
       light.color.set(directionalLightComponent.color.value)
-      if (!lightHelper) return
-      lightHelper.color.set(directionalLightComponent.color.value)
     }, [directionalLightComponent.color])
+
+    useEffect(() => {
+      if (!activeHelperComponent?.helperSelectedGizmo.value) return
+      const helper = getMutableComponent(activeHelperComponent?.helperSelectedGizmo.value, LineSegmentComponent)
+      helper.color.set(directionalLightComponent.color.value)
+    }, [activeHelperComponent?.helperSelectedGizmo, directionalLightComponent.color])
 
     useEffect(() => {
       light.intensity = directionalLightComponent.intensity.value
@@ -166,21 +177,22 @@ export const DirectionalLightComponent = defineComponent({
     }, [renderState.shadowMapResolution])
 
     useEffect(() => {
-      if (debugEnabled.value) {
-        setComponent(entity, LineSegmentComponent, {
-          name: 'directional-light-helper',
-          // Clone geometry because LineSegmentComponent disposes it when removed
-          geometry: mergedGeometry?.clone(),
-          color: directionalLightComponent.color.value
-        })
+      if (!(debugEnabled.value || (activeHelperComponent !== undefined && activeHelperComponent.enabled.value))) return
 
-        return () => {
-          removeComponent(entity, LineSegmentComponent)
-        }
+      activeHelperComponent!.helperSelectedGizmo.set(createEntity())
+      setComponent(activeHelperComponent!.helperSelectedGizmo.value, EntityTreeComponent, { parentEntity: entity })
+      setComponent(activeHelperComponent!.helperSelectedGizmo.value, LineSegmentComponent, {
+        name: 'directional-light-helper',
+        // Clone geometry because LineSegmentComponent disposes it when removed
+        geometry: mergedGeometry?.clone(),
+        color: directionalLightComponent.color.value
+      })
+
+      return () => {
+        removeEntity(activeHelperComponent!.helperSelectedGizmo.value)
+        activeHelperComponent!.helperSelectedGizmo.set(UndefinedEntity)
       }
-    }, [debugEnabled])
-
-    useUpdateLight(light)
+    }, [debugEnabled, activeHelperComponent?.enabled])
 
     return null
   }

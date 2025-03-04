@@ -35,8 +35,7 @@ import {
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
 import { NO_PROXY, State, getMutableState, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { Input } from '@ir-engine/ui'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
@@ -223,7 +222,8 @@ export default function FilePropertiesModal() {
         const _thumbnailKey = thumbnailURL.href.replace(config.client.fileServer + '/', '')
         API.instance.service(staticResourcePath).patch(resource.id, {
           thumbnailKey: _thumbnailKey,
-          thumbnailMode: 'custom'
+          thumbnailMode: 'custom',
+          project: projectName
         })
       }
     }
@@ -254,7 +254,7 @@ export default function FilePropertiesModal() {
         >
           {t('editor:layout.filebrowser.fileProperties.regenerateThumbnail')}
         </Button>
-        <div className="mt-1 rounded-md bg-blue-primary px-4 py-1 text-base">
+        <div className="mt-1 rounded-md px-4 py-1 text-base">
           {/* Use a label to trigger the file input click, no ref needed */}
           <label className="mt-1 cursor-pointer text-xs">
             <input
@@ -271,7 +271,7 @@ export default function FilePropertiesModal() {
       <div className="flex flex-col items-center gap-2">
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.fileName')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-name">
+          <Text className="" data-testid="files-panel-file-item-properties-file-name">
             {filename}
           </Text>
         </div>
@@ -283,39 +283,41 @@ export default function FilePropertiesModal() {
                 <Input value={resourceDigest.name.value ?? ''} onChange={onChange('name', resourceDigest.name)} />
                 <Button
                   title={t('common:components.save')}
-                  variant="transparent"
-                  size="small"
-                  startIcon={<RiSave2Line />}
+                  variant="secondary"
+                  size="sm"
                   onClick={() => editedField.set(null)}
-                />
+                >
+                  <RiSave2Line />
+                </Button>
               </>
             ) : (
               <>
-                <Text className="text-theme-input">
+                <Text className="">
                   {files.length > 1 && !sharedFields.value.includes('name')
                     ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                     : resourceDigest.name.value || <em>{t('common:components.none')}</em>}
                 </Text>
                 <Button
                   title={t('common:components.edit')}
-                  variant="transparent"
-                  size="small"
-                  startIcon={<HiPencil />}
+                  variant="secondary"
+                  size="sm"
                   onClick={() => editedField.set('name')}
-                />
+                >
+                  <HiPencil />
+                </Button>
               </>
             )}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.type')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-type">
+          <Text className="" data-testid="files-panel-file-item-properties-file-type">
             {fileDigest.type.toUpperCase()}
           </Text>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.size')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-size">
+          <Text className="" data-testid="files-panel-file-item-properties-file-size">
             {files.map((file) => file.size).reduce((total, value) => total + parseInt(value ?? '0'), 0)}
           </Text>
         </div>
@@ -323,7 +325,7 @@ export default function FilePropertiesModal() {
           <>
             <div className="grid grid-cols-2 gap-2">
               <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.author')}</Text>
-              <Text className="text-theme-input">{author.value?.name}</Text>
+              <Text className="">{author.value?.name}</Text>
             </div>
             <div className="grid grid-cols-2 items-center gap-2">
               <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.attribution')}</Text>
@@ -336,26 +338,28 @@ export default function FilePropertiesModal() {
                     />
                     <Button
                       title={t('common:components.save')}
-                      variant="transparent"
-                      size="small"
-                      startIcon={<RiSave2Line />}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => editedField.set(null)}
-                    />
+                    >
+                      <RiSave2Line />
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <Text className="text-theme-input">
+                    <Text className="">
                       {files.length > 1 && !sharedFields.value.includes('attribution')
                         ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                         : resourceDigest.attribution.value || <em>{t('common:components.none')}</em>}
                     </Text>
                     <Button
                       title={t('common:components.edit')}
-                      variant="transparent"
-                      size="small"
-                      startIcon={<HiPencil />}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => editedField.set('attribution')}
-                    />
+                    >
+                      <HiPencil />
+                    </Button>
                   </>
                 )}
               </span>
@@ -371,26 +375,28 @@ export default function FilePropertiesModal() {
                     />
                     <Button
                       title={t('common:components.save')}
-                      variant="transparent"
-                      size="small"
-                      startIcon={<RiSave2Line />}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => editedField.set(null)}
-                    />
+                    >
+                      <RiSave2Line />
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <Text className="text-theme-input">
+                    <Text className="">
                       {files.length > 1 && !sharedFields.value.includes('licensing')
                         ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                         : resourceDigest.licensing.value || <em>{t('common:components.none')}</em>}
                     </Text>
                     <Button
                       title={t('common:components.edit')}
-                      variant="transparent"
-                      size="small"
-                      startIcon={<HiPencil />}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => editedField.set('licensing')}
-                    />
+                    >
+                      <HiPencil />
+                    </Button>
                   </>
                 )}
               </span>
@@ -407,32 +413,34 @@ export default function FilePropertiesModal() {
                   />
                   <Button
                     title={t('common:components.save')}
-                    variant="transparent"
-                    size="small"
-                    startIcon={<RiSave2Line />}
+                    variant="secondary"
+                    size="sm"
                     onClick={() => editedField.set(null)}
                     className="mt-2"
-                  />
+                  >
+                    <RiSave2Line />
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Text className="block h-auto w-full overflow-auto whitespace-normal break-words text-theme-input">
+                  <Text className="block h-auto w-full overflow-auto whitespace-normal break-words ">
                     {files.length > 1 && !sharedFields.value.includes('description')
                       ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                       : resourceDigest.description.value || <em>{t('common:components.none')}</em>}
                   </Text>
                   <Button
                     title={t('common:components.edit')}
-                    variant="transparent"
-                    size="small"
-                    startIcon={<HiPencil />}
+                    variant="secondary"
+                    size="sm"
                     onClick={() => editedField.set('description')}
-                  />
+                  >
+                    <HiPencil />
+                  </Button>
                 </>
               )}
             </span>
             <div className="mt-10 flex flex-col gap-2">
-              <Text className="text-theme-gray3" fontSize="sm">
+              <Text className="" fontSize="sm">
                 {t('editor:layout.filebrowser.fileProperties.addTag')}
               </Text>
               <div className="flex items-center gap-2">
@@ -445,13 +453,11 @@ export default function FilePropertiesModal() {
                     }
                   }}
                 />
-                <Button
-                  startIcon={<HiPlus />}
-                  title={t('editor:layout.filebrowser.fileProperties.add')}
-                  onClick={handleAddTag}
-                />
+                <Button title={t('editor:layout.filebrowser.fileProperties.add')} onClick={handleAddTag}>
+                  <HiPlus />
+                </Button>
               </div>
-              <div className="flex h-24 flex-wrap gap-2 overflow-y-auto bg-theme-surfaceInput p-2">
+              <div className="flex h-24 flex-wrap gap-2 overflow-y-auto  p-2">
                 {resourceDigest.tags.value!.map((tag, idx) => (
                   <span key={idx} className="flex h-fit w-fit items-center rounded bg-[#2C2E33] px-2 py-0.5">
                     {tag} <HiXMark className="ml-1 cursor-pointer" onClick={() => handleRemoveTag(idx)} />

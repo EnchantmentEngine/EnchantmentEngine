@@ -23,27 +23,37 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Entity, EntityTreeComponent, createEntity, setComponent } from '@ir-engine/ecs'
+import { TransformComponent } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
   BoxGeometry,
   BufferGeometry,
   CylinderGeometry,
   DoubleSide,
+  Euler,
   Float32BufferAttribute,
   Line,
   LineBasicMaterial,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
-  Object3D,
   OctahedronGeometry,
-  PlaneGeometry,
+  Quaternion,
   SphereGeometry,
-  TorusGeometry
+  TorusGeometry,
+  Vector3
 } from 'three'
 
 const gizmoMaterial = new MeshBasicMaterial({
   depthTest: false,
   depthWrite: false,
   fog: false,
+  side: DoubleSide,
   toneMapped: false,
   transparent: true
 })
@@ -94,6 +104,14 @@ matInvisible.visible = false
 
 const matHelper = gizmoLineMaterial.clone()
 matHelper.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
+
+const matHelperRed = gizmoLineMaterial.clone()
+matHelperRed.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED].color)
+matHelperRed.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
+
+const matHelperBlue = gizmoLineMaterial.clone()
+matHelperBlue.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE].color)
+matHelperBlue.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
 
 const matRed = gizmoMaterial.clone()
 matRed.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED].color)
@@ -223,21 +241,9 @@ const scaleHandleGeometry = new BoxGeometry(0.08, 0.08, 0.08).translate(0, 0.04,
 const lineGeometry = new BufferGeometry().setAttribute('position', new Float32BufferAttribute([0, 0, 0, 1, 0, 0], 3))
 const lineGeometry2 = new CylinderGeometry(0.0075, 0.0075, 0.5, 4).translate(0, 0.25, 0)
 const lineGeometry3 = new CylinderGeometry(0.02, 0.02, 0.5, 4).translate(0, 0.25, 0)
+const lineGeometry4 = new CylinderGeometry(0.02, 0.02, 0.2, 4).translate(0, 0.25, 0)
 
-//plane geomerty
-const gizmoPlane = new Mesh(
-  new PlaneGeometry(100000, 100000, 2, 2),
-  new MeshBasicMaterial({
-    visible: false,
-    wireframe: true,
-    side: DoubleSide,
-    transparent: true,
-    opacity: 0.1,
-    toneMapped: false
-  })
-)
-
-function CircleGeometry(radius, arc) {
+function CircleGeometry(radius: number, arc: number) {
   const geometry = new TorusGeometry(radius, 0.0075, 3, 64, arc * Math.PI * 2)
   geometry.rotateY(Math.PI / 2)
   geometry.rotateX(Math.PI / 2)
@@ -256,9 +262,32 @@ function TranslateHelperGeometry() {
 
 // Creates an Object3D with gizmos described in custom hierarchy definition.
 
-// Gizmo definitions - custom hierarchy definitions for setupGizmo() function
+interface GizmoDefinition {
+  [key: string]: Array<[Mesh | Line, ...Array<Array<number> | null>]>
+}
 
-const cameraGizmo = {
+// Gizmo definitions - custom hierarchy definitions for setupGizmo() function
+const iconGizmoArrow: GizmoDefinition = {
+  ARROW: [
+    [new Mesh(arrowGeometry, matGray.clone()), [0, 0, 0.5], [Math.PI / 2, 0, 0]],
+    [new Mesh(lineGeometry4, matGray.clone()), [0, 0, 0.2], [Math.PI / 2, 0, 0]]
+  ]
+}
+
+const iconGizmoYHelper: GizmoDefinition = {
+  DELTAY: [
+    [new Line(TranslateHelperGeometry(), matHelper), null, null, null],
+    [new Mesh(CircleGeometry(0.1, 1), matHelper), null, [0, 0, -Math.PI / 2]]
+  ]
+}
+
+const iconGizmoHelper: GizmoDefinition = {
+  DELTAX: [[new Line(TranslateHelperGeometry(), matHelperRed), null, null, null]],
+  ...iconGizmoYHelper,
+  DELTAZ: [[new Line(TranslateHelperGeometry(), matHelperBlue), null, null, null]]
+}
+
+const cameraGizmo: GizmoDefinition = {
   X: [
     [new Mesh(sphereGeometry, matRed.clone()), [0.5, 0, 0]],
     [new Mesh(lineGeometry3, matRed.clone()), [0, 0, 0], [0, 0, -Math.PI / 2]]
@@ -273,7 +302,7 @@ const cameraGizmo = {
   Zn: [[new Mesh(sphereGeometry, matBlue.clone()), [0, 0, -0.5]]]
 }
 
-const cameraPicker = {
+const cameraPicker: GizmoDefinition = {
   X: [[new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0.3, 0, 0], [0, 0, -Math.PI / 2]]],
   Xn: [[new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [-0.3, 0, 0], [0, 0, Math.PI / 2]]],
   Y: [[new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0, 0.3, 0]]],
@@ -282,7 +311,7 @@ const cameraPicker = {
   Zn: [[new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0, 0, -0.3], [-Math.PI / 2, 0, 0]]]
 }
 
-const gizmoTranslate = {
+const gizmoTranslate: GizmoDefinition = {
   X: [
     [new Mesh(arrowGeometry, matRed), [0.5, 0, 0], [0, 0, -Math.PI / 2]],
     [new Mesh(arrowGeometry, matRed), [-0.5, 0, 0], [0, 0, Math.PI / 2]],
@@ -304,7 +333,7 @@ const gizmoTranslate = {
   XZ: [[new Mesh(new BoxGeometry(0.15, 0.15, 0.01), matGreenTransparent), [0.15, 0, 0.15], [-Math.PI / 2, 0, 0]]]
 }
 
-const pickerTranslate = {
+const pickerTranslate: GizmoDefinition = {
   X: [
     [new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0.3, 0, 0], [0, 0, -Math.PI / 2]],
     [new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [-0.3, 0, 0], [0, 0, Math.PI / 2]]
@@ -323,16 +352,16 @@ const pickerTranslate = {
   XZ: [[new Mesh(new BoxGeometry(0.2, 0.2, 0.01), matInvisible), [0.15, 0, 0.15], [-Math.PI / 2, 0, 0]]]
 }
 
-const helperTranslate = {
-  START: [[new Mesh(new OctahedronGeometry(0.01, 2), matHelper), null, null, null, 'helper']],
-  END: [[new Mesh(new OctahedronGeometry(0.01, 2), matHelper), null, null, null, 'helper']],
-  DELTA: [[new Line(TranslateHelperGeometry(), matHelper), null, null, null, 'helper']],
-  X: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']],
-  Y: [[new Line(lineGeometry, matHelper), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1], 'helper']],
-  Z: [[new Line(lineGeometry, matHelper), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1], 'helper']]
+const helperTranslate: GizmoDefinition = {
+  START: [[new Mesh(new OctahedronGeometry(0.01, 2), matHelper), null, null, null]],
+  END: [[new Mesh(new OctahedronGeometry(0.01, 2), matHelper), null, null, null]],
+  DELTA: [[new Line(TranslateHelperGeometry(), matHelper), null, null, null]],
+  X: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1]]],
+  Y: [[new Line(lineGeometry, matHelper), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1]]],
+  Z: [[new Line(lineGeometry, matHelper), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1]]]
 }
 
-const gizmoRotate = {
+const gizmoRotate: GizmoDefinition = {
   XYZE: [[new Mesh(CircleGeometry(0.5, 1), matGray), null, [0, Math.PI / 2, 0]]],
   X: [[new Mesh(CircleGeometry(0.5, 0.5), matRed)]],
   Y: [[new Mesh(CircleGeometry(0.5, 0.5), matGreen), null, [0, 0, -Math.PI / 2]]],
@@ -340,11 +369,11 @@ const gizmoRotate = {
   E: [[new Mesh(CircleGeometry(0.75, 1), matYellowTransparent), null, [0, Math.PI / 2, 0]]]
 }
 
-const helperRotate = {
-  AXIS: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']]
+const helperRotate: GizmoDefinition = {
+  AXIS: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1]]]
 }
 
-const pickerRotate = {
+const pickerRotate: GizmoDefinition = {
   XYZE: [[new Mesh(new SphereGeometry(0.25, 10, 8), matInvisible)]],
   X: [[new Mesh(new TorusGeometry(0.5, 0.1, 4, 24), matInvisible), [0, 0, 0], [0, -Math.PI / 2, -Math.PI / 2]]],
   Y: [[new Mesh(new TorusGeometry(0.5, 0.1, 4, 24), matInvisible), [0, 0, 0], [Math.PI / 2, 0, 0]]],
@@ -352,7 +381,7 @@ const pickerRotate = {
   E: [[new Mesh(new TorusGeometry(0.75, 0.1, 2, 24), matInvisible)]]
 }
 
-const gizmoScale = {
+const gizmoScale: GizmoDefinition = {
   X: [
     [new Mesh(scaleHandleGeometry, matRed), [0.5, 0, 0], [0, 0, -Math.PI / 2]],
     [new Mesh(lineGeometry2, matRed), [0, 0, 0], [0, 0, -Math.PI / 2]],
@@ -374,7 +403,7 @@ const gizmoScale = {
   XYZ: [[new Mesh(new BoxGeometry(0.1, 0.1, 0.1), matWhiteTransparent)]]
 }
 
-const pickerScale = {
+const pickerScale: GizmoDefinition = {
   X: [
     [new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0.3, 0, 0], [0, 0, -Math.PI / 2]],
     [new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [-0.3, 0, 0], [0, 0, Math.PI / 2]]
@@ -393,68 +422,87 @@ const pickerScale = {
   XYZ: [[new Mesh(new BoxGeometry(0.2, 0.2, 0.2), matInvisible), [0, 0, 0]]]
 }
 
-const helperScale = {
-  X: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']],
-  Y: [[new Line(lineGeometry, matHelper), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1], 'helper']],
-  Z: [[new Line(lineGeometry, matHelper), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1], 'helper']]
+const helperScale: GizmoDefinition = {
+  X: [[new Line(lineGeometry, matHelper), [-1e3, 0, 0], null, [1e6, 1, 1]]],
+  Y: [[new Line(lineGeometry, matHelper), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1]]],
+  Z: [[new Line(lineGeometry, matHelper), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1]]]
 }
 
-function setupGizmo(gizmoMap) {
-  const gizmo = new Object3D()
+const _position = new Vector3()
+const _rotation = new Quaternion()
+const _scale = new Vector3()
+const matrix4 = new Matrix4()
 
+function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer: number = ObjectLayers.Gizmos) {
+  const gizmoEntiies: Entity[] = []
   for (const name in gizmoMap) {
-    for (let i = gizmoMap[name].length; i--; ) {
-      const object = gizmoMap[name][i][0].clone()
-      const position = gizmoMap[name][i][1]
-      const rotation = gizmoMap[name][i][2]
-      const scale = gizmoMap[name][i][3]
-      const tag = gizmoMap[name][i][4]
+    for (let i = 0; i < gizmoMap[name].length; i++) {
+      const object = gizmoMap[name][i][0].clone() as Mesh
+      object.geometry = object.geometry.clone()
+      const position = (gizmoMap[name][i][1] as number[]) ?? [0, 0, 0]
+      const rotation = (gizmoMap[name][i][2] as number[]) ?? [0, 0, 0]
+      const scale = (gizmoMap[name][i][3] as number[]) ?? [1, 1, 1]
 
-      // name and tag properties are essential for picking and updating logic.
-      object.name = name
-      object.tag = tag
+      const entity = createEntity()
+      setComponent(entity, NameComponent, name)
+      setComponent(entity, EntityTreeComponent, { parentEntity })
+      setComponent(entity, TransformComponent)
 
-      if (position) {
-        object.position.set(position[0], position[1], position[2])
-      }
+      _position.fromArray(position)
+      _rotation.setFromEuler(new Euler(rotation[0], rotation[1], rotation[2]))
+      _scale.fromArray(scale)
+      matrix4.compose(_position, _rotation, _scale)
+      object.geometry.applyMatrix4(matrix4)
 
-      if (rotation) {
-        object.rotation.set(rotation[0], rotation[1], rotation[2])
-      }
+      // for some reason, mesh-three-bvh has a problem updating the bounds on torus geometry...
+      // so we need to compute the bounds tree here
+      object.geometry.computeBoundsTree()
 
-      if (scale) {
-        object.scale.set(scale[0], scale[1], scale[2])
-      }
-
-      object.updateMatrix()
-
-      const tempGeometry = object.geometry.clone()
-      tempGeometry.applyMatrix4(object.matrix)
-      object.geometry = tempGeometry
+      setComponent(entity, MeshComponent, object)
+      setComponent(entity, VisibleComponent)
       object.renderOrder = Infinity
-      object.position.set(0, 0, 0)
-      object.rotation.set(0, 0, 0)
-      object.scale.set(1, 1, 1)
-
-      gizmo.add(object)
+      ObjectLayerMaskComponent.setLayer(entity, gizmoLayer)
+      gizmoEntiies.push(entity)
     }
   }
 
-  return gizmo
+  return gizmoEntiies
+}
+
+const gizmo = {
+  translate: gizmoTranslate,
+  rotate: gizmoRotate,
+  scale: gizmoScale
+}
+
+const picker = {
+  translate: pickerTranslate,
+  rotate: pickerRotate,
+  scale: pickerScale
+}
+
+const helper = {
+  translate: helperTranslate,
+  rotate: helperRotate,
+  scale: helperScale
 }
 
 export {
   GizmoMaterial,
   cameraGizmo,
   cameraPicker,
+  gizmo,
   gizmoMaterialProperties,
-  gizmoPlane,
   gizmoRotate,
   gizmoScale,
   gizmoTranslate,
+  helper,
   helperRotate,
   helperScale,
   helperTranslate,
+  iconGizmoArrow,
+  iconGizmoHelper,
+  iconGizmoYHelper,
   matBlue,
   matBlueTransparent,
   matGray,
@@ -466,6 +514,7 @@ export {
   matRedTransparent,
   matWhiteTransparent,
   matYellowTransparent,
+  picker,
   pickerRotate,
   pickerScale,
   pickerTranslate,
