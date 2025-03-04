@@ -165,20 +165,6 @@ const Select = ({
   }, [selectedOptionIndex])
 
   useEffect(() => {
-    if (localValue.value === '') {
-      setDisplayText('')
-      return
-    }
-
-    if (
-      0 <= selectedOptionIndex &&
-      selectedOptionIndex < filteredOptions.length &&
-      filteredOptions[selectedOptionIndex].value === localValue.value
-    ) {
-      setDisplayText(filteredOptions[selectedOptionIndex].label)
-      return
-    }
-
     if (filteredOptions.length > 0) {
       const index = filteredOptions.findIndex((option) => option.value === localValue.value)
 
@@ -188,13 +174,16 @@ const Select = ({
           setDisplayText('')
           return
         }
-      } else {
-        setDisplayText(filteredOptions[index].label)
       }
-    } else {
-      setDisplayText('')
     }
   }, [value, localValue, selectedOptionIndex, filteredOptions])
+
+  useEffect(() => {
+    const index = filteredOptions.findIndex((option) => option.value === localValue.value)
+    if (index !== -1) {
+      setDisplayText(filteredOptions[index].label)
+    }
+  }, [localValue])
 
   useEffect(() => {
     if (searchString === '') {
@@ -262,6 +251,22 @@ const Select = ({
     }
   }
 
+  const inputRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [positionStyle, setPositionStyle] = useState({})
+
+  useEffect(() => {
+    if (ref.current && contentRef.current) {
+      const refTop = ref.current.getBoundingClientRect().top
+      const contentHeight = contentRef.current.getBoundingClientRect().height
+      const gap = 10
+
+      setPositionStyle({
+        top: `${refTop - contentHeight - gap}px`
+      })
+    }
+  }, [filteredOptions])
+
   return (
     <Popup
       trigger={(isOpen) => (
@@ -311,6 +316,8 @@ const Select = ({
                 )}
               >
                 <input
+                  ref={inputRef}
+                  onBlur={() => inputRef.current && inputRef.current.focus()}
                   onClick={() => {
                     if (!disabled) {
                       togglePopup()
@@ -318,15 +325,16 @@ const Select = ({
                   }}
                   type="text"
                   className={twMerge(
-                    'focus:outline-non w-full bg-inherit text-text-secondary',
+                    'w-full bg-inherit text-text-secondary focus:border-transparent focus:outline-none focus:ring-0',
                     searchMode === undefined ? 'cursor-pointer' : 'cursor-text',
                     disabled ? 'cursor-not-allowed' : ''
                   )}
                   value={displayText}
                   readOnly={searchMode === undefined}
                   onChange={(e) => {
-                    setSearchString(e.target.value)
+                    popupRef.current && popupRef.current.open()
                     setDisplayText(e.target.value)
+                    setSearchString(e.target.value)
                   }}
                 />
 
@@ -367,11 +375,16 @@ const Select = ({
       closeOnDocumentClick
       arrow={false}
       ref={popupRef}
-      position={['bottom left', 'top left']}
+      position={['bottom center', 'top center']}
       repositionOnResize={true}
-      contentStyle={{ padding: '0px', border: 'none' }}
+      contentStyle={{
+        padding: '0px',
+        border: 'none',
+        ...positionStyle
+      }}
     >
       <div
+        ref={contentRef}
         className={`z-50 flex flex-col overflow-y-auto overflow-x-hidden rounded-lg`}
         style={{
           width: triggerWidth,
