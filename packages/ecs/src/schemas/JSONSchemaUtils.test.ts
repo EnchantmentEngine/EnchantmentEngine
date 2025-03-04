@@ -29,7 +29,12 @@ import { createEntity, removeEntity } from '../ComponentFunctions'
 import { createEngine, destroyEngine } from '../Engine'
 import { UndefinedEntity } from '../Entity'
 import { Kind, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
-import { DeserializeSchemaValue, HasRequiredSchema, HasSchemaDeserializers } from './JSONSchemaUtils'
+import {
+  DeserializeSchemaValue,
+  HasRequiredSchema,
+  HasSchemaDeserializers,
+  HasSchemaValidators
+} from './JSONSchemaUtils'
 
 /**
  * @description Returns an object nested to `@param depth` levels of depth.
@@ -1159,7 +1164,7 @@ describe('HasRequiredSchema', () => {
       child2: child,
       child3: child
     }
-    const schema = { [Kind]: 'Number', properties: children } as Schema
+    const schema = { [Kind]: 'Object', properties: children } as Schema
     // 1. Sanity check (input & dependencies)
     expect(schema.properties).not.toBeUndefined()
     expect(schema[Kind]).not.toBe('Required')
@@ -1185,45 +1190,103 @@ describe('HasRequiredSchema', () => {
   })
 
   /** @todo Why is this setup not returning true ?? */
-  it.todo(
-    'should return true if `@param schema` has children, does not have a Kind.Required field and at least one of its children have a Kind.Required field ',
-    () => {
-      const Expected = true
-      // 3. Set input & dependencies data
-      const child = { [Kind]: 'Any', properties: undefined } as Schema
-      const required = { [Kind]: 'Required', properties: child } as Schema
-      const children = {
-        child1: child,
-        child2: required,
-        child3: child
-      }
-      const schema = { [Kind]: 'Number', properties: children } as Schema
-      // 1. Sanity check (input & dependencies)
-      expect(schema.properties).not.toBeUndefined()
-      expect(schema[Kind]).not.toBe('Required')
-      // 2. Run the process
-      const result = HasRequiredSchema(schema)
-      // 4. Check the result (output)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
+  it('should return true if `@param schema` has children, does not have a Kind.Required field and at least one of its children have a Kind.Required field ', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const child = { [Kind]: 'Any', properties: undefined } as Schema
+    const required = { [Kind]: 'Required', properties: child } as Schema
+    const children = {
+      child1: child,
+      child2: required,
+      child3: child
     }
-  )
+    const schema = { [Kind]: 'Object', properties: children } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = HasRequiredSchema(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: HasRequiredSchema
 
 describe('HasSchemaValidators', () => {
-  it.todo(
-    'should return false if `@param schema` has no children and does not have an .options.validate field',
-    () => {}
-  )
-  it.todo(
-    'should return false if `@param schema` has children, does not have an .options.validate field and none of its children have it either',
-    () => {}
-  )
-  it.todo('should return true if `@param schema` has an .options.validate field', () => {})
-  it.todo(
-    'should return true if `@param schema` has children, does not have an .options.validate field and at least one of its children have an .options.validate field ',
-    () => {}
-  )
+  it('should return false if `@param schema` has no children and does not have an .options.validate field', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: 'Number', properties: undefined } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).toBeUndefined()
+    expect(schema.options?.validate).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = HasSchemaValidators(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return false if `@param schema` has children, does not have an .options.validate field and none of its children have it either', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const child = { [Kind]: 'Any', properties: undefined } as Schema
+    const children = {
+      child1: child,
+      child2: child,
+      child3: child
+    }
+    const schema = { [Kind]: 'Object', properties: children } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    expect(schema.options?.validate).toBeUndefined()
+    expect(child.options?.validate).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = HasSchemaValidators(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return true if `@param schema` has an .options.validate field', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: 'Number', options: { validate: (_, __, ____) => {} }, properties: undefined } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).toBeUndefined()
+    expect(schema.options?.validate).not.toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = HasSchemaValidators(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return true if `@param schema` has children, does not have an .options.validate field and at least one of its children have an .options.validate field ', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const child = { [Kind]: 'Any', properties: undefined } as Schema
+    const validate = { [Kind]: 'Any', options: { validate: (_, __, ____) => {} }, properties: undefined } as Schema
+    const children = {
+      child1: child,
+      child2: validate,
+      child3: child
+    }
+    const schema = { [Kind]: 'Object', properties: children } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    expect(schema.options?.validate).toBeUndefined()
+    expect(child.options?.validate).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = HasSchemaValidators(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: HasSchemaValidators
 
 describe('requiresDeserialization', () => {
