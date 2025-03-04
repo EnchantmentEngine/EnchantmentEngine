@@ -30,12 +30,14 @@ import {
   EntityTreeComponent,
   EntityUUID,
   LayerComponent,
+  LayerFunctions,
+  Layers,
   UUIDComponent,
-  createEntity,
   deserializeComponent,
   getComponent,
   getMutableComponent,
   hasComponent,
+  iterateEntityNode,
   removeComponent,
   setComponent,
   traverseEntityNode
@@ -56,6 +58,7 @@ import {
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import {
   AnimationClip,
   AnimationMixer,
@@ -124,7 +127,7 @@ import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
+import { SourceID } from '../scene/components/SourceComponent'
 import { GLTFComponent } from './GLTFComponent'
 import { KHR_DRACO_MESH_COMPRESSION, getBufferIndex } from './GLTFExtensions'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
@@ -623,7 +626,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialExtensions = materialDef.extensions || {}
 
   let materialConstructor = MeshStandardMaterial
-
   if (!materialExtensions[EXTENSIONS.EE_MATERIAL] && materialExtensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
     const kmuExtension = KHRUnlitExtensionComponent
     materialConstructor = kmuExtension.getMaterialType() as any
@@ -764,6 +766,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   }
 
   const extensions = Object.entries(materialDef.extensions || {})
+
   for (const [extensionName, extension] of extensions) {
     const Component = ComponentJSONIDMap.get(extensionName) as any // todo
     if (!Component) continue
@@ -1216,8 +1219,6 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
 
   const meshDef = json.meshes![meshIndex]
 
-  if (!hasComponent(entity, ColliderComponent)) setComponent(entity, VisibleComponent)
-
   const node = json.nodes![nodeIndex]
 
   const [geometry, materials] = await GLTFLoaderFunctions.loadPrimitives(options, node.mesh!)
@@ -1348,12 +1349,8 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   const layerID = LayerComponent.get(options.entity)
 
   const nodeID = getNodeID(nodeDef, options.documentID, nodeIndex)
-  const nodeEntity = createEntity(layerID)
-  setComponent(nodeEntity, NodeIDComponent, nodeID)
-  const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(options.documentID, nodeID)
-  setComponent(nodeEntity, SourceComponent, options.documentID)
+  const nodeEntity = NodeIDComponent.create(options.documentID, nodeID, layerID)
 
-  setComponent(nodeEntity, UUIDComponent, uuid)
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
   setComponent(nodeEntity, TransformComponent)
 
@@ -1423,7 +1420,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   if (typeof nodeDef.mesh !== 'undefined') {
     const meshPromise = getDependency(options, 'mesh', nodeEntity, nodeIndex, nodeDef.mesh)
     dependencies.push(meshPromise)
-    if (!hasComponent(nodeEntity, ColliderComponent)) setComponent(nodeEntity, VisibleComponent)
   } else if (isBoneNode(json, nodeIndex)) {
     const bone = new Bone()
     // bone.name = node.name ?? 'Node-' + i
@@ -1452,9 +1448,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
     for (const extension in nodeDef.extensions) {
       const Component = ComponentJSONIDMap.get(extension) as any // todo
       if (!Component) continue
-      if (Component === ColliderComponent) {
-        removeComponent(nodeEntity, VisibleComponent)
-      }
       deserializeComponent(nodeEntity, Component, nodeDef.extensions[extension])
       if (typeof Component.loadNode === 'function') {
         extensionPending.push(Component.loadNode(options, nodeIndex))
@@ -1494,6 +1487,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
 
   for (const entity of loadedNodeEntities) {
     setComponent(entity, EntityTreeComponent, { parentEntity: options.entity })
+    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
   }
 
   const rootEntity = options.entity
@@ -1506,7 +1500,11 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const animationClips = await Promise.all(animationPromises)
 
   if (animationClips.length > 0) {
-    const obj3d = getComponent(rootEntity, ObjectComponent)
+    // obj3d should always come from the simulation layer
+    const obj3d = getComponent(
+      LayerFunctions.getLayerRelationsEntities(rootEntity)?.[Layers.Simulation]?.[1] ?? rootEntity,
+      ObjectComponent
+    )
     obj3d.animations = animationClips
     if (!hasComponent(rootEntity, AnimationComponent)) {
       setComponent(rootEntity, AnimationComponent, {

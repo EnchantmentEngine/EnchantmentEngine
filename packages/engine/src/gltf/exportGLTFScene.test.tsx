@@ -226,7 +226,7 @@ describe('exportGLTFScene', () => {
     const geometry = new SphereGeometry(1, 8, 8)
 
     // Create a texture and assign its userData.src field.
-    const textureUrl = '/projects/dud-org/dud-project/base/folder1/image.png'
+    const textureUrl = 'https://example.com/projects/ir-engine/dud-project/public/images/image.png'
     const texture = new Texture()
     texture.userData = { src: textureUrl }
     texture.image = {}
@@ -256,9 +256,11 @@ describe('exportGLTFScene', () => {
   it('export mesh with material texture map', async () => {
     const { meshEntity } = createDudMesh()
     // Export the scene. The first element is the GLTF JSON.
-    const [gltf, ...files] = (await exportGLTFScene(meshEntity, 'dud-project', 'base/folder1/test.gltf')) as [
-      GLTF.IGLTF
-    ]
+    const [gltf, ...files] = (await exportGLTFScene(
+      meshEntity,
+      'ir-engine/dud-project',
+      'assets/base/folder1/test.gltf'
+    )) as [GLTF.IGLTF]
 
     // Validate that the GLTF contains a single node referencing mesh index 0.
     assert(Array.isArray(gltf.nodes))
@@ -291,15 +293,15 @@ describe('exportGLTFScene', () => {
 
     assert.strictEqual(gltf.images?.length, 1)
     const image = gltf.images[0]
-    assert.strictEqual(image.uri, './image.png')
+    assert.strictEqual(image.uri, '../../../public/images/image.png')
   })
 
   it('export mesh with material texture map into new folder', async () => {
     const { meshEntity } = createDudMesh()
-    const [gltf, ...files] = (await exportGLTFScene(meshEntity, 'dud-project', 'base/folder2/test.gltf')) as [
+    const [gltf, ...files] = (await exportGLTFScene(meshEntity, 'ir-engine/dud-project', 'base/folder2/test.gltf')) as [
       GLTF.IGLTF
     ]
-    assert.strictEqual(gltf.images?.[0]?.uri, '../folder1/image.png')
+    assert.strictEqual(gltf.images?.[0]?.uri, '../../public/images/image.png')
   })
 
   it('export custom ECS data', async () => {

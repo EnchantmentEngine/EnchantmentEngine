@@ -30,7 +30,6 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import FileBrowser from '../files/filebrowser'
 import { CurrentFilesQueryProvider } from '../files/helpers'
-import { FileUploadProgress } from '../files/loaders'
 import FilesToolbar from '../files/toolbar'
 import CategoriesList, { VerticalDivider } from './categories'
 import { AssetsQueryProvider } from './hooks'
@@ -83,7 +82,6 @@ function AssetsContainer() {
       <CurrentFilesQueryProvider>
         <AssetsQueryProvider>
           {toolbar}
-          <FileUploadProgress />
           <VerticalDivider
             leftChildren={<CategoriesList selected={activeTab.value} onClick={handleSidebarChange} />}
             rightChildren={rightChildren}

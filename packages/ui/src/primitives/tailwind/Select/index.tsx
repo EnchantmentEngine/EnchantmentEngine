@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useHookstate } from '@ir-engine/hyperflux'
 import { ChevronDownSm, HelpIconSm, XCloseSm } from '@ir-engine/ui/src/icons'
 import Fuse from 'fuse.js'
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
@@ -99,7 +100,7 @@ const Select = ({
   const [filteredOptions, setFilteredOptions] = useState(options)
   const [searchString, setSearchString] = useState('')
   const fuseRef = useRef<Fuse<OptionType> | null>(null)
-  const [localValue, setLocalValue] = useState(value)
+  const localValue = useHookstate(value)
   const id = useId()
   const [triggerWidth, setTriggerWidth] = useState(0)
   const popupRef = useRef<PopupActions>(null)
@@ -111,6 +112,10 @@ const Select = ({
       })
     }
   }, [searchMode])
+
+  useEffect(() => {
+    localValue.set(value)
+  }, [value])
 
   useLayoutEffect(() => {
     const updateDirection = () => {
@@ -160,7 +165,7 @@ const Select = ({
   }, [selectedOptionIndex])
 
   useEffect(() => {
-    if (localValue === '') {
+    if (localValue.value === '') {
       setDisplayText('')
       return
     }
@@ -168,24 +173,28 @@ const Select = ({
     if (
       0 <= selectedOptionIndex &&
       selectedOptionIndex < filteredOptions.length &&
-      filteredOptions[selectedOptionIndex].value === localValue
+      filteredOptions[selectedOptionIndex].value === localValue.value
     ) {
       setDisplayText(filteredOptions[selectedOptionIndex].label)
       return
     }
 
-    const index = filteredOptions.findIndex((option) => option.value === localValue)
+    if (filteredOptions.length > 0) {
+      const index = filteredOptions.findIndex((option) => option.value === localValue.value)
 
-    if (index === -1) {
-      if (searchMode === undefined) {
-        console.warn('No corresponding option found. Defaulting to null.')
-        setDisplayText('')
-        return
+      if (index === -1) {
+        if (searchMode === undefined) {
+          console.warn('No corresponding option found. Defaulting to null.')
+          setDisplayText('')
+          return
+        }
+      } else {
+        setDisplayText(filteredOptions[index].label)
       }
     } else {
-      setDisplayText(filteredOptions[index].label)
+      setDisplayText('')
     }
-  }, [localValue, selectedOptionIndex])
+  }, [value, localValue, selectedOptionIndex, filteredOptions])
 
   useEffect(() => {
     if (searchString === '') {
@@ -309,7 +318,7 @@ const Select = ({
                   }}
                   type="text"
                   className={twMerge(
-                    'w-full bg-inherit focus:outline-none',
+                    'focus:outline-non w-full bg-inherit text-text-secondary',
                     searchMode === undefined ? 'cursor-pointer' : 'cursor-text',
                     disabled ? 'cursor-not-allowed' : ''
                   )}
@@ -321,12 +330,12 @@ const Select = ({
                   }}
                 />
 
-                {showClearButton && (
+                {showClearButton && !disabled && (
                   <XCloseSm
                     onClick={() => {
                       onChange('')
                     }}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-text-secondary"
                   />
                 )}
 
@@ -336,7 +345,7 @@ const Select = ({
                       togglePopup()
                     }
                   }}
-                  className={`cursor-pointer ${isOpen && 'rotate-180'} duration-300`}
+                  className={`cursor-pointer ${isOpen && !disabled && 'rotate-180'} text-text-secondary duration-300`}
                 />
               </div>
             </div>
@@ -389,25 +398,26 @@ const Select = ({
 
           if (['Enter', ' '].includes(e.code)) {
             closePopup()
-            setLocalValue(filteredOptions[newIndex].value)
+            localValue.set(filteredOptions[newIndex].value)
             setSelectedOptionIndex(newIndex)
             setDisplayText(filteredOptions[newIndex].label)
             onChange(filteredOptions[newIndex].value)
           }
         }}
       >
-        {filteredOptions.length > 0 ? (
+        {filteredOptions.length > 0 &&
+          !disabled &&
           filteredOptions.map(({ value: currentValue, ...optionProps }, index) => (
             <DropdownItem
               key={index}
               {...optionProps}
-              selected={localValue === currentValue}
+              selected={localValue.value === currentValue}
               active={index === activeIndex}
               onMouseDown={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
                 closePopup()
-                setLocalValue(currentValue)
+                localValue.set(currentValue)
                 setSelectedOptionIndex(index)
                 setDisplayText(optionProps.label)
                 onChange(currentValue)
@@ -421,15 +431,16 @@ const Select = ({
               onKeyUp={(e) => {
                 if (e.code === 'Enter') {
                   closePopup()
-                  setLocalValue(currentValue)
+                  localValue.set(currentValue)
                   setSelectedOptionIndex(index)
                   setDisplayText(optionProps.label)
                   onChange(currentValue)
                 }
               }}
             />
-          ))
-        ) : (
+          ))}
+
+        {filteredOptions.length === 0 && !disabled && (
           <div className="flex h-12 items-center justify-center bg-ui-background text-text-secondary">
             No options available
           </div>

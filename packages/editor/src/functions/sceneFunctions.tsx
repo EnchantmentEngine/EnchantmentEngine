@@ -44,32 +44,44 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import React from 'react'
 import { EditorState } from '../services/EditorServices'
+import { SceneThumbnailState } from '../services/SceneThumbnailState'
 import { uploadProjectFiles } from './assetFunctions'
 
 const logger = multiLogger.child({ component: 'editor:sceneFunctions' })
 
 const fileServer = config.client.fileServer
 
+export const confirmSceneExists = async (sceneFile: string) => {
+  const sceneName = cleanString(sceneFile!.replace('.scene.json', '').replace('.gltf', ''))
+  const currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
+
+  const existingScene = await API.instance.service(staticResourcePath).find({
+    query: { key: `${currentSceneDirectory}/${sceneName}.gltf`, $limit: 1 }
+  })
+
+  return existingScene.data.length > 0
+}
+
 export const saveSceneGLTF = async (
   sceneAssetID: string,
   projectName: string,
   sceneFile: string,
   signal: AbortSignal,
-  saveAs?: boolean
+  saveAs?: boolean,
+  savePath?: string
 ) => {
   if (signal.aborted) throw new Error(i18n.t('editor:errors.saveProjectAborted'))
 
   const { rootEntity } = getState(EditorState)
 
-  const sceneName = cleanString(sceneFile!.replace('.scene.json', '').replace('.gltf', ''))
-  const currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
-
+  const sceneName = cleanString(sceneFile!.replace('.scene.json', '').replace('.gltf', '')) + '.gltf'
+  let currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
+  if (savePath) {
+    currentSceneDirectory = savePath
+  }
   if (saveAs) {
-    const existingScene = await API.instance.service(staticResourcePath).find({
-      query: { key: `${currentSceneDirectory}/${sceneName}.gltf`, $limit: 1 }
-    })
-
-    if (existingScene.data.length > 0) throw new Error(i18n.t('editor:errors.sceneAlreadyExists'))
+    const isSceneExists = await confirmSceneExists(sceneFile)
+    if (isSceneExists) throw new Error(i18n.t('editor:errors.sceneAlreadyExists'))
   }
 
   const response = await exportGLTFScene(rootEntity, getState(EditorState).projectName!, sceneFile, false)
@@ -94,7 +106,7 @@ export const saveSceneGLTF = async (
         {
           type: 'scene',
           contentType: 'model/gltf+json',
-          thumbnailKey: currentScene.thumbnailKey
+          thumbnailKey: currentScene.thumbnailKey ?? ''
         }
       ]
     ).promises
@@ -118,6 +130,26 @@ export const saveSceneGLTF = async (
     scenePath: assetURL,
     projectName,
     sceneAssetID: result.data[0].id
+  })
+}
+
+export const logNewScene = (authoringApp: string, entryPoint: string = 'editor') => {
+  logger.analytics({
+    app_name: 'editor',
+    project: getState(EditorState).projectName,
+    user_id: getState(EngineState).userID,
+    event_name: 'editor',
+    event_value: 'new-scene',
+    event_properties: [
+      {
+        key: 'authoring-app',
+        value: authoringApp
+      },
+      {
+        key: 'entry-point',
+        value: entryPoint
+      }
+    ]
   })
 }
 
@@ -163,6 +195,13 @@ export const setCurrentEditorScene = (sceneURL: string, uuid: EntityUUID) => {
 export const onSaveScene = async () => {
   const { sceneAssetID, projectName, sceneName, rootEntity } = getState(EditorState)
   const sceneModified = EditorState.isModified()
+
+  try {
+    await SceneThumbnailState.createThumbnail()
+    await SceneThumbnailState.uploadThumbnail()
+  } catch (error) {
+    console.error(error)
+  }
 
   if (!sceneModified) {
     PopoverState.hidePopupover()

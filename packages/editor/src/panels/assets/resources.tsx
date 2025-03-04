@@ -22,8 +22,8 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import ProgressBar from '@ir-engine/client-core/src/systems/ui/LoadingDetailView/SimpleProgressBar'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
@@ -31,7 +31,6 @@ import { getMutableState, State, useHookstate, useMutableState } from '@ir-engin
 import { Button, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import InfiniteScroll from '@ir-engine/ui/src/components/tailwind/InfiniteScroll'
-import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React, { useEffect, useRef, useState } from 'react'
 import { DragPreviewImage, useDrag } from 'react-dnd'
@@ -154,7 +153,9 @@ export function FileCard({
   dataTestIdJson,
   assetType,
   onDoubleClick,
-  className
+  className,
+  onLoad,
+  onLoadStart
 }) {
   const iconSize = useHookstate(getMutableState(FilesViewModeSettings).icons.iconSize).value
   const thumbnailURL = item.thumbnailURL
@@ -183,7 +184,13 @@ export function FileCard({
           }}
           data-testid={dataTestIdJson?.fileIconId}
         >
-          <FileIcon thumbnailURL={thumbnailURL} type={assetType} isFolder={item?.isFolder} />
+          <FileIcon
+            thumbnailURL={thumbnailURL}
+            type={assetType}
+            isFolder={item?.isFolder}
+            onLoad={onLoad}
+            onLoadStart={onLoadStart}
+          />
         </div>
 
         <Tooltip content={name} position="bottom">
@@ -204,7 +211,15 @@ export function FileCard({
   )
 }
 
-function ResourceFile({ resource }: { resource: StaticResourceType }) {
+function ResourceFile({
+  resource,
+  onLoad,
+  onLoadStart
+}: {
+  resource: StaticResourceType
+  onLoad?: () => void
+  onLoadStart?: () => void
+}) {
   const anchorEvent = useHookstate<React.MouseEvent | undefined>(undefined)
 
   const assetType = AssetLoader.getAssetType(resource.key)
@@ -224,7 +239,15 @@ function ResourceFile({ resource }: { resource: StaticResourceType }) {
     if (preview) preview(getEmptyImage(), { captureDraggingState: true })
   }, [preview])
 
-  const isSelected = useMutableState(ClickPlacementState).selectedAsset.value === resource.url
+  const selectedAsset = useMutableState(ClickPlacementState).selectedAsset.value
+
+  const handleLoad = () => {
+    onLoad?.()
+  }
+
+  const handleLoadStart = () => {
+    onLoadStart?.()
+  }
 
   return (
     <div className="h-min">
@@ -233,13 +256,16 @@ function ResourceFile({ resource }: { resource: StaticResourceType }) {
         <FileCard
           item={resource}
           name={name}
-          onClick={() => ClickPlacementState.setSelectedAsset(resource.url)}
+          onClick={() => {
+            console.log('asset url', resource.url)
+            console.log('selected', selectedAsset, resource.url), ClickPlacementState.setSelectedAsset(resource.url)
+          }}
           onContextMenu={(event) => {
             event.preventDefault()
             event.stopPropagation()
             anchorEvent.set(event)
           }}
-          isSelected={isSelected}
+          // isSelected={isSelected}
           info={resource.mimeType}
           assetType={assetType}
           dataTestIdJson={{
@@ -249,6 +275,8 @@ function ResourceFile({ resource }: { resource: StaticResourceType }) {
           }}
           onDoubleClick={() => {}}
           className="resource-file"
+          onLoad={handleLoad}
+          onLoadStart={handleLoadStart}
         />
       </div>
       <ResourceFileContextMenu resource={resource} anchorEvent={anchorEvent} />
@@ -346,8 +374,11 @@ function BottomPaginationNavBar({ resourceLength, handleScrollToPage }) {
 
 function ResourceItems({ resources }) {
   const { t } = useTranslation()
+  const { resourcesLoading, staticResourcesPagination } = useAssetsQuery()
   const pages = Math.ceil(resources.length / (ASSETS_PAGE_LIMIT + calculateItemsToFetch()))
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]) // Create a ref array
+  const fileIconsLoaded = useHookstate(0)
+  const fileIconsToLoad = useHookstate(0)
 
   const handleScrollToPage = (pageIndex: number) => {
     if (pageRefs.current[pageIndex]) {
@@ -355,11 +386,21 @@ function ResourceItems({ resources }) {
     }
   }
 
+  const isStillLoadingIcons = fileIconsLoaded.value !== fileIconsToLoad.value
+
+  const handleFileIconLoadStart = () => {
+    fileIconsToLoad.set(fileIconsToLoad.get() + 1)
+  }
+
+  const handleFileIconLoad = () => {
+    fileIconsLoaded.set(fileIconsLoaded.get() + 1)
+  }
+
   return (
     <div className="relative flex w-full ">
       <div className="relative flex w-[95%] flex-col">
         {' '}
-        {resources.length === 0 && (
+        {resources.length === 0 && !resourcesLoading && (
           <div className="col-start-2 flex h-full w-full items-center justify-center text-text-secondary">
             {t('editor:layout.scene-assets.no-search-results')}
           </div>
@@ -391,13 +432,40 @@ function ResourceItems({ resources }) {
                     i * (ASSETS_PAGE_LIMIT + calculateItemsToFetch()),
                     (i + 1) * (ASSETS_PAGE_LIMIT + calculateItemsToFetch())
                   )
-                  .map((resource) => (
-                    <ResourceFile key={resource.id} resource={resource as StaticResourceType} />
+                  .map((resource, index) => (
+                    <ResourceFile
+                      onLoadStart={handleFileIconLoadStart}
+                      onLoad={handleFileIconLoad}
+                      key={resource.id}
+                      resource={resource as StaticResourceType}
+                    />
                   ))}
               </div>
             </div>
           ))}
-        <BottomPaginationNavBar resourceLength={resources.length} handleScrollToPage={handleScrollToPage} />
+        {!resourcesLoading && !isStillLoadingIcons && resources.length > 0 && (
+          <BottomPaginationNavBar handleScrollToPage={handleScrollToPage} />
+        )}
+        {(resourcesLoading || isStillLoadingIcons) && (
+          <div className="my-4 w-full">
+            <div id="progress-container" xr-layer="true" xr-scalable="true" className="w-[350px] place-self-center ">
+              <ProgressBar
+                borderRadius="2px"
+                bgColor={'#ffffff'}
+                completed={(fileIconsLoaded.value / fileIconsToLoad.value) * 100}
+                height="3px"
+                baseBgColor="#2F3137"
+                isLabelVisible={false}
+              />
+            </div>
+            <div className="my-2 flex w-[350px] place-self-center text-sm text-white ">
+              <div className="w-1/2 justify-center  text-left">Loading Assets</div>
+              <div className="w-1/2 justify-center  text-right ">
+                {fileIconsLoaded.value} of {fileIconsToLoad.value}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {/* Sticky Mini Navbar */}
       <SideNavBar resourceLength={resources.length} handleScrollToPage={handleScrollToPage} />
@@ -428,7 +496,6 @@ export default function Resources() {
             <ResourceItems resources={activeTab.value === ResourceType.ASSETS ? resources : myAssets} />
           ) : null}
         </div>
-        {resourcesLoading && <LoadingView spinnerOnly className="h-6 w-6" />}
       </InfiniteScroll>
       <div className="mx-auto mb-10" />
     </div>
