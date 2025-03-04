@@ -33,7 +33,9 @@ import {
   DeserializeSchemaValue,
   HasRequiredSchema,
   HasSchemaDeserializers,
-  HasSchemaValidators
+  HasSchemaValidators,
+  IsSingleValueSchema,
+  requiresDeserialization
 } from './JSONSchemaUtils'
 
 /**
@@ -1290,62 +1292,225 @@ describe('HasSchemaValidators', () => {
 }) //:: HasSchemaValidators
 
 describe('requiresDeserialization', () => {
-  it.todo(
-    'should return false if `@param schema` has no children and does not have an .options.deserialize field',
-    () => {}
-  )
-  it.todo(
-    'should return false if `@param schema` has children, does not have an .options.deserialize field and none of its children have it either',
-    () => {}
-  )
-  it.todo('should return true if `@param schema` has an .options.deserialize field', () => {})
-  it.todo(
-    'should return true if `@param schema` has children, does not have an .options.deserialize field and at least one of its children have an .options.deserialize field ',
-    () => {}
-  )
+  it('should return false if `@param schema` has no children and does not have an .options.deserialize field', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: 'Number', properties: undefined } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).toBeUndefined()
+    expect(schema.options?.serialize).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = requiresDeserialization(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return false if `@param schema` has children, does not have an .options.deserialize field and none of its children have it either', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const child = { [Kind]: 'Any', properties: undefined } as Schema
+    const children = {
+      child1: child,
+      child2: child,
+      child3: child
+    }
+    const schema = { [Kind]: 'Object', properties: children } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    expect(schema.options?.deserialize).toBeUndefined()
+    expect(child.options?.deserialize).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = requiresDeserialization(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return true if `@param schema` has an .options.deserialize field', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: 'Number', options: { deserialize: (_, __) => {} }, properties: undefined } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).toBeUndefined()
+    expect(schema.options?.deserialize).not.toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = requiresDeserialization(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return true if `@param schema` has children, does not have an .options.deserialize field and at least one of its children have an .options.deserialize field ', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const child = { [Kind]: 'Any', properties: undefined } as Schema
+    const validate = { [Kind]: 'Any', options: { deserialize: (_, __) => {} }, properties: undefined } as Schema
+    const children = {
+      child1: child,
+      child2: validate,
+      child3: child
+    }
+    const schema = { [Kind]: 'Object', properties: children } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    expect(schema.options?.deserialize).toBeUndefined()
+    expect(child.options?.deserialize).toBeUndefined()
+    expect(schema[Kind]).not.toBe('Required')
+    // 2. Run the process
+    const result = requiresDeserialization(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: requiresDeserialization
 
 describe('IsSingleValueSchema', () => {
-  it.todo('should return false if `@param schema` is falsy', () => {})
-  it.todo('should return false if `@param schema`[Kind] is falsy', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Null', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Undefined', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Void', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Number', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Bool', () => {})
-  it.todo('should return true if `@param schema`[Kind] is String', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Enum', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Literal', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Class', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Array', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Tuple', () => {})
-  it.todo('should return true if `@param schema`[Kind] is Func', () => {})
-  it.todo('should return false if `@param schema`[Kind] is Any', () => {})
-  it.todo('should return false if `@param schema`[Kind] is Object', () => {})
-  it.todo('should return false if `@param schema`[Kind] is Record', () => {})
-  it.todo('should return false if `@param schema`[Kind] is Partial', () => {})
+  it('should return false if `@param schema` is falsy', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const schema = undefined
+    // 1. Sanity check (input & dependencies)
+    expect(schema).toBeFalsy()
+    // 2. Run the process
+    const result = IsSingleValueSchema(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return false if `@param schema`[Kind] is falsy', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const schema = {} as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema).toBeTruthy()
+    // 2. Run the process
+    const result = IsSingleValueSchema(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  describe.each([
+    'Null',
+    'Undefined',
+    'Void',
+    'Number',
+    'Bool',
+    'String',
+    'Enum',
+    'Literal',
+    'Class',
+    'Array',
+    'Tuple',
+    'Func'
+  ])('case: Kind.%s', (kind) => {
+    it('should return true', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema).toBeTruthy()
+      // 2. Run the process
+      const result = IsSingleValueSchema(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+  })
+
+  describe.each(['Any', 'Object', 'Record', 'Partial'])('case: Kind.%s', (kind) => {
+    it('should return false', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema).toBeTruthy()
+      // 2. Run the process
+      const result = IsSingleValueSchema(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+  })
 
   describe('case: Kind.Union', () => {
-    it.todo('should return false when `@param schema`.properties has no values', () => {})
+    const TestSchemaKind = 'Union'
+
+    it('should return false when `@param schema`.properties has no values', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const properties = {} as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema).toBeTruthy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = IsSingleValueSchema(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    /** @todo Depends on the test below */
     it.todo('should return false if any of the `@param schema`.properties is not a single value schema', () => {})
+
+    /** @todo Why is this setup not working ?? */
     it.todo(
       'should return true if `@param schema`.properties has values and all of them are single value schemas',
-      () => {}
+      () => {
+        const Expected = true
+        // 3. Set input & dependencies data
+        const properties = {
+          one: { [Kind]: 'Number' } as Schema
+        }
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema).toBeTruthy()
+        expect(schema.properties).not.toBeUndefined()
+        expect(Object.keys(schema.properties!).length).not.toBe(0)
+        // 2. Run the process
+        const result = IsSingleValueSchema(schema)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      }
     )
   }) //:: Kind.Union
-  it.todo(
-    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is NonSerialized',
-    () => {}
-  )
-  it.todo(
-    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is Required',
-    () => {}
-  )
-  it.todo(
-    'should return the result of IsSingleValueSchema( `@param schema`.properties ) if `@param schema`[Kind] is Proxy',
-    () => {}
-  )
-  it.todo('should return false if `@param schema`[Kind] is a value that is not mapped', () => {})
+
+  describe.each(['NonSerialized', 'Required', 'Proxy'])('case: Kind.%s', (kind) => {
+    it('should return the result of IsSingleValueSchema( `@param schema`.properties )', () => {
+      // 3. Set input & dependencies data
+      const properties = { [Kind]: kind } as Schema
+      const schema = { [Kind]: kind, properties: properties } as Schema
+      const Expected = IsSingleValueSchema(schema.properties as Schema)
+      // 1. Sanity check (input & dependencies)
+      expect(schema).toBeTruthy()
+      // 2. Run the process
+      const result = IsSingleValueSchema(schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+  })
+
+  it('should return false if `@param schema`[Kind] is a value that is not mapped', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    // @ts-expect-error Coerce an invalid Kinds string into the Kind sympol field
+    const schema = { [Kind]: 'IncorrectKind' } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema).toBeTruthy()
+    // 2. Run the process
+    const result = IsSingleValueSchema(schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: IsSingleValueSchema
 
 describe('HasRequiredSchemaValues', () => {
