@@ -28,7 +28,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEntity, removeEntity } from '../ComponentFunctions'
 import { createEngine, destroyEngine } from '../Engine'
 import { UndefinedEntity } from '../Entity'
-import { Kind, Schema, TEnumSchema } from './JSONSchemaTypes'
+import { Kind, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
 import { DeserializeSchemaValue, HasSchemaDeserializers } from './JSONSchemaUtils'
 
 /**
@@ -537,44 +537,89 @@ describe('DeserializeSchemaValue', () => {
       // 5? Cleanup (dependencies)
     })
 
-    /** @todo How to create the setup such that deserializing does not return curr, but the desired output instead */
-    it.todo(
-      'should return a new array based on deserializing every entry of `@param value` and ignoring any of the entries that are not valid values',
-      () => {
-        const Expected = undefined
-        // 3. Set input & dependencies data
-        const options = { deserialize: undefined }
-        const schema = { [Kind]: TestSchemaKind, options: options } as Schema
-        const curr = {}
-        const invalid = [
-          { [Kind]: 'Null', properties: null, options: options } as Schema,
-          { [Kind]: 'Undefined', properties: undefined, options: options } as Schema
-        ]
-        const valid = [
-          { [Kind]: 'Number', properties: 42, options: options } as Schema,
-          { [Kind]: 'String', properties: 'someString', options: options } as Schema,
-          { [Kind]: 'Bool', properties: false, options: options } as Schema
-        ]
-        const value = [...valid, ...invalid]
-        // 1. Sanity check (input & dependencies)
-        expect(value).not.toBeNull()
-        expect(value).not.toBeUndefined()
-        expect(Array.isArray(value)).toBeTruthy()
-        expect(schema.options?.deserialize).toBeFalsy()
-        // 2. Run the process
-        const result = DeserializeSchemaValue(testEntity, schema, curr, value)
-        // 4. Check the result (output)
-        expect(result).not.toBe(curr)
-        expect(result).toEqual(Expected)
-        // 5? Cleanup (dependencies)
-      }
-    )
+    it('should add default values to `@param curr` when its .length is less than `@param value`.length', () => {
+      const Expected = [0, 0, 0, 0, 0]
+      // 3. Set input & dependencies data
+      const options = { deserialize: undefined }
+      const properties = { [Kind]: 'Number' } as TArraySchema<Schema>['properties']
+      const schema = { [Kind]: TestSchemaKind, options: options, properties: properties } as Schema
+      const curr = []
+      const invalid = [
+        { [Kind]: 'Null', properties: null, options: options } as Schema,
+        { [Kind]: 'Undefined', properties: undefined, options: options } as Schema
+      ]
+      const valid = [
+        { [Kind]: 'Number', properties: 42, options: options } as Schema,
+        { [Kind]: 'String', properties: 'someString', options: options } as Schema,
+        { [Kind]: 'Bool', properties: false, options: options } as Schema
+      ]
+      const value = [40, 41, 42, 43, 44]
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      expect(curr.length).lessThan(value.length)
+      const before = curr
+      expect(before).not.toEqual(Expected)
+      // 2. Run the process
+      DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = curr
+      // 4. Check the result (output)
+      expect(result.length).toEqual(Expected.length)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
 
-    /** @todo Depends on the previous setup */
-    it.todo(
-      'should return `@param curr` if `@param value` is an array and an error is thrown while deserializing its entries',
-      () => {}
-    )
+    it('should return a new array based on deserializing every entry of `@param value` and ignoring any of the entries that are not valid values', () => {
+      const Expected = [40, 41, 42, 43, 44]
+      // 3. Set input & dependencies data
+      const options = { deserialize: undefined }
+      const properties = { [Kind]: 'Number' } as TArraySchema<Schema>['properties']
+      const schema = { [Kind]: TestSchemaKind, options: options, properties: properties } as Schema
+      const curr = [1, 2, 3, 4, 5]
+      const value = [...Expected, undefined, null]
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      expect(curr.length).not.toBe(value.length)
+      const before = value
+      expect(before).not.toEqual(Expected)
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)!
+      // 4. Check the result (output)
+      expect(result.length).toEqual(Expected.length)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return `@param curr` if `@param value` is an array and an error is thrown while deserializing its entries', () => {
+      const Expected = [40, 41, 42, 43, 44]
+      // 3. Set input & dependencies data
+      const options = { deserialize: undefined }
+      const properties = undefined // This makes `value.map` throw an error and trigger the `catch(e) return curr` branch
+      const schema = { [Kind]: TestSchemaKind, options: options, properties: properties } as Schema
+      const curr = Expected
+      const value = [0, 1, 2, 3, 4]
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).toBeUndefined()
+      expect(curr.length).toBe(value.length)
+      const before = value
+      expect(before).not.toEqual(Expected)
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)!
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Array
 
   describe('case: Kind.Tuple', () => {
@@ -632,8 +677,31 @@ describe('DeserializeSchemaValue', () => {
       // 5? Cleanup (dependencies)
     })
 
-    /** @todo */
-    // TODO: valid return cases for Kind.Tuple
+    it('should return a new tuple array with the deserialized values of `@param value`, and replacing each nullish entry with the respective entry from `@param curr`', () => {
+      const Expected = [40, '41_String', 42, '43_String', false]
+      // 3. Set input & dependencies data
+      const properties = [
+        { [Kind]: 'Number' } as Schema,
+        { [Kind]: 'String' } as Schema,
+        { [Kind]: 'Number' } as Schema,
+        { [Kind]: 'String' } as Schema,
+        { [Kind]: 'Bool' } as Schema
+      ]
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = [0, Expected[1], 2, Expected[3], true]
+      const value = [Expected[0], undefined, Expected[2], null, Expected[4]]
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).toBeTruthy()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Tuple
 
   describe('case: Kind.Object', () => {
@@ -692,8 +760,115 @@ describe('DeserializeSchemaValue', () => {
       // 5? Cleanup (dependencies)
     })
 
-    /** @todo */
-    // TODO: valid return cases for Kind.Object
+    it('should ignore every key of `@param value` (continue) that is not described by `@param schema`.properties', () => {
+      const Expected = { valid1: 1, valid2: true, valid3: 'String' }
+      // 3. Set input & dependencies data
+      const properties = {
+        valid1: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema,
+        valid2: { [Kind]: 'Bool', options: { deserialize: undefined } } as Schema,
+        valid3: { [Kind]: 'String', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = {}
+      const value = { valid1: 1, valid2: true, valid3: 'String', ignore: 'IgnoredField' }
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(typeof value).toBe(TestValueTypeof)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should add the respective field of `@param curr` to the result if that same field at `@param value` represents an invalid value', () => {
+      const Expected = { valid1: 1, valid2: true, valid3: 'ValidString', missing: 'MissingString' }
+      // 3. Set input & dependencies data
+      const properties = {
+        valid1: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema,
+        valid2: { [Kind]: 'Bool', options: { deserialize: undefined } } as Schema,
+        valid3: { [Kind]: 'String', options: { deserialize: undefined } } as Schema,
+        missing: { [Kind]: 'String', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = { missing: Expected.missing }
+      const value = {
+        valid1: Expected.valid1,
+        valid2: Expected.valid2,
+        valid3: Expected.valid3,
+        missing: undefined,
+        ignore: 'IgnoredField'
+      } as any
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(typeof value).toBe(TestValueTypeof)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a new object that contains every valid field of `@param value` deserialized', () => {
+      const Expected = { valid1: 1, valid2: true, valid3: 'ValidString' }
+      // 3. Set input & dependencies data
+      const properties = {
+        valid1: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema,
+        valid2: { [Kind]: 'Bool', options: { deserialize: undefined } } as Schema,
+        valid3: { [Kind]: 'String', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = {}
+      const value = {
+        valid1: Expected.valid1,
+        valid2: Expected.valid2,
+        valid3: Expected.valid3,
+        invalid1: undefined,
+        invalid2: null
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(typeof value).toBe(TestValueTypeof)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should not add any field of `@param value` to the result when deserializing it results in an undefined value', () => {
+      const Expected = { valid1: 1, valid2: true }
+      // 3. Set input & dependencies data
+      const properties = {
+        valid1: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema,
+        valid2: { [Kind]: 'Bool', options: { deserialize: undefined } } as Schema,
+        valid3: { [Kind]: 'String', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = {}
+      const invalid = 42
+      const value = { valid1: Expected.valid1, valid2: Expected.valid2, valid3: invalid }
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(typeof value).toBe(TestValueTypeof)
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Object
 
   describe('case: Kind.Class', () => {
@@ -733,16 +908,100 @@ describe('DeserializeSchemaValue', () => {
       // 5? Cleanup (dependencies)
     })
 
-    /** @todo */
-    // TODO: valid return cases for Kind.Class
+    it('should mutate every `@param value` field to its deserialized value when value[key] is a valid value', () => {
+      const Expected = { test: { one: 4, two: 5 } }
+      // 3. Set input & dependencies data
+      const properties = {
+        test: {
+          [Kind]: 'Object',
+          options: { deserialize: undefined },
+          properties: {
+            one: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema,
+            two: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema
+          }
+        } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = { test: { one: 21, two: 22 } }
+      const value = { test: { one: 4 as unknown, two: 5 as unknown } }
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toBe(value)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should mutate every `@param value` field to its respective curr[key] when value[key] is an invalid value', () => {
+      const Expected = { test: 42 }
+      // 3. Set input & dependencies data
+      const properties = {
+        test: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = { test: Expected.test }
+      const value = { test: undefined } as any
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toBe(value)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return `@param value`', () => {
+      const Expected = { test: 42 }
+      // 3. Set input & dependencies data
+      const properties = {
+        test: { [Kind]: 'Number', options: { deserialize: undefined } } as Schema
+      }
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = {}
+      const value = Expected
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Class
 
-  /** @todo */
   describe.each(['Required', 'Proxy', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
-    it.todo(
-      'should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value',
-      () => {}
-    )
+    const TestSchemaKind = kind
+
+    it('should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value', () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const properties = { [Kind]: 'Number', options: { deserialize: undefined } } as Schema
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const curr = {}
+      const value = Expected
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value).not.toBeUndefined()
+      expect(schema.options?.deserialize).toBeFalsy()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: [Kind.Required, Kind.Proxy, Kind.NonSerialized, Kind.Partial]
 
   describe('case: Kind -> default', () => {
