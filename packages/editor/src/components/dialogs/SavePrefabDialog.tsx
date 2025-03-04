@@ -28,7 +28,7 @@ import { cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName.t
 import { getComponent, hasComponent } from '@ir-engine/ecs'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { getState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -36,6 +36,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
 import { EditorState } from '../../services/EditorServices'
+import { FilesState } from '../../services/FilesState.ts'
 
 export default function SavePrefabPanel({ entity }) {
   const { t } = useTranslation()
@@ -49,6 +50,9 @@ export default function SavePrefabPanel({ entity }) {
     const isGLTF = gltfComponent.src.endsWith('gltf')
     const saveName = srcPath.value + '.gltf'
     await exportRelativeGLTF(entity, getState(EditorState).projectName!, saveName, false)
+    const fileState = getMutableState(FilesState)
+    const updatedFileCount = fileState.updatedFileCount.value
+    fileState.updatedFileCount.set(updatedFileCount + 1)
     PopoverState.hidePopupover()
   }
 

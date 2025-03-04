@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { getState } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { Button } from '@ir-engine/ui'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
 import { FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
@@ -33,6 +33,7 @@ import { useTranslation } from 'react-i18next'
 import { validateImportFolderPath } from '../../components/dialogs/ImportSettingsPanelDialog'
 import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
+import { FilesState } from '../../services/FilesState.ts'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
 import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
 import { AssetCategoryNode } from './categories'
@@ -100,6 +101,7 @@ export default function Topbar() {
   const { search } = useAssetsQuery()
   const { currentCategoryPath } = useAssetsCategory()
   const { refetchResources, staticResourcesPagination } = useAssetsQuery()
+  const filesState = getMutableState(FilesState)
 
   const handleBack = () => {
     const path = currentCategoryPath.value?.path.split('/') ?? []
@@ -121,6 +123,13 @@ export default function Topbar() {
     staticResourcesPagination.skip.set(0)
     refetchResources()
   }, [search.query])
+
+  useEffect(() => {
+    if (filesState.updatedFileCount.value > 0) {
+      filesState.updatedFileCount.set(0)
+      refetchResources()
+    }
+  }, [filesState.updatedFileCount.value])
 
   return (
     <PanelToolbar

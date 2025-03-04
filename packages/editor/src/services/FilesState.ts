@@ -61,7 +61,8 @@ export const FilesState = defineState({
     selectedDirectory: '',
     projectName: '',
     clipboardFiles: { files: [] } as { isCopy?: boolean; files: FileDataType[] },
-    searchText: ''
+    searchText: '',
+    updatedFileCount: 0
   })
 })
 
