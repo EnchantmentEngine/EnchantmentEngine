@@ -333,7 +333,10 @@ export class FileBrowserService
           data.newProject
       )
 
-    if (data.oldPath !== data.newPath && data.newPath.startsWith(`${data.oldPath}/`)) {
+    const oldFullPath = `${data.oldPath}${data.oldName}/`.replace(/\/+$/, '') // Ensure consistent format
+    const newFullPath = data.newPath.replace(/\/+$/, '')
+
+    if (oldFullPath === newFullPath || newFullPath.startsWith(oldFullPath + '/')) {
       throw new Error('Cannot move a folder into itself or its own subfolder')
     }
 
