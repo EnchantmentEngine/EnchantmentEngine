@@ -30,6 +30,7 @@ import { createEngine, destroyEngine } from '../Engine'
 import { Entity, UndefinedEntity } from '../Entity'
 import { Kind, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
 import {
+  CreateSchemaValue,
   DeserializeSchemaValue,
   HasRequiredSchema,
   HasRequiredSchemaValues,
@@ -1847,55 +1848,292 @@ describe('HasValidSchemaValues', () => {
 }) //:: HasValidSchemaValues
 
 describe('CreateSchemaValue', () => {
-  it.todo(
-    'should return a deepcopy of `@param schema`.options.default when it is not a function, options is truthy and options has a field called default',
-    () => {}
+  it('should return a deepcopy of `@param schema`.options.default when it is not a function, options is truthy and options has a field called default', () => {
+    const Expected = { one: 41, two: 42 }
+    // 3. Set input & dependencies data
+    const defaultField = structuredClone(Expected)
+    const schema = { options: { default: defaultField } } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema.options).toBeTruthy()
+    expect(typeof schema.options?.default).not.toBe('function')
+    expect('default' in schema.options!).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return the result of `@param schema`.options.default() when it is a function, options is truthy and options has a field called default', () => {
+    const Expected = { one: 41, two: 42 }
+    // 3. Set input & dependencies data
+    const schema = { options: { default: () => Expected } } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema.options).toBeTruthy()
+    expect(typeof schema.options?.default).toBe('function')
+    expect('default' in schema.options!).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it.each([
+    [null, 'Null'],
+    [undefined, 'Undefined'],
+    [undefined, 'Void'],
+    [0, 'Number'],
+    [false, 'Bool'],
+    ['', 'String']
+  ])('should return %s when `@param schema`[Kind] is %s', (Expected, kind) => {
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: kind } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return the first value that can be represented by the `@param schema`.properties enum when schema[Kind] is 'Enum'", () => {
+    const Expected = 42
+    // 3. Set input & dependencies data
+    const kind = 'Enum'
+    const properties = { expectedValue: Expected, One: 1, Two: 2 }
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return `@param schema`.properties when schema[Kind] is 'Literal'", () => {
+    const Expected = { thing: 42 }
+    // 3. Set input & dependencies data
+    const kind = 'Literal'
+    const properties = Expected
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it.each(['Object', 'Class'])(
+    'should create an object as defined by `@schema properties` with all proxies flattened (Kind.Proxy) when `@param schema`[Kind] is Kind.%s',
+    (kind) => {
+      const Expected = { one: 42, two: 'SomeString' }
+      // 3. Set input & dependencies data
+      const schema = {
+        [Kind]: kind,
+        properties: {
+          one: {
+            [Kind]: 'Proxy',
+            options: {
+              create: () => {
+                return Expected.one
+              }
+            },
+            properties: { [Kind]: 'Number' }
+          } as unknown as Schema,
+          two: {
+            [Kind]: 'Proxy',
+            options: {
+              create: () => {
+                return Expected.two
+              }
+            },
+            properties: { [Kind]: 'String' }
+          } as unknown as Schema
+        }
+      } as Schema
+      const testEntity = 12345 as Entity
+      // 1. Sanity check (input & dependencies)
+      expect(schema[Kind]).toBeTruthy()
+      expect(schema.options).not.toBeTruthy()
+      expect(schema.options?.default).toBeUndefined()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = CreateSchemaValue(testEntity, schema)
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    }
   )
-  it.todo(
-    'should return the result of `@param schema`.options.default() when it is a function, options is truthy and options has a field called default',
-    () => {}
-  )
-  it.todo("should return null when `@param schema`[Kind] is 'Null'", () => {})
-  it.todo("should return .undefined when `@param schema`[Kind] is 'Undefined'", () => {})
-  it.todo("should return undefined when `@param schema`[Kind] is 'Void'", () => {})
-  it.todo("should return return when `@param schema`[Kind] is 'Number'", () => {})
-  it.todo("should return false when `@param schema`[Kind] is 'Bool'", () => {})
-  it.todo("should return '' when `@param schema`[Kind] is 'String'", () => {})
-  it.todo(
-    "should return the first value that can be represented by the `@param schema`.properties enum when schema[Kind] is 'Enum'",
-    () => {}
-  )
-  it.todo("should return `@param schema`.properties when schema[Kind] is 'Literal'", () => {})
-  it.todo.each(['Object', 'Class'])(
-    'should return a deep clone of `@schema properties` with all proxies flattened (Kind.Proxy) when `@param schema`[Kind] is Kind.%s',
-    (kind) => {}
-  )
-  it.todo.each(['Any', 'Record', 'Partial'])(
+
+  it.each(['Any', 'Record', 'Partial'])(
     'should return an empty object when `@param schema`[Kind] is Kind.%s',
-    (kind) => {}
+    (kind) => {
+      const Expected = {}
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      const testEntity = 12345 as Entity
+      // 1. Sanity check (input & dependencies)
+      expect(schema[Kind]).toBeTruthy()
+      expect(schema.options).not.toBeTruthy()
+      expect(schema.options?.default).toBeUndefined()
+      // 2. Run the process
+      const result = CreateSchemaValue(testEntity, schema)
+      // 4. Check the result (output)
+      expect(typeof result).toBe(typeof Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    }
   )
-  it.todo.each(['Array', 'Tuple'])('should return an empty array when `@param schema`[Kind] is Kind.%s', (kind) => {})
-  it.todo(
-    "should return null when `@param schema`[Kind] is 'Union' and the `@param schema`.properties array has no child schemas ",
-    () => {}
+
+  it.each(['Array', 'Tuple'])('should return an empty array when `@param schema`[Kind] is Kind.%s', (kind) => {
+    const Expected = []
+    // 3. Set input & dependencies data
+    const schema = { [Kind]: kind } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(Array.isArray(result)).toBeTruthy()
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return null when `@param schema`[Kind] is 'Union' and the `@param schema`.properties array has no child schemas ", () => {
+    const Expected = null
+    // 3. Set input & dependencies data
+    const kind = 'Union'
+    const properties = []
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return the first value representable by `@param schema`.properties when schema[Kind] is 'Union' and the `@param schema`.properties array has at least one child schema", () => {
+    const Expected = 0
+    // 3. Set input & dependencies data
+    const kind = 'Union'
+    const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    expect(result).not.toEqual('')
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return a new function as represented by `@param schema`.properties.return when schema[Kind] is 'Func'", () => {
+    const Expected = 0
+    // 3. Set input & dependencies data
+    const kind = 'Func'
+    const returnSchema = { [Kind]: 'Number' } as Schema
+    const properties = { params: [], return: returnSchema }
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = (CreateSchemaValue(testEntity, schema) as Function)()
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).not.toEqual('')
+    // 5? Cleanup (dependencies)
+  })
+
+  it.each(['Required', 'NonSerialized'])(
+    'should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is %s',
+    (kind) => {
+      const Expected = 0
+      // 3. Set input & dependencies data
+      const properties = {
+        [Kind]: 'Union',
+        properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+      }
+      const schema = { [Kind]: kind, properties: properties } as Schema
+      const testEntity = 12345 as Entity
+      // 1. Sanity check (input & dependencies)
+      expect(schema[Kind]).toBeTruthy()
+      expect(schema.options).not.toBeTruthy()
+      expect(schema.options?.default).toBeUndefined()
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = CreateSchemaValue(testEntity, schema)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+      expect(result).not.toEqual('')
+      // 5? Cleanup (dependencies)
+    }
   )
-  it.todo(
-    "should return the first value representable by `@param schema`.properties when schema[Kind] is 'Union' and the `@param schema`.properties array has at least one child schema",
-    () => {}
-  )
-  it.todo(
-    "should return a new function as represented by `@param schema`.properties.return when schema[Kind] is 'Func'",
-    () => {}
-  )
-  it.todo(
-    "should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is 'Required'",
-    () => {}
-  )
-  it.todo(
-    "should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is 'NonSerialized'",
-    () => {}
-  )
-  it.todo('should return undefined for every other `@param schema`[Kind] (case: default)', () => {})
+
+  it('should return undefined for every other `@param schema`[Kind] (case: default)', () => {
+    const Expected = undefined
+    // 3. Set input & dependencies data
+    const kind = 'UnknownKind' as any
+    const properties = { [Kind]: 'Union', properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema] }
+    const schema = { [Kind]: kind, properties: properties } as Schema
+    const testEntity = 12345 as Entity
+    // 1. Sanity check (input & dependencies)
+    expect(schema[Kind]).toBeTruthy()
+    expect(schema.options).not.toBeTruthy()
+    expect(schema.options?.default).toBeUndefined()
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CreateSchemaValue(testEntity, schema)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    expect(result).toEqual(Expected)
+    expect(result).not.toEqual('')
+    // 5? Cleanup (dependencies)
+  })
 }) //:: CreateSchemaValue
 
 describe('CheckSchemaValue', () => {
