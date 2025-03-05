@@ -30,6 +30,7 @@ import { createEngine, destroyEngine } from '../Engine'
 import { Entity, UndefinedEntity } from '../Entity'
 import { Kind, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
 import {
+  CheckSchemaValue,
   CreateSchemaValue,
   DeserializeSchemaValue,
   HasRequiredSchema,
@@ -2137,47 +2138,219 @@ describe('CreateSchemaValue', () => {
 }) //:: CreateSchemaValue
 
 describe('CheckSchemaValue', () => {
-  describe('case Kind.Null', () => {
-    it.todo('should return true if `@param value` is null', () => {})
-    it.todo('should return false if `@param value` is not null', () => {})
+  describe.each([
+    ['Null', { one: null, two: 42 }],
+    ['Undefined', { one: undefined, two: 42 }]
+  ])('case Kind.%s', (kind, value) => {
+    it(`should return true if '@param value' is ${value.one}`, () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value.one)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it(`should return false if '@param value' is not ${value.one}`, () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value.two)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Null
 
-  describe('case Kind.Undefined', () => {
-    it.todo('should return true if `@param value` is undefined', () => {})
-    it.todo('should return false if `@param value` is not undefined', () => {})
-  }) //:: Kind.Undefined
+  describe.each([
+    ['Number', 'number', { one: 1, two: false }],
+    ['Bool', 'boolean', { one: false, two: 42 }],
+    ['String', 'string', { one: 'SomeString', two: 42 }]
+  ])('case Kind.%s', (kind, typ, value) => {
+    it("should return true if typeof `@param value` is 'number'", () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(typeof value.one).toBe(typ)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value.one)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
 
-  describe('case Kind.Number', () => {
-    it.todo("should return true if typeof `@param value` is 'number'", () => {})
-    it.todo("should return false if typeof `@param value` is not 'number'", () => {})
+    it("should return false if typeof `@param value` is not 'number'", () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: kind } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(typeof value.two).not.toBe(typ)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value.two)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Number
 
-  describe('case Kind.Bool', () => {
-    it.todo("should return true if typeof `@param value` is 'boolean'", () => {})
-    it.todo("should return false if typeof `@param value` is not 'boolean'", () => {})
-  }) //:: Kind.Bool
-
-  describe('case Kind.String', () => {
-    it.todo("should return true if typeof `@param value` is 'string'", () => {})
-    it.todo("should return false if typeof `@param value` is not 'string'", () => {})
-  }) //:: Kind.String
-
   describe('case Kind.Enum', () => {
-    it.todo('should return true if `@param schema`.properties includes `@param value`', () => {})
-    it.todo('should return false if `@param schema`.properties does not include `@param value`', () => {})
+    const TestSchemaKind = 'Enum'
+
+    it('should return true if `@param schema`.properties includes `@param value`', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { expectedValue: value, One: 1, Two: 2 }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(Object.values(schema.properties!).includes(value)).toBeTruthy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param schema`.properties does not include `@param value`', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { One: 1, Two: 2 }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(Object.values(schema.properties!).includes(value)).toBeFalsy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Enum
 
   describe('case Kind.Literal', () => {
-    it.todo('should return true if `@param schema`.properties is `@param value`', () => {})
-    it.todo('should return false if `@param schema`.properties is not `@param value`', () => {})
+    const TestSchemaKind = 'Literal'
+
+    it('should return true if `@param schema`.properties is `@param value`', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = { one: 42 }
+      const properties = value
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.properties!).toBe(value)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param schema`.properties is not `@param value`', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = { one: 41 }
+      const properties = { two: 42 }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.properties!).not.toBe(value)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Literal
 
-  describe.each(['Object', 'Class'])('case Kind.%s', () => {
-    it.todo('should ignore any `@param schema`.properties or their children when they are not serializable', () => {})
-    it.todo('should return false if any of the `@param schema`.properties is not a schema value', () => {})
-    it.todo('should return true if all `@param schema`.properties are schema values', () => {})
-    it.todo('should return true if `@param schema`[Kind] is Kind.Any', () => {})
+  describe.each(['Object', 'Class'])('case Kind.%s', (kind) => {
+    it('should ignore any `@param schema`.properties or their children when they are not serializable', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = { one: 41, two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
+      const properties = {
+        one: { [Kind]: 'Number' } as Schema,
+        two: { [Kind]: 'String' } as Schema,
+        ignored1: { [Kind]: 'NonSerialized' } as Schema,
+        ignored2: {
+          [Kind]: 'Object',
+          properties: {
+            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
+          }
+        } as Schema
+      }
+      const schema = { [Kind]: kind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if any of the `@param schema`.properties is not a schema value', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = { one: 'ShouldBeNumber', two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
+      const properties = {
+        one: { [Kind]: 'Number' } as Schema,
+        two: { [Kind]: 'String' } as Schema,
+        ignored1: { [Kind]: 'NonSerialized' } as Schema,
+        ignored2: {
+          [Kind]: 'Object',
+          properties: {
+            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
+          }
+        } as Schema
+      }
+      const schema = { [Kind]: kind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if all `@param schema`.properties are schema values', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = { one: 41, two: 'SomeString' }
+      const properties = {
+        one: { [Kind]: 'Number' } as Schema,
+        two: { [Kind]: 'String' } as Schema
+      }
+      const schema = { [Kind]: kind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.properties).not.toBeUndefined()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: [Kind.Object, Kind.Class]
+
+  it('should return true if `@param schema`[Kind] is Kind.Any', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const TestSchemaKind = 'Any'
+    const value = null
+    const schema = { [Kind]: TestSchemaKind, properties: {} } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(schema.properties).not.toBeUndefined()
+    // 2. Run the process
+    const result = CheckSchemaValue(schema, value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 
   describe('case Kind.Record', () => {
     it.todo('should return true if `@param schema`.properties.value is not serializable', () => {})
@@ -2333,14 +2506,15 @@ describe('ConvertToSchema', () => {
       it.todo('should return `@param value` if it is not an array', () => {})
     }) //:: case 'Tuple'
 
-    describe("case 'Union'", () => {}) //:: case 'Union'
-    it.todo('should return null if `@param schema`.properties has no values', () => {})
-    it.todo('should ignore (continue) all values of `@param schema`.properties that are not serializable', () => {})
-    it.todo(
-      'should return `@param value` converted to the first entry of `@param schema`.properties that matches its value',
-      () => {}
-    )
-    it.todo('should return null if no entry of `@param schema`.properties that matches `@param value`', () => {})
+    describe("case 'Union'", () => {
+      it.todo('should return null if `@param schema`.properties has no values', () => {})
+      it.todo('should ignore (continue) all values of `@param schema`.properties that are not serializable', () => {})
+      it.todo(
+        'should return `@param value` converted to the first entry of `@param schema`.properties that matches its value',
+        () => {}
+      )
+      it.todo('should return null if no entry of `@param schema`.properties that matches `@param value`', () => {})
+    }) //:: case 'Union'
 
     describe.each(['Partial', 'Required', 'Proxy'])('case %s', (kind) => {
       it.todo(
