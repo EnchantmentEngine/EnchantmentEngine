@@ -2082,7 +2082,7 @@ describe('CreateSchemaValue', () => {
     expect(schema.options?.default).toBeUndefined()
     expect(schema.properties).not.toBeUndefined()
     // 2. Run the process
-    const result = (CreateSchemaValue(testEntity, schema) as Function)()
+    const result = (CreateSchemaValue(testEntity, schema) as any)()
     // 4. Check the result (output)
     expect(result).toBe(Expected)
     expect(result).not.toEqual('')
