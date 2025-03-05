@@ -2353,17 +2353,48 @@ describe('CheckSchemaValue', () => {
   })
 
   describe('case Kind.Record', () => {
-    it.todo('should return true if `@param schema`.properties.value is not serializable', () => {})
+    const TestSchemaKind = 'Record'
+
+    it('should return true if `@param schema`.properties.value is not serializable', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = null
+      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    /** @todo Why is this setup not correct ?? */
     it.todo(
       "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.keys is not a schema value",
-      () => {}
+      () => {
+        const Expected = false
+        // 3. Set input & dependencies data
+        const value = { One: 1, Two: 2, 3: 3 }
+        const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(value).toBeTruthy()
+        expect(typeof value).toBe('object')
+        // 2. Run the process
+        const result = CheckSchemaValue(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      }
     )
+
     it.todo(
       "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.values is not a schema value",
       () => {}
     )
     it.todo(
-      "should return true if `@param schema`.properties.value is serializable, `@param value` is falsy of its typeof is not 'object'",
+      "should return true if `@param schema`.properties.value is serializable, `@param value` is falsy or its typeof is not 'object'",
       () => {}
     )
   }) //:: Kind.Record
