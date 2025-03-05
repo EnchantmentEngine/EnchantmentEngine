@@ -41,6 +41,7 @@ export const InputSourceComponent = defineComponent({
   name: 'InputSourceComponent',
 
   schema: S.Object({
+    sourceEntity: S.Entity(),
     source: S.Type<XRInputSource>({} as XRInputSource),
     buttons: S.Type<Readonly<ButtonStateMap<typeof DefaultButtonBindings>>>({}),
     raycaster: S.Class(() => new Raycaster()),
@@ -55,7 +56,7 @@ export const InputSourceComponent = defineComponent({
   onSet: (
     entity,
     component,
-    args: { buttons?: ButtonStateMap<any>; source?: XRInputSource; gamepad?: Gamepad } = {}
+    args: { sourceEntity?: Entity; buttons?: ButtonStateMap<any>; source?: XRInputSource; gamepad?: Gamepad } = {}
   ) => {
     const source =
       args.source ??
@@ -99,6 +100,10 @@ export const InputSourceComponent = defineComponent({
 
     if (args.buttons) {
       component.buttons.set(args.buttons)
+    }
+
+    if (typeof args.sourceEntity === 'number') {
+      component.sourceEntity.set(args.sourceEntity)
     }
   },
 

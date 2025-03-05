@@ -43,6 +43,7 @@ import { MouseScroll } from '../../input/state/ButtonState'
 import { InputState } from '../../input/state/InputState'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+
 const ZOOM_SPEED = 0.1
 const PAN_SPEED = 1
 const ORBIT_SPEED = 5

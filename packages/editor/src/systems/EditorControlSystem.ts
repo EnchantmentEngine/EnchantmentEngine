@@ -283,15 +283,10 @@ const findNextSelectionEntity = (topLevelParent: Entity, child: Entity): Entity 
   return findNextSelectionEntity(topLevelParent, parentTree.parentEntity)
 }
 
-const inputQuery = defineQuery([InputSourceComponent])
 let clickStartEntity = UndefinedEntity
-
 let hierarchyFeatureFlagEnabled = false
 
 const execute = () => {
-  const entity = AvatarComponent.getSelfAvatarEntity()
-  if (entity) return
-
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const buttons = InputComponent.getButtons(viewerEntity, EditorButtonBindings)
 
@@ -299,6 +294,9 @@ const execute = () => {
   if (buttons.FlyControlMode?.up) onFlyControlModeEnd()
 
   if (hasComponent(viewerEntity, FlyControlComponent)) return
+
+  const entity = AvatarComponent.getSelfAvatarEntity()
+  if (entity) return
 
   if (buttons.Undo?.down) onUndo()
   if (buttons.Redo?.down) onRedo()

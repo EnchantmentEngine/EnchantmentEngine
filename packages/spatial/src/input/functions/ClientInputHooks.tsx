@@ -156,7 +156,7 @@ export const useXRInputSources = () => {
 
     const addInputSource = (source: XRInputSource) => {
       const eid = createEntity()
-      setComponent(eid, InputSourceComponent, { source })
+      setComponent(eid, InputSourceComponent, { source, sourceEntity: Engine.instance.viewerEntity })
       setComponent(eid, EntityTreeComponent, {
         parentEntity:
           source.targetRayMode === 'tracked-pointer' ? Engine.instance.localFloorEntity : Engine.instance.viewerEntity
@@ -235,7 +235,7 @@ export const CanvasInputReactor = () => {
       const pointerEntity = createEntity()
       setComponent(pointerEntity, NameComponent, 'InputSource-emulated-pointer')
       setComponent(pointerEntity, TransformComponent)
-      setComponent(pointerEntity, InputSourceComponent)
+      setComponent(pointerEntity, InputSourceComponent, { sourceEntity: cameraEntity })
       setComponent(pointerEntity, InputPointerComponent, {
         pointerId: event.pointerId,
         cameraEntity

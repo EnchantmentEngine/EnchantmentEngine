@@ -120,7 +120,7 @@ export const InputComponent = defineComponent({
           for (const sourceEntity of inputComponent.inputSources) {
             const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
             if (!inputSourceComponent) continue
-            const state = inputSourceComponent.buttons[button]
+            const state = inputSourceComponent.buttons[button] as ButtonState
             if (state?.consumed)
               console.warn(
                 `button ${button} checked by ${entity} - ${getComponent(entity, NameComponent)} consumed by ${

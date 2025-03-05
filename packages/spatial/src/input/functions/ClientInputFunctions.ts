@@ -45,8 +45,6 @@ import { getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { PI } from '../../common/constants/MathConstants'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
-import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent, TransformGizmoTagComponent } from '../../transform/components/TransformComponent'
 import { XRSpaceComponent } from '../../xr/XRComponents'
 import { XRUIComponent } from '../../xrui/components/XRUIComponent'
@@ -295,9 +293,3 @@ export const ClientInputFunctions = {
   assignInputSources
 }
 export default ClientInputFunctions
-
-function filterEntitiesByViewer(entity: Entity, viewerEntity = getState(ReferenceSpaceState).viewerEntity) {
-  const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
-  if (!sceneEntity) return false
-  return getComponent(viewerEntity, RendererComponent).scenes.includes(sceneEntity)
-}
