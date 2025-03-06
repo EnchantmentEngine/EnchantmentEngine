@@ -40,7 +40,9 @@ import {
   HasSchemaValidators,
   HasValidSchemaValues,
   IsSingleValueSchema,
-  requiresDeserialization
+  JSONSchemaUtilsFunctions,
+  requiresDeserialization,
+  SerializeSchema
 } from './JSONSchemaUtils'
 
 /**
@@ -2888,83 +2890,446 @@ describe('CloneSerializable', () => {
   })
 }) //:: CloneSerializable
 
-describe('SerializeSchema', () => {
-  it.todo(
-    'should return a deep clone of `@param value` with all its serializable values converted based on `@param schema`',
-    () => {}
-  )
-}) //:: SerializeSchema
-
 describe('ConvertToSchema', () => {
   describe('when `@param schema`.options.serialize is truthy ..', () => {
-    it.todo(
-      '.. should return the result of calling schema.options.serialize with (`@param value`) as arguments',
-      () => {}
-    )
+    it('.. should return the result of calling schema.options.serialize with (`@param value`) as arguments', () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const resultSpy = vi.fn((_: any): any => Expected)
+      const value = 21
+      const schema = { options: { serialize: resultSpy as any } } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(schema.options?.serialize).toBeTruthy()
+      // 2. Run the process
+      const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith(value)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   })
 
   describe('when `@param schema`.options.serialize is falsy ..', () => {
     it.todo.each(['Null', 'Undefined', 'Void', 'Number', 'Bool', 'String', 'Enum', 'Literal', 'Any'])(
       "should return `@param value` when `@param schema`[Kind] is '%s'",
-      (kind) => {}
+      (kind) => {
+        const Expected = { one: 42 }
+        // 3. Set input & dependencies data
+        const TestSchemaKind = kind
+        const value = Expected
+        const schema = { [Kind]: TestSchemaKind, options: { serialize: undefined } } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema.options?.serialize).not.toBeTruthy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      }
     )
+
     describe.each(['Object', 'Class'])('case: Kind.%s', (kind) => {
+      const TestSchemaKind = kind
+
       describe("when schema.properties has keys, `@param value` is truthy and its typeof is 'object' ..", () => {
-        it.todo(
-          '.. should return an object that contains all serializable fields of `@param value` converted to schema values',
-          () => {}
-        )
+        it('.. should return an object that contains all serializable fields of `@param value` converted to schema values', () => {
+          const Expected = { one: 42 }
+          // 3. Set input & dependencies data
+          const TestSchemaKind = kind
+          const value = { one: 42, two: undefined }
+          const properties = {
+            one: { [Kind]: 'Number' } as Schema,
+            two: { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
+          }
+          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          // 1. Sanity check (input & dependencies)
+          expect(schema).toBeTruthy()
+          expect(typeof schema).toBe('object')
+          expect(Object.keys(schema.properties!).length).not.toBe(0)
+          expect(schema.options?.serialize).not.toBeTruthy()
+          // 2. Run the process
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+          // 4. Check the result (output)
+          expect(result).not.toBe(Expected)
+          expect(result).toEqual(Expected)
+          // 5? Cleanup (dependencies)
+        })
       })
-      describe("when schema.properties has no keys, `@param value` is truthy or its typeof is no 'object' ..", () => {
-        it.todo(".. should return null if `@param schema`[Kind] is 'Class'", () => {})
-        it.todo(".. should return `@param value` if `@param schema`[Kind] is not 'Class',", () => {})
+
+      describe("when schema.properties has no keys, `@param value` is truthy or its typeof is not 'object' ..", () => {
+        it(".. should return null if `@param schema`[Kind] is 'Class'", () => {
+          const Expected = kind === 'Class' ? null : { one: 42, two: undefined }
+          // 3. Set input & dependencies data
+          const TestSchemaKind = kind
+          const value = { one: 42, two: undefined }
+          const properties = {}
+          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          // 1. Sanity check (input & dependencies)
+          expect(schema).toBeTruthy()
+          expect(typeof schema).toBe('object')
+          expect(Object.keys(schema.properties!).length).toBe(0)
+          expect(schema.options?.serialize).not.toBeTruthy()
+          expect(typeof value).toBe('object')
+          // 2. Run the process
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+          // 4. Check the result (output)
+          expect(result).toEqual(Expected)
+          // 5? Cleanup (dependencies)
+        })
+
+        it(".. should return `@param value` if `@param schema`[Kind] is not 'Class',", () => {
+          const Expected = kind !== 'Class' ? { one: 42, two: undefined } : null
+          // 3. Set input & dependencies data
+          const TestSchemaKind = kind
+          const value = { one: 42, two: undefined }
+          const properties = {}
+          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          // 1. Sanity check (input & dependencies)
+          expect(schema).toBeTruthy()
+          expect(typeof schema).toBe('object')
+          expect(Object.keys(schema.properties!).length).toBe(0)
+          expect(schema.options?.serialize).not.toBeTruthy()
+          expect(typeof value).toBe('object')
+          // 2. Run the process
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+          // 4. Check the result (output)
+          expect(result).toEqual(Expected)
+          // 5? Cleanup (dependencies)
+        })
       })
     }) //:: case: ['Object', 'Class']
 
     describe("case 'Record'", () => {
-      it.todo('should return null if `@param schema`.properties.value is falsy', () => {})
-      it.todo(
-        "should return a new record object with all the (key:value)s from `@param value` that are not null or undefined converted to schema values if value is truthy and its typeof is 'object'",
-        () => {}
-      )
-      it.todo("should return `@param value` if it is falsy or its typeof is not 'object'", () => {})
+      const TestSchemaKind = 'Record'
+
+      it('should return null if `@param schema`.properties.value is falsy', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = { one: 42, two: undefined }
+        const properties = {}
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema).toBeTruthy()
+        expect((schema.properties! as any).value).toBeFalsy()
+        expect(value).toBeTruthy()
+        expect(typeof value).toBe('object')
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it("should return a new record object with all the (key:value)s from `@param value` converted to schema values if value is truthy and its typeof is 'object'", () => {
+        const one = 41
+        const two = 42
+        const Expected = { one: one, two: two }
+        // 3. Set input & dependencies data
+        const value = structuredClone(Expected)
+        const properties = {
+          key: { [Kind]: 'String' } as Schema,
+          value: { [Kind]: 'Number' } as Schema
+        }
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema).toBeTruthy()
+        expect((schema.properties! as any).key).toBeTruthy()
+        expect((schema.properties! as any).value).toBeTruthy()
+        expect(value).toBeTruthy()
+        expect(typeof value).toBe('object')
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return `@param value` if it is falsy', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = {
+          key: { [Kind]: 'String' } as Schema,
+          value: { [Kind]: 'Number' } as Schema
+        }
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema).toBeTruthy()
+        expect((schema.properties! as any).key).toBeTruthy()
+        expect((schema.properties! as any).value).toBeTruthy()
+        expect(value).toBeFalsy()
+        expect(typeof value).toBe('object')
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it("should return `@param value` if it its typeof is not 'object'", () => {
+        const Expected = 42
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = {
+          key: { [Kind]: 'String' } as Schema,
+          value: { [Kind]: 'Number' } as Schema
+        }
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(schema).toBeTruthy()
+        expect((schema.properties! as any).key).toBeTruthy()
+        expect((schema.properties! as any).value).toBeTruthy()
+        expect(value).toBeTruthy()
+        expect(typeof value).not.toBe('object')
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
     }) //:: case 'Record'
 
     describe("case 'Array'", () => {
-      it.todo('should return null if `@param schema`.properties is not serializable', () => {})
-      it.todo(
-        'should return a new array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array',
-        () => {}
-      )
-      it.todo('should return `@param value` if it is not an array', () => {})
+      const TestSchemaKind = 'Array'
+
+      it('should return null if `@param schema`.properties is not serializable', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = 42
+        const properties = { [Kind]: 'NonSerialized' } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any)[Kind]).toBe('NonSerialized')
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return a new array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array', () => {
+        const Expected = [41, 42]
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = { [Kind]: 'Number' } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+        expect(Array.isArray(value)).toBeTruthy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).not.toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return `@param value` if it is not an array', () => {
+        const Expected = { one: 42 }
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = { [Kind]: 'Number' } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+        expect(Array.isArray(value)).toBeFalsy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
     }) //:: case 'Array'
 
     describe("case 'Tuple'", () => {
-      it.todo(
-        'should return a new tuple/array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array',
-        () => {}
-      )
-      it.todo('should return `@param value` if it is not an array', () => {})
+      const TestSchemaKind = 'Tuple'
+
+      it('should return a new tuple/array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array', () => {
+        const Expected = [42, 'SomeString']
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect(Array.isArray(value)).toBeTruthy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).not.toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return `@param value` if it is not an array', () => {
+        const Expected = { one: 42 }
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = { [Kind]: 'Number' } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+        expect(Array.isArray(value)).toBeFalsy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
     }) //:: case 'Tuple'
 
     describe("case 'Union'", () => {
-      it.todo('should return null if `@param schema`.properties has no values', () => {})
-      it.todo('should ignore (continue) all values of `@param schema`.properties that are not serializable', () => {})
-      it.todo(
-        'should return `@param value` converted to the first entry of `@param schema`.properties that matches its value',
-        () => {}
-      )
-      it.todo('should return null if no entry of `@param schema`.properties that matches `@param value`', () => {})
+      const TestSchemaKind = 'Union'
+
+      it('should return null if `@param schema`.properties has no values', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = 42
+        const properties = []
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any).length).toBe(0)
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return `@param value` converted to the first entry of `@param schema`.properties that matches its value', () => {
+        const Expected = 42
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = [
+          { [Kind]: 'String' } as Schema,
+          { [Kind]: 'Void' } as Schema,
+          { [Kind]: 'Number' } as Schema
+        ]
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any).length).not.toBe(0)
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return null if no entry of `@param schema`.properties matches `@param value`', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = 42
+        const properties = [{ [Kind]: 'String' } as Schema, { [Kind]: 'Void' } as Schema]
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any).length).not.toBe(0)
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should ignore (continue) all values of `@param schema`.properties that are not serializable', () => {
+        const Expected = null
+        // 3. Set input & dependencies data
+        const value = 42
+        const properties = [
+          { [Kind]: 'String' } as Schema,
+          { [Kind]: 'Void' } as Schema,
+          { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
+        ]
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any).length).not.toBe(0)
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     }) //:: case 'Union'
 
-    describe.each(['Partial', 'Required', 'Proxy'])('case %s', (kind) => {
-      it.todo(
-        'should flatten the schema and return `@param value` converted to the schema defined by `@param schema`.properties',
-        () => {}
-      )
-    }) //:: case: ['Partial', 'Required', 'Proxy']
+    it.each(['Partial', 'Required', 'Proxy'])(
+      'should flatten the schema and return `@param value` converted to the schema defined by `@param schema`.properties when schema[Kind] is "%s"',
+      (kind) => {
+        const Expected = [41, 42]
+        const TestSchemaKind = kind
+        // 3. Set input & dependencies data
+        const value = Expected
+        const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        // 1. Sanity check (input & dependencies)
+        expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+        expect(Array.isArray(value)).toBeTruthy()
+        // 2. Run the process
+        const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+        // 4. Check the result (output)
+        expect(result).not.toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      }
+    ) //:: case: ['Partial', 'Required', 'Proxy']
 
-    it.todo("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {})
-    it.todo('should return null for every other value of `@param schema`[Kind]  (case: default)', () => {})
+    it("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {
+      const Expected = undefined
+      const TestSchemaKind = 'NonSerialized'
+      // 3. Set input & dependencies data
+      const value = [41, 42]
+      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+      expect(Array.isArray(value)).toBeTruthy()
+      // 2. Run the process
+      const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return null for every other value of `@param schema`[Kind]  (case: default)', () => {
+      const Expected = null
+      const TestSchemaKind = 'UnknownSchemaKind' as any
+      // 3. Set input & dependencies data
+      const value = [41, 42]
+      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect((schema.properties! as any)[Kind]).not.toBe('NonSerialized')
+      expect(Array.isArray(value)).toBeTruthy()
+      // 2. Run the process
+      const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   })
 }) //:: ConvertToSchema
+
+describe('SerializeSchema', () => {
+  it('should return a deep clone of `@param value` with all its serializable values converted based on `@param schema`', () => {
+    const Expected = { one: 41, two: 'TWO' }
+    // 3. Set input & dependencies data
+    const value = { one: Expected.one, two: Expected.two, three: undefined, four: null }
+    const properties = {
+      one: { [Kind]: 'Number' } as Schema,
+      two: { [Kind]: 'String' } as Schema
+    }
+    const schema = { [Kind]: 'Object', properties: properties } as Schema
+    // 1. Sanity check (input & dependencies)
+    // 2. Run the process
+    const result = SerializeSchema(schema, value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+}) //:: SerializeSchema
