@@ -128,8 +128,8 @@ import {
 import { getImageURIMimeType } from '../assets/loaders/gltf/GLTFParser'
 import { KTX2Loader } from '../assets/loaders/gltf/KTX2Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
-import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
+import { ResourceCacheState } from '../assets/state/resourceCacheState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceID } from '../scene/components/SourceComponent'
 import {
@@ -1557,8 +1557,8 @@ const unloadScene = async (url: string, entity: Entity) => {
   unloadResourcesForEntity(entity)
 
   // if no more references to this url, remove from cache
-  const assetCacheState = getState(AssetCacheState)
-  if (!assetCacheState[url]) {
+  const resourceCacheState = getState(ResourceCacheState)
+  if (!resourceCacheState[url]) {
     delete interleavedBufferCache[url]
     DependencyCache.delete(url)
   }
