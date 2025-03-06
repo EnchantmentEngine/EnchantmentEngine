@@ -113,6 +113,8 @@ class TextureLoader extends Loader<Texture> {
       texture.source.data.src = url
 
       implementRefetchSource(texture, loader)
+
+      texture.needsUpdate = true
       onLoad(texture)
     }
 
