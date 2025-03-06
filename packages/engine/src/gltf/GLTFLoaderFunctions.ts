@@ -129,7 +129,7 @@ import { getImageURIMimeType } from '../assets/loaders/gltf/GLTFParser'
 import { KTX2Loader } from '../assets/loaders/gltf/KTX2Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
-import { ResourceCacheState } from '../assets/state/resourceCacheState'
+import { ResourceCacheState } from '../assets/state/ResourceCacheState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceID } from '../scene/components/SourceComponent'
 import {

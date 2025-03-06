@@ -29,7 +29,7 @@ import { DefaultLoadingManager, LoadingManager } from 'three'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { ResourceLoadingManager } from '../loaders/base/ResourceLoadingManager'
-import { ResourceCacheState, ResourceStatus } from './resourceCacheState'
+import { ResourceCacheState, ResourceStatus } from './ResourceCacheState'
 
 export const setDefaultLoadingManager = (
   loadingManager: LoadingManager = new ResourceLoadingManager(
