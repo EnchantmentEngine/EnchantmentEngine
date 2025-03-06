@@ -957,17 +957,24 @@ function getIntersectionsWithRay(world: PhysicsWorld, raycastQuery: RaycastArgs)
 
   const hits = [] as RaycastHit[]
 
-  world.intersectionsWithRay(ray, maxToi, solid, (hit) => {
-    hits.push({
-      collider: hit.collider,
-      distance: hit.toi,
-      position: ray.pointAt(hit.toi),
-      normal: hit.normal,
-      body: hit.collider.parent() as RigidBody,
-      entity: hit.collider.parent()?.entity ?? UndefinedEntity
-    })
-    return true
-  }, flags, groups)
+  world.intersectionsWithRay(
+    ray,
+    maxToi,
+    solid,
+    (hit) => {
+      hits.push({
+        collider: hit.collider,
+        distance: hit.toi,
+        position: ray.pointAt(hit.toi),
+        normal: hit.normal,
+        body: hit.collider.parent() as RigidBody,
+        entity: hit.collider.parent()?.entity ?? UndefinedEntity
+      })
+      return true
+    },
+    flags,
+    groups
+  )
 
   return hits
 }
