@@ -171,7 +171,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
 
       const newValue = {} as Val
       const valueKeys = Object.keys(value as object)
-      const props = schema.properties as TProperties
+      const props = (schema.properties as TProperties) ?? {}
 
       for (const key of valueKeys) {
         if (!props[key]) continue
@@ -188,7 +188,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
     case 'Class': {
       if (!validValue(value)) return value
 
-      const props = schema.properties as TProperties
+      const props = (schema.properties as TProperties) ?? {}
       const propKeys = Object.keys(props)
 
       for (const key of propKeys) {
@@ -603,7 +603,7 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
     case 'Record': {
       const props = schema.properties as TRecordSchema<TPropertyKeySchema, Schema>['properties']
       const keySchema = props.key
-      const valueSchema = props.value
+      const valueSchema = props.value ?? ({ [Kind]: 'NonSerialized' } as Schema)
 
       if (!isSerializable(valueSchema)) return null
       if (value && typeof value === 'object') {
