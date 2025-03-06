@@ -72,7 +72,7 @@ export interface DisposableObject {
   disposed?: boolean
 }
 
-Cache.enabled = false
+Cache.enabled = true
 
 export enum ResourceType {
   Mesh = 'Mesh',

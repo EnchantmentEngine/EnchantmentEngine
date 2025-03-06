@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { GLTF } from '@gltf-transform/core'
 import assert from 'assert'
-import { Cache, Color, MeshPhysicalMaterial, MeshStandardMaterial } from 'three'
+import { Color, MeshPhysicalMaterial, MeshStandardMaterial } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import { UserID } from '@ir-engine/common/src/schema.type.module'
