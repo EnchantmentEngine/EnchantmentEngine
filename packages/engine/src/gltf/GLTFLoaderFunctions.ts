@@ -105,6 +105,7 @@ import { parseStorageProviderURLs } from '../assets/functions/parseSceneJSON'
 import { loadResource, unloadResourcesForEntity } from '../assets/functions/resourceLoaderFunctions'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
+import { ResourceCache } from '../assets/loaders/base/ResourceCache'
 import {
   ALPHA_MODES,
   ATTRIBUTES,
@@ -499,13 +500,12 @@ const loadBuffer = async (options: GLTFParserOptions, bufferIndex: number) => {
     throw new Error('THREE.GLTFLoader: ' + bufferDef.type + ' buffer type is not supported.')
   }
 
-  const loader = new FileLoader(options.manager)
-  loader.setResponseType('arraybuffer')
-
   if (bufferDef.uri === undefined && bufferIndex === 0) {
     return Promise.resolve(options.body)
   }
 
+  const loader = new FileLoader(options.manager)
+  loader.setResponseType('arraybuffer')
   return new Promise<ArrayBuffer>(function (resolve, reject) {
     const url = LoaderUtils.resolveURL(bufferDef.uri!, options.path)
     loadResource<ArrayBuffer>(
@@ -997,8 +997,7 @@ const loadImageSource = async (
   const json = options.document
   const sourceDef = json.images![sourceIndex]
 
-  let sourceURI = sourceDef.uri || ''
-  let isObjectURL = false
+  const sourceURI = sourceDef.uri || options.url + '?image=' + sourceIndex
 
   if (sourceDef.bufferView !== undefined) {
     if (!isClient) {
@@ -1007,12 +1006,8 @@ const loadImageSource = async (
       return texture
     }
     // Load binary image data from bufferView, if provided.
-
-    sourceURI = await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
-      isObjectURL = true
-      const blob = new Blob([bufferView!], { type: sourceDef.mimeType })
-      sourceURI = URL.createObjectURL(blob)
-      return sourceURI
+    await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
+      ResourceCache?.put(sourceURI, new Response(bufferView!))
     })
   } else if (sourceDef.uri === undefined) {
     throw new Error('THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView')
@@ -1039,12 +1034,7 @@ const loadImageSource = async (
     )
   })
 
-  if (isObjectURL) {
-    URL.revokeObjectURL(sourceURI)
-  } else {
-    texture.userData.src = sourceURI
-  }
-
+  texture.userData.src = sourceURI
   texture.userData.mimeType = sourceDef.mimeType || getImageURIMimeType(sourceDef.uri)
 
   return texture

@@ -27,6 +27,7 @@ import { Cache, LoadingManager } from 'three'
 
 import { parseStorageProviderURLs } from '../../functions/parseSceneJSON'
 import { Loader } from './Loader'
+import { ResourceCache } from './ResourceCache'
 
 const loading = {}
 
@@ -60,7 +61,15 @@ class FileLoader<TData = unknown> extends Loader<TData> {
 
     url = this.manager.resolveURL(url)
 
-    const cached = Cache.get(url)
+    // Create a cache key
+    const cacheKey = JSON.stringify({
+      url,
+      responseType: this.responseType,
+      mimeType: this.mimeType,
+      headers: this.requestHeader,
+      withCredentials: this.withCredentials
+    })
+    const cached = Cache.get(cacheKey)
 
     if (cached !== undefined) {
       this.manager.itemStart(url)
@@ -77,8 +86,8 @@ class FileLoader<TData = unknown> extends Loader<TData> {
 
     // Check if request is duplicate
 
-    if (loading[url] !== undefined) {
-      loading[url].push({
+    if (loading[cacheKey] !== undefined) {
+      loading[cacheKey].push({
         onLoad: onLoad,
         onProgress: onProgress,
         onError: onError
@@ -100,7 +109,6 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     const req = new Request(url, {
       headers: new Headers(this.requestHeader),
       credentials: this.withCredentials ? 'include' : 'same-origin'
-      // An abort controller could be added within a future PR
     })
 
     // record states ( avoid data race )
@@ -108,19 +116,25 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     const responseType = this.responseType
     const manager = this.manager
 
+    // use native cache if available
+    let responsePromise: Promise<Response>
+    if (ResourceCache) {
+      responsePromise = ResourceCache.match(req).then((response) => {
+        if (!response) return fetch(req, { signal })
+        return response
+      })
+    } else {
+      responsePromise = fetch(req, { signal })
+    }
+
     // start the fetch
-    fetch(req, { signal })
+    responsePromise
       .then((response) => {
-        if (response.status === 200 || response.status === 0) {
+        if (response.ok || response.status === 0) {
           // Some browsers return HTTP Status 0 when using non-http protocol
           // e.g. 'file://' or 'data://'. Handle as success.
 
-          if (response.status === 0) {
-            console.warn('THREE.FileLoader: HTTP Status 0 received.')
-          }
-
-          // Workaround: Checking if response.body === undefined for Alipay browser #23548
-
+          // If the response is already loaded (e.g. blob: URLs), or streaming is not supported, return the response
           if (
             typeof ReadableStream === 'undefined' ||
             response.body == undefined ||
@@ -186,6 +200,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         }
       })
       .then((response) => {
+        if (ResourceCache) ResourceCache.put(req, response)
         switch (responseType) {
           case 'arraybuffer':
             return response.arrayBuffer()
@@ -216,9 +231,8 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         }
       })
       .then((data) => {
-        // Add to cache only on HTTP success, so that we do not cache
-        // error response bodies as proper responses to requests.
-        Cache.add(url, data)
+        // Add to cache with response type in the key
+        Cache.add(cacheKey, data)
 
         const callbacks = loading[url]
         delete loading[url]
