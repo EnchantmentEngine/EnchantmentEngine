@@ -29,6 +29,9 @@ import { LoadingManager, Texture } from 'three'
 import { Loader } from '../base/Loader'
 import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
+// import resource state such that we have type override
+import '@ir-engine/spatial/src/resources/ResourceState'
+
 const noop = () => {}
 
 const iOSMaxResolution = 1024
