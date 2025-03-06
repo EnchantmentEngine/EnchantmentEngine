@@ -105,7 +105,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
       onError: onError
     })
 
-    const isCachableRequest = !url.startsWith('blob:')
+    const isBlob = url.startsWith('blob:')
 
     // create request
     const req = new Request(url, {
@@ -119,10 +119,12 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     const manager = this.manager
 
     // use native cache if available
+    let fromCache = false
     let responsePromise: Promise<Response>
-    if (isCachableRequest && ResourceCache) {
+    if (!isBlob && ResourceCache) {
       responsePromise = ResourceCache.match(req).then((response) => {
         if (!response) return fetch(req, { signal })
+        fromCache = true
         return response
       })
     } else {
@@ -140,7 +142,9 @@ class FileLoader<TData = unknown> extends Loader<TData> {
           if (
             typeof ReadableStream === 'undefined' ||
             response.body == undefined ||
-            response.body.getReader == undefined
+            response.body.getReader == undefined ||
+            isBlob ||
+            fromCache
           ) {
             return response
           }
@@ -202,7 +206,21 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         }
       })
       .then((response) => {
-        if (isCachableRequest && ResourceCache) ResourceCache.put(req, response.clone())
+        if (!isBlob && ResourceCache) {
+          return response
+            .clone()
+            .arrayBuffer()
+            .then((buffer) => {
+              return ResourceCache!.put(req, new Response(buffer))
+            })
+            .then(() => {
+              return response
+            })
+        } else {
+          return response
+        }
+      })
+      .then((response) => {
         switch (responseType) {
           case 'arraybuffer':
             return response.arrayBuffer()
@@ -233,6 +251,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         }
       })
       .then((data) => {
+        if (!data) throw new Error('No data returned from fetch')
         // Add to cache with response type in the key
         Cache.add(cacheKey, data)
 

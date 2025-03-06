@@ -27,7 +27,6 @@ import { isClient } from '@ir-engine/hyperflux'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { LoadingManager, Texture } from 'three'
 import { Loader } from '../base/Loader'
-import { ResourceCache } from '../base/ResourceCache'
 import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
 const noop = () => {}
@@ -105,53 +104,16 @@ class TextureLoader extends Loader<Texture> {
     onError?: (err: unknown) => void,
     signal?: AbortSignal
   ) {
-    const onImage = (image: ImageBitmap) => {
+    const onImage = (i: ImageBitmap) => {
       if (signal?.aborted) return
 
-      ResourceCache?.add(url)
-
-      if (this.maxResolution) {
-        const imageBitmap = getScaledBitmap(image, this.maxResolution)
-        if (!imageBitmap) {
-          onError?.(new Error(`TextureLoader:load Unable to create scaled image bitmap for image url: ${url}`))
-          return
-        }
-
-        const texture = new Texture(imageBitmap)
-        texture.userData.url = url
-        texture.source.data.src = url
-
-        implementRefetchSource(texture, loader)
-
-        onLoad(texture)
-        return
-      }
-
+      const image = this.maxResolution ? getScaledBitmap(i, this.maxResolution) : i
       const texture = new Texture(image)
       texture.userData.url = url
       texture.source.data.src = url
 
       implementRefetchSource(texture, loader)
-
-      const completedLoading = () => {
-        texture.needsUpdate = true
-        onLoad(texture)
-      }
-
-      // workaround for threejs freaking out when texture is set before image is complete
-      if (texture.source.data instanceof HTMLImageElement) {
-        if (texture.source.data.complete) {
-          completedLoading()
-        } else {
-          const onload = () => {
-            completedLoading()
-            texture.source.data.removeEventListener('load', onload)
-          }
-          texture.source.data.addEventListener('load', onload)
-        }
-      } else {
-        completedLoading()
-      }
+      onLoad(texture)
     }
 
     if (!isClient) {

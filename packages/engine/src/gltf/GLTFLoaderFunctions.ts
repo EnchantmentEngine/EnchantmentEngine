@@ -999,7 +999,7 @@ const loadImageSource = async (
   const json = options.document
   const sourceDef = json.images![sourceIndex]
 
-  const sourceURI = sourceDef.uri || options.url + '?image=' + sourceIndex
+  const url = LoaderUtils.resolveURL(sourceDef.uri || options.url + '?image=' + sourceIndex, options.path)
 
   if (sourceDef.bufferView !== undefined) {
     if (!isClient) {
@@ -1009,14 +1009,13 @@ const loadImageSource = async (
     }
     // Load binary image data from bufferView, if provided.
     await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
-      ResourceCache?.put(sourceURI, new Response(bufferView!))
+      return ResourceCache?.put(url, new Response(bufferView!))
     })
   } else if (sourceDef.uri === undefined) {
     throw new Error('THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView')
   }
 
   const texture = await new Promise<Texture>(function (resolve, reject) {
-    const url = LoaderUtils.resolveURL(sourceURI, options.path)
     loadResource<Texture>(
       url,
       ResourceType.Texture,
@@ -1036,7 +1035,7 @@ const loadImageSource = async (
     )
   })
 
-  texture.userData.src = sourceURI
+  texture.userData.src = url
   texture.userData.mimeType = sourceDef.mimeType || getImageURIMimeType(sourceDef.uri)
 
   return texture
