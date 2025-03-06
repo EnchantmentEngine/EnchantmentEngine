@@ -28,9 +28,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEntity, removeEntity } from '../ComponentFunctions'
 import { createEngine, destroyEngine } from '../Engine'
 import { Entity, UndefinedEntity } from '../Entity'
-import { Kind, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
+import { Kind, NonSerializable, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
 import {
   CheckSchemaValue,
+  CloneSerializable,
   CreateSchemaValue,
   DeserializeSchemaValue,
   HasRequiredSchema,
@@ -2721,30 +2722,170 @@ describe('CheckSchemaValue', () => {
 }) //:: CheckSchemaValue
 
 describe('CloneSerializable', () => {
-  it.todo('should return null if typeof `@param value` is undefined', () => {})
-  it.todo('should return `@param value` if its typeof is a value type', () => {})
-  it.todo('should return `@param value` if its null', () => {})
-  it.todo('should return a duplicate of `@param value` if it is an ArrayBuffer', () => {})
+  it('should return null if typeof `@param value` is undefined', () => {
+    const Expected = null
+    // 3. Set input & dependencies data
+    const value = undefined
+    // 1. Sanity check (input & dependencies)
+    expect(typeof value).toBe('undefined')
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it.each([
+    [BigInt(42), 'bigint'],
+    [true, 'boolean'],
+    [42, 'number'],
+    ['thing', 'string'],
+    [Symbol('thing'), 'symbol']
+  ])('should return `@param value` if its typeof is a value type', (value, typ) => {
+    const Expected = value
+    // 3. Set input & dependencies data
+    // 1. Sanity check (input & dependencies)
+    expect(typeof value).toBe(typ)
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return `@param value` if its null', () => {
+    const Expected = null
+    // 3. Set input & dependencies data
+    const value = Expected
+    // 1. Sanity check (input & dependencies)
+    expect(value).toBeNull()
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  /** @todo How to set it up such that ArrayBuffer.isView(value) is truthy */
+  it.todo('should return a duplicate of `@param value` if it is an ArrayBuffer', () => {
+    const Expected = new ArrayBuffer(42)
+    // 3. Set input & dependencies data
+    const value = Expected
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeNull()
+    expect(ArrayBuffer.isView(value)).toBeTruthy()
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return a duplicate of `@param value` without any of its NonSerializable entries if value is an Array', () => {
+    const Expected = [41, 42, null]
+    // 3. Set input & dependencies data
+    const value = [Expected[0], Expected[1], undefined]
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeNull()
+    expect(Array.isArray(value)).toBeTruthy()
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  /** @todo How to create the sets such that the results make sense */
   it.todo(
-    'should return a duplicate of `@param value` without any of its NonSerializable entries if it is an Array',
-    () => {}
+    'should return a new Set containing all the serializable values of `@param value`.entries() if value is a Set',
+    () => {
+      const one = 41
+      const two = 42
+      const Expected = new Set([one, two, null])
+      // 3. Set input & dependencies data
+      const value = new Set([one, two, undefined])
+      // 1. Sanity check (input & dependencies)
+      expect(value).not.toBeNull()
+      expect(value instanceof Set).toBeTruthy()
+      // 2. Run the process
+      const result = CloneSerializable(value)
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    }
   )
-  it.todo(
-    'should return a new Set containing all the serializable values of `@param value`.entries() if its a Set',
-    () => {}
-  )
-  it.todo(
-    'should return a new Map containing all the serializable values of `@param value`.entries() if its a Map',
-    () => {}
-  )
-  it.todo(
-    "should return a new object containing all the serializable values of `@param value` if its typeof is 'object'",
-    () => {}
-  )
-  it.todo(
-    "should return NonSerializable if typeof `@param value` is not 'undefined', its typeof is not a value type, and it is not null, an ArrayBuffer, an Array, a Set, a Map or an object",
-    () => {}
-  )
+
+  it('should return a new Map containing all the serializable values of `@param value`.entries() if value is a Map', () => {
+    const one = 41
+    const two = 42
+    const Expected = new Map([
+      ['one', one],
+      ['two', two],
+      ['thr', null]
+    ])
+    // 3. Set input & dependencies data
+    const value = new Map([
+      ['one', one],
+      ['two', two],
+      ['thr', undefined]
+    ])
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeNull()
+    expect(value instanceof Map).toBeTruthy()
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it("should return a new object containing all the serializable values of `@param value` if typeof value is 'object'", () => {
+    const one = 41
+    const two = 42
+    const Expected = { one: one, two: two, thr: null }
+    // 3. Set input & dependencies data
+    const value = { one: one, two: two, thr: undefined }
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeNull()
+    expect(typeof value).toBe('object')
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  /** Just for reference. This branch/case can never be hit */
+  it.skip("should return NonSerializable if typeof `@param value` is not 'undefined', its typeof is not a value type, and it is not null, an ArrayBuffer, an Array, a Set, a Map or an object", () => {
+    const Expected = NonSerializable
+    // 3. Set input & dependencies data
+    const value = new ArrayBuffer(2) // @todo Is there any value that could trigger this case ?
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeUndefined()
+    expect(typeof value).not.toBe('bigint')
+    expect(typeof value).not.toBe('boolean')
+    expect(typeof value).not.toBe('number')
+    expect(typeof value).not.toBe('string')
+    expect(typeof value).not.toBe('symbol')
+    expect(typeof value).not.toBe('undefined')
+    expect(value).not.toBeNull()
+    expect(ArrayBuffer.isView(value)).toBeFalsy()
+    expect(Array.isArray(value)).toBeFalsy()
+    expect((value as any) instanceof Set).toBeFalsy()
+    expect((value as any) instanceof Map).toBeFalsy()
+    expect(typeof value).not.toBe('object')
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: CloneSerializable
 
 describe('SerializeSchema', () => {
