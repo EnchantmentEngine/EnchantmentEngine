@@ -93,7 +93,7 @@ const execute = () => {
       }
     }
 
-    if (panning?.dragging) {
+    if (panning?.pressed) {
       const inputPointer = getOptionalComponent(panning.inputSourceEntity, InputPointerComponent)
       const movement = inputPointer?.movement
       if (movement) {
