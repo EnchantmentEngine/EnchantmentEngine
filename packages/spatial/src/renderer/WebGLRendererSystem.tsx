@@ -218,12 +218,12 @@ export const RendererComponent = defineComponent({
       const handleWebGLContextLost = (e) => {
         console.log('Browser lost the context.', e, rendererComponent.webGLLostContext.value)
         e.preventDefault()
-        const renderer = getComponent(entity, RendererComponent)
-        if (renderer.renderer) renderer.renderer.dispose()
-        if (renderer.effectComposer) renderer.effectComposer.dispose()
+        // const renderer = getComponent(entity, RendererComponent)
+        // if (renderer.renderer) renderer.renderer.dispose()
+        // if (renderer.effectComposer) renderer.effectComposer.dispose()
         rendererComponent.needsResize.set(false)
-        rendererComponent.renderContext.set(null)
-        rendererComponent.renderer.set(null)
+        // rendererComponent.renderContext.set(null)
+        // rendererComponent.renderer.set(null)
 
         setTimeout(() => {
           rendererComponent.webGLLostContext.get(NO_PROXY)!.restoreContext()
@@ -232,9 +232,9 @@ export const RendererComponent = defineComponent({
 
       /** @todo this seems unnecessary, since threejs recovers internally */
       const handleWebGLContextRestore = (e) => {
-        const canvas = rendererComponent.canvas.value as HTMLCanvasElement
-        const context = canvas.getContext('webgl2')
-        rendererComponent.renderContext.set(context)
+        // const canvas = rendererComponent.canvas.value as HTMLCanvasElement
+        // const context = canvas.getContext('webgl2')
+        // rendererComponent.renderContext.set(context)
         rendererComponent.needsResize.set(true)
         console.log("Browser's context is restored.", e)
 
