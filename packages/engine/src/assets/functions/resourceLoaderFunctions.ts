@@ -43,7 +43,12 @@ const isCloneable = (resourceType: ResourceType): boolean => {
 
 const cloneAsset = <T>(asset: Cloneable<T> | undefined, onLoad: (T) => void): boolean => {
   if (asset && typeof asset.clone === 'function') {
-    onLoad(asset.clone())
+    const clone = asset.clone()
+    // quick hack to ensure texture clones retain our custom refetch function
+    if ('refetchSource' in asset) {
+      clone['refetchSource'] = asset.refetchSource
+    }
+    onLoad(clone)
     return true
   }
 

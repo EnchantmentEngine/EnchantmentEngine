@@ -1,6 +1,7 @@
 import { Cache, Loader } from 'three'
+import { FileLoader } from '../base/FileLoader'
 
-class ImageBitmapLoader extends Loader {
+class ImageBitmapLoader extends Loader<ImageBitmap> {
   isImageBitmapLoader = true
   options: ImageBitmapOptions
 
@@ -48,33 +49,32 @@ class ImageBitmapLoader extends Loader {
       return cached
     }
 
-    const fetchOptions = {} as {
-      credentials: 'same-origin' | 'include'
-      headers: any
+    const loader = new FileLoader<Blob>(this.manager)
+
+    loader.setPath(this.path)
+    loader.setResponseType('blob')
+    loader.setCrossOrigin(this.crossOrigin)
+    loader.setRequestHeader(this.requestHeader)
+    loader.setWithCredentials(this.withCredentials)
+
+    function onFile(blob: Blob) {
+      createImageBitmap(blob, Object.assign(options, { colorSpaceConversion: 'none' }))
+        .then(function (imageBitmap) {
+          Cache.add(url, imageBitmap)
+
+          if (onLoad) onLoad(imageBitmap)
+
+          manager.itemEnd(url)
+        })
+        .catch(function (e) {
+          if (onError) onError(e)
+
+          manager.itemError(url)
+          manager.itemEnd(url)
+        })
     }
-    fetchOptions.credentials = this.crossOrigin === 'anonymous' ? 'same-origin' : 'include'
-    fetchOptions.headers = this.requestHeader
 
-    fetch(url, fetchOptions)
-      .then(function (res) {
-        return res.blob()
-      })
-      .then(function (blob) {
-        return createImageBitmap(blob, Object.assign(options, { colorSpaceConversion: 'none' }))
-      })
-      .then(function (imageBitmap) {
-        Cache.add(url, imageBitmap)
-
-        if (onLoad) onLoad(imageBitmap)
-
-        manager.itemEnd(url)
-      })
-      .catch(function (e) {
-        if (onError) onError(e)
-
-        manager.itemError(url)
-        manager.itemEnd(url)
-      })
+    loader.load(url, onFile, onProgress, onError)
 
     manager.itemStart(url)
   }

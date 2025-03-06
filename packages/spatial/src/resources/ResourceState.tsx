@@ -249,20 +249,23 @@ const resourceCallbacks = {
       discardUponUpload = false
     ) => {
       if (!asset.image) return
-      
+
+      const isCompressedTexture = (asset as CompressedTexture).isCompressedTexture
+
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: discardUponUpload })
         //@ts-ignore
-        // asset.onUpdate = null
+        asset.onUpdate = null
         if (discardUponUpload) {
+          /** @todo replace setTimeout with fenceSync */
           // setTimeout(() => {
           //   asset.source.data = null
           //   asset.mipmaps = []
           // }, 500)
         }
       }
-      if ((asset as CompressedTexture).isCompressedTexture && discardUponUpload) {
+      if (isCompressedTexture && discardUponUpload) {
         // for some reason, this is necessary for the onUpdate to trigger
         asset.needsUpdate = true
       }
@@ -646,6 +649,16 @@ const useEntityResource = (entity: Entity, state: State<ResourceAssetType>) => {
   }, [state])
 }
 
+const getAllResourcesOfType = (type: ResourceType) => {
+  const resources = getState(ResourceState).resources
+  const result = [] as Resource[]
+  for (const key in resources) {
+    const resource = resources[key]
+    if (resource.type === type) result.push(resource)
+  }
+  return result
+}
+
 export const ResourceState = defineState({
   name: 'ResourceState',
 
@@ -662,6 +675,8 @@ export const ResourceState = defineState({
   debugWarn: (...data: any[]) => {
     if (getState(ResourceState).debug) console.warn(...data)
   },
+
+  getAllResourcesOfType,
 
   resourceCallbacks,
   useEntityResource,

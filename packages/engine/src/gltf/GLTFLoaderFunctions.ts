@@ -945,7 +945,7 @@ const loadTexture = (options: GLTFParserOptions, textureIndex: number) => {
   if (basisu) loader = getState(AssetLoaderState).gltfLoader.ktx2Loader!
   else if (handler) loader = handler as Loader<unknown, string>
   else {
-    const textureLoader = new TextureLoader(undefined, true)
+    const textureLoader = new TextureLoader()
     loader = textureLoader
     loader.setRequestHeader(options.requestHeader)
   }
@@ -1646,4 +1646,6 @@ export type GLTFParserOptions = {
   manager: LoadingManager
   path: string
   requestHeader: Record<string, string>
+  // @todo
+  // abortController: AbortController
 }

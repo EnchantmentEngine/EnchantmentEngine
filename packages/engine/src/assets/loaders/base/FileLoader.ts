@@ -97,13 +97,15 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     }
 
     // Initialise array for duplicate requests
-    loading[url] = []
+    loading[cacheKey] = []
 
-    loading[url].push({
+    loading[cacheKey].push({
       onLoad: onLoad,
       onProgress: onProgress,
       onError: onError
     })
+
+    const isCachableRequest = !url.startsWith('blob:')
 
     // create request
     const req = new Request(url, {
@@ -118,7 +120,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
 
     // use native cache if available
     let responsePromise: Promise<Response>
-    if (ResourceCache) {
+    if (isCachableRequest && ResourceCache) {
       responsePromise = ResourceCache.match(req).then((response) => {
         if (!response) return fetch(req, { signal })
         return response
@@ -143,7 +145,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
             return response
           }
 
-          const callbacks = loading[url]
+          const callbacks = loading[cacheKey]
           const reader = response.body.getReader()
 
           // Nginx needs X-File-Size check
@@ -178,7 +180,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
                     }
                   })
                   .catch((err) => {
-                    delete loading[url]
+                    delete loading[cacheKey]
 
                     for (let i = 0, il = callbacks.length; i < il; i++) {
                       const callback = callbacks[i]
@@ -200,7 +202,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         }
       })
       .then((response) => {
-        if (ResourceCache) ResourceCache.put(req, response)
+        if (isCachableRequest && ResourceCache) ResourceCache.put(req, response.clone())
         switch (responseType) {
           case 'arraybuffer':
             return response.arrayBuffer()
@@ -234,8 +236,8 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         // Add to cache with response type in the key
         Cache.add(cacheKey, data)
 
-        const callbacks = loading[url]
-        delete loading[url]
+        const callbacks = loading[cacheKey]
+        delete loading[cacheKey]
 
         for (let i = 0, il = callbacks.length; i < il; i++) {
           const callback = callbacks[i]
@@ -245,7 +247,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
       .catch((err) => {
         // Abort errors and other errors are handled the same
 
-        const callbacks = loading[url]
+        const callbacks = loading[cacheKey]
 
         if (callbacks === undefined) {
           // When onLoad was called and url was deleted in `loading`
@@ -253,7 +255,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
           throw err
         }
 
-        delete loading[url]
+        delete loading[cacheKey]
 
         for (let i = 0, il = callbacks.length; i < il; i++) {
           const callback = callbacks[i]
