@@ -23,9 +23,4 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export let ResourceCache: Cache | null = null
-if ('caches' in self) {
-  caches.open('ir-engine-cache').then((c) => {
-    ResourceCache = c
-  })
-}
+export const ResourceCache = 'caches' in self ? caches.open('ir-engine-cache') : null

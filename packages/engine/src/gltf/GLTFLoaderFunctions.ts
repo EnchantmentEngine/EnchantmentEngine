@@ -1009,7 +1009,7 @@ const loadImageSource = async (
     }
     // Load binary image data from bufferView, if provided.
     await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
-      return ResourceCache?.put(url, new Response(bufferView!))
+      return ResourceCache?.then((cache) => cache.put(url, new Response(bufferView!)))
     })
   } else if (sourceDef.uri === undefined) {
     throw new Error('THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView')
