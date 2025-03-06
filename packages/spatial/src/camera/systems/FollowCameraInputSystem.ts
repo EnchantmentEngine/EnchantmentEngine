@@ -53,7 +53,7 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
 const pointerPositionDelta = new Vector2()
-const rendererQuery = defineQuery([RendererComponent])
+const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent])
 const epsilon = 0.001
 
 const followCameraModeCycle = [
@@ -122,15 +122,13 @@ const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
   const cameraSettings = getState(CameraSettings)
 
-  for (const cameraEntity of rendererQuery()) {
+  for (const cameraEntity of followCameraQuery()) {
     const buttons = InputComponent.getButtons(cameraEntity)
     const axes = InputComponent.getAxes(cameraEntity)
 
     const inputPointerEntities = InputPointerComponent.getPointersForCamera(cameraEntity)
     const inputState = getState(InputState)
-
-    const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
-    if (!follow) continue
+    const follow = getComponent(cameraEntity, FollowCameraComponent)
 
     let { theta, phi } = getOptionalComponent(cameraEntity, TargetCameraRotationComponent) ?? follow
     let time = 0.3
