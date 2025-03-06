@@ -23,4 +23,68 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export const ResourceCache = 'caches' in self ? caches.open('ir-engine-cache') : null
+import Dexie from 'dexie'
+
+/**
+ * ResourceCache using IndexedDB via Dexie
+ * Provides storage for assets and resources
+ */
+class ResourceCacheDatabase extends Dexie {
+  resources: Dexie.Table<{ key: string; value: any; timestamp: number }, string>
+
+  constructor() {
+    super('ir-engine-cache')
+    this.version(1).stores({
+      resources: 'key'
+    })
+  }
+
+  /**
+   * Store a resource in the cache
+   * @param key The resource key
+   * @param value The resource value
+   */
+  async put(key: string, value: ArrayBuffer): Promise<void> {
+    await this.resources.put({
+      key,
+      value,
+      timestamp: Date.now()
+    })
+  }
+
+  /**
+   * Get a resource from the cache
+   * @param key The resource key
+   * @returns The resource value or null if not found
+   */
+  async get(key: string): Promise<Response | null> {
+    const resource = await this.resources.get(key)
+    return resource ? new Response(resource.value) : null
+  }
+
+  /**
+   * Check if a resource exists in the cache
+   * @param key The resource key
+   * @returns True if the resource exists
+   */
+  async has(key: string): Promise<boolean> {
+    return (await this.resources.get(key)) !== undefined
+  }
+
+  /**
+   * Delete a resource from the cache
+   * @param key The resource key
+   */
+  async deleteResource(key: string): Promise<void> {
+    await this.resources.delete(key)
+  }
+
+  /**
+   * Clear all resources from the cache
+   */
+  async clear(): Promise<void> {
+    await this.resources.clear()
+  }
+}
+
+export const ResourceCache = 'indexedDB' in self ? new ResourceCacheDatabase() : null

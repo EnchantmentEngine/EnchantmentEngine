@@ -122,7 +122,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     let fromCache = false
     let responsePromise: Promise<Response>
     if (!isBlob && ResourceCache) {
-      responsePromise = ResourceCache.then((cache) => cache.match(req)).then((response) => {
+      responsePromise = ResourceCache.get(req.url).then((response) => {
         if (!response) return fetch(req, { signal })
         fromCache = true
         return response
@@ -211,7 +211,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
             .clone()
             .arrayBuffer()
             .then((buffer) => {
-              return ResourceCache!.then((cache) => cache.put(req, new Response(buffer)))
+              return ResourceCache!.put(req.url, buffer)
             })
             .then(() => {
               return response

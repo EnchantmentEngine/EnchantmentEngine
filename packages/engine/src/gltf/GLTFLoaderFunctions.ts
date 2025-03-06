@@ -1001,16 +1001,20 @@ const loadImageSource = async (
 
   const url = LoaderUtils.resolveURL(sourceDef.uri || options.url + '?image=' + sourceIndex, options.path)
 
+  const hasResource = await ResourceCache?.has(url)
+
   if (sourceDef.bufferView !== undefined) {
     if (!isClient) {
       const texture = new Texture()
       texture.userData.mimeType = sourceDef.mimeType || getImageURIMimeType(sourceDef.uri)
       return texture
     }
-    // Load binary image data from bufferView, if provided.
-    await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
-      return ResourceCache?.then((cache) => cache.put(url, new Response(bufferView!)))
-    })
+    if (!hasResource) {
+      // Load binary image data from bufferView, if provided.
+      await GLTFLoaderFunctions.loadBufferView(options, sourceDef.bufferView).then(function (bufferView) {
+        return ResourceCache?.put(url, bufferView!)
+      })
+    }
   } else if (sourceDef.uri === undefined) {
     throw new Error('THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView')
   }
