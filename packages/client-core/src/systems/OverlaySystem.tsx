@@ -23,8 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PresentationSystemGroup } from '@ir-engine/ecs'
+import { ComponentType, PresentationSystemGroup } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
+import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { defineState, getMutableState } from '@ir-engine/hyperflux'
 import EmbedFrame from '../user/menus/avatar/EmbedFrame'
 
@@ -33,7 +34,7 @@ export const OverlayComponentState = defineState({
   initial: () =>
     ({
       iframe: EmbedFrame
-    }) as Record<string, React.FC>
+    }) as Record<string, React.FC<{ component: ComponentType<typeof OverlayComponent>; onClose: () => void }>>
 })
 
 export const OverlaySystem = defineSystem({
