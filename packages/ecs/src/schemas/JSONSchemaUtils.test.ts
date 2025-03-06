@@ -2369,86 +2369,355 @@ describe('CheckSchemaValue', () => {
       // 5? Cleanup (dependencies)
     })
 
-    /** @todo Why is this setup not correct ?? */
-    it.todo(
-      "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.keys is not a schema value",
-      () => {
-        const Expected = false
-        // 3. Set input & dependencies data
-        const value = { One: 1, Two: 2, 3: 3 }
-        const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-        // 1. Sanity check (input & dependencies)
-        expect(value).toBeTruthy()
-        expect(typeof value).toBe('object')
-        // 2. Run the process
-        const result = CheckSchemaValue(schema, value)
-        // 4. Check the result (output)
-        expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
-      }
-    )
+    it("should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.values is not a schema value", () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = { One: 1, Two: 2, 3: 'test' } as Record<number, string>
+      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).toBe('object')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
 
-    it.todo(
-      "should return false if `@param value` is truthy, its typeof is 'object' and one of its .properties.values is not a schema value",
-      () => {}
-    )
-    it.todo(
-      "should return true if `@param schema`.properties.value is serializable, `@param value` is falsy or its typeof is not 'object'",
-      () => {}
-    )
+    it('should return true if `@param schema`.properties.value is not serializable', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = { One: 1, Two: 2 } as Record<string, number>
+      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).toBe('object')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if `@param schema`.properties.value is serializable and `@param value` is falsy', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = null
+      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeFalsy()
+      expect(typeof value).toBe('object')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it("should return true if `@param schema`.properties.value is serializable, `@param value` is truthy but its typeof is not 'object'", () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).not.toBe('object')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Record
 
   describe('case Kind.Array', () => {
-    it.todo('should return true if `@param schema`.properties is not serializable', () => {})
-    it.todo('should return false if `@param value` is not an array', () => {})
-    it.todo('should return true if `@param value` is an array of length 0', () => {})
-    it.todo(
-      'should return false if `@param value` is an array and at least one of its entries is not a schema value',
-      () => {}
-    )
-    it.todo('should return true if `@param value` is an array and all its entries are schema values', () => {})
+    const TestSchemaKind = 'Array'
+
+    it('should return true if `@param schema`.properties is not serializable', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { [Kind]: 'NonSerialized' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).not.toBe('object')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param value` is not an array', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).not.toBe('object')
+      expect(Array.isArray(value)).toBeFalsy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if `@param value` is an array of length 0', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = []
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(value.length).toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param value` is an array and at least one of its entries is not a schema value', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = [42, 'invalid']
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(value.length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if `@param value` is an array and all its entries are schema values', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = [41, 42]
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(value.length).not.toBe(0)
+      for (const entry of value) expect(typeof entry).toBe('number')
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Array
 
   describe('case Kind.Tuple', () => {
-    it.todo('should return false if `@param value` is not an array', () => {})
-    it.todo(
-      'should return false if `@param value` is an array and at least one of its entries is not a schema value',
-      () => {}
-    )
-    it.todo('should return true if `@param value` is an array and all its entries are schema values', () => {})
+    const TestSchemaKind = 'Tuple'
+
+    it('should return false if `@param value` is not an array', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = undefined
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(typeof value).not.toBe('object')
+      expect(Array.isArray(value)).toBeFalsy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param value` is an array and at least one of its entries is not a schema value', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = [41, 42]
+      const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(value.length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if `@param value` is an array and all its entries are schema values', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = [42, 'SomeString']
+      const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(value)).toBeTruthy()
+      expect(value.length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Tuple
 
   describe('case Kind.Union', () => {
-    it.todo('should return false if `@param schema`.properties.length is 0', () => {})
-    it.todo('should ignore (continue) any values of `@param schema`.properties that are not serializable', () => {})
-    it.todo(
-      'should return true if `@param value` is a schema value of any of the `@param schema`.properties fields',
-      () => {}
-    )
-    it.todo(
-      'should return false if `@param schema`.properties.length is not 0 and `@param value` is not a schema value of any of the `@param schema`.properties fields',
-      () => {}
-    )
+    const TestSchemaKind = 'Union'
+
+    it('should return false if `@param schema`.properties.length is 0', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = []
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(schema.properties)).toBeTruthy()
+      expect((schema.properties as any).length).toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return true if `@param value` is a schema value of any of the `@param schema`.properties fields', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(schema.properties)).toBeTruthy()
+      expect((schema.properties as any).length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should ignore (continue) any values of `@param schema`.properties that are not serializable', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = [
+        { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema,
+        { [Kind]: 'String' } as Schema
+      ]
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(schema.properties)).toBeTruthy()
+      expect((schema.properties as any).length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param schema`.properties.length is not 0 and `@param value` is not a schema value of any of the `@param schema`.properties fields', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = [{ [Kind]: 'Bool' } as Schema, { [Kind]: 'String' } as Schema]
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(Array.isArray(schema.properties)).toBeTruthy()
+      expect((schema.properties as any).length).not.toBe(0)
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Kind.Union
 
-  describe.each(['Required', 'Proxy'])('case Kind.%s', () => {
-    it.todo(
-      'should return true if `@param value` is a schema value of any of the `@param schema`.properties fields',
-      () => {}
-    )
-    it.todo(
-      'should return false if `@param value` is not a schema value of any of the `@param schema`.properties fields',
-      () => {}
-    )
+  describe.each(['Required', 'Proxy'])('case Kind.%s', (kind) => {
+    const TestSchemaKind = kind
+
+    it('should return true if `@param value` is a schema value of any of the `@param schema`.properties fields', () => {
+      const Expected = true
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(schema.properties).toBeTruthy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return false if `@param value` is not a schema value of any of the `@param schema`.properties fields', () => {
+      const Expected = false
+      // 3. Set input & dependencies data
+      const value = 42
+      const properties = { [Kind]: 'String' } as Schema
+      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      // 1. Sanity check (input & dependencies)
+      expect(value).toBeTruthy()
+      expect(schema.properties).toBeTruthy()
+      // 2. Run the process
+      const result = CheckSchemaValue(schema, value)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: [Kind.Required, Kind.Proxy]
 
-  it.todo.each(['Partial', 'Func', 'NonSerialized'])(
-    'should return true if `@param schema`[Kind] is Kind.%s',
-    (kind) => {}
-  )
+  it.each(['Partial', 'Func', 'NonSerialized'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    const TestSchemaKind = kind
+    const value = 42
+    const schema = { [Kind]: TestSchemaKind } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(value).toBeTruthy()
+    // 2. Run the process
+    const result = CheckSchemaValue(schema, value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 
-  it.todo('should return false for every other `@param schema`[Kind] value  (case: default)', () => {})
+  it('should return false for every other `@param schema`[Kind] value  (case: default)', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const TestSchemaKind = 'InvalidSchemaKind' as any
+    const value = 42
+    const schema = { [Kind]: TestSchemaKind } as Schema
+    // 1. Sanity check (input & dependencies)
+    expect(value).toBeTruthy()
+    // 2. Run the process
+    const result = CheckSchemaValue(schema, value)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: CheckSchemaValue
 
 describe('CloneSerializable', () => {
