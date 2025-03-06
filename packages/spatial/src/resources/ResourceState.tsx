@@ -58,6 +58,12 @@ import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/WebGLRendererSystem'
 
+declare module 'three/src/textures/Texture.js' {
+  export interface Texture {
+    refetchSource?: () => void
+  }
+}
+
 export interface DisposableObject {
   uuid: string
   id: number
@@ -243,6 +249,7 @@ const resourceCallbacks = {
       discardUponUpload = false
     ) => {
       if (!asset.image) return
+      
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: discardUponUpload })

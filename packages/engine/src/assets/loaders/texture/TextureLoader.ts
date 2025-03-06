@@ -26,8 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { isClient } from '@ir-engine/hyperflux'
 import { PromiseQueue } from '@ir-engine/spatial/src/common/classes/PromiseQueue'
 import { firefoxVersion, iOS, isFirefox, isSafari } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { ImageBitmapLoader, ImageLoader, LoadingManager, Texture } from 'three'
+import { LoadingManager, Texture } from 'three'
 import { Loader } from '../base/Loader'
+import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
+import { ImageLoader } from '../image/ImageLoader'
 
 // Do we still need this check if we're now reliant on a browser that's new enough to have ArrayBuffer.resize?
 const useImageLoader = typeof createImageBitmap === 'undefined' || isSafari || (isFirefox && firefoxVersion < 98)
