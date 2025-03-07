@@ -37,7 +37,6 @@
     "@ir-engine/engine": "^1.6.0",
     "@ir-engine/hyperflux": "^1.6.0",
     "@ir-engine/ui": "^1.6.0",
-    "@popperjs/core": "^2.11.8",
     "@uiw/react-color-sketch": "^2.1.1",
     "axios": "1.3.4",
     "comlink": "4.4.1",
