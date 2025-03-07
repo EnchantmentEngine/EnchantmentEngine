@@ -50,6 +50,7 @@ export const CameraOrbitComponent = defineComponent({
     const entity = useEntityContext()
     const cameraOrbit = useComponent(entity, CameraOrbitComponent)
     const pivot = useTransformPivot(cameraOrbit.focusedEntities.value, cameraOrbit.transformPivot.value)
+
     useImmediateEffect(() => {
       if (!pivot.position) return
       const zoom = Math.max(cameraOrbit.minimumZoom.value * 10, pivot.bounds.getSize(new Vector3()).length())
@@ -58,6 +59,7 @@ export const CameraOrbitComponent = defineComponent({
       delta.set(0, 0, 1).applyQuaternion(transform.rotation).multiplyScalar(Math.min(zoom, MAX_ZOOM_DISTANCE))
       transform.position.copy(pivot.position).add(delta)
     }, [pivot])
+
     return null
   }
 })

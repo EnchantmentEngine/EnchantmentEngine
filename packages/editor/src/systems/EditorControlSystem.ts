@@ -472,6 +472,16 @@ const reactor = () => {
     cameraOrbit?.focusedEntities.set(selectedEntities)
   }, [selectedEntities])
 
+  const rootEntity = useMutableState(EditorState).rootEntity.value
+  const sceneLoaded = GLTFComponent.useSceneLoaded(rootEntity)
+
+  /** On scene load ensure the camera isn't stuck at the origin */
+  useEffect(() => {
+    if (!sceneLoaded) return
+    const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
+    cameraOrbit?.focusedEntities.set([rootEntity])
+  }, [sceneLoaded])
+
   useEffect(() => {
     hierarchyFeatureFlagEnabled = hideGlbChildrenFeatureFlag[0]
   }, [hideGlbChildrenFeatureFlag])
