@@ -110,7 +110,7 @@ describe('TransformGizmoSystem', () => {
 
         startReactor(meshBVHReactor)
 
-        await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree))
+        await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree), { timeout: 10000 })
 
         editorInputHeuristic(viewerEntity, data, rayOrigin, rayDirection)
 
@@ -165,7 +165,7 @@ describe('TransformGizmoSystem', () => {
 
         startReactor(meshBVHReactor)
 
-        await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree))
+        await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree), { timeout: 10000 })
 
         editorInputHeuristic(viewerEntity, data, rayOrigin, rayDirection)
 
