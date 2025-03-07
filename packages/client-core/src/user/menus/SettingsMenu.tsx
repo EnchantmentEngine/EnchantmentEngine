@@ -245,6 +245,8 @@ function GraphicsTab() {
               event_name: `change_shadow_map_resolution`,
               event_value: `${event}px`
             })
+            rendererState.automatic.set(false)
+            logger.analytics({ event_name: `automatic_qp`, event_value: false })
           }}
         />
       </div>
