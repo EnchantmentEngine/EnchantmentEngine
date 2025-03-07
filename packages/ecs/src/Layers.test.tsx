@@ -34,6 +34,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import assert from 'assert'
 import {
+  CreatePropagationArgs,
   defineComponent,
   getComponent,
   getOptionalComponent,
@@ -45,12 +46,15 @@ import {
   LayerRelationTypes,
   Layers,
   removeComponent,
+  removeEntity,
   setComponent
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
 import { createEntity, entityExists } from './EntityFunctions'
 import { defineQuery } from './QueryFunctions'
+import { S } from './schemas/JSONSchemas'
+import { Kind, Schema } from './schemas/JSONSchemaTypes'
 
 const TestComponent = defineComponent({ name: 'SomeTestComponent' })
 
@@ -323,95 +327,710 @@ describe('LayerFunctions', () => {
   }) //:: getAuthoringCounterpart
 
   describe('createLayerPropagationArgs', () => {
-    it.todo('should return undefined if `@param component`.schema is falsy', () => {})
-    it.todo(
-      'should return the object resulting from calling CreatePropagationArgs.Inner, with all its undefined values removed',
-      () => {}
-    )
+    let testEntity = UndefinedEntity
+
+    beforeEach(() => {
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+    })
+
+    it('should return undefined if `@param component`.schema is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const component = defineComponent({ name: 'TestComponent', schema: undefined })
+      const linkedLayer: LayerID = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      expect(component.schema).toBeFalsy()
+      // 2. Run the process
+      const result = LayerFunctions.createLayerPropagationArgs(testEntity, linkedLayer, component)
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return the object resulting from calling CreatePropagationArgs.Inner, with all its undefined values removed', () => {
+      const Initial = 'TestValue'
+      // 3. Set input & dependencies data
+      const component = defineComponent({ name: 'TestComponent', schema: S.String(Initial) })
+      setComponent(testEntity, component)
+      const key = ''
+      const data = Initial
+      const layer: LayerID = Layers.Simulation
+      const linkedLayer: LayerID = Layers.Authoring
+      const Expected = CreatePropagationArgs.Inner(
+        component.schema as any,
+        key,
+        data,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(component.schema).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = LayerFunctions.createLayerPropagationArgs(testEntity, linkedLayer, component)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: createLayerPropagationArgs
 }) //:: LayerFunctions
 
-/** @todo */
 describe('CreatePropagationArgs', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroyEngine()
+  })
+
   describe('Inner', () => {
-    it.todo("should return undefined when `@param key` is '', and typeof `@param data` is 'undefined'", () => {})
-    it.todo(
-      "should return undefined when `@param key` is not '', and typeof `@param data`[key] is 'undefined'",
-      () => {}
-    )
-    describe.each(['Null', 'Undefined', 'Void', 'Bool', 'String', 'Enum', 'Literal'])('case: Kind.%s', (kind) => {
-      it.todo("should return `@param data` if `@param key` is '' and data is not undefined", () => {})
-      it.todo("should return `@param data`[`@param key`] if `@param key` is not '' and data is not undefined", () => {})
+    it("should return undefined when `@param key` is '', and typeof `@param data` is 'undefined'", () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const component = defineComponent({ name: 'TestComponent', schema: S.String('TestValue') })
+      setComponent(testEntity, component)
+      const key = ''
+      const data = undefined
+      const layer: LayerID = Layers.Simulation
+      const linkedLayer: LayerID = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      expect(component.schema).toBeTruthy()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Inner(
+        component.schema as any,
+        key,
+        data,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
     })
-    it.todo("should call CreatePropagationArgs.Number when `@param schema`[Kind] is 'Number'", () => {})
-    it.todo("should call CreatePropagationArgs.Any when `@param schema`[Kind] is 'Any'", () => {})
-    it.todo("should call CreatePropagationArgs.Class when `@param schema`[Kind] is 'Class'", () => {})
-    it.todo("should call CreatePropagationArgs.Object when `@param schema`[Kind] is 'Object'", () => {})
-    it.todo("should call CreatePropagationArgs.Record when `@param schema`[Kind] is 'Record'", () => {})
-    it.todo("should call CreatePropagationArgs.Array when `@param schema`[Kind] is 'Array'", () => {})
-    it.todo("should call CreatePropagationArgs.Tuple when `@param schema`[Kind] is 'Tuple'", () => {})
-    it.todo("should call CreatePropagationArgs.Union when `@param schema`[Kind] is 'Union'", () => {})
-    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Partial'", () => {})
-    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Required'", () => {})
-    it.todo("should call CreatePropagationArgs.Default when `@param schema`[Kind] is 'Proxy'", () => {})
-    it.todo(
-      'should call CreatePropagationArgs.Default when `@param schema`[Kind] is any other kind  (case: default)',
-      () => {}
+
+    it("should return undefined when `@param key` is not '', and typeof `@param data`[key] is 'undefined'", () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const component = defineComponent({ name: 'TestComponent', schema: S.String('TestValue') })
+      setComponent(testEntity, component)
+      const key = 'SomeKey'
+      const data = {}
+      const layer: LayerID = Layers.Simulation
+      const linkedLayer: LayerID = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      expect(component.schema).toBeTruthy()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Inner(
+        component.schema as any,
+        key,
+        data,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    describe.each(['Null', 'Undefined', 'Void', 'Bool', 'String', 'Enum', 'Literal'])('case: Kind.%s', (kind) => {
+      const TestSchemaKind = kind
+
+      it("should return `@param data` if `@param key` is '' and data is not undefined", () => {
+        const Expected = { one: 1 }
+        // 3. Set input & dependencies data
+        const schema = { [Kind]: TestSchemaKind, properties: [] } as Schema
+        const component = defineComponent({ name: 'TestComponent', schema: schema })
+        setComponent(testEntity, component)
+        const key = ''
+        const data = Expected
+        const layer: LayerID = Layers.Simulation
+        const linkedLayer: LayerID = Layers.Authoring
+        // 1. Sanity check (input & dependencies)
+        expect(component.schema).toBeTruthy()
+        // 2. Run the process
+        const result = CreatePropagationArgs.Inner(
+          component.schema as any,
+          key,
+          data,
+          layer,
+          linkedLayer,
+          testEntity,
+          component
+        )
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it("should return `@param data`[`@param key`] if `@param key` is not '' and data is not undefined", () => {
+        const Expected = 42
+        // 3. Set input & dependencies data
+        const schema = { [Kind]: TestSchemaKind, properties: [] } as Schema
+        const component = defineComponent({ name: 'TestComponent', schema: schema })
+        setComponent(testEntity, component)
+        const key = 'one'
+        const data = { [key]: Expected }
+        const layer: LayerID = Layers.Simulation
+        const linkedLayer: LayerID = Layers.Authoring
+        // 1. Sanity check (input & dependencies)
+        expect(component.schema).toBeTruthy()
+        // 2. Run the process
+        const result = CreatePropagationArgs.Inner(
+          component.schema as any,
+          key,
+          data,
+          layer,
+          linkedLayer,
+          testEntity,
+          component
+        )
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
+    })
+
+    it.each([
+      ['Number', 'Number'],
+      ['Any', 'Any'],
+      ['Class', 'Class'],
+      ['Object', 'Object'],
+      ['Array', 'Array'],
+      ['Tuple', 'Tuple'],
+      ['Union', 'Union'],
+      ['Default', 'Partial']
+    ])("should call CreatePropagationArgs.%s when `@param schema`[Kind] is '%s'", (fn, kind) => {
+      const TestSchemaKind = kind
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: TestSchemaKind, options: { default: 42 }, properties: [] } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema })
+      setComponent(testEntity, component)
+      const key = 'one'
+      const data = { one: { val: 42, clone: () => {} } }
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
+
+    it.each([['Record', 'Record']])(
+      "should call CreatePropagationArgs.%s when `@param schema`[Kind] is '%s'",
+      (fn, kind) => {
+        const TestSchemaKind = kind
+        // 3. Set input & dependencies data
+        const schema = {
+          [Kind]: TestSchemaKind,
+          properties: { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
+        } as Schema
+        const component = defineComponent({ name: 'TestComponent', schema: schema })
+        setComponent(testEntity, component)
+        const key = 'one'
+        const data = { one: { val: 42, clone: () => {} } }
+        const layer = Layers.Simulation
+        const linkedLayer = Layers.Authoring
+        const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
+        // 1. Sanity check (input & dependencies)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        // 5? Cleanup (dependencies)
+      }
     )
+
+    it.each([
+      ['Default', 'Required'],
+      ['Default', 'Proxy'],
+      ['Default', 'InvalidKind']
+    ])("should call CreatePropagationArgs.%s when `@param schema`[Kind] is '%s'", (fn, kind) => {
+      const TestSchemaKind = kind
+      // 3. Set input & dependencies data
+      const properties = { [Kind]: 'Number' } as Schema
+      const schema = { [Kind]: TestSchemaKind, options: { default: 42 }, properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const data = 42
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Inner
 
   describe('Number', () => {
-    it.todo('should return `@param obj` if it is UndefinedEntity', () => {})
-    describe("when `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is 'Entity' ..", () => {
-      it.todo('should return `@param obj` if LayerComponent.get(obj) is `@param linkedLayer`', () => {})
-      it.todo(
-        'should return the result of getComponent(`@param obj`, LayerComponents[`@param layer`].relations[`@param linkedLayer`]',
-        () => {}
+    it('should return `@param obj` if it is UndefinedEntity', () => {
+      const Expected = UndefinedEntity
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 42 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Number(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
       )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
     })
-    it.todo(
-      "should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is not 'Entity'",
-      () => {}
-    )
-    it.todo(
-      "should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.['id'] is 'Entity'",
-      () => {}
-    )
+
+    describe("when `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is 'Entity' ..", () => {
+      const id = 'Entity'
+      const key = 'Number'
+
+      it('should return `@param obj` if LayerComponent.get(obj) is `@param linkedLayer`', () => {
+        const Expected = testEntity
+        // 3. Set input & dependencies data
+        const schema = { [Kind]: 'Number', options: { id: id } } as Schema
+        const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+        setComponent(testEntity, component)
+        const obj = Expected
+        const layer = Layers.Authoring
+        const linkedLayer = Layers.Simulation
+        // 1. Sanity check (input & dependencies)
+        expect(LayerComponent.get(obj)).toBe(linkedLayer)
+        // 2. Run the process
+        const result = CreatePropagationArgs.Number(
+          component.schema as any,
+          key,
+          obj,
+          layer,
+          linkedLayer,
+          testEntity,
+          component
+        )
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should return the result of getComponent(`@param obj`, LayerComponents[`@param layer`].relations[`@param linkedLayer`]', () => {
+        // 3. Set input & dependencies data
+        const schema = { [Kind]: 'Number', options: { id: id } } as Schema
+        const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+        setComponent(testEntity, component)
+        const obj = testEntity
+        const layer = Layers.Authoring
+        const linkedLayer = Layers.Simulation
+        setComponent(testEntity, LayerComponent, layer)
+        const Expected = getComponent(obj, LayerComponents[layer]).relations[linkedLayer]
+        // 1. Sanity check (input & dependencies)
+        // 2. Run the process
+        const result = CreatePropagationArgs.Number(
+          component.schema as any,
+          key,
+          obj,
+          layer,
+          linkedLayer,
+          testEntity,
+          component
+        )
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
+    }) //:: Number:Entity
+
+    it("should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is not 'Entity'", () => {
+      const Expected = 12345 as Entity
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 42, id: 'NotEntity' } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = 'Number'
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Number(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it("should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.['id'] is 'Entity'", () => {
+      const Expected = 12345 as Entity
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'String', options: { default: 42, id: 'Entity' } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = 'OtherKey'
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Number(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Number
 
   describe('Any', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
-    it.todo(
-      "should return the result of calling `@param obj`.clone if typeof obj is 'object' and obj contains a valid function at .clone",
-      () => {}
-    )
-    it.todo('should return a new array containing all elements of `@param obj` if obj is an array', () => {})
-    it.todo(
-      'should return a deep clone of `@param obj` if it does not have a .clone function and it is not an array',
-      () => {}
-    )
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 42 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Any(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it("should return the result of calling `@param obj`.clone if typeof obj is 'object' and obj contains a valid function at .clone", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 1234 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = { clone: () => Expected }
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Any(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a new array containing all elements of `@param obj` if obj is an array', () => {
+      const Expected = [40, 41, 42, 'TestValue']
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 1234 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Any(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a deep clone of `@param obj` if it does not have a .clone function and it is not an array', () => {
+      const Expected = { one: 41, two: 42 }
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 1234 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Any(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Any
 
   describe('Class', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
-    it.todo(
-      'should return the result of calling `@param obj`.clone if obj contains a valid function at .clone',
-      () => {}
-    )
-    it.todo('should return a deep copy of `@param obj` when it is a clonable class', () => {})
-    it.todo('should call console.warn and return `@param obj` when obj is not a clonable class', () => {})
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 42 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Class(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return the result of calling `@param obj`.clone if obj contains a valid function at .clone', () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 21 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = { clone: () => Expected }
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Class(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a deep copy of `@param obj` when it is a clonable class', () => {
+      const Expected = { one: 41, two: 'TWO' }
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 21 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Class(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should call console.warn and return `@param obj` when obj is not a clonable class', () => {
+      const Expected = { one: 41, two: 'TWO', sym: Symbol('SomeSymbol') }
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', options: { default: 21 } } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Class(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      expect(result).toEqual(Expected)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Class
 
   describe('Object', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
-    it.todo(
-      "should return a new object created by recursively calling CreatePropagationArgs.Inner of all the fields of `@param obj`, and ignoring any of its results for which typeof is 'undefined'",
-      () => {}
-    )
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number' } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Object(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it("should return a new object created by recursively calling CreatePropagationArgs.Inner for all the fields of `@param obj`, and ignoring any of its results for which typeof is 'undefined'", () => {
+      const Expected = { one: 41, two: 'TWO' }
+      // 3. Set input & dependencies data
+      const properties = {
+        one: { [Kind]: 'Number' } as Schema,
+        two: { [Kind]: 'String' } as Schema
+      }
+      const schema = { [Kind]: 'Number', properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Object(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalledTimes(Object.keys(obj).length)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Object
 
   describe('Record', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number' } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Record(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
     it.todo(
       "should return a new record created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`, and ignoring any of its results for which typeof is 'undefined'",
       () => {}
@@ -419,39 +1038,252 @@ describe('CreatePropagationArgs', () => {
   }) //:: Record
 
   describe('Array', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
-    it.todo(
-      'should return a new array created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`',
-      () => {}
-    )
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number' } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Array(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a new array created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`', () => {
+      const Expected = [41, 42, 43]
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Array(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalledTimes(obj.length)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Array
 
   describe('Tuple', () => {
-    it.todo('should return undefined if `@param obj` is falsy', () => {})
-    it.todo(
-      'should return a new tuple created by recursively calling CreatePropagationArgs.Inner for all the inner values of `@param obj',
-      () => {}
-    )
+    it('should return undefined if `@param obj` is falsy', () => {
+      const Expected = undefined
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number' } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = false
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      // 1. Sanity check (input & dependencies)
+      // 2. Run the process
+      const result = CreatePropagationArgs.Tuple(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return a new tuple created by recursively calling CreatePropagationArgs.Inner for all the inner values of `@param obj', () => {
+      const Expected = [41, 'TWO', 43]
+      // 3. Set input & dependencies data
+      const properties = [
+        { [Kind]: 'Number' } as Schema,
+        { [Kind]: 'String' } as Schema,
+        { [Kind]: 'Number' } as Schema
+      ]
+      const schema = { [Kind]: 'Tuple', properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Tuple(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalledTimes(obj.length)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Tuple
 
   describe('Union', () => {
-    it.todo(
-      'should return result of CreatePropagationArgs.Inner for the first value of `@param schema`.properties that does not return undefined for `@param obj`',
-      () => {}
-    )
-    it.todo(
-      'should return null if none of the values of `@param schema`.properties describe a valid schema for `@param obj`',
-      () => {}
-    )
+    it('should return result of CreatePropagationArgs.Inner for the first value of `@param schema`.properties that does not return undefined for `@param obj`', () => {
+      const Expected = { one: 42 }
+      // 3. Set input & dependencies data
+      const properties = [
+        { [Kind]: 'Number' } as Schema,
+        { [Kind]: 'String' } as Schema,
+        { [Kind]: 'Object', properties: { one: { [Kind]: 'Number' } as Schema } } as Schema
+      ]
+      const schema = { [Kind]: 'Union', properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Union(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalledTimes(Object.keys(obj).length)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return null if none of the values of `@param schema`.properties describe a valid schema for `@param obj`', () => {
+      const Expected = null
+      // 3. Set input & dependencies data
+      const properties = [] // @warning The first entry of this array would hit no matter what
+      const schema = { [Kind]: 'Union', properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = { outer: { one: 42 } }
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Union(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
   }) //::  Union
 
   describe('Default', () => {
-    // (TODO:) should return an object that ???? if `@param schema`.properties is falsy and typeof `@param obj` is 'object'
-    it.todo("should return `@param obj` when its typeof is 'number' and `@param schema`.properties is falsy", () => {})
-    it.todo(
-      'should return the result of CreatePropagationArgs.Inner when `@param schema`.properties is truthy',
-      () => {}
-    )
+    it("should return `@param obj` when its typeof is 'number' and `@param schema`.properties is falsy", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const schema = { [Kind]: 'Number', properties: false } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Default(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalledTimes(Object.keys(obj).length)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should return the result of CreatePropagationArgs.Inner when `@param schema`.properties is truthy', () => {
+      const Expected = { one: 41 }
+      // 3. Set input & dependencies data
+      const properties = { one: { [Kind]: 'Number' } as Schema }
+      const schema = { [Kind]: 'Object', properties: properties } as Schema
+      const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
+      setComponent(testEntity, component)
+      const key = ''
+      const obj = Expected
+      const layer = Layers.Simulation
+      const linkedLayer = Layers.Authoring
+      const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
+      // 1. Sanity check (input & dependencies)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const result = CreatePropagationArgs.Default(
+        component.schema as any,
+        key,
+        obj,
+        layer,
+        linkedLayer,
+        testEntity,
+        component
+      )
+      // 4. Check the result (output)
+      expect(result).not.toBe(Expected)
+      expect(result).toEqual(Expected)
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
   }) //:: Default
 }) //:: CreatePropagationArgs
 
