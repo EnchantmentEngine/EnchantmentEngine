@@ -133,7 +133,7 @@ export function Browser() {
   const FileItems = () => (
     <>
       {sortedFiles.map((file, idx) => {
-        const backgroundColor = idx % 2 === 0 ? '#111113' : '#191B1F'
+        const backgroundColor = idx % 2 === 0 ? 'bg-ui-secondary' : 'bg-ui-primary'
         return (
           <FileItem
             file={{ ...file, ...staticResourceData.value[file?.key] }}
