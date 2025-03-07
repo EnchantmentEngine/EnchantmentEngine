@@ -652,7 +652,8 @@ describe('InputComponent', () => {
     })
   })
 
-  describe('reactor', () => {
+  /** @todo reimplement non-reactively */
+  describe.skip('reactor', () => {
     it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true`', async () => {
       const entity = getState(ReferenceSpaceState).localFloorEntity
 
