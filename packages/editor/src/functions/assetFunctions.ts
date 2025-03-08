@@ -241,9 +241,11 @@ export const handleUploadFiles = (
         ]
       })
         .promise.then((response) => response[0])
-        .catch(() => {
-          NotificationService.dispatchNotify(i18n.t('editor:errors.fileUploadFailed') as string, { variant: 'error' })
-          throw new Error('Upload failed')
+        .catch((e) => {
+          NotificationService.dispatchNotify(i18n.t('editor:errors.fileUploadFailed', { reason: e }) as string, {
+            variant: 'error',
+            autoHideDuration: 20000
+          })
         })
     })
   )
