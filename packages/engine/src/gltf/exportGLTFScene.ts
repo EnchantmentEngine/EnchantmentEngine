@@ -72,6 +72,7 @@ import { SourceComponent } from '../scene/components/SourceComponent'
 import { handleScenePaths } from '../scene/functions/GLTFConversion'
 import { GLTFComponent } from './GLTFComponent'
 import { NodeIDComponent } from './NodeIDComponent'
+import { SceneDeltaExporterExtension } from './SceneDeltaExporterExtension'
 
 const WEBGL_CONSTANTS = {
   POINTS: 0x0000,
@@ -198,9 +199,9 @@ type GLTFSceneExportContext = {
   }
 }
 
-export type ExportExtension = new () => GLTFSceneExportExtension
+export type ExportExtension = GLTFSceneExportExtension
 
-export const defaultExportExtensionList = [] as ExportExtension[]
+export const defaultExportExtensionList = [SceneDeltaExporterExtension] as (() => ExportExtension)[]
 
 type TypedArrayConstructor =
   | Int8ArrayConstructor
@@ -319,9 +320,9 @@ export async function exportGLTFScene(
   projectName: string,
   relativePath: string,
   exportRoot = true,
-  exportExtensionTypes: ExportExtension[] = defaultExportExtensionList
+  exportExtensionTypes: ExportExtension[] = defaultExportExtensionList.map((ext) => ext())
 ) {
-  const exportExtensions = exportExtensionTypes.map((ext) => new ext())
+  const exportExtensions = exportExtensionTypes //.map((ext) => new ext())
 
   const gltf = {
     asset: { generator: 'IREngine.SceneExporter', version: '2.0' },
@@ -437,15 +438,14 @@ const exportMesh = async (mesh: Mesh, gltf: GLTF.IGLTF, context: GLTFSceneExport
       if (attributeName.slice(0, 5) === 'morph') continue
 
       const attribute = geometry.attributes[attributeName]
-      if (attribute instanceof InterleavedBufferAttribute) {
-        throw new Error('InterleavedBufferAttribute not supported')
-      }
 
       const convertedName = nameConversion[attributeName] || attributeName.toUpperCase()
 
       let attributeIndex = -1
       if (context.cache.attributes.has(attribute)) {
         attributeIndex = context.cache.attributes.get(attribute)!
+      } else if (attribute instanceof InterleavedBufferAttribute) {
+        attributeIndex = exportAccessor(toDeInterleaved(attribute), gltf, context)
       } else {
         attributeIndex = exportAccessor(attribute, gltf, context)
       }
@@ -490,6 +490,10 @@ const exportMesh = async (mesh: Mesh, gltf: GLTF.IGLTF, context: GLTFSceneExport
   context.cache.meshes.set(mesh, meshIndex)
 
   return meshIndex
+}
+
+const toDeInterleaved = (attribute: InterleavedBufferAttribute): BufferAttribute => {
+  return attribute.clone(undefined)
 }
 
 const exportAccessor = (
@@ -567,6 +571,8 @@ const exportAccessor = (
   return accessorIndex
 }
 
+const getPaddedBufferSize = (bufferSize: number): number => Math.ceil(bufferSize / 4) * 4
+
 const exportBufferView = (
   attribute: BufferAttribute,
   componentType: number,
@@ -592,7 +598,7 @@ const exportBufferView = (
   }
 
   const bufferSize = count * attribute.itemSize * componentSize
-  const byteLength = Math.ceil(bufferSize / 4) * 4
+  const byteLength = getPaddedBufferSize(bufferSize)
   const dataView = new DataView(new ArrayBuffer(byteLength))
   let offset = 0
   for (let i = start; i < start + count; i++) {
@@ -747,8 +753,10 @@ const exportTexture = async (texture: Texture, gltf: GLTF.IGLTF, context: GLTFSc
   if (mimeType === 'image/webp') mimeType = 'image/png'
 
   const src = texture.userData.src
-
-  if (src) {
+  const url = texture.userData.url
+  if (url) {
+    texture.image.src = url
+  } else if (src) {
     texture.image.src = src
   }
   if (mimeType) {
@@ -765,6 +773,50 @@ const exportTexture = async (texture: Texture, gltf: GLTF.IGLTF, context: GLTFSc
   return textureIndex
 }
 
+const getPaddedArrayBuffer = (arrayBuffer: ArrayBuffer, paddingByte = 0) => {
+  const paddedLength = getPaddedBufferSize(arrayBuffer.byteLength)
+
+  if (paddedLength !== arrayBuffer.byteLength) {
+    const array = new Uint8Array(paddedLength)
+    array.set(new Uint8Array(arrayBuffer))
+
+    if (paddingByte !== 0) {
+      for (let i = arrayBuffer.byteLength; i < paddedLength; i++) {
+        array[i] = paddingByte
+      }
+    }
+
+    return array.buffer
+  }
+
+  return arrayBuffer
+}
+
+const exportBufferViewImage = async (
+  blob: Blob,
+  gltf: GLTF.IGLTF,
+  context: GLTFSceneExportContext
+): Promise<number> => {
+  return new Promise(function (resolve) {
+    const reader = new FileReader()
+    reader.readAsArrayBuffer(blob)
+    reader.onloadend = function () {
+      const buffer = getPaddedArrayBuffer(reader.result as ArrayBuffer)
+
+      const bufferViewDef = {
+        buffer: exportBuffer(buffer, gltf, context),
+        byteOffset: 0,
+        byteLength: buffer.byteLength
+      }
+
+      const bufferViewIndex = gltf.bufferViews!.length
+      if (!gltf.bufferViews) gltf.bufferViews = []
+      gltf.bufferViews.push(bufferViewDef)
+      resolve(bufferViewIndex)
+    }
+  })
+}
+
 const exportImage = async (image: any, gltf: GLTF.IGLTF, context: GLTFSceneExportContext): Promise<number> => {
   const cache = context.cache.images
   if (typeof image.src === 'string') {
@@ -772,17 +824,36 @@ const exportImage = async (image: any, gltf: GLTF.IGLTF, context: GLTFSceneExpor
   } else if (cache.has(image)) return cache.get(image)!
 
   gltf.images ??= []
-  const relativeSrc = STATIC_ASSET_REGEX.exec(image.src)![3]
-  const dstName = baseName(relativeSrc)
-  const srcName = baseName(context.relativePath)
-  const dstDir = LoaderUtils.extractUrlBase(relativeSrc)
-  const srcDir = LoaderUtils.extractUrlBase(context.relativePath)
 
-  const uri = pathJoin(relativePathTo(srcDir, dstDir), dstName)
+  let imageDef = undefined as undefined | GLTF.IImage
 
-  const imageDef: GLTF.IImage = {
-    mimeType: image.mimeType,
-    uri
+  if (/^blob:/.test(image.src)) {
+    const canvas = new OffscreenCanvas(image.width, image.height)
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(image, 0, 0)
+    const blob = await canvas.convertToBlob({ type: image.mimeType, quality: 1 })
+
+    const bufferViewIndex = await exportBufferViewImage(blob, gltf, context)
+    imageDef = {
+      mimeType: image.mimeType,
+      bufferView: bufferViewIndex
+    }
+  } else {
+    const [, dstOrgName, dstProjectName, dstInternalPath] = STATIC_ASSET_REGEX.exec(image.src)!
+    const srcProjectName = context.projectName
+    const dstRelativePath = pathJoin(dstOrgName, dstProjectName, dstInternalPath)
+    const srcRelativePath = pathJoin(srcProjectName, context.relativePath)
+    const dstName = baseName(dstRelativePath)
+    const srcName = baseName(srcRelativePath)
+    const dstDir = LoaderUtils.extractUrlBase(dstRelativePath)
+    const srcDir = LoaderUtils.extractUrlBase(srcRelativePath)
+
+    const uri = pathJoin(relativePathTo(srcDir, dstDir), dstName)
+
+    imageDef = {
+      mimeType: image.mimeType,
+      uri
+    }
   }
 
   gltf.images ??= []

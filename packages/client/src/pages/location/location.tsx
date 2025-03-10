@@ -38,13 +38,12 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
 import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
-import { useMutableState } from '@ir-engine/hyperflux'
-import '../mui.styles.scss' /** @todo Remove when MUI is removed */
+import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import '../styles.scss'
 
 const LocationRoutes = () => {
   const ref = useRef<HTMLElement>(document.body)
-  const ready = useMutableState(LoadingUISystemState).value.ready
+  const ready = useHookstate(getMutableState(LoadingUISystemState).ready).value
 
   useSpatialEngine()
   useEngineCanvas(ref)
@@ -54,7 +53,12 @@ const LocationRoutes = () => {
 
   return (
     <Suspense>
-      {!ready && !projectsLoaded && (
+      {projectsLoaded && (
+        <Routes>
+          <Route path=":locationName" element={<LocationPage online />} />
+        </Routes>
+      )}
+      {!ready && (
         <div className="flex h-screen w-screen items-center justify-center bg-white" style={{ zIndex: 1000000 }}>
           <LoadingView
             fullScreen
@@ -65,9 +69,6 @@ const LocationRoutes = () => {
           />
         </div>
       )}
-      <Routes>
-        <Route path=":locationName" element={<LocationPage online />} />
-      </Routes>
       <Debug />
     </Suspense>
   )
