@@ -438,7 +438,7 @@ export const CloneSerializable = <Val>(value: Val) => {
   else if (isArrayBuffer(value)) return value.slice(0)
   else if (Array.isArray(value))
     return value.map((item) => CloneSerializable(item))?.filter((item) => item !== NonSerializable)
-  else if (isSet(value)) return new Set(CloneSerializable([...value.entries()]))
+  else if (isSet(value)) return new Set(CloneSerializable([...value.values()]))
   else if (isMap(value)) return new Map(CloneSerializable([...value.entries()]))
   else if (type === 'object') {
     const obj = {}
