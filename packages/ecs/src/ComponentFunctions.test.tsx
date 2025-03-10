@@ -831,6 +831,7 @@ describe('deserializeComponent', () => {
     expect(HasValidSchemaValues(schema, json, prev, testEntity)[0]).toBeFalsy()
     // 2. Run the process
     // 4. Check the result (output)
+    // @ts-expect-error Coerce null into string|undefined `@param json`
     expect(() => deserializeComponent(testEntity, component, json)).not.toThrowError()
     // 5? Cleanup (dependencies)
   })
