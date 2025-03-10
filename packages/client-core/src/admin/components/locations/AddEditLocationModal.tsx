@@ -389,7 +389,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
 
     try {
       await SceneThumbnailState.createThumbnail()
-      await SceneThumbnailState.uploadThumbnail()
+      // await SceneThumbnailState.uploadThumbnail()
     } catch (e) {
       errors.serverError.set(e.message)
     }
