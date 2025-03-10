@@ -37,6 +37,7 @@ import {
   getOptionalComponent,
   getSimulationCounterpart,
   hasComponent,
+  iterateEntityNode,
   Layers,
   removeComponent,
   removeEntity,
@@ -210,10 +211,32 @@ export const GLTFComponentReactor = () => {
   const documentLoaded = useHookstate(false)
 
   useEffect(() => {
+    if (!documentLoaded.value) return
     const occlusion = gltfComponent.cameraOcclusion.value
-    if (!occlusion) ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
-    else ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
-  }, [gltfComponent.cameraOcclusion])
+
+    const validLayerEntity = (child: Entity) =>
+      !hasComponent(child, GLTFComponent) && hasComponent(child, MeshComponent)
+
+    if (!occlusion) {
+      iterateEntityNode(
+        entity,
+        (child) => {
+          ObjectLayerMaskComponent.disableLayer(child, ObjectLayers.Camera)
+        },
+        validLayerEntity
+      )
+      ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
+    } else {
+      iterateEntityNode(
+        entity,
+        (child) => {
+          ObjectLayerMaskComponent.enableLayer(child, ObjectLayers.Camera)
+        },
+        validLayerEntity
+      )
+      ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
+    }
+  }, [gltfComponent.cameraOcclusion.value, documentLoaded.value])
 
   useGLTFDocument(entity)
 
