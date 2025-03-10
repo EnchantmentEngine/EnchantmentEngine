@@ -26,8 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Mesh, MeshStandardMaterial } from 'three'
 
-import { useEntityContext } from '@ir-engine/ecs'
+import { EntityTreeComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
+  createEntity,
   defineComponent,
   removeComponent,
   setComponent,
@@ -36,7 +37,12 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Geometry } from '@ir-engine/spatial/src/common/constants/Geometry'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import {
+  MaterialInstanceComponent,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { GeometryTypeEnum, GeometryTypeToFactory } from '../constants/GeometryTypeEnum'
 
 const createGeometry = (geometryType: GeometryTypeEnum, geometryParams: Record<string, any>): Geometry => {
@@ -59,14 +65,18 @@ export const PrimitiveGeometryComponent = defineComponent({
     const geometryComponent = useComponent(entity, PrimitiveGeometryComponent)
 
     useEffect(() => {
-      setComponent(
-        entity,
-        MeshComponent,
-        new Mesh(
-          createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value),
-          new MeshStandardMaterial()
-        )
+      const materialEntity = createEntity()
+      setComponent(materialEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+      const materialUuid = UUIDComponent.generateUUID()
+      setComponent(materialEntity, UUIDComponent, materialUuid)
+      setComponent(materialEntity, NameComponent, 'Material')
+      setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity })
+      const mesh = new Mesh(
+        createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value)
       )
+      setComponent(entity, MeshComponent, mesh)
+      setComponent(entity, MaterialInstanceComponent, { uuid: mesh.geometry.groups.map(() => materialUuid) })
+
       return () => {
         removeComponent(entity, MeshComponent)
       }
