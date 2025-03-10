@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect, useLayoutEffect } from 'react'
 
+import config from '@ir-engine/common/src/config'
 import {
   entityExists,
   EntityUUID,
@@ -39,6 +40,7 @@ import { spawnAvatarReceptor } from '@ir-engine/engine/src/avatar/functions/spaw
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { WorldNetworkAction } from '@ir-engine/network'
+import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
@@ -86,13 +88,21 @@ const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
   const hasTransformComponent = useOptionalComponent(entity, TransformComponent)
 
+  /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
   useLayoutEffect(() => {
     if (!entity || !hasTransformComponent) return
     spawnAvatarReceptor(entityUUID)
   }, [entity, hasTransformComponent])
 
   useEffect(() => {
-    if (!entity || !avatarURL.value) return
+    if (!iOS || !entity) return
+    setComponent(entity, GLTFComponent, {
+      src: config.client.fileServer + '/projects/ir-engine/default-project/assets/avatars/irRobot.vrm'
+    })
+  }, [entity])
+
+  useEffect(() => {
+    if (!entity || !avatarURL.value || iOS) return
 
     setComponent(entity, GLTFComponent, { src: avatarURL.value })
 
