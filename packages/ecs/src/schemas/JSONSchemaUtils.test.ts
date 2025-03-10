@@ -2768,9 +2768,8 @@ describe('CloneSerializable', () => {
     // 5? Cleanup (dependencies)
   })
 
-  /** @todo How to set it up such that ArrayBuffer.isView(value) is truthy */
-  it.todo('should return a duplicate of `@param value` if it is an ArrayBuffer', () => {
-    const Expected = new ArrayBuffer(42)
+  it('should return a duplicate of `@param value` if it is an ArrayBuffer', () => {
+    const Expected = new Int32Array(42)
     // 3. Set input & dependencies data
     const value = Expected
     // 1. Sanity check (input & dependencies)
@@ -2799,26 +2798,24 @@ describe('CloneSerializable', () => {
     // 5? Cleanup (dependencies)
   })
 
-  /** @todo How to create the sets such that the results make sense */
-  it.todo(
-    'should return a new Set containing all the serializable values of `@param value`.entries() if value is a Set',
-    () => {
-      const one = 41
-      const two = 42
-      const Expected = new Set([one, two, null])
-      // 3. Set input & dependencies data
-      const value = new Set([one, two, undefined])
-      // 1. Sanity check (input & dependencies)
-      expect(value).not.toBeNull()
-      expect(value instanceof Set).toBeTruthy()
-      // 2. Run the process
-      const result = CloneSerializable(value)
-      // 4. Check the result (output)
-      expect(result).not.toBe(Expected)
-      expect(result).toEqual(Expected)
-      // 5? Cleanup (dependencies)
-    }
-  )
+  it('should return a new Set containing all the serializable values of `@param value`.entries() if value is a Set', () => {
+    const one = 41
+    const two = 42
+    const Expected = new Set([one, two, null])
+
+    // 3. Set input & dependencies data
+    const value = new Set([one, two, undefined])
+
+    // 1. Sanity check (input & dependencies)
+    expect(value).not.toBeNull()
+    expect(value instanceof Set).toBeTruthy()
+    // 2. Run the process
+    const result = CloneSerializable(value)
+    // 4. Check the result (output)
+    expect(result).not.toBe(Expected)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
 
   it('should return a new Map containing all the serializable values of `@param value`.entries() if value is a Map', () => {
     const one = 41
