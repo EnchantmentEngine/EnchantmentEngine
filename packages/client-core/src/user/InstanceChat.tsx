@@ -262,8 +262,6 @@ function MessagesWrapper() {
     isChatOpen.set(false)
   })
 
-  console.log('debug1 condition', ageVerified, isMobile)
-
   return (
     <div className="flex items-end">
       <div className="relative max-w-16">
