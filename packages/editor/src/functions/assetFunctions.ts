@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { removeFromFileThumbnailsSeen } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import {
   CancelableUploadPromiseArrayReturnType,
@@ -240,10 +241,40 @@ export const handleUploadFiles = (
           }
         ]
       })
-        .promise.then((response) => response[0])
-        .catch(() => {
-          NotificationService.dispatchNotify(i18n.t('editor:errors.fileUploadFailed') as string, { variant: 'error' })
-          throw new Error('Upload failed')
+        .promise.then((response) => {
+          //get the static resource record for this file, so we can make it's thumbnail null, since it was oerwritten
+          const checkStaticResourceThumbnail = async (path) => {
+            await API.instance
+              .service(staticResourcePath)
+              .find({
+                query: { key: { $in: [path] } }
+              })
+              .then((reponse) => {
+                if (reponse.data.length > 0) {
+                  const staticResourceId = reponse.data[0].id
+                  const updateStaticResourceThumbnail = async (id: string) => {
+                    await API.instance
+                      .service(staticResourcePath)
+                      .patch(id, { thumbnailKey: null, thumbnailMode: null })
+                  }
+                  updateStaticResourceThumbnail(staticResourceId)
+                }
+              })
+              .catch((e) => console.error(e))
+            return path
+          }
+          const fileURL = new URL(response[0])
+          fileURL.search = ''
+          fileURL.hash = ''
+          const file = fileURL.href.replace(config.client.fileServer + '/', '')
+          removeFromFileThumbnailsSeen([file])
+          return checkStaticResourceThumbnail(file)
+        })
+        .catch((e) => {
+          NotificationService.dispatchNotify(i18n.t('editor:errors.fileUploadFailed', { reason: e }) as string, {
+            variant: 'error',
+            autoHideDuration: 20000
+          })
         })
     })
   )
