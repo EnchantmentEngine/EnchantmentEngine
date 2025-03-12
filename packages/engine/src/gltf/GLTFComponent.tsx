@@ -37,7 +37,6 @@ import {
   getOptionalComponent,
   getSimulationCounterpart,
   hasComponent,
-  iterateEntityNode,
   Layers,
   removeComponent,
   removeEntity,
@@ -59,6 +58,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
@@ -212,29 +212,22 @@ export const GLTFComponentReactor = () => {
 
   useEffect(() => {
     if (!documentLoaded.value) return
-    const occlusion = gltfComponent.cameraOcclusion.value
 
-    const validLayerEntity = (child: Entity) =>
-      !hasComponent(child, GLTFComponent) && hasComponent(child, MeshComponent)
+    const occlusion = gltfComponent.cameraOcclusion.value
+    const entities = SourceComponent.getEntitiesBySource(GLTFComponent.getInstanceID(entity)).filter(
+      (curr) => !hasComponent(curr, GLTFComponent) && hasComponent(curr, ObjectComponent)
+    )
 
     if (!occlusion) {
-      iterateEntityNode(
-        entity,
-        (child) => {
-          ObjectLayerMaskComponent.disableLayer(child, ObjectLayers.Camera)
-        },
-        validLayerEntity
-      )
       ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.disableLayer(curr, ObjectLayers.Camera)
+      }
     } else {
-      iterateEntityNode(
-        entity,
-        (child) => {
-          ObjectLayerMaskComponent.enableLayer(child, ObjectLayers.Camera)
-        },
-        validLayerEntity
-      )
       ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.enableLayer(curr, ObjectLayers.Camera)
+      }
     }
   }, [gltfComponent.cameraOcclusion.value, documentLoaded.value])
 
