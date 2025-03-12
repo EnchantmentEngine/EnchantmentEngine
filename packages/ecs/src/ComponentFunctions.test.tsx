@@ -37,6 +37,7 @@ import {
   deserializeComponent,
   getAllComponents,
   getComponent,
+  getMutableComponent,
   hasComponent,
   hasComponents,
   removeComponent,
@@ -49,7 +50,12 @@ import { Entity, EntityUUID, UndefinedEntity } from './Entity'
 import { createEntity } from './EntityFunctions'
 import { UUIDComponent } from './UUIDComponent'
 import { createResizableTypeArray } from './bitecsLegacy'
-import { CheckSchemaValue, CreateSchemaValue, HasValidSchemaValues } from './schemas/JSONSchemaUtils'
+import {
+  CheckSchemaValue,
+  CreateSchemaValue,
+  HasValidSchemaValues,
+  IsSingleValueSchema
+} from './schemas/JSONSchemaUtils'
 import { S } from './schemas/JSONSchemas'
 
 class ProxyClass {
@@ -456,69 +462,266 @@ describe('ComponentFunctions', async () => {
     })
 
     describe('when `@param def`.schema is falsy ..', () => {
-      it.todo('should set Component.onSet to an empty function', () => {})
+      let testEntity = UndefinedEntity
+
+      beforeEach(() => {
+        testEntity = createEntity()
+      })
+
+      afterEach(() => {
+        removeEntity(testEntity)
+      })
+
+      it('should set Component.onSet to an empty function', () => {
+        const Expected = 0
+        // 3. Set input & dependencies data
+        // 1. Sanity check (input & dependencies)
+        // 2. Run the process
+        const component = defineComponent({ name: 'TestComponent' })
+        expect(component.schema).toBeFalsy()
+        setComponent(testEntity, component, 21)
+        const result = component.onSet.length
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     describe('when `@param def`.schema is truthy ..', () => {
+      let testEntity = UndefinedEntity
+
+      beforeEach(() => {
+        testEntity = createEntity()
+      })
+
+      afterEach(() => {
+        removeEntity(testEntity)
+      })
+
       describe('.. when `@param def`.schema represents a single value ...', () => {
         describe('... when `@param def`.schema has a required schema value ....', () => {
-          it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ',
-            () => {}
-          )
-          it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments',
-            () => {}
-          )
+          it('.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ', () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Required(S.Number(1234)) })
+            expect(IsSingleValueSchema(component.schema)).toBeTruthy()
+            setComponent(testEntity, component, 21)
+            const data = getComponent(testEntity, component)
+            const value = 'SomeString'
+            // 4. Check the result (output)
+            expect(() => {
+              component.onSet(testEntity, data as any, value as any)
+            }).toThrowError()
+            // 5? Cleanup (dependencies)
+          })
+
+          it('.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments', () => {
+            const Expected = 42
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Required(S.Number(1234)) })
+            expect(IsSingleValueSchema(component.schema)).toBeTruthy()
+            setComponent(testEntity, component, 21)
+            const data = getMutableComponent(testEntity, component)
+            const value = Expected
+            component.onSet(testEntity, data as any, value)
+            // 4. Check the result (output)
+            const result = getComponent(testEntity, component)
+            expect(result).toBe(Expected)
+            // 5? Cleanup (dependencies)
+          })
         })
+
         describe('... when `@param def`.schema does not have a required schema value ....', () => {
-          it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy",
-            () => {}
-          )
-          it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments',
-            () => {}
-          )
+          /** @todo Is this desirable behavior ?? */
+          it(".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy", () => {
+            const Expected = 42
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Number(1234) })
+            expect(IsSingleValueSchema(component.schema)).toBeTruthy()
+            setComponent(testEntity, component, Expected)
+            const data = getMutableComponent(testEntity, component)
+            const value = 0 // Falsy value. Won't call onSet
+            component.onSet(testEntity, data as any, value)
+            // 4. Check the result (output)
+            const result = getComponent(testEntity, component)
+            expect(result).toBe(Expected)
+            // 5? Cleanup (dependencies)
+          })
+
+          it('.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments', () => {
+            const Expected = 42
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Number(1234) })
+            expect(IsSingleValueSchema(component.schema)).toBeTruthy()
+            setComponent(testEntity, component, 21)
+            const data = getMutableComponent(testEntity, component)
+            const value = Expected
+            component.onSet(testEntity, data as any, value)
+            // 4. Check the result (output)
+            const result = getComponent(testEntity, component)
+            expect(result).toBe(Expected)
+            // 5? Cleanup (dependencies)
+          })
         })
       })
 
       describe('.. when `@param def`.schema represents multiple values ...', () => {
         describe('... when `@param def`.schema has a required schema value ....', () => {
+          it('.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ', () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({
+              name: 'TestComponent',
+              schema: S.Required(S.Object({ one: S.Number(1234) }))
+            })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, { one: 21 })
+            const data = getComponent(testEntity, component)
+            const value = 'SomeString'
+            // 4. Check the result (output)
+            expect(() => {
+              component.onSet(testEntity, data as any, value as any)
+            }).toThrowError()
+            // 5? Cleanup (dependencies)
+          })
+
+          /** @todo Array is not a multivalue. Is this branch ever reachable? */
           it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ',
-            () => {}
+            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an array',
+            () => {
+              // 3. Set input & dependencies data
+              // 1. Sanity check (input & dependencies)
+              // 2. Run the process
+              const component = defineComponent({
+                name: 'TestComponent',
+                schema: S.Required(S.Object({ one: S.Number(1234) }))
+              })
+              expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+              setComponent(testEntity, component, { one: 21 })
+              const data = getComponent(testEntity, component)
+              const value = [1, 2, 3]
+              component.onSet(testEntity, data as any, value)
+              // 4. Check the result (output)
+              const result = getComponent(testEntity, component)
+              // 5? Cleanup (dependencies)
+            }
           )
-          it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an aray',
-            () => {}
-          )
-          it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is 'object'",
-            () => {}
-          )
-          it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'",
-            () => {}
-          )
+
+          it(".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is not 'object'", () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({
+              name: 'TestComponent',
+              schema: S.Required(S.Object({ one: S.Number(1234) }))
+            })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, { one: 21 })
+            const data = getMutableComponent(testEntity, component)
+            const value = 'SomeString'
+            component.onSet(testEntity, data as any, value as any)
+            const result = getComponent(testEntity, component)
+            // 4. Check the result (output)
+            expect(result).toBe(value)
+            // 5? Cleanup (dependencies)
+          })
+
+          it(".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is 'object'", () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({
+              name: 'TestComponent',
+              schema: S.Required(S.Object({ one: S.Number(1234) }))
+            })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, { one: 21 })
+            const data = getMutableComponent(testEntity, component)
+            const value = { one: 42 }
+            component.onSet(testEntity, data as any, value as any)
+            const result = getComponent(testEntity, component)
+            // 4. Check the result (output)
+            expect(result).toEqual(value)
+            // 5? Cleanup (dependencies)
+          })
         })
+
         describe('... when `@param def`.schema does not have a required schema value ....', () => {
+          it(".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy", () => {
+            const Expected = { one: 21 }
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, Expected)
+            const data = getMutableComponent(testEntity, component)
+            const value = 0
+            component.onSet(testEntity, data as any, value as any)
+            // 4. Check the result (output)
+            const result = getComponent(testEntity, component)
+            expect(result).toEqual(Expected)
+            // 5? Cleanup (dependencies)
+          })
+
+          /** @todo Array is not a multivalue. Is this branch ever reachable? */
           it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy",
-            () => {}
+            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an array',
+            () => {
+              // 3. Set input & dependencies data
+              // 1. Sanity check (input & dependencies)
+              // 2. Run the process
+              const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
+              expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+              setComponent(testEntity, component, { one: 21 })
+              const data = getComponent(testEntity, component)
+              const value = [1, 2, 3]
+              component.onSet(testEntity, data as any, value as any)
+              // 4. Check the result (output)
+              const result = getComponent(testEntity, component)
+              // 5? Cleanup (dependencies)
+            }
           )
-          it.todo(
-            '.... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when json is an aray',
-            () => {}
-          )
-          it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is 'object'",
-            () => {}
-          )
-          it.todo(
-            ".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'",
-            () => {}
-          )
+
+          it(".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is not 'object'", () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, { one: 21 })
+            const data = getMutableComponent(testEntity, component)
+            const value = 'SomeString'
+            component.onSet(testEntity, data as any, value as any)
+            const result = getComponent(testEntity, component)
+            // 4. Check the result (output)
+            expect(result).toBe(value)
+            // 5? Cleanup (dependencies)
+          })
+
+          it(".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'", () => {
+            // 3. Set input & dependencies data
+            // 1. Sanity check (input & dependencies)
+            // 2. Run the process
+            const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
+            expect(IsSingleValueSchema(component.schema)).toBeFalsy()
+            setComponent(testEntity, component, { one: 21 })
+            const data = getMutableComponent(testEntity, component)
+            const value = { one: 42 }
+            component.onSet(testEntity, data as any, value as any)
+            const result = getComponent(testEntity, component)
+            // 4. Check the result (output)
+            expect(result).toEqual(value)
+            // 5? Cleanup (dependencies)
+          })
         })
       })
     })
