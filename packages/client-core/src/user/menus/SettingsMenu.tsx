@@ -170,6 +170,7 @@ function GraphicsTab() {
   const { t } = useTranslation()
   const rendererState = useMutableState(RendererState)
   const xruiNameplateState = useMutableState(XruiNameplateState)
+  const renderQualityLocal = useHookstate(rendererState.qualityLevel.value)
 
   const handleQualityLevelChange = (value: number) => {
     rendererState.qualityLevel.set(value)
@@ -185,9 +186,9 @@ function GraphicsTab() {
           max={5}
           min={0}
           step={1}
-          value={rendererState.qualityLevel.value}
-          onChange={handleQualityLevelChange}
-          onRelease={() => {}}
+          value={renderQualityLocal.value}
+          onChange={(value) => renderQualityLocal.set(value)}
+          onRelease={handleQualityLevelChange}
           label=""
         />
       </div>
