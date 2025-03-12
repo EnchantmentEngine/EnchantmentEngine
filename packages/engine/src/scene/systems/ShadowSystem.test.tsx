@@ -36,7 +36,6 @@ import {
   destroyEngine,
   EntityContext,
   EntityTreeComponent,
-  executeSystems,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -740,11 +739,7 @@ describe('EntityCSMReactor', () => {
     })
   })
 
-  /**
-   * @todo Is there any way to acess this particular hook,
-   * without triggering the others (and therefore failing their dependencies) ?
-   * */
-  describe.todo('after SceneObjectSystem ..', () => {
+  describe('after SceneObjectSystem ..', () => {
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', () => {
       const Initial = undefined
       // 3. Set input & dependencies data
@@ -769,7 +764,9 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      executeSystems(1000 / 60)
+      const systems = SystemDefinitions.values().toArray()
+      const system = systems[systems.length - 1]
+      system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light?.visible
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -799,7 +796,9 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      executeSystems(1000 / 60)
+      const systems = SystemDefinitions.values().toArray()
+      const system = systems[systems.length - 1]
+      system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light.visible
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -832,7 +831,9 @@ describe('EntityCSMReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      executeSystems(1000 / 60)
+      const systems = SystemDefinitions.values().toArray()
+      const system = systems[systems.length - 1]
+      system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light.visible
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
