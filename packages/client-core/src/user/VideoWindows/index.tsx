@@ -25,17 +25,36 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 
-import { UserID } from '@ir-engine/common/src/schema.type.module'
+import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { NO_PROXY, PeerID, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY, PeerID, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 
+import { useGet } from '@ir-engine/common'
 import { EngineState } from '@ir-engine/ecs'
+import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
 import { NetworkPeerState } from '@ir-engine/network/src/NetworkPeerState'
+import {
+  ArrowTopRightOnSquareLg,
+  Microphone01Md,
+  MicrophoneOff,
+  VideoRecorderLg,
+  VideoRecorderOffLg
+} from '@ir-engine/ui/src/icons'
+import { IoWarning } from 'react-icons/io5'
+
+import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { useTranslation } from 'react-i18next'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
-import { PeerMediaChannelState, PeerMediaStreamInterface } from '../../media/PeerMediaChannelState'
+import { PopoverState } from '../../common/services/PopoverState'
+import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
+import { LocationState } from '../../social/services/LocationService'
+import { ReportUserState } from '../../util/ReportUserState'
 import { FilteredUsersState } from '../../world/FilteredUsersSystem'
+import ReportMenu from '../menus/ReportMenu'
 import { AuthState } from '../services/AuthService'
+import { useUserMediaWindowHook } from './hook'
 import { SingleVideoWindow, SingleVideoWindowWidget } from './window'
 
 type WindowType = { peerID: PeerID; type: 'cam' | 'screen' }
@@ -125,13 +144,94 @@ export const useMediaWindows = () => {
 
 export const VideoWindows = () => {
   const windows = useMediaWindows()
-
   return (
     <>
-      {windows.map(({ peerID, type }) => (
-        <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
-      ))}
+      <div className="flex flex-col gap-y-2">
+        {windows.map(({ peerID, type }) => (
+          <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
+        ))}
+      </div>
+      <ReportUserWindowWrapper />
     </>
+  )
+}
+
+const ReportUserWindowWrapper = () => {
+  const { reportedPeerId } = useMutableState(ReportUserState)
+  if (reportedPeerId.value && getMutableState(PeerMediaChannelState)[reportedPeerId.value]['cam'])
+    return <ReportUserWindow />
+  return null
+}
+
+const ReportUserWindow = () => {
+  const { t } = useTranslation()
+  const { reportedPeerId } = useMutableState(ReportUserState)
+  const reportedUserId = NetworkState.mediaNetwork.peers?.[reportedPeerId.value!]?.userId
+  const avatarThumbnail = useUserAvatarThumbnail(reportedUserId)
+  const reportedUser = useGet(userPath, reportedUserId).data
+  const currentLocation = getState(LocationState).currentLocation.location
+  const { toggleVideo, toggleAudio, audioStreamPaused, videoStreamPaused, audioMediaStream, videoMediaStream } =
+    useUserMediaWindowHook({
+      peerID: reportedPeerId.value!,
+      type: 'cam'
+    })
+
+  if (!reportedPeerId || !reportedUserId || !reportedUser) return null
+
+  return (
+    <div className="fixed right-[10%] top-[5%] grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 rounded-xl bg-surface-4 p-3 lg:right-[5%]">
+      <div className="h-[100px] w-[100px]">
+        <AvatarImage size="fill" className="rounded-none" src={avatarThumbnail} />
+      </div>
+      <div className="grid grid-cols-1 gap-y-6">
+        <div className="col-span-1 flex items-center justify-between">
+          <Text className="text-text-primary" fontWeight="medium" fontSize="lg">
+            {reportedUser.name}
+          </Text>
+          <button
+            className="grid h-10 w-10 rotate-180 place-items-center text-[#585858]"
+            onClick={() => ReportUserState.resetPeerId()}
+          >
+            <ArrowTopRightOnSquareLg />
+          </button>
+        </div>
+        <div className="flex items-center gap-x-4">
+          <button
+            className="rounded-full bg-ui-secondary p-[15px] disabled:bg-ui-inactive-secondary"
+            disabled={!videoMediaStream}
+            onClick={() => toggleVideo()}
+          >
+            {videoStreamPaused || !videoMediaStream ? (
+              <VideoRecorderOffLg className="h-5 w-5 text-text-primary-button" />
+            ) : (
+              <VideoRecorderLg className="h-5 w-5 text-text-primary-button" />
+            )}
+          </button>
+          <button
+            className="rounded-full bg-ui-secondary p-[15px] disabled:bg-ui-inactive-secondary"
+            disabled={!audioMediaStream}
+            onClick={() => toggleAudio()}
+          >
+            {audioStreamPaused || !audioMediaStream ? (
+              <MicrophoneOff className="h-5 w-5 text-text-primary-button" />
+            ) : (
+              <Microphone01Md className="h-5 w-5 text-text-primary-button" />
+            )}
+          </button>
+          <button
+            className="rounded-full bg-ui-error p-[15px]"
+            title={t('user:videoWindows.reportUser')}
+            onClick={() =>
+              PopoverState.showPopupover(
+                <ReportMenu type="user" userId={reportedUserId} locationId={currentLocation.id} />
+              )
+            }
+          >
+            <IoWarning className="h-5 w-5 text-text-primary-button" />
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -169,12 +269,12 @@ export const VideoWindowsWidget = () => {
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-y-2">
       {windows
         .filter(({ peerID }) => peerMediaChannelState[peerID].value)
         .map(({ peerID, type }) => (
           <SingleVideoWindowWidget type={type} peerID={peerID} key={type + '-' + peerID} />
         ))}
-    </>
+    </div>
   )
 }

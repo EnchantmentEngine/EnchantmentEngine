@@ -45,8 +45,13 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GrStatusPlaceholder } from 'react-icons/gr'
 import { twMerge } from 'tailwind-merge'
+import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
 
 type ElementsType = 'components' | 'prefabs'
+
+const labelRemapping = {
+  EE_media: 'audio'
+}
 
 export type SceneElementType = {
   componentJsonID: string
@@ -61,14 +66,15 @@ const ComponentListItem = ({ item, onSelect }: { item: Component; onSelect: () =
   const Icon = getState(ComponentEditorsState)[item.name]?.iconComponent ?? GrStatusPlaceholder
 
   // remove any prefix from the jsonID
-  const jsonName = item.jsonID?.split('_').slice(1).join('-') || item.name
+  const jsonName =
+    (item.jsonID ? labelRemapping[item.jsonID] : undefined) || item.jsonID?.split('_').slice(1).join('-') || item.name
 
   return (
     <button
       className="flex w-full items-center justify-center gap-1 rounded-md bg-ui-background p-2 text-text-secondary hover:bg-ui-hover-primary hover:text-text-primary-button"
       onClick={() => {
         const entities = SelectionState.getSelectedEntities()
-        EditorControlFunctions.addOrRemoveComponent(entities, item, true)
+        EditorHistoryFunctions.setComponent(entities, item)
         onSelect()
       }}
     >
@@ -96,6 +102,7 @@ const PrefabListItem = ({ item, onSelect }: { item: PrefabShelfItem; onSelect: (
               name: TransformComponent.jsonID
             }
           ])
+          EditorHistoryFunctions.snapshot()
         } else {
           addMediaNode(url)
         }
@@ -169,7 +176,11 @@ const useComponentShelfCategories = (search: string) => {
 
     return Object.entries(getState(ComponentShelfCategoriesState))
       .map(([category, items]) => {
-        const filteredItems = items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+        const filteredItems = items.filter((item) =>
+          ((item.jsonID ? labelRemapping[item.jsonID] : undefined) || item.name)
+            .toLowerCase()
+            .includes(search.toLowerCase())
+        )
         return [category, filteredItems] as [string, Component[]]
       })
       .map(mapSettingsComponents)

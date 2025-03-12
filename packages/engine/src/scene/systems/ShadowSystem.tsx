@@ -151,7 +151,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
       if (!hasComponent(rendererEntity, RendererComponent)) return
       rendererComponent.csm.set(null)
     }
-  }, [directionalLight, directionalLightComponent?.castShadow.value])
+  }, [directionalLight, directionalLightComponent?.castShadow.value, renderSettingsComponent.cascades])
 
   /** Must run after scene object system to ensure source light is not lit */
   useExecute(
@@ -259,6 +259,8 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   )
   const directionalLight = useOptionalComponent(activeLightEntity.value, DirectionalLightComponent)
 
+  const primaryLightVisibleComponent = useOptionalComponent(activeLightEntity.value, VisibleComponent)
+
   //const rendererState = useMutableState(RendererState)
 
   // useEffect(() => {
@@ -279,7 +281,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
       return
     }
 
-    if (renderSettingsComponent.primaryLight.value) {
+    if (renderSettingsComponent.primaryLight.value && primaryLightVisibleComponent) {
       activeLightEntity.set(
         NodeFunctions.getEntityFromNodeID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
       )
@@ -287,7 +289,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
     }
 
     activeLightEntity.set(UndefinedEntity)
-  }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight])
+  }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight, primaryLightVisibleComponent])
 
   if (!renderSettingsComponent.csm.value || !activeLightEntity.value || !directionalLight?.value) return null
 
@@ -349,6 +351,7 @@ const DropShadowReactor = () => {
     const center = sphere.center.sub(TransformComponent.getWorldPosition(entity, vec3))
     const shadowEntity = createEntity()
     setComponent(shadowEntity, MeshComponent, new Mesh(shadowGeometry.clone(), shadowMaterial.clone()))
+    ObjectLayerMaskComponent.setLayer(shadowEntity, ObjectLayers.Avatar)
     setComponent(shadowEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
     setComponent(
       shadowEntity,
@@ -356,7 +359,6 @@ const DropShadowReactor = () => {
       'Shadow for ' + getComponent(entity, NameComponent) + '_' + getComponent(entity, UUIDComponent)
     )
     setComponent(shadowEntity, VisibleComponent)
-    ObjectLayerMaskComponent.setLayer(shadowEntity, ObjectLayers.Scene)
     setComponent(entity, DropShadowComponent, { radius, center, entity: shadowEntity })
 
     return () => {
@@ -387,7 +389,7 @@ function updateDropShadowTransforms() {
     const dropShadow = getComponent(entity, DropShadowComponent)
     const dropShadowTransform = getComponent(dropShadow.entity, TransformComponent)
 
-    TransformComponent.getWorldPosition(entity, raycasterPosition).add(dropShadow.center)
+    TransformComponent.getWorldPosition(entity, raycasterPosition)
     raycaster.set(raycasterPosition, shadowDirection)
 
     const intersected = raycaster.intersectObjects(sceneObjects, false)[0]

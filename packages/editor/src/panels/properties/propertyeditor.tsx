@@ -30,14 +30,17 @@ import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentE
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
-import { NO_PROXY, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { ErrorBoundary, NO_PROXY, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { Button } from '@ir-engine/ui'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import { PlusCircleSm } from '@ir-engine/ui/src/icons'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { getComponent } from '../../../../ecs/src/ComponentFunctions'
+import { IconComponent } from '../../components/panels/IconComponent'
 import ElementList from './elementlist'
 import MaterialEditor from './materialeditor'
 
@@ -87,12 +90,20 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
   const [isAddComponentMenuOpen, setIsAddComponentMenuOpen] = useState(false)
 
   const hasTransform = useHasComponent(entity, TransformComponent)
+  const hasName = useHasComponent(entity, NameComponent)
 
   if (!entity) return null
 
   return (
     <>
-      <div className="flex w-full justify-end bg-surface-3 p-1" id="add-component-popover">
+      <div className="flex w-full justify-between gap-2 bg-surface-3 p-1 px-3" id="add-component-popover">
+        {hasName && (
+          <div className="flex h-full w-1/2 flex-row items-center text-sm text-text-secondary group-hover/component-dropdown:text-text-primary group-focus/component-dropdown:text-text-primary">
+            <IconComponent entity={entity} />
+            <span className="ml-1 truncate leading-6 ">{getComponent(entity, NameComponent)}</span>
+          </div>
+        )}
+
         <Popup
           keepInside
           position={'left center'}
@@ -111,14 +122,22 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
           </div>
         </Popup>
       </div>
-      {hasTransform && <TransformPropertyGroup entity={entity} />}
+      {hasTransform && (
+        <ErrorBoundary fallback={<div>Error occured displaying transform properties</div>}>
+          <Suspense>
+            <TransformPropertyGroup entity={entity} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
       {components.map((c) => (
-        <EntityComponentEditor
+        <ErrorBoundary
           key={`${entityUUID + entity}-${c.name}`}
-          multiEdit={multiEdit}
-          entity={entity}
-          component={c}
-        />
+          fallback={<div>Error occured displaying properties for {c.name}</div>}
+        >
+          <Suspense>
+            <EntityComponentEditor multiEdit={multiEdit} entity={entity} component={c} />
+          </Suspense>
+        </ErrorBoundary>
       ))}
     </>
   )
@@ -136,9 +155,17 @@ const PropertiesEditor = () => {
   return (
     <div className="flex h-full flex-col gap-0.5 overflow-y-auto bg-surface-1">
       {materialUUID && materialEntity ? (
-        <MaterialEditor materialUUID={materialUUID} />
+        <ErrorBoundary fallback={<div>Error occured displaying material properties</div>}>
+          <Suspense>
+            <MaterialEditor materialUUID={materialUUID} />
+          </Suspense>
+        </ErrorBoundary>
       ) : uuid ? (
-        <EntityEditor entityUUID={uuid} key={uuid} multiEdit={multiEdit} />
+        <ErrorBoundary key={uuid} fallback={<div>Error occured displaying entity properties</div>}>
+          <Suspense>
+            <EntityEditor entityUUID={uuid} multiEdit={multiEdit} />
+          </Suspense>
+        </ErrorBoundary>
       ) : (
         <div className="flex h-full items-center justify-center text-text-secondary">
           {t('editor:properties.noNodeSelected')}

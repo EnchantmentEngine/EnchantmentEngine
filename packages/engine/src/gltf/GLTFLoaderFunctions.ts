@@ -33,7 +33,6 @@ import {
   LayerFunctions,
   Layers,
   UUIDComponent,
-  createEntity,
   deserializeComponent,
   getComponent,
   getMutableComponent,
@@ -43,7 +42,7 @@ import {
   setComponent,
   traverseEntityNode
 } from '@ir-engine/ecs'
-import { getState, isClient } from '@ir-engine/hyperflux'
+import { getMutableState, getState, isClient } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -102,6 +101,7 @@ import {
   Vector3,
   VectorKeyframeTrack
 } from 'three'
+import { parseStorageProviderURLs } from '../assets/functions/parseSceneJSON'
 import { loadResource, unloadResourcesForEntity } from '../assets/functions/resourceLoaderFunctions'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
@@ -128,11 +128,18 @@ import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
+import { SourceID } from '../scene/components/SourceComponent'
+import {
+  MATERIAL_JSON_ID,
+  SceneDeltaEntry,
+  SceneDeltaRegistry,
+  SceneDeltaState
+} from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import { KHR_DRACO_MESH_COMPRESSION, getBufferIndex } from './GLTFExtensions'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { NodeID, NodeIDComponent } from './NodeIDComponent'
+import { SCENE_DELTA_EXTENSION_NAME } from './SceneDeltaExporterExtension'
 
 const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, material: MeshPhysicalMaterial) => {
   const useDerivativeTangents = primitiveDef.attributes.TANGENT === undefined
@@ -627,7 +634,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialExtensions = materialDef.extensions || {}
 
   let materialConstructor = MeshStandardMaterial
-
   if (!materialExtensions[EXTENSIONS.EE_MATERIAL] && materialExtensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
     const kmuExtension = KHRUnlitExtensionComponent
     materialConstructor = kmuExtension.getMaterialType() as any
@@ -768,6 +774,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   }
 
   const extensions = Object.entries(materialDef.extensions || {})
+
   for (const [extensionName, extension] of extensions) {
     const Component = ComponentJSONIDMap.get(extensionName) as any // todo
     if (!Component) continue
@@ -783,6 +790,20 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   }
 
   await Promise.all(promises)
+
+  //apply deltas
+  const deltaState = getState(SceneDeltaState)
+  const sourceDelta = deltaState[GLTFComponent.removeHashes(options.documentID)]
+  if (sourceDelta) {
+    const nodeID = getComponent(materialEntity, NodeIDComponent)
+    const nodeDelta = sourceDelta[nodeID]
+    if (nodeDelta) {
+      const materialDelta = nodeDelta[MATERIAL_JSON_ID]
+      if (materialDelta) {
+        Object.assign(materialParams, materialDelta)
+      }
+    }
+  }
 
   const material = new materialConstructor(materialParams)
   const uuid = getComponent(materialEntity, UUIDComponent)
@@ -1220,8 +1241,6 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
 
   const meshDef = json.meshes![meshIndex]
 
-  if (!hasComponent(entity, ColliderComponent)) setComponent(entity, VisibleComponent)
-
   const node = json.nodes![nodeIndex]
 
   const [geometry, materials] = await GLTFLoaderFunctions.loadPrimitives(options, node.mesh!)
@@ -1352,12 +1371,8 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   const layerID = LayerComponent.get(options.entity)
 
   const nodeID = getNodeID(nodeDef, options.documentID, nodeIndex)
-  const nodeEntity = createEntity(layerID)
-  setComponent(nodeEntity, NodeIDComponent, nodeID)
-  const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(options.documentID, nodeID)
-  setComponent(nodeEntity, SourceComponent, options.documentID)
+  const nodeEntity = NodeIDComponent.create(options.documentID, nodeID, layerID)
 
-  setComponent(nodeEntity, UUIDComponent, uuid)
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
   setComponent(nodeEntity, TransformComponent)
 
@@ -1427,7 +1442,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   if (typeof nodeDef.mesh !== 'undefined') {
     const meshPromise = getDependency(options, 'mesh', nodeEntity, nodeIndex, nodeDef.mesh)
     dependencies.push(meshPromise)
-    if (!hasComponent(nodeEntity, ColliderComponent)) setComponent(nodeEntity, VisibleComponent)
   } else if (isBoneNode(json, nodeIndex)) {
     const bone = new Bone()
     // bone.name = node.name ?? 'Node-' + i
@@ -1456,9 +1470,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
     for (const extension in nodeDef.extensions) {
       const Component = ComponentJSONIDMap.get(extension) as any // todo
       if (!Component) continue
-      if (Component === ColliderComponent) {
-        removeComponent(nodeEntity, VisibleComponent)
-      }
       deserializeComponent(nodeEntity, Component, nodeDef.extensions[extension])
       if (typeof Component.loadNode === 'function') {
         extensionPending.push(Component.loadNode(options, nodeIndex))
@@ -1468,11 +1479,29 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   await Promise.all(extensionPending)
 
+  //apply deltas if they exist in state
+  const hashlessDocumentID = GLTFComponent.removeHashes(options.documentID)
+  const deltas = getState(SceneDeltaState)?.[hashlessDocumentID]?.[nodeID]
+  if (deltas) {
+    for (const [componentName, delta] of Object.entries(deltas)) {
+      const Component = ComponentJSONIDMap.get(componentName)
+      if (!Component) continue
+      deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
+    }
+  }
+
   return nodeEntity
 }
 
 const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const json = options.document
+
+  // load deltas into state before anything else
+  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDeltaRegistry | null
+  if (deltas) {
+    const parsedDeltas = parseStorageProviderURLs(deltas)
+    getMutableState(SceneDeltaState).merge(parsedDeltas)
+  }
 
   DependencyCache.set(options.url, new Map())
 
