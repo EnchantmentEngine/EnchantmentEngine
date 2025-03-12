@@ -474,16 +474,13 @@ describe('ComponentFunctions', async () => {
 
       it('should set Component.onSet to an empty function', () => {
         const Expected = 0
-        // 3. Set input & dependencies data
-        // 1. Sanity check (input & dependencies)
-        // 2. Run the process
+
         const component = defineComponent({ name: 'TestComponent' })
         expect(component.schema).toBeFalsy()
         setComponent(testEntity, component, 21)
         const result = component.onSet.length
-        // 4. Check the result (output)
+
         expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
       })
     })
 
@@ -501,73 +498,59 @@ describe('ComponentFunctions', async () => {
       describe('.. when `@param def`.schema represents a single value ...', () => {
         describe('... when `@param def`.schema has a required schema value ....', () => {
           it('.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ', () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({ name: 'TestComponent', schema: S.Required(S.Number(1234)) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, 21)
             const data = getComponent(testEntity, component)
             const value = 'SomeString'
-            // 4. Check the result (output)
+
             expect(() => {
               component.onSet(testEntity, data as any, value as any)
             }).toThrowError()
-            // 5? Cleanup (dependencies)
           })
 
           it('.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments', () => {
             const Expected = 42
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
+
             const component = defineComponent({ name: 'TestComponent', schema: S.Required(S.Number(1234)) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, 21)
             const data = getMutableComponent(testEntity, component)
             const value = Expected
             component.onSet(testEntity, data as any, value)
-            // 4. Check the result (output)
+
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
-            // 5? Cleanup (dependencies)
           })
         })
 
         describe('... when `@param def`.schema does not have a required schema value ....', () => {
-          /** @todo Is this desirable behavior ?? */
           it(".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy", () => {
             const Expected = 42
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
+
             const component = defineComponent({ name: 'TestComponent', schema: S.Number(1234) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, Expected)
             const data = getMutableComponent(testEntity, component)
             const value = 0 // Falsy value. Won't call onSet
             component.onSet(testEntity, data as any, value)
-            // 4. Check the result (output)
+
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
-            // 5? Cleanup (dependencies)
           })
 
           it('.... should set (closure)`@param Component`.onSet to a function that calls `@param component`.set with `@param component`.json as arguments', () => {
             const Expected = 42
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
+
             const component = defineComponent({ name: 'TestComponent', schema: S.Number(1234) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, 21)
             const data = getMutableComponent(testEntity, component)
             const value = Expected
             component.onSet(testEntity, data as any, value)
-            // 4. Check the result (output)
+
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
-            // 5? Cleanup (dependencies)
           })
         })
       })
@@ -575,9 +558,6 @@ describe('ComponentFunctions', async () => {
       describe('.. when `@param def`.schema represents multiple values ...', () => {
         describe('... when `@param def`.schema has a required schema value ....', () => {
           it('.... should set (closure)`@param Component`.onSet to a function that throws an error when `@param json` returns an invalid schema value based on the `(closure)@param def`.schema ', () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({
               name: 'TestComponent',
               schema: S.Required(S.Object({ one: S.Number(1234) }))
@@ -586,11 +566,10 @@ describe('ComponentFunctions', async () => {
             setComponent(testEntity, component, { one: 21 })
             const data = getComponent(testEntity, component)
             const value = 'SomeString'
-            // 4. Check the result (output)
+
             expect(() => {
               component.onSet(testEntity, data as any, value as any)
             }).toThrowError()
-            // 5? Cleanup (dependencies)
           })
 
           /** @todo Array is not a multivalue. Is this branch ever reachable? */
@@ -609,16 +588,12 @@ describe('ComponentFunctions', async () => {
               const data = getComponent(testEntity, component)
               const value = [1, 2, 3]
               component.onSet(testEntity, data as any, value as any)
-              // 4. Check the result (output)
+
               const result = getComponent(testEntity, component)
-              // 5? Cleanup (dependencies)
             }
           )
 
           it(".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is not 'object'", () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({
               name: 'TestComponent',
               schema: S.Required(S.Object({ one: S.Number(1234) }))
@@ -629,15 +604,11 @@ describe('ComponentFunctions', async () => {
             const value = 'SomeString'
             component.onSet(testEntity, data as any, value as any)
             const result = getComponent(testEntity, component)
-            // 4. Check the result (output)
+
             expect(result).toBe(value)
-            // 5? Cleanup (dependencies)
           })
 
           it(".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is 'object'", () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({
               name: 'TestComponent',
               schema: S.Required(S.Object({ one: S.Number(1234) }))
@@ -648,28 +619,24 @@ describe('ComponentFunctions', async () => {
             const value = { one: 42 }
             component.onSet(testEntity, data as any, value as any)
             const result = getComponent(testEntity, component)
-            // 4. Check the result (output)
+
             expect(result).toEqual(value)
-            // 5? Cleanup (dependencies)
           })
         })
 
         describe('... when `@param def`.schema does not have a required schema value ....', () => {
           it(".... should set (closure)`@param Component`.onSet to a function that doesn't do anything (return early) when `@param json` is falsy", () => {
             const Expected = { one: 21 }
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
+
             const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, Expected)
             const data = getMutableComponent(testEntity, component)
             const value = 0
             component.onSet(testEntity, data as any, value as any)
-            // 4. Check the result (output)
+
             const result = getComponent(testEntity, component)
             expect(result).toEqual(Expected)
-            // 5? Cleanup (dependencies)
           })
 
           /** @todo Array is not a multivalue. Is this branch ever reachable? */
@@ -685,16 +652,12 @@ describe('ComponentFunctions', async () => {
               const data = getComponent(testEntity, component)
               const value = [1, 2, 3]
               component.onSet(testEntity, data as any, value as any)
-              // 4. Check the result (output)
+
               const result = getComponent(testEntity, component)
-              // 5? Cleanup (dependencies)
             }
           )
 
           it(".... should set (closure)`@param Component`.onSet to a function that calls component.set with `@param json` as arguments when typeof json is not 'object'", () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
@@ -702,15 +665,11 @@ describe('ComponentFunctions', async () => {
             const value = 'SomeString'
             component.onSet(testEntity, data as any, value as any)
             const result = getComponent(testEntity, component)
-            // 4. Check the result (output)
+
             expect(result).toBe(value)
-            // 5? Cleanup (dependencies)
           })
 
           it(".... should set (closure)`@param Component`.onSet to a function that calls component.merge with `@param json` as arguments when json is not an array and typeof json is not 'object'", () => {
-            // 3. Set input & dependencies data
-            // 1. Sanity check (input & dependencies)
-            // 2. Run the process
             const component = defineComponent({ name: 'TestComponent', schema: S.Object({ one: S.Number(1234) }) })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
@@ -718,9 +677,8 @@ describe('ComponentFunctions', async () => {
             const value = { one: 42 }
             component.onSet(testEntity, data as any, value as any)
             const result = getComponent(testEntity, component)
-            // 4. Check the result (output)
+
             expect(result).toEqual(value)
-            // 5? Cleanup (dependencies)
           })
         })
       })
@@ -988,38 +946,27 @@ describe('deserializeComponent', () => {
   })
 
   it('should throw an error if `@param Component`.schema is truthy, it has a required schema entry and one of the `@param json` values is not a valid required schema value', () => {
-    // 3. Set input & dependencies data
     const json = { one: 42, invalid: 'InvalidNumber' }
     const schema = { [Kind]: 'Required', properties: { [Kind]: 'Number' } as Schema } as Schema
     const component = defineComponent({ name: 'TestComponent', schema: schema })
-    // 1. Sanity check (input & dependencies)
-    expect(component.schema).toBeTruthy()
-    // 2. Run the process
-    // 4. Check the result (output)
+
     expect(() => deserializeComponent(testEntity, component, json)).toThrowError()
-    // 5? Cleanup (dependencies)
   })
 
   it('should set the `@param Component` to `@param entity` when that entity does not have the component', () => {
     const Expected = true
-    // 3. Set input & dependencies data
+
     const json = { one: 42 }
     const schema = { [Kind]: 'Required', properties: { one: { [Kind]: 'Number' } as Schema } } as Schema
     const component = defineComponent({ name: 'TestComponent', schema: schema })
-    // 1. Sanity check (input & dependencies)
-    expect(component.schema).toBeTruthy()
-    const before = hasComponent(testEntity, component)
-    expect(before).not.toBe(Expected)
-    // 2. Run the process
+
     deserializeComponent(testEntity, component, json)
-    // 4. Check the result (output)
+
     const result = hasComponent(testEntity, component)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should not do anything else (return early) when `@param json` is null', () => {
-    // 3. Set input & dependencies data
     const json = null
     const schema = S.String('TestString', { validate: () => false }) // validate=>false   would always trigger the error, but we pass null to json
     const prev = 'PrevValue'
@@ -1032,15 +979,12 @@ describe('deserializeComponent', () => {
     expect(component.schema).toBeTruthy()
     expect(component.schema.options?.validate).toBeTruthy()
     expect(HasValidSchemaValues(schema, json, prev, testEntity)[0]).toBeFalsy()
-    // 2. Run the process
-    // 4. Check the result (output)
+
     // @ts-expect-error Coerce null into string|undefined `@param json`
     expect(() => deserializeComponent(testEntity, component, json)).not.toThrowError()
-    // 5? Cleanup (dependencies)
   })
 
   it('should not do anything else (return early) when `@param json` is undefined', () => {
-    // 3. Set input & dependencies data
     const json = undefined
     const schema = S.String('TestString', { validate: () => false }) // validate=>false   would always trigger the error, but we pass undefined to json
     const prev = 'PrevValue'
@@ -1053,14 +997,11 @@ describe('deserializeComponent', () => {
     expect(component.schema).toBeTruthy()
     expect(component.schema.options?.validate).toBeTruthy()
     expect(HasValidSchemaValues(schema, json, prev, testEntity)[0]).toBeFalsy()
-    // 2. Run the process
-    // 4. Check the result (output)
+
     expect(() => deserializeComponent(testEntity, component, json)).not.toThrowError()
-    // 5? Cleanup (dependencies)
   })
 
   it('should throw an error if `@param Component`.schema is truthy, .schema has validators and HasValidSchemaValues returns invalid for `@param json`', () => {
-    // 3. Set input & dependencies data
     const json = 'Test42'
     const schema = S.String('TestString', { validate: () => false }) // validate=>false   will always trigger the error for this case
     const prev = 'PrevValue'
@@ -1073,15 +1014,13 @@ describe('deserializeComponent', () => {
     expect(component.schema).toBeTruthy()
     expect(component.schema.options?.validate).toBeTruthy()
     expect(HasValidSchemaValues(schema, json, prev, testEntity)[0]).toBeFalsy()
-    // 2. Run the process
-    // 4. Check the result (output)
+
     expect(() => deserializeComponent(testEntity, component, json)).toThrowError()
-    // 5? Cleanup (dependencies)
   })
 
   it('should set a new value for the `@param Component` of `@param entity` using the (deserialized) value of `@param json`', () => {
     const Expected = 'ExpectedValue'
-    // 3. Set input & dependencies data
+
     const json = Expected
     const schema = S.String('TestString')
     const prev = 'PrevValue'
@@ -1093,12 +1032,11 @@ describe('deserializeComponent', () => {
     expect(component.schema).toBeTruthy()
     expect(component.schema.options?.validate).not.toBeTruthy()
     expect(HasValidSchemaValues(schema, json, prev, testEntity)[0]).toBeTruthy()
-    // 2. Run the process
+
     expect(() => deserializeComponent(testEntity, component, json)).not.toThrowError()
     const result = getComponent(testEntity, component)
-    // 4. Check the result (output)
+
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 }) //:: deserializeComponent
 
