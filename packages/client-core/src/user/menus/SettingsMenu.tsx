@@ -172,6 +172,10 @@ function GraphicsTab() {
   const xruiNameplateState = useMutableState(XruiNameplateState)
   const renderQualityLocal = useHookstate(rendererState.qualityLevel.value)
 
+  useEffect(() => {
+    renderQualityLocal.set(rendererState.qualityLevel.value)
+  }, [rendererState.qualityLevel])
+
   const handleQualityLevelChange = (value: number) => {
     rendererState.qualityLevel.set(value)
     logger.analytics({ event_name: `set_quality_preset`, event_value: value })
