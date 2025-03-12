@@ -608,7 +608,7 @@ describe('ComponentFunctions', async () => {
               setComponent(testEntity, component, { one: 21 })
               const data = getComponent(testEntity, component)
               const value = [1, 2, 3]
-              component.onSet(testEntity, data as any, value)
+              component.onSet(testEntity, data as any, value as any)
               // 4. Check the result (output)
               const result = getComponent(testEntity, component)
               // 5? Cleanup (dependencies)
