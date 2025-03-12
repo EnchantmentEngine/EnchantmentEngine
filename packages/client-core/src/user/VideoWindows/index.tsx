@@ -176,7 +176,7 @@ const ReportUserWindow = () => {
   if (!reportedPeerId || !reportedUserId || !reportedUser) return null
 
   return (
-    <div className="fixed right-[10%] top-[5%] grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 rounded-xl bg-surface-4 p-3 lg:right-[5%]">
+    <div className="fixed right-6 top-6 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 rounded-xl bg-surface-4 p-3">
       <div className="h-[100px] w-[100px]">
         <AvatarImage size="fill" className="rounded-none" src={avatarThumbnail} />
       </div>
