@@ -455,7 +455,7 @@ const getMaxCamDistance = (cameraEntity: Entity, target: Vector3) => {
   let maxDistance = Math.min(followCamera.thirdPersonMaxDistance, raycastProps.rayLength)
 
   // Check hit with mid ray
-  raycaster.layers.set(ObjectLayers.Scene)
+  raycaster.layers.set(ObjectLayers.Camera)
   raycaster.firstHitOnly = true
   raycaster.far = followCamera.thirdPersonMaxDistance
   raycaster.set(target, followCamera.targetToCamera.normalize())
