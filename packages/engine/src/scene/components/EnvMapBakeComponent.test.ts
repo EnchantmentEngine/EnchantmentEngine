@@ -23,9 +23,23 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createEngine, createEntity, destroyEngine, EntityContext, removeEntity, UndefinedEntity } from '@ir-engine/ecs'
+import { ReactorRoot, startReactor } from '@ir-engine/hyperflux'
+import React from 'react'
 import { EnvMapBakeComponent } from './EnvMapBakeComponent'
+
+/**
+ * @warning These next few lines affect this entire test file.
+ * */
+const resultSpy = vi.hoisted(() => {
+  return vi.fn()
+})
+vi.mock('@ir-engine/spatial/src/common/debug/useHelperEntity', async (Original) => {
+  return { ...((await Original()) as any), useHelperEntity: resultSpy }
+})
+/** end */
 
 describe('EnvMapBakeComponent', () => {
   describe('Fields', () => {
@@ -46,8 +60,28 @@ describe('EnvMapBakeComponent', () => {
     })
   }) //:: Fields
 
-  /** @todo */
   describe('reactor', () => {
-    it.todo('should call useHelperEntity with (entityContext, helperFactory) as arguments', () => {})
+    let testEntity = UndefinedEntity
+
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEngine()
+    })
+
+    it('should call useHelperEntity with (entityContext, helperFactory) as arguments', () => {
+      const root = startReactor(() => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(EnvMapBakeComponent.reactor, {})
+        )
+      }) as ReactorRoot
+      expect(resultSpy).toHaveBeenCalledOnce()
+    })
   }) //:: reactor
 }) //:: EnvMapBakeComponent
