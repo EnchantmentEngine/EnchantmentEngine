@@ -41,7 +41,7 @@ import {
   VideoTexture
 } from 'three'
 
-import { createEntity, EntityTreeComponent, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { createEntity, EntityTreeComponent, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -268,7 +268,8 @@ function VideoReactor() {
     const videoEntity = videoMeshEntity
     video.videoMeshEntity.set(videoEntity)
     setComponent(videoEntity, EntityTreeComponent, { parentEntity: entity })
-    setComponent(videoEntity, NameComponent, mesh?.name?.value)
+    setComponent(videoEntity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(videoEntity, NameComponent, 'VideoMeshEntity_' + entity)
     setComponent(videoEntity, MediaComponent)
     video.mediaUUID.set('' as NodeID)
 
