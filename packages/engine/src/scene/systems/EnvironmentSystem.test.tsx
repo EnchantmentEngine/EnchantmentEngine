@@ -23,41 +23,227 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PresentationSystemGroup, SystemDefinitions, SystemUUID } from '@ir-engine/ecs'
-import { EnvironmentSystem } from './EnvironmentSystem'
+import {
+  createEngine,
+  createEntity,
+  defineQuery,
+  destroyEngine,
+  EntityContext,
+  EntityTreeComponent,
+  getComponent,
+  getMutableComponent,
+  hasComponent,
+  haveCommonAncestor,
+  PresentationSystemGroup,
+  removeEntity,
+  setComponent,
+  SystemDefinitions,
+  SystemUUID,
+  UndefinedEntity
+} from '@ir-engine/ecs'
+import { ReactorRoot, startReactor, State } from '@ir-engine/hyperflux'
+import { destroySpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
+import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
+import React from 'react'
+import { MeshStandardMaterial, Texture } from 'three'
+import { EnvMapComponent } from '../components/EnvmapComponent'
+import { EnvironmentSystem, EnvironmentSystemReactors } from './EnvironmentSystem'
 
 describe('IntensityReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on change [envMapComponent.envMapIntensity.value, material.uuid.value]', () => {
-    it.todo(
-      'should set `@param props.entity`.MaterialStateComponent.material.envMapIntensity to `@param props.rootEntity`.EnvMapComponent.envMapIntensity',
-      () => {}
-    )
+    it('should set `@param props.entity`.MaterialStateComponent.material.envMapIntensity to `@param props.rootEntity`.EnvMapComponent.envMapIntensity', () => {
+      const Expected = 42
+      const Initial = 21 // componentIntensity
+      // 3. Set input & dependencies data
+      const rootEntity = createEntity()
+      setComponent(rootEntity, EnvMapComponent, { envMapIntensity: Expected })
+      setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+      const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<MeshStandardMaterial>
+      material.envMapIntensity.set(Initial)
+      // 1. Sanity check (input & dependencies)
+      const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMapIntensity // materialIntensity
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      const root = startReactor(() => {
+        return React.createElement(EnvironmentSystemReactors.IntensityReactor, {
+          rootEntity: rootEntity,
+          entity: testEntity
+        })
+      }) as ReactorRoot
+      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMapIntensity
+      // 4. Check the result (output)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
   })
 }) //:: IntensityReactor
 
 describe('EnvMapSkyboxReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on change [backgroundQuery, materialComponent.material.uuid.value]', () => {
+    /** @todo Depends on the todo tests below */
     it.todo(
-      'should not do anything if the first backgroundQuery[backgroundID] entity found does not have a BackgroundComponent or its value is falsy',
+      'should not do anything (return early) if the first backgroundQuery[backgroundID] entity found does not have a BackgroundComponent',
+      () => {
+        const Expected = false
+        // 3. Set input & dependencies data
+        const parentEntity = createEntity()
+        const backgroundEntity = createEntity()
+        setComponent(backgroundEntity, EntityTreeComponent, { parentEntity: parentEntity })
+        setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+        // setComponent(backgroundEntity, BackgroundComponent)
+        // 1. Sanity check (input & dependencies)
+        expect(haveCommonAncestor(testEntity, backgroundEntity)).toBeTruthy()
+        expect(hasComponent(backgroundEntity, BackgroundComponent)).toBeFalsy()
+        // 2. Run the process
+        const result = true
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      }
+    )
+
+    it.todo(
+      'should not do anything (return early) if the first backgroundQuery[backgroundID] entity found has a BackgroundComponent but its value is falsy',
       () => {}
     )
+
+    /** @todo Why is it not running any of the useEffects ?? */
     it.todo(
       'should set `@param props.entity`.MaterialStateComponent.material.envMap to backgroundQuery[backgroundID].BackgroundComponent',
-      () => {}
+      () => {
+        const Expected = new Texture()
+        const Initial = new Texture()
+        // 3. Set input & dependencies data
+        const rootEntity = createEntity()
+        const backgroundEntity = createEntity()
+        setComponent(backgroundEntity, BackgroundComponent, Expected)
+        setComponent(backgroundEntity, EntityTreeComponent, { parentEntity: rootEntity })
+        setComponent(testEntity, EntityTreeComponent, { parentEntity: rootEntity })
+        setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+        const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<MeshStandardMaterial>
+        material.envMap.set(Initial)
+        const Reactor = () => {
+          return React.createElement(EnvironmentSystemReactors.EnvMapSkyboxReactor, {
+            entity: testEntity,
+            rootEntity: rootEntity
+          })
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(haveCommonAncestor(testEntity, backgroundEntity)).toBeTruthy()
+        expect(hasComponent(backgroundEntity, BackgroundComponent)).toBeTruthy()
+        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(result).not.toBe(Initial)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      }
     )
   })
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvMapSkyboxReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvMapSkyboxReactor
 
 describe('EnvMapCubemapReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on mount', () => {
     describe('on cleanup', () => {
-      it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
+      /** @todo Why is it not running any of the useEffects ?? */
+      it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {
+        const Expected = null
+        const Initial = new Texture()
+        // 3. Set input & dependencies data
+        const rootEntity = createEntity()
+        setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+        const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<MeshStandardMaterial>
+        material.envMap.set(Initial)
+        const Reactor = () => {
+          return React.createElement(EnvironmentSystemReactors.EnvMapCubemapReactor, {
+            entity: testEntity,
+            rootEntity: rootEntity
+          })
+        }
+        // 1. Sanity check (input & dependencies)
+        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        root.stop()
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
   })
 
@@ -68,13 +254,42 @@ describe('EnvMapCubemapReactor', () => {
     )
   })
 
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvMapCubemapReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvMapCubemapReactor
 
 describe('EnvmapProbesReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on mount', () => {
     describe('on cleanup', () => {
       it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
@@ -90,13 +305,42 @@ describe('EnvmapProbesReactor', () => {
     it.todo('should call the `unload` function returned by createReflectionProbeRenderTarget', () => {})
   })
 
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvmapProbesReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvmapProbesReactor
 
 describe('EnvMapEquirectangularReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on mount', () => {
     describe('on cleanup', () => {
       it.todo('should set `@param props.entity`.MaterialStateComponent.material.envMap to null', () => {})
@@ -133,13 +377,43 @@ describe('EnvMapEquirectangularReactor', () => {
     )
   })
 
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvMapEquirectangularReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvMapEquirectangularReactor
 
 describe('EnvMapBakeReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on change [envMaptexture, envMapComponent.type]', () => {
     it.todo(
       'should not do anything if `@param props.rootEntity`.EnvMapBakeComponent.envMapOrigin.envMaptexture is falsy',
@@ -188,13 +462,43 @@ describe('EnvMapBakeReactor', () => {
     )
   })
 
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvMapBakeReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvMapBakeReactor
 
 describe('EnvMapColorReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('on mount', () => {
     describe('on cleanup ..', () => {
       it.todo('.. should set `@params props.entity`.MaterialStateComponent.material.envMap to null', () => {})
@@ -217,18 +521,74 @@ describe('EnvMapColorReactor', () => {
     })
   })
 
-  it.todo(
-    'should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity',
-    () => {}
-  )
+  it('should call IntensityReactor with `@params props.entity` as props.entity and `@params props.rootEntity` as props.rootEntity', () => {
+    // 3. Set input & dependencies data
+    const rootEntity = createEntity()
+    setComponent(rootEntity, EnvMapComponent)
+    setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+    const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'IntensityReactor')
+    const Reactor = () => {
+      return React.createElement(EnvironmentSystemReactors.EnvMapColorReactor, {
+        entity: testEntity,
+        rootEntity: rootEntity
+      })
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+  })
 }) //:: EnvMapColorReactor
 
 describe('EnvMapReactor', () => {
+  let testEntity = UndefinedEntity
+
+  beforeEach(() => {
+    createEngine()
+    mockSpatialEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroySpatialEngine()
+    destroyEngine()
+  })
+
   describe('for every entity that has a MaterialStateComponent ..', () => {
+    /** @todo Why is the sub-reactor never called */
     it.todo(
       ".. should call EnvMapSkyboxReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Skybox'",
-      () => {}
+      () => {
+        const Expected = 42
+        // 3. Set input & dependencies data
+        const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapSkyboxReactor')
+        setComponent(testEntity, EnvMapComponent)
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(EnvironmentSystemReactors.EnvMapReactor, {})
+          )
+        }
+        for (let id = 0; id < Expected; ++id) setComponent(createEntity(), MaterialStateComponent)
+        const query = defineQuery([MaterialStateComponent])
+        // 1. Sanity check (input & dependencies)
+        expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+        expect(query().length).toBe(Expected)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 2 + 1)
+      }
     )
+
     it.todo(
       ".. should call EnvMapCubemapReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Cubemap'",
       () => {}
@@ -269,8 +629,38 @@ describe('EnvironmentSystem', () => {
     expect(System.insert!.after!).toBe(PresentationSystemGroup)
   })
 
-  /** @todo */
   describe('reactor', () => {
-    it.todo('should call EnvMapReactor for every entity that has an EnvMapComponent', () => {})
+    let testEntity = UndefinedEntity
+
+    beforeEach(() => {
+      createEngine()
+      mockSpatialEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroySpatialEngine()
+      destroyEngine()
+    })
+
+    it('should call EnvMapReactor for every entity that has an EnvMapComponent', () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapReactor')
+      const Reactor = () => {
+        return React.createElement(System.reactor!, {})
+      }
+      for (let id = 0; id < Expected; ++id) setComponent(createEntity(), EnvMapComponent)
+      const query = defineQuery([EnvMapComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(result).toBe(Expected * 2 + 1)
+    })
   }) //:: reactor
 }) //:: EnvironmentSystem
