@@ -636,7 +636,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                   onClose={() => {
                     PopoverState.showPopupover(<ProfileMenu />)
                   }}
-                />
+                />,
+                () => {
+                  PopoverState.hidePopupover()
+                  PopoverState.showPopupover(<ProfileMenu />)
+                }
               )
             }}
           >
@@ -659,7 +663,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                   onClose={() => {
                     PopoverState.showPopupover(<ProfileMenu />)
                   }}
-                />
+                />,
+                () => {
+                  PopoverState.hidePopupover()
+                  PopoverState.showPopupover(<ProfileMenu />)
+                }
               )
             }}
           >
