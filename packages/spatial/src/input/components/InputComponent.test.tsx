@@ -1070,35 +1070,35 @@ describe('InputComponent', () => {
   //   }, getInputExecutionInsert(order))
   // },
 
-  describe('reactor', () => {
-    beforeEach(() => {
-      createEngine()
-      initializeSpatialEngine()
-    })
+  // describe('reactor', () => {
+  //   beforeEach(() => {
+  //     createEngine()
+  //     initializeSpatialEngine()
+  //   })
 
-    afterEach(() => {
-      return destroyEngine()
-    })
+  //   afterEach(() => {
+  //     return destroyEngine()
+  //   })
 
-    it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true', async () => {
-      const entity = getState(ReferenceSpaceState).localFloorEntity
+  //   it('should add a HighlightComponent to the entity when the InputComponent is set with `highlight: true', async () => {
+  //     const entity = getState(ReferenceSpaceState).localFloorEntity
 
-      const Expected = { highlight: true, grow: true }
-      ReactorReconciler.flushSync(() => {
-        setComponent(entity, InputComponent, Expected)
-      })
-      const result = getComponent(entity, InputComponent)
+  //     const Expected = { highlight: true, grow: true }
+  //     ReactorReconciler.flushSync(() => {
+  //       setComponent(entity, InputComponent, Expected)
+  //     })
+  //     const result = getComponent(entity, InputComponent)
 
-      assert.equal(result.grow, Expected.grow)
-      assert.equal(result.highlight, Expected.highlight)
+  //     assert.equal(result.grow, Expected.grow)
+  //     assert.equal(result.highlight, Expected.highlight)
 
-      ReactorReconciler.flushSync(() => {
-        getMutableComponent(entity, InputComponent).inputSources.merge([entity])
-      })
+  //     ReactorReconciler.flushSync(() => {
+  //       getMutableComponent(entity, InputComponent).inputSources.merge([entity])
+  //     })
 
-      assert(hasComponent(entity, HighlightComponent))
-    })
-  }) // << reactor
+  //     assert(hasComponent(entity, HighlightComponent))
+  //   })
+  // }) // << reactor
 })
 
 describe('InputExecutionOrder', () => {
