@@ -23,9 +23,33 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  createEngine,
+  createEntity,
+  destroyEngine,
+  EntityContext,
+  removeEntity,
+  setComponent,
+  UndefinedEntity
+} from '@ir-engine/ecs'
+import { ReactorRoot, startReactor } from '@ir-engine/hyperflux'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import React from 'react'
+import { MeshBasicMaterial } from 'three'
 import { BoxProjectionPlugin, EnvMapComponent } from './EnvmapComponent'
+
+/**
+ * @warning These next few lines affect this entire test file.
+ * */
+const resultSpy = vi.hoisted(() => {
+  return vi.fn()
+})
+vi.mock('@ir-engine/spatial/src/renderer/materials/materialFunctions', async (Original) => {
+  return { ...((await Original()) as any), setPlugin: resultSpy }
+})
+/** @warning end */
 
 describe('EnvMapComponent', () => {
   describe('Fields', () => {
@@ -72,10 +96,36 @@ describe('BoxProjectionPlugin', () => {
     })
   }) //:: Fields
 
-  /** @todo */
   describe('reactor', () => {
+    let testEntity = UndefinedEntity
+
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEngine()
+    })
+
     describe('on mount', () => {
-      it.todo('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {})
+      /** @todo Why is this reactor failing ?? */
+      it.todo('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {
+        setComponent(testEntity, MaterialStateComponent, { material: new MeshBasicMaterial() })
+
+        const root = startReactor(() => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(MaterialStateComponent.reactor, {})
+          )
+        }) as ReactorRoot
+
+        // expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()  // @todo Uncomment when .reflection is merged to dev
+        expect(resultSpy).toHaveBeenCalled()
+      })
+
       describe('on cleanup', () => {
         it.todo('.. should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {})
       })
