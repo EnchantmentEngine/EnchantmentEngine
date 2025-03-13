@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { useLayoutEffect } from 'react'
+import React, { useLayoutEffect, useRef } from 'react'
 
 import { TouchGamepad } from '@ir-engine/client-core/src/common/components/TouchGamepad'
 import UserMenus from '@ir-engine/client-core/src/user/menus'
@@ -50,8 +50,10 @@ export const ViewerInteractions = () => {
   const loadingScreenVisible = useHookstate(getMutableState(LoadingSystemState).loadingScreenVisible).value
   const { t } = useTranslation()
   const externalInjectedMenus = useMutableState(ViewerMenuState).externalInjectedMenus.get(NO_PROXY)
+  const locationContainer = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
+    if (locationContainer.current) locationContainer.current.style.opacity = '0'
     const orientationChangeHandler = () => {
       if (screen.orientation.type.match('portrait')) {
         isPortrait.set(true)
@@ -79,7 +81,7 @@ export const ViewerInteractions = () => {
   }
 
   return (
-    <div id="location-container" style={{ opacity: 0 }} className="fixed h-dvh w-full p-6">
+    <div id="location-container" ref={locationContainer} className="fixed h-dvh w-full p-6">
       <div className="pointer-events-auto absolute left-0 top-0 h-fit w-full pt-[inherit]">
         <MediaIconsBox />
       </div>
