@@ -54,6 +54,9 @@ export const ViewerInteractions = () => {
 
   useLayoutEffect(() => {
     if (locationContainer.current) locationContainer.current.style.opacity = '0'
+  }, [locationContainer])
+
+  useLayoutEffect(() => {
     const orientationChangeHandler = () => {
       if (screen.orientation.type.match('portrait')) {
         isPortrait.set(true)
