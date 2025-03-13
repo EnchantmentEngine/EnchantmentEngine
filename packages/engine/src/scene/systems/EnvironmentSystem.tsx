@@ -75,7 +75,7 @@ const EnvMapReactor = () => {
         switch (envMapComponent) {
           case 'Skybox':
             return (
-              <EnvMapSkyboxReactor
+              <EnvironmentSystemReactors.EnvMapSkyboxReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -83,7 +83,7 @@ const EnvMapReactor = () => {
             )
           case 'Cubemap':
             return (
-              <EnvMapCubemapReactor
+              <EnvironmentSystemReactors.EnvMapCubemapReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -91,7 +91,7 @@ const EnvMapReactor = () => {
             )
           case 'Equirectangular':
             return (
-              <EnvMapEquirectangularReactor
+              <EnvironmentSystemReactors.EnvMapEquirectangularReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -99,7 +99,7 @@ const EnvMapReactor = () => {
             )
           case 'Color':
             return (
-              <EnvMapColorReactor
+              <EnvironmentSystemReactors.EnvMapColorReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -107,7 +107,7 @@ const EnvMapReactor = () => {
             )
           case 'Bake':
             return (
-              <EnvMapBakeReactor
+              <EnvironmentSystemReactors.EnvMapBakeReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -115,7 +115,7 @@ const EnvMapReactor = () => {
             )
           case 'Probes':
             return (
-              <EnvmapProbesReactor
+              <EnvironmentSystemReactors.EnvmapProbesReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -168,7 +168,7 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     materialComponent.envMap.set(backgroundComponent.value as any)
   }, [backgroundComponent?.value, materialComponent?.uuid.value])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => {
@@ -204,7 +204,7 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
     )
   }, [envMapComponent.envMapCubemapURL])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
@@ -233,7 +233,7 @@ const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     }
   }, [probeQuery])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entity }) => {
@@ -266,7 +266,7 @@ const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entit
     addError(entity, EnvMapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
   }, [error])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
@@ -315,7 +315,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     addError(bakeEntity, EnvMapComponent, 'MISSING_FILE', 'EnvMap bake texture not found!')
   }, [error])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 const tempColor = new Color(0, 0, 1)
@@ -350,11 +350,25 @@ const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     }
   }, [envMapComponent.envMapSourceColor, materialComponent?.uuid.value, envMapComponent.type])
 
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
+  return <EnvironmentSystemReactors.IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
 
 export const EnvironmentSystem = defineSystem({
   uuid: 'ee.engine.EnvironmentSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => <QueryReactor Components={[EnvMapComponent]} ChildEntityReactor={EnvMapReactor} />
+  reactor: () => (
+    <QueryReactor Components={[EnvMapComponent]} ChildEntityReactor={EnvironmentSystemReactors.EnvMapReactor} />
+  )
 })
+
+/** @private Exported for Unit Tests usage only */
+export const EnvironmentSystemReactors = {
+  EnvmapProbesReactor,
+  EnvMapBakeReactor,
+  EnvMapColorReactor,
+  EnvMapEquirectangularReactor,
+  EnvMapCubemapReactor,
+  EnvMapSkyboxReactor,
+  EnvMapReactor,
+  IntensityReactor
+}
