@@ -32,13 +32,12 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import {
   getComponent,
   getMutableComponent,
-  hasComponent,
   removeComponent,
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { ReactorReconciler, ReactorRoot, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
+import { ReactorRoot, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 
 import {
   EngineState,
@@ -56,9 +55,6 @@ import {
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { Raycaster } from 'three'
 import { assertArray } from '../../../tests/util/assert'
-import { ReferenceSpaceState } from '../../ReferenceSpaceState'
-import { initializeSpatialEngine } from '../../initializeEngine'
-import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import { ReferenceSpace } from '../../xr/XRState'
 import { ButtonStateMap, MouseScroll, XRStandardGamepadAxes } from '../state/ButtonState'
 import { InputState } from '../state/InputState'

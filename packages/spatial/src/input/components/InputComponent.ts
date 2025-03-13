@@ -23,8 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useLayoutEffect } from 'react'
-
 import {
   defineSystem,
   EngineState,
@@ -34,19 +32,12 @@ import {
   useEntityContext,
   useExecute
 } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  hasComponent,
-  removeComponent,
-  setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import {
   AnyAxis,
   AnyButton,
@@ -212,55 +203,55 @@ export const InputComponent = defineComponent({
       { after: InputSystemGroup }
     )
     return hasFocus
-  },
+  }
 
   // reactor: () => {
   //   const entity = useEntityContext()
   //   const input = useComponent(entity, InputComponent)
 
-    // useLayoutEffect(() => {
-    //   if (!input.inputSources.length || !input.highlight.value) return
-    //   setComponent(entity, HighlightComponent)
-    //   return () => {
-    //     removeComponent(entity, HighlightComponent)
-    //   }
-    // }, [input.inputSources, input.highlight])
+  // useLayoutEffect(() => {
+  //   if (!input.inputSources.length || !input.highlight.value) return
+  //   setComponent(entity, HighlightComponent)
+  //   return () => {
+  //     removeComponent(entity, HighlightComponent)
+  //   }
+  // }, [input.inputSources, input.highlight])
 
-    // useEffect(() => {
-    //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
-    //   // whether or not it's a rigidbody or a mesh
-    //
-    //   //then we might just need to abandon the Input layer raycast, leave that as-is, add the distance heuristic and call it a day
-    //
-    //   // the input system can still perform physics and mesh bvh raycasts on things that have an InputComponent as an entity ancestor
-    //   // I think I know how this can work
-    //   //awesome
-    //
-    //   //techincally if we add the distance heuristic a rigidbody / collider are not needed
-    //
-    //   // after entity tree has loaded (how do we check for this...)
-    //   // create an input rigidbody if one doesn't exist
-    //   // if (!hasComponent(entity, RigidBodyComponent)) {
-    //   //   setComponent(entity, RigidBodyComponent, { type: BodyTypes.Fixed }) //assume kinematic if it had no rigidbody before
-    //   // }
-    //   // // create an input colliderComponent if one doesn't exist
-    //   // if (!hasComponent(entity, ColliderComponent)) {
-    //   //   //TODO - check if we have a mesh, if we do, use the mesh as a collider type....if not then generate a bounding sphere
-    //   //   setComponent(entity, ColliderComponent)
-    //   // }
-    //   // const hasMesh = hasComponent(entity, MeshComponent)
-    //   // const collider = getMutableComponent(entity, ColliderComponent)
-    //   // collider.collisionLayer.set(collider.collisionLayer.value | CollisionGroups.Input)
-    // }, [])
+  // useEffect(() => {
+  //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
+  //   // whether or not it's a rigidbody or a mesh
+  //
+  //   //then we might just need to abandon the Input layer raycast, leave that as-is, add the distance heuristic and call it a day
+  //
+  //   // the input system can still perform physics and mesh bvh raycasts on things that have an InputComponent as an entity ancestor
+  //   // I think I know how this can work
+  //   //awesome
+  //
+  //   //techincally if we add the distance heuristic a rigidbody / collider are not needed
+  //
+  //   // after entity tree has loaded (how do we check for this...)
+  //   // create an input rigidbody if one doesn't exist
+  //   // if (!hasComponent(entity, RigidBodyComponent)) {
+  //   //   setComponent(entity, RigidBodyComponent, { type: BodyTypes.Fixed }) //assume kinematic if it had no rigidbody before
+  //   // }
+  //   // // create an input colliderComponent if one doesn't exist
+  //   // if (!hasComponent(entity, ColliderComponent)) {
+  //   //   //TODO - check if we have a mesh, if we do, use the mesh as a collider type....if not then generate a bounding sphere
+  //   //   setComponent(entity, ColliderComponent)
+  //   // }
+  //   // const hasMesh = hasComponent(entity, MeshComponent)
+  //   // const collider = getMutableComponent(entity, ColliderComponent)
+  //   // collider.collisionLayer.set(collider.collisionLayer.value | CollisionGroups.Input)
+  // }, [])
 
-    /** @todo - fix */
-    // useLayoutEffect(() => {
-    //   if (!input.inputSources.length || !input.grow.value) return
-    //   setComponent(entity, AnimateScaleComponent)
-    //   return () => {
-    //     removeComponent(entity, AnimateScaleComponent)
-    //   }
-    // }, [input.inputSources, input.grow])
+  /** @todo - fix */
+  // useLayoutEffect(() => {
+  //   if (!input.inputSources.length || !input.grow.value) return
+  //   setComponent(entity, AnimateScaleComponent)
+  //   return () => {
+  //     removeComponent(entity, AnimateScaleComponent)
+  //   }
+  // }, [input.inputSources, input.grow])
 
   //   return null
   // }
