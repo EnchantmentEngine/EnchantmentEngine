@@ -214,17 +214,17 @@ export const InputComponent = defineComponent({
     return hasFocus
   },
 
-  reactor: () => {
-    const entity = useEntityContext()
-    const input = useComponent(entity, InputComponent)
+  // reactor: () => {
+  //   const entity = useEntityContext()
+  //   const input = useComponent(entity, InputComponent)
 
-    useLayoutEffect(() => {
-      if (!input.inputSources.length || !input.highlight.value) return
-      setComponent(entity, HighlightComponent)
-      return () => {
-        removeComponent(entity, HighlightComponent)
-      }
-    }, [input.inputSources, input.highlight])
+    // useLayoutEffect(() => {
+    //   if (!input.inputSources.length || !input.highlight.value) return
+    //   setComponent(entity, HighlightComponent)
+    //   return () => {
+    //     removeComponent(entity, HighlightComponent)
+    //   }
+    // }, [input.inputSources, input.highlight])
 
     // useEffect(() => {
     //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
@@ -262,8 +262,8 @@ export const InputComponent = defineComponent({
     //   }
     // }, [input.inputSources, input.grow])
 
-    return null
-  }
+  //   return null
+  // }
 })
 
 function getLargestMagnitudeNumber(a: number, b: number) {
