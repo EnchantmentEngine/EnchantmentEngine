@@ -303,7 +303,7 @@ export function MediaReactor() {
     const autoPlay = getAutoPlay()
     media.paused.set(!autoPlay)
     validateTime()
-  }, [media.autoplay, mediaElement, engineState.isEditing])
+  }, [media.autoplay, !!mediaElement, engineState.isEditing])
 
   useEffect(() => {
     if (!rendererEntity) return
@@ -390,7 +390,7 @@ export function MediaReactor() {
         })
       }
     }
-  }, [media.paused, mediaElement])
+  }, [media.paused, !!mediaElement])
 
   useEffect(() => {
     if (!mediaElement) return
