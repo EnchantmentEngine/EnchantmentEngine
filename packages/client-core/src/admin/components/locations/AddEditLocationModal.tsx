@@ -18,21 +18,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { lazy, useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
-import { useFind, useMutation } from '@ir-engine/common'
-import { config } from '@ir-engine/common/src/config'
-import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
-import {
-  LocationData,
-  LocationID,
-  LocationPatch,
-  LocationType,
-  locationPath,
-  staticResourcePath
-} from '@ir-engine/common/src/schema.type.module'
+import { API, useFind, useMutation } from '@ir-engine/common'
+import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
+import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
 import {
   Entity,
   EntityTreeComponent,
@@ -45,32 +33,44 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { LODVariantDescriptor, defaultLODs } from '@ir-engine/editor/src/constants/GLTFPresets'
-import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
-import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
-import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
-import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
-import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
-import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
-import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import {
+  LocationData,
+  LocationID,
+  LocationPatch,
+  LocationType,
+  locationPath,
+  staticResourcePath
+} from '@ir-engine/common/src/schema.type.module'
+import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
+import { Quaternion, Vector3 } from 'three'
+import React, { lazy, useCallback, useEffect, useMemo } from 'react'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
-import { TransformComponent } from '@ir-engine/spatial'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import CompressedPublishConfirmation from './CompressedPublishConfirmation'
+import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
+import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
+import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
+import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { NotificationService } from '../../../common/services/NotificationService'
+import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
+import { TransformComponent } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-
-import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
-import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
-import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
-import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
-import { Quaternion, Vector3 } from 'three'
-import { NotificationService } from '../../../common/services/NotificationService'
-import CompressedPublishConfirmation from './CompressedPublishConfirmation'
+import { config } from '@ir-engine/common/src/config'
+import { debounce } from 'lodash'
+import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
+import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
+import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
+import { useTranslation } from 'react-i18next'
 
 function formatPublishedDate(isoString) {
   const date = new Date(isoString)
@@ -473,6 +473,31 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
     }
   }, [location, props.onPublishSuccess, isNewPublished.value])
 
+  const validateLocationName = useCallback(
+    debounce(async (value: string) => {
+      if (!value) return
+      const slugifiedName = value.trim().replace(/ /g, '-').toLowerCase()
+      try {
+        const response = await API.instance.service(locationPath).find({
+          query: { action: 'viewer', slugifiedName, $limit: 1 }
+        })
+
+        if (response.total > 0) {
+          if (!location || location.slugifiedName !== slugifiedName) {
+            errors.name.set(t('admin:components.location.nameExists'))
+          } else {
+            errors.name.set('')
+          }
+        } else {
+          errors.name.set('')
+        }
+      } catch (err) {
+        console.error('Error validating location name:', err)
+      }
+    }, 1000),
+    [location]
+  )
+
   return (
     <div className="absolute z-50 bg-surface-2 px-8 pt-6">
       <div className="relative rounded-lg py-2">
@@ -508,7 +533,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               labelProps={{ text: t('admin:components.location.lbl-name'), position: 'top' }}
               value={name.value}
               data-testid="publish-panel-location-name"
-              onChange={(event) => name.set(event.target.value)}
+              onChange={(event) => {
+                name.set(event.target.value)
+                validateLocationName(event.target.value)
+              }}
               state={errors.name.value ? 'error' : undefined}
               helperText={errors.name.value}
               disabled={isLoading}
@@ -606,7 +634,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               <Button
                 className="bg-[#162546]"
                 data-testid="publish-panel-unpublish-button"
-                disabled={isLoading}
+                disabled={isLoading || Object.values(errors.value).some((error) => error.length > 0)}
                 onClick={unPublishLocation}
               >
                 {t('editor:toolbar.publishLocation.unpublish')}
@@ -615,7 +643,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             )}
             <Button
               data-testid="publish-panel-publish-or-update-button"
-              disabled={isLoading}
+              disabled={isLoading || Object.values(errors.value).some((error) => error.length > 0)}
               onClick={() => handlePublish()}
             >
               {location?.id
@@ -625,7 +653,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                 : t('editor:toolbar.publishLocation.title')}
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
             </Button>
-            <Button onClick={handlePublishFolder}>
+            <Button
+              onClick={handlePublishFolder}
+              disabled={isLoading || Object.values(errors.value).some((error) => error.length > 0)}
+            >
               {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
             </Button>
           </div>
