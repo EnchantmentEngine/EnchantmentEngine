@@ -345,7 +345,7 @@ jobs:
           path: ir-engine-npm-tests
       - name: Run npm build test
         run: |
-          cd ../ir-engine-npm-tests
+          cd ./ir-engine-npm-tests
           npm i
           npm run setup
           npm run test
