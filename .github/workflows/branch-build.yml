@@ -333,15 +333,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22.x
-      - name: Checkout Build Test
-        uses: actions/checkout@v3
-        with:
-          repository: ir-engine/ir-engine
-          ref: ${{ env.checkout_branch }}
       - name: Checkout Engine
         uses: actions/checkout@v3
         with:
-          path: '../ir-engine'
+          path: 'ir-engine'
+          ref: ${{ env.checkout_branch }}
+      - name: Checkout Build Test
+        uses: actions/checkout@v3
+        with:
+          repository: 'ir-engine/ir-engine-build-tests'
+          path: 'ir-engine-build-tests'
       - name: Run build test
         run: |
           cd ../ir-engine-build-tests
