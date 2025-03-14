@@ -334,15 +334,15 @@ jobs:
         with:
           node-version: 22.x
       - name: Checkout Engine
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          path: 'ir-engine'
+          path: ir-engine
           ref: ${{ env.checkout_branch }}
       - name: Checkout NPM Build Test
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          repository: 'ir-engine/ir-engine-npm-tests'
-          path: 'ir-engine-npm-tests'
+          repository: ir-engine/ir-engine-npm-tests
+          path: ir-engine-npm-tests
       - name: Run npm build test
         run: |
           cd ../ir-engine-npm-tests
