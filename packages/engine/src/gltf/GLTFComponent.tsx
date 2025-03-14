@@ -58,6 +58,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
@@ -210,10 +211,25 @@ export const GLTFComponentReactor = () => {
   const documentLoaded = useHookstate(false)
 
   useEffect(() => {
+    if (!documentLoaded.value) return
+
     const occlusion = gltfComponent.cameraOcclusion.value
-    if (!occlusion) ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
-    else ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
-  }, [gltfComponent.cameraOcclusion])
+    const entities = SourceComponent.getEntitiesBySource(GLTFComponent.getInstanceID(entity)).filter(
+      (curr) => !hasComponent(curr, GLTFComponent) && hasComponent(curr, ObjectComponent)
+    )
+
+    if (!occlusion) {
+      ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.disableLayer(curr, ObjectLayers.Camera)
+      }
+    } else {
+      ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.enableLayer(curr, ObjectLayers.Camera)
+      }
+    }
+  }, [gltfComponent.cameraOcclusion.value, documentLoaded.value])
 
   useGLTFDocument(entity)
 
