@@ -52,7 +52,7 @@ import {
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
-import { iOS, isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
+import { isIPhone, isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import {
@@ -384,7 +384,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             <AvatarImage size="large" src={avatarThumbnail} className="object-cover" />
             {
               /**@todo disable avatar editing on iOS. Temporary solution for memory related crashing on iOS. */
-              !iOS && (
+              !isIPhone && (
                 <button
                   onClick={() => {
                     PopoverState.showPopupover(
