@@ -37,7 +37,8 @@
       "confirmLocationDelete": "Do you want to delete location",
       "lobby": "Lobby",
       "featured": "Featured",
-      "locations": "Locations"
+      "locations": "Locations",
+      "nameExists": "Location name already exists"
     },
     "bot": {
       "uniqueCommand": "Command should be unique",
