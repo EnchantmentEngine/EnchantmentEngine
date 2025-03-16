@@ -31,7 +31,7 @@ import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/Medi
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import { ECSRecordingActions, PlaybackState, RecordingState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
-import { dispatchAction, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
@@ -54,7 +54,6 @@ import {
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { MdFlipCameraAndroid } from 'react-icons/md'
-import { SearchParamState } from '../../common/services/RouterService'
 import { RecordingUIState } from '../../systems/ui/RecordingsWidgetUI'
 import LocationIconButton from '../../user/components/LocationIconButton'
 import { clientContextParams } from '../../util/ClientContextState'
@@ -134,9 +133,13 @@ export const MediaIconsBox = () => {
 
   const handleExitSpectatorClick = () => {
     if (spectating) {
-      SearchParamState.set('spectate', none)
+      const searchParams = new URLSearchParams(location.search)
+      searchParams.delete('spectate')
+      window.history.replaceState({}, '', searchParams.toString())
     } else {
-      SearchParamState.set('spectate', '')
+      const searchParams = new URLSearchParams(location.search)
+      searchParams.set('spectate', '')
+      window.history.replaceState({}, '', searchParams.toString())
     }
   }
 
