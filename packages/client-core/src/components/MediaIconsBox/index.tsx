@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
@@ -130,17 +130,15 @@ export const MediaIconsBox = () => {
   }
 
   const xrSessionActive = xrState.sessionActive.value
+  const [params, setSearch] = useSearchParams()
 
   const handleExitSpectatorClick = () => {
     if (spectating) {
-      const searchParams = new URLSearchParams(location.search)
-      searchParams.delete('spectate')
-      window.history.replaceState({}, '', searchParams.toString())
+      params.delete('spectate')
     } else {
-      const searchParams = new URLSearchParams(location.search)
-      searchParams.set('spectate', '')
-      window.history.replaceState({}, '', searchParams.toString())
+      params.set('spectate', '')
     }
+    setSearch(params)
   }
 
   return (
