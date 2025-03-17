@@ -59,7 +59,6 @@ const ClickawayListener = (props: { children: React.ReactNode; onClickOutside: V
     }
 
     const eventName = isMobile ? 'pointerup' : 'mousedown'
-    console.log(`#DM# ClickawayListener using eventName: ${eventName}`)
     document.addEventListener(eventName, handler)
 
     return () => {
