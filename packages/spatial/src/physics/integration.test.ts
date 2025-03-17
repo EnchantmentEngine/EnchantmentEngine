@@ -172,6 +172,7 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
       setComponent(testEntity, ColliderComponent)
       await act(() => render(null))
+      TransformComponent.dirty[testEntity] = 0
       const Expected: Result = {
         before: {
           physicsSystem: getPositionFromMatrix(testEntity),

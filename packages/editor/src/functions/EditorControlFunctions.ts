@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Euler, Material, Matrix4, Quaternion, Vector3 } from 'three'
+import { Euler, Material, Matrix4, Quaternion, SRGBColorSpace, Vector3 } from 'three'
 
 import {
   EntityTreeComponent,
@@ -33,7 +33,6 @@ import {
   getAncestorWithComponents,
   getChildrenWithComponents,
   iterateEntityNode,
-  removeEntityNodeRecursively,
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
@@ -48,13 +47,13 @@ import {
   LayerFunctions,
   Layers,
   removeComponent,
+  removeEntity,
   serializeComponent,
   SerializedComponentType,
   setComponent,
   SetComponentType
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { TransformSpace } from '@ir-engine/engine/src/scene/constants/transformConstants'
@@ -64,9 +63,11 @@ import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
+import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
@@ -74,8 +75,9 @@ import {
   MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { extractDefaults } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { extractDefaults, setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { Color } from 'three'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -90,23 +92,36 @@ const addOrRemoveComponent = <C extends Component<any, any>>(
   args: SetComponentType<C> | undefined = undefined
 ) => {
   const sceneComponentID = component.jsonID
-  if (!sceneComponentID) return
+  if (!sceneComponentID) return []
+
+  const modifiedNodes = [] as NodeID[]
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
     if (add) {
       setComponent(entity, component, args)
+      if (args) {
+        EditorControlFunctions.modifyProperty([entity], component, args)
+      } else {
+        setComponent(entity, component, args)
+      }
     } else {
       removeComponent(entity, component)
     }
+    modifiedNodes.push(getComponent(entity, NodeIDComponent))
     EditorState.markModifiedScene(entity)
   }
+
+  return modifiedNodes
 }
 
 const modifyName = (entities: Entity[], name: string) => {
+  const modifiedNodes = [] as NodeID[]
   for (const entity of entities) {
     setComponent(entity, NameComponent, name)
     EditorState.markModifiedScene(entity)
+    modifiedNodes.push(getComponent(entity, NodeIDComponent))
   }
+  return modifiedNodes
 }
 
 /**
@@ -117,9 +132,12 @@ const modifyProperty = <C extends Component<any, any>>(
   component: C,
   properties: Partial<SerializedComponentType<C>>
 ) => {
+  const affectedNodes = [] as NodeID[]
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
-
+    if (!EditorState.isInActiveScene(entity)) {
+      SceneDeltaState.registerDelta(entity, component, properties)
+    }
     const currentComponent = hasComponent(entity, component) ? serializeComponent(entity, component) : {}
     for (const [key, val] of Object.entries(properties)) {
       if (key.includes('.')) {
@@ -130,7 +148,11 @@ const modifyProperty = <C extends Component<any, any>>(
     }
     deserializeComponent(entity, component, currentComponent)
     EditorState.markModifiedScene(entity)
+
+    affectedNodes.push(getComponent(entity, NodeIDComponent))
   }
+
+  return affectedNodes
 }
 
 /**Updates the materialEntity's threejs material using the the newPrototype to look up the new constructor */
@@ -138,12 +160,11 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
   const materialComponent = getOptionalMutableComponent(materialEntity, MaterialStateComponent)
   if (!materialComponent) return
   const material = materialComponent.material.value
-
+  materialComponent.prototype.set(newPrototype)
   if (!material || newPrototype === material.type) return
   const prototype = getState(MaterialPrototypeDefinitions)[newPrototype]
   if (!prototype) return
   const fullParameters = { ...extractDefaults(prototype.arguments) }
-  if (!prototype) return
   const newMaterial = new prototype.prototypeConstructor(fullParameters) as Material
 
   if (newMaterial.plugins) {
@@ -162,15 +183,17 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
       ...Object.fromEntries(Object.entries(material.userData).filter(([k, _v]) => k !== 'type'))
     }
   }
+
   newMaterial.type = newPrototype
   newMaterial.name = material.name
 
   materialComponent.material.set(newMaterial)
   materialComponent.parameters.set({})
-  for (const key in prototype.arguments) materialComponent.parameters[key].set(prototype.arguments[key].default)
 
-  const sceneID = getComponent(materialEntity, SourceComponent)
-  getMutableState(AssetModifiedState)[sceneID].set(true)
+  EditorState.markModifiedScene(materialEntity)
+  if (!EditorState.isInActiveScene(materialEntity)) {
+    SceneDeltaState.registerMaterialDelta(materialEntity, {}, newPrototype)
+  }
 
   return newMaterial
 }
@@ -182,27 +205,51 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
     const materialEntity = UUIDComponent.getEntityByUUID(materialId, Layers.Authoring)
     const material = getComponent(materialEntity, MaterialStateComponent).material
     if (!material) return
+    if (!material) throw new Error('Updating properties on undefined material')
     const props = properties[i] ?? properties[0]
-    Object.entries(props).map(([k, v]) => {
-      if (!material) throw new Error('Updating properties on undefined material')
-      if (
-        ![undefined, null].includes(v) &&
-        ![undefined, null].includes(material[k]) &&
-        typeof material[k] === 'object' &&
-        typeof material[k].set === 'function'
-      ) {
-        material[k].set(v)
-      } else {
-        material[k] = v
+    const materialComponent = getMutableComponent(materialEntity, MaterialStateComponent)
+    /**@todo consolidate material prototype tracking */
+    const prototype =
+      getState(MaterialPrototypeDefinitions)[
+        materialComponent.prototype.value ||
+          materialComponent.material.value.userData?.type ||
+          materialComponent.material.type.value
+      ].arguments
+    const texturePromises = [] as Promise<void>[]
+    for (const [key, value] of Object.entries(props)) {
+      switch (prototype[key]?.type) {
+        case 'texture':
+          texturePromises.push(
+            new Promise<void>(async (resolve) => {
+              const texture = await getTextureAsync(value)
+              if (texture[0]) {
+                texture[0].colorSpace = SRGBColorSpace
+                material[key] = texture[0]
+              }
+              resolve()
+            })
+          )
+          break
+        case 'color':
+          material[key] = value.isColor ? value : new Color(value)
+          break
+        default:
+          material[key] = value
       }
-      getMutableComponent(materialEntity, MaterialStateComponent).parameters[k].set(v)
+    }
+
+    Promise.all(texturePromises).then(() => {
+      setupMaterialParameters(materialEntity, getComponent(materialEntity, MaterialStateComponent).material)
+      EditorState.markModifiedScene(materialEntity)
+      if (!EditorState.isInActiveScene(materialEntity)) {
+        SceneDeltaState.registerMaterialDelta(materialEntity, props, materialComponent.prototype.value)
+      }
     })
-    const sceneID = getComponent(materialEntity, SourceComponent)
+
     getMutableComponent(
       LayerFunctions.getLayerRelationsEntities(materialEntity)![0][1],
       MaterialStateComponent
     ).material.plugins.set(material.plugins)
-    getMutableState(AssetModifiedState)[sceneID].set(true)
   }
 }
 
@@ -290,42 +337,33 @@ const createObjectFromSceneElement = (
  * @todo copying an object should be rooted to which object is currently selected
  */
 const duplicateObject = (entities: Entity[]) => {
-  const rootEntities = findRootAncestors(entities)
-  const uuidMap = {} as { [entityUUID: EntityUUID]: EntityUUID }
-
-  const duplicateEntity = (entity: Entity) => {
-    const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
-    const entityUUID = getComponent(entity, UUIDComponent)
+  const duplicateEntities = (entities: Entity[], parentEntity: Entity) => {
     const parentUUID = getComponent(parentEntity, UUIDComponent)
-    const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
-    const newUUID = generateEntityUUID()
-    const originalSource = getComponent(entity, SourceComponent)
 
-    const newEntity = NodeIDComponent.create(originalSource, NodeIDComponent.generate(), Layers.Authoring)
+    entities.forEach((entity) => {
+      const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
+      const originalSource = getComponent(entity, SourceComponent)
 
-    const name = getComponent(entity, NameComponent)
-    setComponent(newEntity, VisibleComponent)
-    setComponent(newEntity, NameComponent, name)
-    for (const component of entityData) {
-      deserializeComponent(newEntity, ComponentJSONIDMap.get(component.name)!, component.props)
-    }
-    const newParentUUID = uuidMap[parentUUID]
-    const newParentEntity = UUIDComponent.getEntityByUUID(newParentUUID, Layers.Authoring)
-    setComponent(newEntity, EntityTreeComponent, { parentEntity: newParentEntity })
-    uuidMap[entityUUID] = newUUID
+      const newEntity = NodeIDComponent.create(originalSource, NodeIDComponent.generate(), Layers.Authoring)
+      const name = getComponent(entity, NameComponent)
+      setComponent(newEntity, VisibleComponent)
+      setComponent(newEntity, NameComponent, name)
+      setComponent(newEntity, EntityTreeComponent, { parentEntity: parentEntity })
 
-    const children = getComponent(entity, EntityTreeComponent).children
-    for (const childEntity of children) {
-      duplicateEntity(childEntity)
-    }
+      for (const component of entityData) {
+        deserializeComponent(newEntity, ComponentJSONIDMap.get(component.name)!, component.props)
+      }
+
+      const children = getComponent(entity, EntityTreeComponent).children as Entity[]
+      duplicateEntities(children, newEntity)
+    })
   }
 
+  const rootEntities = findRootAncestors(entities)
   for (const rootEntity of rootEntities) {
     if (hasComponent(rootEntity, SceneComponent)) continue
     const { parentEntity } = getComponent(rootEntity, EntityTreeComponent)
-    const rootParentUUID = getComponent(parentEntity, UUIDComponent)
-    uuidMap[rootParentUUID] = rootParentUUID
-    duplicateEntity(rootEntity)
+    duplicateEntities([rootEntity], parentEntity)
     EditorState.markModifiedScene(rootEntity)
   }
 }
@@ -367,6 +405,9 @@ const positionObject = (
     }
 
     setComponent(entity, TransformComponent, { position: transform.position })
+    if (!EditorState.isInActiveScene(entity)) {
+      SceneDeltaState.registerDelta(entity, TransformComponent, { position: transform.position })
+    }
     getMutableComponent(entity, TransformComponent).position.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -403,6 +444,9 @@ const rotateObject = (nodes: Entity[], rotations: Quaternion[], space = getState
     }
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
+    if (!EditorState.isInActiveScene(entity)) {
+      SceneDeltaState.registerDelta(entity, TransformComponent, { rotation: transform.rotation })
+    }
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -431,9 +475,31 @@ const rotateAround = (entities: Entity[], axis: Vector3, angle: number, pivot: V
       .decompose(transform.position, transform.rotation, transform.scale)
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
+    if (!EditorState.isInActiveScene(entity)) {
+      SceneDeltaState.registerDelta(entity, TransformComponent, { rotation: transform.rotation })
+    }
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
+    EditorState.markModifiedScene(entity)
+  }
+}
+
+const worldScaleObject = (entities: Entity[], worldScales: Vector3[]) => {
+  for (let i = 0; i < entities.length; i++) {
+    const entity = entities[i]
+    const worldScale = worldScales[i] ?? worldScales[0]
+
+    const entityTreeComponent = getComponent(entity, EntityTreeComponent)
+    const parentEntity = entityTreeComponent.parentEntity
+
+    const entityWorldScale = TransformComponent.getWorldScale(parentEntity, new Vector3(1, 1, 1))
+    const newLocalScale = new Vector3(
+      worldScale.x / entityWorldScale.x,
+      worldScale.y / entityWorldScale.y,
+      worldScale.z / entityWorldScale.z
+    )
+    setComponent(entity, TransformComponent, { scale: newLocalScale })
     EditorState.markModifiedScene(entity)
   }
 }
@@ -458,6 +524,9 @@ const scaleObject = (entities: Entity[], scales: Vector3[], overrideScale = fals
     )
 
     setComponent(entity, TransformComponent, { scale: transformComponent.scale })
+    if (!EditorState.isInActiveScene(entity)) {
+      SceneDeltaState.registerDelta(entity, TransformComponent, { scale: transformComponent.scale })
+    }
     getMutableComponent(entity, TransformComponent).scale.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -475,6 +544,11 @@ const reparentObject = (
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
     if (entity === parent) continue
+
+    const worldPosition = TransformComponent.getWorldPosition(entity, new Vector3())
+    const worldRotation = TransformComponent.getWorldRotation(entity, new Quaternion())
+    const worldScale = TransformComponent.getWorldScale(entity, new Vector3())
+
     const parentTree = getComponent(parent, EntityTreeComponent)
     const index = afterEntity
       ? parentTree.children.indexOf(afterEntity) + 1
@@ -482,7 +556,21 @@ const reparentObject = (
       ? parentTree.children.indexOf(beforeEntity)
       : undefined
     setComponent(entity, EntityTreeComponent, { parentEntity: parent, childIndex: index })
-    /** @todo handle the entity changing sources */
+
+    EditorControlFunctions.positionObject([entity], [worldPosition], TransformSpace.world)
+    EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
+    worldScaleObject([entity], [worldScale])
+
+    const newSourceID = hasComponent(parent, GLTFComponent)
+      ? GLTFComponent.getInstanceID(parent)
+      : getComponent(parent, SourceComponent)
+    setComponent(entity, SourceComponent, newSourceID)
+    setComponent(
+      entity,
+      UUIDComponent,
+      NodeIDComponent.getUUIDBySourceAndNodeID(newSourceID, getComponent(entity, NodeIDComponent))
+    )
+
     EditorState.markModifiedScene(entity)
   }
 }
@@ -515,11 +603,25 @@ const removeObject = (entities: Entity[]) => {
   /** we have to manually set this here or it will cause react errors when entities are removed */
   getMutableState(SelectionState).selectedEntities.set([])
 
+  const affectedNodes = [] as NodeID[]
+
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
+    const sourceID = getComponent(entity, SourceComponent)
     EditorState.markModifiedScene(entity)
-    removeEntityNodeRecursively(entity)
+    const entitiesToRemove = [] as Entity[]
+    iterateEntityNode(
+      entity,
+      (node) => {
+        affectedNodes.push(getComponent(node, NodeIDComponent))
+        entitiesToRemove.push(node)
+      },
+      (child) => getComponent(child, SourceComponent) === sourceID
+    )
+    for (const node of entitiesToRemove) removeEntity(node)
   }
+
+  return affectedNodes
 }
 
 const replaceSelection = (entities: EntityUUID[]) => {

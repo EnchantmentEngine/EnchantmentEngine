@@ -27,7 +27,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Quaternion, Vector3 } from 'three'
 
-import { getComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { SceneDynamicLoadComponent } from '@ir-engine/engine/src/scene/components/SceneDynamicLoadComponent'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
@@ -43,12 +43,14 @@ import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices
 import { TransformSpace } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { TransformComponent } from '@ir-engine/spatial'
 
+import { EditorHistoryFunctions } from '@ir-engine/editor/src/services/EditorHistoryState'
 import { Checkbox } from '@ir-engine/ui'
 import ComponentDropdown from '../../ComponentDropdown'
 import EulerInput from '../../input/Euler'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import Vector3Input from '../../input/Vector3'
+import { TransformUniformScaleState } from './TransformUniformScaleState.ts'
 
 const position = new Vector3()
 const rotation = new Quaternion()
@@ -61,7 +63,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const locked = useHookstate(getMutableState(EntityHierarchyLockState).lockedEntities).value[props.entity] ?? false
-  const hasDynamicLoad = useHasComponent(props.entity, SceneDynamicLoadComponent)
+  const hasDynamicLoad = useOptionalComponent(props.entity, SceneDynamicLoadComponent)
   const transformComponent = useComponent(props.entity, TransformComponent)
   const transformSpace = useHookstate(getMutableState(EditorHelperState).transformSpace)
 
@@ -77,11 +79,15 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
     if (bboxSnapState.enabled) {
       ObjectGridSnapState.apply()
     }
+    const selectedEntities = SelectionState.getSelectedEntities()
+    EditorHistoryFunctions.setComponent(selectedEntities, TransformComponent)
   }
 
   const onChangeDynamicLoad = (value) => {
     const selectedEntities = SelectionState.getSelectedEntities()
-    EditorControlFunctions.addOrRemoveComponent(selectedEntities, SceneDynamicLoadComponent, value)
+
+    if (value === true) EditorHistoryFunctions.setComponent(selectedEntities, SceneDynamicLoadComponent)
+    else EditorHistoryFunctions.removeComponent(selectedEntities, SceneDynamicLoadComponent)
   }
 
   const onChangePosition = (value: Vector3) => {
@@ -99,6 +105,16 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
     EditorControlFunctions.scaleObject(selectedEntities, [value], true)
   }
 
+  const onToggleUniformScale = (updatedValue: boolean) => {
+    updatedValue
+      ? TransformUniformScaleState.addOrUpdateEntity(props.entity)
+      : TransformUniformScaleState.removeEntry(props.entity)
+  }
+
+  const getUniformScale = (): boolean => {
+    return TransformUniformScaleState.getEntityState(props.entity) ?? false
+  }
+
   return (
     <ComponentDropdown
       name={t('editor:properties.transform.title')}
@@ -108,7 +124,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
     >
       <div className="flex w-full gap-x-2 py-1.5 pl-8 pr-3.5">
         <Checkbox
-          checked={hasDynamicLoad}
+          checked={!!hasDynamicLoad}
           onChange={onChangeDynamicLoad}
           label={t('editor:properties.lbl-dynamicLoad')}
         />
@@ -117,7 +133,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
             <NumericInput
               min={1}
               max={100}
-              value={getComponent(props.entity, SceneDynamicLoadComponent).distance}
+              value={hasDynamicLoad.distance.value}
               onChange={updateProperty(SceneDynamicLoadComponent, 'distance')}
               onRelease={commitProperty(SceneDynamicLoadComponent, 'distance')}
             />
@@ -147,11 +163,12 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
       <InputGroup name="Scale" label={t('editor:properties.transform.lbl-scale')} className="w-auto">
         <Vector3Input
           disabled={locked}
-          uniformScaling
+          uniformScaling={getUniformScale()}
           smallStep={0.01}
           mediumStep={0.1}
           largeStep={1}
           value={scale}
+          onToggleUniformScale={onToggleUniformScale}
           onChange={onChangeScale}
           onRelease={onRelease}
         />

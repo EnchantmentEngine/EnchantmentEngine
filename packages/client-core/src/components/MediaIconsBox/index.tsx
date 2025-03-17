@@ -34,7 +34,6 @@ import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSyst
 import { dispatchAction, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
-import { endXRSession, requestXRSession } from '@ir-engine/spatial/src/xr/XRSessionFunctions'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions } from '../../systems/WidgetAppService'
 
@@ -42,20 +41,20 @@ import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import multiLogger from '@ir-engine/common/src/logger'
 import { EngineState } from '@ir-engine/ecs'
+import { MediaStreamService, MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import {
   Microphone01Lg,
+  Microphone01Md,
   MicrophoneOff,
-  Screenshare,
   VideoRecorderLg,
-  VideoRecorderOffLg
+  VideoRecorderMd,
+  VideoRecorderOffLg,
+  VideoRecorderOffMd
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { IoAccessibility } from 'react-icons/io5'
-import { MdFlipCameraAndroid, MdOutlineViewInAr } from 'react-icons/md'
-import { VrIcon } from '../../common/components/Icons/VrIcon'
+import { MdFlipCameraAndroid } from 'react-icons/md'
 import { SearchParamState } from '../../common/services/RouterService'
-import { MediaStreamService, MediaStreamState } from '../../media/MediaStreamState'
 import { RecordingUIState } from '../../systems/ui/RecordingsWidgetUI'
 import LocationIconButton from '../../user/components/LocationIconButton'
 import { clientContextParams } from '../../util/ClientContextState'
@@ -152,7 +151,7 @@ export const MediaIconsBox = () => {
           tooltip={{
             title: t('user:menu.toggleMute')
           }}
-          icon={isCamAudioEnabled ? Microphone01Lg : MicrophoneOff}
+          icon={isCamAudioEnabled ? (isMobile ? Microphone01Md : Microphone01Lg) : MicrophoneOff}
           id="UserAudio"
           onClick={MediaStreamState.toggleMicrophonePaused}
         />
@@ -163,11 +162,19 @@ export const MediaIconsBox = () => {
             tooltip={{
               title: t('user:menu.toggleVideo')
             }}
-            icon={isCamVideoEnabled ? VideoRecorderLg : VideoRecorderOffLg}
+            icon={
+              isCamVideoEnabled
+                ? isMobile
+                  ? VideoRecorderMd
+                  : VideoRecorderLg
+                : isMobile
+                ? VideoRecorderOffMd
+                : VideoRecorderOffLg
+            }
             id="UserVideo"
             onClick={() => {
               MediaStreamState.toggleWebcamPaused()
-              logger.info({ event_name: 'toggle_camera', value: isCamVideoEnabled })
+              logger.analytics({ event_name: 'toggle_camera', value: isCamVideoEnabled })
             }}
             loadingState={!!mediaStreamState.webcamMediaStream.value != mediaStreamState.webcamEnabled.value}
           />
@@ -182,7 +189,7 @@ export const MediaIconsBox = () => {
               icon={MdFlipCameraAndroid}
             />
           )}
-          {motionCaptureEnabled && (
+          {/* {motionCaptureEnabled && (
             <LocationIconButton
               id="UserPoseTracking"
               tooltip={{
@@ -190,17 +197,17 @@ export const MediaIconsBox = () => {
               }}
               onClick={() => {
                 window.open(`/capture/${location.pathname.split('/')[2]}`, '_blank')
-                logger.info({
+                logger.analytics({
                   event_name: 'toggle_motion_capture',
                   event_value: isMotionCaptureEnabled
                 })
               }}
               icon={IoAccessibility}
             />
-          )}
+          )} */}
         </>
       ) : null}
-      {!isMobile &&
+      {/* {!isMobile &&
       !(typeof navigator.mediaDevices.getDisplayMedia === 'undefined') &&
       screenshareEnabled &&
       mediaNetworkReady &&
@@ -213,8 +220,8 @@ export const MediaIconsBox = () => {
           id="UserScreenSharing"
           onClick={MediaStreamState.toggleScreenshare}
         />
-      ) : null}
-      {supportsVR && xrEnabled && (
+      ) : null} */}
+      {/* {supportsVR && xrEnabled && (
         <LocationIconButton
           tooltip={{
             title: t('user:menu.enterVR')
@@ -237,7 +244,7 @@ export const MediaIconsBox = () => {
           }}
           icon={MdOutlineViewInAr}
         />
-      )}
+      )} */}
       {spectating && (
         <button
           type="button"

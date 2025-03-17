@@ -82,7 +82,8 @@ const Checkbox = (
   }: CheckboxProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) => {
-  const handleChange = () => {
+  const handleChange = (event: React.MouseEvent | React.KeyboardEvent) => {
+    event.stopPropagation()
     if (!disabled && onChange) {
       onChange(!checked)
     }
@@ -98,7 +99,7 @@ const Checkbox = (
         description && 'items-start'
       )}
       onKeyDown={(e) => {
-        if (['Enter', ' '].includes(e.key)) handleChange()
+        if (['Enter', ' '].includes(e.key)) handleChange(e)
       }}
       tabIndex={0}
       {...props}
@@ -111,7 +112,7 @@ const Checkbox = (
           'border border-ui-outline bg-ui-background outline-none',
           (checked || indeterminate) && 'border-ui-select-primary bg-ui-select-background',
           disabled
-            ? 'cursor-not-allowed border-ui-inactive-primary bg-ui-inactive-background'
+            ? 'cursor-not-allowed border-ui-inactive-outline bg-ui-inactive-background'
             : 'group-hover/checkbox:border-ui-hover-primary group-hover/checkbox:bg-ui-hover-background'
         )}
         onClick={handleChange}

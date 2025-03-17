@@ -119,7 +119,9 @@ describe('MountPointComponent.ts', async () => {
         initializeSpatialEngine()
         initializeSpatialViewer()
         mountPointTestEntity = createEntity()
+        avatarTestEntity = createEntity()
         sceneEntity = loadEmptyScene()
+        setComponent(avatarTestEntity, UUIDComponent, Engine.instance.userID as string as EntityUUID)
 
         setComponent(sceneEntity, SceneComponent)
         setComponent(mountPointTestEntity, UUIDComponent, v4() as EntityUUID)
@@ -133,7 +135,7 @@ describe('MountPointComponent.ts', async () => {
             parentUUID: getComponent(sceneEntity, UUIDComponent),
             position: new Vector3(),
             rotation: new Quaternion(),
-            entityUUID: Engine.instance.userID,
+            entityUUID: getComponent(avatarTestEntity, UUIDComponent),
             avatarURL: '',
             name: 'avatar1'
           })
@@ -142,8 +144,6 @@ describe('MountPointComponent.ts', async () => {
         applyIncomingActions()
 
         await act(async () => render(null))
-
-        avatarTestEntity = UUIDComponent.getEntityByUUID(Engine.instance.userID)
       })
 
       afterEach(() => {
@@ -343,6 +343,8 @@ describe('MountPointComponent.ts', async () => {
       initializeSpatialViewer()
       await Physics.load()
 
+      setComponent(avatarTestEntity, UUIDComponent, Engine.instance.userID as string as EntityUUID)
+
       mountPointTestEntity = createEntity()
 
       setComponent(mountPointTestEntity, UUIDComponent, v4() as EntityUUID)
@@ -365,7 +367,7 @@ describe('MountPointComponent.ts', async () => {
           parentUUID: getComponent(sceneEntity, UUIDComponent),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityUUID: Engine.instance.userID,
+          entityUUID: getComponent(avatarTestEntity, UUIDComponent),
           avatarURL: '',
           name: 'avatar1'
         })
@@ -374,8 +376,6 @@ describe('MountPointComponent.ts', async () => {
       applyIncomingActions()
 
       await act(async () => render(null))
-
-      avatarTestEntity = UUIDComponent.getEntityByUUID(Engine.instance.userID)
     })
 
     afterEach(() => {

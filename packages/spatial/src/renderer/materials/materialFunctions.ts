@@ -29,9 +29,7 @@ import {
   Entity,
   EntityUUID,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   setComponent,
   UUIDComponent
@@ -110,7 +108,7 @@ export const hasPlugin = (material: Material, callback) =>
 
 export const removePlugin = (material: Material, callback) => {
   const pluginIndex = material.plugins?.findIndex((plugin) => plugin === callback)
-  if (pluginIndex !== undefined) material.plugins?.splice(pluginIndex, 1)
+  if (pluginIndex !== undefined && pluginIndex >= 0) material.plugins?.splice(pluginIndex, 1)
 }
 
 export function MaterialNotFoundError(message: string) {
@@ -121,20 +119,6 @@ export function MaterialNotFoundError(message: string) {
 export function PrototypeNotFoundError(message: string) {
   this.name = 'PrototypeNotFound'
   this.message = message
-}
-
-/** Assigns a preexisting material entity to a mesh */
-export const assignMaterial = (user: Entity, materialEntity: Entity, index = 0) => {
-  const materialStateComponent = getOptionalMutableComponent(materialEntity, MaterialStateComponent)
-  if (!materialStateComponent) return
-  materialStateComponent.instances.set([...materialStateComponent.instances.value, user])
-  if (!user) return
-  if (!hasComponent(user, MaterialInstanceComponent)) setComponent(user, MaterialInstanceComponent)
-  const material = materialStateComponent.material.value as Material
-  const materialInstanceComponent = getMutableComponent(user, MaterialInstanceComponent)
-  const newUUID = material.uuid as EntityUUID
-  if (!UUIDComponent.getEntityByUUID(newUUID)) throw new MaterialNotFoundError(`Material ${newUUID} not found`)
-  materialInstanceComponent.uuid[index].set(newUUID)
 }
 
 export const getMaterialIndices = (entity: Entity, materialUUID: EntityUUID): number[] => {
@@ -153,4 +137,26 @@ export const injectMaterialDefaults = (materialUUID: EntityUUID) => {
   return Object.fromEntries(
     Object.entries(prototype).map(([k, v]: [string, any]) => [k, { ...v, default: material.parameters![k] }])
   )
+}
+
+/**sets up parameters for editing and serialization into a scene delta */
+export const setupMaterialParameters = (entity: Entity, properties: { [_: string]: any }) => {
+  const params = {} as any
+  Object.entries(properties).map(([k, v]) => {
+    if (!properties[k]) return
+    if (v.isTexture) {
+      const url = v.userData?.url
+      if (url) params[k] = url
+    } else if (v.isColor) {
+      params[k] = (v as Color).getHex()
+    } else {
+      params[k] = v
+    }
+  })
+
+  setComponent(entity, MaterialStateComponent, {
+    parameters: params,
+    prototype: properties.userData?.type || properties.type
+  })
+  return params
 }

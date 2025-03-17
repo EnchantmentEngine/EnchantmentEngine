@@ -29,13 +29,10 @@ import { Joystick } from 'react-joystick-component'
 import { InteractableState } from '@ir-engine/engine/src/interaction/functions/interactableFunctions'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { isTouchAvailable } from '@ir-engine/spatial/src/common/functions/DetectFeatures'
-import { AnyButton, XRStandardGamepadButton } from '@ir-engine/spatial/src/input/state/ButtonState'
+import { AnyButton } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { XRState, isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import { IJoystickUpdateEvent } from 'react-joystick-component/build/lib/Joystick'
 import { AppState } from '../../services/AppService'
-import BasepadImage from './basepad.svg'
-import StickypadImage from './stickypad.svg'
 
 const triggerButton = (button: AnyButton, pressed: boolean): void => {
   const eventType = pressed ? 'touchgamepadbuttondown' : 'touchgamepadbuttonup'
@@ -63,12 +60,7 @@ const handleStop = () => {
   document.dispatchEvent(event)
 }
 
-const buttonsConfig: Array<{ button: AnyButton; label: React.ReactElement }> = [
-  {
-    button: XRStandardGamepadButton.XRStandardGamepadTrigger,
-    label: <Icon type="TouchApp" />
-  }
-]
+const buttonsConfig: Array<{ button: AnyButton; label: React.ReactElement }> = []
 
 export const TouchGamepad = () => {
   const interactableState = useMutableState(InteractableState)
@@ -114,12 +106,12 @@ export const TouchGamepad = () => {
 
   return (
     <>
-      <div className="pointer-events-auto fixed bottom-[15%] left-[15%] [&>div]:m-auto">
+      <div className="pointer-events-auto fixed bottom-[15%] left-[15%] select-none [&>div]:m-auto">
         <Joystick
-          baseImage={BasepadImage}
-          stickImage={StickypadImage}
-          size={100}
-          stickSize={27}
+          baseImage="/static/stickypad.svg"
+          stickImage="/static/basepad.svg"
+          size={27}
+          stickSize={80}
           throttle={100}
           minDistance={40}
           move={handleMove}
@@ -129,7 +121,7 @@ export const TouchGamepad = () => {
         />
       </div>
       {availableInteractable && (
-        <div className="fixed bottom-[10px] right-[150px] rounded-[50%] leading-[4em]">{buttons}</div>
+        <div className="fixed bottom-[10px] right-[150px] select-none rounded-[50%] leading-[4em]">{buttons}</div>
       )}
     </>
   )

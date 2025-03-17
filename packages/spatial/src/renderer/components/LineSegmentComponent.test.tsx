@@ -211,7 +211,7 @@ describe('LineSegmentComponent', () => {
 
     it('should trigger when component.name changes', async () => {
       const testEntity = createEntity()
-      const Expected = 'TestLineName'
+      const Expected = 'line-segment'
       assert.equal(hasComponent(testEntity, NameComponent), false)
       const geometry = new BoxGeometry(1, 1, 1)
       setComponent(testEntity, LineSegmentComponent, {

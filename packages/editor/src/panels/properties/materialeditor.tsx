@@ -50,7 +50,11 @@ import {
   PrototypeArgument
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { getDefaultType } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
-import { extractValues, formatMaterialArgs } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import {
+  extractValues,
+  formatMaterialArgs,
+  setupMaterialParameters
+} from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { Button, Tooltip } from '@ir-engine/ui'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
@@ -60,6 +64,7 @@ import ParameterInput from '@ir-engine/ui/src/components/editor/properties/param
 import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Material, Texture, Uniform } from 'three'
+import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
 
 type ThumbnailData = {
   src: string
@@ -172,14 +177,12 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     }
     return prop
   }
-
   const materialParameters = useHookstate({})
 
   useEffect(() => {
     prototypeName.set(material.type)
+    setupMaterialParameters(entity, material)
 
-    if (currentSelectedMaterial.value === null) return
-    materialParameters.set({})
     materialParameters.set(
       Object.fromEntries(
         Object.keys(extractValues(definitions.value[prototypeName.value].arguments as PrototypeArgument, material)).map(
@@ -187,7 +190,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
         )
       )
     )
-  }, [currentSelectedMaterial])
+  }, [currentSelectedMaterial, material.type])
 
   //for each parameter type, default values
   const pluginParameters = useHookstate({})
@@ -195,7 +198,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   const pluginValues = useHookstate({})
 
   useEffect(() => {
-    if (currentSelectedMaterial.value) pluginValues.set({})
+    pluginValues.set({})
     pluginParameters.set({})
   }, [selectedPlugin, currentSelectedMaterial])
 
@@ -218,7 +221,9 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
 
   useEffect(() => {
     if (prototypeName.value === material.type) return
+
     EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
+    EditorHistoryFunctions.snapshot()
   }, [prototypeName])
 
   return (
@@ -267,6 +272,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
               materialComponent.material.value!.uuid as EntityUUID,
               [{ [key]: property }]
             )
+            EditorHistoryFunctions.snapshot()
             await checkThumbs()
           }}
           defaults={prototype.arguments!.value}

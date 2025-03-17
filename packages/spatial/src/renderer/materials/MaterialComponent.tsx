@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Material, Shader, WebGLRenderer } from 'three'
+import { Material, Shader } from 'three'
 
 import {
   Component,
@@ -60,10 +60,8 @@ import { ShadowMaterial } from './prototypes/ShadowMaterial.mat'
 export type MaterialPrototypeConstructor = new (...args: any) => any
 export type MaterialPrototypeObjectConstructor = { [key: string]: MaterialPrototypeConstructor }
 export type MaterialPrototypeDefinition = {
-  prototypeId: string
   prototypeConstructor: MaterialPrototypeConstructor
   arguments: PrototypeArgument
-  onBeforeCompile?: (shader: Shader, renderer: WebGLRenderer) => void
 }
 
 export type PrototypeArgumentValue = {
@@ -107,7 +105,10 @@ export const MaterialStateComponent = defineComponent({
     material: S.Type<Material>({} as Material),
     parameters: S.Record(S.String(), S.Any()),
     // all entities using this material. an undefined entity at index 0 is a fake user
-    instances: S.NonSerialized(S.Array(S.Entity()))
+    /**@todo move to state */
+    instances: S.NonSerialized(S.Array(S.Entity())),
+    // this has to exist so scene deltas can keep track of material prototype changes
+    prototype: S.String()
   }),
 
   fallbackMaterialUUID: uuidv4() as EntityUUID,

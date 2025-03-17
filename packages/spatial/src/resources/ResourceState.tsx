@@ -44,6 +44,7 @@ import {
   QueryReactor,
   getAncestorWithComponents,
   getAuthoringCounterpart,
+  getComponent,
   getOptionalComponent,
   useComponent,
   useEntityContext
@@ -51,8 +52,10 @@ import {
 import { NO_PROXY, State, defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
 import { Geometry } from '../common/constants/Geometry'
+import { isIPhone } from '../common/functions/isMobile'
 import iterateObject3D from '../common/functions/iterateObject3D'
 import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
@@ -114,11 +117,11 @@ type GLTFMetadata = {
   textureWidths: number[]
 } & BaseMetadata
 
-type TexutreMetadata = {
+type TextureMetadata = {
   textureWidth: number
 } & BaseMetadata
 
-type Metadata = GLTFMetadata | TexutreMetadata | BaseMetadata
+type Metadata = GLTFMetadata | TextureMetadata | BaseMetadata
 
 export type Resource = {
   id: string
@@ -247,11 +250,26 @@ const resourceCallbacks = {
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: discardUponUpload })
         //@ts-ignore
-        asset.onUpdate = null
-        if (discardUponUpload) {
-          /** @todo re-enable discard */
-          // asset.source.data = null
-          // asset.mipmaps = []
+        // asset.onUpdate = null
+        const viewer = getState(ReferenceSpaceState).viewerEntity
+        const renderer = getComponent(viewer, RendererComponent)
+        const gl = renderer.renderContext as WebGL2RenderingContext
+        if (discardUponUpload && gl.fenceSync && isIPhone) {
+          const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
+          if (sync) {
+            const checkSync = () => {
+              const status = gl.clientWaitSync(sync, 0, 0)
+              if (status === gl.TIMEOUT_EXPIRED) {
+                requestAnimationFrame(checkSync)
+              } else {
+                gl.deleteSync(sync)
+                resource.metadata.merge({ onGPU: true, discarded: true })
+                asset.source.data = null
+                asset.mipmaps = []
+              }
+            }
+            requestAnimationFrame(checkSync)
+          }
         }
       }
       if ((asset as CompressedTexture).isCompressedTexture && discardUponUpload) {
@@ -307,6 +325,7 @@ const resourceCallbacks = {
       let size = 0
 
       const checkUploaded = () => {
+        if (!resource.get(NO_PROXY).metadata) return
         resource.metadata.merge({ onGPU: needsUploaded === 0, discarded: needsUploaded === 0 && discardUponUpload })
       }
 
@@ -581,7 +600,7 @@ const addEntityResource = (
     }
     case ResourceType.Material: {
       const material = asset as Material
-      for (const [_, val] of Object.entries(material) as [string, any][]) {
+      for (const [key, val] of Object.entries(material) as [string, any][]) {
         if (isTexture(val)) {
           addEntityResource(entity, val, returnedResources)
         }

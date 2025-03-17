@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   EntityTreeComponent,
+  getAncestorWithComponents,
   getComponent,
   hasComponent,
   useAncestorWithComponents,
@@ -47,8 +48,6 @@ import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackCompone
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
-import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
-import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GiTriggerHurt } from 'react-icons/gi'
@@ -74,11 +73,12 @@ const TriggerProperties: EditorComponentType = (props) => {
   useEffect(() => {
     if (!hasComponent(props.entity, ColliderComponent)) {
       const nodes = SelectionState.getSelectedEntities()
-      EditorControlFunctions.addOrRemoveComponent(nodes, ColliderComponent, true, {
-        shape: Shapes.Sphere,
-        collisionLayer: CollisionGroups.Trigger,
-        collisionMask: CollisionGroups.Avatars
-      })
+      EditorControlFunctions.addOrRemoveComponent(nodes, ColliderComponent, true)
+    }
+
+    if (!getAncestorWithComponents(props.entity, [RigidBodyComponent])) {
+      const nodes = SelectionState.getSelectedEntities()
+      EditorControlFunctions.addOrRemoveComponent(nodes, RigidBodyComponent, true)
     }
 
     const options = [] as TargetOptionType[]
@@ -104,7 +104,8 @@ const TriggerProperties: EditorComponentType = (props) => {
         {!hasRigidbody && (
           <Button
             title={t('editor:properties.triggerVolume.lbl-addRigidBody')}
-            className="text-sm text-[#FFFFFF]"
+            className="text-text-primary"
+            variant="tertiary"
             onClick={() => {
               const nodes = SelectionState.getSelectedEntities()
               EditorControlFunctions.addOrRemoveComponent(nodes, RigidBodyComponent, true, { type: 'fixed' })
@@ -116,9 +117,10 @@ const TriggerProperties: EditorComponentType = (props) => {
         )}
       </div>
       <div className="my-3 flex justify-end">
-        <button
+        <Button
           title={t('editor:properties.triggerVolume.lbl-addTrigger')}
-          className="text-sm text-[#8B8B8D]"
+          className="text-text-primary"
+          variant="tertiary"
           onClick={() => {
             const triggers = [
               ...triggerComponent.triggers.value,
@@ -134,7 +136,8 @@ const TriggerProperties: EditorComponentType = (props) => {
           }}
         >
           <HiPlus />
-        </button>
+          {t('editor:properties.triggerVolume.lbl-addTrigger')}
+        </Button>
       </div>
       {triggerComponent.triggers.map((trigger, index) => {
         const targetOption = targets.value.find((o) => o.value === trigger.target.value)

@@ -23,11 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ThemeState } from '@ir-engine/client-core/src/common/services/ThemeService'
 import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
-import { config } from '@ir-engine/common/src/config'
+import IRLogoModalDark from '@ir-engine/client/public/iR-logo-Modal-dark.png'
+import IRLogoModalLight from '@ir-engine/client/public/iR-logo-Modal-light.png'
 import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
 import { timeAgo } from '@ir-engine/common/src/utils/datetime-sql'
 import RenameSceneModal from '@ir-engine/editor/src/panels/scenes/RenameSceneModal'
+import { useMutableState } from '@ir-engine/hyperflux'
 import { Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import MoreOptionsMenu from '@ir-engine/ui/src/components/tailwind/MoreOptionsMenu'
@@ -35,6 +38,7 @@ import { Edit01Sm, Trash04Sm } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { default as React } from 'react'
 import { useTranslation } from 'react-i18next'
+import { twMerge } from 'tailwind-merge'
 
 type SceneItemProps = {
   scene: StaticResourceType
@@ -42,20 +46,21 @@ type SceneItemProps = {
   refetchProjectsData: () => void
   onRenameScene?: (newName: string) => void
   onDeleteScene?: (scene: StaticResourceType) => void
+  disableDeleteScene?: boolean
 }
-
-const DEFAULT_SCENE_THUMBNAIL = `${config.client.fileServer}/projects/ir-engine/default-project/public/scenes/default.thumbnail.jpg`
 
 export default function SceneItem({
   scene,
   handleOpenScene,
   refetchProjectsData,
   onRenameScene,
-  onDeleteScene
+  onDeleteScene,
+  disableDeleteScene
 }: SceneItemProps) {
   const { t } = useTranslation()
 
   const sceneName = scene.key.split('/').pop()!.replace('.gltf', '')
+  const theme = useMutableState(ThemeState).theme
 
   const deleteSelectedScene = async (scene: StaticResourceType) => {
     if (scene) {
@@ -70,20 +75,27 @@ export default function SceneItem({
     PopoverState.hidePopupover()
   }
 
+  const defaultThumbnail = theme?.value === 'dark' ? IRLogoModalLight : IRLogoModalDark
+
   return (
     <div
       data-testid="scene-container"
       className="col-span-2 inline-flex h-64 w-64 min-w-64 max-w-64 cursor-pointer flex-col items-start justify-start gap-3 rounded-lg border border-ui-outline bg-ui-background p-3 lg:col-span-1"
     >
-      <img
-        className="shrink grow basis-0 self-stretch rounded"
-        src={scene.thumbnailURL || DEFAULT_SCENE_THUMBNAIL}
-        alt={DEFAULT_SCENE_THUMBNAIL}
-        data-testid="scene-thumbnail"
-        onClick={handleOpenScene}
-      />
+      <div className="flex max-h-40 shrink grow basis-0 items-center justify-center self-stretch rounded bg-surface-4">
+        <img
+          className={twMerge(
+            'h-full w-full object-cover',
+            scene.thumbnailURL ? 'rounded' : 'h-auto max-h-32 w-full max-w-32'
+          )}
+          src={scene.thumbnailURL || defaultThumbnail}
+          alt={defaultThumbnail}
+          data-testid="scene-thumbnail"
+          onClick={handleOpenScene}
+        />
+      </div>
       <div className="inline-flex items-start justify-between self-stretch">
-        <div className="inline-flex w-full flex-col items-start justify-start">
+        <div className="inline-flex w-full flex-col items-start justify-start gap-1.5">
           <div className="space-between flex w-full flex-row">
             <Tooltip content={sceneName}>
               <Text
@@ -111,6 +123,7 @@ export default function SceneItem({
           actionProps={[
             {
               label: t('editor:hierarchy.lbl-rename'),
+              disabled: false,
               icon: <Edit01Sm />,
               onClick: () => {
                 PopoverState.showPopupover(
@@ -125,6 +138,7 @@ export default function SceneItem({
             },
             {
               label: t('editor:hierarchy.lbl-delete'),
+              disabled: disableDeleteScene,
               icon: <Trash04Sm />,
               onClick: () => {
                 PopoverState.showPopupover(

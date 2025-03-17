@@ -253,6 +253,8 @@ export const TransformGizmoControlComponent = defineComponent({
     }).value
 
     useEffect(() => {
+      setComponent(gizmoControlEntity, TransformGizmoControlComponent, { pivotEntity: pivotEntity })
+
       return () => {
         removeEntity(pivotEntity)
       }

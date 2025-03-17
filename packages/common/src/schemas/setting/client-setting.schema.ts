@@ -288,3 +288,33 @@ export const clientSettingValidator = /* @__PURE__ */ getValidator(clientSetting
 export const clientSettingDataValidator = /* @__PURE__ */ getValidator(clientSettingDataSchema, dataValidator)
 export const clientSettingPatchValidator = /* @__PURE__ */ getValidator(clientSettingPatchSchema, dataValidator)
 export const clientSettingQueryValidator = /* @__PURE__ */ getValidator(clientSettingQuerySchema, queryValidator)
+
+export const clientDbToSchema = (rawData: ClientSettingDatabaseType): ClientSettingType => {
+  let appSocialLinks = rawData.appSocialLinks
+  //In case the column is already pre-parsed JSON
+  if (typeof appSocialLinks === 'string') appSocialLinks = JSON.parse(appSocialLinks)
+  // Usually above JSON.parse should be enough. But since our pre-feathers 5 data
+  // was serialized multiple times, therefore we need to parse it twice.
+  if (typeof appSocialLinks === 'string') appSocialLinks = JSON.parse(appSocialLinks)
+
+  let themeSettings = rawData.themeSettings
+  if (typeof themeSettings === 'string') themeSettings = JSON.parse(themeSettings)
+  // Usually above JSON.parse should be enough. But since our pre-feathers 5 data
+  // was serialized multiple times, therefore we need to parse it twice.
+  if (typeof themeSettings === 'string') themeSettings = JSON.parse(themeSettings)
+
+  let themeModes = rawData.themeModes
+  if (typeof themeModes === 'string') themeModes = JSON.parse(themeModes)
+  // Usually above JSON.parse should be enough. But since our pre-feathers 5 data
+  // was serialized multiple times, therefore we need to parse it twice.
+  if (typeof themeModes === 'string') themeModes = JSON.parse(themeModes)
+
+  if (typeof rawData.mediaSettings === 'string') rawData.mediaSettings = JSON.parse(rawData.mediaSettings)
+
+  return {
+    ...rawData,
+    appSocialLinks: appSocialLinks as unknown as ClientSocialLinkType[],
+    themeSettings: themeSettings as unknown as Record<string, ClientThemeOptionsType>,
+    themeModes: themeModes as unknown as Record<string, string>
+  }
+}

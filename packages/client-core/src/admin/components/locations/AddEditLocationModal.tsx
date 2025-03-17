@@ -18,11 +18,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { lazy, useEffect } from 'react'
+import React, { lazy, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { useFind, useMutation } from '@ir-engine/common'
+import { config } from '@ir-engine/common/src/config'
+import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
 import {
   LocationData,
   LocationID,
@@ -31,13 +33,44 @@ import {
   locationPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { useHookstate } from '@ir-engine/hyperflux'
+import {
+  Entity,
+  EntityTreeComponent,
+  Layers,
+  UUIDComponent,
+  createEntity,
+  getComponent,
+  hasComponent,
+  iterateEntityNode,
+  setComponent
+} from '@ir-engine/ecs'
+import { LODVariantDescriptor, defaultLODs } from '@ir-engine/editor/src/constants/GLTFPresets'
+import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
+import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
+import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
+import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
+import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { getState, useHookstate } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+
 import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
+import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
+import { Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
+import CompressedPublishConfirmation from './CompressedPublishConfirmation'
 
 function formatPublishedDate(isoString) {
   const date = new Date(isoString)
@@ -55,7 +88,6 @@ function formatPublishedDate(isoString) {
 
   return { formattedDate, formattedTime }
 }
-
 const getDefaultErrors = () => ({
   name: '',
   maxUsers: '',
@@ -75,17 +107,21 @@ const locationTypeOptions = [
 
 const LOCATION_MAX = 5
 
-export default function AddEditLocationModal(props: {
+type AddEditLocationModalProps = Readonly<{
   action: string
   location?: LocationType
   sceneID?: string | null
   sceneModified?: boolean
   inStudio?: boolean
+  projectFullName?: string
 
   onPublish?: () => Promise<void>
-}) {
-  const { t } = useTranslation()
+  onPublishSuccess?: (location: LocationType) => void
+}>
 
+export default function AddEditLocationModal(props: AddEditLocationModalProps) {
+  const { t } = useTranslation()
+  const compressionLoading = useHookstate(false)
   const locationID = useHookstate(props.location?.id || null)
 
   const params = {
@@ -114,7 +150,11 @@ export default function AddEditLocationModal(props: {
   const audioEnabled = useHookstate<boolean>(location?.locationSetting.audioEnabled || true)
   const screenSharingEnabled = useHookstate<boolean>(location?.locationSetting.screenSharingEnabled || true)
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
-
+  const compressionProgress = useHookstate({
+    progress: 0,
+    caption: ''
+  })
+  const lods = useHookstate<LODVariantDescriptor[]>([])
   useEffect(() => {
     if (location) {
       name.set(location.name)
@@ -128,14 +168,37 @@ export default function AddEditLocationModal(props: {
     }
   }, [location])
 
+  const projectQueryParam = props.action === 'studio' && !props.inStudio ? props.projectFullName : undefined
+
   const scenes = useFind(staticResourcePath, {
     query: {
       paginate: false,
-      type: 'scene'
+      type: 'scene',
+      project: projectQueryParam
     }
   })
 
-  const handlePublish = async () => {
+  const scenesOptions = useMemo(() => {
+    if (scenes.status === 'pending') {
+      return [{ value: '', label: t('common:select.fetching') }]
+    }
+    if (scenes.status === 'success' && scenes.data.length) {
+      return [
+        { value: '', label: t('admin:components.location.selectScene'), disabled: true },
+        ...scenes.data.map((scene) => {
+          const project = scene.project
+          const name = scene.key.split('/').pop()!.split('.').at(0)!
+          return {
+            label: `${name} (${project})`,
+            value: scene.id
+          }
+        })
+      ]
+    }
+    return []
+  }, [scenes])
+
+  const validate = (): boolean => {
     errors.set(getDefaultErrors())
 
     if (!name.value.trim()) {
@@ -144,19 +207,208 @@ export default function AddEditLocationModal(props: {
     if (!maxUsers.value) {
       errors.maxUsers.set(t('admin:components.location.maxUserCantEmpty'))
     }
-    if (maxUsers.value > 5) {
+    if (maxUsers.value > LOCATION_MAX) {
       errors.maxUsers.set(t('admin:components.location.maxUserExceeded'))
     }
     if (!scene.value) {
       errors.scene.set(t('admin:components.location.sceneCantEmpty'))
     }
-    if (Object.values(errors.value).some((value) => value.length > 0)) {
+
+    return !Object.values(errors.value).some((value) => value.length > 0)
+  }
+
+  const handlePublishFolder = async () => {
+    const isValid = validate()
+    if (!isValid) {
       return
     }
+    PopoverState.showPopupover(<CompressedPublishConfirmation />)
+    const { projectName, sceneName, rootEntity, sceneAssetID, scenePath } = getState(EditorState)
+    const abortController = new AbortController()
+    try {
+      //save current scene
+      await saveSceneGLTF(sceneAssetID!, projectName!, sceneName!, abortController.signal)
+      // save as duplicate scene
+      if (sceneName && projectName) {
+        const saveScenePath = getState(EditorState)
+          .scenePath!.split('/')
+          .slice(0, -1)
+          .join('/')
+          .replace('scenes', 'publish')
 
+        const scenename = getState(EditorState).sceneName?.split('.').shift()
+        //add all mesh into one entity
+        const combinedMeshEntity = createEntity(Layers.Authoring) //export entity need compress
+        const rootEntity = getState(EditorState).rootEntity
+        const meshEntity = [] as Entity[] //entity with mesh
+        const exportParentEntity = [] as Entity[] //parent entity without mesh
+        const findMeshRootEntity = (entity: Entity, rootEntity: Entity) => {
+          const parentEntity = getComponent(entity, EntityTreeComponent)?.parentEntity
+          if (!parentEntity) return null
+          if (parentEntity === rootEntity) return entity
+          return findMeshRootEntity(parentEntity, rootEntity)
+        }
+        EditorControlFunctions.modifyProperty([combinedMeshEntity], EntityTreeComponent, { parentEntity: rootEntity })
+        setComponent(combinedMeshEntity, NameComponent, 'combined mesh entity')
+        setComponent(combinedMeshEntity, TransformComponent)
+        setComponent(combinedMeshEntity, UUIDComponent, UUIDComponent.generateUUID())
+        const newSource = GLTFComponent.getInstanceID(rootEntity)
+        setComponent(combinedMeshEntity, SourceComponent, newSource)
+        const srcURL = pathJoin(config.client.fileServer, saveScenePath + '/' + scenename + '/combined-mesh.gltf')
+        iterateEntityNode(rootEntity, (entity) => {
+          if (hasComponent(entity, MeshComponent)) {
+            if (meshEntity.includes(entity) || hasComponent(entity, ColliderComponent)) return
+            meshEntity.push(entity)
+            const transform = getComponent(entity, TransformComponent)
+            const meshRootEntity = findMeshRootEntity(entity, rootEntity)
+            if (meshRootEntity === null) return
+            if (!exportParentEntity.includes(meshRootEntity as Entity)) {
+              exportParentEntity.push(meshRootEntity as Entity)
+            }
+
+            computeTransformMatrix(entity)
+            const worldpos = new Vector3()
+            const worldrot = new Quaternion()
+            const getWorldScale = new Vector3()
+            transform.matrixWorld.decompose(worldpos, worldrot, getWorldScale)
+            EditorControlFunctions.modifyProperty([entity], TransformComponent, {
+              position: worldpos,
+              rotation: worldrot,
+              scale: getWorldScale
+            })
+
+            //reparent to combined mesh entity
+            EditorControlFunctions.modifyProperty([entity], EntityTreeComponent, { parentEntity: combinedMeshEntity })
+          }
+        })
+        //export parent entities and combined mesh entity
+        await exportRelativeGLTF(
+          combinedMeshEntity,
+          projectName,
+          'public/publish/' + scenename + '/' + 'combined-mesh.gltf',
+          false
+        )
+        EditorControlFunctions.modifyProperty([combinedMeshEntity], GLTFComponent, { src: srcURL })
+        EditorControlFunctions.modifyProperty([combinedMeshEntity], VisibleComponent, { visible: true })
+
+        for (const entity of exportParentEntity) {
+          const url = getComponent(entity, GLTFComponent).src
+          const saveName = url.split('/').pop()?.split('.').shift()
+          await exportRelativeGLTF(entity, projectName, 'public/publish/' + scenename + '/' + saveName + '.gltf', false)
+          EditorControlFunctions.modifyProperty([entity], GLTFComponent, {
+            src: srcURL.replace('combined-mesh', saveName as string)
+          })
+          setComponent(entity, VisibleComponent, true)
+        }
+
+        //combined mesh entity to compression
+        const transformMetadata: Record<string, any>[] = []
+        const progressCaptions: Record<ModelTransformStatus, string> = {
+          [ModelTransformStatus.TransformingModels]: 'editor:properties.model.transform.status.transformingmodels',
+          [ModelTransformStatus.ProcessingTexture]: 'editor:properties.model.transform.status.processingtexture',
+          [ModelTransformStatus.WritingFiles]: 'editor:properties.model.transform.status.writingfiles',
+          [ModelTransformStatus.Complete]: 'editor:properties.model.transform.status.complete'
+        }
+        const fileName = srcURL.split('/').pop()!.split('.').shift()!
+        const defaults = defaultLODs.map((defaultLOD) => {
+          const lod = JSON.parse(JSON.stringify(defaultLOD)) as LODVariantDescriptor
+          lod.params.dst = fileName + lod.suffix
+          lod.params.modelFormat = srcURL.endsWith('.gltf') ? 'gltf' : srcURL.endsWith('.vrm') ? 'vrm' : 'glb'
+          lod.params.resourceUri = ''
+          return lod
+        })
+        lods.set(defaults)
+        let fileLODs = lods.value as LODVariantDescriptor[]
+
+        const lodVariantParams: ModelTransformParameters[] = fileLODs.map((lod) => ({
+          ...lod.params
+        }))
+        compressionLoading.set(true)
+        compressionProgress.set({
+          progress: 0,
+          caption: 'start compression'
+        })
+        await transformModel(
+          srcURL,
+          [lodVariantParams[2]],
+          (i, key, data) => {
+            if (!transformMetadata[i]) transformMetadata[i] = {}
+            transformMetadata[i][key] = data
+          },
+          (progress, status, numerator, denominator) => {
+            const caption = t(progressCaptions[status]!, {
+              numerator: numerator! + 1,
+              denominator
+            })
+            compressionProgress.set({ progress, caption })
+          }
+        )
+        // const result = createSceneEntity('container')
+        // const variant = createSceneEntity('LOD Variant', result)
+        // const heuristic = Heuristic.DISTANCE
+        // setComponent(variant, VariantComponent, {
+        //   levels: lods.map((lod, lodIndex) => ({
+        //     src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
+        //     metadata: {
+        //       ...lod.variantMetadata,
+        //       ...transformMetadata[lodIndex]
+        //     }
+        //   })),
+        //   heuristic
+        // })
+        // const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
+        // const gltfEntity = getAncestorWithComponents(result, [GLTFComponent])
+        // const uuid = getComponent(gltfEntity, UUIDComponent)
+        // const sourceID = SourceComponent.getSourceID(uuid, destinationPath)
+        // iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, sourceID))
+        // await exportGLTF(result, destinationPath, false)
+        const compressedFilePath = srcURL.replace(/\.[^.]*$/, `-LOD2.gltf`)
+        //update src from combined mesh to compressed mesh
+        compressionLoading.set(false)
+        EditorControlFunctions.modifyProperty([combinedMeshEntity], GLTFComponent, { src: compressedFilePath })
+
+        //save duplicated scene and publish that
+        await saveSceneGLTF(
+          sceneAssetID!,
+          projectName,
+          sceneName.replace('.gltf', '-compressed.gltf'),
+          abortController.signal,
+          true,
+          saveScenePath + '/' + scenename
+        )
+
+        await handlePublish(true)
+        //re-open the original scene
+        const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`
+        window.open(studioUrl, '_blank')?.focus()
+        PopoverState.hidePopupover()
+      }
+    } catch (error) {
+      PopoverState.showPopupover(
+        <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
+      )
+    }
+  }
+
+  const handlePublish = async (inCompress = false) => {
+    const isValid = validate()
+    if (!isValid) {
+      return
+    }
     publishLoading.set(true)
 
-    if (props.onPublish) {
+    const updateSceneID = getState(EditorState).sceneAssetID
+
+    try {
+      if (updateSceneID) {
+        await SceneThumbnailState.createThumbnail()
+        await SceneThumbnailState.uploadThumbnail()
+      }
+    } catch (e) {
+      errors.serverError.set(e.message)
+    }
+
+    if (!inCompress && props.onPublish) {
       try {
         await props.onPublish()
       } catch (e) {
@@ -168,7 +420,7 @@ export default function AddEditLocationModal(props: {
 
     const locationData: LocationData = {
       name: name.value.trim(),
-      sceneId: scene.value,
+      sceneId: updateSceneID || (location?.sceneId as string),
       maxUsersPerInstance: maxUsers.value,
       locationSetting: {
         locationId: '' as LocationID,
@@ -214,6 +466,12 @@ export default function AddEditLocationModal(props: {
   }
 
   const anchorEvent = useHookstate<null | React.MouseEvent<HTMLElement>>(null)
+
+  useEffect(() => {
+    if (isNewPublished.value && location && props.onPublishSuccess) {
+      props.onPublishSuccess(location)
+    }
+  }, [location, props.onPublishSuccess, isNewPublished.value])
 
   return (
     <div className="absolute z-50 bg-surface-2 px-8 pt-6">
@@ -266,21 +524,7 @@ export default function AddEditLocationModal(props: {
               value={scene.value}
               onChange={(value: string) => scene.set(value)}
               disabled={!!props.sceneID || scenes.status !== 'success' || isLoading}
-              options={
-                scenes.status === 'pending'
-                  ? [{ value: '', label: t('common:select.fetching') }]
-                  : [
-                      { value: '', label: t('admin:components.location.selectScene'), disabled: true },
-                      ...scenes.data.map((scene) => {
-                        const project = scene.project
-                        const name = scene.key.split('/').pop()!.split('.').at(0)!
-                        return {
-                          label: `${name} (${project})`,
-                          value: scene.id
-                        }
-                      })
-                    ]
-              }
+              options={scenesOptions}
               state={errors.scene.value ? 'error' : undefined}
               helperText={errors.scene.value}
               width="full"
@@ -327,6 +571,7 @@ export default function AddEditLocationModal(props: {
                     fullWidth
                     height="xl"
                     placeholder="5 - Default"
+                    max={LOCATION_MAX}
                   />
                   <Toggle
                     label={t('admin:components.location.lbl-ve')}
@@ -372,7 +617,11 @@ export default function AddEditLocationModal(props: {
                 {unPublishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
               </Button>
             )}
-            <Button data-testid="publish-panel-publish-or-update-button" disabled={isLoading} onClick={handlePublish}>
+            <Button
+              data-testid="publish-panel-publish-or-update-button"
+              disabled={isLoading}
+              onClick={() => handlePublish()}
+            >
               {location?.id
                 ? t('common:components.update')
                 : props.sceneModified
@@ -380,8 +629,26 @@ export default function AddEditLocationModal(props: {
                 : t('editor:toolbar.publishLocation.title')}
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
             </Button>
+            <Button onClick={handlePublishFolder}>
+              {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
+            </Button>
           </div>
         </div>
+      </div>
+      <div className="flex justify-end justify-items-stretch px-8">
+        {compressionLoading.value ? (
+          <div className="flex w-full flex-col">
+            <div className="h-4 w-full overflow-hidden rounded bg-white">
+              <div
+                className="bg-blue-primary h-4 w-full origin-left transition-transform"
+                style={{
+                  transform: `scaleX(${compressionProgress.progress.value})`
+                }}
+              />
+            </div>
+            {compressionProgress.caption.value}
+          </div>
+        ) : null}
       </div>
 
       <ContextMenu

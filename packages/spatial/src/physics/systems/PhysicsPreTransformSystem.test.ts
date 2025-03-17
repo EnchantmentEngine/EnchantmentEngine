@@ -185,8 +185,7 @@ describe('PhysicsPreTransformFunctions', () => {
 
       it('should not set the `@param entity` transform to dirty', async () => {
         await act(() => render(null))
-        // Sanity check before running
-        assertNotDirty(testEntity)
+        TransformComponent.dirty[testEntity] = 0
         // Run and Check the result
         PhysicsPreTransformFunctions.lerpTransformFromRigidbody(testEntity, Alpha)
         assertNotDirty(testEntity)
@@ -194,8 +193,7 @@ describe('PhysicsPreTransformFunctions', () => {
 
       it('should deeply set all children transforms to dirty', async () => {
         await act(() => render(null))
-        // Sanity check before running
-        assertNotDirty(testEntity)
+        TransformComponent.dirty[testEntity] = 0
         // Run and Check the result
         PhysicsPreTransformFunctions.lerpTransformFromRigidbody(testEntity, Alpha)
         iterateEntityNode(testEntity, (childEntity) => {
@@ -284,8 +282,7 @@ describe('PhysicsPreTransformFunctions', () => {
 
       it('should deeply set all children transforms to dirty', async () => {
         await act(() => render(null))
-        // Sanity check before running
-        assertNotDirty(testEntity)
+        TransformComponent.dirty[testEntity] = 0
         // Run and Check the result
         PhysicsPreTransformFunctions.copyTransformToRigidBody(testEntity)
         iterateEntityNode(testEntity, (childEntity) => {

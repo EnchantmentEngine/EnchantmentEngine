@@ -25,21 +25,29 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useRef } from 'react'
 import Popup from 'reactjs-popup'
-import { PopupActions } from 'reactjs-popup/dist/types'
+import { PopupActions, PopupPosition } from 'reactjs-popup/dist/types'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '../../..'
-import { DotsVerticalLg } from '../../../icons'
+import { DotsHorizontalLg, DotsVerticalLg } from '../../../icons'
 
 interface MoreOptionsMenuProps {
   disabled?: boolean
+  direction?: 'horizontal' | 'vertical'
   actionProps: {
     icon?: React.ReactNode
     label: string
     onClick: () => void
+    disabled?: boolean
   }[]
+  position?: PopupPosition | PopupPosition[] | undefined
 }
 
-export default function MoreOptionsMenu({ disabled, actionProps }: MoreOptionsMenuProps) {
+export default function MoreOptionsMenu({
+  disabled,
+  actionProps,
+  position,
+  direction = 'vertical'
+}: MoreOptionsMenuProps) {
   const popupRef = useRef<PopupActions>(null)
 
   const closePopup = () => {
@@ -58,11 +66,12 @@ export default function MoreOptionsMenu({ disabled, actionProps }: MoreOptionsMe
           data-testid="scene-options-button"
           disabled={disabled}
         >
-          <DotsVerticalLg className="text-text-primary" />
+          {direction === 'vertical' && <DotsVerticalLg className="text-xl text-text-primary" />}
+          {direction === 'horizontal' && <DotsHorizontalLg className="text-xl text-text-primary" />}
         </Button>
       }
       ref={popupRef}
-      position="left bottom"
+      position={position ? position : 'left bottom'}
       on="click"
       closeOnDocumentClick
       arrow={false}
@@ -75,6 +84,7 @@ export default function MoreOptionsMenu({ disabled, actionProps }: MoreOptionsMe
             <Button
               variant="tertiary"
               className="h-full w-full justify-start gap-2 border-0 p-2 text-text-primary hover:bg-ui-hover-quadrary"
+              disabled={actionProp.disabled}
               onClick={() => {
                 closePopup()
                 actionProp.onClick()
