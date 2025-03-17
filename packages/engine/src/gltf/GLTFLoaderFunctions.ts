@@ -1521,8 +1521,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   await Promise.all(extensionPending)
 
   //apply deltas if they exist in state
-  const hashlessDocumentID = GLTFComponent.removeHashes(options.documentID)
-  const deltas = getState(SceneDeltaState)?.[hashlessDocumentID]?.[nodeID]
+  const deltas = getState(SceneDeltaState)?.[getComponent(options.entity, NodeIDComponent)]?.[nodeID]
   if (deltas) {
     for (const [componentName, delta] of Object.entries(deltas)) {
       const Component = ComponentJSONIDMap.get(componentName)
