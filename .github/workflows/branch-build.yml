@@ -43,6 +43,7 @@ jobs:
         run: npm config set '//npm.pkg.github.com/:_authToken' "${NPM_TOKEN}"
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm i -g npm@7
       - run: npm install --production=false --loglevel notice
       - name: cache for next steps
         uses: actions/cache@v3
