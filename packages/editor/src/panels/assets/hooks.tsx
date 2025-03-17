@@ -28,8 +28,9 @@ import { API } from '@ir-engine/common'
 import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
-import { MyAssetCategory } from '../../services/AssetPanelCategoriesState'
-import { ASSETS_PAGE_LIMIT, Category, calculateItemsToFetch, iterativelyListTags, mapCategoriesHelper } from './helpers'
+import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
+import { AssetCategoryNode } from './categories'
+import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, convertToHierarchy, iterativelyListTags } from './helpers'
 
 const AssetsQueryContext = createContext({
   search: null! as State<{ local: string; query: string }>,
@@ -39,12 +40,12 @@ const AssetsQueryContext = createContext({
   staticResourcesPagination: null! as State<{ total: number; skip: number }>,
 
   category: {
-    currentCategoryPath: null! as State<Category[]>,
-    categories: null! as State<Category[]>,
-    expandedCategories: {} as State<{ [key: string]: boolean }>,
+    currentCategoryPath: null! as State<AssetCategoryNode | undefined>,
     sidebarWidth: null! as State<number>
   }
 })
+
+export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
 
 export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const search = useHookstate({ local: '', query: '' })
@@ -52,20 +53,19 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const resources = useHookstate<StaticResourceType[]>([])
   const resourcesLoading = useHookstate(false)
 
-  const currentCategoryPath = useHookstate<Category[]>([])
-  const categories = useHookstate<Category[]>([])
-  const expandedCategories = useHookstate({} as { [key: string]: boolean })
+  const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
+
   const categorySidbarWidth = useHookstate(300)
   const previousSearchQuery = usePrevious(search.query)
 
-  const staticResourcesFindApi = () => {
+  const staticResourcesFindApi = (forceRefresh = false) => {
     const abortController = new AbortController()
-    const selectedCategory = currentCategoryPath.at(-1)?.value
+    const selectedCategory = currentCategoryPath.value
 
     resourcesLoading.set(true)
 
     const performFetch = () => {
-      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.object)] : []
+      const tags = selectedCategory ? [selectedCategory.name, ...iterativelyListTags(selectedCategory.children)] : []
 
       let query = {} as StaticResourceQuery
       if (selectedCategory?.name === MyAssetCategory) {
@@ -80,7 +80,9 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
           userId: selfUser.id,
           $sort: { name: 1 },
           $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
-          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
+          $skip: forceRefresh
+            ? 0
+            : Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
         } as StaticResourceQuery
       } else {
         query = {
@@ -108,7 +110,9 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
             : undefined,
           $sort: { name: 1 },
           $limit: ASSETS_PAGE_LIMIT + calculateItemsToFetch(),
-          $skip: Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
+          $skip: forceRefresh
+            ? 0
+            : Math.min(staticResourcesPagination.skip.value, staticResourcesPagination.total.value)
         } as StaticResourceQuery
       }
 
@@ -118,7 +122,7 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
         .then((fetchedResources) => {
           if (abortController.signal.aborted) return
 
-          if (staticResourcesPagination.skip.value > 0 && previousSearchQuery === search.query.value) {
+          if (staticResourcesPagination.skip.value > 0 && previousSearchQuery === search.query.value && !forceRefresh) {
             resources.merge(fetchedResources.data)
           } else {
             resources.set(fetchedResources.data)
@@ -140,22 +144,18 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
     return () => abortSignal()
   }, [])
 
-  useEffect(() => {
-    categories.set(mapCategoriesHelper(expandedCategories.value))
-  }, [expandedCategories])
-
   return (
     <AssetsQueryContext.Provider
       value={{
         search,
         resources: resources.value as StaticResourceType[],
-        refetchResources: staticResourcesFindApi,
+        refetchResources: () => {
+          staticResourcesFindApi(true)
+        },
         resourcesLoading: resourcesLoading.value,
         staticResourcesPagination,
         category: {
-          categories,
           currentCategoryPath,
-          expandedCategories,
           sidebarWidth: categorySidbarWidth
         }
       }}

@@ -41,6 +41,7 @@ import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spa
 import { Physics, PhysicsWorld } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 
+import { EngineState } from '@ir-engine/ecs'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -56,27 +57,27 @@ describe('moveAvatar function tests', () => {
     initializeSpatialEngine()
     initializeSpatialViewer()
     await Physics.load()
-    Engine.instance.store.userID = 'userId' as UserID
+    getMutableState(EngineState).userID.set('userId' as UserID)
     sceneEntity = loadEmptyScene()
 
     setComponent(sceneEntity, SceneComponent)
-    physicsWorld = Physics.createWorld(getComponent(sceneEntity, UUIDComponent))
+    physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
 
-    createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, Engine.instance.store.userID)
+    createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, Engine.instance.userID)
   })
 
   afterEach(() => {
     return destroyEngine()
   })
 
-  const avatarUrl = 'packages/projects/default-project/assets/avatars/male_01.vrm'
+  const avatarUrl = 'packages/projects/default-project/assets/avatars/irRobot.vrm'
 
   it('should apply world.fixedDelta @ 60 tick to avatar movement, consistent with physics simulation', async () => {
     const ecsState = getMutableState(ECSState)
     ecsState.simulationTimestep.set(1000 / 60)
 
-    const entityUUID = (Engine.instance.store.userID + '_avatar') as EntityUUID
+    const entityUUID = (Engine.instance.userID + '_avatar') as EntityUUID
 
     dispatchAction(
       AvatarNetworkAction.spawn({
@@ -116,7 +117,7 @@ describe('moveAvatar function tests', () => {
         parentUUID: getComponent(sceneEntity, UUIDComponent),
         position: new Vector3(),
         rotation: new Quaternion(),
-        entityUUID: (Engine.instance.store.userID + '_avatar') as EntityUUID,
+        entityUUID: (Engine.instance.userID + '_avatar') as EntityUUID,
         avatarURL: avatarUrl,
         name: 'TestAvatar'
       })
@@ -135,7 +136,7 @@ describe('moveAvatar function tests', () => {
   })
 
   it('should take world.physics.timeScale into account when moving avatars, consistent with physics simulation', async () => {
-    Engine.instance.store.userID = 'user' as UserID
+    getMutableState(EngineState).userID.set('user' as UserID)
 
     const ecsState = getMutableState(ECSState)
     ecsState.simulationTimestep.set(1000 / 60)
@@ -149,7 +150,7 @@ describe('moveAvatar function tests', () => {
         parentUUID: getComponent(sceneEntity, UUIDComponent),
         position: new Vector3(),
         rotation: new Quaternion(),
-        entityUUID: (Engine.instance.store.userID + '_avatar') as EntityUUID,
+        entityUUID: (Engine.instance.userID + '_avatar') as EntityUUID,
         avatarURL: avatarUrl,
         name: 'TestAvatar'
       })
@@ -168,7 +169,7 @@ describe('moveAvatar function tests', () => {
   })
 
   it('should not allow velocity to breach a full unit through multiple frames', async () => {
-    Engine.instance.store.userID = 'user' as UserID
+    getMutableState(EngineState).userID.set('user' as UserID)
 
     const ecsState = getMutableState(ECSState)
     ecsState.simulationTimestep.set(1000 / 60)
@@ -179,7 +180,7 @@ describe('moveAvatar function tests', () => {
         parentUUID: getComponent(sceneEntity, UUIDComponent),
         position: new Vector3(),
         rotation: new Quaternion(),
-        entityUUID: (Engine.instance.store.userID + '_avatar') as EntityUUID,
+        entityUUID: (Engine.instance.userID + '_avatar') as EntityUUID,
         avatarURL: avatarUrl,
         name: 'TestAvatar'
       })

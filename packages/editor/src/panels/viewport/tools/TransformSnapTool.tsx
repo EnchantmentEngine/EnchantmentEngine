@@ -28,12 +28,13 @@ import { EditorHelperState } from '@ir-engine/editor/src/services/EditorHelperSt
 import { ObjectGridSnapState } from '@ir-engine/editor/src/systems/ObjectGridSnapSystem'
 import { SnapMode } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { Select, Tooltip } from '@ir-engine/ui'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { Tooltip } from '@ir-engine/ui'
+import { ViewportButton } from '@ir-engine/ui/editor'
+import { SnappingToolMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuUtilityPole } from 'react-icons/lu'
-import { MdOutlineCenterFocusWeak } from 'react-icons/md'
+import ToolbarDropdown from './ToolbarDropdown'
 
 const translationSnapOptions = [
   { label: '0.1m', value: 0.1 },
@@ -79,43 +80,41 @@ const TransformSnapTool = () => {
   }
 
   return (
-    <div className="flex items-center rounded bg-[#0E0F11]">
-      <Tooltip content={t('editor:toolbar.transformSnapTool.toggleBBoxSnap')}>
-        <Button
-          startIcon={<LuUtilityPole className="text-theme-input" />}
+    <div className="flex items-center gap-x-1 rounded">
+      <Tooltip content={t('editor:toolbar.transformSnapTool.toggleBBoxSnap')} position="bottom">
+        <ViewportButton
           onClick={toggleAttachmentPointSnap}
-          variant={objectSnapState.enabled.value ? 'outline' : 'transparent'}
-          className="px-0"
-          size="small"
+          selected={objectSnapState.enabled.value}
+          icon={LuUtilityPole}
         />
       </Tooltip>
-      <Tooltip content={t('editor:toolbar.transformSnapTool.toggleSnapMode')}>
-        <Button
-          startIcon={<MdOutlineCenterFocusWeak className="text-theme-input" />}
+      <Tooltip content={t('editor:toolbar.transformSnapTool.toggleSnapMode')} position="bottom">
+        <ViewportButton
           onClick={toggleSnapMode}
-          variant={editorHelperState.gridSnap.value === SnapMode.Grid ? 'outline' : 'transparent'}
-          className="px-0"
-          size="small"
+          selected={editorHelperState.gridSnap.value === SnapMode.Grid}
+          icon={SnappingToolMd}
         />
       </Tooltip>
-      <Tooltip content={t('editor:toolbar.transformSnapTool.info-translate')} position="right">
-        <Select
-          key={editorHelperState.translationSnap.value}
-          onChange={onChangeTranslationSnap}
-          options={translationSnapOptions}
-          value={editorHelperState.translationSnap.value}
-          width="sm"
-        />
-      </Tooltip>
-      <Tooltip content={t('editor:toolbar.transformSnapTool.info-rotate')} position="right">
-        <Select
-          key={editorHelperState.rotationSnap.value}
-          onChange={onChangeRotationSnap}
-          options={rotationSnapOptions}
-          value={editorHelperState.rotationSnap.value}
-          width="sm"
-        />
-      </Tooltip>
+
+      <ToolbarDropdown
+        tooltipContent={t('editor:toolbar.transformSnapTool.info-translate')}
+        onChange={onChangeTranslationSnap}
+        options={translationSnapOptions}
+        value={editorHelperState.translationSnap.value}
+        width="full"
+        inputHeight="l"
+        dropdownParentClassName="w-[82px]"
+      />
+
+      <ToolbarDropdown
+        tooltipContent={t('editor:toolbar.transformSnapTool.info-rotate')}
+        onChange={onChangeRotationSnap}
+        options={rotationSnapOptions}
+        value={editorHelperState.rotationSnap.value}
+        width="full"
+        inputHeight="l"
+        dropdownParentClassName="w-[65px]"
+      />
     </div>
   )
 }

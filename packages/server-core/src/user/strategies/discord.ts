@@ -27,11 +27,11 @@ import { AuthenticationRequest, AuthenticationResult } from '@feathersjs/authent
 import { Paginated, Params } from '@feathersjs/feathers'
 
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
+import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { userApiKeyPath, UserApiKeyType } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
 import { InviteCode, UserName, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
-
-import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import moment from 'moment/moment'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
@@ -57,7 +57,6 @@ export class DiscordStrategy extends CustomOAuthStrategy {
     const identityProvider = authResult[identityProviderPath] ? authResult[identityProviderPath] : authResult
     const userId = identityProvider ? identityProvider.userId : params?.query ? params.query.userId : undefined
 
-    console.log('discord profile', profile)
     const returned = {
       ...baseData,
       accountIdentifier: `${profile.username}#${profile.discriminator}`,
@@ -108,8 +107,14 @@ export class DiscordStrategy extends CustomOAuthStrategy {
         userId: entity.userId
       })
     if (entity.type !== 'guest' && identityProvider.type === 'guest') {
-      await this.app.service(identityProviderPath).remove(identityProvider.id)
-      await this.app.service(userPath).remove(identityProvider.userId)
+      if (isValidId(identityProvider.id)) await this.app.service(identityProviderPath).remove(identityProvider.id)
+      if (isValidId(identityProvider.userId)) await this.app.service(userPath).remove(identityProvider.userId)
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(entity, params)
       return super.updateEntity(entity, profile, params)
     }
@@ -118,8 +123,8 @@ export class DiscordStrategy extends CustomOAuthStrategy {
       profile.userId = user.id
       const newIP = await super.createEntity(profile, params)
       if (entity.type === 'guest') {
-        if (profile.email) {
-          const profileEmail = profile.email
+        if (newIP.email) {
+          const profileEmail = newIP.email
           const existingIdentityProviders = await this.app.service(identityProviderPath).find({
             query: {
               $or: [
@@ -150,11 +155,23 @@ export class DiscordStrategy extends CustomOAuthStrategy {
             }
           }
         }
-        await this.app.service(identityProviderPath).remove(entity.id)
+        if (isValidId(entity.id)) await this.app.service(identityProviderPath).remove(entity.id)
       }
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(newIP, params)
       return newIP
     } else if (existingEntity.userId === identityProvider.userId) {
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: existingEntity.userId
+        }
+      })
       await this.userLoginEntry(existingEntity, params)
       return existingEntity
     } else {

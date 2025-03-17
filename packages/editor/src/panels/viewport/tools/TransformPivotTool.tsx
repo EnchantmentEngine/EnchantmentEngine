@@ -27,12 +27,13 @@ import { setTransformPivot, toggleTransformPivot } from '@ir-engine/editor/src/f
 import { EditorHelperState } from '@ir-engine/editor/src/services/EditorHelperState'
 import { TransformPivot } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { Select, Tooltip } from '@ir-engine/ui'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { Tooltip } from '@ir-engine/ui'
+import { ViewportButton } from '@ir-engine/ui/editor'
+import { SelectionMd } from '@ir-engine/ui/src/icons'
 import { t } from 'i18next'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaRegDotCircle } from 'react-icons/fa'
+import ToolbarDropdown from './ToolbarDropdown'
 
 const transformPivotOptions = [
   {
@@ -68,30 +69,21 @@ const TransformPivotTool = () => {
   const editorHelperState = useHookstate(getMutableState(EditorHelperState))
 
   return (
-    <div className="flex items-center rounded bg-[#0E0F11]">
-      <Tooltip content={t('editor:toolbar.transformPivot.toggleTransformPivot')}>
-        <Button
-          startIcon={<FaRegDotCircle className="text-theme-input" />}
-          onClick={toggleTransformPivot}
-          variant="transparent"
-          className="px-0"
-          size="small"
-        />
+    <div className="flex items-center gap-x-1">
+      <Tooltip content={t('editor:toolbar.transformPivot.toggleTransformPivot')} position="bottom">
+        <ViewportButton onClick={toggleTransformPivot} icon={SelectionMd} />
       </Tooltip>
-      <Tooltip
-        content={
+      <ToolbarDropdown
+        tooltipContent={
           transformPivotOptions.find((pivot) => pivot.value === editorHelperState.transformPivot.value)?.description
         }
-        position="right"
-      >
-        <Select
-          key={editorHelperState.transformPivot.value}
-          onChange={setTransformPivot}
-          options={transformPivotOptions}
-          value={editorHelperState.transformPivot.value}
-          width="sm"
-        />
-      </Tooltip>
+        onChange={setTransformPivot}
+        options={transformPivotOptions}
+        value={editorHelperState.transformPivot.value}
+        width="full"
+        inputHeight="l"
+        dropdownParentClassName="w-[106px]"
+      />
     </div>
   )
 }

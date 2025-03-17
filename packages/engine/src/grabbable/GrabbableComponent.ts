@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, matchesEntityUUID } from '@ir-engine/ecs/src/Entity'
 import { defineAction, dispatchAction, getState, isClient, matches } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
@@ -35,7 +35,6 @@ import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NetworkTopics } from '@ir-engine/network'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { InteractableComponent, XRUIVisibilityOverride } from '../interaction/components/InteractableComponent'
 
@@ -56,7 +55,7 @@ export const GrabbableComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-    const isGrabbed = !!useOptionalComponent(entity, GrabbedComponent)
+    const isGrabbed = useHasComponent(entity, GrabbedComponent)
     const interactableComponent = useComponent(entity, InteractableComponent)
 
     useEffect(() => {
@@ -141,7 +140,7 @@ export const GrabbedComponent = defineComponent({
 
   schema: S.Object({
     attachmentPoint: XRHandedness,
-    grabberEntity: T.Entity()
+    grabberEntity: S.Entity()
   })
 })
 
@@ -153,8 +152,8 @@ export const GrabberComponent = defineComponent({
   name: 'GrabberComponent',
 
   schema: S.Object({
-    left: T.Entity(),
-    right: T.Entity()
+    left: S.Entity(),
+    right: S.Entity()
   })
 })
 

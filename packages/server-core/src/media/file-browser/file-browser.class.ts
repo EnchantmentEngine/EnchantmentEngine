@@ -25,11 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { NullableId, Paginated, ServiceInterface } from '@feathersjs/feathers/lib/declarations'
 import { KnexAdapterParams } from '@feathersjs/knex'
-import appRootPath from 'app-root-path'
-import fs from 'fs'
-import { Knex } from 'knex'
-import path from 'path/posix'
-
 import { projectPath, ProjectType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import {
   FileBrowserContentType,
@@ -43,11 +38,16 @@ import {
   ProjectPermissionType
 } from '@ir-engine/common/src/schemas/projects/project-permission.schema'
 import { checkScope } from '@ir-engine/common/src/utils/checkScope'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { isValidFileExtension, isValidFileName, isValidFilePath } from '@ir-engine/common/src/utils/validateFileName'
 import isValidSceneName from '@ir-engine/common/src/utils/validateSceneName'
+import appRootPath from 'app-root-path'
+import fs from 'fs'
+import { Knex } from 'knex'
+import path from 'path/posix'
 
 import { BadRequest } from '@feathersjs/errors/lib'
-import { PROJECT_CAPTURE_REGEX, PROJECT_REGEX } from '@ir-engine/common/src/regex'
+import { PROJECT_CAPTURE_REGEX, PROJECT_REGEX, TRAILING_SLASH_REGEX } from '@ir-engine/common/src/regex'
 import { copyFolderRecursiveSync } from '@ir-engine/common/src/utils/fsHelperFunctions'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
@@ -79,23 +79,25 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
   const fileNameSplit = pathSplit[pathSplit.length - 1].split('.')
   const isDirectory = fileNameSplit.length === 1
   const filePath = path.join(...pathSplit.slice(0, isDirectory ? pathSplit.length : pathSplit.length - 1))
-  if (!isValidFilePath(filePath))
-    throw new BadRequest(
-      'Invalid path: ' +
-        filePath +
-        '; directories can only contain alphanumeric characters, dashes, underscores, dots, and @'
-    )
+
+  const resultFilePath = isValidFilePath(filePath)
+
+  if (!resultFilePath.isValid) throw new BadRequest(resultFilePath.error)
   if (!isDirectory) {
-    if (!isValidFileName(fileNameSplit[0]))
-      throw new BadRequest(
-        'Invalid file name: ' +
-          fileNameSplit[0] +
-          '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
-      )
-    if (!isValidFileExtension(fileNameSplit[1]))
-      throw new BadRequest(
-        'Invalid file extension: ' + fileNameSplit[1] + '; file extension must be 2-4 alphanumeric characters'
-      )
+    let fileName = '',
+      extension = ''
+    if (fileNameSplit.length > 1) {
+      fileName = fileNameSplit.slice(0, -1).join('.')
+      extension = fileNameSplit[fileNameSplit.length - 1]
+    } else {
+      fileName = fileNameSplit[0]
+      extension = ''
+    }
+    const resultFileName = isValidFileName(fileName)
+    if (!resultFileName.isValid) throw new BadRequest(resultFileName.error)
+
+    const resultFileExtension = isValidFileExtension(extension)
+    if (!resultFileExtension.isValid) throw new BadRequest(resultFileExtension.error)
   }
 
   await verifyProjectPermission(['owner', 'editor'])({
@@ -168,7 +170,7 @@ export class FileBrowserService
   async find(params?: FileBrowserParams) {
     if (!params) params = {}
     if (!params.query) params.query = {}
-    const { $skip, $limit } = params.query
+    const { $skip, $limit, recursive } = params.query
     let { directory } = params.query
 
     const skip = $skip ? $skip : 0
@@ -180,7 +182,7 @@ export class FileBrowserService
 
     ensureProjectsDirectory(directory)
 
-    let result = await storageProvider.listFolderContent(directory)
+    let result = await storageProvider.listFolderContent(directory, !!recursive)
     Object.entries(params.query).forEach(([key, value]) => {
       if (value['$like']) {
         result = result.filter(
@@ -261,12 +263,8 @@ export class FileBrowserService
 
     await ensureProjectPermissionAndPublicOrAssetsDirectory(directory, projectName, this.app, params!)
 
-    if (!isValidFilePath(joinedDirectory))
-      throw new BadRequest(
-        'Invalid directory: ' +
-          joinedDirectory +
-          '; directories can only contain alphanumeric characters, dashes, underscores, dots, and @'
-      )
+    const resultFilePath = isValidFilePath(joinedDirectory)
+    if (!resultFilePath.isValid) throw new BadRequest(resultFilePath.error)
 
     const parentPath = path.dirname(directory)
     const key = await getIncrementalName(path.basename(directory), parentPath, storageProvider, true)
@@ -323,6 +321,13 @@ export class FileBrowserService
           ' as it does not match specified project ' +
           data.newProject
       )
+
+    const oldFullPath = `${data.oldPath}${data.oldName}/`.replace(TRAILING_SLASH_REGEX, '')
+    const newFullPath = data.newPath.replace(TRAILING_SLASH_REGEX, '')
+
+    if (oldFullPath === newFullPath || newFullPath.startsWith(oldFullPath + '/')) {
+      throw new Error('Cannot move a folder into itself or its own subfolder')
+    }
 
     const oldDirectory = data.oldPath.endsWith('/')
       ? data.oldPath.split('/').slice(0, -1).join('/')
@@ -467,7 +472,7 @@ export class FileBrowserService
       }
     }
 
-    if (data.type === 'scene') validateSceneName(data.path)
+    if (data.type === 'scene') await validateSceneName(data.path)
 
     let key = path.join('projects', data.project, data.path)
     if (data.unique) key = await ensureUniqueName(this.app, key)
@@ -502,6 +507,14 @@ export class FileBrowserService
   }
 
   /**
+   *  Used to verify when a scene is deleted and has the default thumbnail.
+   * This prevents the default thumbnail from being deleted.
+   */
+  private isDefaultThumbnail(thumbnail: StaticResourceType): boolean {
+    return thumbnail.name === 'default.thumbnail.jpg' && thumbnail.project === 'ir-engine/default-project'
+  }
+
+  /**
    * Remove a directory
    */
   async remove(key: string, params?: FileBrowserParams) {
@@ -533,16 +546,15 @@ export class FileBrowserService
     if (staticResources?.length > 0) {
       await Promise.all(
         staticResources.map(async (resource) => {
-          await this.app.service(staticResourcePath).remove(resource.id)
+          if (isValidId(resource.id)) await this.app.service(staticResourcePath).remove(resource.id)
           if (resource.thumbnailKey) {
             const thumbnail = (await this.app.service(staticResourcePath).find({
               query: { key: { $like: `%${resource.thumbnailKey}%` }, type: 'thumbnail' },
               paginate: false
             })) as any as StaticResourceType[]
-
-            if (thumbnail.length > 0) {
+            if (thumbnail.length > 0 && !this.isDefaultThumbnail(thumbnail[0])) {
               await storageProvider.deleteResources([thumbnail[0].key])
-              await this.app.service(staticResourcePath).remove(thumbnail[0].id)
+              if (isValidId(thumbnail[0].id)) await this.app.service(staticResourcePath).remove(thumbnail[0].id)
             }
           }
         })

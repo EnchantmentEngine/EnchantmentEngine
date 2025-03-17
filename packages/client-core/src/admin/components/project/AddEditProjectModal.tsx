@@ -107,23 +107,8 @@ export default function AddEditProjectModal({
   const { t } = useTranslation()
   const showAutoUpdateOptions = useHookstate(false)
   const modalProcessing = useHookstate(false)
-
   const project = update && inputProject ? inputProject : getTempProject()
-
   const projectUpdateStatus = useHookstate(getMutableState(ProjectUpdateState)[project.name])
-  useEffect(() => {
-    ProjectUpdateService.initializeProjectUpdate(project.name)
-    if (inputProject) {
-      ProjectUpdateService.setTriggerSetDestination(
-        inputProject.name,
-        inputProject.repositoryPath,
-        inputProject.updateType,
-        inputProject.updateSchedule
-      )
-    }
-    return () => ProjectUpdateService.clearProjectUpdate(project.name)
-  }, [project.name])
-
   const identityProvidersQuery = useFind(identityProviderPath)
   const hasGithubProvider = identityProvidersQuery.data.find((ip) => ip.type === 'github')
 
@@ -144,16 +129,27 @@ export default function AddEditProjectModal({
   }))
 
   const commitSelectOptions = projectUpdateStatus?.value?.commitData.map((projectCommit: ProjectCommitType) => {
-    let label = `Commit ${projectCommit.commitSHA?.slice(0, 8)}`
-    if (projectCommit.projectVersion) label += ` -- Project Ver. ${projectCommit.projectVersion}`
-    if (projectCommit.engineVersion) label += ` -- Engine Ver. ${projectCommit.engineVersion}`
-    if (projectCommit.datetime) {
-      const datetime = toDisplayDateTime(projectCommit.datetime)
-      label += ` -- Pushed ${datetime}`
+    const label = `Commit ${projectCommit.commitSHA?.slice(0, 8)}`
+    let secondaryText = ''
+
+    if (projectCommit.projectVersion) {
+      secondaryText += `Proj. Ver. ${projectCommit.projectVersion}`
     }
+
+    if (projectCommit.engineVersion) {
+      if (secondaryText.length > 0) secondaryText += ' • '
+      secondaryText += `Eng. Ver. ${projectCommit.engineVersion}`
+    }
+
+    if (projectCommit.datetime) {
+      if (secondaryText.length > 0) secondaryText += ' • '
+      secondaryText += `Pushed at ${toDisplayDateTime(projectCommit.datetime)}`
+    }
+
     return {
       value: projectCommit.commitSHA,
-      label
+      label,
+      secondaryText
     }
   })
 
@@ -312,6 +308,19 @@ export default function AddEditProjectModal({
   }
 
   useEffect(() => {
+    ProjectUpdateService.initializeProjectUpdate(project.name)
+    if (inputProject) {
+      ProjectUpdateService.setTriggerSetDestination(
+        inputProject.name,
+        inputProject.repositoryPath,
+        inputProject.updateType,
+        inputProject.updateSchedule
+      )
+    }
+    return () => ProjectUpdateService.clearProjectUpdate(project.name)
+  }, [project.name])
+
+  useEffect(() => {
     if (
       projectUpdateStatus?.value?.destinationValid &&
       projectUpdateStatus?.value?.sourceValid &&
@@ -441,7 +450,12 @@ export default function AddEditProjectModal({
               onBlur={handleChangeSourceRepo}
               endComponent={
                 <button
-                  onClick={() => {
+                  title={t('admin:components.project.copyDestination')}
+                  className="h-4 w-4"
+                  onMouseDown={() => {
+                    /**
+                     * Using onMouseDown instead of onClick because, onClick doesn't fire when onBlur is present.
+                     */
                     handleChangeSource({ target: { value: projectUpdateStatus.value.destinationURL } })
                     handleChangeSourceRepo({ target: { value: projectUpdateStatus.value.destinationURL } })
                   }}
@@ -465,11 +479,17 @@ export default function AddEditProjectModal({
                 text: t('admin:components.project.branchData'),
                 position: 'top'
               }}
+              positioning={{
+                maxHeight: '200px'
+              }}
               value={projectUpdateStatus.value?.selectedBranch}
               options={branchSelectOptions}
               state={projectUpdateStatus.value?.branchError ? 'error' : undefined}
               helperText={projectUpdateStatus.value?.branchError}
               onChange={handleChangeBranch}
+              width="full"
+              searchMode="fuzzy"
+              showClearButton={true}
             />
           )}
         {projectUpdateStatus.value?.branchProcessing && (
@@ -490,11 +510,17 @@ export default function AddEditProjectModal({
                 text: t('admin:components.project.commitData'),
                 position: 'top'
               }}
+              positioning={{
+                maxHeight: '200px'
+              }}
               value={projectUpdateStatus.value?.selectedSHA}
               onChange={handleCommitChange}
               options={commitSelectOptions}
               state={projectUpdateStatus.value?.commitError ? 'error' : undefined}
               helperText={projectUpdateStatus.value?.commitError}
+              width="full"
+              searchMode="substring"
+              showClearButton={true}
             />
           )}
         {projectUpdateStatus.value?.commitsProcessing && (
@@ -521,7 +547,7 @@ export default function AddEditProjectModal({
           projectUpdateStatus.value?.selectedSHA.length > 0 &&
           projectUpdateStatus.value?.commitData.length > 0 &&
           !matchesEngineVersion && (
-            <div className="flex items-center justify-center gap-3 rounded-lg bg-theme-bannerInformative p-4">
+            <div className="flex items-center justify-center gap-3 rounded-lg  p-4">
               <div>
                 <CiWarning className="h-5 w-5 bg-transparent" />
               </div>
@@ -533,43 +559,37 @@ export default function AddEditProjectModal({
           <Text className="text-red-700">{projectUpdateStatus.value?.sourceVsDestinationError}</Text>
         )}
 
-        {!update && (
-          <Text
-            className={
-              'flex items-center gap-2 ' +
-              (projectUpdateStatus.value?.destinationValid ? 'text-green-400' : 'text-red-700')
-            }
-          >
-            {projectUpdateStatus.value?.destinationValid && <CiCircleCheck />}
-            {!projectUpdateStatus.value?.destinationValid && <CiCircleRemove />}
-            {t('admin:components.project.destinationURLValid')}
-          </Text>
-        )}
+        <Text
+          className={
+            'flex items-center gap-2 ' +
+            (projectUpdateStatus.value?.destinationValid ? 'text-green-400' : 'text-red-700')
+          }
+        >
+          {projectUpdateStatus.value?.destinationValid && <CiCircleCheck />}
+          {!projectUpdateStatus.value?.destinationValid && <CiCircleRemove />}
+          {t('admin:components.project.destinationURLValid')}
+        </Text>
 
-        {!update && (
-          <Text
-            className={
-              'flex items-center gap-2 ' + (projectUpdateStatus.value?.sourceValid ? 'text-green-400' : 'text-red-700')
-            }
-          >
-            {projectUpdateStatus.value?.sourceValid && <CiCircleCheck />}
-            {!projectUpdateStatus.value?.sourceValid && <CiCircleRemove />}
-            {t('admin:components.project.sourceURLValid')}
-          </Text>
-        )}
+        <Text
+          className={
+            'flex items-center gap-2 ' + (projectUpdateStatus.value?.sourceValid ? 'text-green-400' : 'text-red-700')
+          }
+        >
+          {projectUpdateStatus.value?.sourceValid && <CiCircleCheck />}
+          {!projectUpdateStatus.value?.sourceValid && <CiCircleRemove />}
+          {t('admin:components.project.sourceURLValid')}
+        </Text>
 
-        {!update && (
-          <Text
-            className={
-              'flex items-center gap-2 ' +
-              (projectUpdateStatus.value?.sourceProjectMatchesDestination ? 'text-green-400' : 'text-red-700')
-            }
-          >
-            {projectUpdateStatus.value?.sourceProjectMatchesDestination && <CiCircleCheck />}
-            {!projectUpdateStatus.value?.sourceProjectMatchesDestination && <CiCircleRemove />}
-            {t('admin:components.project.sourceMatchesDestination')}
-          </Text>
-        )}
+        <Text
+          className={
+            'flex items-center gap-2 ' +
+            (projectUpdateStatus.value?.sourceProjectMatchesDestination ? 'text-green-400' : 'text-red-700')
+          }
+        >
+          {projectUpdateStatus.value?.sourceProjectMatchesDestination && <CiCircleCheck />}
+          {!projectUpdateStatus.value?.sourceProjectMatchesDestination && <CiCircleRemove />}
+          {t('admin:components.project.sourceMatchesDestination')}
+        </Text>
 
         <Text>{t('admin:components.project.autoUpdate')}</Text>
         <Toggle

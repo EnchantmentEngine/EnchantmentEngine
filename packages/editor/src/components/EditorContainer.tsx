@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { staticResourcePath } from '@ir-engine/common/src/schema.type.module'
-import { NO_PROXY, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { t } from 'i18next'
@@ -46,22 +46,21 @@ import { useZendesk } from '@ir-engine/client-core/src/hooks/useZendesk'
 import { API } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { EntityUUID } from '@ir-engine/ecs'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
-import { Tooltip } from '@ir-engine/ui'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { Button, Tooltip } from '@ir-engine/ui'
 import 'rc-dock/dist/rc-dock.css'
 import { useTranslation } from 'react-i18next'
 import { IoHelpCircleOutline } from 'react-icons/io5'
 import { onSaveScene, setCurrentEditorScene } from '../functions/sceneFunctions'
 import { AssetsPanelTab } from '../panels/assets'
-import { FilesPanelTab } from '../panels/files'
 import { HierarchyPanelTab } from '../panels/hierarchy'
 import { MaterialsPanelTab } from '../panels/materials'
 import { PropertiesPanelTab } from '../panels/properties'
 import { ScenePanelTab } from '../panels/scenes'
 import { ViewportPanelTab } from '../panels/viewport'
 import { VisualScriptPanelTab } from '../panels/visualscript'
+import { EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorWarningState } from '../services/EditorWarningServices'
 import { UIAddonsState } from '../services/UIAddonsState'
 import './EditorContainer.css'
@@ -103,7 +102,7 @@ const onEditorError = (error) => {
 }
 
 const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData => {
-  const tabs = [ScenePanelTab, FilesPanelTab, AssetsPanelTab]
+  const tabs = [ScenePanelTab, AssetsPanelTab]
   flags.visualScriptPanelEnabled && tabs.push(VisualScriptPanelTab)
 
   return {
@@ -185,7 +184,10 @@ const EditorContainer = () => {
 
   useSpatialEngine()
 
-  const originEntity = useMutableState(EngineState).originEntity.value
+  /** Call get state since it needs to be created */
+  getState(EditorHistoryState)
+
+  const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
 
   useEffect(() => {
     if (!sceneAssetID.value || !currentLoadedSceneURL.value || !originEntity) return
@@ -237,11 +239,7 @@ const EditorContainer = () => {
 
   return (
     <main className="pointer-events-auto">
-      <div
-        id="editor-container"
-        className="flex flex-col bg-black"
-        style={scenePath.value ? { background: 'transparent' } : {}}
-      >
+      <div id="editor-container" className="flex flex-col" style={scenePath.value ? { background: 'transparent' } : {}}>
         {uiEnabled.value && (
           <DndWrapper id="editor-container">
             <DragLayer />
@@ -265,14 +263,9 @@ const EditorContainer = () => {
       {!isWidgetVisible && initialized && (
         <div className="absolute bottom-3 right-4">
           <Tooltip position="left" key={t('editor:help')} content={t('editor:help')}>
-            <Button
-              rounded="full"
-              size="small"
-              className="h-8 w-8 p-0"
-              iconContainerClassName="m-0"
-              startIcon={<IoHelpCircleOutline fontSize={24} />}
-              onClick={openChat}
-            />
+            <Button size="sm" className="h-8 w-8 p-0" onClick={openChat}>
+              <IoHelpCircleOutline fontSize={24} />
+            </Button>
           </Tooltip>
         </div>
       )}

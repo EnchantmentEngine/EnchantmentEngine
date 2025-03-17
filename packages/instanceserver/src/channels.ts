@@ -51,7 +51,7 @@ import {
 import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { GLTFAssetState } from '@ir-engine/engine/src/gltf/GLTFState'
+import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { dispatchAction, getMutableState, getState, HyperFlux, Identifiable, PeerID, State } from '@ir-engine/hyperflux'
 import { addNetwork, NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
@@ -64,6 +64,8 @@ import getLocalServerIp from '@ir-engine/server-core/src/util/get-local-server-i
 import './InstanceServerModule'
 
 import { NotAuthenticated } from '@feathersjs/errors'
+import { projectsPath } from '@ir-engine/common/src/schemas/projects/projects.schema'
+import { EngineState } from '@ir-engine/ecs'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { InstanceServerState } from './InstanceServerState'
 import { authorizeUserToJoinServer, handleDisconnect, setupIPs } from './NetworkFunctions'
@@ -187,7 +189,7 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
   const instanceServerState = getState(InstanceServerState)
 
   const hostId = instanceServerState.instance.id as UserID & InstanceID
-  Engine.instance.store.userID = hostId
+  getMutableState(EngineState).userID.set(hostId)
   const topic = instanceServerState.isMediaInstance ? NetworkTopics.media : NetworkTopics.world
   HyperFlux.store.forwardingTopics.add(topic)
 
@@ -209,7 +211,12 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     })
   )
 
-  await loadEngineInjection()
+  const projects = await app.service(projectsPath).find()
+  try {
+    await loadEngineInjection(projects)
+  } catch (e) {
+    logger.error('Failed to load engine injection', e)
+  }
 
   if (instanceServerState.isMediaInstance) {
     getMutableState(NetworkState).hostIds.media.set(hostId)
@@ -223,7 +230,7 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     const sceneUpdatedListener = async () => {
       const scene = await app.service(staticResourcePath).get(sceneId, { headers })
       if (unload) unload()
-      unload = GLTFAssetState.loadScene(scene.url, scene.id as EntityUUID)
+      unload = SceneState.loadScene(scene.url, scene.id as EntityUUID)
       const entity = UUIDComponent.getEntityByUUID(scene.id as EntityUUID)
 
       /** @todo - quick hack to wait until scene has loaded */
@@ -418,7 +425,7 @@ const handleUserDisconnect = async ({
 
   app.channel(`instanceIds/${instanceId}`).leave(connection)
 
-  await new Promise((resolve) => setTimeout(resolve, config.instanceserver.shutdownDelayMs))
+  await new Promise((resolve) => setTimeout(resolve, config['instance-server'].shutdownDelayMs))
 
   const network = getServerNetwork(app)
 
@@ -498,9 +505,9 @@ export const onConnection = (app: Application) => async (connection: RealTimeCon
 
   if (userId) {
     const user = await app.service(userPath).get(userId)
-    // disallow users from joining media servers if they haven't accepted the TOS
-    if (channelId && !user.acceptedTOS) {
-      logger.warn('User tried to connect without accepting TOS')
+    // disallow users from joining media servers if they aren't age verified
+    if (channelId && !user.ageVerified) {
+      logger.warn('User tried to connect without specifying they are age verified')
       return
     }
   }

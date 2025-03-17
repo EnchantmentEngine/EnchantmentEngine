@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useEffect } from 'react'
 
+import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -32,20 +33,17 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 
 import { UndefinedEntity } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformAxis } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import {
   onGizmoCommit,
   onPointerDown,
@@ -60,9 +58,9 @@ export const CameraGizmoComponent = defineComponent({
   name: 'CameraGizmo',
 
   schema: S.Object({
-    sceneEntity: T.Entity(),
-    cameraEntity: T.Entity(),
-    visualEntity: T.Entity(),
+    sceneEntity: S.Entity(),
+    cameraEntity: S.Entity(),
+    visualEntity: S.Entity(),
     enabled: S.Bool(true),
     axis: S.Nullable(S.LiteralUnion(Object.values(TransformAxis)), null),
     showX: S.Bool(true),
@@ -78,7 +76,7 @@ export const CameraGizmoComponent = defineComponent({
     useEffect(() => {
       const gizmoVisualEntity = createEntity()
       setComponent(gizmoVisualEntity, EntityTreeComponent, {
-        parentEntity: cameraGizmoComponent.sceneEntity.value ?? getState(EngineState).originEntity
+        parentEntity: cameraGizmoComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
       })
 
       setComponent(entity, NameComponent, 'cameraGizmoEntity')
@@ -113,7 +111,7 @@ export const CameraGizmoComponent = defineComponent({
     InputComponent.useExecuteWithInput(
       () => {
         if (!cameraGizmoComponent.enabled.value || !cameraGizmoComponent.visualEntity.value) return
-        if (!cameraGizmoComponent.cameraEntity.value || !getState(EngineState).viewerEntity) return
+        if (!cameraGizmoComponent.cameraEntity.value || !getState(ReferenceSpaceState).viewerEntity) return
 
         onPointerHover(entity)
 

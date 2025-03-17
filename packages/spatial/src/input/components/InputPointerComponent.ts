@@ -69,13 +69,8 @@ export const InputPointerComponent = defineComponent({
     position: T.Vec2(),
     lastPosition: T.Vec2(),
     movement: T.Vec2(),
-    cameraEntity: T.Entity()
+    cameraEntity: S.Entity()
   }),
-
-  onSet(entity, component, json: { pointerId: number; cameraEntity: Entity }) {
-    if (typeof json.pointerId === 'number') component.pointerId.set(json.pointerId)
-    if (typeof json.cameraEntity === 'number') component.cameraEntity.set(json.cameraEntity)
-  },
 
   reactor: () => {
     const entity = useEntityContext()
@@ -101,7 +96,7 @@ export const InputPointerComponent = defineComponent({
 
   usePointersForCamera(cameraEntity: Entity) {
     const pointers = useQuery([InputPointerComponent])
-    return pointers.filter((entity) => getComponent(entity, InputPointerComponent).cameraEntity === cameraEntity)
+    return pointers.filter((entity) => getComponent(entity, InputPointerComponent)?.cameraEntity === cameraEntity)
   },
 
   getPointerByID(cameraEntity: Entity, pointerId: number) {

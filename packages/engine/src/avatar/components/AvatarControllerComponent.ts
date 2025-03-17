@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Vector3 } from 'three'
 
+import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -33,18 +34,18 @@ import {
   removeComponent,
   setComponent,
   useComponent,
+  useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { CameraComponent } from '../../../../spatial/src/camera/components/CameraComponent'
@@ -59,8 +60,8 @@ export const AvatarControllerComponent = defineComponent({
 
   schema: S.Object({
     /** The camera entity that should be updated by this controller */
-    cameraEntity: T.Entity(),
-    movementCaptured: S.Array(T.Entity()),
+    cameraEntity: S.Entity(),
+    movementCaptured: S.Array(S.Entity()),
     isJumping: S.Bool(false),
     isWalking: S.Bool(false),
     isInAir: S.Bool(false),
@@ -94,9 +95,13 @@ export const AvatarControllerComponent = defineComponent({
     const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
+    const cameraHasTargetRotation = useHasComponent(
+      avatarControllerComponent.cameraEntity.value,
+      TargetCameraRotationComponent
+    )
 
     useImmediateEffect(() => {
-      avatarControllerComponent.cameraEntity.set(getState(EngineState).viewerEntity || UndefinedEntity)
+      avatarControllerComponent.cameraEntity.set(getState(ReferenceSpaceState).viewerEntity || UndefinedEntity)
     }, [])
 
     useEffect(() => {
@@ -136,7 +141,7 @@ export const AvatarControllerComponent = defineComponent({
       if (isCameraAttachedToAvatar) {
         const controller = getComponent(entity, AvatarControllerComponent)
         removeComponent(controller.cameraEntity, FollowCameraComponent)
-      } else {
+      } else if (cameraHasTargetRotation) {
         const controller = getComponent(entity, AvatarControllerComponent)
         const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
         setComponent(controller.cameraEntity, FollowCameraComponent, {
@@ -147,7 +152,7 @@ export const AvatarControllerComponent = defineComponent({
           thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
         })
       }
-    }, [isCameraAttachedToAvatar, avatarComponent])
+    }, [isCameraAttachedToAvatar, avatarComponent, cameraHasTargetRotation])
 
     return null
   }
@@ -155,7 +160,7 @@ export const AvatarControllerComponent = defineComponent({
 
 export const AvatarColliderComponent = defineComponent({
   name: 'AvatarColliderComponent',
-  schema: S.Object({ colliderEntity: T.Entity() }),
+  schema: S.Object({ colliderEntity: S.Entity() }),
 
   reactor() {
     const entity = useEntityContext()

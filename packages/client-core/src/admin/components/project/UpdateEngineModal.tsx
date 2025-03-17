@@ -73,7 +73,7 @@ export default function UpdateEngineModal() {
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.store.userID,
+      userId: Engine.instance.userID,
       type: 'projects:read' as ScopeType
     }
   })
@@ -87,11 +87,22 @@ export default function UpdateEngineModal() {
 
   const selectCommitTagOptions = projectState.builderTags.value.map((builderTag) => {
     const pushedDate = toDisplayDateTime(builderTag.pushedAt)
+    const label = `Commit ${builderTag.commitSHA?.slice(0, 8)}`
+
+    let secondaryText = ''
+
+    if (builderTag.tag === engineCommit) {
+      secondaryText += `Current`
+    }
+
+    if (secondaryText.length > 0) secondaryText += ' • '
+
+    secondaryText += `Version ${builderTag.engineVersion} • Pushed ${pushedDate}`
+
     return {
       value: builderTag.tag,
-      label: `Commit ${builderTag.commitSHA?.slice(0, 8)} -- ${
-        builderTag.tag === engineCommit ? '(Current) ' : ''
-      }Version ${builderTag.engineVersion} -- Pushed ${pushedDate}`
+      label,
+      secondaryText
     }
   })
 
@@ -181,12 +192,17 @@ export default function UpdateEngineModal() {
             text: t('admin:components.project.commitData'),
             position: 'top'
           }}
+          positioning={{
+            maxHeight: '200px'
+          }}
           options={selectCommitTagOptions}
           value={selectedCommitTag.value}
           onChange={(value: string) => {
             selectedCommitTag.set(value)
           }}
           disabled={modalProcessing.value}
+          showClearButton={true}
+          width="full"
         />
         <Checkbox
           checked={updateProjects.value}
@@ -197,7 +213,7 @@ export default function UpdateEngineModal() {
 
         {updateProjects.value && (
           <>
-            <div className="flex items-center justify-center gap-3 rounded-lg bg-theme-bannerInformative p-4">
+            <div className="flex items-center justify-center gap-3 rounded-lg  p-4">
               <div>
                 <LuInfo className="h-5 w-5 bg-transparent" />
               </div>
@@ -207,7 +223,7 @@ export default function UpdateEngineModal() {
               {projectState.projects.value
                 .filter((project) => project.name !== 'ir-engine/default-project' && project.repositoryPath)
                 .map((project) => (
-                  <div key={project.id} className="border border-theme-primary bg-theme-surfaceInput px-3.5 py-5">
+                  <div key={project.id} className="border   px-3.5 py-5">
                     <Checkbox
                       label={project.name}
                       checked={projectsToUpdate.value.has(project.name)}
