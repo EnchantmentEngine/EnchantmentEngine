@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MockXRFrame, MockXRMesh, MockXRSpace } from '../../tests/util/MockXR'
+import { MockXRFrame, MockXRMesh, MockXRPose, MockXRSpace } from '../../tests/util/MockXR'
 import { assertVec } from '../../tests/util/assert'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 
@@ -164,6 +164,12 @@ describe('XRDetectedMeshComponent', () => {
       const position = new Vector3(1, 2, 3)
       const quaternion = new Quaternion(1, 2, 3, 4).normalize()
       const pose = new Matrix4().compose(position, quaternion, new Vector3(1, 1, 1))
+      // @ts-expect-error
+      const xrFrame = new MockXRFrame() as XRFrame
+      // @ts-expect-error
+      xrFrame.getPose = () => new MockXRPose(position, quaternion)
+      getMutableState(XRState).xrFrame.set(xrFrame)
+      mesh.meshSpace = new MockXRSpace(pose)
       mesh.meshSpace = new MockXRSpace(pose)
       const meshEntity = XRDetectedMeshComponent.getMeshEntity(mesh)
       XRDetectedMeshComponent.updateMeshPose(meshEntity)
@@ -176,6 +182,11 @@ describe('XRDetectedMeshComponent', () => {
       const position = new Vector3(1, 2, 3)
       const quaternion = new Quaternion(1, 2, 3, 4).normalize()
       const pose = new Matrix4().compose(position, quaternion, new Vector3(1, 1, 1))
+      // @ts-expect-error
+      const xrFrame = new MockXRFrame() as XRFrame
+      // @ts-expect-error
+      xrFrame.getPose = () => new MockXRPose(position, quaternion)
+      getMutableState(XRState).xrFrame.set(xrFrame)
       mesh.meshSpace = new MockXRSpace(pose)
       const meshEntity = XRDetectedMeshComponent.getMeshEntity(mesh)
       XRDetectedMeshComponent.updateMeshPose(meshEntity)
