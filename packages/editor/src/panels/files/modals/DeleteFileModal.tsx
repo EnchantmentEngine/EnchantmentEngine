@@ -71,7 +71,10 @@ export default function DeleteFileModal({
       <Text className="w-full text-center">
         {files.length === 1
           ? t('editor:dialog.delete.confirm-content', { content: files[0].fullName })
-          : t('editor:dialog.delete.confirm-multiple', { first: files[0].fullName, count: files.length - 1 })}
+          : t('editor:dialog.delete.confirm-multiple', {
+              first: files[0].fullName,
+              count: files.length - 1
+            })}
       </Text>
     </Modal>
   )

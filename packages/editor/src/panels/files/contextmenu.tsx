@@ -28,10 +28,10 @@ import { useMutation } from '@ir-engine/common'
 import { fileBrowserPath } from '@ir-engine/common/src/schema.type.module'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
-import { DropdownItem } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import React from 'react'
+import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
+import { twMerge } from 'tailwind-merge'
 import { Vector3 } from 'three'
 import ImageCompressionPanel from '../../components/assets/ImageCompressionPanel'
 import ModelCompressionPanel from '../../components/assets/ModelCompressionPanel'
@@ -43,53 +43,6 @@ import { fileConsistsOfContentType, useCurrentFiles } from './helpers'
 import DeleteFileModal from './modals/DeleteFileModal'
 import FilePropertiesModal from './modals/FilePropertiesModal'
 import RenameFileModal from './modals/RenameFileModal'
-
-function PasteFileButton({
-  newPath,
-  setAnchorEvent
-}: {
-  newPath?: string
-  setAnchorEvent: (event: React.MouseEvent | undefined) => void
-}) {
-  const { t } = useTranslation()
-  const { filesQuery } = useCurrentFiles()
-  const isFilesLoading = filesQuery?.status === 'pending'
-  const fileService = useMutation(fileBrowserPath)
-
-  const filesState = useMutableState(FilesState)
-  const clipboardFiles = filesState.clipboardFiles.files
-  const hasClipboardFiles = clipboardFiles.length > 0
-  const currentDirectory = filesState.selectedDirectory.value.startsWith('/')
-    ? filesState.selectedDirectory.value.substring(1)
-    : filesState.selectedDirectory.value
-
-  return (
-    <DropdownItem
-      data-testid="files-panel-context-menu-paste-asset-button"
-      disabled={!hasClipboardFiles}
-      onClick={async () => {
-        if (!hasClipboardFiles || isFilesLoading) return
-        setAnchorEvent(undefined)
-        for (const clipboardFile of clipboardFiles.get(NO_PROXY)) {
-          // make sure we are not moving a folder into itself
-          if (!filesState.clipboardFiles.isCopy.value && (newPath ?? currentDirectory).startsWith(clipboardFile.path))
-            return
-          await fileService.update(null, {
-            oldProject: filesState.projectName.value,
-            newProject: filesState.projectName.value,
-            oldName: clipboardFile.fullName,
-            newName: clipboardFile.fullName,
-            oldPath: clipboardFile.path,
-            newPath: newPath ?? currentDirectory,
-            isCopy: filesState.clipboardFiles.isCopy.value
-          })
-        }
-      }}
-      label={t('editor:layout.filebrowser.pasteAsset')}
-      className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
-    />
-  )
-}
 
 export function FileContextMenu({
   anchorEvent,
@@ -105,6 +58,18 @@ export function FileContextMenu({
 
   const hasSelection = selectedFiles.length > 0
   const hasFiles = selectedFiles.some((file) => !file.isFolder.value)
+
+  const { filesQuery } = useCurrentFiles()
+  const isFilesLoading = filesQuery?.status === 'pending'
+  const fileService = useMutation(fileBrowserPath)
+
+  const clipboardFiles = filesState.clipboardFiles.files
+  const hasClipboardFiles = clipboardFiles.length > 0
+  const currentDirectory = filesState.selectedDirectory.value.startsWith('/')
+    ? filesState.selectedDirectory.value.substring(1)
+    : filesState.selectedDirectory.value
+
+  const hasPaste = hasClipboardFiles
 
   const fileActions = [
     {
@@ -129,11 +94,26 @@ export function FileContextMenu({
     },
     {
       // PASTE
-      condition: true, // Paste is always available
-      label: '',
-      action: () => {},
+      condition: hasPaste,
+      action: async () => {
+        if (!hasClipboardFiles || isFilesLoading) return
+        setAnchorEvent(undefined)
+        for (const clipboardFile of clipboardFiles.get(NO_PROXY)) {
+          // make sure we are not moving a folder into itself
+          if (!filesState.clipboardFiles.isCopy.value && currentDirectory.startsWith(clipboardFile.path)) return
+          await fileService.update(null, {
+            oldProject: filesState.projectName.value,
+            newProject: filesState.projectName.value,
+            oldName: clipboardFile.fullName,
+            newName: clipboardFile.fullName,
+            oldPath: clipboardFile.path,
+            newPath: currentDirectory,
+            isCopy: filesState.clipboardFiles.isCopy.value
+          })
+        }
+      },
       testId: '',
-      component: <PasteFileButton setAnchorEvent={setAnchorEvent} />
+      label: t('editor:layout.filebrowser.pasteAsset')
     },
     {}, // BREAK
     {
@@ -154,7 +134,7 @@ export function FileContextMenu({
       action: () => {
         PopoverState.showPopupover(
           <DeleteFileModal
-            files={selectedFiles.value}
+            files={selectedFiles.get(NO_PROXY)}
             onComplete={(err) => {
               selectedFiles.set([])
               ClickPlacementState.resetSelectedAsset()
@@ -239,7 +219,9 @@ export function FileContextMenu({
         selectedFiles
           .filter((file) => !file.isFolder.value)
           .map((file) => {
-            addMediaNode(file.url.value)
+            addMediaNode(file.url.value, undefined, undefined, [
+              { name: TransformComponent.jsonID, props: { position: new Vector3() } }
+            ])
           })
         setAnchorEvent(undefined)
       },
@@ -250,7 +232,10 @@ export function FileContextMenu({
       // ADD NEW FOLDER
       condition: true, // Always visible
       label: t('editor:layout.filebrowser.addNewFolder'),
-      action: createNewFolder,
+      action: () => {
+        createNewFolder()
+        setAnchorEvent(undefined)
+      },
       testId: 'files-panel-file-item-context-menu-add-new-folder-button'
     },
     {
@@ -267,27 +252,35 @@ export function FileContextMenu({
 
   return (
     <ContextMenu anchorEvent={anchorEvent} onClose={() => setAnchorEvent(undefined)}>
-      <div className="w-40 overflow-hidden rounded" tabIndex={0}>
+      <div className="w-40 overflow-hidden rounded bg-surface-0">
         {fileActions
           .filter((action) => action.condition || Object.keys(action).length === 0)
-          .map((action, index) => {
-            if (action.component) {
-              return action.component
+          .map((action, index, arr) => {
+            if (Object.keys(action).length === 0 && index > 0 && Object.keys(arr[index - 1]).length === 0) {
+              return null
             }
 
             return (
-              <>
-                {Object.keys(action).length === 0 && <hr className="mx-1 border-[#42454D]" />}
-                {Object.keys(action).length > 0 && (
-                  <DropdownItem
-                    key={index}
-                    label={action.label || ''}
-                    onClick={action.action}
-                    data-testid={action.testId}
-                    className="h-auto bg-[rgba(20,22,25,0.9)] px-6 py-1 text-sm text-white"
-                  />
+              <Fragment key={action.label || `separator-${index}`}>
+                {Object.keys(action).length === 0 && (
+                  <hr className="mx-auto w-[90%] border border-[0.5px] border-surface-outline-3-1" />
                 )}
-              </>
+                {Object.keys(action).length > 0 && (
+                  <span
+                    key={index}
+                    onClick={action.action}
+                    className={twMerge(
+                      'block w-full px-4 py-2 text-left text-sm text-text-secondary transition-colors',
+                      action.condition
+                        ? 'cursor-pointer text-text-secondary hover:bg-surface-3'
+                        : 'cursor-not-allowed text-text-inactive'
+                    )}
+                    data-testid={action.testId}
+                  >
+                    {action.label || ''}
+                  </span>
+                )}
+              </Fragment>
             )
           })}
       </div>

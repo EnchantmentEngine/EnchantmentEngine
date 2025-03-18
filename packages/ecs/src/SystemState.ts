@@ -23,22 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState, isDev, ReactorRoot, State } from '@ir-engine/hyperflux'
+import { defineState, ReactorRoot, State } from '@ir-engine/hyperflux'
 
 import { Entity } from './Entity'
-import { defineQuery, QueryComponents } from './QueryFunctions'
+import { defineQuery, QueryTerm } from './QueryFunctions'
 import { SystemUUID } from './SystemFunctions'
 
 export const SystemState = defineState({
   name: 'ee.meta.SystemState',
   initial: () => ({
-    performanceProfilingEnabled: isDev,
+    performanceProfilingEnabled: false,
     activeSystemReactors: new Map<SystemUUID, ReactorRoot>(),
     currentSystemUUID: '__null__' as SystemUUID,
     reactiveQueryStates: new Set<{
       query: ReturnType<typeof defineQuery>
       entities: State<Entity[]>
-      components: QueryComponents
+      components: QueryTerm[]
     }>()
   })
 })

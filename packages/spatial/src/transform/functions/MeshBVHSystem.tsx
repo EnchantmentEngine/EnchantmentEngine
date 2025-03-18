@@ -63,7 +63,7 @@ import {
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformComponent } from '../components/TransformComponent'
-import { generateMeshBVH } from '../functions/bvhWorkerPool'
+import { generateMeshBVH } from './bvhWorkerPool'
 
 declare module 'three-mesh-bvh' {
   export interface MeshBVHHelper {
@@ -134,7 +134,10 @@ function acceleratedRaycast(raycaster: Raycaster, intersects: Array<Intersection
         }
       }
     }
-  } else if (ValidMeshForBVH(mesh)) origMeshRaycastFunc.call(mesh, raycaster, intersects)
+  } else if (ValidMeshForBVH(mesh)) {
+    // only use fallback for meshes that don't have an entity assigned - should only be XRUI
+    if (!mesh.entity) origMeshRaycastFunc.call(mesh, raycaster, intersects)
+  }
 }
 
 // https://github.com/mrdoob/three.js/blob/dev/src/math/Matrix4.js#L732
@@ -245,8 +248,8 @@ MeshBVHHelper.prototype.add = function (object: Object3D) {
 }
 
 MeshBVHHelper.prototype.remove = function (object: Object3D) {
-  if (!this.entity) return this
-  const entity = object.entity
+  if (!this.entity || !object.entity) return this
+  const entity = object.entity!
   removeEntity(entity)
   return this
 }

@@ -48,11 +48,10 @@ import {
 import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import { PeerID, getState } from '@ir-engine/hyperflux'
-import { MessageTypes } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
+import type { MessageTypes } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
 import crypto from 'crypto'
 import { Application } from '../../../declarations'
 import { ServerMode, ServerState } from '../../ServerState'
-import config from '../../appconfig'
 
 const logger = multiLogger.child({ component: 'instance-signaling' })
 
@@ -143,15 +142,12 @@ const peerJoin = async (app: Application, data: InstanceSignalingDataType, param
     instanceServerSettingsResponse.map((setting) => {
       return {
         key: setting.key,
-        value: setting.value
+        value: setting.value,
+        dataType: setting.dataType
       }
     })
   ) as WebRTCSettings
-  const iceServers: IceServer[] = webRTCSettings.useCustomICEServers
-    ? webRTCSettings.iceServers
-    : config.kubernetes.enabled
-    ? PUBLIC_STUN_SERVERS
-    : []
+  const iceServers: IceServer[] = webRTCSettings.useCustomICEServers ? webRTCSettings.iceServers : PUBLIC_STUN_SERVERS
 
   /** Duplicated from WebRTCFunctions.ts */
   if (webRTCSettings.useCustomICEServers) {

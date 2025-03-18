@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
-import { spawnLocalAvatarInWorld } from '@ir-engine/common/src/world/receiveJoinWorld'
 import {
   defineSystem,
   Entity,
@@ -34,11 +33,12 @@ import {
   getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
-  useOptionalComponent,
+  useHasComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { getRandomSpawnPoint } from '@ir-engine/engine/src/avatar/functions/getSpawnPoint'
+import { spawnLocalAvatarInWorld } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import {
   dispatchAction,
@@ -52,11 +52,13 @@ import { NetworkState, WorldNetworkAction } from '@ir-engine/network'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 
 import { useFind, useMutation } from '@ir-engine/common'
+import { config } from '@ir-engine/common/src/config'
 import { avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState, useChildrenWithComponents } from '@ir-engine/ecs'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
+import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
 import { LocationState } from '../social/services/LocationService'
@@ -106,11 +108,14 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     const rootUUID = getComponent(sceneEntity, UUIDComponent)
     const avatarSpawnPose = getRandomSpawnPoint(userID)
     const user = getState(AuthState).user
-
+    /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
+    const avatarURL = iOS
+      ? config.client.fileServer + '/projects/ir-engine/default-project/assets/avatars/irRobot.vrm'
+      : userAvatar.avatar.modelResource!.url
     spawnLocalAvatarInWorld({
       parentUUID: rootUUID,
       avatarSpawnPose,
-      avatarURL: userAvatar.avatar.modelResource!.url!,
+      avatarURL,
       name: user.name
     })
 
@@ -130,23 +135,29 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   }, [isSpectating, !!userAvatar])
 
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
-  const errorWithAvatar = !!useOptionalComponent(selfAvatarEntity, ErrorComponent)
+  const errorWithAvatar = useHasComponent(selfAvatarEntity, ErrorComponent)
+  const isMissingAvatar = userAvatarQuery.data.length === 0 && userAvatarQuery.status === 'success'
+  const needsNewAvatar = errorWithAvatar || isMissingAvatar
 
   const userAvatarMutation = useMutation(userAvatarPath)
 
   const avatarsQuery = useFind(avatarPath)
 
   useEffect(() => {
-    if (!errorWithAvatar || !avatarsQuery.data.length) return
+    if (!needsNewAvatar || !avatarsQuery.data.length) return
     const randomAvatar = avatarsQuery.data[Math.floor(Math.random() * avatarsQuery.data.length)]
     userAvatarMutation.patch(null, { avatarId: randomAvatar.id }, { query: { userId: userID } })
-  }, [errorWithAvatar])
+  }, [needsNewAvatar])
 
   useEffect(() => {
     if (isSpectating || !userAvatar) return
+    /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
+    const avatarURL = iOS
+      ? config.client.fileServer + '/projects/ir-engine/default-project/assets/avatars/irRobot.vrm'
+      : userAvatar.avatar.modelResource!.url
     dispatchAction(
       AvatarNetworkAction.setAvatarURL({
-        avatarURL: userAvatar.avatar.modelResource!.url,
+        avatarURL,
         entityUUID: (userID + '_avatar') as any as EntityUUID
       })
     )

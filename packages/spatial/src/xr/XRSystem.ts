@@ -62,6 +62,5 @@ const reactor = () => {
 export const XRSystem = defineSystem({
   uuid: 'ee.engine.XRSystem',
   insert: { before: InputSystemGroup },
-  execute: () => {},
   reactor
 })
