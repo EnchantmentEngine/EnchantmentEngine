@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { CheckLg, MinusLg } from '@ir-engine/ui/src/icons'
-import React, { SyntheticEvent } from 'react'
+import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
 export interface CheckboxProps extends Omit<React.HTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -82,7 +82,7 @@ const Checkbox = (
   }: CheckboxProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) => {
-  const handleChange = (event: SyntheticEvent) => {
+  const handleChange = (event: React.MouseEvent | React.KeyboardEvent) => {
     event.stopPropagation()
     if (!disabled && onChange) {
       onChange(!checked)
