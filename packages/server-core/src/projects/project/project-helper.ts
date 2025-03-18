@@ -69,7 +69,6 @@ import {
   getFilesRecursive
 } from '@ir-engine/common/src/utils/fsHelperFunctions'
 import { isValidId } from '@ir-engine/common/src/utils/isValidId'
-import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import { getState } from '@ir-engine/hyperflux'
 import { ProjectConfigInterface, ProjectEventHooks } from '@ir-engine/projects/ProjectConfigInterface'
 
@@ -1684,8 +1683,8 @@ const getResourceType = (key: string, resource?: ResourceType) => {
   if (key.startsWith('public/thumbnails') || key.endsWith('.thumbnail.jpg')) return 'thumbnail'
   if (key.startsWith('public/scenes') && (key.endsWith('.gltf') || key.endsWith('.scene.json'))) return 'scene'
   if (!resource) return 'file'
-  if (staticResourceClasses.includes(FileToAssetType(key))) return 'asset'
   if (resource.type) return resource.type
+  if (staticResourceClasses.includes(FileToAssetType(key))) return 'asset'
   if (resource.tags) return 'asset'
   return 'file'
 }
@@ -1802,7 +1801,7 @@ export const uploadLocalProjectToProvider = async (
       }
 
       const isScene = oldManifestScenes && oldManifestScenes.includes(filePathRelative)
-      const thisFileClass = AssetLoader.getAssetClass(key)
+      const thisFileClass = FileToAssetType(key)
       const hash = createStaticResourceHash(fileResult)
       const stats = await getStats(fileResult, contentType)
       const resourceInfo = resourcesJson?.[filePathRelative]
