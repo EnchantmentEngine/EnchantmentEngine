@@ -35,13 +35,13 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getState, startReactor } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { useEffect } from 'react'
 import sinon from 'sinon'
 import { Vector2 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { CameraPointerHash, InputPointerComponent, InputPointerState } from './InputPointerComponent'
-import { act, render } from '@testing-library/react'
 
 const InputPointerComponentDefaults = {
   pointerId: -1 as number,

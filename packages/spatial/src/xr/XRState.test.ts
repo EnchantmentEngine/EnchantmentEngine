@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { createEngine, destroyEngine } from '@ir-engine/ecs'
 import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
@@ -32,7 +33,6 @@ import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 import { DepthDataTexture } from './DepthDataTexture'
 import { onSessionEnd } from './XRSessionFunctions'
 import { ReferenceSpace, XRAction, XRState } from './XRState'
-import { act, render } from '@testing-library/react'
 
 type SessionModes = 'inline' | 'immersive-ar' | 'immersive-vr' | 'none'
 const SessionMode = {

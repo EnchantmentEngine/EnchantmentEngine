@@ -43,6 +43,7 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { OutlineEffect } from 'postprocessing'
 import { BoxGeometry, MathUtils, Mesh } from 'three'
@@ -58,7 +59,6 @@ import { MeshComponent } from './MeshComponent'
 import { PostProcessingComponent } from './PostProcessingComponent'
 import { SceneComponent } from './SceneComponents'
 import { VisibleComponent } from './VisibleComponent'
-import { act, render } from '@testing-library/react'
 
 describe('HighlightComponent', () => {
   describe('IDs', () => {

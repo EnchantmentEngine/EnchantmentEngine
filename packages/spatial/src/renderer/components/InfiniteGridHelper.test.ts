@@ -38,6 +38,7 @@ import {
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { Color, ColorRepresentation, ShaderMaterial } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -48,7 +49,6 @@ import { createInfiniteGridHelper, InfiniteGridComponent } from './InfiniteGridH
 import { LineSegmentComponent } from './LineSegmentComponent'
 import { MeshComponent } from './MeshComponent'
 import { VisibleComponent } from './VisibleComponent'
-import { act, render } from '@testing-library/react'
 
 type InfiniteGridComponentData = {
   size: number

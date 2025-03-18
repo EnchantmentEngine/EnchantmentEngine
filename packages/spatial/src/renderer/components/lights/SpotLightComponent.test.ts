@@ -37,6 +37,7 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { ColorRepresentation, SpotLight, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -49,7 +50,6 @@ import { RendererState } from '../../RendererState'
 import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
 import { SpotLightComponent } from './SpotLightComponent'
-import { act, render } from '@testing-library/react'
 
 type SpotLightComponentData = {
   color: ColorRepresentation
@@ -488,7 +488,7 @@ describe('SpotLightComponent', () => {
 
       // Re-run and Check the result again
       getMutableState(RendererState).shadowMapResolution.set(Expected)
-      
+
       await act(() => render(null))
       const result = getComponent(testEntity, ObjectComponent) as SpotLight
       assert.equal(result.shadow.mapSize.x, Expected)
@@ -509,7 +509,7 @@ describe('SpotLightComponent', () => {
 
       // Re-run and Check the result again
       getMutableState(RendererState).nodeHelperVisibility.set(Expected)
-      
+
       await act(() => render(null))
 
       const childEntity1 = getComponent(testEntity, EntityTreeComponent).children[0]
@@ -518,7 +518,7 @@ describe('SpotLightComponent', () => {
 
       // Re-run and Check the unmount case
       getMutableState(RendererState).nodeHelperVisibility.set(Initial)
-      
+
       await act(() => render(null))
       assert.equal(hasComponent(childEntity1, ObjectComponent), Initial)
     })

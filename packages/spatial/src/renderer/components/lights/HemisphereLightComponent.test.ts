@@ -36,6 +36,7 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -49,7 +50,6 @@ import { LineSegmentComponent } from '../LineSegmentComponent'
 import { ObjectComponent } from '../ObjectComponent'
 import { HemisphereLightComponent } from './HemisphereLightComponent'
 import { LightTagComponent } from './LightTagComponent'
-import { act, render } from '@testing-library/react'
 
 type HemisphereLightComponentData = {
   skyColor: ColorRepresentation

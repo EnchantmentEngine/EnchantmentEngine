@@ -41,6 +41,7 @@ import {
 
 import { EntityTreeComponent, getAncestorWithComponents } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
+import { act, render } from '@testing-library/react'
 import { Vector3 } from 'three'
 import { assertVec } from '../../../tests/util/assert'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
@@ -51,7 +52,6 @@ import { BodyTypes, Shapes } from '../types/PhysicsTypes'
 import { ColliderComponent } from './ColliderComponent'
 import { RigidBodyComponent } from './RigidBodyComponent'
 import { TriggerComponent } from './TriggerComponent'
-import { act, render } from '@testing-library/react'
 
 export const ColliderComponentDefaults = {
   // also used in TriggerComponent.test.ts

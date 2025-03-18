@@ -41,11 +41,11 @@ import assert from 'assert'
 import { Material, Uniform, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { act, render } from '@testing-library/react'
 import { assertVec } from '../../../../../tests/util/assert'
 import { generateNoiseTexture } from '../../../functions/generateNoiseTexture'
 import { MaterialStateComponent } from '../../MaterialComponent'
 import { NoiseOffsetPluginComponent, NoiseOffsetSystem } from './NoiseOffsetPlugin'
-import { act, render } from '@testing-library/react'
 
 type NoiseOffsetPluginComponentData = {
   textureSize: Uniform

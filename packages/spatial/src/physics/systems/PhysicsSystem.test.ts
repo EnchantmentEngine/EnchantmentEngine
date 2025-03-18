@@ -308,7 +308,6 @@ describe('PhysicsSystem', () => {
         return destroyEngine()
       })
 
-
       /** @todo Why is the world not recreated as expected ?? */
       it("should create a new physics world whenever the UUIDComponent of a SceneComponent's entityContext changes", async () => {
         // Sanity check before running

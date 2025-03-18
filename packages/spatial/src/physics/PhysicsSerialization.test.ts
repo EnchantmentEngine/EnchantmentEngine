@@ -467,7 +467,7 @@ describe('PhysicsSerialization', () => {
         destroyEngine()
       })
 
-      it('should write the RigidBodyComponent.rotation into the ViewCursor correctly',async () => {
+      it('should write the RigidBodyComponent.rotation into the ViewCursor correctly', async () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })

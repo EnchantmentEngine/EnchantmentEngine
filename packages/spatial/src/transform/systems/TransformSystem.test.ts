@@ -287,7 +287,6 @@ describe('TransformSystem', () => {
       })
 
       it('.. should not do anything for the EngineState.viewerEntity when both itself and XSState.xrFrame are truthy', async () => {
-        
         await act(() => render(null))
         const position = new Vector3(1, 2, 3)
         const rotation = new Quaternion(4, 5, 6, 7).normalize()

@@ -72,7 +72,6 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { HighlightState } from './HighlightState'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
-import { ReferenceSpaceState } from '../ReferenceSpaceState'
 
 declare module 'postprocessing' {
   interface EffectComposer {

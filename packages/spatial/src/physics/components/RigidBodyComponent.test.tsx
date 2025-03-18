@@ -394,7 +394,7 @@ describe('RigidBodyComponent', () => {
       assertArray.allNotEq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllLocked) // Should still be the default
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: AllLocked })
       await act(() => render(null))
-      assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllLocked)     
+      assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllLocked)
 
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()

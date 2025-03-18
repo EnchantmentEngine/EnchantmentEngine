@@ -616,7 +616,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })
         setComponent(testEntity, TransformComponent, { position: position, scale: scale, rotation: rotation })
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic, canSleep: true, gravityScale: 0 })
-        
+
         await act(() => render(null))
       })
 
@@ -693,7 +693,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })
@@ -732,7 +732,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })
@@ -777,7 +777,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })
@@ -816,7 +816,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })
@@ -875,7 +875,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })
@@ -930,7 +930,7 @@ describe('Physics : Rapier->ECS API', () => {
         setComponent(testEntity, EntityTreeComponent, { parentEntity: entity })
         setComponent(testEntity, TransformComponent)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        
+
         await act(() => render(null))
         Physics.createRigidBody(physicsWorld, testEntity)
       })

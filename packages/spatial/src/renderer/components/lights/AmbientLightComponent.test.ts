@@ -35,6 +35,7 @@ import {
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { Color, ColorRepresentation } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -44,7 +45,6 @@ import { TransformComponent } from '../../RendererModule'
 import { ObjectComponent } from '../ObjectComponent'
 import { AmbientLightComponent } from './AmbientLightComponent'
 import { LightTagComponent } from './LightTagComponent'
-import { act, render } from '@testing-library/react'
 
 type AmbientLightComponentData = { color: ColorRepresentation; intensity: number }
 const AmbientLightComponentDefaults: AmbientLightComponentData = {

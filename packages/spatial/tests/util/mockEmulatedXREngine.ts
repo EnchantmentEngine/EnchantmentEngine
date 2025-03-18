@@ -28,10 +28,10 @@ import { MockXRFrame } from './MockXR'
 import { mockSpatialEngine } from './mockSpatialEngine'
 
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import { destroySpatialEngine, destroySpatialViewer } from '../../src/initializeEngine'
 import { endXRSession } from '../../src/xr/XRSessionFunctions'
 import { XRState } from '../../src/xr/XRState'
-import { act, render } from '@testing-library/react'
 
 export async function mockEmulatedXREngine() {
   mockSpatialEngine()

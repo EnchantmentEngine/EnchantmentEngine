@@ -35,6 +35,7 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { Material, Uniform } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -44,7 +45,6 @@ import {
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
 } from './TransparencyDitheringComponent'
-import { act, render } from '@testing-library/react'
 
 type TransparencyDitheringRootComponentData = {
   materials: EntityUUID[]
