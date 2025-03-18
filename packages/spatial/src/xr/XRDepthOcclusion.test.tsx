@@ -41,7 +41,6 @@ import {
   Vector2,
   Vector3
 } from 'three'
-import { mountSystemReactor } from '../../tests/util/systemHelpers'
 import { Vector3_One } from '../common/constants/MathConstants'
 import { PluginType } from '../common/functions/OnBeforeCompilePlugin'
 import { MeshComponent } from '../renderer/components/MeshComponent'
@@ -845,7 +844,7 @@ describe('XRDepthOcclusionSystem', () => {
           const testEntity = createEntity()
           setComponent(testEntity, VisibleComponent)
           setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
-          mountSystemReactor(XRDepthOcclusionSystem)
+          // mountSystemReactor(XRDepthOcclusionSystem)
           getMutableState(XRState).depthDataTexture.set(Initial)
           // Sanity check before running
           expect(getState(XRState).sessionActive).toBe(true)
