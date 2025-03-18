@@ -23,22 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { UndefinedEntity, createEngine, createEntity, destroyEngine, getComponent, setComponent } from '@ir-engine/ecs'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertArray } from '../../tests/util/assert'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import {
-  EntityTreeComponent,
-  UndefinedEntity,
-  createEngine,
-  createEntity,
-  destroyEngine,
-  getComponent,
-  hasComponent,
-  removeComponent,
-  removeEntity,
-  setComponent
-} from '@ir-engine/ecs'
+import { EntityTreeComponent, hasComponent, removeComponent, removeEntity } from '@ir-engine/ecs'
 import { getMutableState } from '@ir-engine/hyperflux'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
@@ -96,7 +86,8 @@ describe('XRLeftHandComponent', () => {
     })
 
     it("should initialize the Component's data with the expected default values", () => {
-      const result = setComponent(testEntity, XRLeftHandComponent)
+      setComponent(testEntity, XRLeftHandComponent)
+      const result = getComponent(testEntity, XRLeftHandComponent)
       assertXRHandComponentDefaults(result)
     })
   }) //:: onInit
@@ -122,7 +113,8 @@ describe('XRRightHandComponent', () => {
     })
 
     it("should initialize the Component's data with the expected default values", () => {
-      const result = setComponent(testEntity, XRLeftHandComponent)
+      setComponent(testEntity, XRRightHandComponent)
+      const result = getComponent(testEntity, XRRightHandComponent)
       assertXRHandComponentDefaults(result)
     })
   }) //:: onInit

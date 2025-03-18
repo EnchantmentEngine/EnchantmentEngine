@@ -58,7 +58,7 @@ export const useEngineInjection = () => {
   const projects = useFind(projectsPath)
   const loaded = useHookstate(false)
   useImmediateEffect(() => {
-    if (!projects.data) return
+    if (!projects.data.length) return
     loadEngineInjection(projects.data as string[])
       .then(() => {
         loaded.set(true)

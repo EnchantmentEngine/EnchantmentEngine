@@ -25,9 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   createEngine,
-  createEntity,
   destroyEngine,
-  EntityTreeComponent,
   generateEntityUUID,
   getComponent,
   getOptionalComponent,
@@ -37,26 +35,16 @@ import {
 } from '@ir-engine/ecs'
 import { applyIncomingActions } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { render } from '@testing-library/react'
-import React from 'react'
+import { act, render } from '@testing-library/react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTestGLTFEntity } from '../../../tests/avatar/mockAnimatedAvatar'
+import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { mixamoVRMRigMap } from '../AvatarBoneMatching'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { retargetAnimationClips } from './retargetingFunctions'
-
-const setupEntity = () => {
-  const parent = createEntity()
-  setComponent(parent, SceneComponent)
-  setComponent(parent, EntityTreeComponent)
-  setComponent(parent, UUIDComponent, generateEntityUUID())
-  const entity = createEntity()
-  setComponent(entity, EntityTreeComponent, { parentEntity: parent })
-  return entity
-}
 
 const default_url = 'packages/projects/default-project/assets'
 const animation_pack = default_url + '/animations/emotes.glb'
@@ -67,6 +55,7 @@ describe('retargetingFunctions', () => {
 
     beforeEach(() => {
       createEngine()
+      startEngineReactor()
     })
 
     afterEach(() => {
@@ -74,17 +63,20 @@ describe('retargetingFunctions', () => {
     })
 
     it('should bind animation tracks to rig entities based on VRM schema', async () => {
-      const entity = setupEntity()
+      const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, generateEntityUUID())
       setComponent(entity, GLTFComponent, { src: animation_pack })
       setComponent(entity, NameComponent, 'animationPack')
 
-      const { rerender, unmount } = render(<></>)
+      await act(() => render(null))
+
       applyIncomingActions()
+
       //extra wait for animation component to prevent race conditions
       await vi.waitFor(
-        () => {
+        async () => {
+          await act(() => render(null))
           expect(getOptionalComponent(entity, AnimationComponent)).toBeTruthy()
         },
         { timeout: 20000 }
@@ -104,8 +96,6 @@ describe('retargetingFunctions', () => {
           assert.equal(!!rig[track.name.split('.')[0]], true)
         }
       }
-
-      unmount()
     })
   })
 })

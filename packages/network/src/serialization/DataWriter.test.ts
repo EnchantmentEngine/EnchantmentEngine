@@ -24,17 +24,17 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { strictEqual } from 'assert'
-import { Types } from 'bitecs'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
+import { createEntity } from '@ir-engine/ecs'
 import { defineComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { getMutableState, getState, PeerID, UserID } from '@ir-engine/hyperflux'
 import { NetworkId } from '@ir-engine/network/src/NetworkId'
 
+import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { createMockNetwork } from '../../tests/createMockNetwork'
 import { roundNumberToPlaces } from '../../tests/MathTestUtils'
 import { Network, NetworkTopics } from '../Network'
@@ -62,13 +62,20 @@ import {
   ViewCursor
 } from './ViewCursor'
 
-const { f64 } = Types
-
 const MockPoseComponent = defineComponent({
   name: 'MockPoseComponent_Writer',
-  schema: {
-    Vec3: { x: f64, y: f64, z: f64 },
-    Quat: { x: f64, y: f64, z: f64, w: f64 }
+  storage: {
+    Vec3: {
+      x: createResizableTypeArray(Float64Array),
+      y: createResizableTypeArray(Float64Array),
+      z: createResizableTypeArray(Float64Array)
+    },
+    Quat: {
+      x: createResizableTypeArray(Float64Array),
+      y: createResizableTypeArray(Float64Array),
+      z: createResizableTypeArray(Float64Array),
+      w: createResizableTypeArray(Float64Array)
+    }
   }
 })
 
@@ -120,6 +127,7 @@ describe('DataWriter', () => {
     const entity = createEntity()
 
     const [x, y, z] = [1.5, 2.5, 3.5]
+    setComponent(entity, MockPoseComponent)
     MockPoseComponent.Vec3.x[entity] = x
     MockPoseComponent.Vec3.y[entity] = y
     MockPoseComponent.Vec3.z[entity] = z
@@ -454,8 +462,10 @@ describe('DataWriter', () => {
 
     entities.forEach((entity) => {
       const networkId = entity as unknown as NetworkId
+      setComponent(entity, NetworkObjectComponent)
       NetworkObjectComponent.networkId[entity] = networkId
 
+      setComponent(entity, MockPoseComponent)
       MockPoseComponent.Vec3.x[entity] = posX
       MockPoseComponent.Vec3.y[entity] = posY
       MockPoseComponent.Vec3.z[entity] = posZ
@@ -549,8 +559,10 @@ describe('DataWriter', () => {
 
     entities.forEach((entity) => {
       const networkId = entity as unknown as NetworkId
+      setComponent(entity, NetworkObjectComponent)
       NetworkObjectComponent.networkId[entity] = networkId
 
+      setComponent(entity, MockPoseComponent)
       MockPoseComponent.Vec3.x[entity] = posX
       MockPoseComponent.Vec3.y[entity] = posY
       MockPoseComponent.Vec3.z[entity] = posZ
