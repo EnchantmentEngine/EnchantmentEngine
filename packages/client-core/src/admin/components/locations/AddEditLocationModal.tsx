@@ -19,8 +19,15 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { API, useFind, useMutation } from '@ir-engine/common'
-import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
-import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
+import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
+import {
+  LocationData,
+  LocationID,
+  LocationPatch,
+  LocationType,
+  locationPath,
+  staticResourcePath
+} from '@ir-engine/common/src/schema.type.module'
 import {
   Entity,
   EntityTreeComponent,
@@ -33,44 +40,37 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { LODVariantDescriptor, defaultLODs } from '@ir-engine/editor/src/constants/GLTFPresets'
-import {
-  LocationData,
-  LocationID,
-  LocationPatch,
-  LocationType,
-  locationPath,
-  staticResourcePath
-} from '@ir-engine/common/src/schema.type.module'
-import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
-import { Quaternion, Vector3 } from 'three'
-import React, { lazy, useCallback, useEffect, useMemo } from 'react'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
+import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
+import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
+import React, { lazy, useCallback, useEffect, useMemo } from 'react'
+import { Quaternion, Vector3 } from 'three'
 
-import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
-import CompressedPublishConfirmation from './CompressedPublishConfirmation'
-import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
-import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
-import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
-import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
-import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { NotificationService } from '../../../common/services/NotificationService'
+import { config } from '@ir-engine/common/src/config'
+import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
+import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
+import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
+import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import { TransformComponent } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { config } from '@ir-engine/common/src/config'
+import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
+import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
+import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
+import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import { debounce } from 'lodash'
-import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
-import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
 import { useTranslation } from 'react-i18next'
+import { NotificationService } from '../../../common/services/NotificationService'
+import CompressedPublishConfirmation from './CompressedPublishConfirmation'
 
 function formatPublishedDate(isoString) {
   const date = new Date(isoString)
