@@ -29,7 +29,7 @@ import Config from '../../vitest.server.config.ts'
 const paritionedFileNames = [
   // 'src/{analytics,assets,bot,cluster,hooks,integrations,matchmaking,media,moderation,networking}/**/*.test.ts',
   'tests/**/*.test.ts',
-  'src/{projects,social}/**/*.test.ts'
+  'src/{projects,social,media}/**/*.test.ts'
 ]
 
 let paritionedConfig: UserConfig
