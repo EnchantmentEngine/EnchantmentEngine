@@ -507,7 +507,24 @@ describe('GLTFComponent', () => {
   }) //:: useInstanceID
 
   describe('removeHashes', () => {
-    it.todo('should return `@param url` with all its `?hash=...` instances removed', () => {})
+    /** @todo The Regex of this function looks completely wrong */
+    it.todo('should return `@param url` with all its `?hash=...` instances removed', () => {
+      const one = 'http://some.domain.url/'
+      const two = '?value=SomeValueTwo'
+      const three = '?value=SomeValueThree'
+      const four = '?value=SomeValueFour'
+      const hash = `?hash=${UUIDComponent.generateUUID()}`
+      const Expected = one + two + three + four
+      const url = one + hash + two + hash + three + hash + four + hash
+      const result = GLTFComponent.removeHashes(url as SourceID)
+      console.log('\ninput:')
+      console.log(url)
+      console.log('\noutput:')
+      console.log(result)
+      console.log('\nExpected:')
+      console.log(Expected)
+      expect(result).toBe(Expected)
+    })
   }) //:: removeHashes
 }) //:: GLTFComponent
 
