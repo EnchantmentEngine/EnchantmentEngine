@@ -194,19 +194,88 @@ describe('GLTFComponent', () => {
   }) //:: useSceneLoaded
 
   describe('isSceneLoaded', () => {
-    it.todo('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {})
-    it.todo(
-      'should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true',
-      () => {}
-    )
-    it.todo(
-      'should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false and entity.GLTFComponent.progress is 100',
-      () => {}
-    )
-    it.todo(
-      'should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false and entity.GLTFComponent.progress is not 100',
-      () => {}
-    )
+    let testEntity = UndefinedEntity
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEngine()
+    })
+
+    it('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {
+      const Expected = false
+      const result = GLTFComponent.isSceneLoaded(testEntity)
+      expect(result).toBe(Expected)
+    })
+
+    describe('when progress is 100 ..', () => {
+      const progress = 100
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: { one: {} as any } } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        const result = GLTFComponent.isSceneLoaded(testEntity)
+        expect(result).toBe(Expected)
+      })
+
+      it('should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true', () => {
+        const Expected = true
+
+        const dependencies = { componentDependencies: {} } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeTruthy()
+
+        const result = GLTFComponent.isSceneLoaded(testEntity)
+        expect(result).toBe(Expected)
+      })
+    })
+
+    describe('when progress is not 100 ..', () => {
+      const progress = 100 - 1
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: { one: {} as any } } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeFalsy()
+
+        const result = GLTFComponent.isSceneLoaded(testEntity)
+        expect(result).toBe(Expected)
+      })
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: {} } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeTruthy()
+
+        const result = GLTFComponent.isSceneLoaded(testEntity)
+        expect(result).toBe(Expected)
+      })
+    })
   }) //:: isSceneLoaded
 
   describe('getInstanceID', () => {
