@@ -39,7 +39,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { applyIncomingActions, getState } from '@ir-engine/hyperflux'
+import { applyIncomingActions } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, PointLightComponent, SpotLightComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -53,8 +53,6 @@ import {
 import { InstancedMesh, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
 import { overrideFileLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
-import { loadDRACODecoderNode, NodeDRACOLoader } from '../assets/loaders/gltf/NodeDracoLoader'
-import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { GLTFComponent } from './GLTFComponent'
 import { KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
@@ -161,15 +159,6 @@ describe('GLTF Loader', async () => {
 
   it('can load a draco geometry', async () => {
     const entity = setupEntity()
-
-    const loader = getState(AssetLoaderState).gltfLoader
-    loadDRACODecoderNode()
-    const dracoLoader = new NodeDRACOLoader()
-    /* @ts-ignore */
-    dracoLoader.preload = () => {
-      return dracoLoader
-    }
-    loader.setDRACOLoader(dracoLoader)
 
     setComponent(entity, UUIDComponent, generateEntityUUID())
     setComponent(entity, GLTFComponent, { src: draco_gltf })

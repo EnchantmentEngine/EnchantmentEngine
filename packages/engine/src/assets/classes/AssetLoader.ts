@@ -61,13 +61,13 @@ const getAssetClass = (assetFileName: string): AssetType => {
 export const getLoader = (assetType: AssetExt) => {
   switch (assetType) {
     case AssetExt.KTX2:
-      return getState(AssetLoaderState).gltfLoader.ktx2Loader!
+      return getState(AssetLoaderState).ktx2Loader!
     case AssetExt.DDS:
       return new DDSLoader()
-    case AssetExt.GLTF:
-    case AssetExt.GLB:
-    case AssetExt.VRM:
-      return getState(AssetLoaderState).gltfLoader
+    // case AssetExt.GLTF:
+    // case AssetExt.GLB:
+    // case AssetExt.VRM:
+    //   return getState(AssetLoaderState).gltfLoader
     // case AssetExt.USDZ:
     //   return new USDZLoader()
     // case AssetExt.FBX:

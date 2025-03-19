@@ -108,24 +108,6 @@ import { loadResource, unloadResourcesForEntity } from '../assets/functions/reso
 import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
-import {
-  ALPHA_MODES,
-  ATTRIBUTES,
-  INTERPOLATION,
-  PATH_PROPERTIES,
-  WEBGL_COMPONENT_TYPES,
-  WEBGL_FILTERS,
-  WEBGL_TYPE_SIZES,
-  WEBGL_WRAPPINGS
-} from '../assets/loaders/gltf/GLTFConstants'
-import { EXTENSIONS } from '../assets/loaders/gltf/GLTFExtensions'
-import {
-  GLTFCubicSplineInterpolant,
-  GLTFCubicSplineQuaternionInterpolant,
-  assignExtrasToUserData,
-  getNormalizedComponentScale
-} from '../assets/loaders/gltf/GLTFLoaderFunctions'
-import { getImageURIMimeType } from '../assets/loaders/gltf/GLTFParser'
 import { KTX2Loader } from '../assets/loaders/gltf/KTX2Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
@@ -140,10 +122,33 @@ import {
   SceneDeltaState
 } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
+import {
+  ALPHA_MODES,
+  ATTRIBUTES,
+  INTERPOLATION,
+  PATH_PROPERTIES,
+  WEBGL_COMPONENT_TYPES,
+  WEBGL_FILTERS,
+  WEBGL_TYPE_SIZES,
+  WEBGL_WRAPPINGS
+} from './GLTFConstants'
 import { KHR_DRACO_MESH_COMPRESSION, getBufferIndex } from './GLTFExtensions'
+import {
+  GLTFCubicSplineInterpolant,
+  GLTFCubicSplineQuaternionInterpolant,
+  assignExtrasToUserData,
+  getNormalizedComponentScale
+} from './GLTFLoaderUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { NodeID, NodeIDComponent } from './NodeIDComponent'
 import { SCENE_DELTA_EXTENSION_NAME } from './SceneDeltaExporterExtension'
+
+export function getImageURIMimeType(uri) {
+  if (uri.search(/\.jpe?g($|\?)/i) > 0 || uri.search(/^data\:image\/jpeg/) === 0) return 'image/jpeg'
+  if (uri.search(/\.webp($|\?)/i) > 0 || uri.search(/^data\:image\/webp/) === 0) return 'image/webp'
+
+  return 'image/png'
+}
 
 const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, material: MeshPhysicalMaterial) => {
   const useDerivativeTangents = primitiveDef.attributes.TANGENT === undefined
@@ -211,7 +216,7 @@ const loadPrimitive = async (
     materialPromise = Promise.resolve(MaterialStateComponent.fallbackMaterial())
   }
 
-  const hasDracoCompression = primitiveDef.extensions && primitiveDef.extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION]
+  const hasDracoCompression = primitiveDef.extensions && primitiveDef.extensions['KHR_draco_mesh_compression']
 
   if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitiveDef.attributes) {
     console.warn(
@@ -638,7 +643,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialExtensions = materialDef.extensions || {}
 
   let materialConstructor = MeshStandardMaterial
-  if (!materialExtensions[EXTENSIONS.EE_MATERIAL] && materialExtensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
+  if (!materialExtensions['EE_material'] && materialExtensions['KHR_materials_unlit']) {
     const kmuExtension = KHRUnlitExtensionComponent
     materialConstructor = kmuExtension.getMaterialType() as any
     promises.push(kmuExtension.extendMaterialParams(options, materialConstructorParameters, materialDef) as any)
@@ -970,7 +975,7 @@ const loadTexture = (options: GLTFParserOptions, textureIndex: number) => {
   const textureDef = json.textures![textureIndex]
 
   const extensions = textureDef?.extensions as Record<string, Record<string, number>> | null
-  const basisu = extensions && (extensions[EXTENSIONS.KHR_TEXTURE_BASISU] as KHRTextureBasisu)
+  const basisu = extensions && (extensions['KHR_texture_basisu'] as KHRTextureBasisu)
 
   /** @todo properly support texture extensions, this is a hack */
   const sourceIndex =
@@ -981,7 +986,7 @@ const loadTexture = (options: GLTFParserOptions, textureIndex: number) => {
   const handler = typeof sourceDef?.uri === 'string' && options.manager.getHandler(sourceDef.uri)
   let loader: ImageLoader | ImageBitmapLoader | TextureLoader | KTX2Loader | Loader<unknown, string>
 
-  if (basisu) loader = getState(AssetLoaderState).gltfLoader.ktx2Loader!
+  if (basisu) loader = getState(AssetLoaderState).ktx2Loader!
   else if (handler) loader = handler as Loader<unknown, string>
   else {
     const textureLoader = new TextureLoader(undefined, undefined, false)
@@ -1089,6 +1094,18 @@ const loadImageSource = async (
   texture.userData.mimeType = sourceDef.mimeType || getImageURIMimeType(sourceDef.uri)
 
   return texture
+}
+
+declare module '@gltf-transform/core' {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace GLTF {
+    interface IBuffer {
+      type?: string
+    }
+    interface IAnimation {
+      parameters?: any
+    }
+  }
 }
 
 const loadAnimation = async (options: GLTFParserOptions, animationIndex: number) => {
