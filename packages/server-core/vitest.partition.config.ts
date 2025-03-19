@@ -27,7 +27,9 @@ import { defineConfig, UserConfig } from 'vitest/config'
 import Config from '../../vitest.server.config.ts'
 
 const paritionedFileNames = [
-  'src/{analytics,assets,bot,cluster,hooks,integrations,matchmaking,media,moderation,networking}/**/*.test.ts'
+  // 'src/{analytics,assets,bot,cluster,hooks,integrations,matchmaking,media,moderation,networking}/**/*.test.ts',
+  'tests/**/*.test.ts',
+  'src/{projects}/**/*.test.ts'
 ]
 
 let paritionedConfig: UserConfig
