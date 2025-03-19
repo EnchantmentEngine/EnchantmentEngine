@@ -52,9 +52,11 @@ export const AssetLoaderState = defineState({
 
     const ktx2Loader = new KTX2Loader()
     ktx2Loader.setTranscoderPath(getState(DomainConfigState).publicDomain + '/loader_decoders/basis/')
-    const renderer = new WebGLRenderer()
-    ktx2Loader.detectSupport(renderer)
-    renderer.dispose()
+    if (isClient) {
+      const renderer = new WebGLRenderer()
+      ktx2Loader.detectSupport(renderer)
+      renderer.dispose()
+    }
 
     return {
       manager: DefaultLoadingManager,

@@ -24,6 +24,7 @@ Ethereal Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
+import { KHRDracoMeshCompression } from '@gltf-transform/extensions'
 import {
   ComponentJSONIDMap,
   Entity,
@@ -216,7 +217,8 @@ const loadPrimitive = async (
     materialPromise = Promise.resolve(MaterialStateComponent.fallbackMaterial())
   }
 
-  const hasDracoCompression = primitiveDef.extensions && primitiveDef.extensions['KHR_draco_mesh_compression']
+  const hasDracoCompression =
+    primitiveDef.extensions && (primitiveDef.extensions['KHR_draco_mesh_compression'] as KHRDracoMeshCompression)
 
   if (ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in primitiveDef.attributes) {
     console.warn(
