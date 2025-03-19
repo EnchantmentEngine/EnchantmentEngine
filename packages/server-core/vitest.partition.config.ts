@@ -26,16 +26,11 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineConfig, UserConfig } from 'vitest/config'
 import Config from '../../vitest.server.config.ts'
 
-const paritionedFileNames = [
-  // 'src/{analytics,assets,bot,cluster,hooks,integrations,matchmaking,media,moderation,networking}/**/*.test.ts',
-  'tests/**/*.test.ts',
-  'src/{projects,social}/**/*.test.ts'
-]
+const paritionedFileNames = ['tests/**/*.test.ts', 'src/{projects,social}/**/*.test.ts']
 
 let paritionedConfig: UserConfig
 
 if (process.env.PARTITION === '1') {
-  console.log('--- running parition 1 --')
   paritionedConfig = defineConfig({
     ...Config,
     test: {
@@ -44,7 +39,6 @@ if (process.env.PARTITION === '1') {
     }
   })
 } else {
-  console.log('--- running parition 2 --')
   paritionedConfig = defineConfig({
     ...Config,
     test: {
