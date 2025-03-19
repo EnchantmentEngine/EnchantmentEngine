@@ -209,8 +209,8 @@ const reactor = () => {
     const probe = xrLightProbeState.probe.value
     if (!probe || !session) return
 
-    // If the XRWebGLBinding class is available then we can also query an
-    // estimated reflection cube map.
+    // If the XRWebGLBinding class is available then
+    // we can also query an estimated reflection cube map.
     if ('XRWebGLBinding' in window) {
       // This is the simplest way I know of to initialize a WebGL cubemap in Three.
       const cubeRenderTarget = new WebGLCubeRenderTarget(16)

@@ -27,7 +27,19 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 
-import { SystemDefinitions, SystemUUID, createEngine, destroyEngine, entityExists, getComponent } from '@ir-engine/ecs'
+import {
+  Entity,
+  SystemDefinitions,
+  SystemUUID,
+  UndefinedEntity,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  entityExists,
+  getComponent,
+  removeComponent,
+  removeEntity
+} from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { MockXRMesh, MockXRPlane, MockXRSpace } from '../../tests/util/MockXR'
@@ -45,13 +57,16 @@ beforeAll(() => {
 
 describe('XRDetectedMeshSystem', () => {
   const System = SystemDefinitions.get(XRDetectedMeshSystem)!
+  let testEntity = UndefinedEntity
 
   beforeEach(async () => {
     createEngine()
     await mockEmulatedXREngine()
+    testEntity = createEntity()
   })
 
   afterEach(() => {
+    removeEntity(testEntity)
     destroyEmulatedXREngine()
     destroyEngine()
   })
@@ -72,10 +87,6 @@ describe('XRDetectedMeshSystem', () => {
     })
   }) //:: Fields
 
-  /** @todo */
-  describe('reactor', () => {}) //:: reactor
-
-  /** @todo */
   describe('execute', () => {
     it('should not do anything if XRState.xrFrame.session is falsy', () => {
       // Set the data as expected
@@ -153,6 +164,39 @@ describe('XRDetectedMeshSystem', () => {
       expect(resultSpy).toHaveBeenCalledWith(getState(XRState).xrFrame)
     })
   }) //:: execute
+  describe('reactor', () => {
+    // @todo When system mounting/unmounting is exposed
+    describe('cleanup', () => {
+      it.skip('should not do anything if XRState.session.value is falsy', () => {})
+
+      // @todo Why is this setup not passing the expected checks ?
+      it.skip('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedPlanesMap', () => {
+        // Set the data as expected
+        const Entities = [createEntity(), createEntity(), createEntity(), createEntity()] as Entity[]
+        for (const entity of Entities) {
+          getState(XRDetectedPlaneComponentState).detectedPlanesMap.set(
+            { lastChangedTime: Math.random() } as XRPlane,
+            entity
+          )
+        }
+        // Sanity check before running
+        for (const entity of getState(XRDetectedPlaneComponentState).detectedPlanesMap.values()) {
+          expect(entityExists(entity)).toBe(true)
+        }
+        // Run and Check the result
+        removeComponent(testEntity, XRDetectedPlaneComponent)
+        for (const entity of getState(XRDetectedPlaneComponentState).detectedPlanesMap.values()) {
+          expect(entityExists(entity)).toBe(false)
+        }
+      })
+
+      it.skip('should call XRDetectedPlaneComponent.detectedPlanesMap.clear()', () => {})
+      it.skip('should call XRDetectedPlaneComponent.planesLastChangedTimes.clear()', () => {})
+      it.skip('should call removeEntity on every entry of the XRDetectedPlaneComponent.detectedMeshesMap', () => {})
+      it.skip('should call XRDetectedPlaneComponent.detectedMeshesMap.clear()', () => {})
+      it.skip('should call XRDetectedPlaneComponent.meshesLastChangedTimes.clear()', () => {})
+    }) //:: cleanup
+  }) //:: reactor
 }) //:: XRDetectedMeshSystem
 
 describe('XRDetectedMeshSystem Functions', () => {
