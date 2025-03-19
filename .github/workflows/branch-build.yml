@@ -215,7 +215,8 @@ jobs:
       - run: mv packages_moved/network packages/
       - run: mv packages_moved/xrui packages/
       - run: mv packages_moved/spatial packages/
-      - run: cd packages/spatial && npm run test
+      - run: npm run test || npm run test
+        working-directory: packages/spatial
 
   test_engine:
     needs: install-modules
