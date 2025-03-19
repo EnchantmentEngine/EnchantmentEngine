@@ -135,11 +135,12 @@ export const GLTFComponent = defineComponent({
 
   useInstanceID: (entity: Entity) => {
     const uuid = useOptionalComponent(entity, UUIDComponent)?.value
-    const src = useOptionalComponent(entity, GLTFComponent)?.src.value
+    const src = useOptionalComponent(entity, GLTFComponent)?.src?.value
     const source = useOptionalComponent(entity, SourceComponent)?.value
     if (!uuid || !src) return source ?? ('' as SourceID)
     return SourceComponent.getSourceID(uuid, src)
   },
+
   removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
     return url.replaceAll(/\?hash=[^-]+/g, '') as T
   }
