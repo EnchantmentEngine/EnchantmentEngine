@@ -30,12 +30,15 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
+  getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent,
-  UndefinedEntity
+  UndefinedEntity,
+  UUIDComponent
 } from '@ir-engine/ecs'
 import { startReactor } from '@ir-engine/hyperflux'
+import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import { GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
 
 describe('GLTFComponent', () => {
@@ -279,17 +282,66 @@ describe('GLTFComponent', () => {
   }) //:: isSceneLoaded
 
   describe('getInstanceID', () => {
-    describe('when `@param entity` does not have a GLTFComponent ..', () => {
-      it.todo('.. should return `@param entity`.SourceComponent if it is truthy', () => {})
-      it.todo(".. should return '' if `@param entity`.SourceComponent is falsy", () => {})
+    let testEntity = UndefinedEntity
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
     })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEngine()
+    })
+
+    describe('when `@param entity` does not have a GLTFComponent ..', () => {
+      it('.. should return `@param entity`.SourceComponent if it is truthy', () => {
+        const Expected = 'SomeSourceID' as SourceID
+        setComponent(testEntity, SourceComponent, Expected)
+        const result = GLTFComponent.getInstanceID(testEntity)
+        expect(result).toBe(Expected)
+      })
+
+      it(".. should return '' if `@param entity`.SourceComponent is falsy", () => {
+        const Expected = '' as SourceID
+        setComponent(testEntity, SourceComponent, Expected)
+        const result = GLTFComponent.getInstanceID(testEntity)
+        expect(result).toBe(Expected)
+      })
+    })
+
     describe('when `@param entity` has a GLTFComponent ..', () => {
-      it.todo(".. should return '' if `@param entity`.UUIDComponent is falsy", () => {})
-      it.todo(".. should return '' if `@param entity`.GLTFComponent is falsy", () => {})
-      it.todo(
-        '.. should return the result of SourceComponent.getSourceID with entity.(UUIDCOmponent, GLTFComponent.src) as arguments',
-        () => {}
-      )
+      it(".. should return '' if `@param entity`.UUIDComponent is falsy", () => {
+        const Expected = '' as SourceID
+        setComponent(testEntity, SourceComponent, Expected)
+        setComponent(testEntity, GLTFComponent)
+        const result = GLTFComponent.getInstanceID(testEntity)
+        expect(result).toBe(Expected)
+      })
+
+      it(".. should return '' if `@param entity`.GLTFComponent is falsy", () => {
+        const Expected = '' as SourceID
+
+        setComponent(testEntity, SourceComponent, Expected)
+        setComponent(testEntity, GLTFComponent)
+        getMutableComponent(testEntity, GLTFComponent).set(null as any)
+        setComponent(testEntity, UUIDComponent, UUIDComponent.generateUUID())
+
+        const result = GLTFComponent.getInstanceID(testEntity)
+        expect(result).toBe(Expected)
+      })
+
+      it('.. should return the result of SourceComponent.getSourceID with entity.(UUIDCOmponent, GLTFComponent.src) as arguments', () => {
+        const uuid = UUIDComponent.generateUUID()
+        const src = 'SomeSourcePath'
+        const Expected = `${uuid}-${src}` as SourceID
+
+        setComponent(testEntity, SourceComponent, Expected)
+        setComponent(testEntity, GLTFComponent, { src: src })
+        setComponent(testEntity, UUIDComponent, uuid)
+
+        const result = GLTFComponent.getInstanceID(testEntity)
+        expect(result).toBe(Expected)
+      })
     })
   }) //:: getInstanceID
 
