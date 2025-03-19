@@ -30,9 +30,11 @@ import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/service
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { useFind, useMutation, useRealtime, useSearch } from '@ir-engine/common'
 import {
+  FileBrowserContentType,
   StaticResourceType,
   UserID,
   fileBrowserPath,
+  fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
 import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
@@ -94,6 +96,14 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     filesState.searchText.value
   )
 
+  const uploadsQuery = useFind(fileBrowserUploadPath, {
+    query: {
+      $limit: FILES_PAGE_LIMIT
+    }
+  })
+
+  useSearch(uploadsQuery, { key: { $like: `%${filesState.searchText.value}%` } }, filesState.searchText.value)
+
   const changeDirectoryByPath = (path: string) => {
     filesState.merge({ selectedDirectory: path })
     filesQuery.setPage(0)
@@ -115,7 +125,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   }
 
   const createNewFolder = () => fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
-  const files = filesQuery.data.map((file) => {
+  const files = filesQuery.data.concat(uploadsQuery.data as FileBrowserContentType[]).map((file) => {
     const isFolder = file.type === 'folder'
     const fullName = isFolder ? file.name : file.name + '.' + file.type
 
@@ -127,6 +137,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
       isFolder
     }
   })
+
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
 
