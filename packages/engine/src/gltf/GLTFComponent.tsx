@@ -606,3 +606,7 @@ export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
     manager: gltfLoader.manager
   }
 }
+
+export const GLTFComponentFunctions = {
+  componentDependenciesLoaded
+}

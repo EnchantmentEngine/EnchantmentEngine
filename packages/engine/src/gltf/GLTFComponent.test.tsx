@@ -23,9 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { GLTFComponent } from './GLTFComponent'
+import { createEngine, createEntity, destroyEngine, removeEntity, setComponent, UndefinedEntity } from '@ir-engine/ecs'
+import { startReactor } from '@ir-engine/hyperflux'
+import { GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
 
 describe('GLTFComponent', () => {
   describe('Fields', () => {
@@ -52,11 +54,37 @@ describe('GLTFComponent', () => {
     }) //:: jsonID
   }) //:: Fields
 
+  type ComponentDependencies = any
+
   describe('useDependenciesLoaded', () => {
-    it.todo(
-      'should return the result of calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies',
-      () => {}
-    )
+    let testEntity = UndefinedEntity
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      return destroyEngine()
+    })
+
+    it('should return the result of calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies', () => {
+      const dependencies = { componentDependencies: {} } as ComponentDependencies
+      const Expected = GLTFComponentFunctions.componentDependenciesLoaded(dependencies)
+
+      setComponent(testEntity, GLTFComponent, { dependencies: dependencies })
+      let state: boolean = false
+      const Reactor = () => {
+        state = GLTFComponent.useDependenciesLoaded(testEntity)
+        return null
+      }
+      const before = state
+      expect(before).not.toBe(Expected)
+
+      const root = startReactor(Reactor)
+      const result = state
+      expect(result).toBe(Expected)
+    })
   }) //:: useDependenciesLoaded
 
   describe('useSceneLoaded', () => {
