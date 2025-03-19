@@ -60,6 +60,7 @@ import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
 import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
+import { act, render } from '@testing-library/react'
 import { Cache } from 'three'
 import { v4 } from 'uuid'
 import { SearchParamState } from '../common/services/RouterService'
@@ -197,29 +198,29 @@ describe('AvatarSpawnSystem', async () => {
 
     startReactor(system.reactor!)
 
-    await vi.waitFor(() => {
-      applyIncomingActions()
+    await act(async () => render(null))
 
-      // should have spawn action
-      const spawnAction = Engine.instance.store.actions.history.findLast((action) =>
-        AvatarNetworkAction.spawn.matches.test(action)
-      ) as typeof AvatarNetworkAction.spawn.matches._TYPE
-      assert.ok(spawnAction)
-      assert.deepEqual(spawnAction.type as string, AvatarNetworkAction.spawn.type)
-      assert.ok(spawnAction.position)
-      assert.ok(spawnAction.rotation)
-      assert.ok(spawnAction.parentUUID)
-      assert.equal(spawnAction.avatarURL, '/avatar.gltf')
-      assert.equal(spawnAction.entityUUID, userID + '_avatar')
+    applyIncomingActions()
 
-      const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
-        AvatarNetworkAction.setAvatarURL.matches.test(action)
-      ) as typeof AvatarNetworkAction.spawn.matches._TYPE
-      assert.ok(avatarURLAction)
-      assert.deepEqual(avatarURLAction.type as string, AvatarNetworkAction.setAvatarURL.type)
-      assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
-      assert.equal(avatarURLAction.entityUUID, userID + '_avatar')
-    })
+    // should have spawn action
+    const spawnAction = Engine.instance.store.actions.history.findLast((action) =>
+      AvatarNetworkAction.spawn.matches.test(action)
+    ) as typeof AvatarNetworkAction.spawn.matches._TYPE
+    assert.ok(spawnAction)
+    assert.deepEqual(spawnAction.type as string, AvatarNetworkAction.spawn.type)
+    assert.ok(spawnAction.position)
+    assert.ok(spawnAction.rotation)
+    assert.ok(spawnAction.parentUUID)
+    assert.equal(spawnAction.avatarURL, '/avatar.gltf')
+    assert.equal(spawnAction.entityUUID, userID + '_avatar')
+
+    const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
+      AvatarNetworkAction.setAvatarURL.matches.test(action)
+    ) as typeof AvatarNetworkAction.spawn.matches._TYPE
+    assert.ok(avatarURLAction)
+    assert.deepEqual(avatarURLAction.type as string, AvatarNetworkAction.setAvatarURL.type)
+    assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
+    assert.equal(avatarURLAction.entityUUID, userID + '_avatar')
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
@@ -233,16 +234,17 @@ describe('AvatarSpawnSystem', async () => {
 
     startReactor(system.reactor!)
 
-    await vi.waitFor(() => {
-      applyIncomingActions()
-      // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
-        SpectateActions.spectateEntity.matches.test(action)
-      ) as typeof SpectateActions.spectateEntity.matches._TYPE
-      assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
-      assert.equal(spectateAction.spectatingEntity, '')
-    })
+    await act(async () => render(null))
+
+    applyIncomingActions()
+
+    // should have spectate action
+    const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+      SpectateActions.spectateEntity.matches.test(action)
+    ) as typeof SpectateActions.spectateEntity.matches._TYPE
+    assert.ok(spectateAction)
+    assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+    assert.equal(spectateAction.spectatingEntity, '')
   })
 
   it('should enter spectate mode when spectate specified user is in search state', async () => {
@@ -258,9 +260,9 @@ describe('AvatarSpawnSystem', async () => {
 
     startReactor(system.reactor!)
 
-    applyIncomingActions()
-
     await vi.waitFor(() => {
+      applyIncomingActions()
+
       // should have spectate action
       const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
@@ -279,9 +281,9 @@ describe('AvatarSpawnSystem', async () => {
 
     startReactor(system.reactor!)
 
-    applyIncomingActions()
-
     await vi.waitFor(() => {
+      applyIncomingActions()
+
       // should have spectate action
       const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
