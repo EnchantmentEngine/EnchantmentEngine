@@ -29,7 +29,12 @@ import { TransformComponent } from '@ir-engine/spatial'
 import { exportGLTFScene } from '../../gltf/exportGLTFScene'
 
 export default async function exportMaterialsGLTF(
-  materialEntities: Entity[]
+  materialEntities: Entity[],
+  exporterArgs: {
+    binary: boolean
+    relativePath: string
+    projectName: string
+  }
 ): Promise<ArrayBuffer | { [key: string]: any } | undefined> {
   if (materialEntities.length === 0) return
   const rootEntity = createEntity()
@@ -43,7 +48,7 @@ export default async function exportMaterialsGLTF(
     setComponent(materialEntity, EntityTreeComponent, { parentEntity: rootEntity })
   }
 
-  const gltf = await exportGLTFScene(rootEntity, '', '', false)
+  const gltf = await exportGLTFScene(rootEntity, exporterArgs.projectName, exporterArgs.relativePath, false)
 
   for (const materialEntity of materialEntities) {
     const parentEntity = previousParentEntities.get(materialEntity)!
