@@ -567,9 +567,12 @@ describe('EditorControlFunctions', () => {
         UndefinedEntity,
         requestedName
       )
+<<<<<<< HEAD
 
       await flushAll()
 
+=======
+>>>>>>> dd9bd8e374 (Update STG with release1.0 (#1440))
       const entity1 = UUIDComponent.getEntityByUUID(entity1UUID, Layers.Authoring)
       assert(entity1)
       assert.equal(getComponent(entity1, NameComponent), 'Test')
@@ -608,9 +611,12 @@ describe('EditorControlFunctions', () => {
         UndefinedEntity,
         requestedName
       )
+<<<<<<< HEAD
 
       await flushAll()
 
+=======
+>>>>>>> dd9bd8e374 (Update STG with release1.0 (#1440))
       const entity3 = UUIDComponent.getEntityByUUID(entity3UUID, Layers.Authoring)
       assert(entity3)
       assert.equal(getComponent(entity3, NameComponent), 'Test 2')

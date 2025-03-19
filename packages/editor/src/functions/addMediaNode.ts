@@ -58,7 +58,11 @@ import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/Volu
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
+<<<<<<< HEAD
 import { getState, none } from '@ir-engine/hyperflux'
+=======
+import { getState } from '@ir-engine/hyperflux'
+>>>>>>> dd9bd8e374 (Update STG with release1.0 (#1440))
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
