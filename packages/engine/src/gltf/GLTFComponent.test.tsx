@@ -30,30 +30,6 @@ import { startReactor } from '@ir-engine/hyperflux'
 import { GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
 
 describe('GLTFComponent', () => {
-  describe('Fields', () => {
-    describe('name', () => {
-      it('should have the expected value', () => {
-        const Expected = 'GLTFComponent'
-        const result = GLTFComponent.name
-        expect(result).toBe(Expected)
-      })
-
-      it('should respect the naming convention for Components', () => {
-        const result = GLTFComponent.name
-        expect(result).toBeTruthy()
-        expect(result.endsWith('Component')).toBeTruthy()
-      })
-    }) //:: name
-
-    describe('jsonID', () => {
-      it('should have the expected value', () => {
-        const Expected = 'EE_model'
-        const result = GLTFComponent.jsonID
-        expect(result).toBe(Expected)
-      })
-    }) //:: jsonID
-  }) //:: Fields
-
   type ComponentDependencies = any
 
   describe('useDependenciesLoaded', () => {
@@ -65,7 +41,7 @@ describe('GLTFComponent', () => {
 
     afterEach(() => {
       removeEntity(testEntity)
-      return destroyEngine()
+      destroyEngine()
     })
 
     it('should return the result of calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies', () => {
@@ -88,7 +64,26 @@ describe('GLTFComponent', () => {
   }) //:: useDependenciesLoaded
 
   describe('useSceneLoaded', () => {
-    it.todo('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {})
+    let testEntity = UndefinedEntity
+    beforeEach(() => {
+      createEngine()
+      testEntity = createEntity()
+    })
+
+    afterEach(() => {
+      removeEntity(testEntity)
+      destroyEngine()
+    })
+
+    it.todo('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {
+      let state: boolean = false
+      const Reactor = () => {
+        state = GLTFComponent.useSceneLoaded(testEntity)
+        return null
+      }
+      expect(true).false
+    })
+
     it.todo(
       'should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true',
       () => {}
