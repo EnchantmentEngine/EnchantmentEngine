@@ -25,7 +25,16 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { createEngine, createEntity, destroyEngine, removeEntity, setComponent, UndefinedEntity } from '@ir-engine/ecs'
+import {
+  createEngine,
+  createEntity,
+  destroyEngine,
+  getComponent,
+  hasComponent,
+  removeEntity,
+  setComponent,
+  UndefinedEntity
+} from '@ir-engine/ecs'
 import { startReactor } from '@ir-engine/hyperflux'
 import { GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
 
@@ -75,27 +84,113 @@ describe('GLTFComponent', () => {
       destroyEngine()
     })
 
-    it.todo('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {
+    it('should return false (return early) if `@param entity`.GLTFComponent is falsy', () => {
+      const Expected = false
+
       let state: boolean = false
       const Reactor = () => {
         state = GLTFComponent.useSceneLoaded(testEntity)
         return null
       }
-      expect(true).false
+
+      const root = startReactor(Reactor)
+      const result = state
+      expect(result).toBe(Expected)
     })
 
-    it.todo(
-      'should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true',
-      () => {}
-    )
-    it.todo(
-      'should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false and entity.GLTFComponent.progress is 100',
-      () => {}
-    )
-    it.todo(
-      'should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false and entity.GLTFComponent.progress is not 100',
-      () => {}
-    )
+    describe('when progress is 100 ..', () => {
+      const progress = 100
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: { one: {} as any } } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        let state: boolean = false
+        const Reactor = () => {
+          state = GLTFComponent.useSceneLoaded(testEntity)
+          return null
+        }
+
+        const root = startReactor(Reactor)
+        const result = state
+        expect(result).toBe(Expected)
+      })
+
+      it('should return true when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true', () => {
+        const Expected = true
+
+        const dependencies = { componentDependencies: {} } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeTruthy()
+
+        let state: boolean = false
+        const Reactor = () => {
+          state = GLTFComponent.useSceneLoaded(testEntity)
+          return null
+        }
+
+        const root = startReactor(Reactor)
+        const result = state
+        expect(result).toBe(Expected)
+      })
+    })
+
+    describe('when progress is not 100 ..', () => {
+      const progress = 100 - 1
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns false', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: { one: {} as any } } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeFalsy()
+
+        let state: boolean = false
+        const Reactor = () => {
+          state = GLTFComponent.useSceneLoaded(testEntity)
+          return null
+        }
+
+        const root = startReactor(Reactor)
+        const result = state
+        expect(result).toBe(Expected)
+      })
+
+      it('should return false when calling componentDependenciesLoaded with `@param entity`.GLTFComponent.dependencies returns true', () => {
+        const Expected = false
+
+        const dependencies = { componentDependencies: {} } as ComponentDependencies
+        setComponent(testEntity, GLTFComponent, { dependencies: dependencies, progress: progress })
+
+        expect(hasComponent(testEntity, GLTFComponent)).true
+        expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+        expect(
+          GLTFComponentFunctions.componentDependenciesLoaded(getComponent(testEntity, GLTFComponent).dependencies)
+        ).toBeTruthy()
+
+        let state: boolean = false
+        const Reactor = () => {
+          state = GLTFComponent.useSceneLoaded(testEntity)
+          return null
+        }
+
+        const root = startReactor(Reactor)
+        const result = state
+        expect(result).toBe(Expected)
+      })
+    })
   }) //:: useSceneLoaded
 
   describe('isSceneLoaded', () => {
