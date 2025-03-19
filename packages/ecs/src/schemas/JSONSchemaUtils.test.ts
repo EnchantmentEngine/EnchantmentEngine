@@ -2248,8 +2248,6 @@ describe('ConvertToSchema', () => {
     )
 
     describe.each(['Object', 'Class'])('case: Kind.%s', (kind) => {
-      const TestSchemaKind = kind
-
       describe("when schema.properties has keys, `@param value` is truthy and its typeof is 'object' ..", () => {
         it('.. should return an object that contains all serializable fields of `@param value` converted to schema values', () => {
           const Expected = { one: 42 }
