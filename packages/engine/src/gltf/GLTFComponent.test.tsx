@@ -44,9 +44,16 @@ import { getState, startReactor } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { BoxGeometry, Mesh } from 'three'
+import { BINARY_EXTENSION_HEADER_MAGIC } from '../assets/loaders/gltf/GLTFExtensions'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
-import { getGLTFOptions, GLTFComponent, GLTFComponentFunctions, useHasModelOrIndependentMesh } from './GLTFComponent'
+import {
+  getGLTFOptions,
+  GLTFComponent,
+  GLTFComponentFunctions,
+  parseBinaryData,
+  useHasModelOrIndependentMesh
+} from './GLTFComponent'
 
 describe('GLTFComponent', () => {
   type ComponentDependencies = any
@@ -620,14 +627,34 @@ describe('loadGLTFFile', () => {
 }) //:: loadGLTFFile
 
 describe('parseBinaryData', () => {
-  it.todo(
-    'should throw an error if the first 4 bytes of `@param data` are not equal to BINARY_EXTENSION_HEADER_MAGIC',
-    () => {}
-  )
-  it.todo(
-    'should throw an error if the first 4 bytes of `@param data` are equal to BINARY_EXTENSION_HEADER_MAGIC and the uint32 at byte 8 is less than 2.0',
-    () => {}
-  )
+  /** @todo Create with mockGLB instead */
+  it('should throw an error if the first 4 bytes of `@param data` are not equal to BINARY_EXTENSION_HEADER_MAGIC', () => {
+    // 3. Set input & dependencies data
+    const data = new TextEncoder().encode('STAR')
+    // 1. Sanity check (input & dependencies)
+    expect(data.slice(0, 4)).not.toBe(BINARY_EXTENSION_HEADER_MAGIC)
+    // 2. Run the process
+    expect(() => {
+      parseBinaryData(data)
+    }).toThrowError()
+  })
+
+  /** @todo Create with mockGLB instead */
+  it('should throw an error if the first 4 bytes of `@param data` are equal to BINARY_EXTENSION_HEADER_MAGIC and the uint32 at byte 4 is less than 2.0', () => {
+    // 3. Set input & dependencies data
+    const u32 = '\0\0\0\0'
+    const data = new TextEncoder().encode(BINARY_EXTENSION_HEADER_MAGIC + u32 + u32)
+    const view = new DataView(data.buffer)
+    // 1. Sanity check (input & dependencies)
+    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
+    expect(view.getUint32(4, true)).toBeLessThan(2.0)
+    // 2. Run the process
+    expect(() => {
+      parseBinaryData(data)
+    }).toThrowError()
+  })
+
+  /** @todo Create with mockGLB */
   it.todo(
     'should decode and parse the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk data into the result.json object',
     () => {}
