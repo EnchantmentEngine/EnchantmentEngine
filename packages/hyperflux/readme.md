@@ -61,7 +61,6 @@ dispatchAction(increment({ amount: 5 }))
 #### Starting a Reactor
 
 ```tsx
-// TSX (React)
 import React from 'react'
 import { useHookstate, startReactor, getState, getMutableState, defineState } from '@ir-engine/hyperflux'
 
