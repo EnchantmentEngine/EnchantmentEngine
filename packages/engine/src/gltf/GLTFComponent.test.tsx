@@ -30,6 +30,8 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
+  EntityTreeComponent,
+  getAncestorWithComponents,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -39,9 +41,12 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getState, startReactor } from '@ir-engine/hyperflux'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { BoxGeometry, Mesh } from 'three'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
-import { getGLTFOptions, GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
+import { getGLTFOptions, GLTFComponent, GLTFComponentFunctions, useHasModelOrIndependentMesh } from './GLTFComponent'
 
 describe('GLTFComponent', () => {
   type ComponentDependencies = any
@@ -632,17 +637,102 @@ describe('parseBinaryData', () => {
 }) //:: parseBinaryData
 
 describe('useHasModelOrIndependentMesh', () => {
-  it.todo('should return true if `@param entity` has a GLTFComponent', () => {})
-  it.todo('should return true if `@param entity` has a GLTFComponent', () => {})
-  it.todo(
-    'should return true if `@param entity` has a MeshComponent and it does not have an ancestor with components [GLTFComponent, SceneComponent]',
-    () => {}
-  )
-  it.todo('should return false if `@param entity` has a GLTFComponent and it does not have a MeshComponent', () => {})
-  it.todo(
-    'should return false if `@param entity` has components [GLTFComponent, MeshComponent] and has an ancestor with components [GLTFComponent, SceneComponent]',
-    () => {}
-  )
+  let testEntity = UndefinedEntity
+  beforeEach(() => {
+    createEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroyEngine()
+  })
+
+  it('should return true if `@param entity` has a GLTFComponent', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    // 2. Run the process
+    let result = !Expected
+    const Reactor = () => {
+      result = useHasModelOrIndependentMesh(testEntity)
+      return null
+    }
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return true if `@param entity` does not have a GLTFComponent, it has a MeshComponent and it does not have an ancestor with components [GLTFComponent, SceneComponent]', () => {
+    const Expected = true
+    // 3. Set input & dependencies data
+    setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
+    expect(hasComponent(testEntity, MeshComponent)).toBeTruthy()
+    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeFalsy()
+    // 2. Run the process
+    let result = !Expected
+    const Reactor = () => {
+      result = useHasModelOrIndependentMesh(testEntity)
+      return null
+    }
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return false if `@param entity` does not have a GLTFComponent, it has a MeshComponent and it has an ancestor with components [GLTFComponent, SceneComponent]', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const parentEntity = createEntity()
+    setComponent(parentEntity, GLTFComponent)
+    setComponent(parentEntity, SceneComponent)
+    setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
+    setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
+    expect(hasComponent(testEntity, MeshComponent)).toBeTruthy()
+    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeTruthy()
+    // 2. Run the process
+    let result = !Expected
+    const Reactor = () => {
+      result = useHasModelOrIndependentMesh(testEntity)
+      return null
+    }
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return false if `@param entity` does not have a GLTFComponent, a MeshComponent or an ancestor with components [GLTFComponent, SceneComponent]', () => {
+    const Expected = false
+    // 3. Set input & dependencies data
+    const parentEntity = createEntity()
+    // setComponent(parentEntity, GLTFComponent)
+    // setComponent(parentEntity, SceneComponent)
+    // setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
+    setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
+    expect(hasComponent(testEntity, MeshComponent)).toBeFalsy()
+    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeFalsy()
+    // 2. Run the process
+    let result = !Expected
+    const Reactor = () => {
+      result = useHasModelOrIndependentMesh(testEntity)
+      return null
+    }
+    const root = startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: useHasModelOrIndependentMesh
 
 describe('getGLTFOptions', () => {

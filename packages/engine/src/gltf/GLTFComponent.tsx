@@ -579,9 +579,9 @@ export const parseBinaryData = (data) => {
  */
 export const useHasModelOrIndependentMesh = (entity: Entity) => {
   const hasModel = useHasComponent(entity, GLTFComponent)
-  const isChildOfModel = !!useAncestorWithComponents(entity, [GLTFComponent, SceneComponent])
+  const hasParentWithModel = !!useAncestorWithComponents(entity, [GLTFComponent, SceneComponent])
   const hasMesh = useHasComponent(entity, MeshComponent)
-  return hasModel || (hasMesh && !isChildOfModel)
+  return hasModel || (hasMesh && !hasParentWithModel)
 }
 
 export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
