@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { GLTF } from '@gltf-transform/core'
 import {
   createEngine,
   createEntity,
@@ -37,9 +38,10 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { startReactor } from '@ir-engine/hyperflux'
+import { getState, startReactor } from '@ir-engine/hyperflux'
+import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
-import { GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
+import { getGLTFOptions, GLTFComponent, GLTFComponentFunctions } from './GLTFComponent'
 
 describe('GLTFComponent', () => {
   type ComponentDependencies = any
@@ -644,21 +646,253 @@ describe('useHasModelOrIndependentMesh', () => {
 }) //:: useHasModelOrIndependentMesh
 
 describe('getGLTFOptions', () => {
+  let testEntity = UndefinedEntity
+  beforeEach(() => {
+    createEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroyEngine()
+  })
+
   // dep: `@param entity`.GLTFComponent
   // dep: `@param entity`.GLTFComponent.src
   // dep: `@param entity`.GLTFComponent.document
   // dep: AssetLoaderState.gltfLoader
   // dep: `@param entity`.GLTFComponent.body
   // dep: AssetLoaderState.gltfLoader.manager
-  it.todo('should return an object that has `@param entity` in its .entity field', () => {})
-  it.todo('should return an object that has `@param entity`.GLTFComponent.document in its .document field', () => {})
-  it.todo('should return an object that has `@param entity`.GLTFComponent.src in its .documentID field', () => {})
-  it.todo('should return an object that has `@param entity`.GLTFComponent.src in its .url field', () => {})
-  it.todo(
-    'should return an object that has the result of calling LoaderUtils.extractUrlBase with `@param entity`.GLTFComponent.src as arguments in its .path field',
-    () => {}
-  )
-  it.todo('should return an object that has `@param entity`.GLTFComponent.body in its .body field', () => {})
-  it.todo('should return an object that has an empty object in its .requestHeader field', () => {})
-  it.todo('should return an object that has AssetLoaderState.gltfLoader.manager in its .manager field', () => {})
+  it('should return an object that has `@param entity` in its .entity field', () => {
+    const Expected = testEntity
+    const gltf = {
+      src: 'SomeTestSource',
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).entity
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has `@param entity`.GLTFComponent.document in its .document field', () => {
+    const Expected = {} as GLTF.IGLTF
+    const gltf = {
+      src: 'SomeTestSource',
+      document: Expected,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).document
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has `@param entity`.instanceID in its .documentID field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const src = 'SomeSourcePath'
+    const Expected = `${uuid}-${src}` as SourceID
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, Expected)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).documentID
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has `@param entity`.GLTFComponent.src in its .url field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const src = 'SomeSourcePath'
+    const sourceID = `${uuid}-${src}` as SourceID
+    const Expected = src
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, sourceID)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).url
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has the result of calling LoaderUtils.extractUrlBase with `@param entity`.GLTFComponent.src as arguments in its .path field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const urlBase = 'http://some.domain.url/'
+    const src = urlBase + 'SomeSourcePath'
+    const sourceID = `${uuid}-${src}` as SourceID
+    const Expected = urlBase
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, sourceID)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).path
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has `@param entity`.GLTFComponent.body in its .body field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const urlBase = 'http://some.domain.url/'
+    const src = urlBase + 'SomeSourcePath'
+    const sourceID = `${uuid}-${src}` as SourceID
+    const Expected = {} as ArrayBuffer
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: Expected
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, sourceID)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).body
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has an empty object in its .requestHeader field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const urlBase = 'http://some.domain.url/'
+    const src = urlBase + 'SomeSourcePath'
+    const sourceID = `${uuid}-${src}` as SourceID
+    const Expected = {}
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, sourceID)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).requestHeader
+    // 4. Check the result (output)
+    expect(result).toEqual(Expected)
+    // 5? Cleanup (dependencies)
+  })
+
+  it('should return an object that has AssetLoaderState.gltfLoader.manager in its .manager field', () => {
+    const uuid = UUIDComponent.generateUUID()
+    const urlBase = 'http://some.domain.url/'
+    const src = urlBase + 'SomeSourcePath'
+    const sourceID = `${uuid}-${src}` as SourceID
+    const Expected = getState(AssetLoaderState).gltfLoader.manager
+    const gltf = {
+      src: src,
+      document: {} as GLTF.IGLTF,
+      body: {} as ArrayBuffer
+    }
+    // 3. Set input & dependencies data
+    setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
+    setComponent(testEntity, SourceComponent, sourceID)
+    setComponent(testEntity, UUIDComponent, uuid)
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+    expect(getState(AssetLoaderState)).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
+    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
+    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    // 2. Run the process
+    const result = getGLTFOptions(testEntity).manager
+    // 4. Check the result (output)
+    expect(result).toBe(Expected)
+    // 5? Cleanup (dependencies)
+  })
 }) //:: getGLTFOptions
