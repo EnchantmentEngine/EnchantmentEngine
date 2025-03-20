@@ -32,7 +32,7 @@ const build = async () => {
   if (fs.existsSync('dist')) fs.rmdirSync('dist', { recursive: true })
 
   // run tsc --build tsconfig.build.json
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     exec('tsc --build tsconfig.build.json', (err, stdout, stderr) => {
       if (err) {
         reject(err)
