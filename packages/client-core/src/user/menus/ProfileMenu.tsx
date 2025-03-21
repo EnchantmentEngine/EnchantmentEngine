@@ -36,6 +36,7 @@ import {
   authenticationSettingPath,
   clientSettingPath,
   identityProviderPath,
+  projectSettingPath,
   scopePath,
   userApiKeyPath,
   userPath
@@ -136,6 +137,13 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
   const currentLocation = getState(LocationState).currentLocation.location
 
+  const projectSettings = useFind(projectSettingPath, {
+    query: {
+      projectId: currentLocation.projectId
+    }
+  })
+  const creatorPrivacyPolicyUrl = projectSettings.data.find((setting) => setting.key === 'PrivacyPolicyUrl')
+
   const avatarSelectMenuRef = useRef<{
     handleClose: () => Promise<void>
   } | null>(null)
@@ -226,7 +234,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
     }
   }, [identityProvidersQuery.data])
 
-  const updateUserName = (e: React.MouseEvent | React.KeyboardEvent) => {
+  const updateUserName = (e: React.MouseEvent | React.KeyboardEvent | MouseEvent | TouchEvent) => {
     e.preventDefault()
     handleUpdateUsername()
   }
@@ -375,6 +383,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
     authState?.value?.twitter
 
   const enableConnect = authState?.value?.emailMagicLink || authState?.value?.smsMagicLink
+
   return (
     <div className="absolute z-50 h-fit max-h-[90dvh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-4 p-6 smh:max-h-[60dvh] smh:px-8 smh:py-6">
       <div className="relative grid w-full grid-cols-5 gap-x-2">
@@ -414,7 +423,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             )}
 
             {acceptedTOS && apiKey?.id && (
-              <button onClick={() => showApiKey.set(!showApiKey.value)} className="w-fit text-text-secondary">
+              <button onClick={() => showApiKey.set(!showApiKey.value)} className="w-fit text-text-primary">
                 <Text fontSize="sm">
                   {showApiKey.value ? t('user:usermenu.profile.hideApiKey') : t('user:usermenu.profile.showApiKey')}
                 </Text>
@@ -465,6 +474,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             initialized && 'top-[4.5rem]'
           )}
         >
+          {apiKey?.id && <div className="h-2"></div>}
           {isGuest && !originallyAcceptedTOS && (
             <>
               <div className="flex w-full items-center justify-start gap-x-1">
@@ -621,7 +631,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                   onClose={() => {
                     PopoverState.showPopupover(<ProfileMenu />)
                   }}
-                />
+                />,
+                () => {
+                  PopoverState.hidePopupover()
+                  PopoverState.showPopupover(<ProfileMenu />)
+                }
               )
             }}
           >
@@ -644,7 +658,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                   onClose={() => {
                     PopoverState.showPopupover(<ProfileMenu />)
                   }}
-                />
+                />,
+                () => {
+                  PopoverState.hidePopupover()
+                  PopoverState.showPopupover(<ProfileMenu />)
+                }
               )
             }}
           >
@@ -796,11 +814,25 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         </div>
       )}
 
-      <a href={clientSetting?.privacyPolicy} target="_blank">
-        <Text className="mt-1 w-full text-center text-text-primary smh:mt-5" fontSize="sm">
-          {t('user:usermenu.profile.privacyPolicy')}
-        </Text>
-      </a>
+      <div className="mt-1 flex w-full items-center justify-center gap-x-2 smh:mt-5">
+        <a href={clientSetting?.privacyPolicy} target="_blank">
+          <Text className="text-center text-text-primary" fontSize="sm">
+            {t('user:usermenu.profile.privacyPolicy')}
+          </Text>
+        </a>
+        {creatorPrivacyPolicyUrl?.value && (
+          <>
+            <Text className="text-center text-text-primary" fontSize="sm">
+              |
+            </Text>
+            <a href={creatorPrivacyPolicyUrl.value} target="_blank">
+              <Text className="text-center text-text-primary" fontSize="sm">
+                {t('user:usermenu.profile.creatorPrivacyPolicy')}
+              </Text>
+            </a>
+          </>
+        )}
+      </div>
     </div>
   )
 }
