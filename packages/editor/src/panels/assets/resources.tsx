@@ -26,7 +26,7 @@ import {
   FileThumbnailJobState,
   removeFromFileThumbnailsSeen
 } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import ProgressBar from '@ir-engine/client-core/src/systems/ui/LoadingDetailView/SimpleProgressBar'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
@@ -116,7 +116,7 @@ function ResourceFileContextMenu({
             size="sm"
             fullWidth
             onClick={() => {
-              PopoverState.showPopupover(
+              ModalState.openModal(
                 <DeleteFileModal
                   files={[
                     {
@@ -133,7 +133,7 @@ function ResourceFileContextMenu({
                   onComplete={(err?: unknown) => {
                     if (!err) {
                       removeFromFileThumbnailsSeen([resource.key])
-                      refetchResources()
+                      refetchResources(true)
                     }
                   }}
                 />
@@ -413,7 +413,7 @@ function ResourceItems() {
 
   const thumbnailJobState = useMutableState(FileThumbnailJobState)
   useEffect(() => {
-    refetchResources()
+    refetchResources(true)
   }, [thumbnailJobState.jobs.length])
 
   useEffect(() => {
