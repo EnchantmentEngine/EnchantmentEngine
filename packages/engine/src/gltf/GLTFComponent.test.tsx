@@ -23,14 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockGLB, mockGLBOptionsSetMissingDefaults } from '../../tests/util/mockGLTF'
 
 import { GLTF } from '@gltf-transform/core'
 import {
   createEngine,
   createEntity,
+  defineComponent,
   destroyEngine,
+  EntityContext,
   EntityTreeComponent,
   getAncestorWithComponents,
   getComponent,
@@ -41,20 +43,29 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getState, startReactor } from '@ir-engine/hyperflux'
+import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import React from 'react'
 import { BoxGeometry, Mesh } from 'three'
+import { overrideFileLoaderLoad, overrideTextureLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
 import { BINARY_EXTENSION_HEADER_LENGTH, BINARY_EXTENSION_HEADER_MAGIC } from '../assets/loaders/gltf/GLTFExtensions'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
+import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import {
   getGLTFOptions,
   GLTFComponent,
   GLTFComponentFunctions,
+  GLTFComponentHooks,
+  GLTFComponentReactor,
+  GLTFComponentReactors,
   parseBinaryData,
   useHasModelOrIndependentMesh
 } from './GLTFComponent'
+import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
+import { AssetState } from './GLTFState'
 
 describe('GLTFComponent', () => {
   type ComponentDependencies = any
@@ -529,30 +540,176 @@ describe('GLTFComponent', () => {
 // ? ResourceReactor
 // ? DependencyReactor
 describe('GLTFComponentReactor', () => {
-  // dep: entityContext
-  // dep: entityContext.GLTFComponent
+  /** @todo Switch to https://github.com/ir-engine/ir-engine/pull/1421 */
+  overrideFileLoaderLoad()
+  overrideTextureLoaderLoad()
+  const TestScenePath: string = '/packages/engine/tests/assets/SceneLoadingTest.gltf'
+
+  let testEntity = UndefinedEntity
+  beforeEach(() => {
+    createEngine()
+    testEntity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(testEntity)
+    destroyEngine()
+  })
+
   describe('on change [gltfComponent.cameraOcclusion]', () => {
-    it.todo(
-      'should call ObjectLayerMaskComponent.disableLayer if entityContext.GLTFComponent.cameraOcclusion is falsy',
-      () => {}
-    )
-    it.todo(
-      'should call ObjectLayerMaskComponent.enableLayer if entityContext.GLTFComponent.cameraOcclusion is truthy',
-      () => {}
-    )
+    it('should call ObjectLayerMaskComponent.disableLayer if entityContext.GLTFComponent.cameraOcclusion is falsy', () => {
+      // 3. Set input & dependencies data
+      setComponent(testEntity, GLTFComponent, { progress: 100, dependencies: { componentDependencies: {} } })
+      const resultSpy = vi.spyOn(ObjectLayerMaskComponent, 'disableLayer')
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).cameraOcclusion).toBeFalsy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should call ObjectLayerMaskComponent.enableLayer if entityContext.GLTFComponent.cameraOcclusion is truthy', () => {
+      // 3. Set input & dependencies data
+      setComponent(testEntity, GLTFComponent, {
+        progress: 100,
+        dependencies: { componentDependencies: {} },
+        cameraOcclusion: true
+      })
+      const resultSpy = vi.spyOn(ObjectLayerMaskComponent, 'enableLayer')
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).cameraOcclusion).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
   }) //:: [gltfComponent.cameraOcclusion]
 
-  // @todo How to check for useGLTFDocument(entityContext) ?
+  it('should call useGLTFDocument with entityContext as arguments', () => {
+    // 3. Set input & dependencies data
+    const resultSpy = vi.spyOn(GLTFComponentHooks, 'useGLTFDocument')
+    const uuid = UUIDComponent.generateUUID()
+    const src = TestScenePath
+    setComponent(testEntity, UUIDComponent, uuid)
+    setComponent(testEntity, GLTFComponent, { src: src })
+    const Reactor = () => {
+      return React.createElement(
+        EntityContext.Provider,
+        { value: testEntity },
+        React.createElement(GLTFComponentReactor, {})
+      )
+    }
+    // 1. Sanity check (input & dependencies)
+    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+    expect(resultSpy).not.toHaveBeenCalled()
+    // 2. Run the process
+    startReactor(Reactor)
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalledWith(testEntity)
+    // 5? Cleanup (dependencies)
+  })
 
   describe('on change [gltfComponent.src]', () => {
-    it.todo('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to entityContext', () => {})
+    it('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to entityContext', () => {
+      const Expected = testEntity
+      const Initial = createEntity()
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      const sourceID = `${uuid}-${src}` as SourceID
+      getMutableState(AssetState)[sourceID].set(Initial)
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, { src: src, progress: 100, dependencies: { componentDependencies: {} } })
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      const before = getState(AssetState)[sourceID]
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = getState(AssetState)[sourceID]
+      // 4. Check the result (output)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
     describe('on cleanup', () => {
-      it.todo('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to none', () => {})
+      it('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to none', () => {
+        const Expected = undefined
+        const Initial = createEntity()
+        // 3. Set input & dependencies data
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        const sourceID = `${uuid}-${src}` as SourceID
+        getMutableState(AssetState)[sourceID].set(Initial)
+        setComponent(testEntity, UUIDComponent, uuid)
+        setComponent(testEntity, GLTFComponent, {
+          src: src,
+          progress: 100,
+          dependencies: { componentDependencies: {} }
+        })
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+        expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+        expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+        const before = getState(AssetState)[sourceID]
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        root.stop()
+        const result = getState(AssetState)[sourceID]
+        // 4. Check the result (output)
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
   }) //:: [gltfComponent.src]
 
   describe('on change [gltfComponent.document]', () => {
-    it.todo('should not do anything (return early) if entityContext.GLTFComponent.document is falsy', () => {})
     // dep: entityContext.GLTFComponent
     // dep: entityContext.GLTFComponent.src
     // dep: entityContext.GLTFComponent.document
@@ -560,12 +717,119 @@ describe('GLTFComponentReactor', () => {
     // dep: entityContext.GLTFComponent.body
     // dep: AssetLoaderState.gltfLoader.manager
     // dep: entityContext.GLTFComponent.document.scene || 0
-    it.todo('should remove the AnimationComponent of entityContext', () => {})
+    it('should remove the AnimationComponent of entityContext', () => {
+      const Expected = false
+      const Initial = !Expected
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      const json = { scenes: [{}] } as GLTF.IGLTF
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, {
+        src: src,
+        document: json,
+        progress: 100,
+        dependencies: { componentDependencies: {} }
+      })
+      setComponent(testEntity, AnimationComponent)
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      const before = hasComponent(testEntity, AnimationComponent)
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = hasComponent(testEntity, AnimationComponent)
+      // 4. Check the result (output)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
 
-    // @todo How to run/check the code inside .then ?
+    it('should not do anything (return early) if entityContext.GLTFComponent.document is falsy', () => {
+      const Initial = true
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      const json = null as unknown as GLTF.IGLTF
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, {
+        src: src,
+        document: json,
+        progress: 100,
+        dependencies: { componentDependencies: {} }
+      })
+      setComponent(testEntity, AnimationComponent)
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      const before = hasComponent(testEntity, AnimationComponent)
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = hasComponent(testEntity, AnimationComponent)
+      // 4. Check the result (output)
+      expect(result).toBe(Initial)
+      // 5? Cleanup (dependencies)
+    })
+
+    // dep: entityContext.GLTFComponent
+    // dep: entityContext.GLTFComponent.src
+    // dep: entityContext.GLTFComponent.document
+    // dep: AssetLoaderState.gltfLoader
+    // dep: entityContext.GLTFComponent.body
+    // dep: AssetLoaderState.gltfLoader.manager
+    // dep: entityContext.GLTFComponent.document.scene || 0
+
+    /** @todo Why does this fail ?? */
     it.todo(
       'should call GLTFLoaderFunctions.loadScene with the generated glTF loader options and sceneIndex as arguments',
-      () => {}
+      async () => {
+        // 3. Set input & dependencies data
+        const resultSpy = vi.spyOn(GLTFLoaderFunctions, 'loadScene')
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        setComponent(testEntity, UUIDComponent, uuid)
+        setComponent(testEntity, GLTFComponent, { src: src })
+        setComponent(testEntity, AnimationComponent)
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        startReactor(Reactor)
+
+        await vi.waitUntil(() => getComponent(testEntity, GLTFComponent).progress === 100, { timeout: 1_000 })
+
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        // 5? Cleanup (dependencies)
+      }
     )
 
     describe('on cleanup', () => {
@@ -583,21 +847,158 @@ describe('GLTFComponentReactor', () => {
   // dep: entityContext.GLTFComponent.dependencies
   // dep: entityContext.SceneComponent
   describe('on change [sceneLoaded, !!scene]', () => {
-    it.todo('should not do anything (return early) if sceneLoaded is falsy', () => {})
-    it.todo('should not do anything (return early) if scene is falsy', () => {})
-    it.todo('should set a SceneComponent to entityContext with {active:true}', () => {})
+    it('should set a SceneComponent to entityContext with {active:true}', () => {
+      const Expected = true
+      const Initial = !Expected
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, { src: src, progress: 100, dependencies: { componentDependencies: {} } })
+      setComponent(testEntity, SceneComponent, { active: Initial })
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
+      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
+      expect(hasComponent(testEntity, SceneComponent)).toBeTruthy()
+      expect(getComponent(testEntity, SceneComponent).active).toBe(Initial)
+      const before = getComponent(testEntity, SceneComponent).active
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = getComponent(testEntity, SceneComponent).active
+      // 4. Check the result (output)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should not do anything (return early) if sceneLoaded is falsy', () => {
+      const Initial = false
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, { src: src, progress: 99, dependencies: { componentDependencies: {} } })
+      setComponent(testEntity, SceneComponent, { active: Initial })
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeFalsy()
+      expect(hasComponent(testEntity, SceneComponent)).toBeTruthy()
+      expect(getComponent(testEntity, SceneComponent).active).toBe(Initial)
+      const before = getComponent(testEntity, SceneComponent).active
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = getComponent(testEntity, SceneComponent).active
+      // 4. Check the result (output)
+      expect(result).toBe(Initial)
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should not do anything (return early) if entityContext does not have an SceneComponent', () => {
+      const Initial = false
+      // 3. Set input & dependencies data
+      const uuid = UUIDComponent.generateUUID()
+      const src = TestScenePath
+      setComponent(testEntity, UUIDComponent, uuid)
+      setComponent(testEntity, GLTFComponent, { src: src, progress: 99, dependencies: { componentDependencies: {} } })
+      const Reactor = () => {
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(GLTFComponentReactor, {})
+        )
+      }
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+      expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
+      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
+      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeFalsy()
+      expect(hasComponent(testEntity, SceneComponent)).toBeFalsy()
+      const before = hasComponent(testEntity, SceneComponent)
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      startReactor(Reactor)
+      const result = hasComponent(testEntity, SceneComponent)
+      // 4. Check the result (output)
+      expect(result).toBe(Initial)
+      // 5? Cleanup (dependencies)
+    })
   }) //:: [sceneLoaded, !!scene]
 
   describe('on cleanup', () => {
     describe('when entityContext.GLTFDocument.dependencies is truthy and componentDependenciesLoaded is falsy', () => {
-      it.todo(
-        'should call ResourceReactor with sourceID as props.documentID, entityContext as props.entity and documentLoaded as props.documentLoaded',
-        () => {}
-      )
-      it.todo(
-        'should call DependencyReactor with entityContext as key, entityContext as props.gltfComponentEntity and entityContext.GLTFDocument.dependencies as props.dependencies',
-        () => {}
-      )
+      it('should call ResourceReactor with sourceID as props.documentID, entityContext as props.entity and documentLoaded as props.documentLoaded', () => {
+        // 3. Set input & dependencies data
+        const src = TestScenePath
+        const uuid = UUIDComponent.generateUUID()
+        setComponent(testEntity, GLTFComponent, { src: src })
+        setComponent(testEntity, UUIDComponent, uuid)
+        const resultSpy = vi.spyOn(GLTFComponentReactors, 'ResourceReactor')
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        root.stop()
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should call DependencyReactor with entityContext as key, entityContext as props.gltfComponentEntity and entityContext.GLTFDocument.dependencies as props.dependencies', () => {
+        // 3. Set input & dependencies data
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        const TestComponent = defineComponent({ name: 'TestComponent' })
+        const dependencies = { componentDependencies: { [uuid]: [TestComponent] } }
+        setComponent(testEntity, GLTFComponent, { src: src, dependencies: dependencies })
+        setComponent(testEntity, UUIDComponent, uuid)
+        const resultSpy = vi.spyOn(GLTFComponentReactors, 'DependencyReactor')
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(getComponent(testEntity, GLTFComponent).dependencies).not.toBeUndefined()
+        expect(getComponent(testEntity, GLTFComponent).dependencies).toBeTruthy()
+        expect(GLTFComponentFunctions.componentDependenciesLoaded(dependencies)).toBeFalsy()
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        root.stop()
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        // 5? Cleanup (dependencies)
+      })
     })
   })
 }) //:: GLTFComponentReactor
