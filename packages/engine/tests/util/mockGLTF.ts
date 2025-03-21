@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { expect } from 'vitest'
 import {
+  BINARY_EXTENSION_CHUNK_TYPES,
   BINARY_EXTENSION_HEADER_LENGTH,
   BINARY_EXTENSION_HEADER_MAGIC
 } from '../../src/assets/loaders/gltf/GLTFExtensions'
@@ -35,34 +37,86 @@ type MockGLBOptions = {
   bin?: ArrayBuffer
 }
 
-/** @todo */
-function mockGLBLength(args: MockGLBOptions): number {
-  expect(args.json).toBeTruthy()
-  expect(args.bin).toBeTruthy()
+/** @description Sets the missing values of `@param args` to their relevant default values. */
+export function mockGLBOptionsSetMissingDefaults(args: MockGLBOptions) {
+  if (args.magic == undefined) args.magic = BINARY_EXTENSION_HEADER_MAGIC
+  if (args.version == undefined) args.version = 2
+  if (args.json == undefined) args.json = {}
+  if (args.bin == undefined) args.bin = new ArrayBuffer([])
+}
+
+/** @description Returns the total length of the GLB file that the GLB header should describe for the file described by `@param args` */
+export function mockGLBLength(args: MockGLBOptions): number {
+  expect(args.json).not.toBeUndefined()
+  expect(args.bin).not.toBeUndefined()
   const json = 4 + 4 + JSON.stringify(args.json).length
-  const bin = 4 + 4 + (args.bin?.byteLength ?? 0)
+  const bin = 4 + 4 + args.bin!.byteLength
   return BINARY_EXTENSION_HEADER_LENGTH + json + bin
 }
 
-/** @todo */
-function mockGLBHeader(glb: Uint8Array, args: MockGLBOptions) {
-  if (!args.magic) args.magic = BINARY_EXTENSION_HEADER_MAGIC
-  expect(args.magic.length).toBe(4)
-
-  const u32 = '\0\0\0\0'
-  const data = new TextEncoder().encode(BINARY_EXTENSION_HEADER_MAGIC + u32 + u32)
+/** @description Writes the GLTF Header data described by `@param args` into the `@param glb` buffer */
+export function mockGLBHeader(glb: Uint8Array, args: MockGLBOptions) {
+  expect(args.magic!.length).toBe(4)
+  expect(args.version).not.toBeUndefined()
   const view = new DataView(glb.buffer)
+  // Write magic
+  for (let id = 0; id < args.magic!.length; ++id) view.setUint8(id, args.magic!.charCodeAt(id))
+  // Write Version
+  view.setUint32(4, args.version!, true)
+  // Write length
+  view.setUint32(8, mockGLBLength(args), true)
 }
 
-/** @todo */
-function mockGLBChunkJSON(glb: Uint8Array, args: MockGLBOptions) {}
-function mockGLBChunkBIN(glb: Uint8Array, args: MockGLBOptions) {}
+/**
+ * @description Writes the GLTF JSON data described by `@param args` into the `@param glb` buffer
+ * @returns The index to the byte right after the JSON chunk. Can be used as the start offset for writing into the BIN chunck.
+ * */
+export function mockGLBChunkJSON(glb: Uint8Array, args: MockGLBOptions): number {
+  expect(args.json).not.toBeUndefined()
+  const json = JSON.stringify(args.json)
+  const view = new DataView(glb.buffer)
+  const chunkStart = BINARY_EXTENSION_HEADER_LENGTH
+  // Write Length
+  view.setUint32(chunkStart, json.length, true)
+  // Write Type
+  view.setUint32(chunkStart + 4, BINARY_EXTENSION_CHUNK_TYPES.JSON, true)
+  // Write Data
+  for (let id = 0; id < json.length; ++id) {
+    view.setUint8(BINARY_EXTENSION_HEADER_LENGTH + 4 + 4 + id, json.charCodeAt(id))
+  }
+  return chunkStart + 4 + 4 + json.length
+}
 
-/** @todo */
+/** @description Writes the GLTF BIN data described by `@param args` into the `@param glb` buffer */
+export function mockGLBChunkBIN(glb: Uint8Array, args: MockGLBOptions, chunkStart: number) {
+  expect(args.bin).not.toBeUndefined()
+  expect(chunkStart).not.toBeLessThanOrEqual(BINARY_EXTENSION_HEADER_LENGTH + 4)
+  const view = new DataView(glb.buffer)
+  // Write Length
+  view.setUint32(chunkStart, args.bin!.byteLength, true)
+  // Write Type
+  view.setUint32(chunkStart + 4, BINARY_EXTENSION_CHUNK_TYPES.BIN, true)
+  // Write Data
+  const u8binData = new Uint8Array(args.bin!) // @warning Would write zeros if indexed directly, instead of from this typed array
+  for (let id = 0; id < args.bin!.byteLength; ++id) {
+    view.setUint8(chunkStart + 4 + 4 + id, u8binData![id])
+  }
+}
+
+/**
+ * @description
+ * Writes the Binary GLTF data described by `@param args` into the `@param glb` buffer
+ *
+ * @note
+ * Will set every parameter to a sane default when that parameter is omitted.
+ * Magic and version become valid values, and json/bin become empty (but valid) data
+ * */
 export function mockGLB(args: MockGLBOptions) {
+  mockGLBOptionsSetMissingDefaults(args)
+
   const result = new Uint8Array(mockGLBLength(args))
   mockGLBHeader(result, args)
-  mockGLBChunkJSON(result, args)
-  mockGLBChunkBIN(result, args)
+  const jsonEnd = mockGLBChunkJSON(result, args)
+  mockGLBChunkBIN(result, args, jsonEnd)
   return result
 }
