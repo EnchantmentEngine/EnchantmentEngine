@@ -181,5 +181,5 @@ export const getBufferIndex = (options: GLTFParserOptions, bufferViewIndex: numb
 
 export const GLTFExtensions = {
   KHR_draco_mesh_compression: KHR_DRACO_MESH_COMPRESSION,
-  EXT_meshop_compression: EXT_MESHOPT_COMPRESSION
+  EXT_meshopt_compression: EXT_MESHOPT_COMPRESSION
 } as Record<string, GLTFExtensionType>
