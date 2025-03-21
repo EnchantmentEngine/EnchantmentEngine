@@ -28,7 +28,6 @@ import { AudioLoader } from 'three'
 import { getState } from '@ir-engine/hyperflux'
 
 import { AssetExt, AssetType, FileToAssetExt, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
-import loadVideoTexture from '../../scene/materials/functions/LoadVideoTexture'
 import { FileLoader } from '../loaders/base/FileLoader'
 import { Loader } from '../loaders/base/Loader'
 import { DDSLoader } from '../loaders/dds/DDSLoader'
@@ -64,14 +63,6 @@ export const getLoader = (assetType: AssetExt) => {
       return getState(AssetLoaderState).ktx2Loader!
     case AssetExt.DDS:
       return new DDSLoader()
-    // case AssetExt.GLTF:
-    // case AssetExt.GLB:
-    // case AssetExt.VRM:
-    //   return getState(AssetLoaderState).gltfLoader
-    // case AssetExt.USDZ:
-    //   return new USDZLoader()
-    // case AssetExt.FBX:
-    //   return new FBXLoader()
     case AssetExt.TGA:
       return new TGALoader()
     case AssetExt.PNG:
@@ -83,10 +74,10 @@ export const getLoader = (assetType: AssetExt) => {
     case AssetExt.OGG:
     case AssetExt.M4A:
       return new AudioLoader()
-    case AssetExt.MP4:
-    case AssetExt.MKV:
-    case AssetExt.M3U8:
-      return { load: loadVideoTexture }
+    // case AssetExt.MP4:
+    // case AssetExt.MKV:
+    // case AssetExt.M3U8:
+    //   return { load: loadVideoTexture }
     default:
       return new FileLoader()
   }
