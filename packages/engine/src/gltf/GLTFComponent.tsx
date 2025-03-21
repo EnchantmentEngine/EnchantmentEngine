@@ -225,7 +225,7 @@ export const GLTFComponentReactor = () => {
     }
   }, [gltfComponent.cameraOcclusion.value, sceneLoaded])
 
-  useGLTFDocument(entity)
+  GLTFComponentHooks.useGLTFDocument(entity)
 
   const sourceID = GLTFComponent.getInstanceID(entity)
 
@@ -285,9 +285,17 @@ export const GLTFComponentReactor = () => {
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
   return (
     <>
-      <ResourceReactor documentID={sourceID} entity={entity} documentLoaded={documentLoaded.value} />
+      <GLTFComponentReactors.ResourceReactor
+        documentID={sourceID}
+        entity={entity}
+        documentLoaded={documentLoaded.value}
+      />
       {dependencies && !componentDependenciesLoaded(dependencies) ? (
-        <DependencyReactor key={entity} gltfComponentEntity={entity} dependencies={dependencies} />
+        <GLTFComponentReactors.DependencyReactor
+          key={entity}
+          gltfComponentEntity={entity}
+          dependencies={dependencies}
+        />
       ) : null}
     </>
   )
@@ -390,7 +398,7 @@ const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: stri
       {components.map((component) => {
         return (
           <Suspense key={component.jsonID} fallback={null}>
-            <ComponentReactor
+            <GLTFComponentReactors.ComponentReactor
               key={component.jsonID}
               gltfComponentEntity={gltfComponentEntity}
               entity={entity}
@@ -418,7 +426,7 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: C
     <>
       {componentDependencies.map(([uuid, components]) => {
         return (
-          <DependencyEntryReactor
+          <GLTFComponentReactors.DependencyEntryReactor
             key={uuid}
             gltfComponentEntity={gltfComponentEntity}
             uuid={uuid}
@@ -610,6 +618,20 @@ export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
   }
 }
 
+/** @private Exposed only for Unit Testing */
 export const GLTFComponentFunctions = {
   componentDependenciesLoaded
+}
+
+/** @private Exposed only for Unit Testing */
+export const GLTFComponentReactors = {
+  ResourceReactor,
+  ComponentReactor,
+  DependencyReactor,
+  DependencyEntryReactor
+}
+
+/** @private Exposed only for Unit Testing */
+export const GLTFComponentHooks = {
+  useGLTFDocument
 }
