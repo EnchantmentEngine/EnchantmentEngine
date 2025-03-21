@@ -45,7 +45,7 @@ import React, { Suspense, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiFilter, HiGlobeAlt } from 'react-icons/hi'
 import { SelectionState } from '../../services/SelectionServices'
-import { FixedSizeListWrapper, MATERIALS_PANEL_ID } from './helpers'
+import { FixedSizeListWrapper, MATERIALS_PANEL_ID, saveMaterial } from './helpers'
 import MaterialLayerNode from './layernode'
 import { MaterialPreviewer } from './materialpreviewer'
 
@@ -122,10 +122,9 @@ function MaterialsLibrary() {
             onChange={(e) => srcPath.set(e.target.value)}
             fullWidth
           />
-          {/* @todo reimplement material saver on ECS exporter */}
-          {/* <Button variant="secondary" onClick={() => saveMaterial(srcPath.value)}>
+          <Button variant="secondary" onClick={() => saveMaterial(srcPath.value)}>
             {t('common:components.save')}
-          </Button> */}
+          </Button>
           <Button
             onClick={() => {
               layer.set(

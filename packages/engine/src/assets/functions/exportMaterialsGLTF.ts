@@ -41,19 +41,8 @@ export default async function exportMaterialsGLTF(
   setComponent(rootEntity, UUIDComponent, UUIDComponent.generateUUID())
   setComponent(rootEntity, TransformComponent)
   setComponent(rootEntity, EntityTreeComponent)
-  const previousParentEntities = new Map<Entity, Entity>()
-  for (const materialEntity of materialEntities) {
-    const parentEntity = getComponent(materialEntity, EntityTreeComponent).parentEntity
-    previousParentEntities.set(materialEntity, parentEntity)
-    setComponent(materialEntity, EntityTreeComponent, { parentEntity: rootEntity })
-  }
-
+  // hacky way to set the root entity as the parent of all material entities
+  getComponent(rootEntity, EntityTreeComponent).children = [...materialEntities]
   const gltf = await exportGLTFScene(rootEntity, exporterArgs.projectName, exporterArgs.relativePath, false)
-
-  for (const materialEntity of materialEntities) {
-    const parentEntity = previousParentEntities.get(materialEntity)!
-    setComponent(materialEntity, EntityTreeComponent, { parentEntity })
-  }
-
   return gltf
 }
