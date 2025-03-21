@@ -73,8 +73,6 @@ import {
   ColorManagement,
   DoubleSide,
   FrontSide,
-  ImageBitmapLoader,
-  ImageLoader,
   InterleavedBuffer,
   InterleavedBufferAttribute,
   InterpolateLinear,
@@ -109,7 +107,6 @@ import { loadResource, unloadResourcesForEntity } from '../assets/functions/reso
 import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
-import { KTX2Loader } from '../assets/loaders/gltf/KTX2Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
@@ -987,9 +984,9 @@ const loadTexture = (options: GLTFParserOptions, textureIndex: number) => {
   const sourceDef = typeof sourceIndex === 'number' ? json.images![sourceIndex] : null
 
   const handler = typeof sourceDef?.uri === 'string' && options.manager.getHandler(sourceDef.uri)
-  let loader: ImageLoader | ImageBitmapLoader | TextureLoader | KTX2Loader | Loader<unknown, string>
+  let loader: Loader<unknown, string>
 
-  if (basisu) loader = getState(AssetLoaderState).ktx2Loader!
+  if (basisu) loader = getState(AssetLoaderState).ktx2Loader! as any as Loader
   else if (handler) loader = handler as Loader<unknown, string>
   else {
     const textureLoader = new TextureLoader(undefined, undefined, false)
@@ -1006,7 +1003,7 @@ const loadTextureImage = async (
   options: GLTFParserOptions,
   textureIndex: number,
   sourceIndex: number,
-  loader: ImageLoader | ImageBitmapLoader | TextureLoader | KTX2Loader | Loader
+  loader: Loader
 ) => {
   const json = options.document
 
@@ -1038,11 +1035,7 @@ const loadTextureImage = async (
 
 const URL = self.URL || self.webkitURL
 
-const loadImageSource = async (
-  options: GLTFParserOptions,
-  sourceIndex: number,
-  loader: ImageLoader | ImageBitmapLoader | TextureLoader | KTX2Loader | Loader
-) => {
+const loadImageSource = async (options: GLTFParserOptions, sourceIndex: number, loader: Loader) => {
   const json = options.document
   const sourceDef = json.images![sourceIndex]
 
