@@ -41,10 +41,17 @@ export const Fullscreen = () => {
     const onFullScreenChange = () => {
       if (document.fullscreenElement) {
         setFullScreenActive(true)
-        logger.analytics({ event_name: 'view_fullscreen', event_value: true })
+        logger.analytics({
+            project: getState(EditorState).projectName,
+            user_id: getState(EngineState).userID,		
+	    event_name: 'view_fullscreen', event_value: true 
+	})
       } else {
         setFullScreenActive(false)
-        logger.analytics({ event_name: 'view_fullscreen', event_value: false })
+        logger.analytics({
+	    project: getState(EditorState).projectName,
+            user_id: getState(EngineState).userID,
+    	    event_name: 'view_fullscreen', event_value: false })
       }
     }
 

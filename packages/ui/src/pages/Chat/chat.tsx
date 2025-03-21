@@ -58,8 +58,16 @@ export function ChatPage() {
       instanceID: true,
       roomID: false
     })
-    logger.analytics({ event_name: 'world_chat_open', event_value: '' })
-    return () => logger.analytics({ event_name: 'world_chat_close', event_value: '' })
+    logger.analytics({
+            project: getState(EditorState).projectName,
+            user_id: getState(EngineState).userID,	    
+	    event_name: 'world_chat_open', event_value: '' 
+    })
+    return () => logger.analytics({
+	    project: getState(EditorState).projectName,
+            user_id: getState(EngineState).userID,
+	    event_name: 'world_chat_close', event_value: '' 
+    })
   }, [])
 
   return (
