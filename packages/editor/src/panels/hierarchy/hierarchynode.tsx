@@ -59,9 +59,10 @@ import React, { KeyboardEvent, useEffect, useRef } from 'react'
 import { useDrag } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import { useTranslation } from 'react-i18next'
+import { HiOutlineLockClosed, HiOutlineLockOpen } from 'react-icons/hi'
 import { IoArrowUndo, IoSaveOutline } from 'react-icons/io5'
 import { MdKeyboardArrowDown, MdKeyboardArrowRight } from 'react-icons/md'
-import { PiEyeBold, PiEyeClosedBold, PiLockBold, PiLockOpenBold } from 'react-icons/pi'
+import { PiEyeBold, PiEyeClosedBold } from 'react-icons/pi'
 import { ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
 import { IconComponent } from '../../components/panels/IconComponent'
@@ -327,7 +328,9 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     const fullProjectName = `${orgName}/${projectName}`
     const parsedName = fileName.split('?')[0]
     exportRelativeGLTF(node.entity, fullProjectName, parsedName, false).then((newSRC) => {
-      EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: newSRC })
+      EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, {
+        src: newSRC
+      })
       getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
     })
   }
@@ -335,7 +338,9 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const onRevert = () => {
     const gltfComponent = getComponent(node.entity, GLTFComponent)
     GLTFLoaderFunctions.unloadScene(gltfComponent.src, node.entity)
-    EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: gltfComponent.src })
+    EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, {
+      src: gltfComponent.src
+    })
     ResourceLoaderManager.reloadResource(gltfComponent.src)
     getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
   }
@@ -504,9 +509,9 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
               onClick={onLockUnlockNode}
             >
               {locked ? (
-                <PiLockBold className="font-small text-[#6B7280]" />
+                <HiOutlineLockClosed className="font-small transition-transform duration-300 hover:scale-110" />
               ) : (
-                <PiLockOpenBold className="font-small text-[#42454d]" />
+                <HiOutlineLockOpen className="font-small transition-transform duration-300 hover:scale-110" />
               )}
             </button>
             <button
