@@ -530,7 +530,7 @@ const useGLTFDocument = (entity: Entity) => {
   }, [url, dynamicLoadAndNotEditing])
 }
 
-export const parseBinaryData = (data) => {
+export const parseBinaryData = (data: ArrayBufferLike) => {
   const headerView = new DataView(data, 0, BINARY_EXTENSION_HEADER_LENGTH)
   const textDecoder = new TextDecoder()
 
