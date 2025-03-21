@@ -58,7 +58,7 @@ describe('ResourceState', () => {
 
         setComponent(testEntity, MeshComponent, mesh)
 
-        await vi.waitFor(() => {
+        await vi.waitUntil(() => {
           // @ts-expect-error
           const meshResourceID = mesh.resourceID
           return getState(ResourceState).resources[meshResourceID]
@@ -126,7 +126,7 @@ describe('ResourceState', () => {
 
         setComponent(testEntity, MeshComponent, mesh)
 
-        await vi.waitFor(() => {
+        await vi.waitUntil(() => {
           // @ts-expect-error
           const meshResourceID = mesh.resourceID
           return getState(ResourceState).resources[meshResourceID]
@@ -139,7 +139,7 @@ describe('ResourceState', () => {
 
         removeEntity(testEntity)
 
-        await vi.waitFor(() => {
+        await vi.waitUntil(() => {
           return !getState(ResourceState).resources[meshResourceID]
         })
 
