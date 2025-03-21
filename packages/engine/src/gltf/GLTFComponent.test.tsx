@@ -24,6 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { mockGLB, mockGLBOptionsSetMissingDefaults } from '../../tests/util/mockGLTF'
 
 import { GLTF } from '@gltf-transform/core'
 import {
@@ -44,7 +45,7 @@ import { getState, startReactor } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { BoxGeometry, Mesh } from 'three'
-import { BINARY_EXTENSION_HEADER_MAGIC } from '../assets/loaders/gltf/GLTFExtensions'
+import { BINARY_EXTENSION_HEADER_LENGTH, BINARY_EXTENSION_HEADER_MAGIC } from '../assets/loaders/gltf/GLTFExtensions'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import {
@@ -606,10 +607,9 @@ describe('loadGLTFFile', () => {
 }) //:: loadGLTFFile
 
 describe('parseBinaryData', () => {
-  /** @todo Create with mockGLB instead */
   it('should throw an error if the first 4 bytes of `@param data` are not equal to BINARY_EXTENSION_HEADER_MAGIC', () => {
     // 3. Set input & dependencies data
-    const data = new TextEncoder().encode('STAR')
+    const data = mockGLB({ magic: 'STAR' })
     // 1. Sanity check (input & dependencies)
     expect(data.slice(0, 4)).not.toBe(BINARY_EXTENSION_HEADER_MAGIC)
     // 2. Run the process
@@ -618,12 +618,11 @@ describe('parseBinaryData', () => {
     }).toThrowError()
   })
 
-  /** @todo Create with mockGLB instead */
   it('should throw an error if the first 4 bytes of `@param data` are equal to BINARY_EXTENSION_HEADER_MAGIC and the uint32 at byte 4 is less than 2.0', () => {
     // 3. Set input & dependencies data
-    const u32 = '\0\0\0\0'
-    const data = new TextEncoder().encode(BINARY_EXTENSION_HEADER_MAGIC + u32 + u32)
+    const data = mockGLB({ version: 1 })
     const view = new DataView(data.buffer)
+
     // 1. Sanity check (input & dependencies)
     expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
     expect(view.getUint32(4, true)).toBeLessThan(2.0)
@@ -633,13 +632,63 @@ describe('parseBinaryData', () => {
     }).toThrowError()
   })
 
-  /** @todo Create with mockGLB */
-  it.todo(
-    'should decode and parse the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk data into the result.json object',
-    () => {}
-  )
-  it.todo('should copy the entire BINARY_EXTENSION_CHUNK_TYPES.BIN chunk data into the result.body object', () => {})
-  it.todo('should throw an error if the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk was not found', () => {})
+  it('should decode and parse the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk data into the result.json object', () => {
+    const Expected = { one: 42 }
+    // 3. Set input & dependencies data
+    const data = mockGLB({ json: Expected })
+    const view = new DataView(data.buffer)
+    // 1. Sanity check (input & dependencies)
+    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
+    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
+    // 2. Run the process
+    var result: any
+    expect(() => {
+      result = parseBinaryData(data.buffer)
+    }).not.toThrowError()
+    // 4. Check the result (output)
+    expect(result.json).toEqual(Expected)
+  })
+
+  it('should throw an error if the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk was not found', () => {
+    const Expected = { one: 42 }
+    // 3. Set input & dependencies data
+    const data = mockGLB({ json: Expected })
+    const view = new DataView(data.buffer)
+    view.setUint32(BINARY_EXTENSION_HEADER_LENGTH + 4, 0x12_34_56_78) // Set the chunk type to an incorrect value, so it is skipped
+    // 1. Sanity check (input & dependencies)
+    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
+    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
+    // 2. Run the process
+    var result: any
+    expect(() => {
+      result = parseBinaryData(data.buffer)
+    }).toThrowError()
+  })
+
+  it('should copy the entire BINARY_EXTENSION_CHUNK_TYPES.BIN chunk data into the result.body object', async () => {
+    const Expected = [1, 2, 3, 4]
+
+    // 3. Set input & dependencies data
+    const bin = new Uint8Array(Expected).buffer
+
+    const args = { bin: bin }
+    mockGLBOptionsSetMissingDefaults(args)
+
+    const data = mockGLB(args)
+    const view = new DataView(data.buffer)
+
+    // 1. Sanity check (input & dependencies)
+    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
+    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
+    // 2. Run the process
+    var parsed: { json: string; body: ArrayBuffer | null }
+    expect(() => {
+      parsed = parseBinaryData(data.buffer)
+    }).not.toThrowError()
+    const result = [...new Uint8Array(parsed!.body!)]
+    // 4. Check the result (output)
+    expect(result).toEqual(Expected)
+  })
 }) //:: parseBinaryData
 
 describe('useHasModelOrIndependentMesh', () => {
