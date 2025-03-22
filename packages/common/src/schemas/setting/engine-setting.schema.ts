@@ -34,6 +34,17 @@ export const engineSettingPath = 'engine-setting'
 
 export const engineSettingMethods = ['find', 'create', 'patch', 'remove'] as const
 
+export const engineSettingCategories = [
+  'aws',
+  'server',
+  'task-server',
+  'chargebee',
+  'coil',
+  'zendesk',
+  'redis',
+  'metabase'
+] as const
+
 // Main data model schema
 export const engineSettingSchema = Type.Object(
   {
@@ -41,30 +52,39 @@ export const engineSettingSchema = Type.Object(
       format: 'uuid'
     }),
     key: Type.String(),
-    value: Type.String(),
+    value: Type.String({
+      maxLength: 4095
+    }),
     type: StringEnum(['private', 'public']),
-    category: StringEnum(['aws', 'server', 'task-server', 'chargebee', 'coil', 'zendesk', 'redis']),
+    category: Type.String(),
+    jsonKey: Type.Optional(Type.String()),
     updatedBy: Type.Optional(
       TypedString<UserID>({
         format: 'uuid'
       })
     ),
     updatedAt: Type.String({ format: 'date-time' }),
-    createdAt: Type.String({ format: 'date-time' })
+    createdAt: Type.String({ format: 'date-time' }),
+    dataType: StringEnum(['string', 'integer', 'boolean'])
   },
   { $id: 'EngineSetting', additionalProperties: false }
 )
 export interface EngineSettingType extends Static<typeof engineSettingSchema> {}
 
 // Schema for creating new entries
-export const engineSettingDataSchema = Type.Pick(engineSettingSchema, ['key', 'value', 'type', 'category'], {
-  $id: 'EngineSettingData'
-})
+
+export const engineSettingDataSchema = Type.Pick(
+  engineSettingSchema,
+  ['key', 'value', 'type', 'category', 'jsonKey', 'dataType'],
+  {
+    $id: 'EngineSettingData'
+  }
+)
 export interface EngineSettingData extends Static<typeof engineSettingDataSchema> {}
 
 // Schema for updating existing entries
 export const engineSettingPatchSchema = Type.Partial(
-  Type.Pick(engineSettingSchema, ['key', 'value', 'type', 'category']),
+  Type.Pick(engineSettingSchema, ['key', 'value', 'type', 'category', 'jsonKey', 'dataType']),
   {
     $id: 'EngineSettingPatch'
   }
@@ -72,7 +92,15 @@ export const engineSettingPatchSchema = Type.Partial(
 export interface EngineSettingPatch extends Static<typeof engineSettingPatchSchema> {}
 
 // Schema for allowed query properties
-export const engineSettingQueryProperties = Type.Pick(engineSettingSchema, ['id', 'key', 'value', 'type', 'category'])
+export const engineSettingQueryProperties = Type.Pick(engineSettingSchema, [
+  'id',
+  'key',
+  'value',
+  'type',
+  'category',
+  'jsonKey',
+  'dataType'
+])
 export const engineSettingQuerySchema = Type.Intersect(
   [
     querySyntax(engineSettingQueryProperties),

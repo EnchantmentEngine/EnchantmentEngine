@@ -29,7 +29,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { fileBrowserPath } from '@ir-engine/common/src/schemas/media/file-browser.schema'
-import { KTX2EncodeArguments } from '@ir-engine/engine/src/assets/constants/CompressionParms'
+import type { KTX2EncodeArguments } from '@ir-engine/engine/src/assets/constants/CompressionParms'
 
 import { Application } from '../../../declarations'
 
@@ -46,7 +46,7 @@ const createKtx2 =
   async (data: KTX2EncodeArguments): Promise<string | string[]> => {
     const projectDir = path.join(appRootPath.path, 'packages/projects')
     const BASIS_U = path.join(appRootPath.path, 'packages/server/public/loader_decoders/basisu')
-    const inURI = /.*(projects\/.*)$/.exec(data.src)![1]
+    const inURI = /.*(projects\/.*)$/.exec(data.src as string)![1]
     const inPath = path.join(projectDir, inURI)
     const fileData = fs.statSync(inPath)
     const isDir = fileData.isDirectory()

@@ -23,34 +23,56 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Intersection, Material, Mesh, Raycaster, Vector2 } from 'three'
+import { Intersection, Raycaster, Vector2 } from 'three'
 
 import { getContentType } from '@ir-engine/common/src/utils/getContentType'
-import { UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, setComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
-import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
-import { AssetLoaderState } from '@ir-engine/engine/src/assets/state/AssetLoaderState'
+import {
+  EntityTreeComponent,
+  getAncestorWithComponents,
+  getChildrenWithComponents,
+  iterateEntityNode,
+  removeEntity,
+  UUIDComponent
+} from '@ir-engine/ecs'
+import {
+  getComponent,
+  getMutableComponent,
+  getOptionalComponent,
+  hasComponent,
+  LayerID,
+  Layers,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
-import { EnvmapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
+import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
+import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
+import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
-import { getState, startReactor, useImmediateEffect } from '@ir-engine/hyperflux'
-import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { getState, none } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
-import { GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { ObjectLayerComponents } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayerMasks, ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { assignMaterial, createMaterialEntity } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import {
+  MaterialInstanceComponent,
+  MaterialPrototypeDefinitions,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { EditorHistoryFunctions } from '../services/EditorHistoryState'
+import { EditorState } from '../services/EditorServices'
 import { EditorControlFunctions } from './EditorControlFunctions'
 import { getIntersectingNodeOnScreen } from './getIntersectingNode'
+import { getIncreamentedName } from './utils'
 
 /**
  * Adds media node from passed url. Type of the media will be detected automatically
@@ -69,19 +91,24 @@ export async function addMediaNode(
   const contentType = (await getContentType(url)) || ''
   const { hostname } = new URL(url)
 
+  const urlObj = new URL(url)
+  const path = urlObj.pathname
+  const fileNameWithExtension = path.substring(path.lastIndexOf('/') + 1)
+  let requestedName = decodeURI(fileNameWithExtension.split('.')[0])
+
   if (contentType.startsWith('model/')) {
     if (contentType.startsWith('model/material')) {
       // find current intersected object
-      const objectLayerQuery = defineQuery([ObjectLayerComponents[ObjectLayers.Scene]])
-      const sceneObjects = objectLayerQuery().flatMap((entity) => getComponent(entity, GroupComponent))
+      // const objectLayerQuery = defineQuery([ObjectLayerComponents[ObjectLayers.Scene]])
+      // const sceneObjects = objectLayerQuery().flatMap((entity) => getComponent(entity, ObjectComponent))
       //const sceneObjects = Array.from(Engine.instance.objectLayerList[ObjectLayers.Scene] || [])
       const mouse = new Vector2()
       const mouseEvent = event as MouseEvent // Type assertion
       const element = mouseEvent.target as HTMLElement
-      let rect = element.getBoundingClientRect()
+      const rect = element.getBoundingClientRect()
       mouse.x = ((mouseEvent.clientX - rect.left) / rect.width) * 2 - 1
       mouse.y = -((mouseEvent.clientY - rect.top) / rect.height) * 2 + 1
-      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      // const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
       const raycaster = new Raycaster()
       raycaster.layers.set(ObjectLayerMasks[ObjectLayers.Scene])
       const intersections = [] as Intersection[]
@@ -91,126 +118,152 @@ export async function addMediaNode(
       // const lineStart = raycaster.ray.origin
       // const lineEnd = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1000))
       // const lineGeometry = new BufferGeometry().setFromPoints([lineStart, lineEnd])
+
       // setComponent(rayEntity, LineSegmentComponent, { geometry: lineGeometry })
-      const gltfLoader = getState(AssetLoaderState).gltfLoader
-      return await new Promise((resolve) =>
-        gltfLoader.load(url, (gltf) => {
-          const material = iterateObject3D(
-            gltf.scene,
-            (mesh: Mesh) => mesh.material as Material,
-            (mesh: Mesh) => mesh?.isMesh
-          )[0]
-          if (!material) return
-          const materialEntity = createMaterialEntity(material)
+
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (assetEntity) => {
+          const [material] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
           let foundTarget = false
           for (const intersection of intersections) {
-            iterateObject3D(intersection.object, (mesh: Mesh) => {
-              if (!mesh?.isMesh || !mesh.visible) return
-              assignMaterial(mesh.entity, materialEntity)
+            if (!hasComponent(intersection.object.entity, VisibleComponent)) continue
+
+            iterateEntityNode(intersection.object.entity, (entity: Entity) => {
+              const mesh = getOptionalComponent(entity, MeshComponent)
+              if (!mesh) return
+              let materialIndex = 0
+              for (const g of mesh.geometry.groups) {
+                if (intersection.faceIndex! * 3 >= g.start && intersection.faceIndex! * 3 < g.start + g.count) {
+                  materialIndex = g.materialIndex!
+                  break
+                }
+              }
+              const uuids = getComponent(entity, MaterialInstanceComponent).uuid
+
+              /**@todo we should be setting the uuid of the material instance component to the uuid of the new material */
+              //const materialUUID = getComponent(material, UUIDComponent)
+              //uuids[materialIndex] = materialUUID,
+              //setComponent(entity, MaterialInstanceComponent, { uuid: uuids })
+              /**scene deltas do not yet support this, so a temporary hackfix is to modify existing materials to match */
+              const materialComponent = getComponent(material, MaterialStateComponent)
+              const materialToMutate = UUIDComponent.getEntityByUUID(uuids[materialIndex], Layers.Authoring)
+              // wipe out any existing deltas for this material
+              const existingDelta =
+                SceneDeltaState.getSource(materialToMutate)?.[getComponent(materialToMutate, NodeIDComponent)]
+              if (existingDelta.value) {
+                //another hack
+                const mat = getComponent(materialToMutate, MaterialStateComponent).material
+                const constructor =
+                  getState(MaterialPrototypeDefinitions)[mat.userData?.type || mat.type].prototypeConstructor
+                getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
+                existingDelta.set(none)
+              }
+              EditorControlFunctions.updateMaterialPrototype(
+                materialToMutate,
+                materialComponent.material.userData?.type ?? materialComponent.material.type
+              )
+              EditorControlFunctions.modifyMaterial([uuids[materialIndex]], uuids[materialIndex], [
+                getComponent(material, MaterialStateComponent).parameters
+              ])
+              removeEntity(assetEntity)
               foundTarget = true
             })
             if (foundTarget) break
           }
-          resolve(getComponent(materialEntity, UUIDComponent))
-        })
+        }
       )
     } else if (contentType.startsWith('model/lookdev')) {
-      const gltfLoader = getState(AssetLoaderState).gltfLoader
-      return await new Promise((resolve) =>
-        gltfLoader.load(url, (gltf) => {
-          const componentJson = gltf.scene.children[0].userData.componentJson
-          EditorControlFunctions.overwriteLookdevObject(
-            [{ name: ModelComponent.jsonID, props: { src: url } }, ...extraComponentJson],
-            componentJson,
-            parent!,
-            before
-          )
-          resolve(null)
-        })
+      /**
+       * Load the lookdev object and override or attach it to the current scene
+       */
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (entity) => {
+          const firstChild = getComponent(entity, EntityTreeComponent).children[0]
+          const json = serializeEntity(firstChild)
+          EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
+          removeEntity(entity)
+          EditorHistoryFunctions.snapshot()
+        }
       )
     } else if (contentType.startsWith('model/prefab')) {
-      const { entityUUID, sceneID } = EditorControlFunctions.createObjectFromSceneElement(
-        [{ name: ModelComponent.jsonID, props: { src: url } }, ...extraComponentJson],
-        parent!,
-        before
+      /**
+       * Load all entities from the prefab and attach them to the current scene
+       */
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (entity) => {
+          const currentSource = GLTFComponent.getInstanceID(entity)
+          const entities = SourceComponent.getEntitiesBySource(currentSource, Layers.Authoring)
+          const rootEntity = getState(EditorState).rootEntity
+          const newSource = GLTFComponent.getInstanceID(rootEntity)
+          for (const entity of entities) {
+            requestedName = getIncreamentedName(requestedName, parent)
+            setComponent(entity, NameComponent, requestedName)
+            setComponent(entity, SourceComponent, newSource)
+            setComponent(entity, NodeIDComponent, NodeIDComponent.generate())
+            setComponent(
+              entity,
+              UUIDComponent,
+              NodeIDComponent.getUUIDBySourceAndNodeID(newSource, getComponent(entity, NodeIDComponent))
+            )
+          }
+          for (const childEntity of getComponent(entity, EntityTreeComponent).children) {
+            setComponent(childEntity, EntityTreeComponent, { parentEntity: parent ?? rootEntity })
+          }
+          removeEntity(entity)
+          const gltfEntity = getAncestorWithComponents(parent ?? rootEntity, [GLTFComponent])
+          EditorState.markModifiedScene(gltfEntity)
+          EditorHistoryFunctions.snapshot()
+        }
       )
-      const reactor = startReactor(() => {
-        const entity = UUIDComponent.useEntityByUUID(entityUUID)
-        const modelComponent = useOptionalComponent(entity, ModelComponent)
-
-        useImmediateEffect(() => {
-          if (!modelComponent) return
-
-          modelComponent.dereference.set(true)
-          reactor.stop()
-        }, [modelComponent])
-
-        return null
-      })
-      return entityUUID
     } else {
       const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
         [
-          { name: ModelComponent.jsonID, props: { src: url } },
+          { name: GLTFComponent.jsonID, props: { src: url } },
           { name: ShadowComponent.jsonID },
-          { name: EnvmapComponent.jsonID },
+          { name: EnvMapComponent.jsonID },
           ...extraComponentJson
         ],
         parent!,
-        before
+        before,
+        requestedName
       )
-
-      const reactor = startReactor(() => {
-        const entity = UUIDComponent.useEntityByUUID(entityUUID)
-        const modelComponent = useOptionalComponent(entity, ModelComponent)
-
-        useImmediateEffect(() => {
-          if (!modelComponent) return
-          const pathArray = url.split('/')
-          const lastIndex = pathArray.length - 1
-          const fileNameWithExt = pathArray[lastIndex]
-          const fileNameArray = fileNameWithExt.split('.')
-          const name = decodeURI(fileNameArray[0])
-          setComponent(entity, NameComponent, name)
-
-          reactor.stop()
-        }, [modelComponent])
-
-        return null
-      })
-
+      EditorHistoryFunctions.snapshot()
       return entityUUID
     }
   } else if (contentType.startsWith('video/') || hostname.includes('twitch.tv') || hostname.includes('youtube.com')) {
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
       [
         { name: VideoComponent.jsonID },
-        { name: MediaComponent.jsonID, props: { resources: [url] } },
-        ...extraComponentJson
-      ],
-      parent!,
-      before
-    )
-    return entityUUID
-  } else if (contentType.startsWith('image/')) {
-    const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
-      [{ name: ImageComponent.jsonID, props: { source: url } }, ...extraComponentJson],
-      parent!,
-      before
-    )
-    return entityUUID
-  } else if (contentType.startsWith('audio/')) {
-    const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
-      [
         { name: PositionalAudioComponent.jsonID },
         { name: MediaComponent.jsonID, props: { resources: [url] } },
         ...extraComponentJson
       ],
       parent!,
-      before
+      before,
+      requestedName
     )
+    EditorHistoryFunctions.snapshot()
+    return entityUUID
+  } else if (contentType.startsWith('image/')) {
+    const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
+      [{ name: ImageComponent.jsonID, props: { source: url } }, ...extraComponentJson],
+      parent!,
+      before,
+      requestedName
+    )
+    EditorHistoryFunctions.snapshot()
+    return entityUUID
+  } else if (contentType.startsWith('audio/')) {
+    const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
+      [{ name: MediaComponent.jsonID, props: { resources: [url] } }, ...extraComponentJson],
+      parent!,
+      before,
+      requestedName
+    )
+    EditorHistoryFunctions.snapshot()
     return entityUUID
   } else if (url.includes('.uvol')) {
+    // TODO: detect whether to add LegacyVolumetricComponent or VolumetricComponent
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
       [
         { name: VolumetricComponent.jsonID },
@@ -218,10 +271,11 @@ export async function addMediaNode(
         ...extraComponentJson
       ],
       parent!,
-      before
+      before,
+      requestedName
     )
+    EditorHistoryFunctions.snapshot()
     return entityUUID
-  } else {
-    return null
   }
+  return null
 }

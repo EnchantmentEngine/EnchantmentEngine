@@ -23,26 +23,41 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { useFind, useMutation, useSearch } from '@ir-engine/common'
+import { locationPath, LocationType, scopePath, ScopeType } from '@ir-engine/common/src/schema.type.module'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
+import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiPencil, HiTrash } from 'react-icons/hi2'
-import { validate as isValidUUID } from 'uuid'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
-import { useFind, useMutation, useSearch } from '@ir-engine/common'
-import { locationPath, LocationType } from '@ir-engine/common/src/schema.type.module'
-import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-
-import { userHasAccess } from '../../../user/userHasAccess'
+import config from '@ir-engine/common/src/config'
+import { Engine } from '@ir-engine/ecs'
+import { Edit01Lg, Trash04Lg } from '@ir-engine/ui/src/icons'
 import { locationColumns, LocationRowType } from '../../common/constants/location'
 import DataTable from '../../common/Table'
+import ActionButton from '../ActionButton'
 import AddEditLocationModal from './AddEditLocationModal'
+
+const getStudioURLfromScene = (url: string) => {
+  const key = url.replace(config.client.fileServer, '')
+  const [, orgName, projectName] = key.split('/')
+  return `/studio?projectName=${orgName}/${projectName}&scenePath=${key}`
+}
 
 const transformLink = (link: string) => link.toLowerCase().replace(' ', '-')
 
 export default function LocationTable({ search }: { search: string }) {
   const { t } = useTranslation()
+
+  const scopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.userID,
+      type: 'location:write' as ScopeType
+    }
+  })
+
+  const userHasAccess = scopeQuery.data.length > 0
 
   const adminLocationQuery = useFind(locationPath, {
     query: {
@@ -59,7 +74,7 @@ export default function LocationTable({ search }: { search: string }) {
     {
       $or: [
         {
-          id: isValidUUID(search) ? search : undefined
+          id: isValidId(search) ? search : undefined
         },
         {
           name: {
@@ -67,7 +82,7 @@ export default function LocationTable({ search }: { search: string }) {
           }
         },
         {
-          sceneId: isValidUUID(search) ? search : undefined
+          sceneId: isValidId(search) ? search : undefined
         }
       ]
     },
@@ -84,11 +99,7 @@ export default function LocationTable({ search }: { search: string }) {
         </a>
       ),
       sceneId: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href={`/studio?projectName=${row.sceneAsset.project!}&scenePath=${row.sceneAsset.key}`}
-        >
+        <a target="_blank" rel="noopener noreferrer" href={getStudioURLfromScene(row.sceneURL)}>
           {row.sceneId}
         </a>
       ),
@@ -100,22 +111,18 @@ export default function LocationTable({ search }: { search: string }) {
         : t('admin:components.common.no'),
       action: (
         <div className="flex items-center justify-start gap-3">
-          <Button
-            rounded="full"
-            variant="outline"
-            className="h-8 w-8"
-            disabled={!userHasAccess('location:write')}
+          <ActionButton
+            icon={Edit01Lg}
             title={t('admin:components.common.view')}
-            startIcon={<HiPencil className="place-self-center text-theme-iconGreen" />}
-            onClick={() => PopoverState.showPopupover(<AddEditLocationModal action="admin" location={row} />)}
+            onClick={() => ModalState.openModal(<AddEditLocationModal action="admin" location={row} />)}
+            variant="green"
           />
-          <Button
-            rounded="full"
-            variant="outline"
-            className="h-8 w-8"
+
+          <ActionButton
+            icon={Trash04Lg}
             title={t('admin:components.common.delete')}
             onClick={() =>
-              PopoverState.showPopupover(
+              ModalState.openModal(
                 <ConfirmDialog
                   text={`${t('admin:components.location.confirmLocationDelete')} '${row.name}'?`}
                   onSubmit={async () => {
@@ -124,7 +131,7 @@ export default function LocationTable({ search }: { search: string }) {
                 />
               )
             }
-            startIcon={<HiTrash className="place-self-center text-theme-iconRed" />}
+            variant="red"
           />
         </div>
       )

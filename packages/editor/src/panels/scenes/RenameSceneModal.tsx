@@ -26,13 +26,13 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 
 import { renameScene } from '@ir-engine/client-core/src/world/SceneAPI'
 import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
 import isValidSceneName from '@ir-engine/common/src/utils/validateSceneName'
 import { useHookstate } from '@ir-engine/hyperflux'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
+import { Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 
 type Props = {
@@ -61,7 +61,7 @@ export default function RenameSceneModal({ sceneName, onRenameScene, scene, refe
       onRenameScene(newData[0].key)
     }
 
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   return (
@@ -69,7 +69,7 @@ export default function RenameSceneModal({ sceneName, onRenameScene, scene, refe
       title={t('editor:hierarchy.lbl-renameScene')}
       className="w-[50vw] max-w-2xl"
       onSubmit={handleSubmit}
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
       submitButtonDisabled={newSceneName.value === sceneName || inputError.value.length > 0}
     >
       <Input
@@ -78,8 +78,8 @@ export default function RenameSceneModal({ sceneName, onRenameScene, scene, refe
           inputError.set('')
           newSceneName.set(event.target.value)
         }}
-        description={t('editor:dialog.saveNewScene.info-name')}
-        error={inputError.value}
+        state={inputError.value ? 'error' : undefined}
+        helperText={inputError.value}
         data-testid="scene-panel-scene-rename-input"
       />
     </Modal>

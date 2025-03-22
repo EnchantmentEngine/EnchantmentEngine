@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityTreeComponent,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -42,9 +43,8 @@ import assert from 'assert'
 import sinon from 'sinon'
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
-import { assertVecAllApproxNotEq, assertVecAnyApproxNotEq, assertVecApproxEq } from '../../tests/util/mathAssertions'
+import { assertVec } from '../../tests/util/assert'
 import { SceneComponent } from '../renderer/components/SceneComponents'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import {
   PhysicsSerialization,
@@ -88,6 +88,7 @@ describe('PhysicsSerialization', () => {
 
       it('should read the RigidBodyComponent.position into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.position.x[testEntity] = Expected.x
         RigidBodyComponent.position.y[testEntity] = Expected.y
         RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -124,9 +125,11 @@ describe('PhysicsSerialization', () => {
 
       it('should read the RigidBodyComponent.rotation into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
+        RigidBodyComponent.rotation.w[testEntity] = Expected.w
 
         // Set the data as expected
         const cursor: ViewCursor = createViewCursor()
@@ -136,7 +139,7 @@ describe('PhysicsSerialization', () => {
 
         // Sanity check before running
         const beforeCursor = 0
-        const afterCursor = Uint8Array.BYTES_PER_ELEMENT + 3 * Float64Array.BYTES_PER_ELEMENT
+        const afterCursor = Uint8Array.BYTES_PER_ELEMENT + 4 * Float64Array.BYTES_PER_ELEMENT
         assert.equal(view.cursor, beforeCursor)
         // Run and Check the result
         readBodyRotation(view, testEntity)
@@ -160,6 +163,7 @@ describe('PhysicsSerialization', () => {
 
       it('should read the RigidBodyComponent.linearVelocity into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -196,6 +200,7 @@ describe('PhysicsSerialization', () => {
 
       it('should read the RigidBodyComponent.angularVelocity into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
@@ -232,6 +237,7 @@ describe('PhysicsSerialization', () => {
 
       it('should readBodyPosition into the `@param v` ViewCursor when position is marked as changed (1<<1)', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.position.x[testEntity] = Expected.x
         RigidBodyComponent.position.y[testEntity] = Expected.y
         RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -253,6 +259,7 @@ describe('PhysicsSerialization', () => {
 
       it('should readBodyRotation into the `@param v` ViewCursor when rotation is marked as changed (1<<2)', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -275,6 +282,7 @@ describe('PhysicsSerialization', () => {
 
       it('should readBodyLinearVelocity into the `@param v` ViewCursor when linearVelocity is marked as changed (1<<3)', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -296,6 +304,7 @@ describe('PhysicsSerialization', () => {
 
       it('should readBodyAngularVelocity into the `@param v` ViewCursor when angularVelocity is marked as changed (1<<4)', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
@@ -326,7 +335,7 @@ describe('PhysicsSerialization', () => {
           setComponent(physicsWorldEntity, SceneComponent)
           setComponent(physicsWorldEntity, TransformComponent)
           setComponent(physicsWorldEntity, EntityTreeComponent)
-          physicsWorld = Physics.createWorld(getComponent(physicsWorldEntity, UUIDComponent))
+          physicsWorld = Physics.createWorld(physicsWorldEntity)
           physicsWorld.timestep = 1 / 60
         })
 
@@ -372,17 +381,17 @@ describe('PhysicsSerialization', () => {
         assert.equal(getComponent(testEntity, RigidBodyComponent).type, BodyTypes.Fixed)
         assert.equal(hasComponent(testEntity, RigidBodyDynamicTagComponent), false)
         const before = getComponent(testEntity, RigidBodyComponent).targetKinematicPosition
-        assertVecAnyApproxNotEq(before, Expected, 3)
+        assertVec.anyApproxNotEq(before, Expected, 3)
         // Run and Check the result
         readRigidBody(view, testEntity)
         const result = getComponent(testEntity, RigidBodyComponent).targetKinematicPosition
-        assertVecApproxEq(result, Expected, 3)
+        assertVec.approxEq(result, Expected, 3)
       })
 
       it('should set RigidBodyComponent.targetKinematicRotation to RigidBodyComponent.rotation if the entity has a fixed RigidBody (aka [RigidBodyComponent, Not(RigidBodyDynamicTagComponent)])', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
-        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+        setComponent(testEntity, RigidBodyComponent)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.x.set(Expected.x)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.y.set(Expected.y)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.z.set(Expected.z)
@@ -395,11 +404,11 @@ describe('PhysicsSerialization', () => {
         assert.equal(getComponent(testEntity, RigidBodyComponent).type, BodyTypes.Fixed)
         assert.equal(hasComponent(testEntity, RigidBodyDynamicTagComponent), false)
         const before = getComponent(testEntity, RigidBodyComponent).targetKinematicRotation
-        assertVecAllApproxNotEq(before, Expected, 4)
+        assertVec.allApproxNotEq(before, Expected, 4)
         // Run and Check the result
         readRigidBody(view, testEntity)
         const result = getComponent(testEntity, RigidBodyComponent).targetKinematicRotation
-        assertVecApproxEq(result, Expected, 4)
+        assertVec.approxEq(result, Expected, 4)
       })
     }) //:: readRigidBody
   }) //:: Read
@@ -431,7 +440,7 @@ describe('PhysicsSerialization', () => {
         // Run and Check the result
         readUint8(view) // Read changeMask
         const result = new Vector3(readFloat64(view), readFloat64(view), readFloat64(view))
-        assertVecApproxEq(result, Expected, Vector3.length)
+        assertVec.approxEq(result, Expected, Vector3.length)
       })
     }) //:: writeBodyPosition
 
@@ -452,6 +461,7 @@ describe('PhysicsSerialization', () => {
       it('should write the RigidBodyComponent.rotation into the ViewCursor correctly', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -462,7 +472,7 @@ describe('PhysicsSerialization', () => {
         // Run and Check the result
         readUint8(view) // Read changeMask
         const result = new Quaternion(readFloat64(view), readFloat64(view), readFloat64(view), readFloat64(view))
-        assertVecApproxEq(result, Expected, Quaternion.length)
+        assertVec.approxEq(result, Expected, Quaternion.length)
       })
     }) //:: writeBodyRotation
 
@@ -483,6 +493,7 @@ describe('PhysicsSerialization', () => {
       it('should write the RigidBodyComponent.linearVelocity into the ViewCursor correctly', () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -492,7 +503,7 @@ describe('PhysicsSerialization', () => {
         // Run and Check the result
         readUint8(view) // Read changeMask
         const result = new Vector3(readFloat64(view), readFloat64(view), readFloat64(view))
-        assertVecApproxEq(result, Expected, Vector3.length)
+        assertVec.approxEq(result, Expected, Vector3.length)
       })
     }) //:: writeBodyLinearVelocity
 
@@ -513,6 +524,7 @@ describe('PhysicsSerialization', () => {
       it('should write the RigidBodyComponent.angularVelocity into the ViewCursor correctly', () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
@@ -522,7 +534,7 @@ describe('PhysicsSerialization', () => {
         // Run and Check the result
         readUint8(view) // Read changeMask
         const result = new Vector3(readFloat64(view), readFloat64(view), readFloat64(view))
-        assertVecApproxEq(result, Expected, Vector3.length)
+        assertVec.approxEq(result, Expected, Vector3.length)
       })
     }) //:: writeBodyAngularVelocity
 
@@ -552,7 +564,8 @@ describe('PhysicsSerialization', () => {
 
       it('should return the resulting ViewCursor if one of RigidBodyComponent.[position, rotation, linearVelocity, angularVelocity] changed', () => {
         // Set the data as expected
-        const rigidBody = setComponent(testEntity, RigidBodyComponent)
+        setComponent(testEntity, RigidBodyComponent)
+        const rigidBody = getComponent(testEntity, RigidBodyComponent)
         rigidBody.position.x = 42
         const cursor: ViewCursor = createViewCursor()
         // Sanity check before running
@@ -570,7 +583,6 @@ describe('PhysicsSerialization', () => {
         // Sanity check before running
         assert.equal(hasComponent(testEntity, RigidBodyComponent), true)
         // Run and Check the result
-        // Rigidbody rotations are set to identity on init, so first write is always a change
         writeRigidBody(cursor, testEntity)
         const result = writeRigidBody(cursor, testEntity)
         assert.equal(result, null)

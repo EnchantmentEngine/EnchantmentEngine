@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { StaticResourceType, uploadAssetPath } from '@ir-engine/common/src/schema.type.module'
 import { cleanURL } from '@ir-engine/common/src/utils/cleanURL'
 import { AssetsPreviewPanel } from '@ir-engine/editor/src/components/assets/AssetsPreviewPanel'
@@ -36,10 +36,8 @@ import {
   MimeTypeToAssetType
 } from '@ir-engine/engine/src/assets/constants/fileTypes'
 import { useHookstate } from '@ir-engine/hyperflux'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
+import { Button, Input, RadioGroup } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
-import Radio from '@ir-engine/ui/src/primitives/tailwind/Radio'
 
 import { NotificationService } from '../../../common/services/NotificationService'
 import { uploadToFeathersService } from '../../../util/upload'
@@ -157,7 +155,7 @@ export default function CreateResourceModal({ selectedResource }: { selectedReso
           args: { path: state.name.value, project: state.project.value }
         })
       }
-      PopoverState.hidePopupover()
+      ModalState.closeModal()
     } catch (e) {
       NotificationService.dispatchNotify(e.message, { variant: 'error' })
       errors.serverError.set(e.message)
@@ -167,7 +165,7 @@ export default function CreateResourceModal({ selectedResource }: { selectedReso
   return (
     <Modal
       title={t('admin:components.resources.createResource')}
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
       className="w-[50vw] max-w-2xl"
       onSubmit={handleSubmit}
     >
@@ -175,22 +173,35 @@ export default function CreateResourceModal({ selectedResource }: { selectedReso
         {errors.serverError.value && <p className="mt-4 text-red-700">{errors.serverError.value}</p>}
         <Input
           value={state.name.value}
-          label={t('admin:components.resources.resourceName')}
+          labelProps={{
+            text: t('admin:components.resources.resourceName'),
+            position: 'top'
+          }}
           onChange={(e) => {
             state.name.set(e.target.value)
           }}
           disabled={modalProcessing.value}
         />
-        <Input value={state.mimeType.value} label={t('admin:components.resources.columns.mimeType')} disabled />
+        <Input
+          value={state.mimeType.value}
+          disabled
+          labelProps={{
+            text: t('admin:components.resources.columns.mimeType'),
+            position: 'top'
+          }}
+        />
         <Input
           value={state.project.value}
-          label={t('admin:components.resources.columns.project')}
+          labelProps={{
+            text: t('admin:components.resources.columns.project'),
+            position: 'top'
+          }}
           onChange={(e) => {
             state.project.set(e.target.value)
           }}
           disabled={modalProcessing.value}
         />
-        <Radio
+        <RadioGroup
           value={state.source.value}
           options={[
             { label: 'URL', value: 'url' },
@@ -224,7 +235,10 @@ export default function CreateResourceModal({ selectedResource }: { selectedReso
             onChange={(e) => {
               state.resourceURL.set(e.target.value)
             }}
-            label={t('admin:components.resources.resourceUrl')}
+            labelProps={{
+              text: t('admin:components.resources.resourceUrl'),
+              position: 'top'
+            }}
             disabled={modalProcessing.value}
           />
         )}

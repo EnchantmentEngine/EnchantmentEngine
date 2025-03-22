@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 /**
  * This method takes a filename (with or without included path) and returns a cleaned version of it.
- * ensures toLower file extension, truncates a file name if too long
+ * Ensures toLower file extension, truncates a file name if too long, and sanitizes special characters
  * @param fullFileName
  * @param useStorageProviderLengthRestrictions
  */
@@ -45,7 +45,7 @@ export const cleanFileNameString = (fullFileName: string, useStorageProviderLeng
     let nameWithoutExtension = fileName.substring(0, lastDotIndex)
     const extension = fileName.substring(lastDotIndex + 1).toLowerCase()
 
-    //Used by backend uploads to storage provider, which has different length restrictions than other uses
+    //Used by backend uploads to storage provider...
     if (useStorageProviderLengthRestrictions) {
       if (nameWithoutExtension.length > 1024) nameWithoutExtension = nameWithoutExtension.slice(0, 1024)
     } else {
@@ -53,14 +53,12 @@ export const cleanFileNameString = (fullFileName: string, useStorageProviderLeng
       if (nameWithoutExtension.length > 64) {
         nameWithoutExtension = nameWithoutExtension.slice(0, 64)
       } else if (nameWithoutExtension.length < 4) {
-        //file names need to be longer than 3 characters to be valid for s3 - https://docs.weka.io/additional-protocols/s3/s3-limitations
-        nameWithoutExtension = nameWithoutExtension + '0000'
+        nameWithoutExtension = nameWithoutExtension.padEnd(4, '0')
       }
     }
 
     // Combine the name with the lowercase extension
     const newFileName = hasExtension ? `${nameWithoutExtension}.${extension}` : `${nameWithoutExtension}`
-
     return filePath ? filePath + '/' + newFileName : newFileName
   } catch (e) {
     return fullFileName
@@ -73,8 +71,16 @@ export const cleanFileNameString = (fullFileName: string, useStorageProviderLeng
  * @param file
  */
 export function cleanFileNameFile(file: File): File {
-  return new File([file], cleanFileNameString(file.name), {
+  const newFile = new File([file], cleanFileNameString(file.name), {
     type: file.type,
     lastModified: file.lastModified
   })
+  //overwrite the webkitRelativePath property to preserve directory structure
+  Object.defineProperty(newFile, 'webkitRelativePath', {
+    value: file.webkitRelativePath !== '' ? cleanFileNameString(file.webkitRelativePath) : '',
+    writable: false,
+    enumerable: true,
+    configurable: true
+  })
+  return newFile
 }

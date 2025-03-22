@@ -26,26 +26,30 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Vector3 } from 'three'
 
+import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
   hasComponent,
   removeComponent,
   setComponent,
-  useComponent
+  useComponent,
+  useHasComponent,
+  useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { CameraComponent } from '../../../../spatial/src/camera/components/CameraComponent'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 import { AvatarComponent } from './AvatarComponent'
 
@@ -66,9 +70,9 @@ export const AvatarControllerComponent = defineComponent({
     /** Is the gamepad-driven jump active */
     gamepadJumpActive: S.Bool(false),
     /** gamepad-driven input, in the local XZ plane */
-    gamepadLocalInput: S.Vec3(),
+    gamepadLocalInput: T.Vec3(),
     /** gamepad-driven movement, in the world XZ plane */
-    gamepadWorldMovement: S.Vec3()
+    gamepadWorldMovement: T.Vec3()
   }),
 
   captureMovement(capturedEntity: Entity, entity: Entity): void {
@@ -85,15 +89,30 @@ export const AvatarControllerComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const avatarComponent = useComponent(entity, AvatarComponent)
+    const avatarComponent = useOptionalComponent(entity, AvatarComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
     const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
     const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
     const world = Physics.useWorld(entity)
+    const gltfComponent = useOptionalComponent(entity, GLTFComponent)
+    const cameraHasTargetRotation = useHasComponent(
+      avatarControllerComponent.cameraEntity.value,
+      TargetCameraRotationComponent
+    )
 
     useImmediateEffect(() => {
-      avatarControllerComponent.cameraEntity.set(getState(EngineState).viewerEntity || UndefinedEntity)
+      avatarControllerComponent.cameraEntity.set(getState(ReferenceSpaceState).viewerEntity || UndefinedEntity)
     }, [])
+
+    useEffect(() => {
+      if (!gltfComponent) return
+
+      if (gltfComponent.progress.value !== 100) {
+        AvatarControllerComponent.captureMovement(entity, entity)
+      } else {
+        AvatarControllerComponent.releaseMovement(entity, entity)
+      }
+    }, [gltfComponent?.progress?.value])
 
     useEffect(() => {
       if (!world) return
@@ -106,6 +125,7 @@ export const AvatarControllerComponent = defineComponent({
     }, [world])
 
     useEffect(() => {
+      if (!avatarComponent) return
       setAvatarColliderTransform(entity)
 
       const cameraEntity = avatarControllerComponent.cameraEntity.value
@@ -114,13 +134,14 @@ export const AvatarControllerComponent = defineComponent({
         cameraComponent.firstPersonOffset.set(0, avatarComponent.eyeHeight.value, eyeOffset)
         cameraComponent.thirdPersonOffset.set(0, avatarComponent.eyeHeight.value, 0)
       }
-    }, [avatarComponent.avatarHeight, camera.near])
+    }, [avatarComponent?.avatarHeight, camera.near])
 
     useEffect(() => {
+      if (!avatarComponent) return
       if (isCameraAttachedToAvatar) {
         const controller = getComponent(entity, AvatarControllerComponent)
         removeComponent(controller.cameraEntity, FollowCameraComponent)
-      } else {
+      } else if (cameraHasTargetRotation) {
         const controller = getComponent(entity, AvatarControllerComponent)
         const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
         setComponent(controller.cameraEntity, FollowCameraComponent, {
@@ -131,7 +152,7 @@ export const AvatarControllerComponent = defineComponent({
           thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
         })
       }
-    }, [isCameraAttachedToAvatar])
+    }, [isCameraAttachedToAvatar, avatarComponent, cameraHasTargetRotation])
 
     return null
   }

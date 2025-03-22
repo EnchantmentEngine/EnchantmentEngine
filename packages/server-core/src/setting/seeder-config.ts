@@ -26,23 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { KnexSeed } from '@ir-engine/common/src/interfaces/KnexSeed'
 
 import * as authenticationSeed from './authentication-setting/authentication-setting.seed'
-import * as awsSeed from './aws-setting/aws-setting.seed'
 import * as clientSeed from './client-setting/client-setting.seed'
-import * as emailSeed from './email-setting/email-setting.seed'
 import * as engineSeed from './engine-setting/engine-setting.seed'
-import * as helmSeed from './helm-setting/helm-setting.seed'
-import * as instanceServerSeed from './instance-server-setting/instance-server-setting.seed'
-import * as mailchimpSeed from './mailchimp-setting/mailchimp-setting.seed'
-import * as serverSeed from './server-setting/server-setting.seed'
 
-export const settingSeeds: Array<KnexSeed> = [
-  authenticationSeed,
-  clientSeed,
-  serverSeed,
-  instanceServerSeed,
-  emailSeed,
-  awsSeed,
-  helmSeed,
-  mailchimpSeed,
-  engineSeed
-]
+export const settingSeeds: Array<KnexSeed> = [authenticationSeed, clientSeed, engineSeed]

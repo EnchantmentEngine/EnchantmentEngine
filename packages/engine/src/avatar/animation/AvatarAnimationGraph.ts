@@ -23,20 +23,25 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { clamp } from 'lodash-es'
-import { AnimationAction, AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Object3D, Vector3 } from 'three'
+import { clamp } from 'lodash'
+import { AnimationAction, AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
 
 import { UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  getComponent,
+  getMutableComponent,
+  getOptionalComponent,
+  hasComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineActionQueue, getState } from '@ir-engine/hyperflux'
 import { lerp } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
 
+import { NetworkObjectComponent, NetworkState } from '@ir-engine/network'
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { bindAnimationClipFromMixamo } from '../functions/retargetMixamoRig'
 import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
 import { preloadedAnimations } from './Util'
 
@@ -46,7 +51,8 @@ const animationQueue = defineActionQueue(AvatarNetworkAction.setAnimationState.m
 export const getAnimationAction = (name: string, mixer: AnimationMixer, animations?: AnimationClip[]) => {
   const manager = getState(AnimationState)
   const clip = AnimationClip.findByName(
-    animations ?? manager.loadedAnimations[preloadedAnimations.locomotion]!.animations,
+    animations ??
+      getComponent(manager.loadedAnimations[preloadedAnimations.locomotion]!, AnimationComponent).animations,
     name
   )
   return mixer.clipAction(clip)
@@ -59,6 +65,11 @@ const epsilon = 0.01
 export const updateAnimationGraph = (avatarEntities: Entity[]) => {
   for (const newAnimation of animationQueue()) {
     const targetEntity = UUIDComponent.getEntityByUUID(newAnimation.entityUUID)
+    /** @todo this validation will require some more advanced tooling in event source state once we convert this module to use that paradigm */
+    const networkState = NetworkState.worldNetwork
+    if (targetEntity && networkState) {
+      if (newAnimation.$peer !== getOptionalComponent(targetEntity, NetworkObjectComponent)?.authorityPeerID) continue
+    }
     if (!hasComponent(targetEntity, AvatarAnimationComponent)) {
       console.warn(
         '[updateAnimationGraph]: AvatarAnimationComponent not found on entity',
@@ -80,7 +91,7 @@ export const updateAnimationGraph = (avatarEntities: Entity[]) => {
     const graph = getMutableComponent(targetEntity, AvatarAnimationComponent).animationGraph
     graph.fadingOut.set(newAnimation.needsSkip ?? false)
     graph.layer.set(newAnimation.layer ?? 0)
-    playAvatarAnimationFromMixamo(targetEntity, animationAsset.scene, newAnimation.loop!, newAnimation.clipName!)
+    playAvatarAnimationFromMixamo(targetEntity, animationAsset, newAnimation.loop!, newAnimation.clipName!)
   }
 
   for (const entity of avatarEntities) {
@@ -116,7 +127,7 @@ export const updateAnimationGraph = (avatarEntities: Entity[]) => {
 /** Retargets a mixamo animation to the entity's avatar model, then blends in and out of the default locomotion state. */
 export const playAvatarAnimationFromMixamo = (
   entity: Entity,
-  animationsScene: Object3D,
+  animationsEntity: Entity,
   loop?: boolean,
   clipName?: string
 ) => {
@@ -125,19 +136,13 @@ export const playAvatarAnimationFromMixamo = (
   const rigComponent = getComponent(entity, AvatarRigComponent)
   if (!rigComponent || !rigComponent.vrm) return
   //if animation is already present on animation component, use it instead of retargeting again
+  const animationsScene = getComponent(animationsEntity, AnimationComponent)
   let retargetedAnimation = animationComponent.animations.find(
     (clip) => clip.name == (clipName ?? animationsScene.animations[0].name)
   )
-  //otherwise retarget and push to animation component's animations
-  if (!retargetedAnimation) {
-    retargetedAnimation = bindAnimationClipFromMixamo(
-      clipName
-        ? animationsScene.animations.find((clip) => clip.name == clipName) ?? animationsScene.animations[0]
-        : animationsScene.animations[0],
-      rigComponent.vrm
-    )
-    animationComponent.animations.push(retargetedAnimation)
-  }
+
+  if (!retargetedAnimation) retargetedAnimation = animationsScene.animations[0]
+
   const currentAction = avatarAnimationComponent.animationGraph.blendAnimation
   //before setting animation, stop previous animation if it exists
   if (currentAction.value) currentAction.value.stop()

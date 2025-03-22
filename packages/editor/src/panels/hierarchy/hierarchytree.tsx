@@ -24,12 +24,12 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { Button } from '@ir-engine/ui'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
+import { PlusCircleSm } from '@ir-engine/ui/src/icons'
 import React, { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiOutlinePlusCircle } from 'react-icons/hi2'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
@@ -43,32 +43,21 @@ export function Topbar() {
   const isAddEntityMenuOpen = useHookstate(false)
 
   return (
-    <div className="flex h-8 items-center justify-between gap-2 bg-[#212226]" data-testid="hierarchy-panel-top-bar">
-      <SearchBar
-        search={search}
-        inputProps={{
-          className:
-            'text-[#A3A3A3] bg-[#141619] h-6 rounded-lg border border-theme-input px-2 py-0 text-xs text-[#A3A3A3] placeholder:text-xs placeholder:text-[#A3A3A3] focus-visible:ring-0',
-          containerClassName: 'flex h-auto w-full pl-2',
-          variant: 'underlined'
-        }}
-      />
+    <div className="flex items-center justify-between gap-x-4 bg-surface-3 p-1" data-testid="hierarchy-panel-top-bar">
+      <SearchBar inputProps={{ fullWidth: true }} search={search} debounceTime={100} />
       <Popup
         keepInside
         open={isAddEntityMenuOpen.value}
         onClose={() => isAddEntityMenuOpen.set(false)}
         trigger={
           <Button
-            startIcon={<HiOutlinePlusCircle />}
-            variant="transparent"
-            rounded="none"
-            className="ml-auto w-32 text-nowrap bg-theme-highlight px-2 py-3 text-white"
-            size="small"
-            textContainerClassName="mx-0"
+            // variant="secondary"
+            size="xs"
             data-testid="hierarchy-panel-add-entity-button"
             onClick={() => isAddEntityMenuOpen.set(true)}
           >
-            {t('editor:hierarchy.lbl-addEntity')}
+            <PlusCircleSm />
+            <span className="text-nowrap">{t('editor:hierarchy.lbl-addEntity')}</span>
           </Button>
         }
       >
@@ -88,7 +77,7 @@ export function Contents() {
   const nodes = useHierarchyNodes()
   const ref = useRef<HTMLDivElement>(null)
 
-  const { canDrop, isOver, dropTarget: treeContainerDropTarget } = useHierarchyTreeDrop()
+  const { canDrop, isOver, dropTarget: treeContainerDropTarget } = useHierarchyTreeDrop(nodes?.[0], 'On')
 
   /**an explicit callback is required to rerender changed nodes inside FixedSizeList */
   const MemoTreeNode = useCallback(

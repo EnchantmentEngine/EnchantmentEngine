@@ -44,8 +44,10 @@ export const FilesViewModeSettings = defineState({
       fontSize: 15,
       selectedTableColumns: {
         name: true,
+        author: true,
+        statistics: true,
         type: true,
-        dateModified: true,
+        createdAt: true,
         size: true
       }
     }
@@ -58,7 +60,7 @@ export const FilesState = defineState({
   initial: () => ({
     selectedDirectory: '',
     projectName: '',
-    clipboardFile: null as { isCopy?: boolean; file: FileDataType } | null,
+    clipboardFiles: { files: [] } as { isCopy?: boolean; files: FileDataType[] },
     searchText: ''
   })
 })

@@ -26,12 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useMutation } from '@ir-engine/common'
 import { fileBrowserPath } from '@ir-engine/common/src/schema.type.module'
 import { isValidFileName } from '@ir-engine/common/src/utils/validateFileName'
 import { useHookstate } from '@ir-engine/hyperflux'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
+import { Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import { FileDataType } from '../../../constants/AssetTypes'
 
@@ -39,22 +39,21 @@ export default function RenameFileModal({ projectName, file }: { projectName: st
   const { t } = useTranslation()
   const newFileName = useHookstate(file.name)
   const fileService = useMutation(fileBrowserPath)
-  const isValid = isValidFileName(newFileName.value)
+  const resultFileName = isValidFileName(newFileName.value)
 
   const handleSubmit = async () => {
-    const name = newFileName.value
-    if (isValidFileName(name)) {
+    if (resultFileName.isValid) {
       fileService.update(null, {
         oldProject: projectName,
         newProject: projectName,
         oldName: file.fullName,
-        newName: file.isFolder ? name : `${name}.${file.type}`,
+        newName: file.isFolder ? newFileName.value : `${newFileName.value}.${file.type}`,
         oldPath: file.path,
         newPath: file.path,
         isCopy: false
       })
     }
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   return (
@@ -62,16 +61,15 @@ export default function RenameFileModal({ projectName, file }: { projectName: st
       title={t('editor:layout.filebrowser.renameFile')}
       className="w-[50vw] max-w-2xl"
       onSubmit={handleSubmit}
-      onClose={PopoverState.hidePopupover}
-      submitButtonDisabled={!isValid}
+      onClose={ModalState.closeModal}
+      submitButtonDisabled={!resultFileName.isValid}
     >
       <Input
         value={newFileName.value}
         data-testid="rename-file-input"
         onChange={(event) => newFileName.set(event.target.value)}
-        errorBorder={!isValid}
-        description={t('editor:dialog.saveNewScene.info-name')}
-        error={!isValid ? t('editor:layout.filebrowser.renameFileError') : undefined}
+        state={!resultFileName.isValid ? 'error' : undefined}
+        helperText={!resultFileName.isValid ? resultFileName.error : undefined}
       />
     </Modal>
   )
