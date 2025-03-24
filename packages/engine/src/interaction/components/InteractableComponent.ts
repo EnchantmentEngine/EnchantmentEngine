@@ -274,7 +274,7 @@ export const InteractableComponent = defineComponent({
     const isEditing = useMutableState(EngineState).isEditing
     const modalState = useXRUIState<InteractiveModalState>()
     const xrui = getOptionalComponent(interactableComponent.uiEntity.value, XRUIComponent)
-    console.log(xrui, 'inter')
+
     useImmediateEffect(() => {
       setComponent(entity, DistanceFromCameraComponent)
       setComponent(entity, DistanceFromLocalClientComponent)
@@ -322,10 +322,7 @@ export const InteractableComponent = defineComponent({
 
     useEffect(() => {
       if (!isEditing.value && xrui) {
-        xrui?.containerElement.addEventListener('click', () => {
-          callInteractCallbacks(entity)
-          console.log('click', entity)
-        })
+        xrui?.containerElement.addEventListener('click', () => callInteractCallbacks(entity))
       }
       return () => {
         if (xrui) {

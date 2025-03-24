@@ -301,11 +301,7 @@ export function MediaReactor() {
   useEffect(() => {
     if (!mediaElement) return
     const autoPlay = getAutoPlay()
-    if (autoPlay && !engineState.isEditing.value) {
-      media.paused.set(!autoPlay)
-    } else if (engineState.isEditing.value) {
-      media.paused.set(true)
-    }
+    media.paused.set(!autoPlay)
     validateTime()
   }, [media.autoplay, !!mediaElement, engineState.isEditing])
 
