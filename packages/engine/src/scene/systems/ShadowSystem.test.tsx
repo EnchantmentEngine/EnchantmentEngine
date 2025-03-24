@@ -46,7 +46,13 @@ import {
   UndefinedEntity
 } from '@ir-engine/ecs'
 import { getMutableState, getState, none, ReactorRoot, startReactor } from '@ir-engine/hyperflux'
-import { DirectionalLightComponent, ReferenceSpaceState, TransformComponent, TransformSystem } from '@ir-engine/spatial'
+import {
+  DirectionalLightComponent,
+  MeshBVHSystem,
+  ReferenceSpaceState,
+  TransformComponent,
+  TransformSystem
+} from '@ir-engine/spatial'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { destroySpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
@@ -105,34 +111,32 @@ describe('ShadowSystemState', () => {
     })
 
     /**
-     * @todo Is there a way to reset the value of `isMobileXRHeadset` for other tests ?
+     * @todo
+     * vi.mock is hoisted, and calling it (even inside a disabled test) affects EVERY OTHER TEST in this file, and cannot be reverted.
+     * vi.mock should be the solution, but its sideeffects are file-wide.
      * Calling vi.mock again, and/or calling vi.clearAllMocks, does not work
+     * vi.doMock sets the value of `isMobileXRHeadset` for this test, but not for the original import
+     *
+     * ? Solution: Make the variable an export from an object with readonly ?
      * */
-    it.todo('should have an accumulationBudget of 4 when isMobileXRHeadset is truthy', async () => {
+    it.skip('should have an accumulationBudget of 4 when isMobileXRHeadset is truthy', async () => {
       const Expected = 4
 
-      /**
-       * @warning Affects EVERY OTHER TEST in this file, and cannot be reverted!
-       * This should be the solution, but its sideeffects are module-wide.
-       * */
-      /*
-      vitest.mock('@ir-engine/spatial/src/xr/XRState', async (importOriginal) => {
-        const original = await importOriginal() as any
-        return {...original, isMobileXRHeadset: true }
+      vi.doMock('@ir-engine/spatial/src/xr/XRState', async (importOriginal) => {
+        const original = (await importOriginal()) as any
+        return { ...original, isMobileXRHeadset: true }
       })
-      */
+      const mobile = await import('@ir-engine/spatial/src/xr/XRState')
 
       // 1. Sanity check (input & dependencies)
-      expect(isMobileXRHeadset).toBeTruthy()
+      expect(mobile.isMobileXRHeadset).toBeTruthy()
       // 2. Run the process
       const result = (await ShadowSystemState.initial()).priorityQueue.accumulationBudget
       // 4. Check the result (output)
       expect(result).toEqual(Expected)
+
       // 5? Cleanup after running
-      // vitest.mock('@ir-engine/spatial/src/xr/XRState', async (importOriginal) => {
-      //   const original = await importOriginal() as any
-      //   return {...original, isMobileXRHeadset: false }
-      // })
+      vi.doUnmock('@ir-engine/spatial/src/xr/XRState')
     })
 
     it('should have an accumulationBudget of 20 when isMobileXRHeadset is falsy', async () => {
@@ -1355,8 +1359,7 @@ describe('EntityCSMReactor', () => {
       expect(result).toBe(Expected)
     })
 
-    /** @todo Why is this not passing now ? */
-    it.todo('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {
+    it('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {
       const Expected = true
       const Initial = !Expected
       // 2. Set input & dependencies data
@@ -1387,9 +1390,6 @@ describe('EntityCSMReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      const cascades = 42
-      setComponent(renderSettingsEntity, RenderSettingsComponent, { cascades: cascades })
-      root.run()
       // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
@@ -1452,16 +1452,14 @@ describe('CSMReactor', () => {
     destroyEngine()
   })
 
-  /** @todo How to setup the directionalLight<->rendererEntity relationship correctly ?? */
   describe('on change [xrLightProbeEntity.value, renderSettingsComponent.primaryLight, primaryLightVisibleComponent]', () => {
-    it.todo(
+    it(
       'should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to XRLightProbeState.directionalLightEntity' +
         'if `@param props.renderEntity` is ReferenceSpaceState.viewerEntity' +
         'and XRLightProbeState.directionalLightEntity is truthy',
       () => {
         const Expected = createEntity()
         // 3. Set input & dependencies data
-        // const rendererEntity = createEntity()
         const rendererEntity = defineQuery([RendererComponent])()[0]
         getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1478,7 +1476,7 @@ describe('CSMReactor', () => {
         setComponent(renderSettingsEntity, SourceComponent, sourceID)
         setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
 
-        const nodes = { [nodeID]: createEntity() }
+        const nodes = { [nodeID]: directionalLightEntity }
         getMutableState(NodesBySourceState)[sourceID].set(nodes)
 
         const Reactor = () => {
@@ -1510,15 +1508,6 @@ describe('CSMReactor', () => {
         expect(result).toBe(Expected)
         // 5? Cleanup (dependencies)
       }
-    )
-
-    it.todo(
-      '?? should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to ???itself??? if `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight is truthy',
-      () => {}
-    )
-    it.todo(
-      'should set `@param props.renderSettingsEntity`.RenderSettingsComponent.primaryLight to UndefinedEntity otherwise',
-      () => {}
     )
   })
 
@@ -1651,24 +1640,13 @@ describe('RenderSettingsQueryReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
-  /* @todo How to setup so that CSMReactor is triggered ? */
-  it.todo('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {
+  it('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {
     // 3. Set input & dependencies data
+    const rendererEntity = defineQuery([RendererComponent])()[0]
+    getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
-    const rendererEntity = createEntity()
-    setComponent(rendererEntity, RendererComponent, { csm: new CSM({}), scenes: [rendererEntity] })
-    // setComponent(rendererEntity, RendererComponent, { csm: new CSM({}) })
-
-    // @note Crashes the reactor, but this should be the way to achieve this goal
-    // const rendererEntity = defineQuery([RendererComponent])()[0]
-    // getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
-
-    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
+    setComponent(testEntity, RenderSettingsComponent)
     setComponent(testEntity, EntityTreeComponent, { parentEntity: rendererEntity }) // Connect them for useRendererEntity
-
-    const renderSettingsEntity = createEntity()
-    setComponent(renderSettingsEntity, RenderSettingsComponent)
 
     const Reactor = () => {
       return React.createElement(
@@ -1685,6 +1663,8 @@ describe('RenderSettingsQueryReactor', () => {
     expect(getState(RendererState).renderMode).not.toBe(RenderModes.UNLIT)
     expect(getState(RendererState).renderMode).not.toBe(RenderModes.LIT)
     expect(resultSpy).not.toHaveBeenCalled()
+    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
+    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     // 2. Run the process
     const root = startReactor(Reactor)
     // 4. Check the result (output)
@@ -1927,8 +1907,7 @@ describe('ShadowSystem', () => {
         ShadowSystemData._shadowMaterial.version = previous
       })
 
-      /** @todo Does `useTexture` create a new texture everytime it is called ? */
-      it.todo('.. should set _shadowMaterial.map to shadowTexture', async () => {
+      it('.. should set _shadowMaterial.map to shadowTexture', async () => {
         const textureURL = `${
           getState(DomainConfigState).cloudDomain
         }/projects/ir-engine/default-project/assets/drop-shadow.png`
@@ -1954,7 +1933,7 @@ describe('ShadowSystem', () => {
         // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).not.toBe(Initial)
-        expect(result).toEqual(Expected)
+        expect(result?.source.uuid).toEqual(Expected?.source.uuid)
         // 5? Cleanup (dependencies)
         ShadowSystemData._shadowMaterial.map = previous
       })
@@ -2253,7 +2232,7 @@ describe('ShadowSystemFunctions', () => {
           dropShadowEntity = UndefinedEntity
         })
 
-        it('... should set entity.DropShadowComponent.entity.ObjectComponent.material.opacity to the expected value', () => {
+        it('... should set entity.DropShadowComponent.entity.ObjectComponent.material.opacity to the expected value', async () => {
           const Expected = 0.6
           const Initial = 42_000
 
@@ -2263,6 +2242,9 @@ describe('ShadowSystemFunctions', () => {
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
           const raycaster = new Raycaster(rayPos, rayDir)
           const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
+
+          startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
+          await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10000 })
 
           // 1. Sanity check (input & dependencies)
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
@@ -2281,7 +2263,7 @@ describe('ShadowSystemFunctions', () => {
           expect(result).toBe(Expected)
         })
 
-        it('... should set entity.DropShadowComponent.entity.TransformComponent.rotation to the expected value', () => {
+        it('... should set entity.DropShadowComponent.entity.TransformComponent.rotation to the expected value', async () => {
           const Expected = new Quaternion(1, 2, 3, 4).normalize()
           const Initial = new Quaternion(5, 6, 7, 8).normalize()
 
@@ -2290,10 +2272,11 @@ describe('ShadowSystemFunctions', () => {
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
           const raycaster = new Raycaster(rayPos, rayDir)
           const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
+          startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
+          await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10_000 })
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
           Expected.setFromUnitVectors(intersected.face?.normal as any, Vector3_Back)
           setComponent(dropShadowEntity, TransformComponent, { rotation: Initial })
-
           // 1. Sanity check (input & dependencies)
           expect(intersected).toBeTruthy()
           expect(intersected.face).toBeTruthy()
@@ -2310,7 +2293,7 @@ describe('ShadowSystemFunctions', () => {
           assertVec.approxEq(result, Expected, 4, 0.01)
         })
 
-        it('... should set entity.DropShadowComponent.entity.TransformComponent.scale to the expected value', () => {
+        it('... should set entity.DropShadowComponent.entity.TransformComponent.scale to the expected value', async () => {
           const Expected = new Vector3(0, 0, 0)
           const Initial = new Vector3(5, 6, 7)
 
@@ -2320,6 +2303,8 @@ describe('ShadowSystemFunctions', () => {
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
           const raycaster = new Raycaster(rayPos, rayDir)
           const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
+          startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
+          await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10_000 })
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
 
           // 1. Sanity check (input & dependencies)
@@ -2338,7 +2323,7 @@ describe('ShadowSystemFunctions', () => {
           assertVec.approxEq(result, Expected, 3, 0.01)
         })
 
-        it('... should set entity.DropShadowComponent.entity.TransformComponent.position to the expected value', () => {
+        it('... should set entity.DropShadowComponent.entity.TransformComponent.position to the expected value', async () => {
           const Expected = new Vector3(0, -0.99, 0)
           const Initial = new Vector3(5, 6, 7)
 
@@ -2348,6 +2333,8 @@ describe('ShadowSystemFunctions', () => {
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
           const raycaster = new Raycaster(rayPos, rayDir)
           const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
+          startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
+          await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10_000 })
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
 
           // 1. Sanity check (input & dependencies)
