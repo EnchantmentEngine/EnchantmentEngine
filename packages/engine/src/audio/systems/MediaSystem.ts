@@ -87,6 +87,7 @@ export class AudioEffectPlayer {
 
   play = (sound: string, volumeMultiplier = getState(AudioState).notificationVolume) => {
     if (!this.#els.length) return
+
     const audioContext = getState(AudioState).audioContext
     if (this.#queue.has(sound) || audioContext.state === 'suspended') return
     this.#queue.add(sound)
