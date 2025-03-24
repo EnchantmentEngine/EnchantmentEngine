@@ -273,7 +273,7 @@ export const InteractableComponent = defineComponent({
     const interactableComponent = useComponent(entity, InteractableComponent)
     const isEditing = useMutableState(EngineState).isEditing
     const modalState = useXRUIState<InteractiveModalState>()
-    const xrui = getOptionalComponent(interactableComponent.uiEntity.value, XRUIComponent)
+    const isXruiExist = hasComponent(interactableComponent.uiEntity.value, XRUIComponent)
 
     useImmediateEffect(() => {
       setComponent(entity, DistanceFromCameraComponent)
@@ -321,15 +321,13 @@ export const InteractableComponent = defineComponent({
     }, [isEditing.value])
 
     useEffect(() => {
-      if (!isEditing.value && xrui) {
-        xrui?.containerElement.addEventListener('click', () => callInteractCallbacks(entity))
-      }
+      const xrui = getOptionalComponent(interactableComponent.uiEntity.value, XRUIComponent)
+      if (isEditing.value || !xrui) return
+      xrui.containerElement.addEventListener('click', () => callInteractCallbacks(entity))
       return () => {
-        if (xrui) {
-          xrui?.containerElement.removeEventListener('click', () => callInteractCallbacks(entity))
-        }
+        xrui.containerElement.removeEventListener('click', () => callInteractCallbacks(entity))
       }
-    }, [isEditing.value, xrui, entity])
+    }, [isEditing.value, isXruiExist, entity])
 
     useEffect(() => {
       const msg = interactableComponent.label?.value ?? ''
