@@ -185,7 +185,6 @@ export const updateInteractableUI = (entity: Entity) => {
   const mutableInteractable = getMutableComponent(entity, InteractableComponent)
   const newHighlight = hovering || entity === getState(InteractableState).available[0]
   if (mutableInteractable.highlighted.value !== newHighlight) {
-    console.log('here', newHighlight)
     mutableInteractable.highlighted.set(newHighlight)
   }
 
@@ -274,7 +273,8 @@ export const InteractableComponent = defineComponent({
     const interactableComponent = useComponent(entity, InteractableComponent)
     const isEditing = useMutableState(EngineState).isEditing
     const modalState = useXRUIState<InteractiveModalState>()
-
+    const xrui = getOptionalComponent(interactableComponent.uiEntity.value, XRUIComponent)
+    console.log(xrui, 'inter')
     useImmediateEffect(() => {
       setComponent(entity, DistanceFromCameraComponent)
       setComponent(entity, DistanceFromLocalClientComponent)
@@ -319,12 +319,20 @@ export const InteractableComponent = defineComponent({
         }
       }
     }, [isEditing.value])
-    console.log(interactableComponent.highlighted.value)
+
     useEffect(() => {
-      if (!isEditing.value && entity && interactableComponent.highlighted.value) {
-        callInteractCallbacks(entity)
+      if (!isEditing.value && xrui) {
+        xrui?.containerElement.addEventListener('click', () => {
+          callInteractCallbacks(entity)
+          console.log('click', entity)
+        })
       }
-    }, [isEditing, entity, interactableComponent.highlighted.value])
+      return () => {
+        if (xrui) {
+          xrui?.containerElement.removeEventListener('click', () => callInteractCallbacks(entity))
+        }
+      }
+    }, [isEditing.value, xrui, entity])
 
     useEffect(() => {
       const msg = interactableComponent.label?.value ?? ''
