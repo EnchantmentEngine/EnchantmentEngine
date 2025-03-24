@@ -185,6 +185,7 @@ export const updateInteractableUI = (entity: Entity) => {
   const mutableInteractable = getMutableComponent(entity, InteractableComponent)
   const newHighlight = hovering || entity === getState(InteractableState).available[0]
   if (mutableInteractable.highlighted.value !== newHighlight) {
+    console.log('here', newHighlight)
     mutableInteractable.highlighted.set(newHighlight)
   }
 
@@ -318,6 +319,12 @@ export const InteractableComponent = defineComponent({
         }
       }
     }, [isEditing.value])
+    console.log(interactableComponent.highlighted.value)
+    useEffect(() => {
+      if (!isEditing.value && entity && interactableComponent.highlighted.value) {
+        callInteractCallbacks(entity)
+      }
+    }, [isEditing, entity, interactableComponent.highlighted.value])
 
     useEffect(() => {
       const msg = interactableComponent.label?.value ?? ''
