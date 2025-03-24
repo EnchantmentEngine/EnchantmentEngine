@@ -45,16 +45,6 @@
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsapartment_skybox.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
-  "assets/apartment-CubemapBake.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "name": "apartment-CubemapBake.png",
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_apartment-CubemapBake.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
   "assets/apartment.glb": {
     "type": "asset",
     "tags": [
@@ -64,6 +54,24 @@
     "name": "apartment.glb",
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsapartment.glb-thumbnail.png",
     "thumbnailMode": "automatic"
+  },
+  "assets/avatars/irRobot.png": {
+    "type": "file",
+    "tags": [
+      "Image"
+    ],
+    "dependencies": [],
+    "name": "irRobot.png"
+  },
+  "assets/avatars/irRobot.vrm": {
+    "type": "asset",
+    "tags": [
+      "Model"
+    ],
+    "dependencies": [
+      "projects/ir-engine/default-project/assets/avatars/irRobot.png"
+    ],
+    "name": "irRobot.vrm"
   },
   "assets/cloud.png": {
     "type": "asset",
@@ -189,6 +197,16 @@
     "dependencies": [],
     "name": "platform.glb",
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_platform.glb-thumbnail.png",
+    "thumbnailMode": "automatic"
+  },
+  "assets/platform.gltf": {
+    "type": "file",
+    "tags": [
+      "Model"
+    ],
+    "dependencies": [],
+    "name": "platform.gltf",
+    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_platform.gltf-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/portal_frame.glb": {
@@ -543,13 +561,23 @@
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsUV.png-thumbnail.png",
     "thumbnailMode": "automatic"
   },
-  "public/scenes/apartment-New-EnvMap_Bake.ktx2": {
-    "type": "asset",
+  "assets/your-image-here.png": {
+    "type": "file",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "name": "apartment-New-EnvMap_Bake.ktx2"
+    "name": "your-image-here.png",
+    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_your-image-here.png-thumbnail.png",
+    "thumbnailMode": "automatic"
+  },
+  "public/scenes/apartment-envmap.ktx2": {
+    "type": "file",
+    "tags": [
+      "Image"
+    ],
+    "dependencies": [],
+    "name": "apartment-envmap.ktx2"
   },
   "public/scenes/apartment-Portal.ktx2": {
     "type": "asset",
@@ -619,29 +647,29 @@
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_default.loadingscreen.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
-  "public/scenes/sky-station-Portal--_Sky Station Exterior.ktx2": {
-    "type": "asset",
+  "public/scenes/sky-station-Portal-- Sky Station Exterior.ktx2": {
+    "type": "file",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "name": "sky-station-Portal--_Sky Station Exterior.ktx2"
+    "name": "sky-station-Portal-- Sky Station Exterior.ktx2"
   },
-  "public/scenes/sky-station-Portal--_Sky Station Interior.ktx2": {
-    "type": "asset",
+  "public/scenes/sky-station-Portal-- Sky Station Interior.ktx2": {
+    "type": "file",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "name": "sky-station-Portal--_Sky Station Interior.ktx2"
+    "name": "sky-station-Portal-- Sky Station Interior.ktx2"
   },
-  "public/scenes/sky-station-Portal--_to Apartment.ktx2": {
-    "type": "asset",
+  "public/scenes/sky-station-Portal-- to Apartment.ktx2": {
+    "type": "file",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "name": "sky-station-Portal--_to Apartment.ktx2"
+    "name": "sky-station-Portal-- to Apartment.ktx2"
   },
   "public/scenes/sky-station.envmap.ktx2": {
     "type": "asset",
@@ -671,15 +699,5 @@
     "name": "sky-station.loadingscreen.ktx2",
     "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station.loadingscreen.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
-  },
-  "assets/avatars/irRobot.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/irRobot.png"
-    ],
-    "name": "irRobot.vrm"
   }
 }
