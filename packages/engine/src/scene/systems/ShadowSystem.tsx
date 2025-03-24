@@ -276,7 +276,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   // }, [rendererComponent, renderSettingsComponent.csm, rendererState.nodeHelperVisibility])
 
   useEffect(() => {
-    if (rendererEntity === Engine.instance.viewerEntity && xrLightProbeEntity.value) {
+    if (rendererEntity === getState(ReferenceSpaceState).viewerEntity && xrLightProbeEntity.value) {
       activeLightEntity.set(xrLightProbeEntity.value)
       return
     }
