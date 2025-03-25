@@ -27,6 +27,7 @@ import { useEffect } from 'react'
 import { Intersection, Layers, MathUtils, Object3D, Quaternion, Raycaster, Vector3 } from 'three'
 
 import {
+  Easing,
   Entity,
   EntityTreeComponent,
   getAncestorWithComponents,
@@ -205,8 +206,12 @@ const onFlyControlModeEnd = () => {
   setComponent(viewerEntity, CameraOrbitComponent)
   const position = TransformComponent.getWorldPosition(viewerEntity, new Vector3())
   const rotation = TransformComponent.getWorldRotation(viewerEntity, new Quaternion())
-  const editorCameraCenter = getComponent(viewerEntity, CameraOrbitComponent).cameraOrbitCenter
+  const editorCameraCenter = getComponent(viewerEntity, CameraOrbitComponent).cameraOrbitCenter.clone()
   editorCameraCenter.copy(position).add(directionToCenter.set(0, 0, -lastDistanceToCenter).applyQuaternion(rotation))
+  CameraOrbitComponent.setTransition(viewerEntity, 'cameraOrbitCenter', editorCameraCenter, {
+    duration: 0.5,
+    easing: Easing.elastic.inOut
+  })
 }
 
 function copy(event) {

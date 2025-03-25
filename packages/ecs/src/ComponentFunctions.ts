@@ -370,12 +370,18 @@ export const defineComponent = <
   ComponentMap.set(Component.name, Component)
 
   function setTransition<P extends ComponentPropertyPath<ComponentType>>(
+    /** @description The entity to transition the property of. */
     entity: Entity,
+    /** @description The path to the property to transition. */
     propertyPath: P,
+    /** @description The value to transition to. */
     value: ComponentPropertyFromPath<ComponentType, P> & TransitionableTypes,
     options: {
+      /** @description The duration of the transition in milliseconds. */
       duration?: number
+      /** @description The easing function to use for the transition. */
       easing?: EasingFunction
+      /** @description The type of transition to use. */
       type?: keyof typeof Transitionable
     }
   ) {
@@ -1312,13 +1318,11 @@ export const TransitionComponent = defineComponent({
       transitionableType: S.String(),
       duration: S.Number(500),
       easing: S.String(Easing.exponential.inOut.path),
-      initialValue: S.NonSerialized(S.Type<TransitionableTypes>()),
-      outputValue: S.NonSerialized(S.Type<TransitionableTypes>()),
+      initialValue: S.NonSerialized(S.Optional(S.Type<TransitionableTypes>())),
       events: S.NonSerialized(
         S.Array(
           S.Object({
             age: S.Number(),
-            fromValue: S.Type<TransitionableTypes>(),
             toValue: S.Type<TransitionableTypes>(),
             duration: S.Number(),
             easing: S.String()
@@ -1368,12 +1372,10 @@ export const TransitionComponent = defineComponent({
     if (target.duration && transition.duration !== target.duration) transition.duration = target.duration
     if (target.easing && transition.easing !== target.easing.path) transition.easing = target.easing.path
     if (target.type && transition.transitionableType !== type) transition.transitionableType = type
-    TransitionComponent.updateTransition(entity, transition, 0, false)
     transition.events.push({
       age: 0,
       duration: transition.duration,
       easing: transition.easing,
-      fromValue: transition.outputValue,
       toValue: target.value
     })
   },
@@ -1384,6 +1386,8 @@ export const TransitionComponent = defineComponent({
     deltaMilliSeconds: number,
     setProperty: boolean = true
   ) {
+    if (transition.events.length === 0) return
+
     const Component = ComponentJSONIDMap.get(transition.componentJsonID)
     if (!Component) return
     const component = getComponent(entity, Component)
@@ -1391,13 +1395,8 @@ export const TransitionComponent = defineComponent({
     const propertyValue = resolveObject(component, transition.propertyPath) as any as TransitionableTypes
     if (propertyValue === undefined) return
 
-    if (transition.initialValue === undefined) {
+    if (!transition.initialValue) {
       transition.initialValue = typeof propertyValue === 'number' ? propertyValue : propertyValue.clone()
-    }
-
-    if (transition.events.length === 0) {
-      transition.outputValue = transition.initialValue
-      return
     }
 
     const transitionable = Transitionable[transition.transitionableType] as Transitionable
@@ -1436,7 +1435,9 @@ export const TransitionComponent = defineComponent({
       return true
     })
 
-    transition.outputValue = output
+    if (transition.events.length === 0) {
+      transition.initialValue = undefined
+    }
 
     if (setProperty) {
       if (typeof output === 'number') {

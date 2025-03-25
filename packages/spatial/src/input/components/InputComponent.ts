@@ -80,7 +80,7 @@ export const DefaultButtonBindings = {
   FollowCameraShoulderCam: [KeyboardButton.KeyC]
 } satisfies InputButtonBindings
 
-export const DefaultAxisAlias = {
+export const DefaultAxisBindings = {
   FollowCameraZoomScroll: [MouseScroll.VerticalScroll, XRStandardGamepadAxes.XRStandardGamepadTouchpadY],
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
 } satisfies InputAxisBindings

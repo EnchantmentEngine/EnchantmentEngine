@@ -162,5 +162,5 @@ export const ClientInputSystem = defineSystem({
 export const ClientInputCleanupSystem = defineSystem({
   uuid: 'ee.engine.input.ClientInputCleanupSystem',
   insert: { after: PresentationSystemGroup },
-  execute: ClientInputFunctions.refreshInputs
+  execute: ClientInputFunctions.cleanupInputs
 })
