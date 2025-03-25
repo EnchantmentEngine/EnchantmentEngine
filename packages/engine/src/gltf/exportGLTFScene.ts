@@ -35,7 +35,7 @@ import {
   serializeComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
-import { getState, hookstate, startReactor, State, useHookstate } from '@ir-engine/hyperflux'
+import { destroy, getState, hookstate, startReactor, State, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import {
@@ -409,6 +409,9 @@ export async function exportGLTFScene(
   }
 
   for (const extension of exportExtensions) extension.after?.(entity, gltf)
+
+  // destroy hookstate store
+  destroy(context.materialPromises)
 
   if (!gltf) return []
 
