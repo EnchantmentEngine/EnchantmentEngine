@@ -294,7 +294,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   if (!renderSettingsComponent.csm.value || !activeLightEntity.value || !directionalLight?.value) return null
 
   return (
-    <EntityCSMReactor
+    <ShadowSystemReactors.EntityCSMReactor
       key={activeLightEntity.value}
       entity={activeLightEntity.value}
       rendererEntity={rendererEntity}
