@@ -38,7 +38,6 @@ import {
   EntityTreeComponent,
   getComponent,
   getMutableComponent,
-  getOptionalComponent,
   hasComponent,
   removeEntity,
   setComponent,
@@ -65,7 +64,6 @@ import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderMod
 import { CSM } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { getShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
-import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
 import React from 'react'
 import { BoxGeometry, Color, Material, Mesh, Quaternion, Raycaster, Vector2, Vector3 } from 'three'
@@ -122,31 +120,19 @@ describe('ShadowSystemState', () => {
      * */
     it.skip('should have an accumulationBudget of 4 when isMobileXRHeadset is truthy', async () => {
       const Expected = 4
-
       vi.doMock('@ir-engine/spatial/src/xr/XRState', async (importOriginal) => {
         const original = (await importOriginal()) as any
         return { ...original, isMobileXRHeadset: true }
       })
       const mobile = await import('@ir-engine/spatial/src/xr/XRState')
-
-      // 1. Sanity check (input & dependencies)
-      expect(mobile.isMobileXRHeadset).toBeTruthy()
-      // 2. Run the process
       const result = (await ShadowSystemState.initial()).priorityQueue.accumulationBudget
-      // 4. Check the result (output)
       expect(result).toEqual(Expected)
-
-      // 5? Cleanup after running
       vi.doUnmock('@ir-engine/spatial/src/xr/XRState')
     })
 
     it('should have an accumulationBudget of 20 when isMobileXRHeadset is falsy', async () => {
       const Expected = 20
-      // 1. Sanity check (input & dependencies)
-      expect(isMobileXRHeadset).toBeFalsy()
-      // 2. Run the process
       const result = (await ShadowSystemState.initial()).priorityQueue.accumulationBudget
-      // 4. Check the result (output)
       expect(result).toEqual(Expected)
     })
   }) //:: initial
@@ -169,7 +155,6 @@ describe('EntityChildCSMReactor', () => {
 
   describe('on change [shadowComponent.receive, csm]', () => {
     it('should not do anything (return early) if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       const csm = new CSM({})
       csm.setupMaterial = resultSpy
@@ -185,24 +170,13 @@ describe('EntityChildCSMReactor', () => {
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
-      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor) as ReactorRoot
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
     })
 
     it('should not do anything (return early) if entityContext.ShadowComponent.receive is falsy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       const csm = new CSM({})
       csm.setupMaterial = resultSpy
@@ -217,24 +191,13 @@ describe('EntityChildCSMReactor', () => {
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
-      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor) as ReactorRoot
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
     })
 
     it('should not do anything (return early) if entityContext.ObjectComponent is falsy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       const csm = new CSM({})
       csm.setupMaterial = resultSpy
@@ -250,23 +213,13 @@ describe('EntityChildCSMReactor', () => {
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ShadowComponent).receive).toBeFalsy()
-      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ObjectComponent)).toBeFalsy()
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
     })
 
     it('should call `@param props.rendererEntity`.RendererComponent.csm.setupMaterial if entityContext.ObjectComponent.material is truthy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       const csm = new CSM({})
       csm.setupMaterial = resultSpy
@@ -281,25 +234,14 @@ describe('EntityChildCSMReactor', () => {
           React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
-      expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
-      expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(1)
     })
 
     describe('on cleanup ..', () => {
       it('.. should call `@param props.rendererEntity`.RendererComponent.csm.teardownMaterial if entityContext.ObjectComponent.material is truthy', () => {
-        // 3. Set input & dependencies data
         const resultSpy = vi.fn()
         const csm = new CSM({})
         csm.teardownMaterial = resultSpy
@@ -314,19 +256,9 @@ describe('EntityChildCSMReactor', () => {
             React.createElement(ShadowSystemReactors.EntityChildCSMReactor, { rendererEntity: rendererEntity })
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, ShadowComponent)).toBeTruthy()
-        expect(getComponent(testEntity, ShadowComponent).receive).toBeTruthy()
-        expect(hasComponent(testEntity, ObjectComponent)).toBeTruthy()
-        expect(getComponent(testEntity, ObjectComponent)).toBeTruthy()
-        expect(((getComponent(testEntity, ObjectComponent) as Mesh).material as Material).isMaterial).toBeTruthy()
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(resultSpy).not.toHaveBeenCalled()
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(resultSpy).toHaveBeenCalledTimes(1)
       })
@@ -352,7 +284,7 @@ describe('EntityCSMReactor', () => {
   describe('on change [directionalLight, directionalLightComponent?.castShadow.value]', () => {
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', () => {
       const Initial = new CSM({})
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: Initial })
       const renderSettingsEntity = createEntity()
@@ -366,17 +298,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).toBe(Initial)
@@ -384,7 +307,7 @@ describe('EntityCSMReactor', () => {
 
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy', () => {
       const Initial = new CSM({})
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: Initial })
       const renderSettingsEntity = createEntity()
@@ -397,19 +320,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeFalsy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).toBe(Initial)
@@ -417,7 +329,7 @@ describe('EntityCSMReactor', () => {
 
     it('should call `@param props.rendererEntity`.RendererComponent.csm.set with a newly created CSM instance', () => {
       const Initial = new CSM({})
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: Initial })
       const renderSettingsEntity = createEntity()
@@ -430,19 +342,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -450,7 +351,7 @@ describe('EntityCSMReactor', () => {
 
     it('should set `@param props.rendererEntity`.RendererComponent.csm.light to `@param props.entity`.DirectionalLightComponent.light', () => {
       const Initial = undefined
-      // 3. Set input & dependencies data
+
       const csm = new CSM({})
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -464,19 +365,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.sourceLight
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.sourceLight
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -485,7 +375,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.shadowMapSize to RendererState.shadowMapResolution', () => {
       const Expected = getState(RendererState).shadowMapResolution
       const Initial = 42_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ shadowMapSize: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -499,20 +389,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -522,7 +400,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.shadowBias to `@param props.entity`.DirectionalLightComponent.shadowBias', () => {
       const Expected = 42_000
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ shadowBias: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -536,20 +414,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -559,7 +425,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.maxFar to `@param props.entity`.DirectionalLightComponent.cameraFar', () => {
       const Expected = 42_000
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ maxFar: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -573,20 +439,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.maxFar
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.maxFar
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -596,7 +450,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.lightIntensity to `@param props.entity`.DirectionalLightComponent.intensity', () => {
       const Expected = 42_000
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ lightIntensity: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -610,20 +464,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.lightIntensity
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.lightIntensity
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -633,7 +475,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.lightColor to `@param props.entity`.DirectionalLightComponent.color', () => {
       const Expected = new Color(42_000)
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ lightColor: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -647,20 +489,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.lightColor
-      expect(before).toBe(Initial)
-      expect(before).not.toEqual(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.lightColor
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -670,7 +500,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.cascades to `@param props.renderSettingsEntity`.RenderSettingsComponent.cascades', () => {
       const Expected = 4.2
       const Initial = 2.1
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ cascades: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -684,20 +514,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.cascades
-      expect(before).toBe(Initial)
-      expect(before).not.toEqual(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.cascades
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -708,7 +526,7 @@ describe('EntityCSMReactor', () => {
       it('.. should dispose of `@param props.rendererEntity`.RendererComponent.csm and set it to `null`', () => {
         const Expected = null
         const Initial = new CSM({})
-        // 3. Set input & dependencies data
+
         const rendererEntity = createEntity()
         setComponent(rendererEntity, RendererComponent, { csm: Initial })
         const renderSettingsEntity = createEntity()
@@ -721,21 +539,9 @@ describe('EntityCSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        const before = getComponent(rendererEntity, RendererComponent).csm
-        expect(before).toBe(Initial)
-        expect(before).not.toEqual(Expected)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
-        // 4. Check the result (output)
         const result = getComponent(rendererEntity, RendererComponent).csm
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).not.toBe(Initial)
@@ -747,7 +553,7 @@ describe('EntityCSMReactor', () => {
   describe('after SceneObjectSystem ..', () => {
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', () => {
       const Initial = undefined
-      // 3. Set input & dependencies data
+
       const rendererEntity = defineQuery([RendererComponent])()[0]
       setComponent(rendererEntity, RendererComponent, { csm: new CSM({}) })
       const renderSettingsEntity = createEntity()
@@ -761,26 +567,19 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeFalsy()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      const before = getComponent(testEntity, DirectionalLightComponent).light?.visible
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       const systems = SystemDefinitions.values().toArray()
       const system = systems[systems.length - 1]
       system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light?.visible
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).toBe(Initial)
     })
 
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy', () => {
       const Initial = true
-      // 3. Set input & dependencies data
+
       const rendererEntity = defineQuery([RendererComponent])()[0]
       setComponent(rendererEntity, RendererComponent, { csm: new CSM({}) })
       const renderSettingsEntity = createEntity()
@@ -793,28 +592,19 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeFalsy()
-      const before = getComponent(testEntity, DirectionalLightComponent).light.visible
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       const systems = SystemDefinitions.values().toArray()
       const system = systems[systems.length - 1]
       system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light.visible
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).toBe(Initial)
     })
 
     it('should set `@param props.entity`.DirectionalLightComponent.light.visible to false', () => {
       const Expected = false
-      const Initial = !Expected
 
-      // 3. Set input & dependencies data
       const rendererEntity = defineQuery([RendererComponent])()[0]
       setComponent(rendererEntity, RendererComponent, { csm: new CSM({}) })
       const renderSettingsEntity = createEntity()
@@ -828,19 +618,12 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      const before = getComponent(testEntity, DirectionalLightComponent).light.visible
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       const systems = SystemDefinitions.values().toArray()
       const system = systems[systems.length - 1]
       system.execute()
       const result = getComponent(testEntity, DirectionalLightComponent).light.visible
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).toBe(Expected)
     })
@@ -849,7 +632,7 @@ describe('EntityCSMReactor', () => {
   describe('on change [ rendererComponent.csm, shadowMapResolution, directionalLight, directionalLightComponent.shadowBias, directionalLightComponent.intensity, directionalLightComponent.color, directionalLightComponent.castShadow, directionalLightComponent.shadowRadius, directionalLightComponent.cameraFar ]', () => {
     it('should not do anything (return early) and not crash if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
       const Initial = undefined
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: undefined })
       const renderSettingsEntity = createEntity()
@@ -862,21 +645,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       setComponent(rendererEntity, RendererComponent, { csm: undefined })
       root.run()
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(result).toBe(Initial)
@@ -884,7 +656,7 @@ describe('EntityCSMReactor', () => {
 
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', () => {
       const Initial = false
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       const csm = new CSM({})
       csm.needsUpdate = Initial
@@ -900,21 +672,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeFalsy()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       getMutableComponent(rendererEntity, RendererComponent).csm.merge({ needsUpdate: Initial })
       root.run()
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(result).toBe(Initial)
@@ -922,7 +683,7 @@ describe('EntityCSMReactor', () => {
 
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy', () => {
       const Initial = false
-      // 3. Set input & dependencies data
+
       const rendererEntity = createEntity()
       const csm = new CSM({})
       csm.needsUpdate = Initial
@@ -937,21 +698,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeFalsy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       getMutableComponent(rendererEntity, RendererComponent).csm.merge({ needsUpdate: Initial })
       root.run()
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(result).toBe(Initial)
@@ -960,7 +710,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.shadowBias to `@param props.entity`.DirectionalLightComponent.light.shadow.bias', () => {
       const Expected = 42_000
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ shadowBias: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -974,22 +724,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       setComponent(testEntity, DirectionalLightComponent, { shadowBias: Expected })
       root.run()
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowBias
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -999,7 +737,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.maxFar to `@param props.entity`.DirectionalLightComponent.cameraFar', () => {
       const Expected = 42_000
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       const csm = new CSM({ maxFar: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1013,22 +751,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.maxFar
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       setComponent(testEntity, DirectionalLightComponent, { cameraFar: Expected })
       root.run()
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.maxFar
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -1038,7 +764,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.shadowMapSize to RendererState.shadowMapResolution', () => {
       const Expected = 42
       const Initial = 21_000
-      // 3. Set input & dependencies data
+
       getMutableState(RendererState).shadowMapResolution.set(Initial)
       const csm = new CSM({ shadowMapSize: Initial })
       const rendererEntity = createEntity()
@@ -1053,22 +779,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       getMutableState(RendererState).shadowMapResolution.set(Expected)
       root.run()
-      // 4. Check the result (output)
       const result = getComponent(rendererEntity, RendererComponent).csm?.shadowMapSize
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(result).not.toBe(Initial)
@@ -1079,7 +793,7 @@ describe('EntityCSMReactor', () => {
       it('.. should set light.color to a new color from `@param props.entity`.DirectionalLightComponent.color', () => {
         const Expected = 42
         const Initial = 21_000
-        // 3. Set input & dependencies data
+
         const csm = new CSM({ shadowMapSize: Initial })
         for (const light of csm.lights) light.color.setHex(Initial)
         const rendererEntity = createEntity()
@@ -1094,24 +808,10 @@ describe('EntityCSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
-          const before = light.color.getHex()
-          expect(before).toBe(Initial)
-          expect(before).not.toBe(Expected)
-        }
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { color: Expected })
         root.run()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.color.getHex()
@@ -1123,7 +823,7 @@ describe('EntityCSMReactor', () => {
       it('.. should set light.intensity to `@param props.entity`.DirectionalLightComponent.intensity', () => {
         const Expected = 42
         const Initial = 21_000
-        // 3. Set input & dependencies data
+
         const csm = new CSM({ shadowMapSize: Initial })
         for (const light of csm.lights) light.intensity = Initial
         const rendererEntity = createEntity()
@@ -1138,24 +838,10 @@ describe('EntityCSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
-          const before = light.intensity
-          expect(before).toBe(Initial)
-          expect(before).not.toBe(Expected)
-        }
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { intensity: Expected })
         root.run()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.intensity
@@ -1167,7 +853,7 @@ describe('EntityCSMReactor', () => {
       it('.. should set all components of light.shadow.mapSize to RendererState.shadowMapResolution', () => {
         const Expected = 42
         const Initial = 21_000
-        // 3. Set input & dependencies data
+
         getMutableState(RendererState).shadowMapResolution.set(Initial)
         const csm = new CSM({ shadowMapSize: Initial })
         for (const light of csm.lights) light.shadow.mapSize.setScalar(Initial)
@@ -1183,24 +869,10 @@ describe('EntityCSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
-          const before = light.shadow.mapSize
-          expect(before).toEqual(new Vector2(Initial, Initial))
-          expect(before).not.toEqual(new Vector2(Expected, Expected))
-        }
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         getMutableState(RendererState).shadowMapResolution.set(Expected)
         root.run()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.shadow.mapSize
@@ -1212,7 +884,7 @@ describe('EntityCSMReactor', () => {
       it('.. should set light.shadow.radius to `@param props.entity`.DirectionalLightComponent.shadowRadius', () => {
         const Expected = 42
         const Initial = 21_000
-        // 3. Set input & dependencies data
+
         const csm = new CSM({ shadowMapSize: Initial })
         for (const light of csm.lights) light.shadow.radius = Initial
         const rendererEntity = createEntity()
@@ -1227,24 +899,10 @@ describe('EntityCSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-        expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-        expect(getState(RendererState).shadowMapResolution).toBeDefined()
-        for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
-          const before = light.shadow.radius
-          expect(before).toBe(Initial)
-          expect(before).not.toBe(Expected)
-        }
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         setComponent(testEntity, DirectionalLightComponent, { shadowRadius: Expected })
         root.run()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         for (const light of getComponent(rendererEntity, RendererComponent).csm!.lights!) {
           const result = light.shadow.radius
@@ -1257,7 +915,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {
       const Expected = true
       const Initial = !Expected
-      // 3. Set input & dependencies data
+
       const csm = new CSM({})
       csm.needsUpdate = Initial
       const rendererEntity = createEntity()
@@ -1272,20 +930,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(result).not.toBe(Initial)
@@ -1295,8 +941,6 @@ describe('EntityCSMReactor', () => {
 
   describe('on change [csm, renderSettingsComponent.cascades]', () => {
     it('should not do anything (return early) and not crash if `@param props.rendererEntity`.RendererComponent.csm is falsy', () => {
-      const Initial = undefined
-      // 2. Set input & dependencies data
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: undefined })
       const renderSettingsEntity = createEntity()
@@ -1309,24 +953,15 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeFalsy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.cascades
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     })
 
     it('should set `@param props.rendererEntity`.RendererComponent.csm.cascades to `@param props.renderSettingsEntity`.RenderSettingsComponent.cascades', () => {
       const Expected = 42
       const Initial = 21
-      // 2. Set input & dependencies data
+
       const csm = new CSM({ cascades: Initial })
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1340,20 +975,10 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.cascades
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       setComponent(renderSettingsEntity, RenderSettingsComponent, { cascades: Expected })
       root.run()
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.cascades
       expect(result).not.toBe(Initial)
@@ -1363,7 +988,7 @@ describe('EntityCSMReactor', () => {
     it('should set `@param props.rendererEntity`.RendererComponent.csm.needsUpdate to true', () => {
       const Expected = true
       const Initial = !Expected
-      // 2. Set input & dependencies data
+
       const csm = new CSM({})
       csm.needsUpdate = Initial
       const rendererEntity = createEntity()
@@ -1378,20 +1003,8 @@ describe('EntityCSMReactor', () => {
           renderSettingsEntity: renderSettingsEntity
         })
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      // expect(getComponent(testEntity, DirectionalLightComponent).light).toBeDefined()
-      // expect(getComponent(testEntity, DirectionalLightComponent).castShadow).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      const before = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(rendererEntity, RendererComponent).csm?.needsUpdate
       expect(result).not.toBe(Initial)
@@ -1401,7 +1014,6 @@ describe('EntityCSMReactor', () => {
 
   describe('on cleanup ..', () => {
     it('should call EntityChildCSMReactor for every entity with components [ShadowComponent, ObjectComponent] and `@param props.rendererEntity` as a props argument', () => {
-      // 3. Set input & dependencies data
       const csm = new CSM({})
       const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1421,17 +1033,9 @@ describe('EntityCSMReactor', () => {
         setComponent(entity, ObjectComponent, new Mesh(new BoxGeometry()))
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityChildCSMReactor')
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-      expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-      expect(hasComponent(testEntity, DirectionalLightComponent)).toBeTruthy()
-      expect(getState(RendererState).shadowMapResolution).toBeDefined()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
       root.stop()
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(entities.length)
     })
@@ -1460,7 +1064,7 @@ describe('CSMReactor', () => {
         'and XRLightProbeState.directionalLightEntity is truthy',
       () => {
         const Expected = createEntity()
-        // 3. Set input & dependencies data
+
         const rendererEntity = defineQuery([RendererComponent])()[0]
         getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1486,35 +1090,20 @@ describe('CSMReactor', () => {
             renderSettingsEntity: renderSettingsEntity
           })
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-        expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-        expect(hasComponent(renderSettingsEntity, RenderSettingsComponent)).toBeTruthy()
-        expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
-        expect(getState(XRLightProbeState).directionalLightEntity).toBeDefined()
-        expect(getState(XRLightProbeState).directionalLightEntity).not.toBe(UndefinedEntity)
-        expect(getState(XRLightProbeState).directionalLightEntity).toBeTruthy()
-        expect(hasComponent(directionalLightEntity, DirectionalLightComponent)).toBeTruthy()
-        expect(getState(NodesBySourceState)).toBeTruthy()
-        expect(getState(NodesBySourceState)?.[sourceID]).toBeTruthy()
-        expect(getState(NodesBySourceState)?.[sourceID]?.[nodeID]).toBeTruthy()
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         const result = NodeFunctions.getEntityFromNodeID(
           renderSettingsEntity,
           getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
         )
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
       }
     )
   })
 
   describe('on cleanup', () => {
     it('should not call EntityCSMReactor if renderSettingsComponent.csm is falsy', () => {
-      // 3. Set input & dependencies data
       const rendererEntity = defineQuery([RendererComponent])()[0]
       getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1540,26 +1129,13 @@ describe('CSMReactor', () => {
         })
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
-      // 1. Sanity check (input & dependencies)
-      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
-        renderSettingsEntity,
-        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
-      )
-      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
-      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeFalsy()
-      expect(activeLightEntity).toBeTruthy()
-      expect(directionalLight).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
 
     it('should not call EntityCSMReactor if activeLightEntity is falsy', () => {
-      // 3. Set input & dependencies data
       const rendererEntity = defineQuery([RendererComponent])()[0]
       getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1574,8 +1150,7 @@ describe('CSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, SourceComponent, sourceID)
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-      // getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(none)
-      const nodes = { [directionalLightNodeID]: UndefinedEntity /* directionalLightEntity */ }
+      const nodes = { [directionalLightNodeID]: UndefinedEntity }
       getMutableState(NodesBySourceState)[sourceID].set(nodes)
 
       const Reactor = () => {
@@ -1585,31 +1160,17 @@ describe('CSMReactor', () => {
         })
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
-      // 1. Sanity check (input & dependencies)
-      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
-        renderSettingsEntity,
-        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
-      )
-      const directionalLight = getOptionalComponent(directionalLightEntity, DirectionalLightComponent)
-      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
-      expect(activeLightEntity).toBeFalsy()
-      expect(directionalLight).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
 
     it('should not call EntityCSMReactor if directionalLight is falsy', () => {
-      // 3. Set input & dependencies data
       const rendererEntity = defineQuery([RendererComponent])()[0]
       getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
       const directionalLightEntity = createEntity()
-      // setComponent(directionalLightEntity, DirectionalLightComponent)
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
       const directionalLightNodeID = 'SomeNodeID' as NodeID
@@ -1619,8 +1180,7 @@ describe('CSMReactor', () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, SourceComponent, sourceID)
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-      // getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(none)
-      const nodes = { [directionalLightNodeID]: directionalLightEntity } // UndefinedEntity
+      const nodes = { [directionalLightNodeID]: directionalLightEntity }
       getMutableState(NodesBySourceState)[sourceID].set(nodes)
 
       const Reactor = () => {
@@ -1630,26 +1190,13 @@ describe('CSMReactor', () => {
         })
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
-      // 1. Sanity check (input & dependencies)
-      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
-        renderSettingsEntity,
-        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
-      )
-      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
-      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
-      expect(activeLightEntity).toBeTruthy()
-      expect(directionalLight).toBeFalsy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).not.toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
 
     it('should call EntityCSMReactor with (key,entity,rendererEntity,renderSettingsEntity) if renderSettingsComponent.csm, activeLightEntity and directionalLight are all truthy', () => {
-      // 3. Set input & dependencies data
       const rendererEntity = defineQuery([RendererComponent])()[0]
       getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1674,22 +1221,10 @@ describe('CSMReactor', () => {
         })
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
-      // 1. Sanity check (input & dependencies)
-      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
-        renderSettingsEntity,
-        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
-      )
-      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
-      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
-      expect(activeLightEntity).toBeTruthy()
-      expect(directionalLight).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
   })
 }) //:: CSMReactor
@@ -1710,7 +1245,6 @@ describe('RenderSettingsQueryReactor', () => {
   })
 
   it('should not call CSMReactor (return null) if RendererEntity is falsy', () => {
-    // 3. Set input & dependencies data
     const rendererEntity = UndefinedEntity
     const renderSettingsEntity = createEntity()
     setComponent(renderSettingsEntity, RenderSettingsComponent)
@@ -1721,18 +1255,13 @@ describe('RenderSettingsQueryReactor', () => {
       })
     }
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
-    // 1. Sanity check (input & dependencies)
-    expect(rendererEntity).toBeFalsy()
-    expect(resultSpy).not.toHaveBeenCalled()
-    // 2. Run the process
+
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
   it('should not call CSMReactor (return null) if RendererEntity is not ReferenceSpaceState.viewerEntity', () => {
-    // 3. Set input & dependencies data
     const rendererEntity = createEntity()
     const csm = new CSM({})
     setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1747,19 +1276,13 @@ describe('RenderSettingsQueryReactor', () => {
       })
     }
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
-    // 1. Sanity check (input & dependencies)
-    expect(rendererEntity).toBeTruthy()
-    expect(rendererEntity).not.toBe(getState(ReferenceSpaceState).viewerEntity)
-    expect(resultSpy).not.toHaveBeenCalled()
-    // 2. Run the process
+
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
   it('should not call CSMReactor (return null) if RendererState.renderMode is RenderModes.UNLIT', () => {
-    // 3. Set input & dependencies data
     const rendererEntity = createEntity()
     const csm = new CSM({})
     setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1776,20 +1299,13 @@ describe('RenderSettingsQueryReactor', () => {
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     getMutableState(RendererState).renderMode.set(RenderModes.UNLIT)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
-    // 1. Sanity check (input & dependencies)
-    expect(rendererEntity).toBeTruthy()
-    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
-    expect(getState(RendererState).renderMode).toBe(RenderModes.UNLIT)
-    expect(resultSpy).not.toHaveBeenCalled()
-    // 2. Run the process
+
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
   it('should not call CSMReactor (return null) if RendererState.renderMode is RenderModes.LIT', () => {
-    // 3. Set input & dependencies data
     const rendererEntity = createEntity()
     const csm = new CSM({})
     setComponent(rendererEntity, RendererComponent, { csm: csm })
@@ -1806,20 +1322,13 @@ describe('RenderSettingsQueryReactor', () => {
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     getMutableState(RendererState).renderMode.set(RenderModes.LIT)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
-    // 1. Sanity check (input & dependencies)
-    expect(rendererEntity).toBeTruthy()
-    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
-    expect(getState(RendererState).renderMode).toBe(RenderModes.LIT)
-    expect(resultSpy).not.toHaveBeenCalled()
-    // 2. Run the process
+
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).not.toHaveBeenCalled()
   })
 
   it('should call CSMReactor with rendererEntity and renderSettingsEntity otherwise', () => {
-    // 3. Set input & dependencies data
     const rendererEntity = defineQuery([RendererComponent])()[0]
     getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
@@ -1835,17 +1344,8 @@ describe('RenderSettingsQueryReactor', () => {
     }
     getMutableState(ReferenceSpaceState).viewerEntity.set(rendererEntity)
     const resultSpy = vi.spyOn(ShadowSystemReactors, 'CSMReactor')
-    // 1. Sanity check (input & dependencies)
-    expect(rendererEntity).toBeTruthy()
-    expect(rendererEntity).toBe(getState(ReferenceSpaceState).viewerEntity)
-    expect(getState(RendererState).renderMode).not.toBe(RenderModes.UNLIT)
-    expect(getState(RendererState).renderMode).not.toBe(RenderModes.LIT)
-    expect(resultSpy).not.toHaveBeenCalled()
-    expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
-    expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
-    // 2. Run the process
+
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(resultSpy).toHaveBeenCalled()
   })
@@ -1872,7 +1372,7 @@ describe('RendererShadowReactor', () => {
   describe('on change [useShadows, rendererComponent.renderer]', () => {
     it('should not do anything (return early) and not crash if RendererComponent.renderer is falsy', () => {
       const Initial = undefined
-      // 3. Set input & dependencies data
+
       setComponent(testEntity, RendererComponent)
       getMutableComponent(testEntity, RendererComponent).renderer.set(null)
       const Reactor = () => {
@@ -1882,14 +1382,8 @@ describe('RendererShadowReactor', () => {
           React.createElement(ShadowSystemReactors.RendererShadowReactor)
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
-      expect(getComponent(testEntity, RendererComponent).renderer).toBeFalsy()
-      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
       expect(result).toBe(Initial)
@@ -1898,7 +1392,7 @@ describe('RendererShadowReactor', () => {
     it('should set entityContext.RendererComponent.shadowMap.enabled to the value of (use/get)ShadowsEnabled', () => {
       const Expected = getShadowsEnabled()
       const Initial = !Expected
-      // 3. Set input & dependencies data
+
       setComponent(testEntity, RendererComponent)
       getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { enabled: Initial } } as any)
       const Reactor = () => {
@@ -1908,14 +1402,8 @@ describe('RendererShadowReactor', () => {
           React.createElement(ShadowSystemReactors.RendererShadowReactor)
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
-      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.enabled
       expect(result).not.toBe(Initial)
@@ -1925,7 +1413,7 @@ describe('RendererShadowReactor', () => {
     it('should set entityContext.RendererComponent.shadowMap.autoUpdate to the value of (use/get)ShadowsEnabled', () => {
       const Expected = getShadowsEnabled()
       const Initial = !Expected
-      // 3. Set input & dependencies data
+
       setComponent(testEntity, RendererComponent)
       getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { autoUpdate: Initial } } as any)
       const Reactor = () => {
@@ -1935,14 +1423,8 @@ describe('RendererShadowReactor', () => {
           React.createElement(ShadowSystemReactors.RendererShadowReactor)
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, RendererComponent)).toBeTruthy()
-      const before = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
       expect(result).not.toBe(Initial)
@@ -1984,34 +1466,24 @@ describe('ShadowSystem', () => {
     })
 
     it('should not do anything if the result of getShadowsEnabled is falsy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.fn()
       setComponent(testEntity, RendererComponent)
       const csm = { update: resultSpy as any } as CSM
       getMutableComponent(testEntity, RendererComponent).csm.set(csm)
       getMutableState(RendererState).useShadows.set(false)
-      // 1. Sanity check before running
-      expect(getShadowsEnabled()).toBeFalsy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       System.execute()
-      // 4. Check the result (output)
       expect(resultSpy).not.toHaveBeenCalled()
     })
 
     describe('for every entity that has a RendererComponent', () => {
       it('should call entity.RendererComponent.csm.update if entity.RendererComponent.csm is truthy', () => {
-        // 3. Set input & dependencies data
         const resultSpy = vi.fn()
         setComponent(testEntity, RendererComponent)
         const csm = { update: resultSpy as any } as CSM
         getMutableComponent(testEntity, RendererComponent).csm.set(csm)
-        // 1. Sanity check (input & dependencies)
-        expect(getShadowsEnabled()).toBeTruthy()
-        expect(resultSpy).not.toHaveBeenCalled()
-        // 2. Run the process
+
         System.execute()
-        // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
         expect(resultSpy).toHaveBeenCalledTimes(1)
       })
@@ -2021,17 +1493,11 @@ describe('ShadowSystem', () => {
          * Can't test that the function wasn't called if csm is falsy,
          * because assigning the function makes csm truthy.
          * */
-        // 3. Set input & dependencies data
         const resultSpy = vi.fn()
         setComponent(testEntity, RendererComponent)
         const csm = null
         getMutableComponent(testEntity, RendererComponent).csm.set(csm)
-        // 1. Sanity check before running
-        expect(getShadowsEnabled()).toBeTruthy()
-        expect(resultSpy).not.toHaveBeenCalled()
-        // 2. Run the process
         System.execute()
-        // 4. Check the result (output)
         expect(resultSpy).not.toHaveBeenCalled()
       })
     })
@@ -2056,7 +1522,7 @@ describe('ShadowSystem', () => {
       /** @note Can't change the shadowTexture path to be falsy without modifying the file itself. */
       it.skip('.. should not do anything (return) if shadowTexture is falsy', async () => {
         const Initial = 42
-        // 3. Set input & dependencies data
+
         const previous = ShadowSystemData._shadowMaterial.version
         getMutableState(DomainConfigState).cloudDomain.set('InvalidDomain')
         const textureURL = `${
@@ -2071,17 +1537,12 @@ describe('ShadowSystem', () => {
             React.createElement(System.reactor!)
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(await getTextureAsync(textureURL)).toBeFalsy()
-        const before = ShadowSystemData._shadowMaterial.version
-        expect(before).toBe(Initial)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         const result = ShadowSystemData._shadowMaterial.version
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).toBe(Initial)
-        // 5? Cleanup (dependencies)
+
         ShadowSystemData._shadowMaterial.version = previous
       })
 
@@ -2091,7 +1552,7 @@ describe('ShadowSystem', () => {
         }/projects/ir-engine/default-project/assets/drop-shadow.png`
         const Expected = (await getTextureAsync(textureURL))[0]
         const Initial = ShadowSystemData._shadowMaterial.map
-        // 3. Set input & dependencies data
+
         const previous = Initial
         const rendererEntity = defineQuery([RendererComponent])()[0]
         const Reactor = () => {
@@ -2101,25 +1562,21 @@ describe('ShadowSystem', () => {
             React.createElement(System.reactor!)
           )
         }
-        // 1. Sanity check (input & dependencies)
-        const before = ShadowSystemData._shadowMaterial.map
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         const result = ShadowSystemData._shadowMaterial.map
-        // 4. Check the result (output)
+
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).not.toBe(Initial)
         expect(result?.source.uuid).toEqual(Expected?.source.uuid)
-        // 5? Cleanup (dependencies)
+
         ShadowSystemData._shadowMaterial.map = previous
       })
 
       it('.. should call the _shadowMaterial.needsUpdate setter with true to update its .version field', () => {
         const Expected = 42
         const Initial = Expected - 1
-        // 3. Set input & dependencies data
+
         const previous = ShadowSystemData._shadowMaterial.version
         ShadowSystemData._shadowMaterial.version = Initial
         const rendererEntity = defineQuery([RendererComponent])()[0]
@@ -2130,27 +1587,18 @@ describe('ShadowSystem', () => {
             React.createElement(System.reactor!)
           )
         }
-        // 1. Sanity check (input & dependencies)
-        const before = ShadowSystemData._shadowMaterial.version
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         const result = ShadowSystemData._shadowMaterial.version
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(result).not.toBe(Initial)
         expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
+
         ShadowSystemData._shadowMaterial.version = previous
       })
     })
 
     it('should call RenderSettingsQueryReactor once for every entity that has a RenderSettingsComponent when useShadowsEnabled is truthy', async () => {
-      // 3. Set input & dependencies data
-      const textureURL = `${
-        getState(DomainConfigState).cloudDomain
-      }/projects/ir-engine/default-project/assets/drop-shadow.png`
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       const rendererEntity = defineQuery([RendererComponent])()[0]
@@ -2163,23 +1611,13 @@ describe('ShadowSystem', () => {
         )
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'RenderSettingsQueryReactor')
-      // 1. Sanity check (input & dependencies)
-      expect(getShadowsEnabled()).toBeTruthy()
-      expect(await getTextureAsync(textureURL)).not.toBeNull()
-      expect(entities.length).not.toBe(0)
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(entities.length * 2)
     })
 
     it('should call DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy', async () => {
-      // 3. Set input & dependencies data
-      const textureURL = `${
-        getState(DomainConfigState).cloudDomain
-      }/projects/ir-engine/default-project/assets/drop-shadow.png`
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       const rendererEntity = defineQuery([RendererComponent])()[0]
@@ -2195,23 +1633,13 @@ describe('ShadowSystem', () => {
         )
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'DropShadowReactor')
-      // 1. Sanity check (input & dependencies)
-      expect(getShadowsEnabled()).toBeFalsy()
-      expect(await getTextureAsync(textureURL)).not.toBeNull()
-      expect(entities.length).not.toBe(0)
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(entities.length * 3)
     })
 
     it('should call RendererShadowReactor once for every entity that has a RendererComponent', async () => {
-      // 3. Set input & dependencies data
-      const textureURL = `${
-        getState(DomainConfigState).cloudDomain
-      }/projects/ir-engine/default-project/assets/drop-shadow.png`
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       const rendererEntity = defineQuery([RendererComponent])()[0]
@@ -2224,14 +1652,8 @@ describe('ShadowSystem', () => {
         )
       }
       const resultSpy = vi.spyOn(ShadowSystemReactors, 'RendererShadowReactor')
-      // 1. Sanity check (input & dependencies)
-      expect(getShadowsEnabled()).toBeTruthy()
-      expect(await getTextureAsync(textureURL)).not.toBeNull()
-      expect(entities.length).not.toBe(0)
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       const root = startReactor(Reactor)
-      // 4. Check the result (output)
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(resultSpy).toHaveBeenCalledTimes(entities.length)
     })
@@ -2267,28 +1689,16 @@ describe('DropShadowSystem', () => {
     })
 
     it('should call ShadowSystemFunctions.updateDropShadowTransforms when the result of getShadowsEnabled is falsy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.spyOn(ShadowSystemFunctions, 'updateDropShadowTransforms')
       getMutableState(RendererState).useShadows.set(false)
-      // 1. Sanity check (input & dependencies)
-      expect(getShadowsEnabled()).toBeFalsy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
       System.execute()
-      // 4. Check the result (output)
       expect(resultSpy).toHaveBeenCalled()
       expect(resultSpy).toHaveBeenCalledTimes(1)
     })
 
     it('should not call ShadowSystemFunctions.updateDropShadowTransforms when the result of getShadowsEnabled is truthy', () => {
-      // 3. Set input & dependencies data
       const resultSpy = vi.spyOn(ShadowSystemFunctions, 'updateDropShadowTransforms')
-      // 1. Sanity check (input & dependencies)
-      expect(getShadowsEnabled()).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
       System.execute()
-      // 4. Check the result (output)
       expect(resultSpy).not.toHaveBeenCalled()
     })
   }) //:: execute
@@ -2349,7 +1759,6 @@ describe('ShadowSystemFunctions', () => {
           const Expected = new Vector3(0, 0, 0)
           const Initial = new Vector3(5, 6, 7)
 
-          // 3. Set the input & dependencies data
           setComponent(dropShadowEntity, TransformComponent, { scale: Initial })
           const rayDir = ShadowSystemData.shadowDirection.clone()
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
@@ -2357,17 +1766,9 @@ describe('ShadowSystemFunctions', () => {
           const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
 
-          // 1. Sanity check (input & dependencies)
-          expect(intersected).toBeFalsy()
-          const before = getComponent(dropShadowEntity, TransformComponent).scale
-          assertVec.approxEq(before, Initial, 4)
-          assertVec.anyApproxNotEq(before, Expected, 4)
-
-          // 2. Run the process
           ShadowSystemFunctions.updateDropShadowTransforms()
           const result = getComponent(dropShadowEntity, TransformComponent).scale
 
-          // 4. Check the result (output)
           assertVec.anyApproxNotEq(result, Initial, 3, 0.01)
           assertVec.approxEq(result, Expected, 3, 0.01)
         })
@@ -2414,29 +1815,13 @@ describe('ShadowSystemFunctions', () => {
           const Expected = 0.6
           const Initial = 42_000
 
-          // 3. Set the input & dependencies data
           material!.opacity = Initial
-          const rayDir = ShadowSystemData.shadowDirection.clone()
-          const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
-          const raycaster = new Raycaster(rayPos, rayDir)
-          const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
-
           startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
           await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10000 })
 
-          // 1. Sanity check (input & dependencies)
-          const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
-          expect(intersected).toBeTruthy()
-          expect(intersected.face).toBeTruthy()
-          const before = ((getComponent(dropShadowEntity, ObjectComponent) as Mesh).material as Material).opacity
-          expect(before).toBe(Initial)
-          expect(before).not.toBe(Expected)
-
-          // 2. Run the process
           ShadowSystemFunctions.updateDropShadowTransforms()
-          const result = ((getComponent(dropShadowEntity, ObjectComponent) as Mesh).material as Material).opacity
 
-          // 4. Check the result (output)
+          const result = ((getComponent(dropShadowEntity, ObjectComponent) as Mesh).material as Material).opacity
           expect(result).not.toBe(Initial)
           expect(result).toBe(Expected)
         })
@@ -2445,7 +1830,6 @@ describe('ShadowSystemFunctions', () => {
           const Expected = new Quaternion(1, 2, 3, 4).normalize()
           const Initial = new Quaternion(5, 6, 7, 8).normalize()
 
-          // 3. Set the input & dependencies data
           const rayDir = ShadowSystemData.shadowDirection.clone()
           const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
           const raycaster = new Raycaster(rayPos, rayDir)
@@ -2455,18 +1839,10 @@ describe('ShadowSystemFunctions', () => {
           const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
           Expected.setFromUnitVectors(intersected.face?.normal as any, Vector3_Back)
           setComponent(dropShadowEntity, TransformComponent, { rotation: Initial })
-          // 1. Sanity check (input & dependencies)
-          expect(intersected).toBeTruthy()
-          expect(intersected.face).toBeTruthy()
-          const before = getComponent(dropShadowEntity, TransformComponent).rotation
-          assertVec.approxEq(before, Initial, 4)
-          assertVec.anyApproxNotEq(before, Expected, 4)
 
-          // 2. Run the process
           ShadowSystemFunctions.updateDropShadowTransforms()
-          const result = getComponent(dropShadowEntity, TransformComponent).rotation
 
-          // 4. Check the result (output)
+          const result = getComponent(dropShadowEntity, TransformComponent).rotation
           assertVec.anyApproxNotEq(result, Initial, 4, 0.01)
           assertVec.approxEq(result, Expected, 4, 0.01)
         })
@@ -2475,28 +1851,12 @@ describe('ShadowSystemFunctions', () => {
           const Expected = new Vector3(0, 0, 0)
           const Initial = new Vector3(5, 6, 7)
 
-          // 3. Set the input & dependencies data
           setComponent(dropShadowEntity, TransformComponent, { scale: Initial })
-          const rayDir = ShadowSystemData.shadowDirection.clone()
-          const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
-          const raycaster = new Raycaster(rayPos, rayDir)
-          const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
           startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
           await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10_000 })
-          const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
-
-          // 1. Sanity check (input & dependencies)
-          expect(intersected).toBeTruthy()
-          expect(intersected.face).toBeTruthy()
-          const before = getComponent(dropShadowEntity, TransformComponent).scale
-          assertVec.approxEq(before, Initial, 4)
-          assertVec.anyApproxNotEq(before, Expected, 4)
-
-          // 2. Run the process
           ShadowSystemFunctions.updateDropShadowTransforms()
-          const result = getComponent(dropShadowEntity, TransformComponent).scale
 
-          // 4. Check the result (output)
+          const result = getComponent(dropShadowEntity, TransformComponent).scale
           assertVec.anyApproxNotEq(result, Initial, 3, 0.01)
           assertVec.approxEq(result, Expected, 3, 0.01)
         })
@@ -2505,28 +1865,12 @@ describe('ShadowSystemFunctions', () => {
           const Expected = new Vector3(0, -0.99, 0)
           const Initial = new Vector3(5, 6, 7)
 
-          // 3. Set the input & dependencies data
           setComponent(dropShadowEntity, TransformComponent, { position: Initial })
-          const rayDir = ShadowSystemData.shadowDirection.clone()
-          const rayPos = TransformComponent.getWorldPosition(priorityEntity, new Vector3()).add(center)
-          const raycaster = new Raycaster(rayPos, rayDir)
-          const sceneObjects = [getComponent(sceneEntity, MeshComponent)]
           startReactor(SystemDefinitions.get(MeshBVHSystem)!.reactor!)
           await vi.waitUntil(() => getComponent(sceneEntity, MeshComponent).geometry.boundsTree, { timeout: 10_000 })
-          const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
-
-          // 1. Sanity check (input & dependencies)
-          expect(intersected).toBeTruthy()
-          expect(intersected.face).toBeTruthy()
-          const before = getComponent(dropShadowEntity, TransformComponent).position
-          assertVec.approxEq(before, Initial, 4)
-          assertVec.anyApproxNotEq(before, Expected, 4)
-
-          // 2. Run the process
           ShadowSystemFunctions.updateDropShadowTransforms()
-          const result = getComponent(dropShadowEntity, TransformComponent).position
 
-          // 4. Check the result (output)
+          const result = getComponent(dropShadowEntity, TransformComponent).position
           assertVec.anyApproxNotEq(result, Initial, 3, 0.01)
           assertVec.approxEq(result, Expected, 3, 0.01)
         })
