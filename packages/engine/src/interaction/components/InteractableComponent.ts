@@ -324,9 +324,10 @@ export const InteractableComponent = defineComponent({
     useEffect(() => {
       const xrui = getOptionalComponent(interactableComponent.uiEntity.value, XRUIComponent)
       if (isEditing.value || !xrui) return
-      xrui.containerElement.addEventListener('click', () => callInteractCallbacks(entity))
+      const handleClick = () => callInteractCallbacks(entity)
+      xrui.containerElement.addEventListener('click', handleClick)
       return () => {
-        xrui.containerElement.removeEventListener('click', () => callInteractCallbacks(entity))
+        xrui.containerElement.removeEventListener('click', handleClick)
       }
     }, [isEditing.value, isXruiExist, entity])
 
