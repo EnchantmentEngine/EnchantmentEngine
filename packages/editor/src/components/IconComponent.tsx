@@ -27,7 +27,7 @@ import { Entity, entityExists, getAllComponents } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
 import React from 'react'
-import { ComponentEditorsState } from '../../services/ComponentEditors'
+import { ComponentEditorsState } from '../services/ComponentEditors'
 
 export function IconComponent({ entity }: { entity: Entity }) {
   const icons = entityExists(entity)
