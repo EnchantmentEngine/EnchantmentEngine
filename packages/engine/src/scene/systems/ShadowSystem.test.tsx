@@ -38,6 +38,7 @@ import {
   EntityTreeComponent,
   getComponent,
   getMutableComponent,
+  getOptionalComponent,
   hasComponent,
   removeEntity,
   setComponent,
@@ -1512,7 +1513,184 @@ describe('CSMReactor', () => {
   })
 
   describe('on cleanup', () => {
-    it.todo('should call EntityCSMReactor with (key,entity,rendererEntity,renderSettingsEntity)', () => {})
+    it('should not call EntityCSMReactor if renderSettingsComponent.csm is falsy', () => {
+      // 3. Set input & dependencies data
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
+
+      const directionalLightEntity = createEntity()
+      setComponent(directionalLightEntity, DirectionalLightComponent)
+      getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+
+      const directionalLightNodeID = 'SomeNodeID' as NodeID
+      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+
+      const sourceID = 'SomeSourceID' as SourceID
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, SourceComponent, sourceID)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+      getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(none)
+      const nodes = { [directionalLightNodeID]: directionalLightEntity }
+      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.CSMReactor, {
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
+      // 1. Sanity check (input & dependencies)
+      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+        renderSettingsEntity,
+        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
+      )
+      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
+      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeFalsy()
+      expect(activeLightEntity).toBeTruthy()
+      expect(directionalLight).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should not call EntityCSMReactor if activeLightEntity is falsy', () => {
+      // 3. Set input & dependencies data
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
+
+      const directionalLightEntity = createEntity()
+      setComponent(directionalLightEntity, DirectionalLightComponent)
+      getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+
+      const directionalLightNodeID = 'SomeNodeID' as NodeID
+      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+
+      const sourceID = 'SomeSourceID' as SourceID
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, SourceComponent, sourceID)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+      // getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(none)
+      const nodes = { [directionalLightNodeID]: UndefinedEntity /* directionalLightEntity */ }
+      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.CSMReactor, {
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
+      // 1. Sanity check (input & dependencies)
+      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+        renderSettingsEntity,
+        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
+      )
+      const directionalLight = getOptionalComponent(directionalLightEntity, DirectionalLightComponent)
+      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
+      expect(activeLightEntity).toBeFalsy()
+      expect(directionalLight).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should not call EntityCSMReactor if directionalLight is falsy', () => {
+      // 3. Set input & dependencies data
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
+
+      const directionalLightEntity = createEntity()
+      // setComponent(directionalLightEntity, DirectionalLightComponent)
+      getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+
+      const directionalLightNodeID = 'SomeNodeID' as NodeID
+      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+
+      const sourceID = 'SomeSourceID' as SourceID
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, SourceComponent, sourceID)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+      // getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(none)
+      const nodes = { [directionalLightNodeID]: directionalLightEntity } // UndefinedEntity
+      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.CSMReactor, {
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
+      // 1. Sanity check (input & dependencies)
+      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+        renderSettingsEntity,
+        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
+      )
+      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
+      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
+      expect(activeLightEntity).toBeTruthy()
+      expect(directionalLight).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
+
+    it('should call EntityCSMReactor with (key,entity,rendererEntity,renderSettingsEntity) if renderSettingsComponent.csm, activeLightEntity and directionalLight are all truthy', () => {
+      // 3. Set input & dependencies data
+      const rendererEntity = defineQuery([RendererComponent])()[0]
+      getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
+
+      const directionalLightEntity = createEntity()
+      setComponent(directionalLightEntity, DirectionalLightComponent)
+      getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+
+      const directionalLightNodeID = 'SomeNodeID' as NodeID
+      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+
+      const sourceID = 'SomeSourceID' as SourceID
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, SourceComponent, sourceID)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+      const nodes = { [directionalLightNodeID]: directionalLightEntity }
+      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.CSMReactor, {
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      const resultSpy = vi.spyOn(ShadowSystemReactors, 'EntityCSMReactor')
+      // 1. Sanity check (input & dependencies)
+      const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+        renderSettingsEntity,
+        getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
+      )
+      const directionalLight = getOptionalComponent(activeLightEntity, DirectionalLightComponent)
+      expect(getComponent(renderSettingsEntity, RenderSettingsComponent).csm).toBeTruthy()
+      expect(activeLightEntity).toBeTruthy()
+      expect(directionalLight).toBeTruthy()
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      // 5? Cleanup (dependencies)
+    })
   })
 }) //:: CSMReactor
 
