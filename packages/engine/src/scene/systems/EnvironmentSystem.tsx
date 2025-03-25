@@ -148,6 +148,9 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const backgroundQuery = useQuery([BackgroundComponent])
   const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
     ?.material as State<MeshStandardMaterial>
+  const backgroundEntity = backgroundQuery.find((curr) => haveCommonAncestor(entity, curr))
+  const backgroundComponent = useOptionalComponent(backgroundEntity!, BackgroundComponent)
+
   useEffect(() => {
     return () => {
       const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
@@ -156,9 +159,7 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
       if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
     }
   }, [])
-  let i = 0
-  for (i; i < backgroundQuery.length; i++) if (haveCommonAncestor(entity, backgroundQuery[i])) break
-  const backgroundComponent = useOptionalComponent(backgroundQuery[i], BackgroundComponent)
+
   useEffect(() => {
     if (!materialComponent || !backgroundComponent) return
 
