@@ -36,7 +36,8 @@ import {
   removeEntity,
   setComponent,
   UndefinedEntity,
-  useEntityContext
+  useEntityContext,
+  useHasComponent
 } from '@ir-engine/ecs'
 import {
   defineComponent,
@@ -273,7 +274,7 @@ export const InteractableComponent = defineComponent({
     const interactableComponent = useComponent(entity, InteractableComponent)
     const isEditing = useMutableState(EngineState).isEditing
     const modalState = useXRUIState<InteractiveModalState>()
-    const isXruiExist = hasComponent(interactableComponent.uiEntity.value, XRUIComponent)
+    const isXruiExist = useHasComponent(interactableComponent.uiEntity.value, XRUIComponent)
 
     useImmediateEffect(() => {
       setComponent(entity, DistanceFromCameraComponent)
