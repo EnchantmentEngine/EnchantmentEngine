@@ -153,10 +153,9 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
 
@@ -177,14 +176,15 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
   const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
     ?.material as State<MeshStandardMaterial>
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
+
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
+
   useEffect(() => {
     if (!materialComponent || disallowedMaterials.has(materialComponent.type.value)) return
     loadCubeMapTexture(
@@ -217,10 +217,9 @@ const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
 
@@ -246,10 +245,9 @@ const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entit
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
 
@@ -283,10 +281,9 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
 
@@ -328,10 +325,9 @@ const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) materialComponent.envMap.set(null)
+      const materialStateComponent = getOptionalMutableComponent(entity, MaterialStateComponent)
+        ?.material as State<MeshStandardMaterial>
+      if (materialStateComponent?.envMap?.value) materialStateComponent.envMap.set(null)
     }
   }, [])
 
