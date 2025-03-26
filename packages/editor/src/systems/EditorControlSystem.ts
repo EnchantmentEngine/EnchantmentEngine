@@ -36,6 +36,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   getOptionalMutableComponent,
@@ -100,7 +101,8 @@ export const EditorButtonBindings = {
   DecreaseGridHeight: [KeyboardButton.Minus],
   CancelSelection: [KeyboardButton.Escape],
   DeleteSelection: [KeyboardButton.Delete],
-  FlyControlMode: [MouseButton.SecondaryClick]
+  FlyControlMode: [MouseButton.SecondaryClick],
+  FocusCamera: [KeyboardButton.KeyF]
 } satisfies InputButtonBindings
 
 const raycaster = new Raycaster()
@@ -214,6 +216,13 @@ const onFlyControlModeEnd = () => {
   })
 }
 
+const onFocusCamera = () => {
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+  const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
+  cameraOrbit?.focusedEntities.set(SelectionState.getSelectedEntities())
+  cameraOrbit?.transformPivot.set(getMutableState(EditorHelperState).transformPivot.value)
+}
+
 function copy(event) {
   if (isInputSelected()) return
   event.preventDefault()
@@ -320,6 +329,7 @@ const execute = () => {
   if (buttons.DecreaseGridHeight?.down) onDecreaseGridHeight()
   if (buttons.CancelSelection?.down) onCancelSelection()
   if (buttons.DeleteSelection?.down) onDeleteSelection()
+  if (buttons.FocusCamera?.down) onFocusCamera()
 
   if (buttons.PrimaryClick?.pressed) {
     let closestIntersection = {
@@ -331,6 +341,8 @@ const execute = () => {
       if (intersection && intersection.distance < closestIntersection.distance) {
         closestIntersection = intersection
       }
+
+      closestIntersection.entity = getAuthoringCounterpart(closestIntersection.entity)
 
       // Get top most parent entity from the GLTF document
       let selectedParentEntity = getAncestorWithComponents(closestIntersection.entity, [GLTFComponent])
@@ -374,6 +386,14 @@ const execute = () => {
       getMutableState(EditorHelperState).gizmoEnabled.value
     ) {
       const selectedEntities = SelectionState.getSelectedEntities()
+      const clickParentEntity = getAncestorWithComponents(clickStartEntity, [GLTFComponent])
+
+      if (
+        (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) ||
+        selectedEntities[0] === clickParentEntity
+      ) {
+        onFocusCamera()
+      }
 
       //only update selection if the selection actually changed (prevents unnecessarily creating new transform gizmos in edit mode)
       if (
@@ -473,12 +493,6 @@ const reactor = () => {
       removeComponent(viewerEntity, InputComponent)
     }
   }, [viewerEntity])
-
-  const selectedEntities = SelectionState.useSelectedEntities()
-  useEffect(() => {
-    const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
-    cameraOrbit?.focusedEntities.set(selectedEntities)
-  }, [selectedEntities])
 
   const rootEntity = useMutableState(EditorState).rootEntity.value
   const sceneLoaded = GLTFComponent.useSceneLoaded(rootEntity)
