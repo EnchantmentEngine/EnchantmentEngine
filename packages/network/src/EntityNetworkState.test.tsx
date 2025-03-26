@@ -660,6 +660,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
