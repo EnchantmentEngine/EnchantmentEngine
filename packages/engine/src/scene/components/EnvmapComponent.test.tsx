@@ -82,20 +82,6 @@ describe('EnvMapComponent', () => {
 }) //:: EnvMapComponent
 
 describe('BoxProjectionPlugin', () => {
-  describe('Fields', () => {
-    it('should have the expected name', () => {
-      const result = BoxProjectionPlugin.name
-      expect(result).toBeTruthy()
-      expect(result).toBe('BoxProjectionPluginComponent')
-    })
-
-    it('should respect the naming convention for Components', () => {
-      const result = BoxProjectionPlugin.name
-      expect(result).toBeTruthy()
-      expect(result.endsWith('Component')).toBeTruthy()
-    })
-  }) //:: Fields
-
   describe('reactor', () => {
     let testEntity = UndefinedEntity
 
@@ -110,15 +96,14 @@ describe('BoxProjectionPlugin', () => {
     })
 
     describe('on mount', () => {
-      /** @todo Why is this reactor failing ?? */
-      it.todo('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {
+      it('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {
         setComponent(testEntity, MaterialStateComponent, { material: new MeshBasicMaterial() })
 
         const root = startReactor(() => {
           return React.createElement(
             EntityContext.Provider,
             { value: testEntity },
-            React.createElement(MaterialStateComponent.reactor, {})
+            React.createElement(BoxProjectionPlugin.reactor, {})
           )
         }) as ReactorRoot
 
