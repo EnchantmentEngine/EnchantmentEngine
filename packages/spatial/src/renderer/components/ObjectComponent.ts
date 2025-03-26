@@ -70,7 +70,9 @@ export const ObjectComponent = defineComponent({
     obj.matrixWorldAutoUpdate = false
     obj.matrix = transform.matrix
     obj.matrixWorld = transform.matrixWorld
-    const currentMask = obj.layers.mask
+    const currentMask = hasComponent(entity, ObjectLayerMaskComponent)
+      ? ObjectLayerMaskComponent.mask[entity]
+      : obj.layers.mask
     setComponent(entity, ObjectLayerMaskComponent, currentMask)
     obj.layers = new Layer(entity)
 

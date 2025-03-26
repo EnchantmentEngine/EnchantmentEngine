@@ -440,6 +440,9 @@ const buildPerformanceState = async (
   const performanceState = getMutableState(PerformanceState)
   const gl = renderer.renderContext as WebGL2RenderingContext
 
+  // hack fix for nodejs
+  if (!renderer.canvas || !renderer.canvas!.getContext('webgl2')) return
+
   const gpuTier = await getGPUTier({
     glContext: gl,
     desktopTiers: [0, 15, 30, 60, 120, 240],

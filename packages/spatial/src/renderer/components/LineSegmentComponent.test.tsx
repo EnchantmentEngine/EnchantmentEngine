@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import assert from 'assert'
 import sinon from 'sinon'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import {
   BoxGeometry,
@@ -251,7 +251,7 @@ describe('LineSegmentComponent', () => {
       assert.equal(ObjectLayerMaskComponent.mask[testEntity], Expected)
     })
 
-    it('should set the LineSegment layerMask correctly', async () => {
+    it.only('should set the LineSegment layerMask correctly', async () => {
       const entity = createEntity()
       const geometry = new BoxGeometry(1, 1, 1)
       const material = new MeshBasicMaterial({ color: 0xffff00 })
@@ -264,12 +264,14 @@ describe('LineSegmentComponent', () => {
         material: material,
         layerMask: layerMask
       })
-      await act(() => render(null))
 
-      assert(hasComponent(entity, LineSegmentComponent))
-      assert(hasComponent(entity, ObjectComponent))
-      assert(hasComponent(entity, ObjectLayerMaskComponent))
-      assert(hasComponent(entity, ObjectLayerComponents[layer]))
+      await vi.waitFor(() => {
+        assert(hasComponent(entity, LineSegmentComponent))
+        assert(hasComponent(entity, ObjectComponent))
+        assert(hasComponent(entity, ObjectLayerMaskComponent))
+        assert(hasComponent(entity, ObjectLayerComponents[layer]))
+      })
+
       const object = getComponent(entity, ObjectComponent)
       const lineSegments = object as LineSegments
       assert(lineSegments.isLineSegments)

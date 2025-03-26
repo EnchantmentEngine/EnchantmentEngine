@@ -40,7 +40,7 @@ import assert from 'assert'
 import { useEffect } from 'react'
 import sinon from 'sinon'
 import { Vector2 } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { CameraPointerHash, InputPointerComponent, InputPointerState } from './InputPointerComponent'
 
 const InputPointerComponentDefaults = {
@@ -270,9 +270,10 @@ describe('InputPointerComponent', () => {
       const Pointer = 21
       const DummyData = { cameraEntity: Camera, pointerId: Pointer }
       setComponent(testEntity, InputPointerComponent, DummyData)
-      await act(() => render(null))
-      const result = InputPointerComponent.getPointerByID(Camera, Pointer)
-      assert.equal(result, Expected)
+      await vi.waitFor(() => {
+        const result = InputPointerComponent.getPointerByID(Camera, Pointer)
+        assert.equal(result, Expected)
+      })
     })
   }) // << getPointerByID
 
@@ -308,14 +309,15 @@ describe('InputPointerComponent', () => {
         return null
       }
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      assert.equal(reactorSpy.callCount, 2)
-      assert.equal(effectSpy.callCount, 1)
-      // Check that the assumptions are correct
-      assert.equal(cameraPointers.length, 2)
-      for (const pointer of cameraPointers) {
-        assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
-      }
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 2)
+        assert.equal(effectSpy.callCount, 1)
+        // Check that the assumptions are correct
+        assert.equal(cameraPointers.length, 2)
+        for (const pointer of cameraPointers) {
+          assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
+        }
+      })
     })
 
     it('should be possible to use the returned array reactively', async () => {
@@ -341,22 +343,23 @@ describe('InputPointerComponent', () => {
         return null
       }
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      assert.equal(reactorSpy.callCount, 2)
-      assert.equal(effectSpy.callCount, 1)
-      // Check the basic assumptions
-      assert.equal(cameraPointers.length, 2)
-      for (const pointer of cameraPointers) {
-        assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
-      }
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 2)
+        assert.equal(effectSpy.callCount, 1)
+        // Check the basic assumptions
+        assert.equal(cameraPointers.length, 2)
+        for (const pointer of cameraPointers) {
+          assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
+        }
+      })
       // Update the components and Check the results
       removeComponent(pointerEntity2, InputPointerComponent)
 
-      await act(() => render(null))
-
-      assert.equal(reactorSpy.callCount, 3)
-      assert.equal(effectSpy.callCount, 2)
-      assert.equal(cameraPointers.length, 1)
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 3)
+        assert.equal(effectSpy.callCount, 2)
+        assert.equal(cameraPointers.length, 1)
+      })
     })
   }) // << usePointersForCamera
 })

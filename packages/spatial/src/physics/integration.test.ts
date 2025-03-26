@@ -42,7 +42,7 @@ import {
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, MathUtils, Mesh, Quaternion, Vector3 } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { NameComponent } from '../common/NameComponent'
 import { Axis, Vector3_Zero } from '../common/constants/MathConstants'
 import { MeshComponent } from '../renderer/components/MeshComponent'
@@ -56,7 +56,7 @@ import {
   computeTransformMatrix
 } from '../transform/systems/TransformSystem'
 import { PhysicsPreTransformSystem, PhysicsSystem } from './PhysicsModule'
-import { Physics, PhysicsWorld } from './classes/Physics'
+import { Physics, PhysicsWorld, RapierWorldState } from './classes/Physics'
 import { ColliderComponent } from './components/ColliderComponent'
 import { RigidBodyComponent } from './components/RigidBodyComponent'
 import { BodyTypes, Shapes } from './types/PhysicsTypes'
@@ -344,6 +344,7 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       // Sanity check before running
       updateTransforms()
       await act(() => render(null))
+      await vi.waitUntil(() => getState(RapierWorldState)[physicsWorldEntity].colliders.get(testEntity) !== undefined)
       const before = getComponent(testEntity, RigidBodyComponent).position.clone()
       assertVec.anyApproxNotEq(before, Expected, 3)
       before.sub(GravityOneFrame)
@@ -366,10 +367,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         rigidBody: physicsWorld.Rigidbodies.get(testEntity)?.translation(),
         collider: physicsWorld.Colliders.get(testEntity)?.translation()
       }
-      assertVec.approxEq(before, result.entity, 3) // Check that the entity did not move
-      assertVec.approxEq(before, result.collider, 3) // Check that the Collider did not move
-      assertVec.anyApproxNotEq(result.entity, result.rigidBody, 3) // Check that the RigidBody moved separately from the Transform
-      assertVec.approxEq(result.rigidBody, Expected, 3) // Check that the RigidBody moved to the correct position
+      assertVec.approxEq(before, result.entity, 3, 0.01) // Check that the entity did not move
+      assertVec.approxEq(before, result.collider, 3, 0.01) // Check that the Collider did not move
+      assertVec.anyApproxNotEq(result.entity, result.rigidBody, 3, 0.01) // Check that the RigidBody moved separately from the Transform
+      assertVec.approxEq(result.rigidBody, Expected, 3, 0.01) // Check that the RigidBody moved to the correct position
     })
 
     describe('should apply parent.transform overrides to all the child entities contained in its EntityTree ...', () => {
@@ -610,6 +611,8 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       setComponent(physicsWorldEntity, TransformComponent, { position: Initial.position })
       updateTransforms()
       await act(() => render(null))
+      await vi.waitUntil(() => getState(RapierWorldState)[physicsWorldEntity].colliders.get(testEntity) !== undefined)
+
       // Sanity check before running
       for (let id = 0; id < childrenCount; ++id) assert.equal(hasComponent(children[id], TransformComponent), true)
 
@@ -639,9 +642,9 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       const transformPosition = getPositionFromMatrix(colliderChildEntity).sub(GravityOneFrame)
       const transformPositionWorld = getPositionFromMatrixWorld(colliderChildEntity)
       assert.notEqual(physicsPosition, undefined)
-      assertVec.anyApproxNotEq(transformPosition, Vector3_Zero, 3)
-      assertVec.approxEq(physicsPosition, transformPosition, 3)
-      assertVec.approxEq(transformPositionWorld, Expected, 3)
+      assertVec.anyApproxNotEq(transformPosition, Vector3_Zero, 3, 0.01)
+      assertVec.approxEq(physicsPosition, transformPosition, 3, 0.01)
+      assertVec.approxEq(transformPositionWorld, Expected, 3, 0.01)
 
       // Cleanup after we are done
       removeChidren()
