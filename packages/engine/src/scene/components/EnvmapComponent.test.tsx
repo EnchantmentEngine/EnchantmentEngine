@@ -25,6 +25,15 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+/**
+ * @warning These next few lines affect this entire test file.
+ * */
+const setPluginSpy = vi.hoisted(() => vi.fn())
+vi.mock('@ir-engine/spatial/src/renderer/materials/materialFunctions', async (Original) => {
+  return { ...((await Original()) as any), setPlugin: setPluginSpy }
+})
+/** @warning end */
+
 import {
   createEngine,
   createEntity,
@@ -39,17 +48,6 @@ import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/material
 import React from 'react'
 import { MeshBasicMaterial } from 'three'
 import { BoxProjectionPlugin, EnvMapComponent } from './EnvmapComponent'
-
-/**
- * @warning These next few lines affect this entire test file.
- * */
-const resultSpy = vi.hoisted(() => {
-  return vi.fn()
-})
-vi.mock('@ir-engine/spatial/src/renderer/materials/materialFunctions', async (Original) => {
-  return { ...((await Original()) as any), setPlugin: resultSpy }
-})
-/** @warning end */
 
 describe('EnvMapComponent', () => {
   describe('Fields', () => {
@@ -108,7 +106,7 @@ describe('BoxProjectionPlugin', () => {
         }) as ReactorRoot
 
         // expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()  // @todo Uncomment when .reflection is merged to dev
-        expect(resultSpy).toHaveBeenCalled()
+        expect(setPluginSpy).toHaveBeenCalled()
       })
 
       describe('on cleanup', () => {

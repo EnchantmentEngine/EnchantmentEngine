@@ -33,11 +33,9 @@ import { EnvMapBakeComponent } from './EnvMapBakeComponent'
 /**
  * @warning These next few lines affect this entire test file.
  * */
-const resultSpy = vi.hoisted(() => {
-  return vi.fn()
-})
+const useHelperEntitySpy = vi.hoisted(() => vi.fn())
 vi.mock('@ir-engine/spatial/src/common/debug/useHelperEntity', async (Original) => {
-  return { ...((await Original()) as any), useHelperEntity: resultSpy }
+  return { ...((await Original()) as any), useHelperEntity: useHelperEntitySpy }
 })
 /** end */
 
@@ -81,7 +79,7 @@ describe('EnvMapBakeComponent', () => {
           React.createElement(EnvMapBakeComponent.reactor, {})
         )
       }) as ReactorRoot
-      expect(resultSpy).toHaveBeenCalledOnce()
+      expect(useHelperEntitySpy).toHaveBeenCalledOnce()
     })
   }) //:: reactor
 }) //:: EnvMapBakeComponent
