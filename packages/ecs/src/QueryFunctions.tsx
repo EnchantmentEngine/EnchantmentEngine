@@ -85,7 +85,7 @@ export const query = (queryTerms: bitECS.QueryTerm[]) => bitECS.query(HyperFlux.
 const UseQuerySubreactorEntityCache = {} as Record<string, Set<State<Entity[]>>>
 const UseQuerySubreactorCache = {} as Record<string, ReturnType<typeof startReactor>>
 
-const sortAndJoinComponents = (components: bitECS.QueryTerm[]) =>
+export const sortAndJoinComponents = (components: bitECS.QueryTerm[]) =>
   components
     .map((c) => c.name)
     .sort()

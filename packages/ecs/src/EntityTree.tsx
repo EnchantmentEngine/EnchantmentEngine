@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { NO_PROXY, none, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import React, { useLayoutEffect } from 'react'
+import { NO_PROXY, none, startReactor, State, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import React, { useCallback, useLayoutEffect } from 'react'
 import {
   Component,
   ComponentType,
@@ -41,6 +41,7 @@ import {
 } from './ComponentFunctions'
 import { Entity, UndefinedEntity } from './Entity'
 import { entityExists, removeEntity } from './EntityFunctions'
+import { sortAndJoinComponents } from './QueryFunctions'
 import { S } from './schemas/JSONSchemas'
 
 type EntityTreeSetType = {
@@ -394,6 +395,9 @@ export function getNestedChildren(entity: Entity, pred?: (e: Entity) => boolean)
   return result
 }
 
+const UseAncestorSubreactorEntityCache = {} as Record<string, Set<() => void>>
+const UseAncestorSubreactorCache = {} as Record<string, ReturnType<typeof startReactor> | null>
+
 /**
 /**
  * @description
@@ -412,36 +416,56 @@ export function useAncestorWithComponents(
   includeSelf: boolean = true
 ): Entity {
   const result = getAncestorWithComponents(entity, components, closest, includeSelf)
-  const forceUpdate = useForceUpdate()
+  const counter = useHookstate(0)
+  const forceUpdate = useCallback(() => counter.set((c) => c++), [])
 
   const parentEntity = useOptionalComponent(entity, EntityTreeComponent)?.parentEntity
   const componentsString = components.map((component) => component.name).join()
 
   // hook into reactive changes up the tree to trigger a re-render of the parent when necessary
   useImmediateEffect(() => {
+    const key = `${entity}-${sortAndJoinComponents(components)}-${closest}-${includeSelf}-${parentEntity?.value}`
+
+    const exists = !!UseAncestorSubreactorEntityCache[key]
+    if (!UseAncestorSubreactorEntityCache[key]) UseAncestorSubreactorEntityCache[key] = new Set()
+
+    const cache = UseAncestorSubreactorEntityCache[key]
+    cache.add(forceUpdate)
     let unmounted = false
-    const ParentSubReactor = React.memo((props: { entity: Entity }) => {
-      const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      const matchesQuery = useHasComponents(props.entity, components)
-      useImmediateEffect(() => {
-        if (!unmounted) forceUpdate()
-      }, [tree?.parentEntity?.value, matchesQuery])
-      if (matchesQuery && closest) return null
-      if (!tree?.parentEntity?.value) return null
-      return <ParentSubReactor key={tree.parentEntity.value} entity={tree.parentEntity.value} />
-    })
+    if (!exists) {
+      const ParentSubReactor = React.memo((props: { entity: Entity }) => {
+        const tree = useOptionalComponent(props.entity, EntityTreeComponent)
+        const matchesQuery = useHasComponents(props.entity, components)
+        useImmediateEffect(() => {
+          if (!unmounted) {
+            for (const update of cache) {
+              update()
+            }
+          }
+        }, [tree?.parentEntity?.value, matchesQuery])
+        if (matchesQuery && closest) return null
+        if (!tree?.parentEntity?.value) return null
+        return <ParentSubReactor key={tree.parentEntity.value} entity={tree.parentEntity.value} />
+      })
 
-    const startEntity = includeSelf ? entity : parentEntity?.value ?? UndefinedEntity
+      const startEntity = includeSelf ? entity : parentEntity?.value ?? UndefinedEntity
 
-    const root = startEntity
-      ? startReactor(function useQueryReactor() {
-          return <ParentSubReactor entity={startEntity} key={startEntity} />
-        })
-      : null
+      const root = startEntity
+        ? startReactor(function useQueryReactor() {
+            return <ParentSubReactor entity={startEntity} key={startEntity} />
+          })
+        : null
+
+      UseAncestorSubreactorCache[key] = root
+    }
 
     return () => {
-      unmounted = true
-      root?.stop()
+      cache.delete(forceUpdate)
+      if (cache.size === 0) {
+        const subreactor = UseAncestorSubreactorCache[key]
+        if (subreactor) subreactor.stop()
+        unmounted = true
+      }
     }
   }, [entity, componentsString, includeSelf, parentEntity?.value])
 
@@ -466,6 +490,11 @@ const _useHasAnyComponents = (entity: Entity, components: ComponentType<any>[]) 
   return result
 }
 
+const UseChildrenWithComponentsSubreactorEntityCache = {} as Record<string, Set<State<Entity[]>>>
+const UseChildrenWithComponentsSubreactorCache = {} as Record<string, ReturnType<typeof startReactor>>
+globalThis.UseChildrenWithComponentsSubreactorEntityCache = UseChildrenWithComponentsSubreactorEntityCache
+globalThis.UseChildrenWithComponentsSubreactorCache = UseChildrenWithComponentsSubreactorCache
+
 export function useChildrenWithComponents(
   rootEntity: Entity,
   components: ComponentType<any>[],
@@ -474,46 +503,70 @@ export function useChildrenWithComponents(
   const children = useHookstate([] as Entity[])
   const componentsString = components.map((component) => component.name).join()
   const excludeString = exclude.map((component) => component.name).join()
+
   useImmediateEffect(() => {
     let unmounted = false
-    const ChildSubReactor = (props: { entity: Entity }) => {
-      const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      const matchesQuery = useHasComponents(props.entity, components)
-      const matchesExludeQuery = _useHasAnyComponents(props.entity, exclude)
+    const key = `${rootEntity}-${componentsString}-${excludeString}`
 
-      useLayoutEffect(() => {
-        if (!matchesQuery || matchesExludeQuery) return
-        children.set((prev) => {
-          if (prev.indexOf(props.entity) < 0) prev.push(props.entity)
-          return prev
-        })
-        return () => {
-          if (!unmounted) {
-            children.set((prev) => {
-              const index = prev.indexOf(props.entity)
-              prev.splice(index, 1)
+    const exists = !!UseChildrenWithComponentsSubreactorEntityCache[key]
+    if (!UseChildrenWithComponentsSubreactorEntityCache[key])
+      UseChildrenWithComponentsSubreactorEntityCache[key] = new Set()
+
+    const cache = UseChildrenWithComponentsSubreactorEntityCache[key]
+    cache.add(children)
+
+    if (!exists) {
+      const ChildSubReactor = (props: { entity: Entity }) => {
+        const tree = useOptionalComponent(props.entity, EntityTreeComponent)
+        const matchesQuery = useHasComponents(props.entity, components)
+        const matchesExludeQuery = _useHasAnyComponents(props.entity, exclude)
+
+        useLayoutEffect(() => {
+          if (!matchesQuery || matchesExludeQuery) return
+          for (const state of cache) {
+            state.set((prev) => {
+              if (prev.indexOf(props.entity) < 0) prev.push(props.entity)
               return prev
             })
           }
-        }
-      }, [matchesQuery, matchesExludeQuery])
+          return () => {
+            if (!unmounted) {
+              for (const state of cache) {
+                state.set((prev) => {
+                  const index = prev.indexOf(props.entity)
+                  prev.splice(index, 1)
+                  return prev
+                })
+              }
+            }
+          }
+        }, [matchesQuery, matchesExludeQuery])
 
-      if (!tree?.children?.value) return null
-      return (
-        <>
-          {tree.children.value.map((e) => (
-            <ChildSubReactor key={e} entity={e} />
-          ))}
-        </>
-      )
+        if (!tree?.children?.value) return null
+        return (
+          <>
+            {tree.children.value.map((e) => (
+              <ChildSubReactor key={e} entity={e} />
+            ))}
+          </>
+        )
+      }
+
+      const root = startReactor(function useQueryReactor() {
+        return <ChildSubReactor entity={rootEntity} key={rootEntity} />
+      })
+
+      UseChildrenWithComponentsSubreactorCache[key] = root
     }
 
-    const root = startReactor(function useQueryReactor() {
-      return <ChildSubReactor entity={rootEntity} key={rootEntity} />
-    })
     return () => {
-      unmounted = true
-      root.stop()
+      cache.delete(children)
+      if (cache.size === 0) {
+        const root = UseChildrenWithComponentsSubreactorCache[key]
+        root.stop()
+        delete UseChildrenWithComponentsSubreactorCache[key]
+        unmounted = true
+      }
     }
   }, [rootEntity, componentsString, excludeString])
 
