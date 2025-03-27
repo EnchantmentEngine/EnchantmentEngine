@@ -200,6 +200,8 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       getMutableState(ECSState).simulationTime.set(
         getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
       )
+      // set frame time to one frame ahead
+      getMutableState(ECSState).frameTime.set(getState(ECSState).simulationTime + getState(ECSState).simulationTimestep)
       execute.transformDirtyUpdateSystem()
       execute.physicsPreTransformSystem()
       result.physicsPreTransformSystem = getPositionFromMatrix(testEntity)
@@ -311,6 +313,8 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       getMutableState(ECSState).simulationTime.set(
         getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
       )
+      // set frame time to one frame ahead
+      getMutableState(ECSState).frameTime.set(getState(ECSState).simulationTime + getState(ECSState).simulationTimestep)
       execute.transformDirtyUpdateSystem()
       execute.physicsPreTransformSystem()
       // .. Phase 3
@@ -357,6 +361,8 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       getMutableState(ECSState).simulationTime.set(
         getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
       )
+      // set frame time to one frame ahead
+      getMutableState(ECSState).frameTime.set(getState(ECSState).simulationTime + getState(ECSState).simulationTimestep)
       execute.transformDirtyUpdateSystem()
       execute.physicsPreTransformSystem()
       // .. Phase 3
@@ -392,6 +398,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         // .. Phase 2
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
+        )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
         )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
@@ -429,6 +439,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
         )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
+        )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
         // .. Phase 3
@@ -465,6 +479,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         // .. Phase 2
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
+        )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
         )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
@@ -506,6 +524,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         // .. Phase 2
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
+        )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
         )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
@@ -549,6 +571,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
         )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
+        )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
         // .. Phase 3
@@ -587,6 +613,10 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
         // .. Phase 2
         getMutableState(ECSState).simulationTime.set(
           getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
+        )
+        // set frame time to one frame ahead
+        getMutableState(ECSState).frameTime.set(
+          getState(ECSState).simulationTime + getState(ECSState).simulationTimestep
         )
         execute.transformDirtyUpdateSystem()
         execute.physicsPreTransformSystem()
@@ -631,6 +661,8 @@ describe('Integration : PhysicsSystem + PhysicsPreTransformSystem + TransformSys
       getMutableState(ECSState).simulationTime.set(
         getState(ECSState).simulationTime - getState(ECSState).simulationTimestep
       )
+      // set frame time to one frame ahead
+      getMutableState(ECSState).frameTime.set(getState(ECSState).simulationTime + getState(ECSState).simulationTimestep)
       execute.transformDirtyUpdateSystem()
       execute.physicsPreTransformSystem()
       // .. Phase 3
