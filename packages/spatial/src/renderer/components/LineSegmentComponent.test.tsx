@@ -251,7 +251,7 @@ describe('LineSegmentComponent', () => {
       assert.equal(ObjectLayerMaskComponent.mask[testEntity], Expected)
     })
 
-    it.only('should set the LineSegment layerMask correctly', async () => {
+    it('should set the LineSegment layerMask correctly', async () => {
       const entity = createEntity()
       const geometry = new BoxGeometry(1, 1, 1)
       const material = new MeshBasicMaterial({ color: 0xffff00 })
