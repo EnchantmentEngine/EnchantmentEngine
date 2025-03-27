@@ -47,24 +47,8 @@ import { TransformGizmoTagComponent } from '@ir-engine/spatial/src/transform/com
 import { MathUtils, Raycaster, Vector3 } from 'three'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
 import { TransformGizmoControlledComponent } from '../classes/gizmo/transform/TransformGizmoControlledComponent'
-import { controlUpdate, gizmoUpdate, planeUpdate } from '../functions/transformGizmoHelper'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { SelectionState } from '../services/SelectionServices'
-
-const transformGizmoControllerQuery = defineQuery([TransformGizmoControlComponent])
-
-const execute = () => {
-  for (const gizmoEntity of transformGizmoControllerQuery()) {
-    const gizmoControlComponent = getComponent(gizmoEntity, TransformGizmoControlComponent)
-    if (!gizmoControlComponent.enabled) return
-
-    if (!gizmoControlComponent.visualEntity) return
-    if (!gizmoControlComponent.planeEntity) return
-    controlUpdate(gizmoEntity)
-    gizmoUpdate(gizmoEntity)
-    planeUpdate(gizmoEntity)
-  }
-}
 
 /**Editor InputComponent raycast query */
 const inputObjectsQuery = defineQuery([InputComponent, VisibleComponent, ObjectComponent])
@@ -202,6 +186,5 @@ const reactor = () => {
 export const TransformGizmoSystem = defineSystem({
   uuid: 'ee.editor.TransformGizmoSystem',
   insert: { with: InputSystemGroup },
-  execute,
   reactor
 })

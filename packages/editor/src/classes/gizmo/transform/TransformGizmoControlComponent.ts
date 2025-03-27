@@ -34,14 +34,12 @@ import {
   EntityTreeComponent,
   getComponent,
   hasComponent,
-  removeComponent,
   removeEntity,
   setComponent,
-  UndefinedEntity,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import {
   TransformAxis,
   TransformMode,
@@ -53,8 +51,8 @@ import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/inpu
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
+import { Q_IDENTITY } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
@@ -63,11 +61,10 @@ import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLa
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { TransformGizmoTagComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import {
-  onGizmoCommit,
+  gizmoUpdate,
   onPointerDown,
+  onPointerDrag,
   onPointerHover,
-  onPointerLost,
-  onPointerMove,
   onPointerUp
 } from '../../../functions/transformGizmoHelper'
 import { TransformGizmoControlledComponent } from './TransformGizmoControlledComponent'
@@ -81,7 +78,6 @@ export const TransformGizmoControlComponent = defineComponent({
     visualEntity: S.Entity(),
     planeEntity: S.Entity(),
     pivotEntity: S.Entity(),
-    enabled: S.Bool(true),
     dragging: S.Bool(false),
     axis: S.Nullable(S.LiteralUnion(Object.values(TransformAxis)), null),
     space: S.LiteralUnion(Object.values(TransformSpace), TransformSpace.world),
@@ -94,12 +90,10 @@ export const TransformGizmoControlComponent = defineComponent({
     showX: S.Bool(true),
     showY: S.Bool(true),
     showZ: S.Bool(true),
-    worldPosition: T.Vec3(),
-    worldPositionStart: T.Vec3(),
-    worldQuaternion: T.Quaternion(),
-    worldQuaternionStart: T.Quaternion(),
-    pointStart: T.Vec3(),
-    pointEnd: T.Vec3(),
+    pivotStartPosition: T.Vec3(),
+    pivotStartRotation: T.Quaternion(),
+    pointerPlaneStartPosition: T.Vec3(),
+    pointerPlaneEndPosition: T.Vec3(),
     rotationAxis: T.Vec3(),
     rotationAngle: S.Number(0),
     eye: T.Vec3()
@@ -176,58 +170,41 @@ export const TransformGizmoControlComponent = defineComponent({
         removeEntity(gizmoPlaneEntity)
         removeEntity(pivotEntity)
       }
-    }, [originEntity, controlledEntity])
+    }, [originEntity, controlledEntity, JSON.stringify(controlledEntities)])
   },
 
   reactor: () => {
     const gizmoControlEntity = useEntityContext()
     const gizmoControlComponent = useComponent(gizmoControlEntity, TransformGizmoControlComponent)
-    const inputPointerEntities = InputPointerComponent.usePointersForCamera(Engine.instance.viewerEntity)
-
-    // Commit transform changes if the pointer entities are lost (ie. pointer dragged outside of the canvas)
-    useImmediateEffect(() => {
-      const gizmoControlComponent = getComponent(gizmoControlEntity, TransformGizmoControlComponent)
-      if (
-        !gizmoControlComponent.enabled ||
-        !gizmoControlComponent.visualEntity ||
-        !gizmoControlComponent.planeEntity ||
-        !gizmoControlComponent.dragging ||
-        inputPointerEntities.length
-      )
-        return
-
-      onGizmoCommit(gizmoControlEntity)
-      removeComponent(gizmoControlComponent.planeEntity, VisibleComponent)
-    }, [inputPointerEntities])
 
     InputComponent.useExecuteWithInput(
       () => {
+        gizmoUpdate(gizmoControlEntity)
+
         const gizmoControlComponent = getComponent(gizmoControlEntity, TransformGizmoControlComponent)
-
-        if (!gizmoControlComponent.enabled || !gizmoControlComponent.visualEntity || !gizmoControlComponent.planeEntity)
-          return
-
         const visualComponent = getComponent(gizmoControlComponent.visualEntity, TransformGizmoVisualComponent)
         const pickerEntity = visualComponent.picker
 
-        onPointerHover(gizmoControlEntity)
-
+        const inputSourceEntities = InputComponent.getInputSourceEntities(pickerEntity)
         const pickerButtons = InputComponent.getButtons(pickerEntity)
 
-        if (pickerButtons?.PrimaryClick?.pressed && getState(InputState).capturingEntity === UndefinedEntity) {
-          InputState.setCapturingEntity(pickerEntity)
-          onPointerMove(gizmoControlEntity)
+        onPointerHover(gizmoControlEntity, inputSourceEntities)
 
-          //pointer down
+        if (pickerButtons?.PrimaryClick?.pressed) {
+          InputState.setCapturingEntity(pickerEntity)
+
+          const pointerEntity = pickerButtons.PrimaryClick.inputSourceEntity
+
           if (pickerButtons?.PrimaryClick?.down) {
-            setComponent(gizmoControlComponent.planeEntity, VisibleComponent)
-            onPointerDown(gizmoControlEntity)
+            onPointerDown(gizmoControlEntity, pointerEntity)
+          }
+
+          if (pickerButtons?.PrimaryClick?.dragging) {
+            onPointerDrag(gizmoControlEntity, pointerEntity)
           }
 
           if (pickerButtons?.PrimaryClick?.up) {
-            onPointerUp(gizmoControlEntity)
-            onPointerLost(gizmoControlEntity)
-            removeComponent(gizmoControlComponent.planeEntity, VisibleComponent)
+            onPointerUp(gizmoControlEntity, pointerEntity)
           }
         }
       },
@@ -240,8 +217,17 @@ export const TransformGizmoControlComponent = defineComponent({
     const pivot = useTransformPivot(controlledEntities, gizmoControlComponent.transformPivot.value)
 
     useImmediateEffect(() => {
-      setComponent(gizmoControlComponent.pivotEntity.value, TransformComponent, { position: pivot.position })
-    }, [pivot])
+      if (!pivot.position) return
+      const space = gizmoControlComponent.space.value
+      const rotation = Q_IDENTITY.clone()
+      if (space === TransformSpace.local) TransformComponent.getWorldRotation(controlledEntities[0], rotation)
+      setComponent(gizmoControlComponent.pivotEntity.value, TransformComponent, {
+        position: pivot.position,
+        rotation: rotation
+      })
+      gizmoControlComponent.pivotStartPosition.set(pivot.position)
+      gizmoControlComponent.pivotStartRotation.set(rotation)
+    }, [pivot, gizmoControlComponent.space.value])
 
     return null
   }

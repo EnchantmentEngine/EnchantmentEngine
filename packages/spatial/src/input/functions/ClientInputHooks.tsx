@@ -275,6 +275,9 @@ export const CanvasInputReactor = () => {
 
       const down = event.type === 'pointerdown'
 
+      if (down) canvas.setPointerCapture(event.pointerId)
+      else canvas.releasePointerCapture(event.pointerId)
+
       let button = MouseButton.PrimaryClick
       if (event.button === 1) button = MouseButton.AuxiliaryClick
       else if (event.button === 2) button = MouseButton.SecondaryClick
@@ -320,6 +323,8 @@ export const CanvasInputReactor = () => {
 
     const onVisibilityChange = (event: Event) => {
       if (
+        !document.hasFocus() ||
+        document.hidden ||
         document.visibilityState === 'hidden' ||
         !canvas.checkVisibility({
           checkOpacity: true,

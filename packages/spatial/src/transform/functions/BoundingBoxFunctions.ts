@@ -82,7 +82,7 @@ export function useWorldBounds(entities: readonly Entity[], live: boolean = fals
     const boundingBox = new Box3()
     if (live) return boundingBox
     return computeWorldBounds(entities, boundingBox)
-  }, [JSON.stringify(entities)])
+  }, [entities])
   if (live) computeWorldBounds(entities, box)
   return box
 }

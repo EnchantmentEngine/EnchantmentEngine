@@ -216,7 +216,7 @@ const onFlyControlModeEnd = () => {
   })
 }
 
-const onFocusCamera = () => {
+export const onFocusCamera = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
   cameraOrbit?.focusedEntities.set(SelectionState.getSelectedEntities())
