@@ -26,12 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useFind, useRealtime } from '@ir-engine/common'
 import { StaticResourceType, fileBrowserPath, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
-import CreateSceneDialog from '@ir-engine/editor/src/components/dialogs/CreateScenePanelDialog'
 import { confirmSceneSaveIfModified } from '@ir-engine/editor/src/components/toolbar/Toolbar'
 import { onNewScene } from '@ir-engine/editor/src/functions/sceneFunctions'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button } from '@ir-engine/ui'
+import { AddScene } from '@ir-engine/ui/src/components/editor/AddScene/AddScene'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import { PlusCircleSm } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
@@ -40,6 +40,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { UIAddonsState } from '../../services/UIAddonsState'
 import SceneItem from './SceneItem'
+import CreateSceneDialog from '../../components/dialogs/CreateScenePanelDialog'
 
 function ScenesPanel() {
   const { t } = useTranslation()
