@@ -47,6 +47,7 @@ import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { HemisphereLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
@@ -1254,6 +1255,8 @@ describe('EditorControlFunctions', () => {
       const authoringNode3Entity = LayerFunctions.getAuthoringCounterpart(simulationNode3Entity)
 
       EditorControlFunctions.removeObject([authoringNodeEntity])
+
+      await flushAll()
 
       assert.equal(getComponent(rootEntity, EntityTreeComponent).children[0], authoringNode2Entity)
       assert.equal(getComponent(rootEntity, EntityTreeComponent).children[1], authoringNode3Entity)
