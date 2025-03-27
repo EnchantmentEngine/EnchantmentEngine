@@ -57,7 +57,6 @@ import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { act, render } from '@testing-library/react'
 import { Quaternion, Vector3 } from 'three'
 import { v4 } from 'uuid'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -71,6 +70,7 @@ import { MountPointComponent } from './MountPointComponent'
 import { SittingComponent } from './SittingComponent'
 
 // ensure the avatar system is imported
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import '../../avatar/state/AvatarNetworkState'
 
 describe('MountPointComponent.ts', async () => {
@@ -143,7 +143,7 @@ describe('MountPointComponent.ts', async () => {
 
         applyIncomingActions()
 
-        await act(async () => render(null))
+        await flushAll()
       })
 
       afterEach(() => {
@@ -159,7 +159,7 @@ describe('MountPointComponent.ts', async () => {
       it('Should update the UI to show or hide an Interacteable component in the dropdown button based on wheter or not its mounted', async () => {
         MountPointComponent.mountEntity(avatarTestEntity, mountPointTestEntity)
         applyIncomingActions()
-        await act(async () => render(null))
+        await flushAll()
         // Github race condition
         await vi.waitFor(
           () => {
@@ -171,7 +171,7 @@ describe('MountPointComponent.ts', async () => {
         assert.equal(!!mountPointPresent, true)
         MountPointComponent.unmountEntity(avatarTestEntity)
         applyIncomingActions()
-        await act(async () => render(null))
+        await flushAll()
         // Github race condition
         await vi.waitFor(
           () => {
@@ -227,7 +227,7 @@ describe('MountPointComponent.ts', async () => {
 
       applyIncomingActions()
 
-      await act(async () => render(null))
+      await flushAll()
     })
 
     afterEach(() => {
@@ -261,7 +261,7 @@ describe('MountPointComponent.ts', async () => {
         })
       )
       applyIncomingActions()
-      await act(async () => render(null))
+      await flushAll()
       // Mount avatar test entity 2 first
       MountPointComponent.mountEntity(avatarTestEntity2, mountPointTestEntity)
       applyIncomingActions()
@@ -375,7 +375,7 @@ describe('MountPointComponent.ts', async () => {
 
       applyIncomingActions()
 
-      await act(async () => render(null))
+      await flushAll()
     })
 
     afterEach(() => {
