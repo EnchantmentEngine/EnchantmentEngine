@@ -119,7 +119,7 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+        if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
           await callGithubWorkflow(JSON.stringify({
             release: process.env.RELEASE_NAME,
             service: options.service,
@@ -144,7 +144,7 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+        if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
           await callGithubWorkflow(JSON.stringify({
             release: process.env.RELEASE_NAME,
             service: options.service,
@@ -157,7 +157,7 @@ cli.main(async () => {
   } catch (err) {
     console.log(err)
 
-    if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+    if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
       await callGithubWorkflow(JSON.stringify({
         release: process.env.RELEASE_NAME,
         service: options.service,
