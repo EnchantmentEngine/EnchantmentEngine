@@ -30,6 +30,8 @@ import fs from 'fs'
 import knex from 'knex'
 import fetch from 'node-fetch'
 
+import { generateInstallationOctokit } from '@ir-engine/server-core/src/projects/project/github-helper'
+
 import { buildStatusPath, BuildStatusType } from '@ir-engine/common/src/schema.type.module'
 
 dotenv.config({
@@ -43,6 +45,39 @@ const options = cli.parse({
   service: [false, 'Name of failing service', 'string'],
   isDocker: [false, 'Whether or not this is checking logs files for a Docker process.', 'boolean']
 })
+
+async function callGithubWorkflow (payload: string) {
+  const installationOctokit = generateInstallationOctokit(
+      process.env.GITHUB_RECORD_ERROR_APP_ID,
+      process.env.GITHUB_RECORD_ERROR_APP_PRIVATE_KEY,
+      process.env.GITHUB_RECORD_ERROR_INSTALLATION_ID
+  )
+
+  const params = new URLSearchParams()
+  params.append('event_type', 'record-build-error')
+  params.append('client_payload', payload)
+
+  console.log('params', params)
+  const response = await installationOctokit.request({
+    url: `/repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches`,
+    owner: process.env.GITHUB_RECORD_ERROR_OWNER,
+    repo: process.env.GITHUB_RECORD_ERROR_REPO,
+    workflow: process.env.GITHUB_RECORD_ERROR_WORKFLOW,
+    data: params
+  })
+  console.log('repsonse', response)
+
+  // const errorActionResponse = await fetch(process.env.GITHUB_ERROR_ACTION_URL, {
+  //   method: 'POST',
+  //   headers: {
+  //     Accept: 'application/vnd.github.everest-preview+json',
+  //     Authorization: `token ${process.env.GITHUB_ACTION_TOKEN}`
+  //   },
+  //   body: params
+  // })
+  //
+  // console.log('errorActionResponse', errorActionResponse)
+}
 
 cli.main(async () => {
   try {
@@ -84,25 +119,12 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN) {
-          const params = new URLSearchParams()
-          params.append('event_type', 'record-build-error')
-          params.append('client_payload', JSON.stringify({
+        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+          await callGithubWorkflow(JSON.stringify({
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
           }))
-
-          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_URL, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/vnd.github.everest-preview+json',
-              Authorization: `token ${process.env.GITHUB_ACTION_TOKEN}`
-            },
-            body: params
-          })
-          console.log('errorActionResponse', errorActionResponse)
-        }
 
         console.log('exiting with code 1')
         cli.exit(1)
@@ -122,31 +144,26 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-
-        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN) {
-          const params = new URLSearchParams()
-          params.append('event_type', 'record-build-error')
-          params.append('client_payload', JSON.stringify({
+        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+          await callGithubWorkflow(JSON.stringify({
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
           }))
 
-          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_ACTION_URL, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/vnd.github.everest-preview+json',
-              Authorization: `token ${process.env.GITHUB_ACTION_TOKEN}`
-            },
-            body: params
-          })
-          console.log('errorActionResponse', errorActionResponse)
-        }
         cli.exit(1)
       } else cli.exit(0)
     }
   } catch (err) {
     console.log(err)
+
+    if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN)
+      await callGithubWorkflow(JSON.stringify({
+        release: process.env.RELEASE_NAME,
+        service: options.service,
+        logs: err.toString()
+      }))
+
     cli.fatal(err)
   }
 })
