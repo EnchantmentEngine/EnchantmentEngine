@@ -132,7 +132,7 @@ cli.main(async () => {
             logs: combinedLogs
           }))
 
-          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_URL, {
+          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_ACTION_URL, {
             method: 'POST',
             headers: {
               Accept: 'application/vnd.github.everest-preview+json',
