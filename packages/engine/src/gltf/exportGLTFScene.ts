@@ -367,7 +367,12 @@ export async function exportGLTFScene(
   } else {
     const children = getComponent(entity, EntityTreeComponent).children
     for (const child of children) {
-      context.entityPromises.set(child, exportEntity(child, gltf, context))
+      const promise = new Promise<void>(async (resolve) => {
+        const index = await exportEntity(child, gltf, context)
+        if (typeof index === 'number') gltf.scenes![0].nodes.push(index)
+        resolve()
+      })
+      context.entityPromises.set(child, promise)
     }
   }
 

@@ -70,6 +70,19 @@ describe('exportGLTFScene', () => {
     assert(gltf.nodes!.length === 0)
   })
 
+  it('can export a gltf file with a single entity and export root set to false', async () => {
+    const baseEntity = createSceneEntity('base')
+    setComponent(baseEntity, SourceComponent, 'test-source' as SourceID)
+
+    const childEntity = createSceneEntity('child', baseEntity)
+    setComponent(childEntity, SourceComponent, 'test-source' as SourceID)
+
+    const [gltf] = (await exportGLTFScene(baseEntity, 'dud', 'test/path', false)) as [GLTF.IGLTF]
+    assert(Array.isArray(gltf.nodes))
+    assert.strictEqual(gltf.nodes!.length, 1)
+    assert.strictEqual(gltf.nodes![0].name, 'child')
+  })
+
   it('export singleton gltf file', async () => {
     const baseEntity = createSceneEntity('base')
     setComponent(baseEntity, SourceComponent, 'test-source' as SourceID)
