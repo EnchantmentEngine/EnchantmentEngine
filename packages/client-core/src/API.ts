@@ -36,6 +36,7 @@ import config from '@ir-engine/common/src/config'
 
 import { HyperFlux } from '@ir-engine/hyperflux'
 import primusClient from './util/primus-client'
+import cool from '../../pants'
 
 declare module '@feathersjs/client' {
   interface FeathersApplication extends AuthenticationClient {
