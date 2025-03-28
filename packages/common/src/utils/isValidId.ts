@@ -23,12 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export class SimulationFrame {
-  public position: number
-  public velocity: number
+import { GUID_ID_REGEX } from '../regex'
 
-  constructor(position: number, velocity: number) {
-    this.position = position
-    this.velocity = velocity
-  }
+/**
+ * Method used to validate if the given id is a valid guid
+ * @param id
+ * @returns
+ */
+export const isValidId = (id: string) => {
+  return GUID_ID_REGEX.test(id)
 }
