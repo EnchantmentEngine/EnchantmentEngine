@@ -34,8 +34,8 @@ mv package-root-build.json package.json
 npm install
 rm package.json
 mv package.jsonmoved package.json
-npm run prepare-database >prepare-database-build-logs.txt 2>prepare-database-build-error.txt || npm run record-build-error -- --service=prepare-database-projects
-test -s prepare-database-build-error.txt && npm run record-build-error -- --service=prepare-database-projects
+npm run prepare-database >prepare-database-projects-build-logs.txt 2>prepare-database-projects-build-error.txt || npm run record-build-error -- --service=prepare-database-projects
+test -s prepare-database-projects-build-error.txt && npm run record-build-error -- --service=prepare-database-projects
 npx ts-node --swc packages/client/scripts/create-env-production.ts >buildenv-build-logs.txt 2>buildenv-build-error.txt || npm run record-build-error -- --service=buildenv
 test -s buildenv-build-error.txt && npm run record-build-error -- --service=buildenv
 if [ -n "$TWA_LINK" ]
