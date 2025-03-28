@@ -12,35 +12,43 @@ import {
 import { NO_PROXY, StateDefinitions, getNestedObject, getState, useMutableState } from '@ir-engine/hyperflux'
 import { getCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import React, { useEffect } from 'react'
+import { NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
+import { SourceComponent } from './SourceComponent'
 
-const ConditionSchema = S.LiteralUnion(['largerThan', 'smallerThan', 'equal', 'notEqual', 'contains', 'notContains'])
+export const ConditionSchema = S.LiteralUnion([
+  'largerThan',
+  'smallerThan',
+  'equal',
+  'notEqual',
+  'contains',
+  'notContains'
+])
 
-const EntityConditionSchema = S.Object({
-  entityUUID: S.EntityUUID(),
+export const EntityConditionSchema = S.Object({
+  nodeID: NodeIDSchema(),
   component: S.String(),
   property: S.String(),
   value: S.Any(),
   condition: ConditionSchema
 })
 
-const StateConditionSchema = S.Object({
+export const StateConditionSchema = S.Object({
   state: S.String(),
   property: S.Any(),
   value: S.Any(),
   condition: ConditionSchema
 })
 
-const ObserverSchema = S.Object({
+export const ObserverSchema = S.Object({
   conditions: S.Array(S.Union([EntityConditionSchema, StateConditionSchema])),
-  target: S.EntityUUID(),
-  callback: S.String()
-  /** @todo add schematized parameters to the CallbackComponent */
-  // parameters: S.Array(S.Any())
+  target: NodeIDSchema(),
+  callback: S.String(),
+  parameters: S.Array(S.Record(S.String(), S.Union([S.Number(), S.String(), S.Bool()])))
 })
 
 const validCondition = (condition: Static<typeof EntityConditionSchema> | Static<typeof StateConditionSchema>) => {
-  if ('entityUUID' in condition) {
-    return condition.entityUUID !== '' && condition.component !== '' && condition.property !== ''
+  if ('nodeID' in condition) {
+    return condition.nodeID !== '' && condition.component !== '' && condition.property !== ''
   } else {
     return condition.state !== '' && condition.property !== ''
   }
@@ -82,12 +90,15 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
   const observer = useComponent(entity, ObservableComponent).observers[observerIndex]
   const conditions = observer.conditions.value
 
+  const sourceID = getComponent(entity, SourceComponent)
+
   // Get dependencies
   const dependencies = conditions.map((condition) => {
-    if ('entityUUID' in condition) {
+    if ('nodeID' in condition) {
       const componentDefinition = ComponentMap.get(condition.component)
       if (!componentDefinition) return null
-      const observedEntity = UUIDComponent.useEntityByUUID(condition.entityUUID)
+      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, condition.nodeID)
+      const observedEntity = UUIDComponent.useEntityByUUID(uuid)
       const component = useComponent(observedEntity, componentDefinition).value
       const value = getNestedObject(component, condition.property).result
       return value
@@ -99,12 +110,15 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
   })
 
   useEffect(() => {
+    const sourceID = getComponent(entity, SourceComponent)
+
     // Check conditions
     for (const condition of conditions) {
-      if ('entityUUID' in condition) {
+      if ('nodeID' in condition) {
         const componentDefinition = ComponentMap.get(condition.component)
         if (!componentDefinition) return
-        const observedEntity = UUIDComponent.getEntityByUUID(condition.entityUUID)
+        const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, condition.nodeID)
+        const observedEntity = UUIDComponent.getEntityByUUID(uuid)
         const component = getComponent(observedEntity, componentDefinition)
         const property = getNestedObject(component, condition.property).result
         const result = compare(property, condition)
@@ -121,7 +135,10 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
     }
 
     // Execute callback
-    const targetEntity = observer.target.value === '' ? entity : UUIDComponent.getEntityByUUID(observer.target.value)
+    const targetEntity =
+      observer.target.value === ''
+        ? entity
+        : UUIDComponent.getEntityByUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, observer.target.value))
     const callback = getCallback(targetEntity, observer.callback.value)
     if (!callback) return
     callback(entity, targetEntity)
