@@ -130,6 +130,8 @@ cli.main(async () => {
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
+                .replaceAll('"', '\'')
+                .replaceAll('`', '\'')
           })
 
         console.log('exiting with code 1')
@@ -158,6 +160,8 @@ cli.main(async () => {
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
+                .replaceAll('"', '\'')
+                .replaceAll('`', '\'')
           })
 
         cli.exit(1)
@@ -175,6 +179,8 @@ cli.main(async () => {
         release: process.env.RELEASE_NAME,
         service: options.service,
         logs: err.toString()
+            .replaceAll('"', '\'')
+            .replaceAll('`', '\'')
       })
 
     cli.fatal(err)
