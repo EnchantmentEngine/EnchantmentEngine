@@ -28,6 +28,7 @@ import cli from 'cli'
 import dotenv from 'dotenv-flow'
 import fs from 'fs'
 import knex from 'knex'
+import fetch from 'node-fetch'
 
 import { buildStatusPath, BuildStatusType } from '@ir-engine/common/src/schema.type.module'
 
@@ -80,6 +81,27 @@ cli.main(async () => {
             logs: combinedLogs,
             dateEnded: dateNow
           })
+
+        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN) {
+          const params = new URLSearchParams()
+          params.append('event_type', 'record-build-error')
+          params.append('client_payload', JSON.stringify({
+            release: process.env.RELEASE_NAME,
+            service: options.service,
+            logs: combinedLogs
+          }))
+
+          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_URL, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/vnd.github.everest-preview+json',
+              Authorization: `token ${process.env.GITHUB_ACTION_TOKEN}`
+            },
+            body: params
+          })
+          console.log('errorActionResponse', errorActionResponse)
+        }
+
         console.log('exiting with code 1')
         cli.exit(1)
       } else cli.exit(0)
@@ -96,6 +118,27 @@ cli.main(async () => {
             logs: combinedLogs,
             dateEnded: dateNow
           })
+
+
+        if (process.env.GITHUB_ERROR_ACTION_URL && process.env.GITHUB_ACTION_TOKEN) {
+          const params = new URLSearchParams()
+          params.append('event_type', 'record-build-error')
+          params.append('client_payload', JSON.stringify({
+            release: process.env.RELEASE_NAME,
+            service: options.service,
+            logs: combinedLogs
+          }))
+
+          const errorActionResponse = await fetch(process.env.GITHUB_ERROR_URL, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/vnd.github.everest-preview+json',
+              Authorization: `token ${process.env.GITHUB_ACTION_TOKEN}`
+            },
+            body: params
+          })
+          console.log('errorActionResponse', errorActionResponse)
+        }
         cli.exit(1)
       } else cli.exit(0)
     }
