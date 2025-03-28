@@ -65,7 +65,8 @@ import {
   StunServerState,
   WebRTCTransportFunctions
 } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
-import React, { Suspense, useEffect, arglebargle } from 'react'
+import React, { Suspense, useEffect } from 'react'
+import cool from '../../pants'
 
 type InstanceType = {
   id: InstanceID
