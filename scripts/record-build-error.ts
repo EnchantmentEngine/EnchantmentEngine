@@ -62,7 +62,9 @@ cli.main(async () => {
 
     const buildLogs = fs.readFileSync(`${options.service}-build-logs.txt`).toString()
     const buildErrors = fs.readFileSync(`${options.service}-build-error.txt`).toString()
-    const builderRun = fs.readFileSync('builder-run.txt').toString()
+    const builderRun = fs.existsSync('builder-run.txt')
+        ? fs.readFileSync('builder-run.txt').toString()
+        : '0'
     if (options.isDocker) {
       console.log('isDocker is true')
       const cacheMissRegex = new RegExp(`${options.service}:latest_${process.env.RELEASE_NAME}_cache: not found`)
