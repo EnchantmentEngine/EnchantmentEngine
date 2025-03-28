@@ -51,11 +51,11 @@ interface Payload {
   logs: string
 }
 
-async function callGithubDispatch (payload: Payload) {
+async function callGithubDispatch(payload: Payload) {
   const installationOctokit = generateInstallationOctokit(
-      process.env.GITHUB_RECORD_ERROR_APP_ID,
-      process.env.GITHUB_RECORD_ERROR_APP_PRIVATE_KEY,
-      process.env.GITHUB_RECORD_ERROR_INSTALLATION_ID
+    process.env.GITHUB_RECORD_ERROR_APP_ID,
+    process.env.GITHUB_RECORD_ERROR_APP_PRIVATE_KEY,
+    process.env.GITHUB_RECORD_ERROR_INSTALLATION_ID
   )
 
   const response = await installationOctokit.request({
@@ -101,9 +101,7 @@ cli.main(async () => {
 
     const buildLogs = fs.readFileSync(`${options.service}-build-logs.txt`).toString()
     const buildErrors = fs.readFileSync(`${options.service}-build-error.txt`).toString()
-    const builderRun = fs.existsSync('builder-run.txt')
-        ? fs.readFileSync('builder-run.txt').toString()
-        : '0'
+    const builderRun = fs.existsSync('builder-run.txt') ? fs.readFileSync('builder-run.txt').toString() : '0'
     if (options.isDocker) {
       console.log('isDocker is true')
       const cacheMissRegex = new RegExp(`${options.service}:latest_${process.env.RELEASE_NAME}_cache: not found`)
@@ -123,7 +121,11 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-        if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
+        if (
+          process.env.GITHUB_RECORD_ERROR_OWNER &&
+          process.env.GITHUB_RECORD_ERROR_REPO &&
+          process.env.GITHUB_RECORD_ERROR_WORKFLOW
+        )
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
@@ -134,8 +136,7 @@ cli.main(async () => {
         cli.exit(1)
       } else cli.exit(0)
     } else {
-      if (true) {
-      // if ((/error/i.test(buildErrors) && !/'errors'/i.test(buildErrors)) || /fail/i.test(buildErrors)) {
+        if ((/error/i.test(buildErrors) && !/'errors'/i.test(buildErrors)) || /fail/i.test(buildErrors)) {
         const combinedLogs = `Task that errored: ${options.service}\n\nError logs:\n\n${buildErrors}\n\nTask logs:\n\n${buildLogs}`
         await knexClient
           .from<BuildStatusType>(buildStatusPath)
@@ -148,7 +149,11 @@ cli.main(async () => {
             dateEnded: dateNow
           })
 
-        if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
+        if (
+          process.env.GITHUB_RECORD_ERROR_OWNER &&
+          process.env.GITHUB_RECORD_ERROR_REPO &&
+          process.env.GITHUB_RECORD_ERROR_WORKFLOW
+        )
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
@@ -161,7 +166,11 @@ cli.main(async () => {
   } catch (err) {
     console.log(err)
 
-    if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
+    if (
+      process.env.GITHUB_RECORD_ERROR_OWNER &&
+      process.env.GITHUB_RECORD_ERROR_REPO &&
+      process.env.GITHUB_RECORD_ERROR_WORKFLOW
+    )
       await callGithubDispatch({
         release: process.env.RELEASE_NAME,
         service: options.service,
