@@ -48,6 +48,7 @@ export const HomePage = (): any => {
   const viewerMenuState = useMutableState(ViewerMenuState)
 
   useEffect(() => {
+    kwjekfjwekfj
     const error = new URL(window.location.href).searchParams.get('error')
     if (error) NotificationService.dispatchNotify(error, { variant: 'error' })
     ModalState.openModal(<ProfileMenu />)

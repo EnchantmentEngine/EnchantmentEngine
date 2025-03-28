@@ -46,6 +46,7 @@ const AppPage = lazy(() => import('./pages/AppPage'))
 const Router = lazy(() => import('./route/CustomRouter'))
 
 const App = () => {
+    kjwelfjwekfjwkejkf
   return (
     <ClientErrorBoundary>
       <Store>
