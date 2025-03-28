@@ -28,7 +28,6 @@ import cli from 'cli'
 import dotenv from 'dotenv-flow'
 import fs from 'fs'
 import knex from 'knex'
-import fetch from 'node-fetch'
 
 import { generateInstallationOctokit } from '@ir-engine/server-core/src/projects/project/github-helper'
 
@@ -46,24 +45,29 @@ const options = cli.parse({
   isDocker: [false, 'Whether or not this is checking logs files for a Docker process.', 'boolean']
 })
 
-async function callGithubWorkflow (payload: string) {
+interface Payload {
+  release: string
+  service: string
+  logs: string
+}
+
+async function callGithubDispatch (payload: Payload) {
   const installationOctokit = generateInstallationOctokit(
       process.env.GITHUB_RECORD_ERROR_APP_ID,
       process.env.GITHUB_RECORD_ERROR_APP_PRIVATE_KEY,
       process.env.GITHUB_RECORD_ERROR_INSTALLATION_ID
   )
 
-  const params = new URLSearchParams()
-  params.append('event_type', 'record-build-error')
-  params.append('client_payload', payload)
-
-  console.log('params', params)
   const response = await installationOctokit.request({
-    url: `/repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github+json'
+    },
+    url: `/repos/{owner}/{repo}/dispatches`,
     owner: process.env.GITHUB_RECORD_ERROR_OWNER,
     repo: process.env.GITHUB_RECORD_ERROR_REPO,
-    workflow: process.env.GITHUB_RECORD_ERROR_WORKFLOW,
-    data: params
+    event_type: process.env.GITHUB_RECORD_ERROR_DISPATCH_NAME,
+    client_payload: payload
   })
   console.log('repsonse', response)
 
@@ -120,11 +124,11 @@ cli.main(async () => {
           })
 
         if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
-          await callGithubWorkflow(JSON.stringify({
+          await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
-          }))
+          })
 
         console.log('exiting with code 1')
         cli.exit(1)
@@ -145,11 +149,11 @@ cli.main(async () => {
           })
 
         if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
-          await callGithubWorkflow(JSON.stringify({
+          await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
             logs: combinedLogs
-          }))
+          })
 
         cli.exit(1)
       } else cli.exit(0)
@@ -158,11 +162,11 @@ cli.main(async () => {
     console.log(err)
 
     if (process.env.GITHUB_RECORD_ERROR_OWNER && process.env.GITHUB_RECORD_ERROR_REPO && process.env.GITHUB_RECORD_ERROR_WORKFLOW)
-      await callGithubWorkflow(JSON.stringify({
+      await callGithubDispatch({
         release: process.env.RELEASE_NAME,
         service: options.service,
         logs: err.toString()
-      }))
+      })
 
     cli.fatal(err)
   }
