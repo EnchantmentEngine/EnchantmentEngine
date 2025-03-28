@@ -769,7 +769,7 @@ const exportMaterial = async (
       if ((material[field] as CubeTexture).isCubeTexture) continue //for skipping environment maps which cause errors
       const texture = material[field] as Texture
       const textureIndex = await exportTexture(texture, gltf, context)
-      if (!textureIndex) continue
+      if (typeof textureIndex !== 'number') continue
       argEntry.contents = {
         index: textureIndex,
         texCoord: texture.channel
