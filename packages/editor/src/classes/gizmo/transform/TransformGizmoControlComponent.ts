@@ -145,7 +145,7 @@ export const TransformGizmoControlComponent = defineComponent({
       )
 
       setComponent(gizmoPlaneEntity, MeshComponent, gizmoPlane)
-      setComponent(gizmoPlaneEntity, TransformGizmoTagComponent)
+      //setComponent(gizmoPlaneEntity, TransformGizmoTagComponent) we dont want this to be a tagged , as it interferes with heuristic, access via control entity
       ObjectLayerMaskComponent.setLayer(gizmoPlaneEntity, ObjectLayers.TransformGizmo)
 
       const gizmoControlEntity = createEntity()
