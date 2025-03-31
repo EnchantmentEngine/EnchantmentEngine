@@ -42,6 +42,7 @@ export interface SceneOptionData {
   title: string
   description: string
   icon?: React.ElementType
+  onOptionSelectedAnalytics?: (selectedSceneOption: SceneOptionData) => void
   onSubmit?: () => void
 }
 
@@ -143,6 +144,11 @@ export const AddScene = ({ projectName }: AddNewSceneProps) => {
   }
 
   const onContinueClicked = async () => {
+    Object.values(element).map((value, _index) => {
+      if (value.onOptionSelectedAnalytics && selectedSceneOption) {
+        value.onOptionSelectedAnalytics(selectedSceneOption)
+      }
+    })
     selectedSceneOption?.onSubmit?.()
   }
 
