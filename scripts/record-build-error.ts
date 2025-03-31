@@ -125,14 +125,15 @@ cli.main(async () => {
           process.env.GITHUB_RECORD_ERROR_OWNER &&
           process.env.GITHUB_RECORD_ERROR_REPO &&
           process.env.GITHUB_RECORD_ERROR_WORKFLOW
-        )
+        ) {
+          const replacedLogs = combinedLogs.replaceAll('"', '\'').replaceAll('`', '\'')
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
-            logs: combinedLogs
-                .replaceAll('"', '\'')
-                .replaceAll('`', '\'')
+            logs: replacedLogs,
+            logLength: replacedLogs.length
           })
+        }
 
         console.log('exiting with code 1')
         cli.exit(1)
@@ -155,14 +156,15 @@ cli.main(async () => {
           process.env.GITHUB_RECORD_ERROR_OWNER &&
           process.env.GITHUB_RECORD_ERROR_REPO &&
           process.env.GITHUB_RECORD_ERROR_WORKFLOW
-        )
+        ) {
+          const replacedLogs = combinedLogs.replaceAll('"', '\'').replaceAll('`', '\'')
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
-            logs: combinedLogs
-                .replaceAll('"', '\'')
-                .replaceAll('`', '\'')
+            logs: replacedLogs,
+            logLength: replacedLogs.length
           })
+        }
 
         cli.exit(1)
       } else cli.exit(0)
@@ -174,14 +176,15 @@ cli.main(async () => {
       process.env.GITHUB_RECORD_ERROR_OWNER &&
       process.env.GITHUB_RECORD_ERROR_REPO &&
       process.env.GITHUB_RECORD_ERROR_WORKFLOW
-    )
+    ) {
+      const replacedLogs = err.toString().replaceAll('"', '\'').replaceAll('`', '\'')
       await callGithubDispatch({
         release: process.env.RELEASE_NAME,
         service: options.service,
-        logs: err.toString()
-            .replaceAll('"', '\'')
-            .replaceAll('`', '\'')
+        logs: replacedLogs,
+        logLength: replacedLogs.length
       })
+    }
 
     cli.fatal(err)
   }
