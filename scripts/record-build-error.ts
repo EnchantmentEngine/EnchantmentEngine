@@ -129,9 +129,9 @@ cli.main(async () => {
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
-            logs: JSON.stringify(combinedLogs
+            logs: combinedLogs
                 .replaceAll('"', '\'')
-                .replaceAll('`', '\''))
+                .replaceAll('`', '\'')
           })
 
         console.log('exiting with code 1')
@@ -159,9 +159,9 @@ cli.main(async () => {
           await callGithubDispatch({
             release: process.env.RELEASE_NAME,
             service: options.service,
-            logs: JSON.stringify(combinedLogs
+            logs: combinedLogs
                 .replaceAll('"', '\'')
-                .replaceAll('`', '\''))
+                .replaceAll('`', '\'')
           })
 
         cli.exit(1)
@@ -178,9 +178,9 @@ cli.main(async () => {
       await callGithubDispatch({
         release: process.env.RELEASE_NAME,
         service: options.service,
-        logs: JSON.stringify(err.toString()
+        logs: err.toString()
             .replaceAll('"', '\'')
-            .replaceAll('`', '\''))
+            .replaceAll('`', '\'')
       })
 
     cli.fatal(err)
