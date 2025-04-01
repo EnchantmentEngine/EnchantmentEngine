@@ -42,9 +42,10 @@ import {
   defineComponent,
   getOptionalComponent,
   hasComponent,
-  useComponent
+  useComponent,
+  useHasAuthoring
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { getState, isClient, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { getState, isClient, useImmediateEffect } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -57,7 +58,6 @@ import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/com
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
-import { EngineState } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
@@ -271,7 +271,7 @@ export const InteractableComponent = defineComponent({
     if (!isClient) return null
     const entity = useEntityContext()
     const interactableComponent = useComponent(entity, InteractableComponent)
-    const isEditing = useMutableState(EngineState).isEditing
+    const authoring = useHasAuthoring(entity)
     const modalState = useXRUIState<InteractiveModalState>()
 
     useImmediateEffect(() => {
@@ -309,7 +309,7 @@ export const InteractableComponent = defineComponent({
 
     useEffect(() => {
       const simulationEntity = getSimulationCounterpart(entity)
-      if (!isEditing.value) {
+      if (!authoring) {
         const uiEntity = addInteractableUI(simulationEntity)
         return () => {
           if (uiEntity) {
@@ -317,7 +317,7 @@ export const InteractableComponent = defineComponent({
           }
         }
       }
-    }, [isEditing.value])
+    }, [authoring])
 
     useEffect(() => {
       const msg = interactableComponent.label?.value ?? ''

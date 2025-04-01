@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  EngineState,
   Entity,
   EntityTreeComponent,
   S,
@@ -38,9 +37,10 @@ import {
   removeEntity,
   setComponent,
   useComponent,
-  useEntityContext
+  useEntityContext,
+  useHasAuthoring
 } from '@ir-engine/ecs'
-import { getMutableState, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
+import { useDidMount, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { LineSegmentComponent } from '@ir-engine/spatial/src/renderer/components/LineSegmentComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -175,9 +175,9 @@ export const ObjectGridSnapComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const engineState = useState(getMutableState(EngineState))
     const gltfLoaded = GLTFComponent.useSceneLoaded(entity)
     const snapComponent = useComponent(entity, ObjectGridSnapComponent)
+    const authoring = useHasAuthoring(entity)
 
     useEffect(() => {
       if (!gltfLoaded) return
@@ -228,14 +228,14 @@ export const ObjectGridSnapComponent = defineComponent({
     }, [gltfLoaded])
 
     useEffect(() => {
-      if (!engineState.isEditing.value) return
+      if (!authoring) return
       const bbox = snapComponent.bbox.value
       setComponent(entity, BoundingBoxHelperComponent, { bbox })
 
       return () => {
         removeComponent(entity, BoundingBoxHelperComponent)
       }
-    }, [snapComponent.bbox, engineState.isEditing])
+    }, [snapComponent.bbox, authoring])
 
     return null
   }

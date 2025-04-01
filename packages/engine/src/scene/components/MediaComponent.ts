@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ComponentType, EngineState, entityExists, useEntityContext } from '@ir-engine/ecs'
+import { ComponentType, entityExists, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -33,6 +33,7 @@ import {
   removeComponent,
   setComponent,
   useComponent,
+  useHasAuthoring,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -182,7 +183,7 @@ export function MediaReactor() {
   const audioContext = getState(AudioState).audioContext
   const gainNodeMixBuses = getState(AudioState).gainNodeMixBuses
   const rendererEntity = useRendererEntity(entity)
-  const engineState = useMutableState(EngineState)
+  const authoring = useHasAuthoring(entity)
 
   function validateTime() {
     if (!mediaElement) return
@@ -200,8 +201,7 @@ export function MediaReactor() {
   }
 
   const getAutoPlay = () => {
-    const isEditing = engineState.isEditing.value
-    return isEditing ? false : media.autoplay.value
+    return authoring ? false : media.autoplay.value
   }
 
   const playTrack = () => {
@@ -303,7 +303,7 @@ export function MediaReactor() {
     const autoPlay = getAutoPlay()
     media.paused.set(!autoPlay)
     validateTime()
-  }, [media.autoplay, !!mediaElement, engineState.isEditing])
+  }, [media.autoplay, !!mediaElement, authoring])
 
   useEffect(() => {
     if (!rendererEntity) return
@@ -394,11 +394,10 @@ export function MediaReactor() {
 
   useEffect(() => {
     if (!mediaElement) return
-    const isEditing = getState(EngineState).isEditing
-    const isMuted = isEditing ? media.muteEditor.value : false
+    const isMuted = authoring ? media.muteEditor.value : false
     const htmlMedia = mediaElement.element.get(NO_PROXY) as HTMLMediaElement
     htmlMedia.muted = isMuted
-  }, [media.muteEditor, mediaElement])
+  }, [media.muteEditor, mediaElement, authoring])
 
   useEffect(() => {
     if (mediaElement && !mediaElement.element.paused.value) {

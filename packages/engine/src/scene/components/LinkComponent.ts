@@ -27,19 +27,18 @@ import { useEffect } from 'react'
 import { Vector3 } from 'three'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, getComponent, hasAuthoring, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
-import { EngineState } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
 
 const linkLogic = (linkEntity: Entity, xrState) => {
-  if (getState(EngineState).isEditing) return
+  if (hasAuthoring(linkEntity)) return
   const linkComponent = getComponent(linkEntity, LinkComponent)
   // if (!linkComponent.sceneNav) {
   //   xrState && xrState.session?.end()

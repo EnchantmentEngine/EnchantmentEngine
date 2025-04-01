@@ -27,7 +27,6 @@ import { useLayoutEffect } from 'react'
 
 import {
   defineSystem,
-  EngineState,
   getComponent,
   InputSystemGroup,
   UndefinedEntity,
@@ -36,6 +35,7 @@ import {
 } from '@ir-engine/ecs'
 import {
   defineComponent,
+  hasAuthoring,
   hasComponent,
   removeComponent,
   setComponent,
@@ -102,7 +102,7 @@ export const InputComponent = defineComponent({
     return useExecute(() => {
       const capturingEntity = getState(InputState).capturingEntity
       if (
-        (!executeWhenEditing && getState(EngineState).isEditing) ||
+        (!executeWhenEditing && hasAuthoring(entity)) ||
         (capturingEntity && !isAncestor(capturingEntity, entity, true))
       )
         return
