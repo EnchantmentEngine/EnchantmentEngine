@@ -1277,7 +1277,7 @@ export const LayerComponent = defineComponent({
 export function useLayerCounterpart(entity: Entity, layer: LayerID) {
   const entityLayer = useComponent(entity, LayerComponent).value
   const entityLayerRelations = useComponent(entity, LayerComponents[entityLayer]).relations.value
-  return entityLayerRelations[layer] ?? UndefinedEntity
+  return entityLayer == layer ? entity : entityLayerRelations[layer] ?? UndefinedEntity
 }
 
 export function getAuthoringCounterpart(entity: Entity) {
