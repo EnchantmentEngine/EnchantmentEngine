@@ -31,10 +31,12 @@ import {
   defineSystem,
   Entity,
   EntityTreeComponent,
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   getOptionalMutableComponent,
   hasComponent,
+  Layers,
   Not,
   removeComponent,
   setComponent,
@@ -48,7 +50,6 @@ import { defineState, getMutableState, getState, useMutableState } from '@ir-eng
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
-import { EngineState } from '@ir-engine/ecs'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
@@ -250,8 +251,18 @@ export const ObjectGridSnapState = defineState({
   }
 })
 
-const objectGridQuery = defineQuery([ObjectGridSnapComponent])
-const models = defineQuery([GLTFComponent, Not(SceneComponent), Not(AvatarRigComponent)])
+const objectGridQuery = defineQuery([ObjectGridSnapComponent], Layers.Authoring)
+const models = defineQuery([GLTFComponent, Not(SceneComponent), Not(AvatarRigComponent)], Layers.Authoring)
+
+const enableGridSnapEntity = (entity: Entity) => {
+  const authoringEntity = getAuthoringCounterpart(entity)
+  if (authoringEntity) setComponent(entity, ObjectGridSnapComponent)
+}
+
+const disableGridSnapEntity = (entity: Entity) => {
+  const authoringEntity = getAuthoringCounterpart(entity)
+  if (authoringEntity) removeComponent(entity, ObjectGridSnapComponent)
+}
 
 export const ObjectGridSnapSystem = defineSystem({
   uuid: 'ee.engine.scene.ObjectGridSnapSystem',
@@ -262,9 +273,9 @@ export const ObjectGridSnapSystem = defineSystem({
 
     useEffect(() => {
       if (snapState.enabled.value) {
-        for (const entity of models()) setComponent(entity, ObjectGridSnapComponent)
+        for (const entity of models()) enableGridSnapEntity(entity)
         return () => {
-          for (const entity of models()) removeComponent(entity, ObjectGridSnapComponent)
+          for (const entity of models()) disableGridSnapEntity(entity)
         }
       }
     }, [snapState.enabled])
@@ -284,17 +295,15 @@ export const ObjectGridSnapSystem = defineSystem({
     return null
   },
   execute: () => {
-    const engineState = getState(EngineState)
-    if (!engineState.isEditing) return
     const snapState = getState(ObjectGridSnapState)
     if (!snapState.enabled) return
 
     for (const entity of models.enter()) {
-      setComponent(entity, ObjectGridSnapComponent)
+      enableGridSnapEntity(entity)
     }
 
     for (const entity of models.exit()) {
-      removeComponent(entity, ObjectGridSnapComponent)
+      disableGridSnapEntity(entity)
     }
 
     const entities = objectGridQuery()
