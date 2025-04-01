@@ -645,12 +645,14 @@ describe('InputComponent', () => {
       })
 
       it('... has all the expected keys for the default mapping', () => {
-        setComponent(testEntity, InputSourceComponent)
+        setComponent(testEntity, InputSourceComponent, getDummyMapping('xr-standard'))
         const result = InputComponent.getMergedAxesForInputSources([testEntity])
-        assert.notEqual(result.HorizontalScroll, undefined)
-        assert.notEqual(result.VerticalScroll, undefined)
         assert.notEqual(result.FollowCameraZoomScroll, undefined)
         assert.notEqual(result.FollowCameraShoulderCamScroll, undefined)
+        assert.notEqual(result.XRStandardGamepadTouchpadX, undefined)
+        assert.notEqual(result.XRStandardGamepadTouchpadY, undefined)
+        assert.notEqual(result.XRStandardGamepadThumbstickX, undefined)
+        assert.notEqual(result.XRStandardGamepadThumbstickY, undefined)
       })
 
       it('... has all the expected keys for the "" mapping', () => {
