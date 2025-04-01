@@ -40,4 +40,4 @@ export default {
   },
   argTypes
 }
-export const Default = { args: {} }
+export const Default = { args: { entity: 1 } }

@@ -23,30 +23,26 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import Component from './index'
+import getClientCoreI18nConfigs from '@ir-engine/client-core/src/i18n'
+import { getI18nConfigs } from '@ir-engine/client-core/src/i18nImporter'
+import i18n from 'i18next'
+import LanguageDetector from 'i18next-browser-languagedetector'
+import { merge } from 'lodash'
+import { initReactI18next } from 'react-i18next'
 
-const argTypes = {}
+// @ts-ignore
+const clientI18nConfigs = import.meta.glob('../../client-core/i18n/**/*.json', { eager: true })
 
-export default {
-  title: 'Editor/Input/Array',
-  component: Component,
-  parameters: {
-    componentSubtitle: 'ArrayInput',
-    jest: 'Array.test.tsx',
-    design: {
-      type: 'figma',
-      url: ''
-    }
-  },
-  argTypes
-}
+const modules = merge(clientI18nConfigs, getClientCoreI18nConfigs())
 
-export const Default = {
-  args: {
-    label: 'Source Path',
-    containerClassName: 'w-96',
-    values: ['test name 1', 'test value 2', 'test 3', 'test 4'],
-    inputLabel: 'Path',
-    onChange: (values: string[]) => {}
-  }
-}
+const { namespace, resources } = getI18nConfigs(modules)
+
+i18n.use(LanguageDetector).use(initReactI18next).init({
+  fallbackLng: 'en',
+  ns: namespace,
+  defaultNS: 'translation',
+  lng: 'en',
+  resources
+})
+
+export default i18n

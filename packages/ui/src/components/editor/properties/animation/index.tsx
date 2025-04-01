@@ -54,6 +54,8 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
   const entity = props.entity
 
+  console.log('LoopAnimationNodeEditor', entity)
+
   const animationOptions = useState([] as { label: string; value: number }[])
   const loopAnimationComponent = useComponent(entity, LoopAnimationComponent)
 
