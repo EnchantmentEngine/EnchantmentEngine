@@ -26,12 +26,13 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { EngineState, EntityTreeComponent, useEntityContext } from '@ir-engine/ecs'
+import { EntityTreeComponent, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
   getOptionalComponent,
-  useComponent
+  useComponent,
+  useHasAuthoring
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
@@ -67,12 +68,12 @@ export const SplineTrackComponent = defineComponent({
   reactor: function (props) {
     const entity = useEntityContext()
     const component = useComponent(entity, SplineTrackComponent)
+    const authoring = useHasAuthoring(entity)
 
     useExecute(
       () => {
-        const { isEditing } = getState(EngineState)
         const { deltaSeconds } = getState(ECSState)
-        if (isEditing) return
+        if (!authoring) return
         if (!component.splineEntityUUID.value) return
         const splineTargetEntity = NodeFunctions.getEntityFromNodeID(entity, component.splineEntityUUID.value)
         if (!splineTargetEntity) return

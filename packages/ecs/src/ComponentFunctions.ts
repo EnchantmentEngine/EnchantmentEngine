@@ -1280,6 +1280,10 @@ export function useLayerCounterpart(entity: Entity, layer: LayerID) {
   return entityLayer == layer ? entity : entityLayerRelations[layer] ?? UndefinedEntity
 }
 
+export function useHasAuthoring(entity: Entity) {
+  return !!useLayerCounterpart(entity, Layers.Authoring)
+}
+
 export function getAuthoringCounterpart(entity: Entity) {
   const layer = LayerComponent.get(entity)
   if (layer === Layers.Authoring) {
