@@ -23,8 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Engine } from '@ir-engine/ecs'
-import { dispatchAction, getState, NetworkID, PeerID, useMutableState, UserID } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, HyperFlux, NetworkID, PeerID, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { decode, encode } from 'msgpackr'
 import React, { useEffect } from 'react'
 import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from '../constants/VideoConstants'
@@ -61,7 +60,7 @@ export const WebRTCPeerConnection = (props: {
     /**
      * We only need one peer to initiate the connection, so do so if the peerID is greater than our own.
      */
-    const isInitiator = Engine.instance.store.peerID > peerID
+    const isInitiator = HyperFlux.store.peerID > peerID
 
     if (isInitiator) {
       // poll to ensure the other peer's listener has been set up before we try to connect
@@ -94,7 +93,7 @@ export const WebRTCPeerConnection = (props: {
       NetworkActions.peerJoined({
         $network: networkID,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
         peerID: peerID,
         peerIndex: peerIndex,
         userID: userID
@@ -124,7 +123,7 @@ export const WebRTCPeerConnection = (props: {
     const buffer = (dataChannelType: DataChannelType, data: any) => {
       const dataChannel = peerConnectionState.dataChannels[dataChannelType] as RTCDataChannel
       if (!dataChannel || dataChannel.readyState !== 'open') return
-      const fromPeerID = Engine.instance.store.peerID
+      const fromPeerID = HyperFlux.store.peerID
       const fromPeerIndex = network.peerIDToPeerIndex[fromPeerID]
       if (typeof fromPeerIndex === 'undefined')
         return console.warn('fromPeerIndex is undefined', fromPeerID, fromPeerIndex)
@@ -145,8 +144,8 @@ export const WebRTCPeerConnection = (props: {
         if (receivedPoll) {
           clearInterval(interval)
           // once connected, send all our own cached actions to the peer
-          const selfCachedActions = Engine.instance.store.actions.cached.filter(
-            (action) => action.$topic === network.topic && action.$peer === Engine.instance.store.peerID
+          const selfCachedActions = HyperFlux.store.actions.cached.filter(
+            (action) => action.$topic === network.topic && action.$peer === HyperFlux.store.peerID
           )
           message(selfCachedActions)
         }
@@ -159,7 +158,7 @@ export const WebRTCPeerConnection = (props: {
         NetworkActions.peerLeft({
           $network: network.id,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
+          $to: HyperFlux.store.peerID,
           peerID: peerID,
           userID: userID
         })
@@ -206,7 +205,7 @@ const DataChannelReactor = (props: { networkID: NetworkID; peerID: PeerID; dataC
   const dataChannel = peerConnectionState?.dataChannels?.[props.dataChannelType] as RTCDataChannel | undefined
 
   useEffect(() => {
-    const isInitiator = Engine.instance.store.peerID < props.peerID
+    const isInitiator = HyperFlux.store.peerID < props.peerID
     if (!isInitiator) return
 
     WebRTCTransportFunctions.createDataChannel(props.networkID, props.peerID, props.dataChannelType)

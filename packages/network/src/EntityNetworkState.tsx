@@ -48,8 +48,7 @@ import {
 
 import { EngineState } from '@ir-engine/ecs'
 import { WorldNetworkAction } from './functions/WorldNetworkAction'
-import { NetworkId } from './NetworkId'
-import { NetworkObjectComponent } from './NetworkObjectComponent'
+import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
 import { NetworkPeerState } from './NetworkPeerState'
 import { NetworkState, SceneUser } from './NetworkState'
 

@@ -23,10 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, HyperFlux, useMutableState } from '@ir-engine/hyperflux'
 import { VideoConstants } from '@ir-engine/network'
 
-import { Engine } from '@ir-engine/ecs'
 import { useEffect } from 'react'
 import { createPeerMediaChannels, PeerMediaChannelState, removePeerMediaChannels } from './PeerMediaChannelState'
 
@@ -82,13 +81,13 @@ export const MediaStreamState = defineState({
     const state = useMutableState(MediaStreamState)
 
     useEffect(() => {
-      createPeerMediaChannels(Engine.instance.store.peerID)
+      createPeerMediaChannels(HyperFlux.store.peerID)
       return () => {
-        removePeerMediaChannels(Engine.instance.store.peerID)
+        removePeerMediaChannels(HyperFlux.store.peerID)
       }
     }, [])
 
-    const peerMediaChannelState = useMutableState(PeerMediaChannelState)[Engine.instance.store.peerID]
+    const peerMediaChannelState = useMutableState(PeerMediaChannelState)[HyperFlux.store.peerID]
 
     useEffect(() => {
       const microphoneEnabled = state.microphoneEnabled.value

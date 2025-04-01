@@ -43,8 +43,9 @@ import {
   useEntityContext
 } from '@ir-engine/ecs'
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { PeerID, UserID } from '@ir-engine/hyperflux'
-import { NetworkId } from '@ir-engine/network/src/NetworkId'
+import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+
+export type NetworkId = OpaqueType<'networkId'> & number
 
 /** ID of last network created. */
 let availableNetworkId = 0 as NetworkId

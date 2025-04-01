@@ -27,10 +27,9 @@ import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunction
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PeerID, getState } from '@ir-engine/hyperflux'
-import { NetworkId } from '@ir-engine/network/src/NetworkId'
 
 import { Network } from '../Network'
-import { NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
+import { NetworkId, NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
 import { NetworkState } from '../NetworkState'
 import {
   QUAT_MAX_RANGE,
