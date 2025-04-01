@@ -1241,12 +1241,15 @@ export const SimulationLayerComponent = LayerComponents[Layers.Simulation]
 export const LayerComponent = defineComponent({
   name: 'LayerComponent',
 
+  schema: S.Number(),
+
   storage: {
     layer: createResizableTypeArray(Uint8Array)
   },
 
   onSet(entity, component, layer: LayerID) {
     LayerComponent.layer[entity] = layer
+    component.set(layer)
     setComponent(entity, LayerComponents[layer])
   },
 
@@ -1270,6 +1273,12 @@ export const LayerComponent = defineComponent({
     return false
   }
 })
+
+export function useLayerCounterpart(entity: Entity, layer: LayerID) {
+  const entityLayer = useComponent(entity, LayerComponent).value
+  const entityLayerRelations = useComponent(entity, LayerComponents[entityLayer]).relations.value
+  return entityLayerRelations[layer] ?? UndefinedEntity
+}
 
 export function getAuthoringCounterpart(entity: Entity) {
   const layer = LayerComponent.get(entity)
