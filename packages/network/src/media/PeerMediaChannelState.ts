@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState, getMutableState, none, PeerID } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, none, OpaqueType, PeerID } from '@ir-engine/hyperflux'
+
+export type MediaChannelType = OpaqueType<'MediaChannelType'> & string
 
 export interface PeerMediaStreamInterface {
   videoMediaStream: MediaStream | null

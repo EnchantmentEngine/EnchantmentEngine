@@ -43,10 +43,10 @@ import {
 import {
   NetworkState,
   VideoConstants,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
 } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import React, { useEffect } from 'react'
@@ -102,7 +102,7 @@ const MicrophoneReactor = () => {
       .produce({
         track: mediaStreamState.microphoneDestinationNode.value!.stream!.getAudioTracks()[0],
         codecOptions,
-        appData: { mediaTag: webcamAudioDataChannelType, channelId: channelId }
+        appData: { mediaTag: webcamAudioMediaChannelType, channelId: channelId }
       })
       .then((prod) => {
         if (abortController.signal.aborted) return
@@ -205,7 +205,7 @@ const WebcamReactor = () => {
         encodings,
         codecOptions: VideoConstants.CAM_VIDEO_SIMULCAST_CODEC_OPTIONS,
         codec,
-        appData: { mediaTag: webcamVideoDataChannelType, channelId: channelId }
+        appData: { mediaTag: webcamVideoMediaChannelType, channelId: channelId }
       })
       .then((prod) => {
         if (abortController.signal.aborted) return
@@ -279,7 +279,7 @@ const ScreenshareReactor = () => {
         encodings,
         codecOptions: VideoConstants.CAM_VIDEO_SIMULCAST_CODEC_OPTIONS,
         codec,
-        appData: { mediaTag: screenshareVideoDataChannelType, channelId }
+        appData: { mediaTag: screenshareVideoMediaChannelType, channelId }
       })
       .then((producer) => {
         if (abortController.signal.aborted) {
@@ -305,7 +305,7 @@ const ScreenshareReactor = () => {
       transport
         .produce({
           track: audioTracks[0],
-          appData: { mediaTag: screenshareAudioDataChannelType, channelId }
+          appData: { mediaTag: screenshareAudioMediaChannelType, channelId }
         })
         .then((producer) => {
           if (abortController.signal.aborted) {

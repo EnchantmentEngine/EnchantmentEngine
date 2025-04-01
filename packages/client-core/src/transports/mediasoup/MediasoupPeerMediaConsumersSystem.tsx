@@ -34,10 +34,10 @@ import { Engine } from '@ir-engine/ecs/src/Engine'
 import { getMutableState, getState, PeerID, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import {
   NetworkState,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
   VideoConstants,
-  webcamAudioDataChannelType
+  webcamAudioMediaChannelType
 } from '@ir-engine/network'
 
 import { useFind } from '@ir-engine/common'
@@ -72,8 +72,8 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
   const mediaTag = consumerState.mediaTag.value
 
   const type =
-    mediaTag === screenshareAudioDataChannelType || mediaTag === screenshareVideoDataChannelType ? 'screen' : 'cam'
-  const isAudio = mediaTag === webcamAudioDataChannelType || mediaTag === screenshareAudioDataChannelType
+    mediaTag === screenshareAudioMediaChannelType || mediaTag === screenshareVideoMediaChannelType ? 'screen' : 'cam'
+  const isAudio = mediaTag === webcamAudioMediaChannelType || mediaTag === screenshareAudioMediaChannelType
 
   const peerMediaChannelState = useMutableState(PeerMediaChannelState)[peerID][type]
 
@@ -147,7 +147,7 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
   useEffect(() => {
     if (!consumer || isAudio) return
 
-    const isScreen = mediaTag === screenshareVideoDataChannelType
+    const isScreen = mediaTag === screenshareVideoMediaChannelType
 
     const mediaNetwork = NetworkState.mediaNetwork
     const encodings = consumer.rtpParameters.encodings

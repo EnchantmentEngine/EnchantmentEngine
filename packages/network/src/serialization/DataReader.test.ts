@@ -32,13 +32,13 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PeerID, UserID, applyIncomingActions, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
-import { NetworkId } from '@ir-engine/network/src/NetworkId'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { roundNumberToPlaces } from '../../tests/MathTestUtils'
 import { createMockNetwork } from '../../tests/createMockNetwork'
 import { Network, NetworkTopics } from '../Network'
 import {
+  NetworkId,
   NetworkObjectAuthorityTag,
   NetworkObjectComponent,
   NetworkObjectSendPeriodicUpdatesTag

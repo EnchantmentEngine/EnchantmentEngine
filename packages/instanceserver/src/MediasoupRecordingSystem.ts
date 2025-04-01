@@ -36,9 +36,9 @@ import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState, none, PeerID } from '@ir-engine/hyperflux'
 import {
   NetworkState,
-  screenshareAudioDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
+  screenshareAudioMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
 } from '@ir-engine/network'
 import { config } from '@ir-engine/server-core/src/config'
 import serverLogger from '@ir-engine/server-core/src/ServerLogger'
@@ -225,11 +225,11 @@ export const startMediaRecording = async (recordingID: RecordingID, schema: Reco
       const dataChannelType = producer.mediaTag
       if (!mediaStreams[peerID]) mediaStreams[peerID] = {}
       const mediaType =
-        dataChannelType === webcamAudioDataChannelType || dataChannelType === webcamVideoDataChannelType
+        dataChannelType === webcamAudioMediaChannelType || dataChannelType === webcamVideoMediaChannelType
           ? 'webcam'
           : 'screenshare'
       const trackType =
-        dataChannelType === webcamAudioDataChannelType || dataChannelType === screenshareAudioDataChannelType
+        dataChannelType === webcamAudioMediaChannelType || dataChannelType === screenshareAudioMediaChannelType
           ? 'audio'
           : 'video'
       if (!mediaStreams[peerID][mediaType]) mediaStreams[peerID][mediaType] = {}

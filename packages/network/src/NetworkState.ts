@@ -40,12 +40,7 @@ import { DataChannelType } from './DataChannelRegistry'
 import { Network } from './Network'
 import { matchesUserID } from './functions/matchesUserID'
 import { SerializationSchema } from './serialization/Utils'
-
-export type PeersUpdateType = {
-  peerID: PeerID
-  peerIndex: number
-  userID: UserID
-}
+import { MediaChannelType } from './media/PeerMediaChannelState'
 
 export type PeerTransport = {
   message?: (data: any) => void
@@ -124,21 +119,10 @@ export const NetworkState = defineState({
   }
 })
 
-export const webcamVideoDataChannelType = 'ee.core.webcamVideo.dataChannel' as DataChannelType
-export const webcamAudioDataChannelType = 'ee.core.webcamAudio.dataChannel' as DataChannelType
-export const screenshareVideoDataChannelType = 'ee.core.screenshareVideo.dataChannel' as DataChannelType
-export const screenshareAudioDataChannelType = 'ee.core.screenshareAudio.dataChannel' as DataChannelType
-
-export type MediaTagType =
-  | typeof webcamVideoDataChannelType
-  | typeof webcamAudioDataChannelType
-  | typeof screenshareVideoDataChannelType
-  | typeof screenshareAudioDataChannelType
-
-// export const webcamMediaType = 'webcam'
-// export const screenshareMediaType = 'screenshare'
-
-// export type MediaType = typeof webcamMediaType | typeof screenshareMediaType
+export const webcamVideoMediaChannelType = 'ir.core.webcamVideo.mediaChannel' as MediaChannelType
+export const webcamAudioMediaChannelType = 'ir.core.webcamAudio.mediaChannel' as MediaChannelType
+export const screenshareVideoMediaChannelType = 'ir.core.screenshareVideo.mediaChannel' as MediaChannelType
+export const screenshareAudioMediaChannelType = 'ir.core.screenshareAudio.mediaChannel' as MediaChannelType
 
 export const SceneUser = 'scene' as UserID
 export const ScenePeer = 'scene' as PeerID

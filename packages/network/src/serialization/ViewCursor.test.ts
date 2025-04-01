@@ -30,10 +30,9 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState } from '@ir-engine/hyperflux'
-import { NetworkId } from '@ir-engine/network/src/NetworkId'
 
 import { createEntity, setComponent } from '@ir-engine/ecs'
-import { NetworkObjectComponent } from '../NetworkObjectComponent'
+import { NetworkId, NetworkObjectComponent } from '../NetworkObjectComponent'
 import {
   createViewCursor,
   readFloat32,

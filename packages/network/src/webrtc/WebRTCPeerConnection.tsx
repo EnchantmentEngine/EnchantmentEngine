@@ -34,10 +34,10 @@ import { Network, NetworkTopics } from '../Network'
 import {
   NetworkActions,
   NetworkState,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
 } from '../NetworkState'
 import { RTCPeerConnectionState, SendMessageType, WebRTCTransportFunctions } from './WebRTCTransportFunctions'
 
@@ -267,7 +267,7 @@ export const MediaSendChannelReactor = (props: {
       props.networkID,
       props.peerID,
       track,
-      webcamAudioDataChannelType
+      webcamAudioMediaChannelType
     )
     if (!stream) return
     return () => {
@@ -283,7 +283,7 @@ export const MediaSendChannelReactor = (props: {
       props.networkID,
       props.peerID,
       track,
-      webcamVideoDataChannelType
+      webcamVideoMediaChannelType
     )
     if (!stream) return
     return () => {
@@ -300,7 +300,7 @@ export const MediaSendChannelReactor = (props: {
       props.networkID,
       props.peerID,
       videoTrack,
-      screenshareVideoDataChannelType
+      screenshareVideoMediaChannelType
     )
 
     let audioStream: MediaStream | undefined
@@ -314,7 +314,7 @@ export const MediaSendChannelReactor = (props: {
         props.networkID,
         props.peerID,
         audioTrack,
-        screenshareAudioDataChannelType
+        screenshareAudioMediaChannelType
       )!
     }
 
@@ -347,11 +347,11 @@ export const MediaReceiveChannelReactor = (props: {
   const mediaTrack = peerConnectionState?.incomingMediaTracks?.[props.trackID]
   const mediaTag = mediaTrack?.mediaTag
   const type = mediaTag
-    ? mediaTag === screenshareAudioDataChannelType || mediaTag === screenshareVideoDataChannelType
+    ? mediaTag === screenshareAudioMediaChannelType || mediaTag === screenshareVideoMediaChannelType
       ? 'screen'
       : 'cam'
     : null
-  const isAudio = type ? mediaTag === webcamAudioDataChannelType || mediaTag === screenshareAudioDataChannelType : false
+  const isAudio = type ? mediaTag === webcamAudioMediaChannelType || mediaTag === screenshareAudioMediaChannelType : false
   const stream = type ? (mediaTrack?.stream as MediaStream) : null
 
   const peerMediaChannelState = useMutableState(PeerMediaChannelState)[props.peerID]

@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState, getMutableState, getState, HyperFlux, NetworkID, none, PeerID } from '@ir-engine/hyperflux'
 import { DataChannelType } from '../DataChannelRegistry'
-import { MediaTagType } from '../NetworkState'
+import { MediaChannelType } from '../media/PeerMediaChannelState'
 
 const loggingEnabled = false //isDev
 const logger = loggingEnabled ? console : { log: () => {}, warn: () => {}, error: () => {} }
@@ -53,8 +53,8 @@ export const RTCPeerConnectionState = defineState({
         ignoreOffer: boolean
         peerConnection: RTCPeerConnection
         dataChannels: Record<DataChannelType, RTCDataChannel>
-        incomingMediaTracks: Record<string, { mediaTag: MediaTagType | null; stream: MediaStream | null }>
-        outgoingMediaTracks: Record<string, { mediaTag: MediaTagType | null; stream: MediaStream | null }>
+        incomingMediaTracks: Record<string, { mediaTag: MediaChannelType | null; stream: MediaStream | null }>
+        outgoingMediaTracks: Record<string, { mediaTag: MediaChannelType | null; stream: MediaStream | null }>
         ready: boolean
       }
     >
@@ -78,7 +78,7 @@ export type CandidateMessage = {
 export type StartTrackMessage = {
   type: 'start-track'
   id: string
-  mediaTag: MediaTagType
+  mediaTag: MediaChannelType
 }
 
 export type StopTrackMessage = {
@@ -334,7 +334,7 @@ const createMediaChannel = (
   networkID: NetworkID,
   peerID: PeerID,
   track: MediaStreamTrack,
-  mediaTag: MediaTagType
+  mediaTag: MediaChannelType
 ) => {
   const pc = getState(RTCPeerConnectionState)[networkID]?.[peerID]?.peerConnection
   if (!pc) {

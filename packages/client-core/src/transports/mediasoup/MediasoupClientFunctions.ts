@@ -68,10 +68,10 @@ import {
   addNetwork,
   createNetwork,
   removeNetwork,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
 } from '@ir-engine/network'
 
 import {
@@ -573,16 +573,16 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         let paused = false
 
         switch (appData.mediaTag) {
-          case webcamVideoDataChannelType:
+          case webcamVideoMediaChannelType:
             paused = !mediaStreamState.webcamEnabled.value
             break
-          case webcamAudioDataChannelType:
+          case webcamAudioMediaChannelType:
             paused = !mediaStreamState.microphoneEnabled.value
             break
-          case screenshareVideoDataChannelType:
+          case screenshareVideoMediaChannelType:
             paused = false
             break
-          case screenshareAudioDataChannelType:
+          case screenshareAudioMediaChannelType:
             paused = mediaStreamState.screenShareAudioPaused.value
             break
           default:

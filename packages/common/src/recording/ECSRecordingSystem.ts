@@ -70,8 +70,8 @@ import {
   NetworkTopics,
   removeDataChannelHandler,
   SerializationSchema,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType,
   WorldNetworkAction
 } from '@ir-engine/network'
 import {
@@ -183,8 +183,8 @@ export const RecordingState = defineState({
       Object.entries(peerSchema.peers).forEach(([peerID, value]) => {
         const peerSchema = [] as string[]
         if (value.Mocap) peerSchema.push(mocapDataChannelType)
-        if (value.Video) peerSchema.push(webcamVideoDataChannelType)
-        if (value.Audio) peerSchema.push(webcamAudioDataChannelType)
+        if (value.Video) peerSchema.push(webcamVideoMediaChannelType)
+        if (value.Audio) peerSchema.push(webcamAudioMediaChannelType)
         if (peerSchema.length) schema.peers[peerID] = peerSchema
       })
 
