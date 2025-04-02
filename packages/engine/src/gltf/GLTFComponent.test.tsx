@@ -34,7 +34,6 @@ import {
   destroyEngine,
   EntityContext,
   EntityTreeComponent,
-  getAncestorWithComponents,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -323,29 +322,19 @@ describe('GLTFComponent', () => {
     describe('when `@param entity` does not have a GLTFComponent ..', () => {
       it('.. should return `@param entity`.SourceComponent if it is truthy', () => {
         const Expected = 'SomeSourceID' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeTruthy()
-        // 2. Run the process
+
         const result = GLTFComponent.getInstanceID(testEntity)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
       it(".. should return '' if `@param entity`.SourceComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         const result = GLTFComponent.getInstanceID(testEntity)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
     })
@@ -353,36 +342,23 @@ describe('GLTFComponent', () => {
     describe('when `@param entity` has a GLTFComponent ..', () => {
       it(".. should return '' if `@param entity`.UUIDComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         const result = GLTFComponent.getInstanceID(testEntity)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
       it(".. should return '' if `@param entity`.GLTFComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent)
         getMutableComponent(testEntity, GLTFComponent).set(null as any)
         setComponent(testEntity, UUIDComponent, UUIDComponent.generateUUID())
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
-        expect(getComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         const result = GLTFComponent.getInstanceID(testEntity)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
@@ -390,19 +366,12 @@ describe('GLTFComponent', () => {
         const uuid = UUIDComponent.generateUUID()
         const src = 'SomeSourcePath'
         const Expected = `${uuid}-${src}` as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent, { src: src })
         setComponent(testEntity, UUIDComponent, uuid)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeTruthy()
-        // 2. Run the process
+
         const result = GLTFComponent.getInstanceID(testEntity)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
     })
@@ -423,39 +392,29 @@ describe('GLTFComponent', () => {
     describe('when `@param entity` does not have a GLTFComponent ..', () => {
       it('.. should return `@param entity`.SourceComponent if it is truthy', () => {
         const Expected = 'SomeSourceID' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeTruthy()
-        // 2. Run the process
+
         let result = '' as SourceID
         const Reactor = () => {
           result = GLTFComponent.useInstanceID(testEntity)
           return null
         }
         const root = startReactor(Reactor)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
       it(".. should return '' if `@param entity`.SourceComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         let result = '' as SourceID
         const Reactor = () => {
           result = GLTFComponent.useInstanceID(testEntity)
           return null
         }
         const root = startReactor(Reactor)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
     })
@@ -463,46 +422,33 @@ describe('GLTFComponent', () => {
     describe('when `@param entity` has a GLTFComponent ..', () => {
       it(".. should return '' if `@param entity`.UUIDComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         let result = '' as SourceID
         const Reactor = () => {
           result = GLTFComponent.useInstanceID(testEntity)
           return null
         }
         const root = startReactor(Reactor)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
       it(".. should return '' if `@param entity`.GLTFComponent is falsy", () => {
         const Expected = '' as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent)
         getMutableComponent(testEntity, GLTFComponent).set(null as any)
         setComponent(testEntity, UUIDComponent, UUIDComponent.generateUUID())
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
-        expect(getComponent(testEntity, GLTFComponent)).toBeFalsy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeFalsy()
-        // 2. Run the process
+
         let result = '' as SourceID
         const Reactor = () => {
           result = GLTFComponent.useInstanceID(testEntity)
           return null
         }
         const root = startReactor(Reactor)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
 
@@ -510,24 +456,17 @@ describe('GLTFComponent', () => {
         const uuid = UUIDComponent.generateUUID()
         const src = 'SomeSourcePath'
         const Expected = `${uuid}-${src}` as SourceID
-        // 3. Set input & dependencies data
+
         setComponent(testEntity, SourceComponent, Expected)
         setComponent(testEntity, GLTFComponent, { src: src })
         setComponent(testEntity, UUIDComponent, uuid)
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
-        expect(hasComponent(testEntity, SourceComponent)).toBeTruthy()
-        expect(getComponent(testEntity, SourceComponent)).toBeTruthy()
-        // 2. Run the process
+
         let result = '' as SourceID
         const Reactor = () => {
           result = GLTFComponent.useInstanceID(testEntity)
           return null
         }
         const root = startReactor(Reactor)
-        // 4. Check the result (output)
         expect(result).toBe(Expected)
       })
     })
@@ -559,7 +498,6 @@ describe('GLTFComponentReactor', () => {
 
   describe('on change [gltfComponent.cameraOcclusion]', () => {
     it('should call ObjectLayerMaskComponent.disableLayer if entityContext.GLTFComponent.cameraOcclusion is falsy', () => {
-      // 3. Set input & dependencies data
       setComponent(testEntity, GLTFComponent, { progress: 100, dependencies: { componentDependencies: {} } })
       const resultSpy = vi.spyOn(ObjectLayerMaskComponent, 'disableLayer')
       const Reactor = () => {
@@ -569,21 +507,12 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).cameraOcclusion).toBeFalsy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       startReactor(Reactor)
-      // 4. Check the result (output)
       expect(resultSpy).toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
 
     it('should call ObjectLayerMaskComponent.enableLayer if entityContext.GLTFComponent.cameraOcclusion is truthy', () => {
-      // 3. Set input & dependencies data
       setComponent(testEntity, GLTFComponent, {
         progress: 100,
         dependencies: { componentDependencies: {} },
@@ -597,22 +526,13 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).cameraOcclusion).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      expect(resultSpy).not.toHaveBeenCalled()
-      // 2. Run the process
+
       startReactor(Reactor)
-      // 4. Check the result (output)
       expect(resultSpy).toHaveBeenCalled()
-      // 5? Cleanup (dependencies)
     })
   }) //:: [gltfComponent.cameraOcclusion]
 
   it('should call useGLTFDocument with entityContext as arguments', () => {
-    // 3. Set input & dependencies data
     const resultSpy = vi.spyOn(GLTFComponentHooks, 'useGLTFDocument')
     const uuid = UUIDComponent.generateUUID()
     const src = TestScenePath
@@ -625,21 +545,16 @@ describe('GLTFComponentReactor', () => {
         React.createElement(GLTFComponentReactor, {})
       )
     }
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(resultSpy).not.toHaveBeenCalled()
-    // 2. Run the process
+
     startReactor(Reactor)
-    // 4. Check the result (output)
     expect(resultSpy).toHaveBeenCalledWith(testEntity)
-    // 5? Cleanup (dependencies)
   })
 
   describe('on change [gltfComponent.src]', () => {
     it('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to entityContext', () => {
       const Expected = testEntity
       const Initial = createEntity()
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       const sourceID = `${uuid}-${src}` as SourceID
@@ -653,27 +568,18 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      const before = getState(AssetState)[sourceID]
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = getState(AssetState)[sourceID]
-      // 4. Check the result (output)
       expect(result).not.toBe(Initial)
       expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
     })
 
     describe('on cleanup', () => {
       it('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to none', () => {
         const Expected = undefined
         const Initial = createEntity()
-        // 3. Set input & dependencies data
+
         const uuid = UUIDComponent.generateUUID()
         const src = TestScenePath
         const sourceID = `${uuid}-${src}` as SourceID
@@ -691,21 +597,12 @@ describe('GLTFComponentReactor', () => {
             React.createElement(GLTFComponentReactor, {})
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-        expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-        const before = getState(AssetState)[sourceID]
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
         const result = getState(AssetState)[sourceID]
-        // 4. Check the result (output)
         expect(result).not.toBe(Initial)
         expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
       })
     })
   }) //:: [gltfComponent.src]
@@ -720,7 +617,7 @@ describe('GLTFComponentReactor', () => {
     it('should remove the AnimationComponent of entityContext', () => {
       const Expected = false
       const Initial = !Expected
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       const json = { scenes: [{}] } as GLTF.IGLTF
@@ -739,26 +636,16 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      const before = hasComponent(testEntity, AnimationComponent)
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = hasComponent(testEntity, AnimationComponent)
-      // 4. Check the result (output)
       expect(result).not.toBe(Initial)
       expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
     })
 
     it('should not do anything (return early) if entityContext.GLTFComponent.document is falsy', () => {
       const Initial = true
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       const json = null as unknown as GLTF.IGLTF
@@ -777,19 +664,10 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      const before = hasComponent(testEntity, AnimationComponent)
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = hasComponent(testEntity, AnimationComponent)
-      // 4. Check the result (output)
       expect(result).toBe(Initial)
-      // 5? Cleanup (dependencies)
     })
 
     // dep: entityContext.GLTFComponent
@@ -822,12 +700,8 @@ describe('GLTFComponentReactor', () => {
         expect(resultSpy).not.toHaveBeenCalled()
         // 2. Run the process
         startReactor(Reactor)
-
         await vi.waitUntil(() => getComponent(testEntity, GLTFComponent).progress === 100, { timeout: 1_000 })
-
-        // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
-        // 5? Cleanup (dependencies)
       }
     )
 
@@ -843,7 +717,7 @@ describe('GLTFComponentReactor', () => {
       it('should set entityContext.GLTFComponent.progress to 0 if entityContext has a GLTFComponent', () => {
         const Expected = 0
         const Initial = 42
-        // 3. Set input & dependencies data
+
         const uuid = UUIDComponent.generateUUID()
         const src = TestScenePath
         setComponent(testEntity, UUIDComponent, uuid)
@@ -856,20 +730,13 @@ describe('GLTFComponentReactor', () => {
             React.createElement(GLTFComponentReactor, {})
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-        const before = getComponent(testEntity, GLTFComponent).progress
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
-        // 4. Check the result (output)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         const result = getComponent(testEntity, GLTFComponent).progress
         expect(result).not.toBe(Initial)
         expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
       })
     })
   }) //:: [gltfComponent.document]
@@ -880,7 +747,7 @@ describe('GLTFComponentReactor', () => {
     it('should set a SceneComponent to entityContext with {active:true}', () => {
       const Expected = true
       const Initial = !Expected
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       setComponent(testEntity, UUIDComponent, uuid)
@@ -893,28 +760,16 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).toBe(100)
-      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeTruthy()
-      expect(hasComponent(testEntity, SceneComponent)).toBeTruthy()
-      expect(getComponent(testEntity, SceneComponent).active).toBe(Initial)
-      const before = getComponent(testEntity, SceneComponent).active
-      expect(before).toBe(Initial)
-      expect(before).not.toBe(Expected)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = getComponent(testEntity, SceneComponent).active
-      // 4. Check the result (output)
       expect(result).not.toBe(Initial)
       expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
     })
 
     it('should not do anything (return early) if sceneLoaded is falsy', () => {
       const Initial = false
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       setComponent(testEntity, UUIDComponent, uuid)
@@ -927,26 +782,15 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
-      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeFalsy()
-      expect(hasComponent(testEntity, SceneComponent)).toBeTruthy()
-      expect(getComponent(testEntity, SceneComponent).active).toBe(Initial)
-      const before = getComponent(testEntity, SceneComponent).active
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = getComponent(testEntity, SceneComponent).active
-      // 4. Check the result (output)
       expect(result).toBe(Initial)
-      // 5? Cleanup (dependencies)
     })
 
     it('should not do anything (return early) if entityContext does not have an SceneComponent', () => {
       const Initial = false
-      // 3. Set input & dependencies data
+
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
       setComponent(testEntity, UUIDComponent, uuid)
@@ -958,27 +802,16 @@ describe('GLTFComponentReactor', () => {
           React.createElement(GLTFComponentReactor, {})
         )
       }
-      // 1. Sanity check (input & dependencies)
-      expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-      expect(getComponent(testEntity, GLTFComponent).progress).not.toBe(100)
-      expect(getComponent(testEntity, GLTFComponent).document).toBeFalsy()
-      expect(GLTFComponent.isSceneLoaded(testEntity)).toBeFalsy()
-      expect(hasComponent(testEntity, SceneComponent)).toBeFalsy()
-      const before = hasComponent(testEntity, SceneComponent)
-      expect(before).toBe(Initial)
-      // 2. Run the process
+
       startReactor(Reactor)
       const result = hasComponent(testEntity, SceneComponent)
-      // 4. Check the result (output)
       expect(result).toBe(Initial)
-      // 5? Cleanup (dependencies)
     })
   }) //:: [sceneLoaded, !!scene]
 
   describe('on cleanup', () => {
     describe('when entityContext.GLTFDocument.dependencies is truthy and componentDependenciesLoaded is falsy', () => {
       it('should call ResourceReactor with sourceID as props.documentID, entityContext as props.entity and documentLoaded as props.documentLoaded', () => {
-        // 3. Set input & dependencies data
         const src = TestScenePath
         const uuid = UUIDComponent.generateUUID()
         setComponent(testEntity, GLTFComponent, { src: src })
@@ -991,18 +824,13 @@ describe('GLTFComponentReactor', () => {
             React.createElement(GLTFComponentReactor, {})
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(resultSpy).not.toHaveBeenCalled()
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
-        // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
-        // 5? Cleanup (dependencies)
       })
 
       it('should call DependencyReactor with entityContext as key, entityContext as props.gltfComponentEntity and entityContext.GLTFDocument.dependencies as props.dependencies', () => {
-        // 3. Set input & dependencies data
         const uuid = UUIDComponent.generateUUID()
         const src = TestScenePath
         const TestComponent = defineComponent({ name: 'TestComponent' })
@@ -1017,17 +845,10 @@ describe('GLTFComponentReactor', () => {
             React.createElement(GLTFComponentReactor, {})
           )
         }
-        // 1. Sanity check (input & dependencies)
-        expect(getComponent(testEntity, GLTFComponent).dependencies).not.toBeUndefined()
-        expect(getComponent(testEntity, GLTFComponent).dependencies).toBeTruthy()
-        expect(GLTFComponentFunctions.componentDependenciesLoaded(dependencies)).toBeFalsy()
-        expect(resultSpy).not.toHaveBeenCalled()
-        // 2. Run the process
+
         const root = startReactor(Reactor)
         root.stop()
-        // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
-        // 5? Cleanup (dependencies)
       })
     })
   })
@@ -1039,25 +860,17 @@ describe('loadGLTFFile', () => {
 
 describe('parseBinaryData', () => {
   it('should throw an error if the first 4 bytes of `@param data` are not equal to BINARY_EXTENSION_HEADER_MAGIC', () => {
-    // 3. Set input & dependencies data
     const data = mockGLB({ magic: 'STAR' })
-    // 1. Sanity check (input & dependencies)
-    expect(data.slice(0, 4)).not.toBe(BINARY_EXTENSION_HEADER_MAGIC)
-    // 2. Run the process
     expect(() => {
       parseBinaryData(data)
     }).toThrowError()
   })
 
   it('should throw an error if the first 4 bytes of `@param data` are equal to BINARY_EXTENSION_HEADER_MAGIC and the uint32 at byte 4 is less than 2.0', () => {
-    // 3. Set input & dependencies data
     const data = mockGLB({ version: 1 })
     const view = new DataView(data.buffer)
-
-    // 1. Sanity check (input & dependencies)
     expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
     expect(view.getUint32(4, true)).toBeLessThan(2.0)
-    // 2. Run the process
     expect(() => {
       parseBinaryData(data)
     }).toThrowError()
@@ -1065,31 +878,21 @@ describe('parseBinaryData', () => {
 
   it('should decode and parse the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk data into the result.json object', () => {
     const Expected = { one: 42 }
-    // 3. Set input & dependencies data
     const data = mockGLB({ json: Expected })
-    const view = new DataView(data.buffer)
-    // 1. Sanity check (input & dependencies)
-    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
-    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
-    // 2. Run the process
+
     let result: any
     expect(() => {
       result = parseBinaryData(data.buffer)
     }).not.toThrowError()
-    // 4. Check the result (output)
     expect(result.json).toEqual(Expected)
   })
 
   it('should throw an error if the BINARY_EXTENSION_CHUNK_TYPES.JSON chunk was not found', () => {
     const Expected = { one: 42 }
-    // 3. Set input & dependencies data
     const data = mockGLB({ json: Expected })
     const view = new DataView(data.buffer)
     view.setUint32(BINARY_EXTENSION_HEADER_LENGTH + 4, 0x12_34_56_78) // Set the chunk type to an incorrect value, so it is skipped
-    // 1. Sanity check (input & dependencies)
-    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
-    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
-    // 2. Run the process
+
     let result: any
     expect(() => {
       result = parseBinaryData(data.buffer)
@@ -1098,26 +901,16 @@ describe('parseBinaryData', () => {
 
   it('should copy the entire BINARY_EXTENSION_CHUNK_TYPES.BIN chunk data into the result.body object', async () => {
     const Expected = [1, 2, 3, 4]
-
-    // 3. Set input & dependencies data
     const bin = new Uint8Array(Expected).buffer
-
     const args = { bin: bin }
     mockGLBOptionsSetMissingDefaults(args)
-
     const data = mockGLB(args)
-    const view = new DataView(data.buffer)
 
-    // 1. Sanity check (input & dependencies)
-    expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
-    expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
-    // 2. Run the process
     let parsed: { json: string; body: ArrayBuffer | null }
     expect(() => {
       parsed = parseBinaryData(data.buffer)
     }).not.toThrowError()
     const result = [...new Uint8Array(parsed!.body!)]
-    // 4. Check the result (output)
     expect(result).toEqual(Expected)
   })
 }) //:: parseBinaryData
@@ -1136,88 +929,61 @@ describe('useHasModelOrIndependentMesh', () => {
 
   it('should return true if `@param entity` has a GLTFComponent', () => {
     const Expected = true
-    // 3. Set input & dependencies data
     setComponent(testEntity, GLTFComponent)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    // 2. Run the process
+
     let result = !Expected
     const Reactor = () => {
       result = useHasModelOrIndependentMesh(testEntity)
       return null
     }
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return true if `@param entity` does not have a GLTFComponent, it has a MeshComponent and it does not have an ancestor with components [GLTFComponent, SceneComponent]', () => {
     const Expected = true
-    // 3. Set input & dependencies data
     setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-    expect(hasComponent(testEntity, MeshComponent)).toBeTruthy()
-    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeFalsy()
-    // 2. Run the process
+
     let result = !Expected
     const Reactor = () => {
       result = useHasModelOrIndependentMesh(testEntity)
       return null
     }
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return false if `@param entity` does not have a GLTFComponent, it has a MeshComponent and it has an ancestor with components [GLTFComponent, SceneComponent]', () => {
     const Expected = false
-    // 3. Set input & dependencies data
+
     const parentEntity = createEntity()
     setComponent(parentEntity, GLTFComponent)
     setComponent(parentEntity, SceneComponent)
     setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
     setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-    expect(hasComponent(testEntity, MeshComponent)).toBeTruthy()
-    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeTruthy()
-    // 2. Run the process
+
     let result = !Expected
     const Reactor = () => {
       result = useHasModelOrIndependentMesh(testEntity)
       return null
     }
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return false if `@param entity` does not have a GLTFComponent, a MeshComponent or an ancestor with components [GLTFComponent, SceneComponent]', () => {
     const Expected = false
-    // 3. Set input & dependencies data
+
     const parentEntity = createEntity()
-    // setComponent(parentEntity, GLTFComponent)
-    // setComponent(parentEntity, SceneComponent)
-    // setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
     setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeFalsy()
-    expect(hasComponent(testEntity, MeshComponent)).toBeFalsy()
-    expect(getAncestorWithComponents(testEntity, [GLTFComponent, SceneComponent])).toBeFalsy()
-    // 2. Run the process
+
     let result = !Expected
     const Reactor = () => {
       result = useHasModelOrIndependentMesh(testEntity)
       return null
     }
     const root = startReactor(Reactor)
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 }) //:: useHasModelOrIndependentMesh
 
@@ -1245,21 +1011,11 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).entity
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has `@param entity`.GLTFComponent.document in its .document field', () => {
@@ -1269,21 +1025,11 @@ describe('getGLTFOptions', () => {
       document: Expected,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).document
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has `@param entity`.instanceID in its .documentID field', () => {
@@ -1295,23 +1041,13 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, Expected)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).documentID
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has `@param entity`.GLTFComponent.src in its .url field', () => {
@@ -1324,23 +1060,13 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, sourceID)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).url
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has the result of calling LoaderUtils.extractUrlBase with `@param entity`.GLTFComponent.src as arguments in its .path field', () => {
@@ -1354,23 +1080,13 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, sourceID)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).path
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has `@param entity`.GLTFComponent.body in its .body field', () => {
@@ -1384,23 +1100,13 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: Expected
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, sourceID)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).body
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has an empty object in its .requestHeader field', () => {
@@ -1414,23 +1120,13 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, sourceID)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).requestHeader
-    // 4. Check the result (output)
     expect(result).toEqual(Expected)
-    // 5? Cleanup (dependencies)
   })
 
   it('should return an object that has AssetLoaderState.manager in its .manager field', () => {
@@ -1444,22 +1140,12 @@ describe('getGLTFOptions', () => {
       document: {} as GLTF.IGLTF,
       body: {} as ArrayBuffer
     }
-    // 3. Set input & dependencies data
+
     setComponent(testEntity, GLTFComponent, { src: gltf.src, document: gltf.document, body: gltf.body })
     setComponent(testEntity, SourceComponent, sourceID)
     setComponent(testEntity, UUIDComponent, uuid)
-    // 1. Sanity check (input & dependencies)
-    expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
-    expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).manager).toBeTruthy()
-    // 2. Run the process
+
     const result = getGLTFOptions(testEntity).manager
-    // 4. Check the result (output)
     expect(result).toBe(Expected)
-    // 5? Cleanup (dependencies)
   })
 }) //:: getGLTFOptions
