@@ -45,10 +45,10 @@ export type ButtonState = {
   /** current value of button (useful for triggers)*/
   value: number
 
-  /** true for every frame this button is being dragged*/
+  /** true if the input source is being moved while this button is pressed */
   dragging: boolean
 
-  /** true for every frame this button is being rotated*/
+  /** true if the input source is being rotated while this button is pressed */
   rotating: boolean
 
   /** position of the input source when this button was down */

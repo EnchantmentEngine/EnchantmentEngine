@@ -30,8 +30,8 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 
-import { EngineState, Entity, UndefinedEntity } from '@ir-engine/ecs'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState, Entity } from '@ir-engine/ecs'
+import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { SnapMode } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -46,7 +46,6 @@ import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLa
 import { TransformGizmoTagComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { MathUtils, Raycaster, Vector3 } from 'three'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
-import { TransformGizmoControlledComponent } from '../classes/gizmo/transform/TransformGizmoControlledComponent'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { SelectionState } from '../services/SelectionServices'
 
@@ -104,29 +103,31 @@ export function editorInputHeuristic(
   }
 }
 
-const useGizmoControl = (entities: Entity[]) => {
-  TransformGizmoControlComponent.useControlEntities(entities)
-
-  const controlledEntity = entities[0]
-
-  const gizmoControlledComponent = useOptionalComponent(controlledEntity, TransformGizmoControlledComponent)
-  const gizmoControlComponent = useOptionalComponent(
-    gizmoControlledComponent ? gizmoControlledComponent.controller.value : UndefinedEntity,
-    TransformGizmoControlComponent
-  )
+const useTransformGizmoControl = (entities: Entity[]) => {
+  const gizmoEntity = TransformGizmoControlComponent.useControlEntities(entities)
+  const gizmoControlComponent = useOptionalComponent(gizmoEntity, TransformGizmoControlComponent)
   const editorHelperState = useMutableState(EditorHelperState)
 
-  useEffect(() => {
+  useImmediateEffect(() => {
+    editorHelperState.transformGizmoEntity.set(gizmoEntity)
+  }, [gizmoEntity])
+
+  useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const mode = editorHelperState.transformMode.value
     gizmoControlComponent.mode.set(mode)
-  }, [!!gizmoControlComponent, editorHelperState.transformMode])
+  }, [gizmoEntity, editorHelperState.transformMode])
 
-  useEffect(() => {
+  useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const space = editorHelperState.transformSpace.value
     gizmoControlComponent.space.set(space)
-  }, [!!gizmoControlComponent, editorHelperState.transformSpace])
+  }, [gizmoEntity, editorHelperState.transformSpace])
+
+  useImmediateEffect(() => {
+    if (!gizmoControlComponent) return
+    gizmoControlComponent.transformPivot.set(editorHelperState.transformPivot.value)
+  }, [gizmoEntity, editorHelperState.transformPivot])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
@@ -142,33 +143,28 @@ const useGizmoControl = (entities: Entity[]) => {
         gizmoControlComponent.scaleSnap.set(editorHelperState.scaleSnap.value)
         break
     }
-  }, [!!gizmoControlComponent, editorHelperState.gridSnap])
+  }, [gizmoEntity, editorHelperState.gridSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
     gizmoControlComponent.translationSnap.set(
       editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.translationSnap.value : 0
     )
-  }, [!!gizmoControlComponent, editorHelperState.translationSnap])
+  }, [gizmoEntity, editorHelperState.translationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
     gizmoControlComponent.rotationSnap.set(
       editorHelperState.gridSnap.value === SnapMode.Grid ? MathUtils.degToRad(editorHelperState.rotationSnap.value) : 0
     )
-  }, [!!gizmoControlComponent, editorHelperState.rotationSnap])
+  }, [gizmoEntity, editorHelperState.rotationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
     gizmoControlComponent.scaleSnap.set(
       editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
     )
-  }, [!!gizmoControlComponent, editorHelperState.scaleSnap])
-
-  useEffect(() => {
-    if (!gizmoControlComponent) return
-    gizmoControlComponent.transformPivot.set(editorHelperState.transformPivot.value)
-  }, [!!gizmoControlComponent, editorHelperState.transformPivot])
+  }, [gizmoEntity, editorHelperState.scaleSnap])
 }
 
 const reactor = () => {
@@ -178,7 +174,7 @@ const reactor = () => {
 
   const selectedEntities = SelectionState.useSelectedEntities()
 
-  useGizmoControl(selectedEntities)
+  useTransformGizmoControl(selectedEntities)
 
   return null
 }

@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 import {
   SnapMode,
@@ -48,7 +49,8 @@ export const EditorHelperState = defineState({
     transformMode: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
     transformPivot: TransformPivot.FirstSelected as TransformPivotType,
-    gridSnap: SnapMode.Grid as SnapModeType,
+    transformGizmoEntity: UndefinedEntity as Entity,
+    gridSnap: SnapMode.Disabled as SnapModeType,
     translationSnap: 0.5,
     rotationSnap: 10,
     scaleSnap: 0.1,

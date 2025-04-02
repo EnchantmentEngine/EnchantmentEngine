@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Box3, Matrix3, Sphere, Spherical, Vector3 } from 'three'
+import { Matrix3, Spherical, Vector3 } from 'three'
 
 import {
   defineSystem,
@@ -48,10 +48,8 @@ const ZOOM_SPEED = 0.1
 const PAN_SPEED = 1
 const ORBIT_SPEED = 5
 
-const box = new Box3()
 const delta = new Vector3()
 const normalMatrix = new Matrix3()
-const sphere = new Sphere()
 const spherical = new Spherical()
 
 // const throttleZoom = throttle(doZoom, 30, { leading: true, trailing: false })
@@ -60,20 +58,16 @@ const orbitCameraQueryTerms = [RendererComponent, CameraOrbitComponent, InputCom
 const execute = () => {
   if (!isClient) return
 
-  // TODO: handle multi-touch pinch/zoom
-
-  /**
-   * assign active orbit camera based on which input source registers input
-   */
   for (const cameraEid of query(orbitCameraQueryTerms)) {
     const cameraOrbit = getMutableComponent(cameraEid, CameraOrbitComponent)
-    if (cameraOrbit.disabled.value) continue
 
     const buttons = InputComponent.getButtons(cameraEid)
     const axes = InputComponent.getAxes(cameraEid)
 
     const orbiting = buttons.PrimaryClick
     const panning = buttons.AuxiliaryClick
+
+    // TODO: handle multi-touch pinch/zoom
     const zoom = axes[MouseScroll.VerticalScroll]
 
     if (orbiting?.dragging || panning?.dragging || zoom) {
@@ -107,7 +101,7 @@ const execute = () => {
       }
     }
 
-    if (orbiting?.dragging) {
+    if (orbiting?.dragging && !orbiting.up) {
       const inputPointer = getOptionalComponent(orbiting.inputSourceEntity, InputPointerComponent)
       const movement = inputPointer?.movement
       if (movement) {

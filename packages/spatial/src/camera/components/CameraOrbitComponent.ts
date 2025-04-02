@@ -23,15 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, Easing, getComponent, S, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { useImmediateEffect } from '@ir-engine/hyperflux'
-import { Vector3 } from 'three'
-import { TransformPivot } from '../../common/constants/TransformConstants'
-import { useTransformPivot } from '../../common/functions/useTransformPivot'
+import { defineComponent, Easing, Entity, getMutableComponent, S } from '@ir-engine/ecs'
+import { Box3, Vector3 } from 'three'
 import { T } from '../../schema/schemaFunctions'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 
 const delta = new Vector3()
+const focusSize = new Vector3()
 
 const MAX_ZOOM_DISTANCE = 1000
 
@@ -41,35 +39,24 @@ export const CameraOrbitComponent = defineComponent({
   jsonID: 'IR_camera_orbit',
 
   schema: S.Object({
-    focusedEntities: S.Array(S.Entity()),
-    transformPivot: S.LiteralUnion(Object.values(TransformPivot), TransformPivot.FirstSelected),
     minimumZoom: S.Number(0.5),
-    cameraOrbitCenter: T.Vec3(),
-    disabled: S.Bool(false)
+    cameraOrbitCenter: T.Vec3()
   }),
 
-  reactor: () => {
-    const entity = useEntityContext()
-    const cameraOrbit = useComponent(entity, CameraOrbitComponent)
-    const pivot = useTransformPivot(cameraOrbit.focusedEntities.value, cameraOrbit.transformPivot.value)
-
-    useImmediateEffect(() => {
-      if (!pivot.position) return
-      const zoom = Math.max(cameraOrbit.minimumZoom.value * 10, pivot.bounds.getSize(new Vector3()).length())
-      const transform = getComponent(entity, TransformComponent)
-      // cameraOrbit.cameraOrbitCenter.value.copy(pivot.position)
-      delta.set(0, 0, 1).applyQuaternion(transform.rotation).multiplyScalar(Math.min(zoom, MAX_ZOOM_DISTANCE))
-      // transform.position.copy(pivot.position).add(delta)
-      CameraOrbitComponent.setTransition(entity, 'cameraOrbitCenter', pivot.position, {
-        duration: 600,
-        easing: Easing.sine.inOut
-      })
-      TransformComponent.setTransition(entity, 'position', pivot.position.clone().add(delta), {
-        duration: 600,
-        easing: Easing.sine.inOut
-      })
-    }, [pivot])
-
-    return null
+  setFocus: (cameraEntity: Entity, center: Vector3, bounds?: Box3) => {
+    const cameraOrbit = getMutableComponent(cameraEntity, CameraOrbitComponent)
+    const zoom = Math.max(cameraOrbit.minimumZoom.value * 10, bounds?.getSize(focusSize).length() ?? 0)
+    const transform = getMutableComponent(cameraEntity, TransformComponent)
+    // cameraOrbit.cameraOrbitCenter.set(center.clone())
+    // transform.position.set(center.clone().add(delta))
+    delta.set(0, 0, 1).applyQuaternion(transform.rotation.value).multiplyScalar(Math.min(zoom, MAX_ZOOM_DISTANCE))
+    CameraOrbitComponent.setTransition(cameraEntity, 'cameraOrbitCenter', center, {
+      duration: 600,
+      easing: Easing.sine.inOut
+    })
+    TransformComponent.setTransition(cameraEntity, 'position', center.clone().add(delta), {
+      duration: 600,
+      easing: Easing.sine.inOut
+    })
   }
 })

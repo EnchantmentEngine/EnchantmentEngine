@@ -39,7 +39,6 @@ import {
   getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   removeComponent,
   setComponent
@@ -76,6 +75,9 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { InputButtonBindings } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { KeyboardButton, MouseButton } from '@ir-engine/spatial/src/input/state/ButtonState'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem.tsx'
+import { computeWorldBounds } from '@ir-engine/spatial/src/transform/functions/BoundingBoxFunctions.ts'
+import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent.ts'
 import { isEntityGlb } from '../functions/utils.ts'
 import { EditorHistoryActions, EditorHistoryFunctions, EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
@@ -216,11 +218,17 @@ const onFlyControlModeEnd = () => {
   })
 }
 
-export const onFocusCamera = () => {
-  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-  const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
-  cameraOrbit?.focusedEntities.set(SelectionState.getSelectedEntities())
-  cameraOrbit?.transformPivot.set(getMutableState(EditorHelperState).transformPivot.value)
+const onFocusCamera = (cameraEntity: Entity) => {
+  if (!hasComponent(cameraEntity, CameraOrbitComponent)) return
+  const gizmoEntity = getState(EditorHelperState).transformGizmoEntity
+  const gizmo = getOptionalComponent(gizmoEntity, TransformGizmoControlComponent)
+  if (gizmo) {
+    CameraOrbitComponent.setFocus(cameraEntity, gizmo.pivotStartPosition, gizmo.pivotBounds)
+  } else {
+    const renderer = getComponent(cameraEntity, RendererComponent)
+    const bounds = computeWorldBounds(renderer.scenes)
+    CameraOrbitComponent.setFocus(cameraEntity, bounds.getCenter(new Vector3()), bounds)
+  }
 }
 
 function copy(event) {
@@ -304,16 +312,17 @@ let clickStartEntity = UndefinedEntity
 let hierarchyFeatureFlagEnabled = false
 
 const execute = () => {
+  const avatarEntity = AvatarComponent.getSelfAvatarEntity()
+  if (avatarEntity) return
+
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const buttons = InputComponent.getButtons(viewerEntity, EditorButtonBindings)
 
   if (buttons.FlyControlMode?.down) onFlyControlModeBegin()
   if (buttons.FlyControlMode?.up) onFlyControlModeEnd()
+  if (buttons.FocusCamera?.down) onFocusCamera(viewerEntity)
 
   if (hasComponent(viewerEntity, FlyControlComponent)) return
-
-  const entity = AvatarComponent.getSelfAvatarEntity()
-  if (entity) return
 
   if (buttons.Undo?.down) onUndo()
   if (buttons.Redo?.down) onRedo()
@@ -329,7 +338,6 @@ const execute = () => {
   if (buttons.DecreaseGridHeight?.down) onDecreaseGridHeight()
   if (buttons.CancelSelection?.down) onCancelSelection()
   if (buttons.DeleteSelection?.down) onDeleteSelection()
-  if (buttons.FocusCamera?.down) onFocusCamera()
 
   if (buttons.PrimaryClick?.pressed) {
     let closestIntersection = {
@@ -380,10 +388,11 @@ const execute = () => {
   }
 
   if (buttons.PrimaryClick?.up && !buttons.PrimaryClick?.dragging) {
+    const editorHelperState = getState(EditorHelperState)
     if (
       hasComponent(clickStartEntity, SourceComponent) &&
       !getState(ClickPlacementState).placementEntity &&
-      getMutableState(EditorHelperState).gizmoEnabled.value
+      editorHelperState.gizmoEnabled
     ) {
       const selectedEntities = SelectionState.getSelectedEntities()
       const clickParentEntity = getAncestorWithComponents(clickStartEntity, [GLTFComponent])
@@ -392,7 +401,7 @@ const execute = () => {
         (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) ||
         selectedEntities[0] === clickParentEntity
       ) {
-        onFocusCamera()
+        onFocusCamera(viewerEntity)
       }
 
       //only update selection if the selection actually changed (prevents unnecessarily creating new transform gizmos in edit mode)
@@ -500,8 +509,7 @@ const reactor = () => {
   /** On scene load ensure the camera isn't stuck at the origin */
   useEffect(() => {
     if (!sceneLoaded) return
-    const cameraOrbit = getOptionalMutableComponent(viewerEntity, CameraOrbitComponent)
-    cameraOrbit?.focusedEntities.set([rootEntity])
+    onFocusCamera(viewerEntity)
   }, [sceneLoaded])
 
   useEffect(() => {

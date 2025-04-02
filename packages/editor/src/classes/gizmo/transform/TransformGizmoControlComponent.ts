@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Box3, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
+import { DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
 import {
   createEntity,
@@ -36,22 +36,20 @@ import {
   hasComponent,
   removeEntity,
   setComponent,
-  useComponent,
+  UndefinedEntity,
   useEntityContext
 } from '@ir-engine/ecs'
-import { useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import {
   TransformAxis,
   TransformMode,
   TransformPivot,
   TransformSpace
 } from '@ir-engine/spatial/src/common/constants/TransformConstants'
-import { useTransformPivot } from '@ir-engine/spatial/src/common/functions/useTransformPivot'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
-import { Q_IDENTITY } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -67,7 +65,7 @@ import {
   onPointerHover,
   onPointerUp
 } from '../../../functions/transformGizmoHelper'
-import { TransformGizmoControlledComponent } from './TransformGizmoControlledComponent'
+import { EditorHelperState } from '../../../services/EditorHelperState'
 import { TransformGizmoVisualComponent } from './TransformGizmoVisualComponent'
 
 export const TransformGizmoControlComponent = defineComponent({
@@ -90,6 +88,7 @@ export const TransformGizmoControlComponent = defineComponent({
     showX: S.Bool(true),
     showY: S.Bool(true),
     showZ: S.Bool(true),
+    pivotBounds: T.Box3(),
     pivotStartPosition: T.Vec3(),
     pivotStartRotation: T.Quaternion(),
     pointerPlaneStartPosition: T.Vec3(),
@@ -102,6 +101,7 @@ export const TransformGizmoControlComponent = defineComponent({
   useControlEntities: (controlledEntities: Entity[]) => {
     const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
     const controlledEntity = controlledEntities[0]
+    const gizmoEntity = useHookstate(UndefinedEntity)
 
     useEffect(() => {
       if (!originEntity) return
@@ -149,6 +149,7 @@ export const TransformGizmoControlComponent = defineComponent({
       setComponent(pivotEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
       setComponent(pivotEntity, TransformGizmoTagComponent)
 
+      const editorHelperState = getState(EditorHelperState)
       const gizmoControlEntity = createEntity()
       setComponent(gizmoControlEntity, EntityTreeComponent, { parentEntity: originEntity })
       setComponent(gizmoControlEntity, NameComponent, 'gizmoControlEntity')
@@ -156,31 +157,34 @@ export const TransformGizmoControlComponent = defineComponent({
         controlledEntities: controlledEntities,
         visualEntity: gizmoVisualEntity,
         planeEntity: gizmoPlaneEntity,
-        pivotEntity: pivotEntity
+        pivotEntity: pivotEntity,
+        mode: editorHelperState.transformMode,
+        space: editorHelperState.transformSpace,
+        transformPivot: editorHelperState.transformPivot
       })
       setComponent(gizmoControlEntity, TransformGizmoTagComponent)
       setComponent(gizmoControlEntity, VisibleComponent)
       setComponent(gizmoControlEntity, TransformComponent)
 
-      setComponent(controlledEntity, TransformGizmoControlledComponent, { controller: gizmoControlEntity })
+      gizmoEntity.set(gizmoControlEntity)
 
       return () => {
         removeEntity(gizmoControlEntity)
         removeEntity(gizmoVisualEntity)
         removeEntity(gizmoPlaneEntity)
         removeEntity(pivotEntity)
+        gizmoEntity.set(UndefinedEntity)
       }
-    }, [originEntity, controlledEntity, JSON.stringify(controlledEntities)])
+    }, [originEntity, JSON.stringify(controlledEntities)])
+
+    return gizmoEntity.value
   },
 
   reactor: () => {
     const gizmoControlEntity = useEntityContext()
-    const gizmoControlComponent = useComponent(gizmoControlEntity, TransformGizmoControlComponent)
 
     InputComponent.useExecuteWithInput(
       () => {
-        gizmoUpdate(gizmoControlEntity)
-
         const gizmoControlComponent = getComponent(gizmoControlEntity, TransformGizmoControlComponent)
         const visualComponent = getComponent(gizmoControlComponent.visualEntity, TransformGizmoVisualComponent)
         const pickerEntity = visualComponent.picker
@@ -207,30 +211,13 @@ export const TransformGizmoControlComponent = defineComponent({
             onPointerUp(gizmoControlEntity, pointerEntity)
           }
         }
+
+        gizmoUpdate(gizmoControlEntity)
       },
       true,
       InputExecutionOrder.Before
     )
 
-    const controlledEntities = gizmoControlComponent.controlledEntities.value as Entity[]
-
-    const pivot = useTransformPivot(controlledEntities, gizmoControlComponent.transformPivot.value)
-
-    useImmediateEffect(() => {
-      if (!pivot.position) return
-      const space = gizmoControlComponent.space.value
-      const rotation = Q_IDENTITY.clone()
-      if (space === TransformSpace.local) TransformComponent.getWorldRotation(controlledEntities[0], rotation)
-      setComponent(gizmoControlComponent.pivotEntity.value, TransformComponent, {
-        position: pivot.position,
-        rotation: rotation
-      })
-      gizmoControlComponent.pivotStartPosition.set(pivot.position)
-      gizmoControlComponent.pivotStartRotation.set(rotation)
-    }, [pivot, gizmoControlComponent.space.value])
-
     return null
   }
 })
-
-const box = new Box3()
