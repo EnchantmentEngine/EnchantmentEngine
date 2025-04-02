@@ -34,8 +34,8 @@ import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PeerID, UserID, applyIncomingActions, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { roundNumberToPlaces } from '../../tests/MathTestUtils'
-import { createMockNetwork } from '../../tests/createMockNetwork'
+import { roundNumberToPlaces } from '@ir-engine/network/tests/MathTestUtils'
+import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 import {
   NetworkId,
   NetworkObjectAuthorityTag,
@@ -53,7 +53,7 @@ import {
   readMetadata,
   readVector3,
   readVector4
-} from './DataReader'
+} from '@ir-engine/network/src/serialization/DataReader'
 import {
   createDataWriter,
   writeCompressedVector3,
@@ -61,7 +61,7 @@ import {
   writeEntity,
   writeVector3,
   writeVector4
-} from './DataWriter'
+} from '@ir-engine/network/src/serialization/DataWriter'
 import { Vector3SoA } from './Utils'
 import {
   ViewCursor,

@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { dispatchAction, getState, HyperFlux, NetworkID, PeerID, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { decode, encode } from 'msgpackr'
 import React, { useEffect } from 'react'
-import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from '../constants/VideoConstants'
+import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from './VideoConstants'
 import { DataChannelRegistryState, DataChannelType } from '../DataChannelRegistry'
 import {
   createPeerMediaChannels,
@@ -36,8 +36,8 @@ import {
   screenshareVideoMediaChannelType,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '../media/MediaChannelState'
-import { MediaStreamState } from '../media/MediaStreamState'
+} from './MediaChannelState'
+import { MediaStreamState } from './MediaStreamState'
 import { NetworkActions } from '../NetworkPeerState'
 import { Network, NetworkState, NetworkTopics } from '../NetworkState'
 import { RTCPeerConnectionState, SendMessageType, WebRTCTransportFunctions } from './WebRTCTransportFunctions'

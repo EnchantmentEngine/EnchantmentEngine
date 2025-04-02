@@ -26,5 +26,5 @@
     "declaration": false,
     "types": ["@types/node"]
   },
-  "include": ["../../__global.d.ts", "./src", "./index.ts"]
+  "include": ["../../__global.d.ts", "./src", "./index.ts", "../ecs/src/network/RingBuffer.ts", "../ecs/src/network/WorldNetworkAction.ts", "../ecs/src/network/DataReader.test.ts", "../ecs/src/network/DataReader.ts", "../ecs/src/network/DataWriter.test.ts", "../ecs/src/network/DataWriter.ts", "../ecs/src/network/ECSSerializerSystem.ts", "../ecs/src/network/NetworkSerializationState.ts", "../ecs/src/network/Utils.ts", "../ecs/src/network/ViewCursor.test.ts", "../ecs/src/network/ViewCursor.ts", "../ecs/src/network/IncomingActionSystem.test.ts", "../ecs/src/network/IncomingActionSystem.ts", "../ecs/src/network/IncomingNetworkSystem.ts", "../ecs/src/network/OutgoingActionSystem.ts", "../ecs/src/network/OutgoingNetworkSystem.ts", "../ecs/src/network/EntityNetworkState.test.tsx", "../ecs/src/network/EntityNetworkState.tsx", "../ecs/src/network/NetworkObjectComponent.test.tsx", "../ecs/src/network/NetworkObjectComponent.ts"]
 }

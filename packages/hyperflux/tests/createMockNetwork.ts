@@ -23,10 +23,18 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { applyIncomingActions, dispatchAction, getMutableState, NetworkID, PeerID, UserID } from '@ir-engine/hyperflux'
-
-import { NetworkActions } from '../src/NetworkPeerState'
-import { joinNetwork, NetworkState, NetworkTopics } from '../src/NetworkState'
+import {
+  applyIncomingActions,
+  dispatchAction,
+  getMutableState,
+  joinNetwork,
+  NetworkActions,
+  NetworkID,
+  NetworkState,
+  NetworkTopics,
+  PeerID,
+  UserID
+} from '@ir-engine/hyperflux'
 
 const instanceID = 'instanceID' as NetworkID
 

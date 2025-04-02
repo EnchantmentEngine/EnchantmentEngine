@@ -23,8 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState, getMutableState, getState, HyperFlux, useMutableState } from '@ir-engine/hyperflux'
-import { VideoConstants } from '@ir-engine/network'
+import {
+  defineState,
+  getMutableState,
+  getState,
+  HyperFlux,
+  useMutableState,
+  VIDEO_CONSTRAINTS
+} from '@ir-engine/hyperflux'
 
 import { useEffect } from 'react'
 import {
@@ -40,7 +46,7 @@ import {
 export const MediaStreamState = defineState({
   name: 'MediaStreamState',
   initial: {
-    maxResolution: 'hd' as keyof typeof VideoConstants.VIDEO_CONSTRAINTS,
+    maxResolution: 'hd' as keyof typeof VIDEO_CONSTRAINTS,
     availableVideoDevices: [] as MediaDeviceInfo[],
     availableAudioDevices: [] as MediaDeviceInfo[],
     /** Whether the video is enabled or not. */
@@ -135,7 +141,7 @@ export const MediaStreamState = defineState({
       if (!state.webcamEnabled.value) return
 
       const constraints = {
-        video: VideoConstants.VIDEO_CONSTRAINTS[state.maxResolution.value] || VideoConstants.VIDEO_CONSTRAINTS.hd
+        video: VIDEO_CONSTRAINTS[state.maxResolution.value] || VIDEO_CONSTRAINTS.hd
       }
 
       console.log('Getting video stream', constraints)

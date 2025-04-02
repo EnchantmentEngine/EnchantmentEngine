@@ -30,7 +30,7 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
 import { ActionRecipients, applyIncomingActions, defineAction, getMutableState, getState } from '@ir-engine/hyperflux'
 
-import { createMockNetwork } from '../../tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 import { NetworkTopics } from '../Network'
 
 const TestAction = defineAction({ type: 'test' })

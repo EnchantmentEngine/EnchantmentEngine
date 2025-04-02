@@ -32,10 +32,10 @@ import {
   getMutableState,
   matches,
   matchesPeerID,
+  matchesUserID,
   none
 } from '@ir-engine/hyperflux'
 import { NetworkPeer } from './NetworkState'
-import { matchesUserID } from './functions/matchesUserID'
 
 export class NetworkActions {
   static peerJoined = defineAction({

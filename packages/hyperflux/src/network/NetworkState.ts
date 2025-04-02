@@ -36,10 +36,9 @@ import {
   none
 } from '@ir-engine/hyperflux'
 
-import { DataChannelRegistryState, DataChannelType } from './DataChannelRegistry'
-import { NetworkActionFunctions } from './functions/NetworkActionFunctions'
+import { DataChannelRegistryState, DataChannelType } from '../media/DataChannelRegistry'
+import { NetworkActionFunctions } from './NetworkActionFunctions'
 import { NetworkPeerState } from './NetworkPeerState'
-import { SerializationSchema } from './serialization/Utils'
 
 export type PeerTransport = {
   message?: (data: any) => void
@@ -60,8 +59,6 @@ export const NetworkState = defineState({
       media: null as NetworkID | null,
       world: null as NetworkID | null
     },
-    // todo - move to Network.schemas
-    networkSchema: {} as { [key: string]: SerializationSchema },
     networks: {} as { [key: NetworkID]: Network },
     config: {
       /** Allow connections to a world instance server */
@@ -75,13 +72,6 @@ export const NetworkState = defineState({
       /** Use room IDs in url */
       roomID: false
     }
-  },
-
-  /** must be explicitly ordered as objects return keys in assignment order */
-  get orderedNetworkSchema() {
-    return Object.keys(getState(NetworkState).networkSchema)
-      .sort()
-      .map((key) => getState(NetworkState).networkSchema[key])
   },
 
   get worldNetwork() {

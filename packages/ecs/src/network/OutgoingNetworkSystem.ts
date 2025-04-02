@@ -31,8 +31,8 @@ import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { Network } from '../NetworkState'
 import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '../NetworkObjectComponent'
 import { NetworkState } from '../NetworkState'
-import { createDataWriter } from '@ir-engine/ecs/src/network/DataWriter'
-import { ecsDataChannelType } from '@ir-engine/ecs/src/network/IncomingNetworkSystem'
+import { createDataWriter } from '../serialization/DataWriter'
+import { ecsDataChannelType } from './IncomingNetworkSystem'
 
 /***********
  * QUERIES *

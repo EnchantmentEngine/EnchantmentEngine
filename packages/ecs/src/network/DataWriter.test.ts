@@ -31,25 +31,12 @@ import { defineComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getMutableState, getState, PeerID, UserID } from '@ir-engine/hyperflux'
+import { getMutableState, getState, Network, NetworkState, NetworkTopics, PeerID, UserID } from '@ir-engine/hyperflux'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { createMockNetwork } from '../../tests/createMockNetwork'
-import { roundNumberToPlaces } from '../../tests/MathTestUtils'
-import { Network, NetworkTopics } from '../Network'
-import { NetworkId, NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
-import { NetworkState } from '../NetworkState'
+import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
+import { roundNumberToPlaces } from '@ir-engine/network/tests/MathTestUtils'
 import { checkBitflag, readCompressedRotation, readCompressedVector3, readVector3, readVector4 } from './DataReader'
-import {
-  createDataWriter,
-  writeComponent,
-  writeCompressedRotation,
-  writeCompressedVector3,
-  writeEntities,
-  writeEntity,
-  writeVector3,
-  writeVector4
-} from './DataWriter'
 import {
   createViewCursor,
   readFloat64,
@@ -60,6 +47,8 @@ import {
   spaceUint8,
   ViewCursor
 } from './ViewCursor'
+import { writeVector3, writeVector4, writeComponent, writeCompressedRotation, writeCompressedVector3, writeEntity, writeEntities, createDataWriter } from './DataWriter'
+import { NetworkObjectSendPeriodicUpdatesTag, NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
 
 const MockPoseComponent = defineComponent({
   name: 'MockPoseComponent_Writer',

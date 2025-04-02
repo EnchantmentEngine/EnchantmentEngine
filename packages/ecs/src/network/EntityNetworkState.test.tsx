@@ -32,12 +32,12 @@ import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { applyIncomingActions, dispatchAction, getMutableState, getState, PeerID, UserID } from '@ir-engine/hyperflux'
 
-import { createMockNetwork } from '../tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 
-import './EntityNetworkState'
+import '@ir-engine/network/src/EntityNetworkState'
 
 import { EngineState } from '@ir-engine/ecs'
-import { EntityNetworkState } from './EntityNetworkState'
+import { EntityNetworkState } from '@ir-engine/network/src/EntityNetworkState'
 import { WorldNetworkAction } from './functions/WorldNetworkAction'
 import { NetworkObjectComponent, NetworkObjectOwnedTag } from './NetworkObjectComponent'
 import { NetworkActions } from './NetworkPeerState'

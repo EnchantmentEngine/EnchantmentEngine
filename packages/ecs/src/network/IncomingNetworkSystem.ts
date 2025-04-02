@@ -31,9 +31,9 @@ import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { defineState, getState, PeerID } from '@ir-engine/hyperflux'
 
 import { addDataChannelHandler, DataChannelType, removeDataChannelHandler } from '../DataChannelRegistry'
-import { RingBuffer } from '@ir-engine/ecs/src/network/RingBuffer'
+import { RingBuffer } from '../functions/RingBuffer'
 import { Network, NetworkState } from '../NetworkState'
-import { JitterBufferEntry, readDataPacket } from '@ir-engine/ecs/src/network/DataReader'
+import { JitterBufferEntry, readDataPacket } from '../serialization/DataReader'
 
 const toArrayBuffer = (buf) => {
   const ab = new ArrayBuffer(buf.length)

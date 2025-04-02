@@ -47,7 +47,7 @@ import {
 } from '@ir-engine/hyperflux'
 
 import { EngineState } from '@ir-engine/ecs'
-import { WorldNetworkAction } from '@ir-engine/ecs/src/network/WorldNetworkAction'
+import { WorldNetworkAction } from './functions/WorldNetworkAction'
 import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
 import { NetworkPeerState } from './NetworkPeerState'
 import { NetworkState, SceneUser } from './NetworkState'
