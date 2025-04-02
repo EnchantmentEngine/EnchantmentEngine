@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { FileDataType } from '../../constants/AssetTypes'
 import ImageCompressionPanel from './ImageCompressionPanel'
 
 export default {
@@ -38,5 +39,17 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    selectedFiles: [
+      {
+        key: '1',
+        path: 'hello/world.glb',
+        name: 'helloworld.glb',
+        fullName: 'helloworld.glb',
+        url: 'hello/world.glb',
+        type: 'glb',
+        isFolder: false
+      } as FileDataType
+    ]
+  }
 }
