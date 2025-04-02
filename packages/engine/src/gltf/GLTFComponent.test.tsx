@@ -1072,7 +1072,7 @@ describe('parseBinaryData', () => {
     expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
     expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
     // 2. Run the process
-    var result: any
+    let result: any
     expect(() => {
       result = parseBinaryData(data.buffer)
     }).not.toThrowError()
@@ -1090,7 +1090,7 @@ describe('parseBinaryData', () => {
     expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
     expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
     // 2. Run the process
-    var result: any
+    let result: any
     expect(() => {
       result = parseBinaryData(data.buffer)
     }).toThrowError()
@@ -1112,7 +1112,7 @@ describe('parseBinaryData', () => {
     expect(new TextDecoder().decode(data.slice(0, 4))).toBe(BINARY_EXTENSION_HEADER_MAGIC)
     expect(view.getUint32(4, true)).not.toBeLessThan(2.0)
     // 2. Run the process
-    var parsed: { json: string; body: ArrayBuffer | null }
+    let parsed: { json: string; body: ArrayBuffer | null }
     expect(() => {
       parsed = parseBinaryData(data.buffer)
     }).not.toThrowError()

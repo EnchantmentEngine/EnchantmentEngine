@@ -42,7 +42,7 @@ export function mockGLBOptionsSetMissingDefaults(args: MockGLBOptions) {
   if (args.magic == undefined) args.magic = BINARY_EXTENSION_HEADER_MAGIC
   if (args.version == undefined) args.version = 2
   if (args.json == undefined) args.json = {}
-  if (args.bin == undefined) args.bin = new ArrayBuffer([])
+  if (args.bin == undefined) args.bin = new ArrayBuffer(0)
 }
 
 /** @description Returns the total length of the GLB file that the GLB header should describe for the file described by `@param args` */
