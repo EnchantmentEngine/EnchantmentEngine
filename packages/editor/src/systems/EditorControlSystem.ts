@@ -79,6 +79,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRenderer
 import { computeWorldBounds } from '@ir-engine/spatial/src/transform/functions/BoundingBoxFunctions.ts'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent.ts'
 import { isEntityGlb } from '../functions/utils.ts'
+import { SelectionBoxState } from '../panels/viewport/tools/SelectionBoxTool.tsx'
 import { EditorHistoryActions, EditorHistoryFunctions, EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -186,7 +187,7 @@ const onDeleteSelection = () => {
 
 let lastDistanceToCenter = 10
 
-const onFlyControlModeBegin = () => {
+const onCameraFlyControlModeBegin = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
   const cameraOrbit = getOptionalComponent(viewerEntity, CameraOrbitComponent)
@@ -204,7 +205,7 @@ const onFlyControlModeBegin = () => {
 }
 
 const directionToCenter = new Vector3()
-const onFlyControlModeEnd = () => {
+const onCameraOrbitControlBegin = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   removeComponent(viewerEntity, FlyControlComponent)
   setComponent(viewerEntity, CameraOrbitComponent)
@@ -318,8 +319,8 @@ const execute = () => {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   const buttons = InputComponent.getButtons(viewerEntity, EditorButtonBindings)
 
-  if (buttons.FlyControlMode?.down) onFlyControlModeBegin()
-  if (buttons.FlyControlMode?.up) onFlyControlModeEnd()
+  if (buttons.FlyControlMode?.down) onCameraFlyControlModeBegin()
+  if (buttons.FlyControlMode?.up) onCameraOrbitControlBegin()
   if (buttons.FocusCamera?.down) onFocusCamera(viewerEntity)
 
   if (hasComponent(viewerEntity, FlyControlComponent)) return
@@ -467,6 +468,8 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
 const reactor = () => {
   const editorHelperState = useMutableState(EditorHelperState)
   const rendererState = useMutableState(RendererState)
+  const selectionBoxState = useMutableState(SelectionBoxState)
+  const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
 
   //@todo remove hardcoded value once feature flag is added to MT
   const hideGlbChildrenFeatureFlag = [true] // useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.HideGlbChildren])
@@ -483,12 +486,24 @@ const reactor = () => {
   }, [])
 
   useEffect(() => {
+    if (!viewerEntity) return
+    if (selectionBoxState.selectionBoxEnabled.value) {
+      const cameraOrbit = getOptionalComponent(viewerEntity, CameraOrbitComponent)
+      if (cameraOrbit) {
+        const position = TransformComponent.getWorldPosition(viewerEntity, new Vector3())
+        lastDistanceToCenter = cameraOrbit.cameraOrbitCenter.distanceTo(position)
+        removeComponent(viewerEntity, CameraOrbitComponent)
+      }
+    } else {
+      onCameraOrbitControlBegin()
+    }
+  }, [viewerEntity, selectionBoxState.selectionBoxEnabled])
+
+  useEffect(() => {
     const infiniteGridHelperEntity = rendererState.infiniteGridHelperEntity.value
     if (!infiniteGridHelperEntity) return
     setComponent(infiniteGridHelperEntity, InfiniteGridComponent, { size: editorHelperState.translationSnap.value })
   }, [editorHelperState.translationSnap, rendererState.infiniteGridHelperEntity])
-
-  const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
 
   useEffect(() => {
     if (!viewerEntity) return
