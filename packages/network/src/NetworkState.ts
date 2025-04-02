@@ -30,17 +30,13 @@ import {
   PeerID,
   Topic,
   UserID,
-  defineAction,
   defineState,
   getMutableState,
   getState,
-  matches,
-  matchesPeerID,
   none
 } from '@ir-engine/hyperflux'
 
 import { DataChannelRegistryState, DataChannelType } from './DataChannelRegistry'
-import { matchesUserID } from './functions/matchesUserID'
 import { NetworkActionFunctions } from './functions/NetworkActionFunctions'
 import { NetworkPeerState } from './NetworkPeerState'
 import { SerializationSchema } from './serialization/Utils'

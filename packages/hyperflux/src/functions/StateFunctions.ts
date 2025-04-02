@@ -37,9 +37,6 @@ export * from '@hookstate/core'
 export { useHookstate as useState } from '@hookstate/core'
 export * from '@hookstate/identifiable'
 
-/** @deprecated */
-export const createState = hookstate
-
 export const NO_PROXY = { noproxy: true }
 export const NO_PROXY_STEALTH = { noproxy: true, stealth: true }
 

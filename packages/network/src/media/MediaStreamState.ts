@@ -167,11 +167,15 @@ export const MediaStreamState = defineState({
     useEffect(() => {
       if (!state.microphoneEnabled.value) return
 
-      console.log('Getting audio stream', VideoConstants.localAudioConstraints)
-
       const abortController = new AbortController()
       navigator.mediaDevices
-        .getUserMedia(VideoConstants.localAudioConstraints)
+        .getUserMedia({
+          audio: {
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        })
         .then((audioStream) => {
           if (abortController.signal.aborted) {
             audioStream.getAudioTracks().forEach((track) => track.stop())

@@ -30,14 +30,6 @@ export const VIDEO_CONSTRAINTS = {
   fhd: { width: { ideal: 1920 }, height: { ideal: 1080 } }
 }
 
-export const localAudioConstraints: MediaStreamConstraints = {
-  audio: {
-    autoGainControl: true,
-    echoCancellation: true,
-    noiseSuppression: true
-  }
-}
-
 export const CAM_AUDIO_CODEC_OPTIONS = {
   opusDtx: true,
   opusMaxAverageBitrate: 32000 // 32 kbps

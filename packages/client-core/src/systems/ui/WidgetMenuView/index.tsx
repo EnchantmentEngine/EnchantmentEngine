@@ -29,7 +29,7 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 // import { VrIcon } from '../../../common/components/Icons/VrIcon'
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
 import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
-import { createState, dispatchAction, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getMutableState, hookstate, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions, WidgetAppState } from '../../WidgetAppService'
@@ -48,7 +48,7 @@ export function createWidgetButtonsView() {
 }
 
 function createWidgetButtonsState() {
-  return createState({})
+  return hookstate({})
 }
 
 type WidgetButtonProps = {
