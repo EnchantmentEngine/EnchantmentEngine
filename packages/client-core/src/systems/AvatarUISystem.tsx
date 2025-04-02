@@ -44,7 +44,7 @@ import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsSta
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { applyVideoToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent, NetworkState } from '@ir-engine/network'
+import { NetworkObjectComponent, NetworkState, webcamVideoMediaChannelType } from '@ir-engine/network'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { easeOutElastic } from '@ir-engine/spatial/src/common/functions/MathFunctions'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
@@ -58,7 +58,7 @@ import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/sys
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import { MediaChannelState } from '@ir-engine/network'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -192,11 +192,11 @@ const execute = () => {
           return peer.userId === ownerId
         })
         if (peer) {
-          const peerMediaState = getState(PeerMediaChannelState)[peer.peerID].cam
-          const stream = peerMediaState.videoMediaStream
+          const peerMediaState = getState(MediaChannelState)[peer.peerID][webcamVideoMediaChannelType]
+          const stream = peerMediaState.stream
           if (!stream) continue
           const track = stream.getVideoTracks()[0]
-          const active = !peerMediaState.videoStreamPaused
+          const active = !peerMediaState.paused
           if (videoPreviewMesh.material.map) {
             if (!active) {
               videoPreviewMesh.material.map = null!

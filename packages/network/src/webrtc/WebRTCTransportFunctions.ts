@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState, getMutableState, getState, HyperFlux, NetworkID, none, PeerID } from '@ir-engine/hyperflux'
 import { DataChannelType } from '../DataChannelRegistry'
-import { MediaChannelType } from '../media/PeerMediaChannelState'
+import { MediaChannelType } from '../media/MediaChannelState'
 
 const loggingEnabled = false //isDev
 const logger = loggingEnabled ? console : { log: () => {}, warn: () => {}, error: () => {} }

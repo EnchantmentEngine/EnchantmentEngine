@@ -40,7 +40,6 @@ import { DataChannelType } from './DataChannelRegistry'
 import { Network } from './Network'
 import { matchesUserID } from './functions/matchesUserID'
 import { SerializationSchema } from './serialization/Utils'
-import { MediaChannelType } from './media/PeerMediaChannelState'
 
 export type PeerTransport = {
   message?: (data: any) => void
@@ -118,11 +117,6 @@ export const NetworkState = defineState({
     return getMutableState(NetworkState).networks[getState(NetworkState).hostIds.media!]!
   }
 })
-
-export const webcamVideoMediaChannelType = 'ir.core.webcamVideo.mediaChannel' as MediaChannelType
-export const webcamAudioMediaChannelType = 'ir.core.webcamAudio.mediaChannel' as MediaChannelType
-export const screenshareVideoMediaChannelType = 'ir.core.screenshareVideo.mediaChannel' as MediaChannelType
-export const screenshareAudioMediaChannelType = 'ir.core.screenshareAudio.mediaChannel' as MediaChannelType
 
 export const SceneUser = 'scene' as UserID
 export const ScenePeer = 'scene' as PeerID

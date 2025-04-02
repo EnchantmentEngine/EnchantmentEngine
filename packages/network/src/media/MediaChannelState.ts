@@ -27,53 +27,60 @@ import { defineState, getMutableState, none, OpaqueType, PeerID } from '@ir-engi
 
 export type MediaChannelType = OpaqueType<'MediaChannelType'> & string
 
-export interface PeerMediaStreamInterface {
-  videoMediaStream: MediaStream | null
-  audioMediaStream: MediaStream | null
-  videoQuality: 'smallest' | 'auto' | 'largest'
-  videoStreamPaused: boolean
-  audioStreamPaused: boolean
-  videoElement: HTMLVideoElement
-  audioElement: HTMLAudioElement
+export const webcamVideoMediaChannelType = 'ir.core.webcamVideo.mediaChannel' as MediaChannelType
+export const webcamAudioMediaChannelType = 'ir.core.webcamAudio.mediaChannel' as MediaChannelType
+export const screenshareVideoMediaChannelType = 'ir.core.screenshareVideo.mediaChannel' as MediaChannelType
+export const screenshareAudioMediaChannelType = 'ir.core.screenshareAudio.mediaChannel' as MediaChannelType
+
+export interface MediaStreamInterface {
+  stream: MediaStream | null
+  quality: 'smallest' | 'auto' | 'largest'
+  paused: boolean
+  element: HTMLMediaElement
 }
 
-export const PeerMediaChannelState = defineState({
-  name: 'PeerMediaChannelState',
+export const MediaChannelState = defineState({
+  name: 'MediaChannelState',
   initial: {} as {
     [peerID: PeerID]: {
-      cam: PeerMediaStreamInterface
-      screen: PeerMediaStreamInterface
+      [mediaTag: MediaChannelType]: MediaStreamInterface
     }
   }
 })
 
 export const createPeerMediaChannels = (peerID: PeerID) => {
   console.log('createPeerMediaChannels', peerID)
-  const state = getMutableState(PeerMediaChannelState)
+  const state = getMutableState(MediaChannelState)
   state[peerID].set({
-    cam: {
-      videoMediaStream: null,
-      audioMediaStream: null,
-      videoQuality: 'smallest',
-      videoStreamPaused: false,
-      audioStreamPaused: false,
-      videoElement: document.createElement('video'),
-      audioElement: document.createElement('audio')
+    [webcamAudioMediaChannelType]: {
+      stream: null,
+      quality: 'smallest',
+      paused: false,
+      element: document.createElement('audio')
     },
-    screen: {
-      videoMediaStream: null,
-      audioMediaStream: null,
-      videoQuality: 'auto',
-      videoStreamPaused: false,
-      audioStreamPaused: false,
-      videoElement: document.createElement('video'),
-      audioElement: document.createElement('audio')
+    [webcamVideoMediaChannelType]: {
+      stream: null,
+      quality: 'smallest',
+      paused: false,
+      element: document.createElement('video')
+    },
+    [screenshareAudioMediaChannelType]: {
+      stream: null,
+      quality: 'auto',
+      paused: false,
+      element: document.createElement('audio')
+    },
+    [screenshareVideoMediaChannelType]: {
+      stream: null,
+      quality: 'auto',
+      paused: false,
+      element: document.createElement('video')
     }
   })
 }
 
 export const removePeerMediaChannels = (peerID: PeerID) => {
   console.log('removePeerMediaChannels', peerID)
-  const state = getMutableState(PeerMediaChannelState)
+  const state = getMutableState(MediaChannelState)
   state[peerID].set(none)
 }

@@ -28,8 +28,8 @@ import { InstanceID, MessageType, messagePath } from '@ir-engine/common/src/sche
 import { useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
 import { State, UserID, dispatchAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import { NetworkState, webcamVideoMediaChannelType } from '@ir-engine/network'
+import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button } from '@ir-engine/ui'
 import {
@@ -209,10 +209,10 @@ function NewMessage() {
 
 function ReportUserButton({ userId }: { userId: UserID }) {
   const peerId = NetworkState.mediaNetwork.users[userId]?.[0]
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)
+  const peerMediaChannelState = useMutableState(MediaChannelState)
   if (!peerId) return null
 
-  const isCameraVisibile = peerMediaChannelState[peerId]?.['cam']?.value
+  const isCameraVisibile = peerMediaChannelState[peerId]?.[webcamVideoMediaChannelType]?.value
   if (!isCameraVisibile) return null
 
   return (

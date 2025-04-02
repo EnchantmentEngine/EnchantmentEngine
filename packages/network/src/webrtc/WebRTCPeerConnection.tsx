@@ -29,16 +29,17 @@ import React, { useEffect } from 'react'
 import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from '../constants/VideoConstants'
 import { DataChannelRegistryState, DataChannelType } from '../DataChannelRegistry'
 import { MediaStreamState } from '../media/MediaStreamState'
-import { createPeerMediaChannels, PeerMediaChannelState, removePeerMediaChannels } from '../media/PeerMediaChannelState'
-import { Network, NetworkTopics } from '../Network'
 import {
-  NetworkActions,
-  NetworkState,
+  createPeerMediaChannels,
+  MediaChannelState,
+  removePeerMediaChannels,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '../NetworkState'
+} from '../media/MediaChannelState'
+import { Network, NetworkTopics } from '../Network'
+import { NetworkActions, NetworkState } from '../NetworkState'
 import { RTCPeerConnectionState, SendMessageType, WebRTCTransportFunctions } from './WebRTCTransportFunctions'
 
 export const WebRTCPeerConnection = (props: {
@@ -351,37 +352,37 @@ export const MediaReceiveChannelReactor = (props: {
       ? 'screen'
       : 'cam'
     : null
-  const isAudio = type ? mediaTag === webcamAudioMediaChannelType || mediaTag === screenshareAudioMediaChannelType : false
-  const stream = type ? (mediaTrack?.stream as MediaStream) : null
+  const isAudio = mediaTag === webcamAudioMediaChannelType || mediaTag === screenshareAudioMediaChannelType
+  const stream = mediaTrack?.stream as MediaStream
 
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)[props.peerID]
-  const peerMediaStream = type ? peerMediaChannelState?.[type] : null
+  const peerMediaChannelState = useMutableState(MediaChannelState)[props.peerID]
+  const peerMediaStream = mediaTag ? peerMediaChannelState?.[mediaTag] : null
 
   useEffect(() => {
     if (!mediaTag || !stream || !peerMediaStream?.value) return
 
     if (isAudio) {
-      peerMediaStream.audioMediaStream.set(stream)
+      peerMediaStream.stream.set(stream)
       return () => {
-        if (type && !getState(PeerMediaChannelState)[props.peerID]?.[type]) return
-        peerMediaStream.audioMediaStream.set(null)
+        if (mediaTag && !getState(MediaChannelState)[props.peerID]?.[mediaTag]) return
+        peerMediaStream.stream.set(null)
       }
     } else {
-      peerMediaStream.videoMediaStream.set(stream)
+      peerMediaStream.stream.set(stream)
       return () => {
-        if (type && !getState(PeerMediaChannelState)[props.peerID]?.[type]) return
-        peerMediaStream.videoMediaStream.set(null)
+        if (mediaTag && !getState(MediaChannelState)[props.peerID]?.[mediaTag]) return
+        peerMediaStream.stream.set(null)
       }
     }
   }, [mediaTag, stream, !!peerMediaStream?.value])
 
   useEffect(() => {
-    if (!mediaTag || !stream || !peerMediaStream || !type) return
-    const paused = isAudio ? peerMediaStream.audioStreamPaused.value : peerMediaStream.videoStreamPaused.value
+    if (!mediaTag || !stream || !peerMediaStream) return
+    const paused = isAudio ? peerMediaStream.paused.value : peerMediaStream.paused.value
     WebRTCTransportFunctions.pauseMediaChannel(sendMessage, props.networkID, props.peerID, stream, paused)
-  }, [isAudio ? peerMediaStream?.audioStreamPaused?.value : peerMediaStream?.videoStreamPaused?.value])
+  }, [isAudio ? peerMediaStream?.paused?.value : peerMediaStream?.paused?.value])
 
-  const isPiP = props.isPiP || peerMediaStream?.value?.videoQuality === 'largest'
+  const isPiP = props.isPiP || peerMediaStream?.value?.quality === 'largest'
 
   useEffect(() => {
     if (!stream || isAudio) return

@@ -27,7 +27,15 @@ import { defineState, getMutableState, getState, HyperFlux, useMutableState } fr
 import { VideoConstants } from '@ir-engine/network'
 
 import { useEffect } from 'react'
-import { createPeerMediaChannels, PeerMediaChannelState, removePeerMediaChannels } from './PeerMediaChannelState'
+import {
+  createPeerMediaChannels,
+  MediaChannelState,
+  removePeerMediaChannels,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from './MediaChannelState'
 
 export const MediaStreamState = defineState({
   name: 'MediaStreamState',
@@ -87,23 +95,31 @@ export const MediaStreamState = defineState({
       }
     }, [])
 
-    const peerMediaChannelState = useMutableState(PeerMediaChannelState)[HyperFlux.store.peerID]
+    const peerMediaChannelState = useMutableState(MediaChannelState)[HyperFlux.store.peerID]
 
     useEffect(() => {
       const microphoneEnabled = state.microphoneEnabled.value
-      peerMediaChannelState.cam.audioMediaStream.set(microphoneEnabled ? state.microphoneMediaStream.value : null)
+      peerMediaChannelState[webcamAudioMediaChannelType].stream.set(
+        microphoneEnabled ? state.microphoneMediaStream.value : null
+      )
     }, [state.microphoneMediaStream.value, state.microphoneEnabled.value])
 
     useEffect(() => {
       const webcamEnabled = state.webcamEnabled.value
-      peerMediaChannelState.cam.videoMediaStream.set(webcamEnabled ? state.webcamMediaStream.value : null)
+      peerMediaChannelState[webcamVideoMediaChannelType].stream.set(
+        webcamEnabled ? state.webcamMediaStream.value : null
+      )
     }, [state.value.webcamMediaStream, state.webcamEnabled.value])
 
     useEffect(() => {
       const videoStreamPaused = state.screenshareEnabled.value
       const audioStreamPaused = videoStreamPaused && state.screenShareAudioPaused.value
-      peerMediaChannelState.screen.videoMediaStream.set(videoStreamPaused ? state.screenshareMediaStream.value : null)
-      peerMediaChannelState.screen.audioMediaStream.set(audioStreamPaused ? state.screenshareMediaStream.value : null)
+      peerMediaChannelState[screenshareVideoMediaChannelType].stream.set(
+        videoStreamPaused ? state.screenshareMediaStream.value : null
+      )
+      peerMediaChannelState[screenshareAudioMediaChannelType].stream.set(
+        audioStreamPaused ? state.screenshareMediaStream.value : null
+      )
     }, [state.screenshareMediaStream.value, state.screenshareEnabled.value, state.screenShareAudioPaused.value])
 
     useEffect(() => {

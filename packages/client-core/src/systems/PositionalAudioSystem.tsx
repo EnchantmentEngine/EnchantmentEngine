@@ -33,7 +33,12 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent, NetworkObjectOwnedTag, NetworkState } from '@ir-engine/network'
+import {
+  NetworkObjectComponent,
+  NetworkObjectOwnedTag,
+  NetworkState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/network'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
@@ -50,7 +55,7 @@ import {
   MediaElementComponent,
   createAudioNodeGroup
 } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 const _vec3 = new Vector3()
@@ -87,7 +92,7 @@ const execute = () => {
    */
   if (audioContext.state !== 'running') return
 
-  const peerMediaState = getState(PeerMediaChannelState)
+  const peerMediaState = getState(MediaChannelState)
 
   /**
    * Avatars
@@ -107,7 +112,7 @@ const execute = () => {
       continue
     }
 
-    const videoMediaStream = peerMediaState[peer.peerID].cam.videoMediaStream
+    const videoMediaStream = peerMediaState[peer.peerID][webcamVideoMediaChannelType].stream
     if (!videoMediaStream) {
       if (avatarAudioStreams.has(networkObject)) avatarAudioStreams.delete(networkObject)
       continue
