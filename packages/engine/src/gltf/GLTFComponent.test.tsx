@@ -50,11 +50,12 @@ import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/Scene
 import React from 'react'
 import { BoxGeometry, Mesh } from 'three'
 import { overrideFileLoaderLoad, overrideTextureLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
-import { BINARY_EXTENSION_HEADER_LENGTH, BINARY_EXTENSION_HEADER_MAGIC } from '../assets/loaders/gltf/GLTFExtensions'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import {
+  BINARY_EXTENSION_HEADER_LENGTH,
+  BINARY_EXTENSION_HEADER_MAGIC,
   getGLTFOptions,
   GLTFComponent,
   GLTFComponentFunctions,
@@ -713,9 +714,8 @@ describe('GLTFComponentReactor', () => {
     // dep: entityContext.GLTFComponent
     // dep: entityContext.GLTFComponent.src
     // dep: entityContext.GLTFComponent.document
-    // dep: AssetLoaderState.gltfLoader
     // dep: entityContext.GLTFComponent.body
-    // dep: AssetLoaderState.gltfLoader.manager
+    // dep: AssetLoaderState.manager
     // dep: entityContext.GLTFComponent.document.scene || 0
     it('should remove the AnimationComponent of entityContext', () => {
       const Expected = false
@@ -795,9 +795,8 @@ describe('GLTFComponentReactor', () => {
     // dep: entityContext.GLTFComponent
     // dep: entityContext.GLTFComponent.src
     // dep: entityContext.GLTFComponent.document
-    // dep: AssetLoaderState.gltfLoader
     // dep: entityContext.GLTFComponent.body
-    // dep: AssetLoaderState.gltfLoader.manager
+    // dep: AssetLoaderState.manager
     // dep: entityContext.GLTFComponent.document.scene || 0
 
     /** @todo Why does this fail ?? */
@@ -840,7 +839,38 @@ describe('GLTFComponentReactor', () => {
       )
       // @todo ?? testable ?? : should set aborted to true
       it.todo('should call (closure)unloadEntities', () => {})
-      it.todo('should set entityContext.GLTFComponent.progress to 0 if entityContext has a GLTFComponent', () => {})
+
+      it('should set entityContext.GLTFComponent.progress to 0 if entityContext has a GLTFComponent', () => {
+        const Expected = 0
+        const Initial = 42
+        // 3. Set input & dependencies data
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        setComponent(testEntity, UUIDComponent, uuid)
+        setComponent(testEntity, GLTFComponent, { src: src, progress: Initial })
+        setComponent(testEntity, AnimationComponent)
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(hasComponent(testEntity, GLTFComponent)).toBeTruthy()
+        const before = getComponent(testEntity, GLTFComponent).progress
+        expect(before).toBe(Initial)
+        expect(before).not.toBe(Expected)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        root.stop()
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        const result = getComponent(testEntity, GLTFComponent).progress
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
   }) //:: [gltfComponent.document]
 
@@ -1004,7 +1034,7 @@ describe('GLTFComponentReactor', () => {
 }) //:: GLTFComponentReactor
 
 describe('loadGLTFFile', () => {
-  /** @todo How to test this functionality ? */
+  /** @note Unit Tests for gltf loading are stored in separate files, and dictated by the spec requirements */
 }) //:: loadGLTFFile
 
 describe('parseBinaryData', () => {
@@ -1206,9 +1236,8 @@ describe('getGLTFOptions', () => {
   // dep: `@param entity`.GLTFComponent
   // dep: `@param entity`.GLTFComponent.src
   // dep: `@param entity`.GLTFComponent.document
-  // dep: AssetLoaderState.gltfLoader
   // dep: `@param entity`.GLTFComponent.body
-  // dep: AssetLoaderState.gltfLoader.manager
+  // dep: AssetLoaderState.manager
   it('should return an object that has `@param entity` in its .entity field', () => {
     const Expected = testEntity
     const gltf = {
@@ -1224,9 +1253,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).entity
     // 4. Check the result (output)
@@ -1249,9 +1277,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).document
     // 4. Check the result (output)
@@ -1278,9 +1305,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).documentID
     // 4. Check the result (output)
@@ -1308,9 +1334,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).url
     // 4. Check the result (output)
@@ -1339,9 +1364,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).path
     // 4. Check the result (output)
@@ -1370,9 +1394,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).body
     // 4. Check the result (output)
@@ -1401,9 +1424,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).requestHeader
     // 4. Check the result (output)
@@ -1411,12 +1433,12 @@ describe('getGLTFOptions', () => {
     // 5? Cleanup (dependencies)
   })
 
-  it('should return an object that has AssetLoaderState.gltfLoader.manager in its .manager field', () => {
+  it('should return an object that has AssetLoaderState.manager in its .manager field', () => {
     const uuid = UUIDComponent.generateUUID()
     const urlBase = 'http://some.domain.url/'
     const src = urlBase + 'SomeSourcePath'
     const sourceID = `${uuid}-${src}` as SourceID
-    const Expected = getState(AssetLoaderState).gltfLoader.manager
+    const Expected = getState(AssetLoaderState).manager
     const gltf = {
       src: src,
       document: {} as GLTF.IGLTF,
@@ -1432,9 +1454,8 @@ describe('getGLTFOptions', () => {
     expect(getComponent(testEntity, GLTFComponent).src).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).document).toBeTruthy()
     expect(getState(AssetLoaderState)).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader).toBeTruthy()
     expect(getComponent(testEntity, GLTFComponent).body).toBeTruthy()
-    expect(getState(AssetLoaderState).gltfLoader.manager).toBeTruthy()
+    expect(getState(AssetLoaderState).manager).toBeTruthy()
     // 2. Run the process
     const result = getGLTFOptions(testEntity).manager
     // 4. Check the result (output)

@@ -28,7 +28,7 @@ import {
   BINARY_EXTENSION_CHUNK_TYPES,
   BINARY_EXTENSION_HEADER_LENGTH,
   BINARY_EXTENSION_HEADER_MAGIC
-} from '../../src/assets/loaders/gltf/GLTFExtensions'
+} from '../../src/gltf/GLTFComponent'
 
 type MockGLBOptions = {
   magic?: string
