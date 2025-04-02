@@ -55,10 +55,7 @@ export const ChannelState = defineState({
     instanceChannelFetching: false,
     instanceChannelFetched: false,
     messageCreated: false
-  }),
-  onCreate: (store, state) => {
-    // syncStateWithLocalStorage(ChannelState, ['targetChannelId'])
-  }
+  })
 })
 
 export const ChannelService = {
