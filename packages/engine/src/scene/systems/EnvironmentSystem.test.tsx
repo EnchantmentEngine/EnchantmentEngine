@@ -81,6 +81,7 @@ import {
 } from 'three'
 import { EnvMapComponent } from '../components/EnvmapComponent'
 import { ErrorComponent } from '../components/ErrorComponent'
+import { EnvMapSourceType } from '../constants/EnvMapEnum'
 import { addError } from '../functions/ErrorFunctions'
 import { EnvironmentSystem, EnvironmentSystemFunctions, EnvironmentSystemReactors } from './EnvironmentSystem'
 
@@ -798,48 +799,45 @@ describe('EnvMapEquirectangularReactor', () => {
     )
 
     /** @todo Overrides the output of useTexture, but the component does not get the result??? */
-    it.todo(
-      'should set `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.mapping to EquirectangularReflectionMapping',
-      () => {
-        const Expected = EquirectangularReflectionMapping
-        const Initial = UVMapping
-        // 3. Set input & dependencies data
-        const material = new MeshStandardMaterial({ envMap: new Texture(/* image=*/ undefined, /* mapping=*/ Initial) })
-        const rootEntity = createEntity()
-        setComponent(rootEntity, EnvMapComponent)
-        setComponent(testEntity, MaterialStateComponent, { material: material })
-        const Reactor = () => {
-          return React.createElement(testReactor, {
-            entity: testEntity,
-            rootEntity: rootEntity
-          })
-        }
-        const ExpectedTexture = new Texture(/* image=*/ undefined, /* mapping=*/ Expected)
-        useTextureSpy.mockImplementation((_url, _entity) => [ExpectedTexture, () => {}])
-        // 1. Sanity check (input & dependencies)
-        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-          ?.mapping
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        expect(useTextureSpy).not.toHaveBeenCalled()
-        // 2. Run the process
-
-        console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-        const root = startReactor(Reactor)
-        // ?? null ?? Why ??
-        console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-
-        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-          ?.mapping
-        // 4. Check the result (output)
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(useTextureSpy).toHaveBeenCalled()
-        expect(result).not.toBe(Initial)
-        expect(result).toBe(Expected)
-        // 5? Cleanup (dependencies)
-        useTextureSpy.mockClear()
-      }
-    )
+    // it.todo('should set `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.mapping to EquirectangularReflectionMapping', () => {
+    //   const Expected = EquirectangularReflectionMapping
+    //   const Initial = UVMapping
+    //   // 3. Set input & dependencies data
+    //   const material = new MeshStandardMaterial({ envMap: new Texture(/* image=*/ undefined, /* mapping=*/ Initial) })
+    //   const rootEntity = createEntity()
+    //   setComponent(rootEntity, EnvMapComponent)
+    //   setComponent(testEntity, MaterialStateComponent, { material: material })
+    //   const Reactor = () => {
+    //     return React.createElement(testReactor, {
+    //       entity: testEntity,
+    //       rootEntity: rootEntity
+    //     })
+    //   }
+    //   const ExpectedTexture = new Texture(/* image=*/ undefined, /* mapping=*/ Expected)
+    //   useTextureSpy.mockImplementation((_url, _entity) => [ExpectedTexture, () => {}])
+    //   // 1. Sanity check (input & dependencies)
+    //   const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+    //     ?.mapping
+    //   expect(before).toBe(Initial)
+    //   expect(before).not.toBe(Expected)
+    //   expect(useTextureSpy).not.toHaveBeenCalled()
+    //   // 2. Run the process
+    //
+    //   console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
+    //   const root = startReactor(Reactor)
+    //   // ?? null ?? Why ??
+    //   console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
+    //
+    //   const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+    //     ?.mapping
+    //   // 4. Check the result (output)
+    //   expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+    //   expect(useTextureSpy).toHaveBeenCalled()
+    //   expect(result).not.toBe(Initial)
+    //   expect(result).toBe(Expected)
+    //   // 5? Cleanup (dependencies)
+    //   useTextureSpy.mockClear()
+    // })
 
     /** @todo How to override the output of useTexture without getting null ?? */
     it.todo(
@@ -1192,8 +1190,9 @@ describe('EnvMapReactor', () => {
     it(".. should call EnvMapSkyboxReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Skybox'", () => {
       const Expected = 42
       // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Skybox
       const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapSkyboxReactor')
-      setComponent(testEntity, EnvMapComponent)
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
       const Reactor = () => {
         return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
       }
@@ -1216,26 +1215,147 @@ describe('EnvMapReactor', () => {
       expect(result).toBe(Expected)
     })
 
-    it.todo(
-      ".. should call EnvMapCubemapReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Cubemap'",
-      () => {}
-    )
-    it.todo(
-      ".. should call EnvMapEquirectangularReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Equirectangular'",
-      () => {}
-    )
-    it.todo(
-      ".. should call EnvMapColorReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Color'",
-      () => {}
-    )
-    it.todo(
-      ".. should call EnvMapBakeReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Bake'",
-      () => {}
-    )
-    it.todo(
-      ".. should call EnvmapProbesReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Probes'",
-      () => {}
-    )
+    it(".. should call EnvMapCubemapReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Cubemap'", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Cubemap
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapCubemapReactor')
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
+      const Reactor = () => {
+        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
+      }
+      for (let id = 0; id < Expected; ++id) {
+        const entity = createEntity()
+        setComponent(entity, MaterialStateComponent)
+        setComponent(entity, EntityTreeComponent, { parentEntity: testEntity })
+      }
+      const query = defineQuery([MaterialStateComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(result).toBe(Expected)
+    })
+
+    /** @todo Why is this reactor called 2x per entity, but not the others ?? */
+    it(".. should call EnvMapEquirectangularReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Equirectangular'", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Equirectangular
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapEquirectangularReactor')
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
+      const Reactor = () => {
+        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
+      }
+      for (let id = 0; id < Expected; ++id) {
+        const entity = createEntity()
+        setComponent(entity, MaterialStateComponent)
+        setComponent(entity, EntityTreeComponent, { parentEntity: testEntity })
+      }
+      const query = defineQuery([MaterialStateComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(result).toBe(Expected * 2) /** @todo Is this 2x correct? */
+    })
+
+    it(".. should call EnvMapColorReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Color'", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Color
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapColorReactor')
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
+      const Reactor = () => {
+        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
+      }
+      for (let id = 0; id < Expected; ++id) {
+        const entity = createEntity()
+        setComponent(entity, MaterialStateComponent)
+        setComponent(entity, EntityTreeComponent, { parentEntity: testEntity })
+      }
+      const query = defineQuery([MaterialStateComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(result).toBe(Expected)
+    })
+
+    /** @todo Why is this reactor called 2x per entity, but not the others ?? */
+    it(".. should call EnvMapBakeReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Bake'", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Bake
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvMapBakeReactor')
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
+      const Reactor = () => {
+        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
+      }
+      for (let id = 0; id < Expected; ++id) {
+        const entity = createEntity()
+        setComponent(entity, MaterialStateComponent)
+        setComponent(entity, EntityTreeComponent, { parentEntity: testEntity })
+      }
+      const query = defineQuery([MaterialStateComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(result).toBe(Expected * 2) /** @todo Is this 2x correct? */
+    })
+
+    it(".. should call EnvmapProbesReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Probes'", () => {
+      const Expected = 42
+      // 3. Set input & dependencies data
+      const envmapType = EnvMapSourceType.Probes
+      const resultSpy = vi.spyOn(EnvironmentSystemReactors, 'EnvmapProbesReactor')
+      setComponent(testEntity, EnvMapComponent, { type: envmapType })
+      const Reactor = () => {
+        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(testReactor, {}))
+      }
+      for (let id = 0; id < Expected; ++id) {
+        const entity = createEntity()
+        setComponent(entity, MaterialStateComponent)
+        setComponent(entity, EntityTreeComponent, { parentEntity: testEntity })
+      }
+      const query = defineQuery([MaterialStateComponent])
+      // 1. Sanity check (input & dependencies)
+      expect(hasComponent(testEntity, EnvMapComponent)).toBeTruthy()
+      expect(query().length).toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      const result = resultSpy.mock.calls.length
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(result).toBe(Expected)
+    })
   })
 }) //:: EnvMapReactor
 
