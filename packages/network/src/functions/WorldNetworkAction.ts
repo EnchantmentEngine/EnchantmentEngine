@@ -27,7 +27,7 @@ import { matchesEntityUUID } from '@ir-engine/ecs'
 import { defineAction, getState, matchesPeerID, matchesWithDefault } from '@ir-engine/hyperflux'
 
 import { EngineState } from '@ir-engine/ecs'
-import { NetworkTopics } from '../Network'
+import { NetworkTopics } from '../NetworkState'
 import { matchesUserID } from './matchesUserID'
 
 export class WorldNetworkAction {

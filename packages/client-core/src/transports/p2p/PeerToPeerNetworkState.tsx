@@ -54,9 +54,8 @@ import {
   NetworkState,
   NetworkTopics,
   WebRTCPeerConnection,
-  addNetwork,
-  createNetwork,
-  removeNetwork
+  joinNetwork,
+  leaveNetwork
 } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import {
@@ -136,8 +135,7 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
 
     getMutableState(NetworkState).hostIds[topic].set(instanceID)
 
-    const network = createNetwork(instanceID, null, topic, {})
-    addNetwork(network)
+    const network = joinNetwork(instanceID, null, topic, {})
 
     network.ready = true
 
@@ -168,7 +166,7 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
           userID: Engine.instance.userID
         })
       )
-      removeNetwork(network)
+      leaveNetwork(network)
       getMutableState(NetworkState).hostIds[topic].set(none)
     }
   }, [joinResponse])

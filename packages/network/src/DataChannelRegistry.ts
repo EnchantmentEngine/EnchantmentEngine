@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState, getMutableState, getState, none, OpaqueType, PeerID } from '@ir-engine/hyperflux'
 
-import { Network } from './Network'
+import { Network } from './NetworkState'
 
 export type DataChannelType = OpaqueType<'DataChannelType'> & string
 

@@ -23,8 +23,34 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { NetworkID, PeerID, UserID, defineState, getMutableState, none } from '@ir-engine/hyperflux'
-import { NetworkActions, NetworkPeer } from './NetworkState'
+import {
+  NetworkID,
+  PeerID,
+  UserID,
+  defineAction,
+  defineState,
+  getMutableState,
+  matches,
+  matchesPeerID,
+  none
+} from '@ir-engine/hyperflux'
+import { NetworkPeer } from './NetworkState'
+import { matchesUserID } from './functions/matchesUserID'
+
+export class NetworkActions {
+  static peerJoined = defineAction({
+    type: 'ee.engine.network.PEER_JOINED',
+    peerID: matchesPeerID,
+    peerIndex: matches.number,
+    userID: matchesUserID
+  })
+
+  static peerLeft = defineAction({
+    type: 'ee.engine.network.PEER_LEFT',
+    peerID: matchesPeerID,
+    userID: matchesUserID
+  })
+}
 
 export const NetworkPeerState = defineState({
   name: 'ir.network.NetworkPeerState',

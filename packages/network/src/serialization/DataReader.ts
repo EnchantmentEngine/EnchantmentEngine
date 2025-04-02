@@ -29,9 +29,8 @@ import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { PeerID } from '@ir-engine/hyperflux'
 
-import { JitterBufferEntry, Network } from '../Network'
 import { NetworkId, NetworkObjectAuthorityTag, NetworkObjectComponent } from '../NetworkObjectComponent'
-import { NetworkState } from '../NetworkState'
+import { Network, NetworkState } from '../NetworkState'
 import {
   QUAT_MAX_RANGE,
   QUAT_PRECISION_MULT,
@@ -239,6 +238,11 @@ export const readMetadata = (v: ViewCursor) => {
   const peerIndex = readUint32(v)
   const simulationTime = readFloat64(v)
   return { peerIndex, simulationTime }
+}
+
+export interface JitterBufferEntry {
+  simulationTime: number
+  read: () => void
 }
 
 export const readDataPacket = (network: Network, packet: ArrayBuffer, jitterBufferTaskList: JitterBufferEntry[]) => {

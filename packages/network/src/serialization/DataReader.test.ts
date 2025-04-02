@@ -36,14 +36,14 @@ import { PeerID, UserID, applyIncomingActions, dispatchAction, getMutableState, 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { roundNumberToPlaces } from '../../tests/MathTestUtils'
 import { createMockNetwork } from '../../tests/createMockNetwork'
-import { Network, NetworkTopics } from '../Network'
 import {
   NetworkId,
   NetworkObjectAuthorityTag,
   NetworkObjectComponent,
   NetworkObjectSendPeriodicUpdatesTag
 } from '../NetworkObjectComponent'
-import { NetworkActions, NetworkState } from '../NetworkState'
+import { NetworkActions } from '../NetworkPeerState'
+import { Network, NetworkState, NetworkTopics } from '../NetworkState'
 import {
   checkBitflag,
   readComponentProp,

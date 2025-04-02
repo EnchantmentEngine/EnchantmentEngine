@@ -25,8 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { applyIncomingActions, dispatchAction, getMutableState, NetworkID, PeerID, UserID } from '@ir-engine/hyperflux'
 
-import { createNetwork, NetworkTopics } from '../src/Network'
-import { addNetwork, NetworkActions, NetworkState } from '../src/NetworkState'
+import { NetworkActions } from '../src/NetworkPeerState'
+import { joinNetwork, NetworkState, NetworkTopics } from '../src/NetworkState'
 
 const instanceID = 'instanceID' as NetworkID
 
@@ -37,8 +37,7 @@ export const createMockNetwork = (
 ) => {
   if (networkType === NetworkTopics.world) getMutableState(NetworkState).hostIds.world.set(instanceID)
   else getMutableState(NetworkState).hostIds.media.set(instanceID)
-  const network = createNetwork(instanceID, hostPeerID, networkType)
-  addNetwork(network)
+  const network = joinNetwork(instanceID, hostPeerID, networkType)
 
   if (hostPeerID && hostUserID) {
     dispatchAction(

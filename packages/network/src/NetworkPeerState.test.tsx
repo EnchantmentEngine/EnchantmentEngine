@@ -36,13 +36,13 @@ import {
   UserID
 } from '@ir-engine/hyperflux'
 
-import { createNetwork, NetworkTopics } from './Network'
+import { joinNetwork, NetworkTopics } from './NetworkState'
 
 import './NetworkPeerState'
 
 import { EngineState } from '@ir-engine/ecs'
-import { NetworkPeerState } from './NetworkPeerState'
-import { addNetwork, NetworkActions, NetworkState } from './NetworkState'
+import { NetworkActions, NetworkPeerState } from './NetworkPeerState'
+import { NetworkState } from './NetworkState'
 
 describe('NetworkPeerState', () => {
   beforeEach(async () => {
@@ -61,8 +61,7 @@ describe('NetworkPeerState', () => {
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
-      const network = createNetwork(instanceID, hostPeerID, NetworkTopics.world)
-      addNetwork(network)
+      const network = joinNetwork(instanceID, hostPeerID, NetworkTopics.world)
 
       dispatchAction(
         NetworkActions.peerJoined({
@@ -91,8 +90,7 @@ describe('NetworkPeerState', () => {
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
-      const network = createNetwork(instanceID, hostPeerID, NetworkTopics.world)
-      addNetwork(network)
+      const network = joinNetwork(instanceID, hostPeerID, NetworkTopics.world)
 
       dispatchAction(
         NetworkActions.peerJoined({
@@ -140,8 +138,7 @@ describe('NetworkPeerState', () => {
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
-      const network = createNetwork(instanceID, hostPeerID, NetworkTopics.world)
-      addNetwork(network)
+      const network = joinNetwork(instanceID, hostPeerID, NetworkTopics.world)
 
       dispatchAction(
         NetworkActions.peerJoined({
@@ -187,8 +184,7 @@ describe('NetworkPeerState', () => {
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
-      const network = createNetwork(instanceID, hostPeerID, NetworkTopics.world)
-      addNetwork(network)
+      const network = joinNetwork(instanceID, hostPeerID, NetworkTopics.world)
 
       dispatchAction(
         NetworkActions.peerJoined({
@@ -225,8 +221,7 @@ describe('NetworkPeerState', () => {
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
-      const network = createNetwork(instanceID, hostPeerID, NetworkTopics.world)
-      addNetwork(network)
+      const network = joinNetwork(instanceID, hostPeerID, NetworkTopics.world)
 
       dispatchAction(
         NetworkActions.peerJoined({

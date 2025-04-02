@@ -28,7 +28,6 @@ import { decode, encode } from 'msgpackr'
 import React, { useEffect } from 'react'
 import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from '../constants/VideoConstants'
 import { DataChannelRegistryState, DataChannelType } from '../DataChannelRegistry'
-import { MediaStreamState } from '../media/MediaStreamState'
 import {
   createPeerMediaChannels,
   MediaChannelState,
@@ -38,8 +37,9 @@ import {
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
 } from '../media/MediaChannelState'
-import { Network, NetworkTopics } from '../Network'
-import { NetworkActions, NetworkState } from '../NetworkState'
+import { MediaStreamState } from '../media/MediaStreamState'
+import { NetworkActions } from '../NetworkPeerState'
+import { Network, NetworkState, NetworkTopics } from '../NetworkState'
 import { RTCPeerConnectionState, SendMessageType, WebRTCTransportFunctions } from './WebRTCTransportFunctions'
 
 export const WebRTCPeerConnection = (props: {

@@ -28,7 +28,7 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PeerID, getState } from '@ir-engine/hyperflux'
 
-import { Network } from '../Network'
+import { Network } from '../NetworkState'
 import { NetworkId, NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
 import { NetworkState } from '../NetworkState'
 import {

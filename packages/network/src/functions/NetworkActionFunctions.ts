@@ -33,7 +33,7 @@ import {
   PeerID
 } from '@ir-engine/hyperflux'
 
-import { Network } from '../Network'
+import { Network } from '../NetworkState'
 import { NetworkState } from '../NetworkState'
 
 const receiveIncomingActions = (network: Network, fromPeerID: PeerID, actions: Required<Action>[]) => {

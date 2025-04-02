@@ -24,8 +24,11 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  Action,
+  HyperFlux,
   NetworkID,
   PeerID,
+  Topic,
   UserID,
   defineAction,
   defineState,
@@ -36,9 +39,10 @@ import {
   none
 } from '@ir-engine/hyperflux'
 
-import { DataChannelType } from './DataChannelRegistry'
-import { Network } from './Network'
+import { DataChannelRegistryState, DataChannelType } from './DataChannelRegistry'
 import { matchesUserID } from './functions/matchesUserID'
+import { NetworkActionFunctions } from './functions/NetworkActionFunctions'
+import { NetworkPeerState } from './NetworkPeerState'
 import { SerializationSchema } from './serialization/Utils'
 
 export type PeerTransport = {
@@ -51,21 +55,6 @@ export interface NetworkPeer {
   userId: UserID
   peerID: PeerID
   peerIndex: number
-}
-
-export class NetworkActions {
-  static peerJoined = defineAction({
-    type: 'ee.engine.network.PEER_JOINED',
-    peerID: matchesPeerID,
-    peerIndex: matches.number,
-    userID: matchesUserID
-  })
-
-  static peerLeft = defineAction({
-    type: 'ee.engine.network.PEER_LEFT',
-    peerID: matchesPeerID,
-    userID: matchesUserID
-  })
 }
 
 export const NetworkState = defineState({
@@ -121,10 +110,137 @@ export const NetworkState = defineState({
 export const SceneUser = 'scene' as UserID
 export const ScenePeer = 'scene' as PeerID
 
-export const addNetwork = (network: Network) => {
-  getMutableState(NetworkState).networks[network.id].set(network)
+/**
+ * Network topics are classes of networks. Topics are used to disitinguish between multiple networks of the same type.
+ */
+export const NetworkTopics = {
+  world: 'world' as Topic,
+  media: 'media' as Topic
 }
 
-export const removeNetwork = (network: Network) => {
+export type Network<Ext = unknown> = {
+  transports: Record<PeerID, PeerTransport>
+  /**
+   * Connected peers
+   * @deprecated use `getState(NetworkPeerState)[network.id].peers` instead
+   */
+  peers: Record<PeerID, NetworkPeer>
+
+  /**
+   * Map of numerical peer index to peer IDs
+   * @deprecated use `getState(NetworkPeerState)[network.id].peerIndexToPeerID` instead
+   */
+  peerIndexToPeerID: Record<number, PeerID>
+
+  /**
+   * Map of peer IDs to numerical peer index
+   * @deprecated use `getState(NetworkPeerState)[network.id].peerIDToPeerIndex` instead
+   */
+  peerIDToPeerIndex: Record<PeerID, number>
+
+  /**
+   * Connected users
+   * @deprecated use `getState(NetworkPeerState)[network.id].users` instead
+   */
+  users: Record<UserID, PeerID[]>
+
+  /**
+   * The UserID of the host
+   * - will either be a user's UserID, or an instance server's InstanceId
+   * @todo rename to hostUserID to differentiate better from hostPeerID
+   * @todo change from UserID to PeerID and change "get hostPeerID()" to "get hostUserID()"
+   */
+  hostPeerID: PeerID | null
+
+  readonly hostUserID: UserID | null
+
+  /**
+   * The ID of this network, equivalent to the InstanceID of an instance
+   */
+  id: NetworkID
+
+  /**
+   * The network is ready for sending messages and data
+   */
+  ready: boolean
+
+  /**
+   * The transport used by this network.
+   */
+  messageToPeer: (peerId: PeerID, data: any) => void
+  messageToAll: (data: any) => void
+  onMessage: (fromPeerID: PeerID, data: any) => void
+  bufferToPeer: (dataChannelType: DataChannelType, fromPeerID: PeerID, peerId: PeerID, data: any) => void
+  bufferToAll: (dataChannelType: DataChannelType, fromPeerID: PeerID, data: any) => void
+  onBuffer: (dataChannelType: DataChannelType, fromPeerID: PeerID, data: any) => void
+
+  readonly isHosting: boolean
+
+  topic: Topic
+} & Ext
+
+export const joinNetwork = <Ext = unknown>(
+  id: NetworkID,
+  hostPeerID: PeerID | null,
+  topic: Topic,
+  extension?: Ext
+): Network<Ext> => {
+  const network = {
+    messageToPeer: (peerId: PeerID, data: any) => {
+      network.transports[peerId]?.message?.(data)
+    },
+    messageToAll: (data: any) => {
+      for (const peer of Object.values(network.peers)) network.messageToPeer(peer.peerID, data)
+    },
+    onMessage: (fromPeerID: PeerID, message: any) => {
+      const actions = message as any as Required<Action>[]
+      // const actions = decode(new Uint8Array(message)) as IncomingActionType[]
+      NetworkActionFunctions.receiveIncomingActions(network, fromPeerID, actions)
+    },
+    bufferToPeer: (dataChannelType: DataChannelType, fromPeerID: PeerID, peerID: PeerID, data: any) => {
+      network.transports[peerID]?.buffer?.(dataChannelType, data)
+    },
+    bufferToAll: (dataChannelType: DataChannelType, fromPeerID: PeerID, data: any) => {
+      for (const peer of Object.values(network.peers))
+        network.bufferToPeer(dataChannelType, fromPeerID, peer.peerID, data)
+    },
+    onBuffer: (dataChannelType: DataChannelType, fromPeerID: PeerID, data: any) => {
+      const dataChannelFunctions = getState(DataChannelRegistryState)[dataChannelType]
+      if (dataChannelFunctions) {
+        for (const func of dataChannelFunctions) func(network, dataChannelType, fromPeerID, data)
+      }
+    },
+    ...extension,
+    transports: {},
+    get peers() {
+      return getState(NetworkPeerState)[id]?.peers
+    },
+    get peerIndexToPeerID() {
+      return getState(NetworkPeerState)[id]?.peerIndexToPeerID
+    },
+    get peerIDToPeerIndex() {
+      return getState(NetworkPeerState)[id]?.peerIDToPeerIndex
+    },
+    get users() {
+      return getState(NetworkPeerState)[id]?.users
+    },
+    hostPeerID,
+    get hostUserID() {
+      return network.hostPeerID && (network.peers[network.hostPeerID]?.userId as UserID | undefined)
+    },
+    id,
+    ready: false,
+    get isHosting() {
+      return HyperFlux.store.peerID === network.hostPeerID
+    },
+    topic
+  } as Network<Ext>
+
+  getMutableState(NetworkState).networks[network.id].set(network)
+
+  return network
+}
+
+export const leaveNetwork = (network: Network) => {
   getMutableState(NetworkState).networks[network.id].set(none)
 }

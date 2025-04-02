@@ -65,9 +65,8 @@ import {
   DataChannelType,
   NetworkState,
   NetworkTopics,
-  addNetwork,
-  createNetwork,
-  removeNetwork,
+  joinNetwork,
+  leaveNetwork,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
   webcamAudioMediaChannelType,
@@ -122,7 +121,7 @@ export const closeNetwork = (network: SocketWebRTCClientNetwork) => {
   clearInterval(network.heartbeat)
   network.primus?.removeAllListeners()
   network.primus?.end()
-  removeNetwork(network)
+  leaveNetwork(network)
 }
 
 export const initializeNetwork = (
@@ -136,7 +135,7 @@ export const initializeNetwork = (
     navigator.userAgent === BotUserAgent ? { handlerName: 'Chrome74' } : undefined
   )
 
-  const network = createNetwork(id, hostPeerID, topic, {
+  const network = joinNetwork(id, hostPeerID, topic, {
     mediasoupDevice,
     primus,
     heartbeat: setInterval(() => {
@@ -285,7 +284,7 @@ export const connectToInstance = (
       primus.end()
     } else {
       const network = getState(NetworkState).networks[instanceID] as SocketWebRTCClientNetwork | undefined
-      if (network) leaveNetwork(network)
+      if (network) leaveClientNetwork(network)
     }
   }
 }
@@ -399,8 +398,7 @@ export const connectToNetwork = async (
     getMutableState(NetworkState).hostIds[topic].set(instanceID)
 
     const mediasoupClient = await import('mediasoup-client')
-    const network = initializeNetwork(instanceID, hostPeerID, topic, primus, mediasoupClient)
-    addNetwork(network)
+    initializeNetwork(instanceID, hostPeerID, topic, primus, mediasoupClient)
   }
 
   const network = getState(NetworkState).networks[instanceID] as SocketWebRTCClientNetwork
@@ -750,7 +748,7 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
   getMutableState(MediasoupTransportObjectsState)[transportID].set(transport)
 }
 
-export function leaveNetwork(network: SocketWebRTCClientNetwork) {
+export function leaveClientNetwork(network: SocketWebRTCClientNetwork) {
   if (!network) return
   logger.info('Leaving network %o', { topic: network.topic, id: network.id })
 
@@ -763,7 +761,7 @@ export function leaveNetwork(network: SocketWebRTCClientNetwork) {
       getMutableState(NetworkState).hostIds.world.set(none)
       // if world has a media server connection
       if (NetworkState.mediaNetwork) {
-        leaveNetwork(NetworkState.mediaNetwork as SocketWebRTCClientNetwork)
+        leaveClientNetwork(NetworkState.mediaNetwork as SocketWebRTCClientNetwork)
       }
     }
   } catch (err) {

@@ -32,9 +32,8 @@ import { defineState, getState, PeerID } from '@ir-engine/hyperflux'
 
 import { addDataChannelHandler, DataChannelType, removeDataChannelHandler } from '../DataChannelRegistry'
 import { RingBuffer } from '../functions/RingBuffer'
-import { JitterBufferEntry, Network } from '../Network'
-import { NetworkState } from '../NetworkState'
-import { readDataPacket } from '../serialization/DataReader'
+import { Network, NetworkState } from '../NetworkState'
+import { JitterBufferEntry, readDataPacket } from '../serialization/DataReader'
 
 const toArrayBuffer = (buf) => {
   const ab = new ArrayBuffer(buf.length)

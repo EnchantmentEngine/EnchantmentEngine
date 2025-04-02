@@ -33,7 +33,6 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { applyIncomingActions, dispatchAction, getMutableState, getState, PeerID, UserID } from '@ir-engine/hyperflux'
 
 import { createMockNetwork } from '../tests/createMockNetwork'
-import { Network, NetworkTopics } from './Network'
 
 import './EntityNetworkState'
 
@@ -41,7 +40,8 @@ import { EngineState } from '@ir-engine/ecs'
 import { EntityNetworkState } from './EntityNetworkState'
 import { WorldNetworkAction } from './functions/WorldNetworkAction'
 import { NetworkObjectComponent, NetworkObjectOwnedTag } from './NetworkObjectComponent'
-import { NetworkActions, NetworkState, ScenePeer, SceneUser } from './NetworkState'
+import { NetworkActions } from './NetworkPeerState'
+import { Network, NetworkState, NetworkTopics, ScenePeer, SceneUser } from './NetworkState'
 
 describe('EntityNetworkState', () => {
   beforeEach(async () => {
