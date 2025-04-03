@@ -42,13 +42,14 @@ import { joinNetwork, NetworkTopics } from './NetworkState'
 
 import './NetworkPeerState'
 
-import { EngineState } from '@ir-engine/ecs'
 import { NetworkActions, NetworkPeerState } from './NetworkPeerState'
 import { NetworkState } from './NetworkState'
 
 describe('NetworkPeerState', () => {
+  let agentID: UserID
+
   beforeEach(async () => {
-    createHyperStore()
+    createHyperStore({ getAgentID: () => agentID })
   })
 
   afterEach(() => {
@@ -59,7 +60,7 @@ describe('NetworkPeerState', () => {
     it('should add peer to state', async () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = HyperFlux.store.peerID
-      getMutableState(EngineState).userID.set(hostUserID)
+      agentID = hostUserID
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
@@ -88,7 +89,7 @@ describe('NetworkPeerState', () => {
     it('should add multiple peers to state', async () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = HyperFlux.store.peerID
-      getMutableState(EngineState).userID.set(hostUserID)
+      agentID = hostUserID
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
@@ -136,7 +137,7 @@ describe('NetworkPeerState', () => {
     it('should add multiple peers to state with same user', async () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = HyperFlux.store.peerID
-      getMutableState(EngineState).userID.set(hostUserID)
+      agentID = hostUserID
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
@@ -182,7 +183,7 @@ describe('NetworkPeerState', () => {
     it('should remove peer', async () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = HyperFlux.store.peerID
-      getMutableState(EngineState).userID.set(hostUserID)
+      agentID = hostUserID
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
@@ -219,7 +220,7 @@ describe('NetworkPeerState', () => {
     it('should not remove user when a peer leaves but another remains', async () => {
       const hostUserID = 'host user' as UserID
       const hostPeerID = HyperFlux.store.peerID
-      getMutableState(EngineState).userID.set(hostUserID)
+      agentID = hostUserID
       const instanceID = 'instanceID' as NetworkID
 
       getMutableState(NetworkState).hostIds.world.set(instanceID)
