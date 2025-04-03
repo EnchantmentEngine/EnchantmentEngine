@@ -318,6 +318,33 @@ export class GCSStorage implements StorageProviderInterface {
     )
   }
 
+  private createFolderPromise(key, size = 0): Promise<FileBrowserContentType> {
+    return new Promise(async (resolve) => {
+      size = size || (await this.getFolderSize(key))
+      const cont: FileBrowserContentType = {
+        key,
+        url: `${this.bucketAssetURL}/${key}`,
+        name: key.split('/').pop()!,
+        type: 'folder',
+        size
+      }
+      resolve(cont)
+    })
+  }
+
+  private createFilePromise(key, files, query, index): Promise<FileBrowserContentType> {
+    return new Promise(async (resolve) => {
+      const cont: FileBrowserContentType = {
+        key,
+        url: files.items![index].mediaLink as string,
+        name: query!.groups!.name as string,
+        type: query!.groups!.extension as string,
+        size: parseInt(files.items![index].size)
+      }
+      resolve(cont)
+    })
+  }
+
   /**
    * List all the files/folders in the directory.
    * @param folderName Name of folder in the storage.
@@ -340,46 +367,41 @@ export class GCSStorage implements StorageProviderInterface {
     const files = response[2] as {
       items?: { mediaLink: string; name: string; size: string }[]
       prefixes?: string[]
+      autoPaginate: true
     }
     if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
+    console.log('Daniel')
+    console.log('folderName:' + folderName)
+    console.log(recursive)
+    console.log(files.prefixes)
 
-    // Folders
-    for (let i = 0; i < files.prefixes!.length; i++) {
-      promises.push(
-        new Promise(async (resolve) => {
-          const key = files.prefixes![i].slice(0, -1)
-          const size = await this.getFolderSize(key)
-          const cont: FileBrowserContentType = {
-            key,
-            url: `${this.bucketAssetURL}/${key}`,
-            name: key.split('/').pop()!,
-            type: 'folder',
-            size
-          }
-          resolve(cont)
-        })
-      )
-    }
+    if (recursive) {
+      for (let i = 0; i < files.items.length; i++) {
+        const key = files.items[i].name
+        const regexx = /(?:.*)\/(?<name>.*)\.(?<extension>.*)/g
+        const query = regexx.exec(key)
+        if (query) {
+          promises.push(this.createFilePromise(key, files, query, i))
+        } else {
+          promises.push(this.createFolderPromise(key.slice(0, -1), +files.items[i].size))
+        }
+      }
+    } else {
+      // Folders
+      for (let i = 0; i < files.prefixes!.length; i++) {
+        const key = files.prefixes![i].slice(0, -1)
+        promises.push(this.createFolderPromise(key))
+      }
 
-    // Files
-    for (let i = 0; i < files.items.length; i++) {
-      const key = files.items[i].name
-      const regexx = /(?:.*)\/(?<name>.*)\.(?<extension>.*)/g
-      const query = regexx.exec(key)
-      if (query) {
-        promises.push(
-          new Promise(async (resolve) => {
-            const cont: FileBrowserContentType = {
-              key,
-              url: files.items![i].mediaLink as string,
-              name: query!.groups!.name as string,
-              type: query!.groups!.extension as string,
-              size: parseInt(files.items![i].size)
-            }
-            resolve(cont)
-          })
-        )
+      // Files
+      for (let i = 0; i < files.items.length; i++) {
+        const key = files.items[i].name
+        const regexx = /(?:.*)\/(?<name>.*)\.(?<extension>.*)/g
+        const query = regexx.exec(key)
+        if (query) {
+          promises.push(this.createFilePromise(key, files, query, i))
+        }
       }
     }
 
