@@ -71,7 +71,11 @@ export function Browser() {
   }
 
   useEffect(() => {
-    refreshDirectory()
+    const timeoutId = setTimeout(() => {
+      refreshDirectory()
+    }, 3500) // Debounce refresh to prevent rapid re-renders
+
+    return () => clearTimeout(timeoutId)
   }, [thumbnailJobState.jobs.length])
 
   const staticResourceDataQuery = useFind(staticResourcePath, {
