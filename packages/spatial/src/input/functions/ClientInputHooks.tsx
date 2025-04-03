@@ -259,13 +259,7 @@ export const CanvasInputReactor = () => {
     const onPointerLeave = (event: PointerEvent) => {
       const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, event.pointerId)
       ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
-
-      // because touch events don't have a leave event, we instead need to clear the state instead of removing the entity
-      if (event.pointerType === 'touch') {
-        clearPointerState(pointerEntity)
-      } else {
-        removeEntity(pointerEntity)
-      }
+      clearPointerState(pointerEntity)
     }
 
     const onPointerClick = (event: PointerEvent) => {
