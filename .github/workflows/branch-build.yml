@@ -169,39 +169,6 @@ jobs:
         with:
           projectBaseDir: packages/ecs/
 
-  test_network:
-    needs: install-modules
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/cache@v3
-        with:
-          path: .
-          key: dir-${{github.sha}}
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.x
-      - run: mkdir -p packages_moved/hyperflux/
-      - run: mkdir -p packages_moved/ecs/
-      - run: mkdir -p packages_moved/network/
-      - run: mv packages/hyperflux packages_moved/
-      - run: mv packages/ecs packages_moved/
-      - run: mv packages/network packages_moved/
-      - run: rm -rf packages/*
-      - run: mv packages_moved/hyperflux packages/
-      - run: mv packages_moved/ecs packages/
-      - run: mv packages_moved/network packages/
-      - run: cd packages/network && npm run test
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_network }}
-        with:
-          projectBaseDir: packages/network/
-
   test_spatial:
     needs: install-modules
     runs-on: ubuntu-latest
@@ -219,18 +186,15 @@ jobs:
           node-version: 22.x
       - run: mkdir -p packages_moved/hyperflux/
       - run: mkdir -p packages_moved/ecs/
-      - run: mkdir -p packages_moved/network/
       - run: mkdir -p packages_moved/xrui/
       - run: mkdir -p packages_moved/spatial/
       - run: mv packages/hyperflux packages_moved/
       - run: mv packages/ecs packages_moved/
-      - run: mv packages/network packages_moved/
       - run: mv packages/xrui packages_moved/
       - run: mv packages/spatial packages_moved/
       - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
-      - run: mv packages_moved/network packages/
       - run: mv packages_moved/xrui packages/
       - run: mv packages_moved/spatial packages/
       - run: cd packages/spatial && npm run test
@@ -258,14 +222,12 @@ jobs:
           node-version: 22.x
       - run: mkdir -p packages_moved/hyperflux/
       - run: mkdir -p packages_moved/ecs/
-      - run: mkdir -p packages_moved/network/
       - run: mkdir -p packages_moved/xrui/
       - run: mkdir -p packages_moved/spatial/
       - run: mkdir -p packages_moved/engine/
       - run: mkdir -p packages_moved/projects/
       - run: mv packages/hyperflux packages_moved/
       - run: mv packages/ecs packages_moved/
-      - run: mv packages/network packages_moved/
       - run: mv packages/xrui packages_moved/
       - run: mv packages/spatial packages_moved/
       - run: mv packages/engine packages_moved/
@@ -273,7 +235,6 @@ jobs:
       - run: rm -rf packages/*
       - run: mv packages_moved/hyperflux packages/
       - run: mv packages_moved/ecs packages/
-      - run: mv packages_moved/network packages/
       - run: mv packages_moved/xrui packages/
       - run: mv packages_moved/spatial packages/
       - run: mv packages_moved/engine packages/
