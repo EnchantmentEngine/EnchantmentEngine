@@ -118,7 +118,7 @@ export function ProjectDownloadProgress() {
   return (
     <>
       {isDownloading && (
-        <div className="flex h-auto w-full justify-center pb-2 pt-2">
+        <div className="flex h-auto w-full justify-center pb-1 pt-1">
           <div className="flex w-1/2">
             <span className="inline-block pr-2 text-xs font-normal leading-none ">
               {t('editor:layout.filebrowser.downloadingProject', { completed, total })}
@@ -146,7 +146,7 @@ export function FileUploadProgress() {
   const { completed, total, progress } = useUploadingFiles()
 
   return total ? (
-    <div className="flex h-auto w-full justify-center pb-2 pt-2">
+    <div className="flex h-auto w-full justify-center pb-1 pt-1">
       <div className="flex w-1/2">
         <span className="inline-block pr-2 text-xs font-normal leading-none ">
           {t('editor:layout.filebrowser.uploadingFiles', { completed, total })}
@@ -181,17 +181,22 @@ function FilesLoading() {
   const isLoading = filesQuery?.status === 'pending'
 
   return isLoading ? (
-    <LoadingView title={t('editor:layout.filebrowser.loadingFiles')} fullSpace className="block h-12 w-12" />
+    <LoadingView
+      title={t('editor:layout.filebrowser.loadingFiles')}
+      titleClassname="mt-0"
+      containerClassName="flex-row mt-1"
+      className="mx-2 my-auto h-6 w-6"
+    />
   ) : null
 }
 
 export default function Loaders() {
   return (
-    <>
+    <div className="flex h-[60px] flex-col py-1">
       <FileUploadProgress />
       <ProjectDownloadProgress />
       <FilesLoading />
       <GeneratingThumbnailsProgress />
-    </>
+    </div>
   )
 }
