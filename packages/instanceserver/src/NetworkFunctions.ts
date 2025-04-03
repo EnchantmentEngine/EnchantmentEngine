@@ -50,7 +50,7 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import { Action, dispatchAction, getMutableState, getState, PeerID } from '@ir-engine/hyperflux'
-import { NetworkActions, NetworkState } from '@ir-engine/network'
+import { NetworkActions, NetworkState } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 import config from '@ir-engine/server-core/src/appconfig'
 import { config as mediaConfig } from '@ir-engine/server-core/src/config'

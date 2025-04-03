@@ -25,25 +25,24 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useLayoutEffect } from 'react'
 
+import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+import { createResizableTypeArray } from '../bitecsLegacy'
 import {
   Component,
   defineComponent,
-  defineQuery,
-  Engine,
-  Entity,
   getComponent,
   hasComponent,
-  proxySoAStore,
   removeComponent,
-  S,
   setComponent,
-  TTypedSchema,
-  UndefinedEntity,
   useComponent,
   useEntityContext
-} from '@ir-engine/ecs'
-import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+} from '../ComponentFunctions'
+import { Engine } from '../Engine'
+import { Entity, UndefinedEntity } from '../Entity'
+import { defineQuery } from '../QueryFunctions'
+import { S } from '../schemas/JSONSchemas'
+import { TTypedSchema } from '../schemas/JSONSchemaTypes'
+import { proxySoAStore } from '../schemas/proxySoAStore'
 
 export type NetworkId = OpaqueType<'networkId'> & number
 

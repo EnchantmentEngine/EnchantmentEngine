@@ -32,6 +32,7 @@ import {
   getComponent,
   getOptionalComponent,
   hasComponent,
+  NetworkSchemaState,
   QueryReactor,
   setComponent,
   useComponent,
@@ -39,7 +40,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { NetworkState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Axis } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {
@@ -369,15 +370,15 @@ const SetupIkMatrices = () => {
 
 export const AvatarIkReactor = () => {
   useEffect(() => {
-    const networkState = getMutableState(NetworkState)
+    const networkSchemaState = getMutableState(NetworkSchemaState)
 
-    networkState.networkSchema[IKSerialization.ID].set({
+    networkSchemaState[IKSerialization.ID].set({
       read: IKSerialization.readBlendWeight,
       write: IKSerialization.writeBlendWeight
     })
 
     return () => {
-      networkState.networkSchema[IKSerialization.ID].set(none)
+      networkSchemaState[IKSerialization.ID].set(none)
     }
   }, [])
 

@@ -28,7 +28,7 @@ import { Vector3 } from 'three'
 
 import { defineQuery, defineSystem, getComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
-import { NetworkObjectAuthorityTag } from '@ir-engine/network'
+import { NetworkObjectAuthorityTag } from '@ir-engine/ecs'
 import {
   RigidBodyComponent,
   RigidBodyFixedTagComponent

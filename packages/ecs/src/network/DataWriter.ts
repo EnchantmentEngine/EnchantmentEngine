@@ -26,11 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { PeerID, getState } from '@ir-engine/hyperflux'
+import { Network, PeerID, getState } from '@ir-engine/hyperflux'
 
-import { Network } from '../NetworkState'
-import { NetworkId, NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from '../NetworkObjectComponent'
-import { NetworkState } from '../NetworkState'
+import { NetworkId, NetworkObjectComponent, NetworkObjectSendPeriodicUpdatesTag } from './NetworkObjectComponent'
+import { NetworkSchemaState } from './NetworkSerializationState'
 import {
   QUAT_MAX_RANGE,
   QUAT_PRECISION_MULT,
@@ -278,7 +277,7 @@ export const writeEntity = (
 }
 
 export const writeEntities = (v: ViewCursor, network: Network, entities: Entity[]) => {
-  const entitySchema = NetworkState.orderedNetworkSchema
+  const entitySchema = NetworkSchemaState.orderedNetworkSchema
 
   const writeCount = spaceUint32(v)
 

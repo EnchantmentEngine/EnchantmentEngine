@@ -39,7 +39,7 @@ import {
   screenshareAudioMediaChannelType,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '@ir-engine/network'
+} from '@ir-engine/hyperflux'
 import { config } from '@ir-engine/server-core/src/config'
 import serverLogger from '@ir-engine/server-core/src/ServerLogger'
 

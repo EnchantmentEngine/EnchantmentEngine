@@ -32,7 +32,7 @@ import {
   syncStateWithLocalStorage,
   useHookstate
 } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { NetworkState } from '@ir-engine/hyperflux'
 import { Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { useFrameUpdate } from './useFrameUpdate'

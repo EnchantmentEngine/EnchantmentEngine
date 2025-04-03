@@ -28,17 +28,21 @@ import {
   EntityTreeComponent,
   UUIDComponent,
   UndefinedEntity,
+  ViewCursor,
   createEngine,
   createEntity,
+  createViewCursor,
   destroyEngine,
   getComponent,
   getMutableComponent,
   hasComponent,
+  readFloat64,
+  readUint8,
   removeEntity,
-  setComponent
+  setComponent,
+  writeComponent
 } from '@ir-engine/ecs'
-import { ViewCursor, createViewCursor, readFloat64, readUint8, writeComponent } from '@ir-engine/network'
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import assert from 'assert'
 import sinon from 'sinon'
 import { Quaternion, Vector3 } from 'three'

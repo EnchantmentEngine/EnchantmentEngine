@@ -26,19 +26,20 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import { Vector3 } from 'three'
 
-import { ECSState, Not, useEntityContext } from '@ir-engine/ecs'
+import { ECSState, NetworkObjectComponent, NetworkObjectOwnedTag, Not, useEntityContext } from '@ir-engine/ecs'
 import { ComponentType, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
-import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import {
-  NetworkObjectComponent,
-  NetworkObjectOwnedTag,
+  MediaChannelState,
   NetworkState,
+  getMutableState,
+  getState,
+  useHookstate,
   webcamVideoMediaChannelType
-} from '@ir-engine/network'
+} from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
@@ -55,7 +56,6 @@ import {
   MediaElementComponent,
   createAudioNodeGroup
 } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 const _vec3 = new Vector3()

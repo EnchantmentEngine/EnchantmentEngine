@@ -24,21 +24,21 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  defineSystem,
   Entity,
   EntityTreeComponent,
+  getComponent,
+  hasComponent,
   PresentationSystemGroup,
   QueryReactor,
   QuerySubReactor,
-  UUIDComponent,
-  defineSystem,
-  getComponent,
-  hasComponent,
   useComponent,
   useEntityContext,
-  useOptionalComponent
+  useOptionalComponent,
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkState, ScenePeer, SceneUser, WorldNetworkAction } from '@ir-engine/network'
+import { dispatchAction, NetworkState, ScenePeer, SceneUser, useHookstate } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'

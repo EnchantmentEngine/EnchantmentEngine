@@ -23,19 +23,21 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
+import { getComponent } from '../ComponentFunctions'
+import { Entity, EntityUUID } from '../Entity'
+import { UUIDComponent } from '../UUIDComponent'
+import { checkBitflag } from './DataReader'
+import { SerializationSchema } from './Utils'
 import {
-  checkBitflag,
+  ViewCursor,
   createViewCursor,
   readUint32,
   readUint8,
   rewindViewCursor,
-  SerializationSchema,
   sliceViewCursor,
   spaceUint32,
-  spaceUint8,
-  ViewCursor
-} from '@ir-engine/network'
+  spaceUint8
+} from './ViewCursor'
 
 export type SerializedChunk = {
   startTimecode: number

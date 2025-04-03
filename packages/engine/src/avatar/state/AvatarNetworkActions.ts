@@ -27,7 +27,7 @@ import matches from 'ts-matches'
 
 import { matchesEntityUUID } from '@ir-engine/ecs'
 import { defineAction } from '@ir-engine/hyperflux'
-import { NetworkTopics } from '@ir-engine/network'
+import { NetworkTopics } from '@ir-engine/hyperflux'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
 
 import { matchesIkTarget } from '../animation/Util'

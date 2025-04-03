@@ -26,22 +26,42 @@ import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { createEntity, EntityUUID, generateEntityUUID, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import {
+  createEngine,
+  createEntity,
+  destroyEngine,
+  Engine,
+  EngineState,
+  EntityNetworkState,
+  EntityUUID,
+  generateEntityUUID,
+  getComponent,
+  hasComponent,
+  NetworkObjectComponent,
+  NetworkObjectOwnedTag,
+  setComponent,
+  UUIDComponent,
+  WorldNetworkAction
+} from '@ir-engine/ecs'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
-import { applyIncomingActions, dispatchAction, getMutableState, getState, PeerID, UserID } from '@ir-engine/hyperflux'
+import {
+  applyIncomingActions,
+  dispatchAction,
+  getMutableState,
+  getState,
+  Network,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
+  PeerID,
+  ScenePeer,
+  SceneUser,
+  UserID
+} from '@ir-engine/hyperflux'
 
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-import '@ir-engine/network/src/EntityNetworkState'
-
-import { EngineState } from '@ir-engine/ecs'
-import { EntityNetworkState } from '@ir-engine/network/src/EntityNetworkState'
-import { WorldNetworkAction } from './functions/WorldNetworkAction'
-import { NetworkObjectComponent, NetworkObjectOwnedTag } from './NetworkObjectComponent'
-import { NetworkActions } from './NetworkPeerState'
-import { Network, NetworkState, NetworkTopics, ScenePeer, SceneUser } from './NetworkState'
+import '@ir-engine/ecs/src/network/EntityNetworkState'
 
 describe('EntityNetworkState', () => {
   beforeEach(async () => {

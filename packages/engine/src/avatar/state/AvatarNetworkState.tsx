@@ -38,7 +38,7 @@ import { AvatarColliderComponent } from '@ir-engine/engine/src/avatar/components
 import { spawnAvatarReceptor } from '@ir-engine/engine/src/avatar/functions/spawnAvatarReceptor'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { WorldNetworkAction } from '@ir-engine/network'
+import { WorldNetworkAction } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'

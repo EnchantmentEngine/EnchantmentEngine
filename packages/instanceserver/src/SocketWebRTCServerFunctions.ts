@@ -29,7 +29,7 @@ import { encode } from 'msgpackr'
 import { MediaStreamAppData } from '@ir-engine/common/src/interfaces/NetworkInterfaces'
 import { InstanceID } from '@ir-engine/common/src/schema.type.module'
 import { Action, getState, PeerID, Topic } from '@ir-engine/hyperflux'
-import { DataChannelType, joinNetwork, NetworkActionFunctions, NetworkState } from '@ir-engine/network'
+import { DataChannelType, joinNetwork, NetworkActionFunctions, NetworkState } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 import multiLogger from '@ir-engine/server-core/src/ServerLogger'
 

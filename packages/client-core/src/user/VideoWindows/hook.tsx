@@ -32,19 +32,25 @@ import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { MotionCaptureSystem, timeSeriesMocapData } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import { applyScreenshareToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
-import { getMutableState, getState, NO_PROXY, PeerID, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import {
+  getMutableState,
+  getState,
+  MediaChannelState,
+  MediaStreamInterface,
+  MediaStreamState,
   NetworkState,
+  NO_PROXY,
+  PeerID,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
+  useHookstate,
+  useMutableState,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '@ir-engine/network'
+} from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { drawPoseToCanvas } from '@ir-engine/ui/src/pages/Capture'
 
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
-import { MediaChannelState, MediaStreamInterface } from '@ir-engine/network/src/media/MediaChannelState'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 
 export interface Props {

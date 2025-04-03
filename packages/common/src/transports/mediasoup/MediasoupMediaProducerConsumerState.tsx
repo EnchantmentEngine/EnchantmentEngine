@@ -27,8 +27,12 @@ import React, { useEffect } from 'react'
 
 import { ChannelID } from '@ir-engine/common/src/schema.type.module'
 import {
+  MediaChannelType,
   NO_PROXY_STEALTH,
+  Network,
+  NetworkActions,
   NetworkID,
+  NetworkState,
   PeerID,
   Validator,
   defineAction,
@@ -44,7 +48,6 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 
-import { MediaChannelType, Network, NetworkActions, NetworkState } from '@ir-engine/network'
 import { MediaStreamAppData } from '../../interfaces/NetworkInterfaces'
 import {
   MediasoupTransportActions,

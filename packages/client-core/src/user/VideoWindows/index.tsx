@@ -25,24 +25,24 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useRef } from 'react'
 
-import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getState, NO_PROXY, PeerID, useMutableState } from '@ir-engine/hyperflux'
-import {
-  NetworkState,
-  screenshareVideoMediaChannelType,
-  webcamAudioMediaChannelType,
-  webcamVideoMediaChannelType
-} from '@ir-engine/network'
-
 import { useGet } from '@ir-engine/common'
+import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState } from '@ir-engine/ecs'
+import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
+  getState,
   MediaChannelState,
   MediaChannelType,
-  MediaStreamInterface
-} from '@ir-engine/network/src/media/MediaChannelState'
-import { NetworkPeerState } from '@ir-engine/network/src/NetworkPeerState'
+  MediaStreamInterface,
+  NetworkPeerState,
+  NetworkState,
+  NO_PROXY,
+  PeerID,
+  screenshareVideoMediaChannelType,
+  useMutableState,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import {
   ArrowTopRightOnSquareLg,
   Microphone01Md,

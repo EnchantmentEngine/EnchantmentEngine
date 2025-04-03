@@ -28,12 +28,18 @@ import { useEffect } from 'react'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { defineState, getState, PeerID } from '@ir-engine/hyperflux'
-
-import { addDataChannelHandler, DataChannelType, removeDataChannelHandler } from '../DataChannelRegistry'
-import { RingBuffer } from '../functions/RingBuffer'
-import { Network, NetworkState } from '../NetworkState'
-import { JitterBufferEntry, readDataPacket } from '../serialization/DataReader'
+import {
+  addDataChannelHandler,
+  DataChannelType,
+  defineState,
+  getState,
+  Network,
+  NetworkState,
+  PeerID,
+  removeDataChannelHandler
+} from '@ir-engine/hyperflux'
+import { JitterBufferEntry, readDataPacket } from './DataReader'
+import { RingBuffer } from './RingBuffer'
 
 const toArrayBuffer = (buf) => {
   const ab = new ArrayBuffer(buf.length)

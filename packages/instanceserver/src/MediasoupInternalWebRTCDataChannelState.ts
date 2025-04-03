@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { DataConsumer } from 'mediasoup/node/lib/DataConsumer'
 
 import { defineState, PeerID } from '@ir-engine/hyperflux'
-import { DataChannelType } from '@ir-engine/network'
+import { DataChannelType } from '@ir-engine/hyperflux'
 
 export const MediasoupInternalWebRTCDataChannelState = defineState({
   name: 'ee.instanceserver.mediasoup.MediasoupInternalWebRTCDataChannelState',

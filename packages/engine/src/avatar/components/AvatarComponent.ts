@@ -28,7 +28,7 @@ import { defineComponent, getComponent } from '@ir-engine/ecs/src/ComponentFunct
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { UserID } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent } from '@ir-engine/network'
+import { NetworkObjectComponent } from '@ir-engine/ecs'
 
 export const AvatarComponent = defineComponent({
   name: 'AvatarComponent',

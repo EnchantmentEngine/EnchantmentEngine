@@ -27,9 +27,16 @@ import { useFind, useMutation } from '@ir-engine/common'
 import { InstanceID, MessageType, messagePath } from '@ir-engine/common/src/schema.type.module'
 import { useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
-import { State, UserID, dispatchAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState, webcamVideoMediaChannelType } from '@ir-engine/network'
-import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
+import {
+  MediaChannelState,
+  NetworkState,
+  State,
+  UserID,
+  dispatchAction,
+  useHookstate,
+  useMutableState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button } from '@ir-engine/ui'
 import {

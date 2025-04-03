@@ -28,10 +28,16 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
-import { ActionRecipients, applyIncomingActions, defineAction, getMutableState, getState } from '@ir-engine/hyperflux'
+import {
+  ActionRecipients,
+  applyIncomingActions,
+  defineAction,
+  getMutableState,
+  getState,
+  NetworkTopics
+} from '@ir-engine/hyperflux'
 
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
-import { NetworkTopics } from '../Network'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
 const TestAction = defineAction({ type: 'test' })
 

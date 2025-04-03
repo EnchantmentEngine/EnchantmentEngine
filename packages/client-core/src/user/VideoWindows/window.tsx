@@ -23,20 +23,20 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
+import { useClickOutside, useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
+import {
+  getMutableState,
+  MediaChannelState,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  useHookstate,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { ArrowTopRightOnSquareSm, Microphone01Lg, MicrophoneOff, VolumeMaxLg, VolumeXLg } from '@ir-engine/ui/src/icons'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 import React, { useEffect, useRef } from 'react'
-
-import { useClickOutside, useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
-import {
-  screenshareAudioMediaChannelType,
-  screenshareVideoMediaChannelType,
-  webcamAudioMediaChannelType,
-  webcamVideoMediaChannelType
-} from '@ir-engine/network'
 import { useTranslation } from 'react-i18next'
 import { ReportUserState } from '../../util/ReportUserState'
 import { Props, useUserMediaWindowHook } from './hook'

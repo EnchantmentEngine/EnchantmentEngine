@@ -28,7 +28,7 @@ import React, { useLayoutEffect } from 'react'
 import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkObjectSendPeriodicUpdatesTag, WorldNetworkAction } from '@ir-engine/network'
+import { NetworkObjectSendPeriodicUpdatesTag, WorldNetworkAction } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'

@@ -23,8 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { NetworkID, PeerID } from '@ir-engine/hyperflux'
-import { MediaChannelType } from '@ir-engine/network'
+import { MediaChannelType, NetworkID, PeerID } from '@ir-engine/hyperflux'
 import { ChannelID, LocationID, RoomCode } from '../schema.type.module'
 
 export type NetworkConnectionParams = {

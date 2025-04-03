@@ -56,8 +56,8 @@ import {
   getState,
   startReactor
 } from '@ir-engine/hyperflux'
-import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
+import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/hyperflux'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { act, render } from '@testing-library/react'

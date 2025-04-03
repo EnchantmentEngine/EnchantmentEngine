@@ -25,8 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { TypedArray } from '@ir-engine/ecs/src/bitecsLegacy'
-
-import { NetworkObjectComponent } from '../NetworkObjectComponent'
+import { NetworkObjectComponent } from './NetworkObjectComponent'
 
 export type ViewCursor = DataView & { cursor: number; shadowMap: Map<TypedArray, TypedArray> }
 

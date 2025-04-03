@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineQuery } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { NetworkObjectAuthorityTag } from '@ir-engine/network'
+import { NetworkObjectAuthorityTag } from '@ir-engine/ecs'
 
 import { AvatarControllerComponent } from '../components/AvatarControllerComponent'
 import { applyAutopilotInput } from '../functions/moveAvatar'

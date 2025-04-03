@@ -23,11 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { dispatchAction, getState, HyperFlux, NetworkID, PeerID, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { decode, encode } from 'msgpackr'
 import React, { useEffect } from 'react'
-import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from './VideoConstants'
-import { DataChannelRegistryState, DataChannelType } from '../DataChannelRegistry'
+import { dispatchAction } from '../functions/ActionFunctions'
+import { getState, useMutableState } from '../functions/StateFunctions'
+import { HyperFlux } from '../functions/StoreFunctions'
+import { NetworkActions } from '../network/NetworkPeerState'
+import { Network, NetworkState, NetworkTopics } from '../network/NetworkState'
+import { NetworkID, PeerID, UserID } from '../types/Types'
+import { DataChannelRegistryState, DataChannelType } from './DataChannelRegistry'
 import {
   createPeerMediaChannels,
   MediaChannelState,
@@ -38,8 +42,7 @@ import {
   webcamVideoMediaChannelType
 } from './MediaChannelState'
 import { MediaStreamState } from './MediaStreamState'
-import { NetworkActions } from '../NetworkPeerState'
-import { Network, NetworkState, NetworkTopics } from '../NetworkState'
+import { CAM_VIDEO_SIMULCAST_ENCODINGS, VIDEO_CONSTRAINTS } from './VideoConstants'
 import { RTCPeerConnectionState, SendMessageType, WebRTCTransportFunctions } from './WebRTCTransportFunctions'
 
 export const WebRTCPeerConnection = (props: {

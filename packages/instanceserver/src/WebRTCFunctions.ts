@@ -40,7 +40,7 @@ import os from 'os'
 
 import { API } from '@ir-engine/common'
 import { dispatchAction, getMutableState, getState, Identifiable, none, PeerID, State } from '@ir-engine/hyperflux'
-import { DataChannelRegistryState, DataChannelType, NetworkState } from '@ir-engine/network'
+import { DataChannelRegistryState, DataChannelType, NetworkState } from '@ir-engine/hyperflux'
 import config from '@ir-engine/server-core/src/appconfig'
 import { config as mediaConfig, sctpParameters } from '@ir-engine/server-core/src/config'
 import multiLogger from '@ir-engine/server-core/src/ServerLogger'

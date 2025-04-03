@@ -25,29 +25,31 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect } from 'react'
 
+import { useFind } from '@ir-engine/common'
 import { clientSettingPath, InstanceID } from '@ir-engine/common/src/schema.type.module'
 import {
   MediasoupMediaProducerConsumerState,
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, getState, PeerID, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import {
-  NetworkState,
-  screenshareAudioMediaChannelType,
-  screenshareVideoMediaChannelType,
-  VideoConstants,
-  webcamAudioMediaChannelType
-} from '@ir-engine/network'
-
-import { useFind } from '@ir-engine/common'
 import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
+import { Engine } from '@ir-engine/ecs/src/Engine'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
   createPeerMediaChannels,
+  getMutableState,
+  getState,
   MediaChannelState,
-  removePeerMediaChannels
-} from '@ir-engine/network/src/media/MediaChannelState'
+  NetworkState,
+  PeerID,
+  removePeerMediaChannels,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  useHookstate,
+  useMutableState,
+  VideoConstants,
+  webcamAudioMediaChannelType
+} from '@ir-engine/hyperflux'
+
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { ConsumerExtension, ProducerExtension } from './MediasoupClientFunctions'
 

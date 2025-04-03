@@ -26,24 +26,34 @@ Infinite Reality Engine. All Rights Reserved.
 import assert, { strictEqual } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { EngineState, createEntity } from '@ir-engine/ecs'
+import {
+  EngineState,
+  NetworkId,
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  NetworkObjectSendPeriodicUpdatesTag,
+  NetworkSchemaState,
+  createEntity
+} from '@ir-engine/ecs'
 import { defineComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { PeerID, UserID, applyIncomingActions, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
+import {
+  Network,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
+  PeerID,
+  UserID,
+  applyIncomingActions,
+  dispatchAction,
+  getMutableState,
+  getState
+} from '@ir-engine/hyperflux'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { roundNumberToPlaces } from '@ir-engine/network/tests/MathTestUtils'
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
-import {
-  NetworkId,
-  NetworkObjectAuthorityTag,
-  NetworkObjectComponent,
-  NetworkObjectSendPeriodicUpdatesTag
-} from '../NetworkObjectComponent'
-import { NetworkActions } from '../NetworkPeerState'
-import { Network, NetworkState, NetworkTopics } from '../NetworkState'
 import {
   checkBitflag,
   readComponentProp,
@@ -53,7 +63,7 @@ import {
   readMetadata,
   readVector3,
   readVector4
-} from '@ir-engine/network/src/serialization/DataReader'
+} from './DataReader'
 import {
   createDataWriter,
   writeCompressedVector3,
@@ -61,7 +71,7 @@ import {
   writeEntity,
   writeVector3,
   writeVector4
-} from '@ir-engine/network/src/serialization/DataWriter'
+} from './DataWriter'
 import { Vector3SoA } from './Utils'
 import {
   ViewCursor,
@@ -74,6 +84,8 @@ import {
   spaceUint8,
   writeProp
 } from './ViewCursor'
+
+import { roundNumberToPlaces } from '../../tests/MathTestUtils'
 
 const MockPoseComponent = defineComponent({
   name: 'MockPoseComponent_Reader',
@@ -102,7 +114,7 @@ describe('DataReader', () => {
     createEngine()
     createMockNetwork(NetworkTopics.world, 'host peer id' as PeerID, 'host user id' as UserID)
 
-    getMutableState(NetworkState).networkSchema.merge({
+    getMutableState(NetworkSchemaState).merge({
       mock: {
         read: (v: ViewCursor, entity: Entity) => {
           const changeMask = readUint8(v)
@@ -452,11 +464,11 @@ describe('DataReader', () => {
       ownerId: userID
     })
 
-    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkState).networkSchema))
+    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkSchemaState)))
 
     view.cursor = 0
 
-    readEntity(view, network, peerID, Object.values(getState(NetworkState).networkSchema))
+    readEntity(view, network, peerID, Object.values(getState(NetworkSchemaState)))
 
     strictEqual(MockPoseComponent.Vec3.x[entity], posX)
     strictEqual(MockPoseComponent.Vec3.y[entity], posY)
@@ -471,13 +483,13 @@ describe('DataReader', () => {
 
     view.cursor = 0
 
-    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkState).networkSchema))
+    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkSchemaState)))
 
     MockPoseComponent.Vec3.x[entity] = posX
 
     view.cursor = 0
 
-    readEntity(view, network, peerID, Object.values(getState(NetworkState).networkSchema))
+    readEntity(view, network, peerID, Object.values(getState(NetworkSchemaState)))
 
     strictEqual(MockPoseComponent.Vec3.x[entity], 0)
     strictEqual(MockPoseComponent.Vec3.y[entity], posY)
@@ -517,7 +529,7 @@ describe('DataReader', () => {
 
     setComponent(entity, NetworkObjectAuthorityTag)
 
-    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkState).networkSchema))
+    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkSchemaState)))
 
     view.cursor = 0
 
@@ -531,7 +543,7 @@ describe('DataReader', () => {
     MockPoseComponent.Quat.w[entity] = 0
 
     // read entity will populate data stored in 'view'
-    readEntity(view, network, peerID, Object.values(getState(NetworkState).networkSchema))
+    readEntity(view, network, peerID, Object.values(getState(NetworkSchemaState)))
 
     // should no repopulate as we own this entity
     strictEqual(MockPoseComponent.Vec3.x[entity], 0)
@@ -589,7 +601,7 @@ describe('DataReader', () => {
     MockPoseComponent.Quat.z[entity] = z
     MockPoseComponent.Quat.w[entity] = w
 
-    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkState).networkSchema))
+    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkSchemaState)))
 
     view.cursor = 0
 
@@ -603,7 +615,7 @@ describe('DataReader', () => {
     MockPoseComponent.Quat.w[entity] = 0
 
     // read entity will populate data stored in 'view'
-    readEntity(view, network, peerID, Object.values(getState(NetworkState).networkSchema))
+    readEntity(view, network, peerID, Object.values(getState(NetworkSchemaState)))
 
     // should no repopulate as entity is not listed in network entities
     strictEqual(MockPoseComponent.Vec3.x[entity], 0)
@@ -672,7 +684,7 @@ describe('DataReader', () => {
 
     setComponent(entity, NetworkObjectAuthorityTag)
 
-    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkState).networkSchema))
+    writeEntity(view, networkId, peerIndex, entity, Object.values(getState(NetworkSchemaState)))
 
     view.cursor = 0
 
@@ -695,7 +707,7 @@ describe('DataReader', () => {
     removeComponent(entity, NetworkObjectAuthorityTag)
 
     // read entity will populate data stored in 'view'
-    readEntity(view, network, peerID, Object.values(getState(NetworkState).networkSchema))
+    readEntity(view, network, peerID, Object.values(getState(NetworkSchemaState)))
 
     // should no repopulate as we own this entity
     strictEqual(MockPoseComponent.Vec3.x[entity], 0)

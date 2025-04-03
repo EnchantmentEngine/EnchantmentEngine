@@ -27,10 +27,10 @@ import { TypedArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { PeerID } from '@ir-engine/hyperflux'
+import { Network, PeerID } from '@ir-engine/hyperflux'
 
-import { NetworkId, NetworkObjectAuthorityTag, NetworkObjectComponent } from '../NetworkObjectComponent'
-import { Network, NetworkState } from '../NetworkState'
+import { NetworkId, NetworkObjectAuthorityTag, NetworkObjectComponent } from './NetworkObjectComponent'
+import { NetworkSchemaState } from './NetworkSerializationState'
 import {
   QUAT_MAX_RANGE,
   QUAT_PRECISION_MULT,
@@ -225,7 +225,7 @@ export const readEntity = (
 }
 
 export const readEntities = (v: ViewCursor, network: Network, byteLength: number, fromPeerID: PeerID) => {
-  const entitySchema = NetworkState.orderedNetworkSchema
+  const entitySchema = NetworkSchemaState.orderedNetworkSchema
   while (v.cursor < byteLength) {
     const count = readUint32(v)
     for (let i = 0; i < count; i++) {

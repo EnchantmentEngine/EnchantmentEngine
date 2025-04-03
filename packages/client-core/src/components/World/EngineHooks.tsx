@@ -37,7 +37,7 @@ import {
   useImmediateEffect,
   useMutableState
 } from '@ir-engine/hyperflux'
-import { Network, NetworkActions, NetworkState, NetworkTopics, joinNetwork, leaveNetwork } from '@ir-engine/network'
+import { Network, NetworkActions, NetworkState, NetworkTopics, joinNetwork, leaveNetwork } from '@ir-engine/hyperflux'
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'

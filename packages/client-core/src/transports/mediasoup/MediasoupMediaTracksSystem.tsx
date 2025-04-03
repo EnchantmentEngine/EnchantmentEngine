@@ -31,24 +31,22 @@ import {
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
 import { MediasoupTransportState } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
-import { PresentationSystemGroup, defineSystem } from '@ir-engine/ecs'
+import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
 import {
   defineState,
   dispatchAction,
   getMutableState,
   getState,
-  useHookstate,
-  useMutableState
-} from '@ir-engine/hyperflux'
-import {
+  MediaStreamState,
   NetworkState,
-  VideoConstants,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
+  useHookstate,
+  useMutableState,
+  VideoConstants,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '@ir-engine/network'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+} from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { MediaInstanceState, useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { clientContextParams } from '../../util/ClientContextState'

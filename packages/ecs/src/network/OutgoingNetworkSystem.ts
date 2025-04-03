@@ -28,11 +28,10 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 
-import { Network } from '../NetworkState'
-import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '../NetworkObjectComponent'
-import { NetworkState } from '../NetworkState'
-import { createDataWriter } from '../serialization/DataWriter'
+import { Network, NetworkState } from '@ir-engine/hyperflux'
+import { createDataWriter } from './DataWriter'
 import { ecsDataChannelType } from './IncomingNetworkSystem'
+import { NetworkObjectAuthorityTag, NetworkObjectComponent } from './NetworkObjectComponent'
 
 /***********
  * QUERIES *

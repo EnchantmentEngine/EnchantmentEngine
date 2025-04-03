@@ -27,6 +27,7 @@ import {
   AnimationSystemGroup,
   Entity,
   EntityTreeComponent,
+  NetworkSchemaState,
   SystemDefinitions,
   SystemUUID,
   UndefinedEntity,
@@ -40,7 +41,6 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
 import assert from 'assert'
 import sinon from 'sinon'
 import { Box3, BoxGeometry, Matrix4, Mesh, Quaternion, Vector3 } from 'three'
@@ -503,23 +503,23 @@ describe('TransformSystem', () => {
       const systemReactor = System.reactor!
 
       it('should set NetworkState.networkSchema[TransformSerialization.ID] when it mounts', () => {
-        const before = getState(NetworkState).networkSchema[TransformSerialization.ID]
+        const before = getState(NetworkSchemaState)[TransformSerialization.ID]
         assert.equal(before, undefined)
         // Run and Check the result
         const root = startReactor(systemReactor)
-        const after = getState(NetworkState).networkSchema[TransformSerialization.ID]
+        const after = getState(NetworkSchemaState)[TransformSerialization.ID]
         assert.notEqual(after, undefined)
       })
 
       it('should set NetworkState.networkSchema[TransformSerialization.ID] to none when it unmounts', () => {
-        const before = getState(NetworkState).networkSchema[TransformSerialization.ID]
+        const before = getState(NetworkSchemaState)[TransformSerialization.ID]
         assert.equal(before, undefined)
         // Run and Check the result
         const root = startReactor(systemReactor)
-        const after = getState(NetworkState).networkSchema[TransformSerialization.ID]
+        const after = getState(NetworkSchemaState)[TransformSerialization.ID]
         assert.notEqual(after, undefined)
         root.stop()
-        const result = getState(NetworkState).networkSchema[TransformSerialization.ID]
+        const result = getState(NetworkSchemaState)[TransformSerialization.ID]
         assert.equal(result, undefined)
       })
     }) //:: mount/unmount

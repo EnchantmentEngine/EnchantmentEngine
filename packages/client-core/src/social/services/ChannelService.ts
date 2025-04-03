@@ -37,7 +37,7 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineState, getMutableState, none } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { NetworkState } from '@ir-engine/hyperflux'
 
 import { NotificationService } from '../../common/services/NotificationService'
 

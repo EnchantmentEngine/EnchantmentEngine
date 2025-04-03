@@ -40,8 +40,8 @@ import {
   NetworkState,
   addDataChannelHandler,
   removeDataChannelHandler
-} from '@ir-engine/network'
-import { RingBuffer } from '@ir-engine/network/src/functions/RingBuffer'
+} from '@ir-engine/hyperflux'
+import { RingBuffer } from '@ir-engine/ecs'
 
 import { AvatarRigComponent } from '../avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'

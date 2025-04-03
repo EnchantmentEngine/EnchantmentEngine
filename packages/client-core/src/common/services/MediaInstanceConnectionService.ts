@@ -29,7 +29,7 @@ import { API } from '@ir-engine/common'
 import multiLogger from '@ir-engine/common/src/logger'
 import { ChannelID, InstanceID, instanceProvisionPath, RoomCode } from '@ir-engine/common/src/schema.type.module'
 import { defineState, getMutableState, getState, Identifiable, State, useState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { NetworkState } from '@ir-engine/hyperflux'
 
 import { SocketWebRTCClientNetwork } from '../../transports/mediasoup/MediasoupClientFunctions'
 import { AuthState } from '../../user/services/AuthService'

@@ -30,13 +30,21 @@ import { useFind, useGet } from '@ir-engine/common'
 import { ECSRecordingActions, PlaybackState, RecordingState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { RecordingType, recordingPath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { PeerID, defineState, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState, webcamVideoMediaChannelType } from '@ir-engine/network'
+import {
+  MediaChannelState,
+  NetworkState,
+  PeerID,
+  defineState,
+  getMutableState,
+  getState,
+  useHookstate,
+  useMutableState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { startPlayback } from '@ir-engine/ui/src/pages/Capture'
-import { WidgetAppService } from '../WidgetAppService'
 
-import { MediaChannelState } from '@ir-engine/network/src/media/MediaChannelState'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
+import { WidgetAppService } from '../WidgetAppService'
 
 // TODO replace these templates with our generalised ones for XRUI
 const Checkbox = (props: { label: string; disabled?: boolean; checked: boolean; onChange: () => void }) => {

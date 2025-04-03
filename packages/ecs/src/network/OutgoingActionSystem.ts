@@ -25,8 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-
-import { NetworkActionFunctions } from '../functions/NetworkActionFunctions'
+import { NetworkActionFunctions } from '@ir-engine/hyperflux'
 
 const execute = () => {
   NetworkActionFunctions.sendOutgoingActions()

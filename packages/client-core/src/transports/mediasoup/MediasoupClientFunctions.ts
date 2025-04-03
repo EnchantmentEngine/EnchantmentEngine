@@ -50,7 +50,10 @@ import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { AuthTask, ReadyTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import {
   Action,
+  DataChannelType,
   NetworkID,
+  NetworkState,
+  NetworkTopics,
   PeerID,
   Topic,
   addOutgoingTopicIfNecessary,
@@ -58,20 +61,15 @@ import {
   dispatchAction,
   getMutableState,
   getState,
-  none,
-  removeActionQueue
-} from '@ir-engine/hyperflux'
-import {
-  DataChannelType,
-  NetworkState,
-  NetworkTopics,
   joinNetwork,
   leaveNetwork,
+  none,
+  removeActionQueue,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
-} from '@ir-engine/network'
+} from '@ir-engine/hyperflux'
 
 import {
   MediasoupDataProducerActions,
@@ -84,7 +82,7 @@ import {
   MediasoupTransportState,
   TransportType
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+import { MediaStreamState } from '@ir-engine/hyperflux'
 import { LocationInstanceState } from '../../common/services/LocationInstanceConnectionService'
 import { MediaInstanceState } from '../../common/services/MediaInstanceConnectionService'
 import { ChannelState } from '../../social/services/ChannelService'

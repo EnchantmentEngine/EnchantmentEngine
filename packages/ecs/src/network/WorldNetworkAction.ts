@@ -23,12 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { matchesEntityUUID } from '@ir-engine/ecs'
-import { defineAction, getState, matchesPeerID, matchesWithDefault } from '@ir-engine/hyperflux'
-
-import { EngineState } from '@ir-engine/ecs'
-import { NetworkTopics } from '../NetworkState'
-import { matchesUserID } from './matchesUserID'
+import {
+  defineAction,
+  getState,
+  matchesPeerID,
+  matchesUserID,
+  matchesWithDefault,
+  NetworkTopics
+} from '@ir-engine/hyperflux'
+import { EngineState } from '../EngineState'
+import { matchesEntityUUID } from '../Entity'
 
 export class WorldNetworkAction {
   static spawnEntity = defineAction({

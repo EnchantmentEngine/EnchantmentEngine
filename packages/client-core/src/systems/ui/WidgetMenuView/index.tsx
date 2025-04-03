@@ -34,7 +34,7 @@ import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions, WidgetAppState } from '../../WidgetAppService'
 
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+import { MediaStreamState } from '@ir-engine/hyperflux'
 import { Microphone01, MicrophoneOff, Refresh2Lg, User01Lg } from '@ir-engine/ui/src/icons'
 import { SVGIconType } from '@ir-engine/ui/src/icons/types'
 import { IconType } from 'react-icons'

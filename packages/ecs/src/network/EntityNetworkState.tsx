@@ -26,31 +26,27 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useLayoutEffect } from 'react'
 
 import {
-  Engine,
-  EntityTreeComponent,
-  EntityUUID,
-  getOptionalComponent,
-  removeEntity,
-  setComponent,
-  UUIDComponent
-} from '@ir-engine/ecs'
-import {
   defineState,
   dispatchAction,
   getMutableState,
   getState,
+  NetworkPeerState,
+  NetworkState,
   none,
   PeerID,
+  SceneUser,
   useHookstate,
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
-
-import { EngineState } from '@ir-engine/ecs'
-import { WorldNetworkAction } from './functions/WorldNetworkAction'
+import { getOptionalComponent, removeEntity, setComponent } from '../ComponentFunctions'
+import { Engine } from '../Engine'
+import { EngineState } from '../EngineState'
+import { EntityUUID } from '../Entity'
+import { EntityTreeComponent } from '../EntityTree'
+import { UUIDComponent } from '../UUIDComponent'
 import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
-import { NetworkPeerState } from './NetworkPeerState'
-import { NetworkState, SceneUser } from './NetworkState'
+import { WorldNetworkAction } from './WorldNetworkAction'
 
 export const EntityNetworkState = defineState({
   name: 'ee.EntityNetworkState',

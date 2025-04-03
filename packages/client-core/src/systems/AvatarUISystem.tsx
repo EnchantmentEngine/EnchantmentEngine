@@ -27,7 +27,13 @@ import { useEffect } from 'react'
 import { CircleGeometry, DoubleSide, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 
 import { UserID } from '@ir-engine/common/src/schema.type.module'
-import { createEntity, EngineState, useEntityContext } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EngineState,
+  EntityTreeComponent,
+  NetworkObjectComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
 import {
   getComponent,
   hasComponent,
@@ -43,27 +49,29 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { applyVideoToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent, NetworkState, webcamVideoMediaChannelType } from '@ir-engine/network'
+import {
+  getState,
+  MediaChannelState,
+  NetworkState,
+  useMutableState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { easeOutElastic } from '@ir-engine/spatial/src/common/functions/MathFunctions'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
+import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { Physics, RaycastArgs } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
 import { getInteractionGroups } from '@ir-engine/spatial/src/physics/functions/getInteractionGroups'
 import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
-
-import { EntityTreeComponent } from '@ir-engine/ecs'
-import { MediaChannelState } from '@ir-engine/network'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import React from 'react'
 import { XruiNameplateComponent } from '../social/components/XruiNameplateComponent'
 
