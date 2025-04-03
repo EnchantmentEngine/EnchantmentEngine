@@ -40,7 +40,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Axis } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {

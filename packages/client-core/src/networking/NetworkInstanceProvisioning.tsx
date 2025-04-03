@@ -43,9 +43,15 @@ import { useFind } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { clientSettingPath, InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
 import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
-import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/hyperflux'
-import { MediaStreamState } from '@ir-engine/hyperflux'
+import {
+  getMutableState,
+  getState,
+  MediaStreamState,
+  NetworkState,
+  none,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
 import { FriendService } from '../social/services/FriendService'
 import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
 import { PeerToPeerNetworkState } from '../transports/p2p/PeerToPeerNetworkState'

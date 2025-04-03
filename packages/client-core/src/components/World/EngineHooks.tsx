@@ -29,15 +29,20 @@ import multiLogger from '@ir-engine/common/src/logger'
 import { InstanceID, projectsPath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs'
 import {
+  Network,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
   addOutgoingTopicIfNecessary,
   dispatchAction,
   getMutableState,
+  joinNetwork,
+  leaveNetwork,
   none,
   useHookstate,
   useImmediateEffect,
   useMutableState
 } from '@ir-engine/hyperflux'
-import { Network, NetworkActions, NetworkState, NetworkTopics, joinNetwork, leaveNetwork } from '@ir-engine/hyperflux'
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'

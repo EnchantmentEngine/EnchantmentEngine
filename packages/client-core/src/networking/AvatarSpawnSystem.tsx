@@ -45,11 +45,11 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NetworkState,
   useHookstate,
   useImmediateEffect,
   useMutableState
 } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/hyperflux'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 
 import { useFind, useMutation } from '@ir-engine/common'

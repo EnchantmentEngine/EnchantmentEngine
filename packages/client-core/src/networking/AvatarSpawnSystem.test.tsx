@@ -49,6 +49,9 @@ import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/S
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import {
   EventDispatcher,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
   UserID,
   applyIncomingActions,
   dispatchAction,
@@ -57,7 +60,6 @@ import {
   startReactor
 } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
-import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/hyperflux'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { act, render } from '@testing-library/react'
