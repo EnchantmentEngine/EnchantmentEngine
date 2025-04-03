@@ -75,7 +75,6 @@ export default function TransformGizmoTool() {
   useEffect(() => {
     const isSelecting = selectionMode.value === SelectionModes.selectionBox
     getMutableState(SelectionBoxState).selectionBoxEnabled.set(isSelecting)
-    // getMutableState(InputState).capturingCameraOrbitEnabled.set(!isSelecting)
   }, [selectionMode])
 
   useEffect(() => {

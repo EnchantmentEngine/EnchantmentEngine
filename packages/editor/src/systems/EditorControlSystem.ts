@@ -31,7 +31,7 @@ import {
   Entity,
   EntityTreeComponent,
   getAncestorWithComponents,
-  PresentationSystemGroup,
+  InputSystemGroup,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -56,7 +56,6 @@ import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/In
 import { InfiniteGridComponent } from '@ir-engine/spatial/src/renderer/components/InfiniteGridHelper'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 
-import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { addMediaNode } from '../functions/addMediaNode'
 import { EditorControlFunctions } from '../functions/EditorControlFunctions'
 import isInputSelected from '../functions/isInputSelected'
@@ -217,6 +216,7 @@ const onCameraOrbitControlBegin = () => {
     duration: 0.5,
     easing: Easing.elastic.inOut
   })
+  getMutableState(SelectionBoxState).selectionBoxEnabled.set(false)
 }
 
 const onFocusCamera = (cameraEntity: Entity) => {
@@ -382,10 +382,10 @@ const execute = () => {
       //   clickStartEntity = selectedParentEntity
       // }
     }
-    const capturingEntity = getState(InputState).capturingEntity
-    if (capturingEntity !== UndefinedEntity && capturingEntity !== clickStartEntity) {
-      clickStartEntity = capturingEntity
-    }
+    // const capturingEntity = getState(InputState).capturingEntity
+    // if (capturingEntity !== UndefinedEntity && capturingEntity !== clickStartEntity) {
+    // clickStartEntity = capturingEntity
+    // }
   }
 
   if (buttons.PrimaryClick?.up && !buttons.PrimaryClick?.dragging) {
@@ -536,7 +536,7 @@ const reactor = () => {
 
 export const EditorControlSystem = defineSystem({
   uuid: 'ee.editor.EditorControlSystem',
-  insert: { before: PresentationSystemGroup },
+  insert: { after: InputSystemGroup },
   execute,
   reactor
 })

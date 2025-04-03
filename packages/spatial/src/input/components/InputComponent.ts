@@ -108,6 +108,10 @@ export const InputComponent = defineComponent({
     /** populated automatically by ClientInputSystem */
     inputSources: S.NonSerialized(S.Array(S.Entity())),
     cachedButtons: S.NonSerialized(S.Type<ButtonStateMap<any>>({})),
+
+    /** if true, the input component will automatically capture input when a button is consumed */
+    autoCapture: S.Bool(false),
+
     buttons: S.NonSerialized(
       S.SerializedClass((entity) => {
         // Helper function to find first unconsumed button state
@@ -143,7 +147,12 @@ export const InputComponent = defineComponent({
               const cachedButtons = inputComponent.cachedButtons
               if (Object.hasOwn(cachedButtons, prop)) {
                 if (!cachedButtons[prop]) return undefined
-                if (cachedButtons[prop] && cachedButtons[prop].consumed) return cachedButtons[prop]
+                if (cachedButtons[prop] && cachedButtons[prop].consumed) {
+                  if (inputComponent.autoCapture && cachedButtons[prop].pressed) {
+                    InputState.setCapturingEntity(entity)
+                  }
+                  return cachedButtons[prop]
+                }
               }
 
               let result = cachedButtons[prop]
@@ -174,6 +183,9 @@ export const InputComponent = defineComponent({
                       result.rotating = states.some((s) => s.rotating)
                       result.up = false
                       result.consumed = entity
+                      if (inputComponent.autoCapture && result?.pressed) {
+                        InputState.setCapturingEntity(entity)
+                      }
                       return result
                     } else if (result) {
                       result.up = true
@@ -183,6 +195,9 @@ export const InputComponent = defineComponent({
                     // For single button bindings, just return that button
                     result = cachedButtons[prop] = findButtonState(b)
                     if (result) result.consumed = entity
+                    if (inputComponent.autoCapture && result?.pressed) {
+                      InputState.setCapturingEntity(entity)
+                    }
                     return result
                   }
 
@@ -194,6 +209,9 @@ export const InputComponent = defineComponent({
               // Otherwise check if this exact button exists and is not consumed
               const rawState = (cachedButtons[prop] = findButtonState(prop as AnyButton))
               if (rawState) rawState.consumed = entity
+              if (rawState && inputComponent.autoCapture && rawState.pressed) {
+                InputState.setCapturingEntity(entity)
+              }
               return rawState
             }
           }
@@ -240,7 +258,8 @@ export const InputComponent = defineComponent({
 
   getButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
-    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType,
+    autoCapture = true
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
@@ -250,6 +269,7 @@ export const InputComponent = defineComponent({
         if (!input.buttonBindings[binding].value) input.buttonBindings[binding].set(inputBindings[binding] as any)
       }
     }
+    input.autoCapture.set(autoCapture)
     return input.buttons.get(NO_PROXY_STEALTH) as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
