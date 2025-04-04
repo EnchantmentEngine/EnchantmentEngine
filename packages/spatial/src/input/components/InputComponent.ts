@@ -92,6 +92,56 @@ const ButtonSchema = S.Union([
   S.Enum(XRStandardGamepadButton)
 ])
 
+/**
+ * Execute a function based on input with configurable order and edit mode behavior
+ * @param executeOnInput Function to execute
+ * @param order Order of execution relative to the input system group
+ * @param executeWhenEditing Whether to execute when in edit mode
+ */
+function useExecuteWithInput(executeOnInput: () => void, order?: InputExecutionOrder, executeWhenEditing?: boolean)
+
+/**
+ * @deprecated Use the new parameter order: (executeOnInput, order, executeWhenEditing)
+ */
+function useExecuteWithInput(executeOnInput: () => void, executeWhenEditing: boolean, order: InputExecutionOrder)
+
+// Implementation
+function useExecuteWithInput(
+  executeOnInput: () => void,
+  orderOrExecuteWhenEditing?: InputExecutionOrder | boolean,
+  executeWhenEditingOrOrder?: boolean | InputExecutionOrder
+) {
+  const entity = useEntityContext()
+
+  // Determine if we're using the deprecated parameter order
+  let order: InputExecutionOrder = InputExecutionOrder.With
+  let executeWhenEditing = false
+
+  if (typeof orderOrExecuteWhenEditing === 'boolean') {
+    // Old parameter order
+    executeWhenEditing = orderOrExecuteWhenEditing
+    order = executeWhenEditingOrOrder as InputExecutionOrder
+  } else {
+    // New parameter order
+    order = (orderOrExecuteWhenEditing as InputExecutionOrder) ?? InputExecutionOrder.With
+    executeWhenEditing = (executeWhenEditingOrOrder as boolean) ?? false
+  }
+
+  useExecute(() => {
+    const isEditing = getState(EngineState).isEditing
+    const capturingEntity = getState(InputState).capturingEntity
+
+    // Don't execute if:
+    // 1. We don't want to execute when editing and we are editing
+    // 2. The entity is not an ancestor of the capturing entity
+    if ((!executeWhenEditing && isEditing) || (capturingEntity && !isAncestor(capturingEntity, entity, true))) {
+      return
+    }
+
+    executeOnInput()
+  }, getInputExecutionInsert(order))
+}
+
 export const InputComponent = defineComponent({
   name: 'InputComponent',
   jsonID: 'EE_input',
@@ -220,28 +270,6 @@ export const InputComponent = defineComponent({
     )
   }),
 
-  useExecuteWithInput(
-    executeOnInput: () => void,
-    executeWhenEditing = false,
-    order: InputExecutionOrder = InputExecutionOrder.With
-  ) {
-    const entity = useEntityContext()
-
-    return useExecute(() => {
-      const isEditing = getState(EngineState).isEditing
-      const capturingEntity = getState(InputState).capturingEntity
-
-      // Don't execute if:
-      // 1. We don't want to execute when editing and we are editing
-      // 2. The entity is not an ancestor of the capturing entity
-      if ((!executeWhenEditing && isEditing) || (capturingEntity && !isAncestor(capturingEntity, entity, true))) {
-        return
-      }
-
-      executeOnInput()
-    }, getInputExecutionInsert(order))
-  },
-
   getInputEntity(entityContext: Entity): Entity {
     const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent], true, true)
     if (closestInputEntity) return closestInputEntity
@@ -323,6 +351,8 @@ export const InputComponent = defineComponent({
   ) {
     return InputComponent.getAxes(entityContext, inputBindings)
   },
+
+  useExecuteWithInput,
 
   useHasFocus() {
     const entity = useEntityContext()

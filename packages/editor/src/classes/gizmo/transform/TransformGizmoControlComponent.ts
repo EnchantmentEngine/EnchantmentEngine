@@ -214,8 +214,8 @@ export const TransformGizmoControlComponent = defineComponent({
 
         gizmoUpdate(gizmoControlEntity)
       },
-      true,
-      InputExecutionOrder.Before
+      InputExecutionOrder.Before,
+      true
     )
 
     return null
