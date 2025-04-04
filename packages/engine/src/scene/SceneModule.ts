@@ -43,6 +43,7 @@ import { LinkComponent } from './components/LinkComponent'
 import { LookAtComponent } from './components/LookAtComponent'
 import { MediaComponent } from './components/MediaComponent'
 import { MountPointComponent } from './components/MountPointComponent'
+import { ObservableComponent } from './components/ObservableComponent'
 import { ParticleSystemComponent } from './components/ParticleSystemComponent'
 import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
 import { RenderSettingsComponent } from './components/RenderSettingsComponent'
@@ -89,6 +90,7 @@ export const SceneComponents = [
   MediaComponent,
   // MediaSettingsComponent,
   MountPointComponent,
+  ObservableComponent,
   // OceanComponent,
   ParticleSystemComponent,
   PostProcessingComponent,

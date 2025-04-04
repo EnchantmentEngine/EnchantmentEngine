@@ -33,16 +33,26 @@ const AnimationTriggerObservableData: SerializedComponentType<typeof ObservableC
     // enter
     {
       conditions: [],
-      target: '' as NodeID, // loop animation component
-      callback: 'EE_loop_animation.deserializeComponent',
-      parameters: [{ activeClipIndex: -1, loop: LoopOnce }]
+      effects: [
+        {
+          nodeID: '' as NodeID, // loop animation component
+          jsonID: 'EE_loop_animation',
+          values: { activeClipIndex: -1, loop: LoopOnce }
+        }
+      ],
+      networked: true
     },
     // exit
     {
       conditions: [],
-      target: '' as NodeID, // loop animation component
-      callback: 'EE_loop_animation.deserializeComponent',
-      parameters: [{ activeClipIndex: -1, loop: LoopOnce }]
+      effects: [
+        {
+          nodeID: '' as NodeID, // loop animation component
+          jsonID: 'EE_loop_animation',
+          values: { activeClipIndex: -1, loop: LoopOnce }
+        }
+      ],
+      networked: true
     }
   ]
 }
@@ -52,16 +62,26 @@ const VideoTriggerObservableData: SerializedComponentType<typeof ObservableCompo
     // enter
     {
       conditions: [],
-      target: '' as NodeID, // loop animation component
-      callback: 'EE_media.deserializeComponent',
-      parameters: [{ activeClipIndex: -1, loop: LoopOnce }]
+      effects: [
+        {
+          nodeID: '' as NodeID, // loop animation component
+          jsonID: 'EE_media',
+          values: { activeClipIndex: -1, loop: LoopOnce }
+        }
+      ],
+      networked: true
     },
     // exit
     {
       conditions: [],
-      target: '' as NodeID, // loop animation component
-      callback: 'EE_media.deserializeComponent',
-      parameters: [{ activeClipIndex: -1, loop: LoopOnce }]
+      effects: [
+        {
+          nodeID: '' as NodeID, // loop animation component
+          jsonID: 'EE_media',
+          values: { activeClipIndex: -1, loop: LoopOnce }
+        }
+      ],
+      networked: true
     }
   ]
 }
