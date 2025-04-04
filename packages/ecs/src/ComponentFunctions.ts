@@ -1383,7 +1383,7 @@ export const TransitionComponent = defineComponent({
     const propertyValue = resolveObject(component, transition.propertyPath) as any as TransitionableTypes
     if (propertyValue === undefined) return
 
-    if (!transition.initialValue) {
+    if (transition.initialValue === undefined) {
       transition.initialValue = typeof propertyValue === 'number' ? propertyValue : propertyValue.clone()
     }
 

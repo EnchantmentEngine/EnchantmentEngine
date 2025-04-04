@@ -38,6 +38,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { ReactorReconciler, ReactorRoot, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 
 import {
   EngineState,
@@ -530,6 +531,8 @@ describe('InputComponent', () => {
       syst.execute()
       root.run()
 
+      await flushAll()
+
       // Check that we have run the correct number of times
       assert.equal(reactorSpy.callCount, 4)
       assert.equal(effectSpy.callCount, 2)
@@ -612,7 +615,7 @@ describe('InputComponent', () => {
         const ancestor = data.notAncestor ? 'not an ancestor' : 'an ancestor'
         const orderIs = `order is set to InputExecutionOrder.${OrderName}`
 
-        it(`should ${run} the executeOnInput function when (we ${want} to executeWhenEditing and we are ${editing}) or (the entity is ${ancestor} of the entityContext) and ${orderIs}`, () => {
+        it(`should ${run} the executeOnInput function when (we ${want} to executeWhenEditing and we are ${editing}) or (the entity is ${ancestor} of the entityContext) and ${orderIs}`, async () => {
           // Create the function spies
           const executeSpy = sinon.spy()
           const reactorSpy = sinon.spy()
@@ -632,6 +635,8 @@ describe('InputComponent', () => {
             return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
           }) as ReactorRoot
 
+          await flushAll()
+
           assert.equal(reactorSpy.callCount, 2)
           assert.ok(!executeSpy.called)
           root.run()
@@ -649,6 +654,8 @@ describe('InputComponent', () => {
 
           assert.equal(getState(EngineState).isEditing, data.isEditing)
           assert.equal(ConditionAncestor, !isAncestor(getState(InputState).capturingEntity, testEntity, true))
+
+          await flushAll()
 
           assert.equal(reactorSpy.callCount, 3)
           assert.equal(executeSpy.called, ShouldRun)
@@ -673,6 +680,8 @@ describe('InputComponent', () => {
       ReactorReconciler.flushSync(() => {
         getMutableComponent(entity, InputComponent).inputSources.merge([entity])
       })
+
+      await flushAll()
 
       assert(hasComponent(entity, HighlightComponent))
     })
