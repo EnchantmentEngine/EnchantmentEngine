@@ -382,10 +382,6 @@ const execute = () => {
       //   clickStartEntity = selectedParentEntity
       // }
     }
-    // const capturingEntity = getState(InputState).capturingEntity
-    // if (capturingEntity !== UndefinedEntity && capturingEntity !== clickStartEntity) {
-    // clickStartEntity = capturingEntity
-    // }
   }
 
   if (buttons.PrimaryClick?.up && !buttons.PrimaryClick?.dragging) {
@@ -420,6 +416,8 @@ const execute = () => {
           !!buttons.ShiftLeft?.pressed || !!buttons.ShiftRight?.pressed
         )
       }
+    } else if (!clickStartEntity) {
+      SelectionState.updateSelection([])
     }
   }
 }

@@ -47,7 +47,7 @@ import {
   BoundingBoxComponent,
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Box2, Frustum, Plane, Vector2, Vector3 } from 'three'
 import { EditorState } from '../../../services/EditorServices'
 import { SelectionState } from '../../../services/SelectionServices'
@@ -78,13 +78,11 @@ export default function SelectionBox({
   const onPointerDrag = (pointer: typeof InputPointerComponent._TYPE) => {
     box.set(box.value.makeEmpty().expandByPoint(start.value).expandByPoint(pointer.position))
     isDragging.set(true)
-    console.log('onPointerDrag')
   }
 
   const onPointerUp = (pointer: typeof InputPointerComponent._TYPE) => {
     isDragging.set(false)
     updateSelectionEntity()
-    console.log('onPointerUp')
   }
 
   const updateSelectionEntity = () => {
@@ -156,7 +154,6 @@ export default function SelectionBox({
         buttons.PrimaryClick?.inputSourceEntity || UndefinedEntity,
         InputPointerComponent
       )
-      console.log(buttons?.PrimaryClick)
       if (pointer && buttons?.PrimaryClick?.down) {
         onPointerDown(pointer)
       }
@@ -171,7 +168,7 @@ export default function SelectionBox({
     InputExecutionOrder.With
   )
 
-  useEffect(() => {}, [getMutableState(SelectionBoxState).selectionBoxEnabled])
+  const selectionBoxEnabled = useMutableState(SelectionBoxState).selectionBoxEnabled
 
   const vWidth = viewportRef.current?.clientWidth ?? 0
   const vHeight = viewportRef.current?.clientHeight ?? 0
@@ -180,8 +177,8 @@ export default function SelectionBox({
   const size = box.value.getSize(_size)
 
   return (
-    <div className="relative h-full w-full" style={{ backgroundColor: 'rgba(255, 0, 0, 0.5)' }}>
-      {getMutableState(SelectionBoxState).selectionBoxEnabled.value && isDragging.value && (
+    <div className="relative h-full w-full">
+      {selectionBoxEnabled.value && isDragging.value && (
         <div
           className="absolute z-[5] flex touch-none flex-col items-center border-2 border-dashed border-white bg-transparent"
           style={{
