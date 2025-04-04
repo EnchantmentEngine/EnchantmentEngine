@@ -303,8 +303,8 @@ export const InteractableComponent = defineComponent({
           }
         }
       },
-      true,
-      InputExecutionOrder.After
+      InputExecutionOrder.After,
+      true
     )
 
     useEffect(() => {

@@ -164,8 +164,8 @@ export default function SelectionBox({
         onPointerUp(pointer)
       }
     },
-    true,
-    InputExecutionOrder.With
+    InputExecutionOrder.With,
+    true
   )
 
   const selectionBoxEnabled = useMutableState(SelectionBoxState).selectionBoxEnabled
