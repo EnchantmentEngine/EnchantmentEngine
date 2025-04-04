@@ -56,7 +56,6 @@ export const SpawnPointComponent = defineComponent({
   }),
 
   reactor: function () {
-    console.log('reactor')
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
     const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
@@ -100,7 +99,6 @@ export const SpawnPointComponent = defineComponent({
       }
     }, [])
 
-    console.log('rendererd')
     return null
   }
 })

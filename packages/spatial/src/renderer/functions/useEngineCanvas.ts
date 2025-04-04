@@ -32,6 +32,7 @@ import { useEffect } from 'react'
 
 export const useEngineCanvas = (ref: React.RefObject<HTMLElement>) => {
   useEffect(() => {
+    if (!ref.current) return
     const parent = ref.current as HTMLElement
 
     const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement

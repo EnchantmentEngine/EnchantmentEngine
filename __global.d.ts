@@ -69,3 +69,8 @@ declare module '*!text' {
   const _: string
   export default _
 }
+
+declare module "*.gltf" {
+  const value: string
+  export default value
+}

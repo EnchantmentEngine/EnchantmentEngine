@@ -89,6 +89,7 @@ export const EditorState = defineState({
     const linkState = useMutableState(LinkState)
 
     useEffect(() => {
+      console.log('use effect')
       if (!linkState.location.value) return
 
       NotificationService.dispatchNotify('Scene navigation is disabled in the studio', { variant: 'warning' })

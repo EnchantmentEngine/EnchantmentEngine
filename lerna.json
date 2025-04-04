@@ -1,8 +1,5 @@
 {
-  "packages": [
-    "packages/*",
-    "packages/projects/projects/**"
-  ],
+  "packages": ["packages/**", "packages/projects/projects/**"],
   "version": "1.6.0",
   "npmClient": "npm",
   "useNx": true,

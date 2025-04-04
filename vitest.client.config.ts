@@ -40,6 +40,10 @@ export default defineConfig({
     hookTimeout: 10000,
     reporters: reporters,
     slowTestThreshold: 1000,
+    env: {
+      // Add any default environment variables here
+      TEST: 'true'
+    },
     coverage: {
       enabled: true,
       reporter: ['lcov'],
