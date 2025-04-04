@@ -26,6 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineComponent, useChildrenWithComponents, useComponent, useEntityContext } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useEffect } from 'react'
+import { TransformPivot, TransformSpace } from '../../common/constants/TransformConstants'
+import { computeTransformPivot } from '../../common/functions/TransformPivot'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { CameraOrbitComponent } from './CameraOrbitComponent'
 
@@ -43,8 +45,14 @@ export const AssetPreviewCameraComponent = defineComponent({
     const cameraOrbitComponent = useComponent(entity, CameraOrbitComponent)
 
     useEffect(() => {
-      cameraOrbitComponent.focusedEntities.set([previewCameraComponent.targetModelEntity.value])
-    }, [childMeshes.length > 0, !!cameraOrbitComponent])
+      const pivot = computeTransformPivot(
+        [previewCameraComponent.targetModelEntity.value],
+        TransformPivot.Center,
+        TransformSpace.world
+      )
+      if (!pivot || !pivot.position || !cameraOrbitComponent) return
+      CameraOrbitComponent.setFocus(entity, pivot.position, pivot.bounds)
+    }, [childMeshes.length, !!cameraOrbitComponent])
 
     return null
   }
