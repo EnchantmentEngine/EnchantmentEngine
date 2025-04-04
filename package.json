@@ -133,6 +133,7 @@
     "kill-port": "2.0.1",
     "lerna": "6.5.1",
     "lint-staged": "13.2.0",
+    "msw": "^2.7.3",
     "package-json-type": "1.0.3",
     "playwright": "^1.51.1",
     "pre-commit": "1.2.2",
@@ -171,5 +172,10 @@
     "patch-package": "^6.5.1",
     "ts-node": "10.9.2",
     "typescript": "5.6.3"
+  },
+  "msw": {
+    "workerDirectory": [
+      "packages/vitest-example"
+    ]
   }
 }

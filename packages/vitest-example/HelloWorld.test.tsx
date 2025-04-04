@@ -25,13 +25,18 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { createEntity, getComponent, query, setComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
 import { SpawnPointComponent } from '@ir-engine/engine/src/scene/components/SpawnPointComponent'
+import { SkyTypeEnum } from '@ir-engine/engine/src/scene/constants/SkyTypeEnum'
 import { getMutableState } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { http, HttpResponse } from 'msw'
+import { setupWorker } from 'msw/browser'
 import React from 'react'
 import { Cache } from 'three'
 import { assert, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import negX from '../projects/default-project/assets/skyboxsun25deg/negx.jpg'
 import EngineSandbox from './EngineSanbox'
 import HelloWorld from './HelloWorld'
 
@@ -62,7 +67,38 @@ test('render engine', async () => {
     if (success) gltfEntity = q[0]
     return success
   })
-  console.log(gltfEntity)
   const gltf = getComponent(gltfEntity, GLTFComponent)
   assert.exists(gltf)
+})
+
+const initWorker = async () => {
+  const image = await fetch(negX).then((res) => res.arrayBuffer())
+  const worker = setupWorker(
+    http.get(/[pos|neg]/g, async ({ request }) => {
+      console.log(request.url)
+      return HttpResponse.arrayBuffer(image)
+    })
+  )
+  return worker
+}
+
+const extension = test.extend({
+  worker: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use) => {
+      const worker = await initWorker()
+      await worker.start({ quiet: true })
+      await use(worker)
+      worker.stop()
+    },
+    { auto: true }
+  ]
+})
+
+extension('should intercept', async () => {
+  render(<EngineSandbox />)
+  const entity = createEntity()
+  setComponent(entity, SkyboxComponent, { backgroundType: SkyTypeEnum.cubemap, cubemapPath: 'https://test.com/' })
+  await new Promise((resolve) => setTimeout(resolve, 10000))
+  console.log('done')
 })
