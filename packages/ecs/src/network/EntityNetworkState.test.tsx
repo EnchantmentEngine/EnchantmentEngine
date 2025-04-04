@@ -98,6 +98,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
@@ -148,6 +150,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -200,6 +204,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
@@ -224,6 +230,7 @@ describe('EntityNetworkState', () => {
 
       getMutableState(EngineState).userID.set(userId)
       const network = NetworkState.worldNetwork as Network
+      console.log('TEST')
 
       dispatchAction(
         NetworkActions.peerJoined({
@@ -250,11 +257,15 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
       const networkObjectEntities = networkObjectQuery()
+      console.log({ networkObjectEntities })
       const networkObjectOwnedEntities = networkObjectOwnedQuery()
+      console.log({ networkObjectOwnedEntities })
 
       assert.equal(networkObjectEntities.length, 1)
       assert.equal(networkObjectOwnedEntities.length, 1)
@@ -310,6 +321,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       dispatchAction(
         WorldNetworkAction.spawnEntity({
           parentUUID,
@@ -322,6 +335,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -426,6 +441,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
@@ -443,6 +460,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       networkObjectEntities = networkObjectQuery()
       networkObjectOwnedEntities = networkObjectOwnedQuery()
@@ -489,6 +508,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
@@ -508,6 +529,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       networkObjectEntities = networkObjectQuery()
       networkObjectOwnedEntities = networkObjectOwnedQuery()
@@ -540,6 +563,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -591,6 +616,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -653,6 +680,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
 
@@ -714,6 +743,8 @@ describe('EntityNetworkState', () => {
 
       applyIncomingActions()
 
+      await act(() => render(null))
+
       const parentEntity = createEntity()
       const parentUUID = UUIDComponent.generateUUID()
       setComponent(parentEntity, UUIDComponent, parentUUID)
@@ -730,6 +761,8 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectQuery = defineQuery([NetworkObjectComponent])
       const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -753,7 +786,12 @@ describe('EntityNetworkState', () => {
       )
 
       applyIncomingActions()
+
+      await act(() => render(null))
+
       applyIncomingActions()
+
+      await act(() => render(null))
 
       const networkObjectEntitiesAfter = networkObjectQuery()
       const networkObjectOwnedEntitiesAfter = networkObjectOwnedQuery()
@@ -800,6 +838,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     const parentEntity = createEntity()
     const parentUUID = UUIDComponent.generateUUID()
     setComponent(parentEntity, UUIDComponent, parentUUID)
@@ -816,6 +856,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const networkObjectQuery = defineQuery([NetworkObjectComponent])
     const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -839,7 +881,12 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
+
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const networkObjectEntitiesAfter = networkObjectQuery()
     const networkObjectOwnedEntitiesAfter = networkObjectOwnedQuery()
@@ -888,6 +935,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         parentUUID,
@@ -900,6 +949,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const networkObjectQuery = defineQuery([NetworkObjectComponent])
     const networkObjectOwnedQuery = defineQuery([NetworkObjectOwnedTag])
@@ -923,6 +974,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
     applyIncomingActions()
 
     const networkObjectEntitiesAfter = networkObjectQuery()
@@ -976,6 +1029,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     const networkObjectQuery = defineQuery([NetworkObjectComponent])
 
     const networkObjectEntitiesBefore = networkObjectQuery()
@@ -1000,6 +1055,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     const networkObjectEntitiesAfter = networkObjectQuery()
 
     assert.equal(networkObjectEntitiesAfter.length, 2)
@@ -1019,6 +1076,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const otherEntity = UUIDComponent.getEntityByUUID(otherEntityUUID)
 
@@ -1042,6 +1101,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const otherEntity2 = UUIDComponent.getEntityByUUID(otherEntityUUID2)
 
@@ -1076,6 +1137,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         parentUUID,
@@ -1088,6 +1151,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const networkObjectQuery = defineQuery([NetworkObjectComponent])
 
@@ -1105,6 +1170,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     assert.equal(getState(EntityNetworkState)['entity'].requestingPeerId, peerID)
 
@@ -1155,6 +1222,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         parentUUID,
@@ -1167,6 +1236,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     dispatchAction(
       NetworkActions.peerLeft({
@@ -1181,6 +1252,8 @@ describe('EntityNetworkState', () => {
     await act(() => render(null))
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     assert.equal(getState(EntityNetworkState)['entity'].authorityPeerId, peerID2)
 
@@ -1229,6 +1302,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         parentUUID,
@@ -1241,6 +1316,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     dispatchAction(
       NetworkActions.peerLeft({
@@ -1255,6 +1332,8 @@ describe('EntityNetworkState', () => {
     await act(() => render(null))
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     assert.equal(getState(EntityNetworkState)['entity'].authorityPeerId, peerID2)
 
@@ -1304,6 +1383,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         parentUUID,
@@ -1318,6 +1399,8 @@ describe('EntityNetworkState', () => {
 
     applyIncomingActions()
 
+    await act(() => render(null))
+
     dispatchAction(
       NetworkActions.peerLeft({
         peerID: peerID2,
@@ -1331,6 +1414,8 @@ describe('EntityNetworkState', () => {
     await act(() => render(null))
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     /** @todo we need to handle reverting authority to the scene */
     // assert.equal(getState(EntityNetworkState)['entity'].authorityPeerId, ScenePeer)
@@ -1378,6 +1463,8 @@ describe('EntityNetworkState', () => {
     )
     applyIncomingActions()
 
+    await act(() => render(null))
+
     const start = performance.now()
 
     const count = 1000
@@ -1396,6 +1483,8 @@ describe('EntityNetworkState', () => {
     }
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const applyActionsEnd = performance.now()
     console.log(count, 'entities apply action time:', applyActionsEnd - start)
@@ -1420,6 +1509,8 @@ describe('EntityNetworkState', () => {
     )
 
     applyIncomingActions()
+
+    await act(() => render(null))
 
     const runner2End = performance.now()
 

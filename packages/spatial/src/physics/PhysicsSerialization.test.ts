@@ -43,6 +43,7 @@ import {
   writeComponent
 } from '@ir-engine/ecs'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import sinon from 'sinon'
 import { Quaternion, Vector3 } from 'three'
@@ -239,9 +240,10 @@ describe('PhysicsSerialization', () => {
         destroyEngine()
       })
 
-      it('should readBodyPosition into the `@param v` ViewCursor when position is marked as changed (1<<1)', () => {
+      it('should readBodyPosition into the `@param v` ViewCursor when position is marked as changed (1<<1)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.position.x[testEntity] = Expected.x
         RigidBodyComponent.position.y[testEntity] = Expected.y
         RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -261,9 +263,10 @@ describe('PhysicsSerialization', () => {
         assert.equal(view.cursor, afterCursor)
       })
 
-      it('should readBodyRotation into the `@param v` ViewCursor when rotation is marked as changed (1<<2)', () => {
+      it('should readBodyRotation into the `@param v` ViewCursor when rotation is marked as changed (1<<2)', async () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -284,9 +287,10 @@ describe('PhysicsSerialization', () => {
         assert.equal(view.cursor, afterCursor)
       })
 
-      it('should readBodyLinearVelocity into the `@param v` ViewCursor when linearVelocity is marked as changed (1<<3)', () => {
+      it('should readBodyLinearVelocity into the `@param v` ViewCursor when linearVelocity is marked as changed (1<<3)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -306,9 +310,10 @@ describe('PhysicsSerialization', () => {
         assert.equal(view.cursor, afterCursor)
       })
 
-      it('should readBodyAngularVelocity into the `@param v` ViewCursor when angularVelocity is marked as changed (1<<4)', () => {
+      it('should readBodyAngularVelocity into the `@param v` ViewCursor when angularVelocity is marked as changed (1<<4)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
@@ -341,9 +346,10 @@ describe('PhysicsSerialization', () => {
           setComponent(physicsWorldEntity, EntityTreeComponent)
           physicsWorld = Physics.createWorld(physicsWorldEntity)
           physicsWorld.timestep = 1 / 60
+          await act(() => render(null))
         })
 
-        it('should call setRigidbodyPose when the entity has dynamic a RigidBody (aka [RigidBodyComponent, RigidBodyDynamicTagComponent]) and one of the elements changed', () => {
+        it('should call setRigidbodyPose when the entity has dynamic a RigidBody (aka [RigidBodyComponent, RigidBodyDynamicTagComponent]) and one of the elements changed', async () => {
           const Expected = new Vector3(41, 42, 43)
           const spy = sinon.spy()
           // Set the data as expected
@@ -351,6 +357,7 @@ describe('PhysicsSerialization', () => {
           setComponent(testEntity, TransformComponent)
           setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
           setComponent(testEntity, ColliderComponent, { shape: Shapes.Sphere })
+          await act(() => render(null))
           RigidBodyComponent.position.x[testEntity] = Expected.x
           RigidBodyComponent.position.y[testEntity] = Expected.y
           RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -370,10 +377,11 @@ describe('PhysicsSerialization', () => {
         })
       })
 
-      it('should set RigidBodyComponent.targetKinematicPosition to RigidBodyComponent.position if the entity has a fixed RigidBody (aka [RigidBodyComponent, Not(RigidBodyDynamicTagComponent)])', () => {
+      it('should set RigidBodyComponent.targetKinematicPosition to RigidBodyComponent.position if the entity has a fixed RigidBody (aka [RigidBodyComponent, Not(RigidBodyDynamicTagComponent)])', async () => {
         const Expected = new Vector3(41, 42, 43)
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+        await act(() => render(null))
         getMutableComponent(testEntity, RigidBodyComponent).position.x.set(Expected.x)
         getMutableComponent(testEntity, RigidBodyComponent).position.y.set(Expected.y)
         getMutableComponent(testEntity, RigidBodyComponent).position.z.set(Expected.z)
@@ -392,10 +400,11 @@ describe('PhysicsSerialization', () => {
         assertVec.approxEq(result, Expected, 3)
       })
 
-      it('should set RigidBodyComponent.targetKinematicRotation to RigidBodyComponent.rotation if the entity has a fixed RigidBody (aka [RigidBodyComponent, Not(RigidBodyDynamicTagComponent)])', () => {
+      it('should set RigidBodyComponent.targetKinematicRotation to RigidBodyComponent.rotation if the entity has a fixed RigidBody (aka [RigidBodyComponent, Not(RigidBodyDynamicTagComponent)])', async () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent)
+        await act(() => render(null))
         getMutableComponent(testEntity, RigidBodyComponent).rotation.x.set(Expected.x)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.y.set(Expected.y)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.z.set(Expected.z)
@@ -462,10 +471,11 @@ describe('PhysicsSerialization', () => {
         destroyEngine()
       })
 
-      it('should write the RigidBodyComponent.rotation into the ViewCursor correctly', () => {
+      it('should write the RigidBodyComponent.rotation into the ViewCursor correctly', async () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -494,10 +504,11 @@ describe('PhysicsSerialization', () => {
         destroyEngine()
       })
 
-      it('should write the RigidBodyComponent.linearVelocity into the ViewCursor correctly', () => {
+      it('should write the RigidBodyComponent.linearVelocity into the ViewCursor correctly', async () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -525,10 +536,11 @@ describe('PhysicsSerialization', () => {
         destroyEngine()
       })
 
-      it('should write the RigidBodyComponent.angularVelocity into the ViewCursor correctly', () => {
+      it('should write the RigidBodyComponent.angularVelocity into the ViewCursor correctly', async () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        await act(() => render(null))
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
