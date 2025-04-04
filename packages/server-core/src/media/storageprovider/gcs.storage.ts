@@ -371,12 +371,20 @@ export class GCSStorage implements StorageProviderInterface {
     }
     if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
-    console.log('Daniel')
-    console.log('folderName:' + folderName)
-    console.log(recursive)
-    console.log(files.prefixes)
 
     if (recursive) {
+      //Recursive calls don't get immediate child folders/prefixes, so we need to get them manually
+      //and then add them onto the results
+      const childResponse = await this.provider.bucket(this.bucket).getFiles({
+        prefix,
+        delimiter: '/'
+      })
+      const childFiles = childResponse[2] as {
+        items?: { mediaLink: string; name: string; size: string }[]
+        prefixes?: string[]
+        autoPaginate: true
+      }
+      files.prefixes = files.prefixes.concat(childFiles.prefixes || [])
       for (let i = 0; i < files.items.length; i++) {
         const key = files.items[i].name
         const regexx = /(?:.*)\/(?<name>.*)\.(?<extension>.*)/g
@@ -386,6 +394,11 @@ export class GCSStorage implements StorageProviderInterface {
         } else {
           promises.push(this.createFolderPromise(key.slice(0, -1), +files.items[i].size))
         }
+      }
+      // Folders
+      for (let i = 0; i < files.prefixes!.length; i++) {
+        const key = files.prefixes![i].slice(0, -1)
+        promises.push(this.createFolderPromise(key))
       }
     } else {
       // Folders

@@ -185,10 +185,10 @@ export class FileBrowserService
     let result = await storageProvider.listFolderContent(directory, !!recursive)
     Object.entries(params.query).forEach(([key, value]) => {
       if (value['$like']) {
-        result = result.filter(
-          (item) =>
-            (item[key] as string).search(new RegExp((value['$like'] as string).replaceAll('%', ''), 'gi')) !== -1
-        )
+        result = result.filter((item) => {
+          const split = item[key].split('/')
+          return split[split.length - 1].search(new RegExp((value['$like'] as string).replaceAll('%', ''), 'gi')) !== -1
+        })
       }
     })
 
