@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useLayoutEffect } from 'react'
+import { useEffect } from 'react'
 
 import { createEntity, entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
@@ -56,6 +56,7 @@ export const SpawnPointComponent = defineComponent({
   }),
 
   reactor: function () {
+    console.log('reactor')
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
     const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
@@ -63,11 +64,13 @@ export const SpawnPointComponent = defineComponent({
     const debugEnabled = renderState.nodeHelperVisibility.value || activeHelperComponent !== undefined
 
     const debugGLTF = useGLTFComponent(debugEnabled ? GLTF_PATH : '', entity)
+    console.log({ debugEnabled, debugGLTF })
 
-    useLayoutEffect(() => {
+    useEffect(() => {
       if (!debugGLTF || !debugEnabled) return
 
       const boundsHelperEntity = createEntity()
+
       setComponent(boundsHelperEntity, TransformComponent)
       setComponent(boundsHelperEntity, EntityTreeComponent, { parentEntity: entity })
       setComponent(boundsHelperEntity, VisibleComponent)
@@ -95,8 +98,9 @@ export const SpawnPointComponent = defineComponent({
         removeEntity(boundsHelperEntity)
         if (entityExists(debugGLTF)) setVisibleComponent(debugGLTF, false)
       }
-    }, [debugGLTF, debugEnabled])
+    }, [])
 
+    console.log('rendererd')
     return null
   }
 })
