@@ -170,7 +170,6 @@ export const execute = () => {
 
 export const WidgetAppServiceReceptorSystem = defineSystem({
   uuid: 'ee.engine.widgets.WidgetAppServiceReceptorSystem',
-
-  insert: { after: PresentationSystemGroup }
-  // execute
+  insert: { after: PresentationSystemGroup },
+  execute
 })

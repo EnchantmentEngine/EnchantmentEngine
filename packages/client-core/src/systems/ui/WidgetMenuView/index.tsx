@@ -35,9 +35,11 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions, WidgetAppState } from '../../WidgetAppService'
 
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+import { endXRSession, requestXRSession } from '@ir-engine/spatial/src/xr/XRSessionFunctions'
 import { Microphone01, MicrophoneOff, Refresh2Lg, User01Lg } from '@ir-engine/ui/src/icons'
 import { SVGIconType } from '@ir-engine/ui/src/icons/types'
 import { IconType } from 'react-icons'
+import { VrIcon } from '../../../common/components/Icons/VrIcon'
 import { useMediaInstance } from '../../../common/services/MediaInstanceConnectionService'
 import XRIconButton from '../../components/XRIconButton'
 import HandSVG from './back_hand_24px.svg?react'
@@ -116,6 +118,7 @@ const HandednessWidgetButton = () => {
 export const WidgetButtons = () => {
   const widgetMutableState = useMutableState(WidgetAppState)
   const sessionMode = useHookstate(getMutableState(XRState).sessionMode)
+  const session = useHookstate(getMutableState(XRState).session)
   const mediaInstanceState = useMediaInstance()
 
   const mediaStreamState = useMutableState(MediaStreamState)
@@ -130,13 +133,13 @@ export const WidgetButtons = () => {
   //     setUnreadMessages(true)
   // }, [activeChannel?.messages])
 
-  // const toggleVRSession = () => {
-  //   if (engineState.xrSessionStarted.value) {
-  //     endXRSession()
-  //   } else {
-  //     requestXRSession()
-  //   }
-  // }
+  const toggleVRSession = () => {
+    if (session.value) {
+      endXRSession()
+    } else {
+      requestXRSession()
+    }
+  }
 
   const handleRespawnAvatar = () => {
     respawnAvatar(AvatarComponent.getSelfAvatarEntity())
@@ -188,11 +191,7 @@ export const WidgetButtons = () => {
             label={isCamAudioEnabled ? 'Audio on' : 'Audio Off'}
           />
         )}
-        {/* <WidgetButton
-          Icon={VrIcon}
-          toggle={toggleVRSession}
-          label={engineState.xrSessionStarted.value ? 'Exit VR' : 'Enter VR'}
-        /> */}
+        <WidgetButton Icon={VrIcon} toggle={toggleVRSession} label={session.value ? 'Exit VR' : 'Enter VR'} />
         {activeWidgets.map((widget, i) => (
           <WidgetButton key={i} Icon={widget.icon!} toggle={toggleWidget(widget)} label={widget.label} />
         ))}
