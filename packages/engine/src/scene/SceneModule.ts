@@ -32,6 +32,7 @@ import { LoopAnimationComponent } from '../avatar/components/LoopAnimationCompon
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
 import { MountPointSystem } from '../interaction/systems/MountPointSystem'
 import { MaterialLibrarySystem } from '../scene/materials/systems/MaterialLibrarySystem'
+import { BehaviorComponent } from './components/BehaviorComponent'
 import { CameraSettingsComponent } from './components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from './components/EnvMapBakeComponent'
 import { EnvMapComponent } from './components/EnvmapComponent'
@@ -43,7 +44,6 @@ import { LinkComponent } from './components/LinkComponent'
 import { LookAtComponent } from './components/LookAtComponent'
 import { MediaComponent } from './components/MediaComponent'
 import { MountPointComponent } from './components/MountPointComponent'
-import { ObservableComponent } from './components/ObservableComponent'
 import { ParticleSystemComponent } from './components/ParticleSystemComponent'
 import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
 import { RenderSettingsComponent } from './components/RenderSettingsComponent'
@@ -90,7 +90,7 @@ export const SceneComponents = [
   MediaComponent,
   // MediaSettingsComponent,
   MountPointComponent,
-  ObservableComponent,
+  BehaviorComponent,
   // OceanComponent,
   ParticleSystemComponent,
   PostProcessingComponent,

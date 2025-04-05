@@ -26,15 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import { SerializedComponentType } from '@ir-engine/ecs'
 import { LoopOnce } from 'three'
 import { NodeID } from '../../gltf/NodeIDComponent'
-import { ObservableComponent } from './ObservableComponent'
+import { BehaviorComponent } from './BehaviorComponent'
 
-const AnimationTriggerObservableData: SerializedComponentType<typeof ObservableComponent> = {
-  observers: [
+const AnimationTriggerBehaviorData: SerializedComponentType<typeof BehaviorComponent> = {
+  behaviors: [
     // enter
     {
       conditions: [],
       effects: [
         {
+          type: 'setComponent',
           nodeID: '' as NodeID, // loop animation component
           jsonID: 'EE_loop_animation',
           values: { activeClipIndex: -1, loop: LoopOnce }
@@ -47,6 +48,7 @@ const AnimationTriggerObservableData: SerializedComponentType<typeof ObservableC
       conditions: [],
       effects: [
         {
+          type: 'setComponent',
           nodeID: '' as NodeID, // loop animation component
           jsonID: 'EE_loop_animation',
           values: { activeClipIndex: -1, loop: LoopOnce }
@@ -57,13 +59,14 @@ const AnimationTriggerObservableData: SerializedComponentType<typeof ObservableC
   ]
 }
 
-const VideoTriggerObservableData: SerializedComponentType<typeof ObservableComponent> = {
-  observers: [
+const VideoTriggerBehaviorData: SerializedComponentType<typeof BehaviorComponent> = {
+  behaviors: [
     // enter
     {
       conditions: [],
       effects: [
         {
+          type: 'setComponent',
           nodeID: '' as NodeID, // loop animation component
           jsonID: 'EE_media',
           values: { activeClipIndex: -1, loop: LoopOnce }
@@ -76,6 +79,7 @@ const VideoTriggerObservableData: SerializedComponentType<typeof ObservableCompo
       conditions: [],
       effects: [
         {
+          type: 'setComponent',
           nodeID: '' as NodeID, // loop animation component
           jsonID: 'EE_media',
           values: { activeClipIndex: -1, loop: LoopOnce }

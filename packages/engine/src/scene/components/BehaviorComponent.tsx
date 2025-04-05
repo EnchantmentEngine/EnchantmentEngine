@@ -103,9 +103,9 @@ const ObservableCalledReactor = (props: { item: { entityUUID: EntityUUID; indice
     const entity = UUIDComponent.getEntityByUUID(item.entityUUID)
     const sourceID = getComponent(entity, SourceComponent)
     for (const index of item.indices) {
-      const observer = getComponent(entity, ObservableComponent).observers[index]
-      if (!observer) continue
-      for (const effect of observer.effects) {
+      const behavior = getComponent(entity, BehaviorComponent).behaviors[index]
+      if (!behavior) continue
+      for (const effect of behavior.effects) {
         const targetSource = effect.sourceNodeID ? getSourceIDFromNodeID(sourceID, effect.sourceNodeID) : sourceID
 
         // setComponent
@@ -271,7 +271,7 @@ export const TransitionSchema = S.Object({
 //   parameters: S.Array(ValueSchema)
 // })
 
-export const ObserverSchema = S.Object({
+export const BehaviorSchema = S.Object({
   conditions: ConditionsSchema,
   effects: S.Array(
     S.Union([
@@ -355,32 +355,32 @@ const getSourceIDFromNodeID = (sourceID: SourceID, nodeID: NodeID) => {
   return GLTFComponent.getInstanceID(entity)
 }
 
-const validObserver = (observer: Static<typeof ObserverSchema>) =>
-  observer.conditions.length &&
-  observer.effects.length &&
-  observer.conditions.every(validCondition) &&
-  observer.effects.every(validEffect)
+const validBehavior = (behavior: Static<typeof BehaviorSchema>) =>
+  behavior.conditions.length &&
+  behavior.effects.length &&
+  behavior.conditions.every(validCondition) &&
+  behavior.effects.every(validEffect)
 
-export const ObservableComponent = defineComponent({
-  name: 'ObservableComponent',
+export const BehaviorComponent = defineComponent({
+  name: 'BehaviorComponent',
   jsonID: 'IR_observable',
 
   schema: S.Object({
-    observers: S.Array(ObserverSchema)
+    behaviors: S.Array(BehaviorSchema)
   }),
 
   reactor: () => {
     const entity = useEntityContext()
-    const observers = useComponent(entity, ObservableComponent).observers
+    const behaviors = useComponent(entity, BehaviorComponent).behaviors
 
     return (
       <>
-        {observers.value.filter(validObserver).map((observer, index) => {
+        {behaviors.value.filter(validBehavior).map((behavior, index) => {
           return (
-            <ObserverReactor
-              key={JSON.stringify(observers[index].get(NO_PROXY))}
+            <BehaviorReactor
+              key={JSON.stringify(behaviors[index].get(NO_PROXY))}
               entity={entity}
-              observerIndex={index}
+              behaviorIndex={index}
             />
           )
         })}
@@ -389,10 +389,10 @@ export const ObservableComponent = defineComponent({
   }
 })
 
-const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
-  const { entity, observerIndex } = props
-  const observer = useComponent(entity, ObservableComponent).observers[observerIndex]
-  const conditions = observer.conditions.value
+const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
+  const { entity, behaviorIndex } = props
+  const behavior = useComponent(entity, BehaviorComponent).behaviors[behaviorIndex]
+  const conditions = behavior.conditions.value
 
   const sourceID = getComponent(entity, SourceComponent)
 
@@ -411,11 +411,11 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
           const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
           if (!success) return
 
-          const networkParams = observer.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
+          const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
           dispatchAction(
             ObservableActions.called({
               entityUUID: getComponent(entity, UUIDComponent),
-              indices: [observerIndex],
+              indices: [behaviorIndex],
               ...networkParams
             })
           )
@@ -458,11 +458,11 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
     const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
     if (!success) return
 
-    const networkParams = observer.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
+    const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
     dispatchAction(
       ObservableActions.called({
         entityUUID: getComponent(entity, UUIDComponent),
-        indices: [observerIndex],
+        indices: [behaviorIndex],
         ...networkParams
       })
     )
