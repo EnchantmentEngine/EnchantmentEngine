@@ -26,10 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   ComponentJSONIDMap,
   ComponentMap,
+  Easing,
   Entity,
   EntityUUID,
   S,
   Static,
+  TransitionComponent,
   UUIDComponent,
   defineComponent,
   deserializeComponent,
@@ -54,9 +56,11 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 import { NetworkTopics } from '@ir-engine/network'
+import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import React, { useEffect } from 'react'
-import { NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
-import { SourceComponent } from './SourceComponent'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { NodeID, NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
+import { SourceComponent, SourceID } from './SourceComponent'
 
 export const ObservableActions = {
   called: defineAction({
@@ -97,32 +101,35 @@ const ObservableCalledReactor = (props: { item: { entityUUID: EntityUUID; indice
 
   useImmediateEffect(() => {
     const entity = UUIDComponent.getEntityByUUID(item.entityUUID)
+    const sourceID = getComponent(entity, SourceComponent)
     for (const index of item.indices) {
       const observer = getComponent(entity, ObservableComponent).observers[index]
       if (!observer) continue
       for (const effect of observer.effects) {
+        const targetSource = effect.sourceNodeID ? getSourceIDFromNodeID(sourceID, effect.sourceNodeID) : sourceID
+
         // setComponent
-        if ('nodeID' in effect && 'jsonID' in effect && 'values' in effect) {
-          const componentDefinition = ComponentMap.get(effect.jsonID)
+        if (effect.type === 'setComponent') {
+          const componentDefinition = ComponentJSONIDMap.get(effect.jsonID)
           if (!componentDefinition) continue
           const targetEntity = UUIDComponent.getEntityByUUID(
-            NodeIDComponent.getUUIDBySourceAndNodeID(getComponent(entity, SourceComponent), effect.nodeID)
+            NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.nodeID)
           )
           deserializeComponent(targetEntity, componentDefinition, effect.values)
         }
         // removeComponent
-        else if ('nodeID' in effect && 'jsonID' in effect) {
-          const componentDefinition = ComponentMap.get(effect.jsonID)
+        else if (effect.type === 'removeComponent') {
+          const componentDefinition = ComponentJSONIDMap.get(effect.jsonID)
           if (!componentDefinition) continue
           const targetEntity = UUIDComponent.getEntityByUUID(
-            NodeIDComponent.getUUIDBySourceAndNodeID(getComponent(entity, SourceComponent), effect.nodeID)
+            NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.nodeID)
           )
           removeComponent(targetEntity, componentDefinition)
         }
         // createEntity
-        else if ('nodeID' in effect && 'parentID' in effect && 'components' in effect) {
+        else if (effect.type === 'createEntity') {
           const parentEntity = UUIDComponent.getEntityByUUID(
-            NodeIDComponent.getUUIDBySourceAndNodeID(getComponent(entity, SourceComponent), effect.parentID)
+            NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.parentID)
           )
           const newEntity = NodeIDComponent.create(getComponent(parentEntity, SourceComponent), effect.nodeID)
           for (const components of effect.components) {
@@ -134,16 +141,27 @@ const ObservableCalledReactor = (props: { item: { entityUUID: EntityUUID; indice
           }
         }
         // removeEntity
-        else if ('nodeID' in effect) {
+        else if (effect.type === 'removeEntity') {
           const targetEntity = UUIDComponent.getEntityByUUID(
-            NodeIDComponent.getUUIDBySourceAndNodeID(getComponent(entity, SourceComponent), effect.nodeID)
+            NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.nodeID)
           )
           removeEntity(targetEntity)
+        } else if (effect.type === 'transition') {
+          const targetEntity = UUIDComponent.getEntityByUUID(
+            NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.nodeID)
+          )
+          TransitionComponent.setTarget(targetEntity, {
+            componentJsonID: effect.jsonID,
+            propertyPath: effect.propertyPath,
+            value: effect.value,
+            duration: effect.duration,
+            easing: Easing.fromPath(effect.easing)
+          })
         }
         // callback
         // else if ('callback' in effect) {
         //   const targetEntity = UUIDComponent.getEntityByUUID(
-        //     NodeIDComponent.getUUIDBySourceAndNodeID(getComponent(entity, SourceComponent), effect.target)
+        //     NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.target)
         //   )
         //   const callback = getCallback(targetEntity, effect.callback)
         //   if (!callback) continue
@@ -175,7 +193,9 @@ export const ConditionSchema = S.LiteralUnion([
 ])
 
 export const EntityConditionSchema = S.Object({
+  type: S.Literal('entity'),
   nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema()),
   component: S.String(),
   property: S.String(),
   value: S.Any(),
@@ -183,40 +203,68 @@ export const EntityConditionSchema = S.Object({
 })
 
 export const StateConditionSchema = S.Object({
+  type: S.Literal('state'),
   state: S.String(),
   property: S.Any(),
   value: S.Any(),
   condition: ConditionSchema
 })
 
+export const CallbackConditionSchema = S.Object({
+  type: S.Literal('callback'),
+  callback: S.String(),
+  nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema())
+})
+
+export const ConditionsSchema = S.Array(S.Union([EntityConditionSchema, StateConditionSchema, CallbackConditionSchema]))
+
 export const PrimitiveSchema = S.Union([S.String(), S.Number(), S.Bool(), S.Null()])
 
-export const ValueSchema = S.Union([PrimitiveSchema, S.Array(PrimitiveSchema)])
+export const ValueSchema = S.Union([PrimitiveSchema, S.Array(PrimitiveSchema), S.Any()])
 
 // Component properties use period separated paths for nested properties, which is handled by deserializeComponent
 export const ComponentSchema = S.Record(S.String(), ValueSchema)
 
 export const SetComponentSchema = S.Object({
+  type: S.Literal('setComponent'),
   nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema()),
   jsonID: S.String(),
   values: ComponentSchema
 })
 
 export const RemoveComponentSchema = S.Object({
+  type: S.Literal('removeComponent'),
   nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema()),
   jsonID: S.String()
 })
 
 export const CreateEntitySchema = S.Object({
+  type: S.Literal('createEntity'),
   nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema()),
   parentID: NodeIDSchema(),
   components: S.Array(ComponentSchema)
 })
 
 export const RemoveEntitySchema = S.Object({
+  type: S.Literal('removeEntity'),
+  sourceNodeID: S.Optional(NodeIDSchema()),
   nodeID: NodeIDSchema()
 })
 
+export const TransitionSchema = S.Object({
+  type: S.Literal('transition'),
+  sourceNodeID: S.Optional(NodeIDSchema()),
+  nodeID: NodeIDSchema(),
+  jsonID: S.String(),
+  propertyPath: S.String(),
+  value: S.Any(),
+  duration: S.Number(),
+  easing: S.String()
+})
 // export const CallbackSchema = S.Object({
 //   callback: S.String(),
 //   target: NodeIDSchema(),
@@ -224,24 +272,32 @@ export const RemoveEntitySchema = S.Object({
 // })
 
 export const ObserverSchema = S.Object({
-  conditions: S.Array(S.Union([EntityConditionSchema, StateConditionSchema])),
+  conditions: ConditionsSchema,
   effects: S.Array(
     S.Union([
       SetComponentSchema,
       RemoveComponentSchema,
       CreateEntitySchema,
-      RemoveEntitySchema
+      RemoveEntitySchema,
+      TransitionSchema
       // CallbackSchema
     ])
   ),
   networked: S.Bool(true)
 })
 
-const validCondition = (condition: Static<typeof EntityConditionSchema> | Static<typeof StateConditionSchema>) => {
-  if ('nodeID' in condition) {
+const validCondition = (
+  condition:
+    | Static<typeof EntityConditionSchema>
+    | Static<typeof StateConditionSchema>
+    | Static<typeof CallbackConditionSchema>
+) => {
+  if (condition.type === 'entity') {
     return condition.nodeID !== '' && condition.component !== '' && condition.property !== ''
-  } else {
+  } else if (condition.type === 'state') {
     return condition.state !== '' && condition.property !== ''
+  } else if (condition.type === 'callback') {
+    return condition.callback !== '' && condition.nodeID !== ''
   }
 }
 
@@ -251,6 +307,7 @@ const validEffect = (
     | Static<typeof RemoveComponentSchema>
     | Static<typeof CreateEntitySchema>
     | Static<typeof RemoveEntitySchema>
+    | Static<typeof TransitionSchema>
   // | Static<typeof CallbackSchema>
 ) => {
   if ('nodeID' in effect && 'jsonID' in effect) {
@@ -266,6 +323,36 @@ const validEffect = (
   //  else if ('callback' in effect) {
   //   return effect.callback !== '' && effect.parameters.length > 0
   // }
+}
+
+const conditionsMet = (sourceID: SourceID, conditions: Static<typeof ConditionsSchema>) => {
+  for (const condition of conditions) {
+    if (condition.type === 'entity') {
+      const componentDefinition = ComponentJSONIDMap.get(condition.component)
+      if (!componentDefinition) return false
+      const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
+      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+      const observedEntity = UUIDComponent.getEntityByUUID(uuid)
+      const component = getComponent(observedEntity, componentDefinition)
+      const property = getNestedObject(component, condition.property).result
+      const result = compare(property, condition)
+      if (!result) return false
+    } else if (condition.type === 'state') {
+      const stateDefinition = StateDefinitions.get(condition.state)
+      if (!stateDefinition) return false
+      const state = getState(stateDefinition)
+      const property = getNestedObject(state, condition.property).result
+      const result = compare(property, condition)
+      if (!result) return false
+    }
+  }
+  return true
+}
+
+const getSourceIDFromNodeID = (sourceID: SourceID, nodeID: NodeID) => {
+  const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID)
+  const entity = UUIDComponent.getEntityByUUID(uuid)
+  return GLTFComponent.getInstanceID(entity)
 }
 
 const validObserver = (observer: Static<typeof ObserverSchema>) =>
@@ -309,17 +396,55 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
 
   const sourceID = getComponent(entity, SourceComponent)
 
+  useEffect(() => {
+    // add callbacks to the entity
+    const callbacks = [] as { targetEntity: Entity; callback: string }[]
+    for (const condition of conditions as any as Static<typeof CallbackConditionSchema>[]) {
+      if (condition.type === 'callback') {
+        const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
+        const targetEntity = UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+        )
+
+        setCallback(targetEntity, condition.callback, () => {
+          // Check conditions
+          const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
+          if (!success) return
+
+          const networkParams = observer.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
+          dispatchAction(
+            ObservableActions.called({
+              entityUUID: getComponent(entity, UUIDComponent),
+              indices: [observerIndex],
+              ...networkParams
+            })
+          )
+        })
+      }
+    }
+    return () => {
+      for (const callback of callbacks) {
+        removeCallback(callback.targetEntity, callback.callback)
+      }
+    }
+  }, [])
+
+  //if any effects have a callback, we don't want to trigger it here
+  if (conditions.some((condition) => condition.type === 'callback')) return null
+
   // Get dependencies
   const dependencies = conditions.map((condition) => {
-    if ('nodeID' in condition) {
+    if (condition.type === 'entity') {
       const componentDefinition = ComponentMap.get(condition.component)
       if (!componentDefinition) return null
-      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, condition.nodeID)
+      // todo this might need to be made reactive
+      const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
+      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
       const observedEntity = UUIDComponent.useEntityByUUID(uuid)
       const component = useComponent(observedEntity, componentDefinition).value
       const value = getNestedObject(component, condition.property).result
       return value
-    } else {
+    } else if (condition.type === 'state') {
       const stateDefinition = StateDefinitions.get(condition.state)
       if (!stateDefinition) return null
       return useMutableState(stateDefinition, condition.property).value
@@ -330,26 +455,8 @@ const ObserverReactor = (props: { entity: Entity; observerIndex: number }) => {
     const sourceID = getComponent(entity, SourceComponent)
 
     // Check conditions
-    for (const condition of conditions) {
-      if ('nodeID' in condition) {
-        const componentDefinition = ComponentMap.get(condition.component)
-        if (!componentDefinition) return
-        const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, condition.nodeID)
-        const observedEntity = UUIDComponent.getEntityByUUID(uuid)
-        const component = getComponent(observedEntity, componentDefinition)
-        const property = getNestedObject(component, condition.property).result
-        const result = compare(property, condition)
-        if (!result) return
-      } else {
-        const stateDefinition = StateDefinitions.get(condition.state)
-        if (!stateDefinition) return
-        const state = getState(stateDefinition)
-        const property = getNestedObject(state, condition.property).result
-
-        const result = compare(property, condition)
-        if (!result) return
-      }
-    }
+    const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
+    if (!success) return
 
     const networkParams = observer.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
     dispatchAction(
