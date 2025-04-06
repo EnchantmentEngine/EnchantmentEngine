@@ -71,6 +71,7 @@ import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
+import { GLTFMigration } from './GLTFMigration'
 import { AssetState } from './GLTFState'
 import { NodeID, NodeIDComponent } from './NodeIDComponent'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
@@ -513,6 +514,7 @@ const useGLTFDocument = (entity: Entity) => {
       url,
       (gltf, body) => {
         if (body) state.body.set(body)
+        GLTFMigration.migrate(gltf)
         state.document.set(gltf)
         const dependencies = buildComponentDependencies(entity, gltf)
         state.dependencies.set(dependencies)
