@@ -62,26 +62,26 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { NodeID, NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
 import { SourceComponent, SourceID } from './SourceComponent'
 
-export const ObservableActions = {
+export const BehaviorActions = {
   called: defineAction({
-    type: 'ir.engine.observable.CALLED' as const,
+    type: 'ir.engine.behavior.CALLED' as const,
     entityUUID: matchesEntityUUID,
     indices: matches.arrayOf(matches.number)
   })
 }
 
-type ObservableCalled = {
+type BehaviorCalled = {
   entityUUID: EntityUUID
   indices: number[]
 }
 
-export const ObservableState = defineState({
-  name: 'ir.engine.ObservableState',
-  initial: [] as Array<ObservableCalled>,
+export const BehaviorState = defineState({
+  name: 'ir.engine.BehaviorState',
+  initial: [] as Array<BehaviorCalled>,
 
   receptors: {
-    onCalled: ObservableActions.called.receive((action) => {
-      const state = getMutableState(ObservableState)
+    onCalled: BehaviorActions.called.receive((action) => {
+      const state = getMutableState(BehaviorState)
       state.merge([
         {
           entityUUID: action.entityUUID,
@@ -91,12 +91,12 @@ export const ObservableState = defineState({
     })
   },
   reactor: () => {
-    const calls = useMutableState(ObservableState).get(NO_PROXY)
-    return calls.map((item: ObservableCalled, i) => <ObservableCalledReactor key={i} item={item} />)
+    const calls = useMutableState(BehaviorState).get(NO_PROXY)
+    return calls.map((item: BehaviorCalled, i) => <BehaviorCalledReactor key={i} item={item} />)
   }
 })
 
-const ObservableCalledReactor = (props: { item: { entityUUID: EntityUUID; indices: number[] } }) => {
+const BehaviorCalledReactor = (props: { item: { entityUUID: EntityUUID; indices: number[] } }) => {
   const { item } = props
 
   useImmediateEffect(() => {
@@ -363,7 +363,7 @@ const validBehavior = (behavior: Static<typeof BehaviorSchema>) =>
 
 export const BehaviorComponent = defineComponent({
   name: 'BehaviorComponent',
-  jsonID: 'IR_observable',
+  jsonID: 'IR_behavior',
 
   schema: S.Object({
     behaviors: S.Array(BehaviorSchema)
@@ -413,7 +413,7 @@ const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
 
           const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
           dispatchAction(
-            ObservableActions.called({
+            BehaviorActions.called({
               entityUUID: getComponent(entity, UUIDComponent),
               indices: [behaviorIndex],
               ...networkParams
@@ -460,7 +460,7 @@ const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
 
     const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
     dispatchAction(
-      ObservableActions.called({
+      BehaviorActions.called({
         entityUUID: getComponent(entity, UUIDComponent),
         indices: [behaviorIndex],
         ...networkParams
