@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, getOptionalComponent } from '@ir-engine/ecs'
+import { Entity, getOptionalComponent, getSimulationCounterpart } from '@ir-engine/ecs'
 import { useMemo } from 'react'
 import { Box3, Vector3 } from 'three'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
@@ -57,16 +57,17 @@ const _position = new Vector3()
 export function computeWorldBounds(entities: readonly Entity[], boundingBox: Box3 = new Box3()) {
   boundingBox.makeEmpty()
   for (const entity of entities) {
-    const obj = getOptionalComponent(entity, ObjectComponent)
-    const transform = getOptionalComponent(entity, TransformComponent)
+    const sEid = getSimulationCounterpart(entity)
+    const obj = getOptionalComponent(sEid, ObjectComponent)
+    const transform = getOptionalComponent(sEid, TransformComponent)
     if (transform) {
-      computeTransformMatrixWithChildren(entity)
+      computeTransformMatrixWithChildren(sEid)
     }
-    const box = getOptionalComponent(entity, BoundingBoxComponent)
+    const box = getOptionalComponent(sEid, BoundingBoxComponent)
     if (obj) {
       boundingBox.expandByObject(obj)
     } else if (!box && transform) {
-      boundingBox.expandByPoint(TransformComponent.getWorldPosition(entity, _position))
+      boundingBox.expandByPoint(TransformComponent.getWorldPosition(sEid, _position))
     } else if (box && transform) {
       _box.copy(box.box)
       _box.applyMatrix4(transform.matrixWorld)

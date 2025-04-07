@@ -52,7 +52,7 @@ interface TransformPivotResult {
  */
 export function computeTransformPivot(
   entities: readonly Entity[],
-  transformPivot: TransformPivotType,
+  transformPivot = TransformPivot.Center as TransformPivotType,
   transformSpace = TransformSpace.local as TransformSpaceType
 ): TransformPivotResult {
   const r = _result
@@ -75,7 +75,8 @@ export function computeTransformPivot(
       break
     case TransformPivot.FirstSelected:
       if (hasComponent(entities[0], TransformComponent)) {
-        r.position.copy(TransformComponent.getWorldPosition(entities[0], new Vector3()))
+        TransformComponent.getWorldPosition(entities[0], r.position)
+        TransformComponent.getWorldRotation(entities[0], r.rotation)
       } else {
         r.position = undefined
         r.rotation = undefined
@@ -83,16 +84,26 @@ export function computeTransformPivot(
       break
     case TransformPivot.Center:
       if (r.bounds.isEmpty()) {
-        r.position = undefined
-        r.rotation = undefined
+        if (hasComponent(entities[0], TransformComponent)) {
+          TransformComponent.getWorldPosition(entities[0], r.position)
+          TransformComponent.getWorldRotation(entities[0], r.rotation)
+        } else {
+          r.position = undefined
+          r.rotation = undefined
+        }
         break
       }
       r.bounds.getCenter(r.position)
       break
     case TransformPivot.Bottom: {
       if (r.bounds.isEmpty()) {
-        r.position = undefined
-        r.rotation = undefined
+        if (hasComponent(entities[0], TransformComponent)) {
+          TransformComponent.getWorldPosition(entities[0], r.position)
+          TransformComponent.getWorldRotation(entities[0], r.rotation)
+        } else {
+          r.position = undefined
+          r.rotation = undefined
+        }
         break
       }
       r.bounds.getCenter(r.position)

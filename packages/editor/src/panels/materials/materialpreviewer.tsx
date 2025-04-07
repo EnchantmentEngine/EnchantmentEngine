@@ -27,11 +27,12 @@ import React, { useEffect, useRef } from 'react'
 import { BufferAttribute, Mesh, SphereGeometry } from 'three'
 
 import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
-import { getComponent, getMutableComponent, getOptionalComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, getOptionalComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
@@ -64,8 +65,11 @@ function MaterialPreviewCanvas() {
     sphereMesh.geometry.attributes['uv1'] = sphereMesh.geometry.attributes['uv']
     setComponent(sceneEntity, MeshComponent, sphereMesh)
     setComponent(sceneEntity, MaterialInstanceComponent, { uuid: [selectedMaterial.value] })
-    const orbitCamera = getMutableComponent(cameraEntity, CameraOrbitComponent)
-    orbitCamera.focusedEntities.set([sceneEntity])
+
+    const pivot = computeTransformPivot([sceneEntity])
+    if (pivot.position) {
+      CameraOrbitComponent.setFocus(cameraEntity, pivot.position, pivot.bounds)
+    }
 
     return () => {}
   }, [selectedMaterial])
