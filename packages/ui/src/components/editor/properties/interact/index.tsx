@@ -27,7 +27,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdOutlinePanTool } from 'react-icons/md'
 
-import { EntityTreeComponent, getOptionalComponent, useQuery } from '@ir-engine/ecs'
+import { EntityTreeComponent, getOptionalComponent, UndefinedEntity, useQuery } from '@ir-engine/ecs'
 import {
   getComponent,
   hasComponent,
@@ -103,7 +103,8 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       })
     }
     for (const entity of callbackQuery) {
-      if (entity === simulationEntity || !hasComponent(entity, EntityTreeComponent)) continue
+      if (entity === simulationEntity || !hasComponent(entity, EntityTreeComponent) || LayerComponents[Layers.Simulation].refs[entity] === undefined) continue
+      // check if entity has an authoring layer equivalent
       const callbacks = getComponent(entity, CallbackComponent)
       options.push({
         label: getComponent(entity, NameComponent),
