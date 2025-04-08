@@ -39,8 +39,10 @@ import {
   useHookstate
 } from '@ir-engine/hyperflux'
 
-import { EntityContext, LayerComponents, LayerID, Layers } from './ComponentFunctions'
+import { Component, EntityContext, LayerComponents, LayerID, Layers, useOptionalComponent } from './ComponentFunctions'
 import { Entity } from './Entity'
+// import { OpReturnType } from 'bitecs'
+// import { $opTerms, $opType } from 'bitecs/dist/core/Query'
 
 export type { QueryTerm } from 'bitecs'
 
@@ -191,19 +193,41 @@ export const EntityArrayBoundary = memo(
   }
 )
 
-export const QuerySubReactor = memo((props: { entity: Entity; ChildEntityReactor: FC; props?: any }) => {
-  return (
-    <>
-      <QueryReactorErrorBoundary>
-        <Suspense fallback={<Suspended {...props} />}>
-          <EntityContext.Provider value={props.entity}>
-            <props.ChildEntityReactor {...props.props} entity={props.entity} />
-          </EntityContext.Provider>
-        </Suspense>
-      </QueryReactorErrorBoundary>
-    </>
-  )
-})
+export const QuerySubReactor = memo(
+  (props: { entity: Entity; ChildEntityReactor: FC; Components?: bitECS.QueryTerm[]; props?: any }) => {
+    const components = [] as Component[]
+    for (const queryTerm of props.Components ?? []) {
+      if (queryTerm.isComponent) {
+        components.push(queryTerm)
+      } else {
+        // const q = queryTerm() as OpReturnType
+        // const type = q[$opType]
+        // if (type === 'Or' || type === 'And') {
+        //   components.push(...q[$opTerms])
+        // }
+      }
+    }
+
+    const ids = [] as string[]
+    for (const c of components) {
+      const id = useOptionalComponent(props.entity, c)?.identifier
+      if (id) ids.push(id)
+    }
+    const id = ids.join('_')
+
+    return (
+      <>
+        <QueryReactorErrorBoundary>
+          <Suspense fallback={<Suspended {...props} />}>
+            <EntityContext.Provider value={props.entity}>
+              <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+            </EntityContext.Provider>
+          </Suspense>
+        </QueryReactorErrorBoundary>
+      </>
+    )
+  }
+)
 
 export const QueryReactor = memo(
   (props: { Components: bitECS.QueryTerm[]; ChildEntityReactor: FC; props?: any; layer?: LayerID }) => {
@@ -211,14 +235,17 @@ export const QueryReactor = memo(
     const MemoChildEntityReactor = useMemo(() => memo(props.ChildEntityReactor), [props.ChildEntityReactor])
     return (
       <>
-        {entities.map((entity) => (
-          <QuerySubReactor
-            key={entity}
-            entity={entity}
-            ChildEntityReactor={MemoChildEntityReactor}
-            props={props.props}
-          />
-        ))}
+        {entities.map((entity) => {
+          return (
+            <QuerySubReactor
+              key={entity}
+              entity={entity}
+              Components={props.Components}
+              ChildEntityReactor={MemoChildEntityReactor}
+              props={props.props}
+            />
+          )
+        })}
       </>
     )
   }

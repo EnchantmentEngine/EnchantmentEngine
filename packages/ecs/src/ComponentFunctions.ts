@@ -35,13 +35,16 @@ import type from 'react/experimental'
 import {
   DeepReadonly,
   HyperFlux,
+  Identifiable,
   NO_PROXY_STEALTH,
   ReactorRoot,
   SetPartialStateAction,
   State,
   destroy,
+  extend,
   getState,
   hookstate,
+  identifiable,
   none,
   resolveObject,
   startReactor,
@@ -192,7 +195,7 @@ export interface Component<
   reactor?: any
   reactorRoot?: ReactorRoot
   storage?: StorageType
-  stateMap: Record<Entity, State<ComponentType>>
+  stateMap: Record<Entity, State<ComponentType, Identifiable>>
   valueMap: Record<Entity, ComponentType>
   errors: ErrorTypes[]
   storageSize: number
@@ -403,13 +406,16 @@ export const defineComponent = <
 export const getOptionalMutableComponent = <C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined => {
+): State<ComponentType<C>, Identifiable> | undefined => {
   return !bitECS.hasComponent(HyperFlux.store, entity, component)
     ? undefined
-    : (component.stateMap[entity]! as State<ComponentType<C>> | undefined)
+    : (component.stateMap[entity]! as State<ComponentType<C>, Identifiable> | undefined)
 }
 
-export const getMutableComponent = <C extends Component>(entity: Entity, component: C): State<ComponentType<C>> => {
+export const getMutableComponent = <C extends Component>(
+  entity: Entity,
+  component: C
+): State<ComponentType<C>, Identifiable> => {
   const componentState = getOptionalMutableComponent(entity, component)
   if (componentState === undefined) {
     console.warn(
@@ -488,17 +494,23 @@ const resizeComponent = (component: Component, size: number) => {
   component.storageSize = size
 }
 
+let componentInstanceCount = 0
+
 const _getComponentState = <C extends Component>(entity: Entity, component: C) => {
   if (!component.stateMap[entity]) {
-    component.stateMap[entity] = hookstate(none, () => ({
-      onSet: (s, d) => {
-        const rootState = component.stateMap[entity]
-        component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
-        if (bitECS.hasComponent(HyperFlux.store, entity, component)) {
-          LayerFunctions.propagateLayer(entity, component)
+    const id = `${component.name}_${entity}_${componentInstanceCount++}`
+    component.stateMap[entity] = hookstate(
+      none,
+      extend(identifiable(id), () => ({
+        onSet: (s, d) => {
+          const rootState = component.stateMap[entity]
+          component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
+          if (bitECS.hasComponent(HyperFlux.store, entity, component)) {
+            LayerFunctions.propagateLayer(entity, component)
+          }
         }
-      }
-    }))
+      }))
+    )
   }
   return component.stateMap[entity]
 }
@@ -737,7 +749,7 @@ export function _use(promise) {
 /**
  * Use a component in a reactive context (a React component)
  */
-export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>> {
+export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>, Identifiable> {
   if (entity === UndefinedEntity) throw new Error('InvalidUsage: useComponent called with UndefinedEntity')
 
   const state = _getComponentState(entity, component)
@@ -747,7 +759,7 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
     ;(React.use ?? _use)(state.promise)
   }
 
-  return useHookstate(state) as State<ComponentType<C>>
+  return useHookstate(state) as State<ComponentType<C>, Identifiable>
 }
 
 export function useHasComponent<C extends Component>(entity: Entity, component: C): boolean {
@@ -761,8 +773,8 @@ export function useHasComponent<C extends Component>(entity: Entity, component: 
 export function useOptionalComponent<C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined {
-  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>>
+): State<ComponentType<C>, Identifiable> | undefined {
+  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>, Identifiable>
   return componentState.promised ? undefined : componentState
 }
 
