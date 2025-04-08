@@ -399,6 +399,15 @@ export class GCSStorage implements StorageProviderInterface {
       for (let i = 0; i < files.prefixes!.length; i++) {
         const key = files.prefixes![i].slice(0, -1)
         promises.push(this.createFolderPromise(key))
+        const subFolderContent = await this.listFolderContent(key, true)
+        const filtered = []
+        const filteredKeys = []
+        for (const item of subFolderContent)
+          if (filteredKeys.indexOf(item.key) < 0 && item.type === 'folder' && !files.items.find(file => file.name === item.key + '/')) {
+            filtered.push(item)
+            filteredKeys.push(item.key)
+          }
+        for (let subfolder of filtered) promises.push(this.createFolderPromise(subfolder.key))
       }
     } else {
       // Folders
