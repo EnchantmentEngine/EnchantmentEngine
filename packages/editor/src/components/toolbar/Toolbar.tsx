@@ -165,6 +165,8 @@ export default function Toolbar() {
   const anchorPosition = useHookstate({ left: 0, top: 0 })
 
   const { projectName, sceneName, sceneAssetID } = useMutableState(EditorState)
+  const sceneNameSimplified = sceneName.value?.split('.').slice(0, -1).join('.')
+
   const isModified = EditorState.useIsModified()
 
   const locationScopeQuery = useFind(scopePath, {
@@ -211,7 +213,7 @@ export default function Toolbar() {
               <span className="text-text-secondary">{' / '}</span>
             </Fragment>
           ))}
-          <span className="text-text-primary">{sceneName.value}</span>
+          <span className="text-text-primary">{sceneNameSimplified}</span>
         </div>
 
         <div className="flex items-center justify-center gap-2">
