@@ -23,20 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import Loading from './Loading'
 
-export default {
-  title: 'editor/Loading',
-  component: Loading,
-  parameters: {
-    componentSubtitle: 'Loading',
-    design: {
-      type: 'figma',
-      url: ''
-    }
-  }
+import tailwindConfig from '../../tailwind.config'
+
+module.exports = {
+  ...tailwindConfig
 }
 
-export const Default = {
-  args: { isFullscreen: false }
-}
