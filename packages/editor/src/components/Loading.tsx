@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+// not used anywhere, maybe removed
 const styledLoadingStyles = (isFullscreen) => ({
   display: 'flex',
   flexDirection: 'column',
