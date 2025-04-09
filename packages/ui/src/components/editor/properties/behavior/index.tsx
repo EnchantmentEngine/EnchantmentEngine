@@ -45,11 +45,12 @@ import {
   BehaviorComponent,
   BehaviorSchema,
   CallbackConditionSchema,
+  EffectSchema,
   EntityConditionSchema,
   StateConditionSchema
 } from '@ir-engine/engine/src/scene/components/BehaviorComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, none, StateDefinitions, useHookstate } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
@@ -236,14 +237,6 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     )
   }
 
-  /**
-   * - sourceNodeID: The ID of the node that is the source of the condition.
-   * - nodeID: The ID of the node that is the target of the condition.
-   * - component: The component that is being used for the condition.
-   * - property: The property of the component that is being used for the condition.
-   * - value: The value of the component that is being asserted against.
-   * - condition: The condition that is being used for the assertion.
-   */
   const EntityConditionInput = ({
     behaviorIndex,
     condition,
@@ -343,6 +336,7 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
     )
   }
+
   const StateConditionInput = ({
     behaviorIndex,
     condition,
@@ -352,8 +346,155 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     condition: Static<typeof StateConditionSchema>
     index: number
   }) => {
-    /** @todo */
-    return <></>
+    // ignore all event sourced states
+    const stateList = Object.fromEntries([...StateDefinitions.entries()].filter(([key, val]) => !val.receptors))
+
+    const stateOptions = Object.keys(stateList)
+      .map((state) => ({
+        label: state.includes('.') ? state.split('.').pop()! : state,
+        value: state
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+    const selectedState = condition.state ? getState(stateList[condition.state]) : undefined
+    const propertyOptions = selectedState
+      ? Object.keys(selectedState).map((property) => ({
+          label: property,
+          value: property
+        }))
+      : []
+
+    return (
+      <InputGroup
+        name="State"
+        label={t('editor:properties.behavior.lbl-state')}
+        info={t('editor:properties.behavior.lbl-state-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'State', position: 'left' }}
+          value={condition.state}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.conditions.${index}.state` as any)}
+          options={stateOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Property', position: 'left' }}
+          value={condition.property}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.conditions.${index}.property` as any)}
+          options={propertyOptions}
+        />
+        <StringInput
+          labelProps={{ text: 'Assertion Value', position: 'left' }}
+          value={condition.value}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.conditions.${index}.value` as any)}
+        />
+        <SelectInput
+          labelProps={{ text: 'Condition', position: 'left' }}
+          value={condition.condition}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.conditions.${index}.condition` as any
+          )}
+          options={ConditionOptions}
+        />
+      </InputGroup>
+    )
+  }
+
+  const ConditionInput = ({
+    index,
+    condition,
+    behaviorIndex
+  }: {
+    index: number
+    condition: Static<typeof CallbackConditionSchema | typeof EntityConditionSchema | typeof StateConditionSchema>
+    behaviorIndex: number
+  }) => {
+    return (
+      <>
+        <SelectInput
+          value={condition.type}
+          onChange={(val) =>
+            commitProperties(BehaviorComponent, {
+              [`behaviors.${behaviorIndex}.conditions.${index}` as any]:
+                val === 'callback'
+                  ? {
+                      type: 'callback',
+                      callback: '',
+                      nodeID: '',
+                      sourceNodeID: ''
+                    }
+                  : val === 'entity'
+                  ? {
+                      type: 'entity',
+                      sourceNodeID: '',
+                      nodeID: '',
+                      component: '',
+                      property: '',
+                      value: '',
+                      condition: 'equal'
+                    }
+                  : {
+                      type: 'state',
+                      state: '',
+                      property: '',
+                      value: '',
+                      condition: 'equal'
+                    }
+            })
+          }
+          options={[
+            { label: 'Callback', value: 'callback' },
+            { label: 'State', value: 'state' },
+            { label: 'Entity', value: 'entity' }
+          ]}
+        />
+        {condition.type === 'callback' ? (
+          <CallbackConditionInput behaviorIndex={behaviorIndex} index={index} condition={condition} />
+        ) : condition.type === 'entity' ? (
+          <EntityConditionInput behaviorIndex={behaviorIndex} index={index} condition={condition} />
+        ) : (
+          <StateConditionInput behaviorIndex={behaviorIndex} index={index} condition={condition} />
+        )}
+      </>
+    )
+  }
+
+  const EffectInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof EffectSchema>
+    behaviorIndex: number
+  }) => {
+    const effectOptions = getAllComponents(props.entity)
+      .filter((c) => !!c.jsonID)
+      .map((component) => ({
+        label: component.name,
+        value: component.jsonID!
+      }))
+
+    return (
+      <InputGroup
+        name="Effect"
+        label={t('editor:properties.behavior.lbl-effects')}
+        info={t('editor:properties.behavior.lbl-effects-info')}
+      >
+        <SelectInput
+          value={effect.component}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.component` as any)}
+          options={effectOptions}
+        />
+        <StringInput
+          value={effect.property}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.property` as any)}
+        />
+        <StringInput
+          value={effect.value}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.value` as any)}
+        />
+      </InputGroup>
+    )
   }
 
   return (
@@ -385,63 +526,18 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
               label={t('editor:properties.behavior.lbl-conditions') + (conditionIndex + 1)}
               info={t('editor:properties.behavior.lbl-conditions-info')}
             >
-              <SelectInput
-                value={condition.type}
-                onChange={(val) =>
-                  commitProperties(BehaviorComponent, {
-                    [`behaviors.${index}.conditions.${conditionIndex}` as any]:
-                      val === 'callback'
-                        ? {
-                            type: 'callback',
-                            callback: '',
-                            nodeID: '',
-                            sourceNodeID: ''
-                          }
-                        : val === 'entity'
-                        ? {
-                            type: 'entity',
-                            sourceNodeID: '',
-                            nodeID: '',
-                            component: '',
-                            property: '',
-                            value: '',
-                            condition: 'equal'
-                          }
-                        : {
-                            type: 'state',
-                            state: '',
-                            property: '',
-                            value: '',
-                            condition: 'equal'
-                          }
-                  })
-                }
-                options={[
-                  { label: 'Callback', value: 'callback' },
-                  { label: 'State', value: 'state' },
-                  { label: 'Entity', value: 'entity' }
-                ]}
-              />
-              {condition.type === 'callback' ? (
-                <CallbackConditionInput behaviorIndex={index} index={conditionIndex} condition={condition} />
-              ) : condition.type === 'entity' ? (
-                <EntityConditionInput behaviorIndex={index} index={conditionIndex} condition={condition} />
-              ) : (
-                <StateConditionInput behaviorIndex={index} index={conditionIndex} condition={condition} />
-              )}
+              <ConditionInput condition={condition} index={conditionIndex} behaviorIndex={index} />
             </InputGroup>
           ))}
           {/* effects */}
-          {behavior.effects.map((effect, index) => (
+          {behavior.effects.map((effect, effectIndex) => (
             <InputGroup
               key={index}
               name="Effect"
               label={t('editor:properties.behavior.lbl-effects') + (index + 1)}
               info={t('editor:properties.behavior.lbl-effects-info')}
             >
-              {/* effect inputs */}
-              <></>
-              {/* <EffectInput index={index} effect={effect} /> */}
+              <EffectInput behaviorIndex={index} index={effectIndex} effect={effect as Static<typeof EffectSchema>} />
             </InputGroup>
           ))}
           {/* networked */}

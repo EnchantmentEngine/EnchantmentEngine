@@ -265,24 +265,25 @@ export const TransitionSchema = S.Object({
   duration: S.Number(),
   easing: S.String()
 })
+
 // export const CallbackSchema = S.Object({
 //   callback: S.String(),
 //   target: NodeIDSchema(),
 //   parameters: S.Array(ValueSchema)
 // })
 
+export const EffectSchema = S.Union([
+  SetComponentSchema,
+  RemoveComponentSchema,
+  CreateEntitySchema,
+  RemoveEntitySchema,
+  TransitionSchema
+  // CallbackSchema
+])
+
 export const BehaviorSchema = S.Object({
   conditions: ConditionsSchema,
-  effects: S.Array(
-    S.Union([
-      SetComponentSchema,
-      RemoveComponentSchema,
-      CreateEntitySchema,
-      RemoveEntitySchema,
-      TransitionSchema
-      // CallbackSchema
-    ])
-  ),
+  effects: S.Array(EffectSchema),
   networked: S.Bool(true)
 })
 
