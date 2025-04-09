@@ -50,12 +50,12 @@ export const MATERIAL_PROTOTYPE_JSON_ID = 'prototypeConstructor' as const
 export const SceneDeltaState = defineState({
   name: 'SceneDeltaState',
   initial: {} as SceneDelta,
-  getSource: (entity: Entity) => {
+  getSource: (entity: Entity, ceiling?: NodeID) => {
     const parentIds = [] as NodeID[]
-
     traverseEntityNodeParent(entity, (parentEntity) => {
       if (hasComponent(parentEntity, NodeIDComponent)) {
         const nodeID = getComponent(parentEntity, NodeIDComponent)
+        if (nodeID === ceiling) return true
         parentIds.unshift(nodeID)
       }
     })

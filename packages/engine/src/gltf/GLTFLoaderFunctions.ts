@@ -1600,7 +1600,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
         const rootID = getComponent(rootEntity, NodeIDComponent)
         const deltas = getState(SceneDeltaState)[rootID]
         if (deltas) {
-          const source = SceneDeltaState.getSource(e)
+          const source = SceneDeltaState.getSource(e, rootID)
 
           let current = deltas
           for (const nodeID of source) {
