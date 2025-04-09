@@ -11,7 +11,7 @@ jobs:
       - run: curl -fsSL https://ollama.com/install.sh | sh
       - uses: actions/cache@v4
         with:
-          path: ~/.ollama
+          path: ~/.ollama/models
           key: ${{ runner.os }}-qwen2.5
       - run: ollama serve & ollama pull qwen2.5:32b
       - run: tree ~/.ollama
@@ -57,7 +57,7 @@ jobs:
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                model: 'llama3:latest',
+                model: 'qwen2.5:32b',
                 prompt: prompt.trim(),
                 stream: false
               })
