@@ -26,28 +26,46 @@ jobs:
             const body = pr.body ? pr.body.trim() : "";
 
             const prompt = `
-            You are an assistant that reviews pull requests to ensure they meet our contribution guidelines. Your task is to evaluate the title and description of a pull request based on the following criteria:
+            # PR Review Prompt
 
-            1. Title:
-              - It must be short, concise, and serve as a clear heading for the pull request.
-              - It should capture the essence of what the pull request is about.
+            You're evaluating the quality of a pull request. Focus on two main elements:
 
-            2. Description:
-              - It must provide an explanation of what the pull request is doing or why it is needed.
-              - It should include sufficient context so that reviewers understand the change or its motivation.
+            1. **Title** - Should be short and descriptive, clearly indicating what the PR does
+            2. **Description** - Should explain what changes were made and why they're needed
 
-            3. Jira Ticket Verification:
-              - The description must include a Jira ticket link in the following format:  
-                https://tsu.atlassian.net/browse/IR-<number>
-              - Alternatively, if no Jira ticket is linked, the description should explicitly state that there is no Jira ticket linked.
+            Also verify:
+            - A JIRA ticket URL is included in the format: `https://tsu.atlassian.net/browse/IR-<number>`
+            - Or an explicit statement that no JIRA ticket is applicable
 
-            Please analyze the following pull request:
+            ## Evaluation Requirements
 
-            **Title:** ${title}
+            For the PR title:
+            - Is it concise?
+            - Does it clearly indicate the PR's purpose?
+            - Is it specific rather than vague?
 
-            **Description:** ${body}
+            For the PR description:
+            - Does it explain what changes were made?
+            - Does it explain why the changes were needed?
+            - Is there sufficient context for reviewers?
 
-            Evaluate the title and description against the criteria. If both the title and description are good, just return ok. Otherwise, provide a detailed explanation of what is wrong with the title and/or description. If the description does not include a Jira ticket link, please mention that as well.
+            For JIRA tickets:
+            - Is a valid JIRA ticket linked (`https://tsu.atlassian.net/browse/IR-<number>`)?
+            - If no ticket is linked, is this explicitly stated?
+
+            ## Response Format
+
+            Review the PR silently against the criteria above. Provide feedback ONLY if the PR has insufficient title or description.
+
+            If the PR passes all checks, return no message.
+
+            If the PR is insufficient in any area, return specific feedback on what needs to be improved. Format your feedback like this:
+
+            ```
+            PR Review: Changes Needed
+
+            [List specific issues with the title and/or description that need to be addressed]
+            ```
             `;
 
             const response = await fetch('http://localhost:11434/api/generate', {
