@@ -34,7 +34,7 @@ jobs:
             2. **Description** - Should explain what changes were made and why they're needed
 
             Also verify:
-            - A JIRA ticket URL is included in the format: `https://tsu.atlassian.net/browse/IR-<number>`
+            - A JIRA ticket URL is included in the format: \`https://tsu.atlassian.net/browse/IR-<number>\`
             - Or an explicit statement that no JIRA ticket is applicable
 
             ## Evaluation Requirements
@@ -50,7 +50,7 @@ jobs:
             - Is there sufficient context for reviewers?
 
             For JIRA tickets:
-            - Is a valid JIRA ticket linked (`https://tsu.atlassian.net/browse/IR-<number>`)?
+            - Is a valid JIRA ticket linked (\`https://tsu.atlassian.net/browse/IR-<number>\`)?
             - If no ticket is linked, is this explicitly stated?
 
             ## Response Format
@@ -61,11 +61,11 @@ jobs:
 
             If the PR is insufficient in any area, return specific feedback on what needs to be improved. Format your feedback like this:
 
-            ```
+            \`\`\`
             PR Review: Changes Needed
 
             [List specific issues with the title and/or description that need to be addressed]
-            ```
+            \`\`\`
             `;
 
             const response = await fetch('http://localhost:11434/api/generate', {
