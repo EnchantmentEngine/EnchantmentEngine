@@ -1,15 +1,18 @@
-name: PR Description Checks
+name: PR Title and Description Checks
 
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
+  push:
+    branches:
+      - pr-check
 
 jobs:
-  check-pr-quality:
+  check-pr:
     runs-on: ubuntu-latest
     steps:
       - run: curl -fsSL https://ollama.com/install.sh | sh
-      - run: ollama serve & ollama pull llama3.3
+      - run: ollama serve & ollama pull qwen2.5:32b
       - name: Check PR Title and Description
         uses: actions/github-script@v6
         with:
