@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: curl -fsSL https://ollama.com/install.sh | sh
+      - uses: actions/cache@v4
+        with:
+          path: ~/.ollama
+          key: ${{ runner.os }}-qwen2.5
       - run: ollama serve & ollama pull qwen2.5:32b
       - run: tree ~/.ollama
       - name: Check PR Title and Description
@@ -23,7 +27,7 @@ jobs:
               core.setFailed("No pull request found.");
               return;
             }
-            
+
             const title = pr.title ? pr.title.trim() : "";
             const body = pr.body ? pr.body.trim() : "";
 
@@ -67,10 +71,9 @@ jobs:
             console.log('debug', output)
 
             core.info('output', output)
-            # await github.rest.issues.createComment({
-            #   issue_number: context.issue.number,
-            #   owner: context.repo.owner,
-            #   repo: context.repo.repo,
-            #   body: output
-            # })
-            
+            // await github.rest.issues.createComment({
+            //   issue_number: context.issue.number,
+            //   owner: context.repo.owner,
+            //   repo: context.repo.repo,
+            //   body: output
+            // })
