@@ -1,0 +1,70 @@
+name: PR Description Checks
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  check-pr-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsSL https://ollama.com/install.sh | sh
+      - run: ollama serve & ollama pull llama3.3
+      - name: Check PR Title and Description
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed("No pull request found.");
+              return;
+            }
+            
+            const title = pr.title ? pr.title.trim() : "";
+            const body = pr.body ? pr.body.trim() : "";
+
+            const prompt = `
+            You are an assistant that reviews pull requests to ensure they meet our contribution guidelines. Your task is to evaluate the title and description of a pull request based on the following criteria:
+
+            1. Title:
+              - It must be short, concise, and serve as a clear heading for the pull request.
+              - It should capture the essence of what the pull request is about.
+
+            2. Description:
+              - It must provide an explanation of what the pull request is doing or why it is needed.
+              - It should include sufficient context so that reviewers understand the change or its motivation.
+
+            3. Jira Ticket Verification:
+              - The description must include a Jira ticket link in the following format:  
+                https://tsu.atlassian.net/browse/IR-<number>
+              - Alternatively, if no Jira ticket is linked, the description should explicitly state that there is no Jira ticket linked.
+
+            Please analyze the following pull request:
+
+            **Title:** ${title}
+
+            **Description:** ${description}
+
+            Evaluate the title and description against the criteria and output a summary of any issues or confirmations if all conditions are met. If improvements are needed, provide actionable feedback so that the pull request can meet our standards.
+            `;
+
+            const response = await fetch('http://localhost:11434/api/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'llama3:latest',
+                prompt: prompt.trim(),
+                stream: false
+              })
+            });
+
+            const output = await response.json().response.trim();
+
+            core.info('output', output)
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+            
