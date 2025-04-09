@@ -10,7 +10,7 @@ jobs:
     steps:
       - run: curl -fsSL https://ollama.com/install.sh | sh
       - run: ollama list
-      - run: ollama serve & ollama pull qwen2.5:14b
+      - run: ollama serve & ollama pull qwen2.5:7b
       - run: tree ~/.ollama
       - name: Check PR Title and Description
         uses: actions/github-script@v7
@@ -47,14 +47,14 @@ jobs:
 
             **Description:** ${body}
 
-            Evaluate the title and description against the criteria and output a summary of any issues or confirmations if all conditions are met. If improvements are needed, provide actionable feedback so that the pull request can meet our standards.
+            Evaluate the title and description against the criteria. If both the title and description are good, just return ok. Otherwise, provide a detailed explanation of what is wrong with the title and/or description. If the description does not include a Jira ticket link, please mention that as well.
             `;
 
             const response = await fetch('http://localhost:11434/api/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                model: 'qwen2.5:14b',
+                model: 'qwen2.5:7b',
                 prompt: prompt.trim(),
                 stream: false
               })
