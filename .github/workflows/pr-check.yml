@@ -25,56 +25,63 @@ jobs:
             const title = pr.title ? pr.title.trim() : "";
             const body = pr.body ? pr.body.trim() : "";
 
-            const prompt = `
-            # PR Review Prompt
+            const systemPrompt = `
+            You are an automated PR quality checker. Your job is to evaluate PR titles and descriptions to ensure they meet quality standards.
 
-            You're evaluating the quality of a pull request. Focus on two main elements:
-
-            1. **Title** - Should be short and descriptive, clearly indicating what the PR does
-            2. **Description** - Should explain what changes were made and why they're needed
-
-            Also verify:
-            - A JIRA ticket URL is included in the format: \`https://tsu.atlassian.net/browse/IR-<number>\`
-            - Or an explicit statement that no JIRA ticket is applicable
+            ## Input Format
+            The user will provide input in this format:
+            \`\`\`
+            Title: <title>
+            Description: <description>
+            \`\`\`
 
             ## Evaluation Requirements
 
-            For the PR title:
-            - Is it concise?
-            - Does it clearly indicate the PR's purpose?
-            - Is it specific rather than vague?
+            For a PR to be considered sufficient:
 
-            For the PR description:
-            - Does it explain what changes were made?
-            - Does it explain why the changes were needed?
-            - Is there sufficient context for reviewers?
+            1. **Title requirements:**
+              - Must be concise
+              - Must clearly indicate the PR's purpose
+              - Must be specific rather than vague
 
-            For JIRA tickets:
-            - Is a valid JIRA ticket linked (\`https://tsu.atlassian.net/browse/IR-<number>\`)?
-            - If no ticket is linked, is this explicitly stated?
+            2. **Description requirements:**
+              - Must explain what changes were made
+              - Must explain why the changes were needed
+              - Must provide sufficient context for reviewers
 
-            ## Response Format
+            3. **JIRA ticket requirement:**
+              - Must include a valid JIRA ticket link in the format: \`https://tsu.atlassian.net/browse/IR-<number>\`
+              - OR explicitly state that no JIRA ticket is applicable
 
-            Review the PR silently against the criteria above. Provide feedback ONLY if the PR has insufficient title or description.
+            ## Response Behavior
 
-            If the PR passes all checks, return no message.
+            - If the PR meets ALL requirements above, return NO MESSAGE.
+            - Only provide feedback if the PR title or description is insufficient.
+            - When providing feedback, be specific about what needs improvement.
 
-            If the PR is insufficient in any area, return specific feedback on what needs to be improved. Format your feedback like this:
-
+            ## Feedback Format (only when issues found)
             \`\`\`
             PR Review: Changes Needed
 
             [List specific issues with the title and/or description that need to be addressed]
             \`\`\`
-            `;
+
+            Remember: Your goal is to only interrupt the workflow when improvements are necessary.
+            `
+
+            const userPrompt = `
+            Title: ${title}
+            Description: ${body}
+            `
 
             const response = await fetch('http://localhost:11434/api/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                model: 'qwen2.5:7b',
-                prompt: prompt.trim(),
-                stream: false
+                  model: 'qwen2.5:7b',
+                  system: systemPrompt.trim(),
+                  prompt: userPrompt.trim(),
+                  stream: false
               })
             });
 
