@@ -26,54 +26,66 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   Component,
   Entity,
-  getAncestorWithComponents,
   getComponent,
   hasComponent,
-  SerializedComponentType
+  SerializedComponentType,
+  traverseEntityNodeParent
 } from '@ir-engine/ecs'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { defineState, getMutableState, NO_PROXY_STEALTH, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
-import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { SceneState } from '../../gltf/GLTFState'
 
-export type SceneDeltaEntry<C extends Component> = Record<string, Partial<SerializedComponentType<C>>>
+export interface SceneDelta {
+  [key: NodeID]: SceneDelta
+  [key: string]: SceneDeltaEntry<any>
+}
+
+export type SceneDeltaEntry<C extends Component> = Record<NodeID, Record<string, Partial<SerializedComponentType<C>>>>
+export type MaterialDeltaEntry = Record<typeof MATERIAL_JSON_ID, any>
 
 export const MATERIAL_JSON_ID = 'materialParameters' as const
 export const MATERIAL_PROTOTYPE_JSON_ID = 'prototypeConstructor' as const
 
-export type MaterialDeltaEntry = Record<typeof MATERIAL_JSON_ID, any>
-
-export type SceneDeltaRegistry = Record<NodeID, Record<NodeID, SceneDeltaEntry<any> | MaterialDeltaEntry>>
-
 export const SceneDeltaState = defineState({
   name: 'SceneDeltaState',
-  initial: {} as SceneDeltaRegistry,
+  initial: {} as SceneDelta,
   getSource: (entity: Entity) => {
-    const rootNodeID = getComponent(getAncestorWithComponents(entity, [GLTFComponent]), NodeIDComponent)
-    const state = getMutableState(SceneDeltaState)
-    if (!state.value[rootNodeID]) state[rootNodeID].set({})
-    const source = state[rootNodeID]
-    return source
+    const parentIds = [] as NodeID[]
+
+    traverseEntityNodeParent(entity, (parentEntity) => {
+      if (hasComponent(parentEntity, NodeIDComponent)) {
+        const nodeID = getComponent(parentEntity, NodeIDComponent)
+        parentIds.unshift(nodeID)
+      }
+    })
+
+    return [...parentIds, getComponent(entity, NodeIDComponent)]
   },
-  registerDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
-    if (!component.jsonID || !hasComponent(entity, NodeIDComponent)) return
-    const source = SceneDeltaState.getSource(entity)
-    const nodeID = getComponent(entity, NodeIDComponent)
-    if (!source.value[nodeID]) source[nodeID].set({} as SceneDeltaEntry<C>)
-    const componentMap = source[nodeID].get(NO_PROXY_STEALTH) as SceneDeltaEntry<C>
-    componentMap[component.jsonID] = { ...componentMap[component.jsonID], ...delta }
-    source[nodeID].set(componentMap)
+  setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
+    const parentIds = SceneDeltaState.getSource(entity)
+    const deltaRegistry = getMutableState(SceneDeltaState)
+    let current = deltaRegistry.get(NO_PROXY) as SceneDelta
+    for (let i = 0; i < parentIds.length; i++) {
+      const nodeId = parentIds[i]
+      current[nodeId] = current[nodeId] ?? ({} as SceneDelta)
+      if (getComponent(entity, NodeIDComponent) === nodeId) {
+        current[nodeId][component.jsonID!] = { ...current[nodeId][component.jsonID!], ...delta }
+        break
+      }
+      current = current[nodeId] as any
+    }
   },
+
   registerMaterialDelta(entity: Entity, props?: any, prototype?: string) {
-    if (!hasComponent(entity, NodeIDComponent)) return
-    const source = SceneDeltaState.getSource(entity)
-    const nodeID = getComponent(entity, NodeIDComponent)
-    if (!source.value[nodeID]) source[nodeID].set({} as MaterialDeltaEntry)
-    const componentMap = source[nodeID].get(NO_PROXY_STEALTH) as MaterialDeltaEntry
-    if (props) componentMap[MATERIAL_JSON_ID] = { ...componentMap[MATERIAL_JSON_ID], ...props }
-    if (prototype) componentMap[MATERIAL_PROTOTYPE_JSON_ID] = prototype
-    source[nodeID].set(componentMap)
+    // if (!hasComponent(entity, NodeIDComponent)) return
+    // const source = SceneDeltaState.getSource(entity)
+    // const nodeID = getComponent(entity, NodeIDComponent)
+    // if (!source.value[nodeID]) source[nodeID].set({} as MaterialDeltaEntry)
+    // const componentMap = source[nodeID].get(NO_PROXY_STEALTH) as MaterialDeltaEntry
+    // if (props) componentMap[MATERIAL_JSON_ID] = { ...componentMap[MATERIAL_JSON_ID], ...props }
+    // if (prototype) componentMap[MATERIAL_PROTOTYPE_JSON_ID] = prototype
+    // source[nodeID].set(componentMap)
   },
   reactor: () => {
     const sceneState = useMutableState(SceneState)

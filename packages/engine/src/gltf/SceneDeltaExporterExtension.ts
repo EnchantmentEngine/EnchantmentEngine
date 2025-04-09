@@ -32,7 +32,7 @@ import {
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { cleanStorageProviderURLs } from '../assets/functions/parseSceneJSON'
-import { SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
+import { SceneDelta, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFSceneExportExtension } from './exportGLTFScene'
 import { GLTFComponent } from './GLTFComponent'
 import { NodeIDComponent } from './NodeIDComponent'
@@ -59,7 +59,7 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
       gltf.extensions ??= {}
       const extensions: Record<string, any> = gltf.extensions
       extensions[SCENE_DELTA_EXTENSION_NAME] ??= {}
-      const extension: SceneDeltaRegistry = extensions[SCENE_DELTA_EXTENSION_NAME]
+      const extension: SceneDelta = extensions[SCENE_DELTA_EXTENSION_NAME]
       extension[rootID] ??= {}
       extension[rootID][nodeID] = nodeDelta
       usedSceneDelta = true

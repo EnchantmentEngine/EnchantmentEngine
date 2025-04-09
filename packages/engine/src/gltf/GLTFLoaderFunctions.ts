@@ -58,7 +58,6 @@ import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import {
   MaterialInstanceComponent,
-  MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
@@ -105,9 +104,7 @@ import {
   Vector3,
   VectorKeyframeTrack
 } from 'three'
-import { parseStorageProviderURLs } from '../assets/functions/parseSceneJSON'
 import { loadResource, unloadResourcesForEntity } from '../assets/functions/resourceLoaderFunctions'
-import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
@@ -115,13 +112,7 @@ import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceID } from '../scene/components/SourceComponent'
-import {
-  MATERIAL_JSON_ID,
-  MATERIAL_PROTOTYPE_JSON_ID,
-  SceneDeltaEntry,
-  SceneDeltaRegistry,
-  SceneDeltaState
-} from '../scene/systems/SceneDeltaState'
+import { SceneDelta, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -820,43 +811,43 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const deltaState = getState(SceneDeltaState)
   const sourceDelta = deltaState[getComponent(options.entity, NodeIDComponent)]
 
-  if (sourceDelta) {
-    const nodeID = getComponent(materialEntity, NodeIDComponent)
-    const nodeDelta = sourceDelta[nodeID]
-    if (nodeDelta) {
-      const materialDelta = nodeDelta[MATERIAL_JSON_ID]
-      const materialPrototype = nodeDelta[MATERIAL_PROTOTYPE_JSON_ID]
-      if (materialDelta && materialPrototype) {
-        const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
-        materialConstructor = prototype.prototypeConstructor
-        // optionally serializing the uuid to determine if we need to replace the material -
-        // this is insanely brittle but will do for now
-        if (materialDelta.uuid || materialPrototype) materialConstructorParameters = {}
+  // if (sourceDelta) {
+  //   const nodeID = getComponent(materialEntity, NodeIDComponent)
+  //   const nodeDelta = sourceDelta[nodeID]
+  //   if (nodeDelta) {
+  //     const materialDelta = nodeDelta[MATERIAL_JSON_ID]
+  //     const materialPrototype = nodeDelta[MATERIAL_PROTOTYPE_JSON_ID]
+  //     if (materialDelta && materialPrototype) {
+  //       const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
+  //       materialConstructor = prototype.prototypeConstructor
+  //       // optionally serializing the uuid to determine if we need to replace the material -
+  //       // this is insanely brittle but will do for now
+  //       if (materialDelta.uuid || materialPrototype) materialConstructorParameters = {}
 
-        for (const key in materialDelta) {
-          if (materialDelta[key] === null) continue
-          switch (prototype.arguments[key]?.type) {
-            case 'color':
-              materialConstructorParameters[key] = new Color(materialDelta[key])
-              break
-            case 'texture':
-              deltaPromises.push(
-                getTextureAsync(materialDelta[key]).then(([texture]) => {
-                  if (texture) {
-                    texture.colorSpace = SRGBColorSpace
-                    materialConstructorParameters[key] = texture
-                  }
-                })
-              )
-              break
-            default:
-              materialConstructorParameters[key] = materialDelta[key]
-              break
-          }
-        }
-      }
-    }
-  }
+  //       for (const key in materialDelta) {
+  //         if (materialDelta[key] === null) continue
+  //         switch (prototype.arguments[key]?.type) {
+  //           case 'color':
+  //             materialConstructorParameters[key] = new Color(materialDelta[key])
+  //             break
+  //           case 'texture':
+  //             deltaPromises.push(
+  //               getTextureAsync(materialDelta[key]).then(([texture]) => {
+  //                 if (texture) {
+  //                   texture.colorSpace = SRGBColorSpace
+  //                   materialConstructorParameters[key] = texture
+  //                 }
+  //               })
+  //             )
+  //             break
+  //           default:
+  //             materialConstructorParameters[key] = materialDelta[key]
+  //             break
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   await Promise.all(deltaPromises)
 
@@ -1550,14 +1541,17 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   const rootNodeID = getOptionalComponent(options.entity, NodeIDComponent)
 
   //apply deltas if they exist in state
-  const deltas = rootNodeID ? getState(SceneDeltaState)?.[rootNodeID]?.[nodeID] : null
-  if (deltas) {
-    for (const [componentName, delta] of Object.entries(deltas)) {
-      const Component = ComponentJSONIDMap.get(componentName)
-      if (!Component) continue
-      deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
-    }
-  }
+  // const deltas = rootNodeID ? getState(SceneDeltaState)?.[rootNodeID] : null
+  // console.log(getComponent(nodeEntity, NameComponent), getOptionalComponent(nodeEntity, EntityTreeComponent), 'our root is', rootNodeID)
+  // if (deltas) {
+
+  //   console.log()
+  //   for (const [componentName, delta] of Object.entries(deltas)) {
+  //     const Component = ComponentJSONIDMap.get(componentName)
+  //     if (!Component) continue
+  //     deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
+  //   }
+  // }
 
   return nodeEntity
 }
@@ -1565,13 +1559,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const json = options.document
   const rootEntity = options.entity
-
-  // load deltas into state before anything else
-  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDeltaRegistry | null
-  if (deltas) {
-    const parsedDeltas = parseStorageProviderURLs(deltas)
-    getMutableState(SceneDeltaState).merge(parsedDeltas)
-  }
 
   DependencyCache.set(options.url, new Map())
 
@@ -1595,6 +1582,13 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
 
   const loadedNodeEntities = await Promise.all(pending)
 
+  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDelta | null
+  if (deltas) {
+    getMutableState(SceneDeltaState).merge(deltas)
+    console.log(deltas)
+    console.log(getComponent(rootEntity, NodeIDComponent), rootEntity)
+  }
+
   for (const entity of loadedNodeEntities) {
     setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
     iterateEntityNode(
@@ -1602,6 +1596,20 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
       (e) => {
         computeTransformMatrix(e)
         TransformComponent.dirty[e] = 1
+
+        const rootID = getComponent(rootEntity, NodeIDComponent)
+        const deltas = getState(SceneDeltaState)[rootID]
+        if (deltas) {
+          const source = SceneDeltaState.getSource(e)
+
+          let current = deltas
+          for (const nodeID of source) {
+            if (!current) break
+            current = current[nodeID]
+          }
+
+          console.log(current, getComponent(e, NameComponent))
+        }
       },
       (e) => hasComponent(e, TransformComponent)
     )
