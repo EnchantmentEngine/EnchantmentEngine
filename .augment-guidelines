@@ -37,6 +37,7 @@ This file provides guidelines for AI assistants when working with the IR Engine 
   - Camera systems
   - XR support
   - Rendering
+  - Spatialized Input
 
 ### engine
 - **Purpose**: Main engine module that integrates all other modules
