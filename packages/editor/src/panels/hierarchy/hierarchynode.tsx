@@ -504,7 +504,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
               onClick={onLockUnlockNode}
             >
               {locked ? (
-                <PiLockBold className="font-small text-[#6B7280]" />
+                <PiLockBold className="font-small text-ui-primary" />
               ) : (
                 <PiLockOpenBold className="font-small text-[#42454d]" />
               )}
