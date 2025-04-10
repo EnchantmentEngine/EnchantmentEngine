@@ -2797,6 +2797,15 @@ describe('GenerateJSONSchema', () => {
       required: []
     })
   })
+
+  it('should include $comment when provided in options', () => {
+    const schema = S.String('test', { $comment: 'test-comment' })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'string',
+      $comment: 'test-comment'
+    })
+  })
 }) //:: GenerateJSONSchema
 
 describe('flattenSchema', () => {
