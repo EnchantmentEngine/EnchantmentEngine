@@ -116,6 +116,9 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
   if (validValue(value) && schema.options?.deserialize) return schema.options.deserialize(curr, value) as Val
 
   switch (schema[Kind]) {
+    // case 'Any': /** @todo this is insecure but necessary for extensibility */
+    // console.log('Any schema', value)
+    //   return value
     case 'Number': {
       if (!validValue(value)) return value
       return typeof value === 'number' ? value : undefined
@@ -853,7 +856,7 @@ export function flattenSchema(
           ...flattenSchema(
             childSchema.items,
             // if the array has one element, it's the only data we can use, so reference it directly
-            sampleData[key].length === 1 ? fullKey + '.0' : fullKey,
+            sampleData && sampleData[key].length === 1 ? fullKey + '.0' : fullKey,
             sampleData ? sampleData[key]?.[0] : undefined
           )
         }

@@ -683,27 +683,12 @@ export const deserializeComponent = <C extends Component>(
 
   const component = getComponent(entity, Component)
 
-  const jsonWithoutStringPartials =
-    typeof json === 'object'
-      ? Object.fromEntries(Object.entries(json).filter(([key, value]) => !key.includes('.')))
-      : json
-
-  const args = Component.schema
-    ? DeserializeSchemaValue(entity, Component.schema, component, jsonWithoutStringPartials)
-    : jsonWithoutStringPartials
+  const args = Component.schema ? DeserializeSchemaValue(entity, Component.schema, component, json) : json
 
   if (Component.schema && HasSchemaValidators(Component.schema)) {
     const [valid, key] = HasValidSchemaValues(Component.schema, args, component, entity)
     if (!valid)
       throw new Error(`${component.name}:deserializeComponent Invalid value for key ${key} ${JSON.stringify(args)}`)
-  }
-
-  // handle period separated string deep partials
-  if (args) {
-    const jsonWithStringPartials = Object.fromEntries(Object.entries(json).filter(([key, value]) => key.includes('.')))
-    for (const [key, val] of Object.entries(jsonWithStringPartials)) {
-      setNestedObject(args, key, val)
-    }
   }
 
   setComponent(entity, Component, args)

@@ -86,6 +86,17 @@ import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
 
+function isClass(obj) {
+  const isCtorClass = obj.constructor && obj.constructor.toString().substring(0, 5) === 'class'
+  if (obj.prototype === undefined) {
+    return isCtorClass
+  }
+  const isPrototypeCtorClass =
+    obj.prototype.constructor &&
+    obj.prototype.constructor.toString &&
+    obj.prototype.constructor.toString().substring(0, 5) === 'class'
+  return isCtorClass || isPrototypeCtorClass
+}
 /**
  * Use this function to infer the preset based on the entity's behaviors.
  */
@@ -562,62 +573,64 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     }))
     newValueOptions.unshift({ label: 'Select Property', value: '' })
     const newValue = useHookstate('')
-    if (schema.type === 'array') return <></> // todo: handle arrays
+    if (typeof values !== 'object' || schema.type === 'array') return <></> // todo: handle arrays
     return (
       <>
-        {Object.keys(values).map((key: any, index: number) => {
-          const currentPath = path ? `${pathContext}.${path}.${key}` : (`${pathContext}.${key}` as any)
-          const subSchema = getSchemaFromPath(schema, key)
-          const schemaType = subSchema?.type
-          let Editor = <></>
-          if (schemaType === 'object') {
-            Editor = (
-              <ObjectEditor schema={subSchema} values={values[key]} path={currentPath} pathContext={pathContext} />
+        {Object.keys(values)
+          .filter((key) => values[key] && !isClass(values[key]))
+          .map((key: any, index: number) => {
+            const currentPath = path ? `${pathContext}.${path}.${key}` : (`${pathContext}.${key}` as any)
+            const subSchema = getSchemaFromPath(schema, key)
+            const schemaType = subSchema?.type
+            let Editor = <></>
+            if (schemaType === 'object') {
+              Editor = (
+                <ObjectEditor schema={subSchema} values={values[key]} path={currentPath} pathContext={pathContext} />
+              )
+            } else if (schemaType === 'boolean') {
+              Editor = (
+                <Checkbox
+                  key={index}
+                  variantTextPlacement={'right'}
+                  checked={values[key]}
+                  onChange={commitProperty(BehaviorComponent, currentPath)}
+                />
+              )
+            } else if (schemaType === 'string') {
+              Editor = (
+                <StringInput
+                  key={index}
+                  labelProps={{ text: index.toString(), position: 'left' }}
+                  value={values[key]}
+                  onRelease={commitProperty(BehaviorComponent, currentPath)}
+                />
+              )
+            } else if (schemaType === 'number') {
+              Editor = (
+                <NumericInput
+                  key={index}
+                  value={values[key]}
+                  onChange={updateProperty(BehaviorComponent, currentPath)}
+                  onRelease={commitProperty(BehaviorComponent, currentPath)}
+                />
+              )
+            }
+            return (
+              <InputGroup key={key} name={key.toString()} label={key.toString()}>
+                {Editor}
+                <button
+                  className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+                  onClick={() => {
+                    const newValues = { ...values }
+                    delete newValues[key]
+                    commitProperties(BehaviorComponent, { [path ? `${pathContext}.${path}` : pathContext]: newValues })
+                  }}
+                >
+                  <HiMinus className="m-auto" />
+                </button>
+              </InputGroup>
             )
-          } else if (schemaType === 'boolean') {
-            Editor = (
-              <Checkbox
-                key={index}
-                variantTextPlacement={'right'}
-                checked={values[key]}
-                onChange={commitProperty(BehaviorComponent, currentPath)}
-              />
-            )
-          } else if (schemaType === 'string') {
-            Editor = (
-              <StringInput
-                key={index}
-                labelProps={{ text: index.toString(), position: 'left' }}
-                value={values[key]}
-                onRelease={commitProperty(BehaviorComponent, currentPath)}
-              />
-            )
-          } else if (schemaType === 'number') {
-            Editor = (
-              <NumericInput
-                key={index}
-                value={values[key]}
-                onChange={updateProperty(BehaviorComponent, currentPath)}
-                onRelease={commitProperty(BehaviorComponent, currentPath)}
-              />
-            )
-          }
-          return (
-            <InputGroup key={key} name={key.toString()} label={key.toString()}>
-              {Editor}
-              <button
-                className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
-                onClick={() => {
-                  const newValues = { ...values }
-                  delete newValues[key]
-                  commitProperties(BehaviorComponent, { [path ? `${pathContext}.${path}` : pathContext]: newValues })
-                }}
-              >
-                <HiMinus className="m-auto" />
-              </button>
-            </InputGroup>
-          )
-        })}
+          })}
         {/* dropdown for new text value key */}
         <SelectInput
           labelProps={{ text: 'New Property', position: 'left' }}
@@ -734,6 +747,15 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.behavior.lbl-setComponent-info')}
       >
         <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
+        <SelectInput
           labelProps={{ text: 'Node', position: 'left' }}
           value={effect.nodeID}
           onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
@@ -792,6 +814,15 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.behavior.lbl-removeComponent')}
         info={t('editor:properties.behavior.lbl-removeComponent-info')}
       >
+        <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
         <SelectInput
           labelProps={{ text: 'Node', position: 'left' }}
           value={effect.nodeID}
@@ -1221,6 +1252,9 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
    */
   const TriggerUI = () => {
     const enterBehavior = behavior.get(NO_PROXY).behaviors[0]
+    const exitBehavior = behavior.get(NO_PROXY).behaviors[1]
+
+    if (!enterBehavior || !exitBehavior) return <></>
 
     return (
       <>
@@ -1230,8 +1264,13 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
           info={t('editor:properties.behavior.lbl-enterTrigger-info')}
         >
           {/* Effect editor */}
-          {enterBehavior.effects.map((effect, index) => (
-            <EffectInput key={index} behaviorIndex={0} index={index} effect={effect as Static<typeof EffectSchema>} />
+          {enterBehavior?.effects?.map((effect, index) => (
+            <EffectInput
+              key={'enter' + index}
+              behaviorIndex={0}
+              index={index}
+              effect={effect as Static<typeof EffectSchema>}
+            />
           ))}
           <Button onClick={() => handleChangeEffect(0, 0, 'add')}>Add Effect</Button>
         </InputGroup>
@@ -1240,8 +1279,13 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
           label={t('editor:properties.behavior.lbl-exitTrigger')}
           info={t('editor:properties.behavior.lbl-exitTrigger-info')}
         >
-          {behavior.get(NO_PROXY).behaviors[1].effects.map((effect, index) => (
-            <EffectInput key={index} behaviorIndex={1} index={index} effect={effect as Static<typeof EffectSchema>} />
+          {exitBehavior?.effects?.map((effect, index) => (
+            <EffectInput
+              key={'exit' + index}
+              behaviorIndex={1}
+              index={index}
+              effect={effect as Static<typeof EffectSchema>}
+            />
           ))}
           <Button onClick={() => handleChangeEffect(1, 0, 'add')}>Add Effect</Button>
         </InputGroup>
