@@ -32,13 +32,12 @@ import {
   traverseEntityNodeParent
 } from '@ir-engine/ecs'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { defineState, getMutableState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { SceneState } from '../../gltf/GLTFState'
 
 export interface SceneDelta {
-  [key: NodeID]: SceneDelta
-  [key: string]: SceneDeltaEntry<any>
+  [key: NodeID]: { children?: SceneDelta; delta?: { [key: string]: SceneDeltaEntry<any> } }
 }
 
 export type SceneDeltaEntry<C extends Component> = Record<NodeID, Record<string, Partial<SerializedComponentType<C>>>>
@@ -62,18 +61,30 @@ export const SceneDeltaState = defineState({
 
     return [...parentIds, getComponent(entity, NodeIDComponent)]
   },
+  getDelta: (source: NodeID[]) => {
+    let current = getState(SceneDeltaState) as SceneDelta | undefined
+    for (let i = 0; i < source.length; i++) {
+      if (!current) break
+      console.log(current)
+      if (i !== source.length - 1) current = current[source[i]]?.children
+      else current = current[source[i]]?.delta
+    }
+    return current
+  },
   setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
     const parentIds = SceneDeltaState.getSource(entity)
     const deltaRegistry = getMutableState(SceneDeltaState)
-    let current = deltaRegistry.get(NO_PROXY) as SceneDelta
+    let current = deltaRegistry.get(NO_PROXY) as SceneDelta | undefined
     for (let i = 0; i < parentIds.length; i++) {
+      if (!current) break
       const nodeId = parentIds[i]
-      current[nodeId] = current[nodeId] ?? ({} as SceneDelta)
+      current[nodeId] = current[nodeId] ?? (i < parentIds.length - 1 ? { children: {} } : ({} as SceneDelta))
       if (getComponent(entity, NodeIDComponent) === nodeId) {
-        current[nodeId][component.jsonID!] = { ...current[nodeId][component.jsonID!], ...delta }
+        current[nodeId].delta = { [component.jsonID!]: { ...current[nodeId][component.jsonID!], ...delta } }
+
         break
       }
-      current = current[nodeId] as any
+      current = current[nodeId].children
     }
   },
 

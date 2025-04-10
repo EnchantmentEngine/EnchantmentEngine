@@ -112,7 +112,7 @@ import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceID } from '../scene/components/SourceComponent'
-import { SceneDelta, SceneDeltaState } from '../scene/systems/SceneDeltaState'
+import { SceneDelta, SceneDeltaEntry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -1585,34 +1585,32 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDelta | null
   if (deltas) {
     getMutableState(SceneDeltaState).merge(deltas)
-    console.log(deltas)
-    console.log(getComponent(rootEntity, NodeIDComponent), rootEntity)
   }
 
   for (const entity of loadedNodeEntities) {
     setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
-    iterateEntityNode(
-      entity,
-      (e) => {
+    iterateEntityNode(entity, (e) => {
+      if (hasComponent(e, TransformComponent)) {
         computeTransformMatrix(e)
         TransformComponent.dirty[e] = 1
+      }
 
-        const rootID = getComponent(rootEntity, NodeIDComponent)
-        const deltas = getState(SceneDeltaState)[rootID]
-        if (deltas) {
-          const source = SceneDeltaState.getSource(e, rootID)
+      const deltas = getState(SceneDeltaState)
+      if (deltas) {
+        const source = SceneDeltaState.getSource(e)
+        console.log('source', source, 'for node id', getComponent(e, NodeIDComponent))
+        if (source.length < 1) return
+        const delta = SceneDeltaState.getDelta(source)
+        if (!delta) return
+        for (const [componentName, partial] of Object.entries(delta)) {
+          console.log('deserializing component', componentName, 'for node id', getComponent(e, NodeIDComponent))
 
-          let current = deltas
-          for (const nodeID of source) {
-            if (!current) break
-            current = current[nodeID]
-          }
-
-          console.log(current, getComponent(e, NameComponent))
+          const Component = ComponentJSONIDMap.get(componentName)
+          if (!Component) continue
+          deserializeComponent(e, Component, partial as SceneDeltaEntry<typeof Component>)
         }
-      },
-      (e) => hasComponent(e, TransformComponent)
-    )
+      }
+    })
   }
 
   /** @todo this is a temporary hack */

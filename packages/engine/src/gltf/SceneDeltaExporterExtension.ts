@@ -54,14 +54,14 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
       const deltaState = getState(SceneDeltaState)
       const sourceDelta = deltaState[rootID]
       if (!sourceDelta) return
-      const nodeDelta = sourceDelta[nodeID]
+      const nodeDelta = SceneDeltaState.getDelta(SceneDeltaState.getSource(entity))
       if (!nodeDelta) return
       gltf.extensions ??= {}
       const extensions: Record<string, any> = gltf.extensions
       extensions[SCENE_DELTA_EXTENSION_NAME] ??= {}
       const extension: SceneDelta = extensions[SCENE_DELTA_EXTENSION_NAME]
       extension[rootID] ??= {}
-      extension[rootID][nodeID] = nodeDelta
+      extension[rootID] = deltaState[rootID]
       usedSceneDelta = true
     })
     if (usedSceneDelta) {
