@@ -132,12 +132,10 @@ const BehaviorCalledReactor = (props: { item: { entityUUID: EntityUUID; indices:
             NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.parentID)
           )
           const newEntity = NodeIDComponent.create(getComponent(parentEntity, SourceComponent), effect.nodeID)
-          for (const components of effect.components) {
-            for (const [jsonID, values] of Object.entries(components)) {
-              const componentDefinition = ComponentJSONIDMap.get(jsonID)
-              if (!componentDefinition) continue
-              deserializeComponent(newEntity, componentDefinition, values)
-            }
+          for (const [jsonID, values] of Object.entries(effect.components)) {
+            const componentDefinition = ComponentJSONIDMap.get(jsonID)
+            if (!componentDefinition) continue
+            deserializeComponent(newEntity, componentDefinition, values)
           }
         }
         // removeEntity
@@ -246,7 +244,7 @@ export const CreateEntitySchema = S.Object({
   nodeID: NodeIDSchema(),
   sourceNodeID: S.Optional(NodeIDSchema()),
   parentID: NodeIDSchema(),
-  components: S.Array(ComponentSchema)
+  components: S.Record(S.String(), ComponentSchema)
 })
 
 export const RemoveEntitySchema = S.Object({

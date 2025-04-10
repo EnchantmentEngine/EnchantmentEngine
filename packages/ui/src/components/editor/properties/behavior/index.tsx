@@ -35,27 +35,48 @@ import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiMiniPuzzlePiece, HiMinus, HiPlus } from 'react-icons/hi2'
 
-import { commitProperties, commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
+import {
+  commitProperties,
+  commitProperty,
+  EditorComponentType,
+  updateProperty
+} from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 
-import { Entity, Static, useAncestorWithComponents, useChildrenWithComponents, UUIDComponent } from '@ir-engine/ecs'
+import {
+  Entity,
+  flattenSchema,
+  GenerateJSONSchema,
+  JSONSchema,
+  Static,
+  useAncestorWithComponents,
+  useChildrenWithComponents,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import {
   BehaviorComponent,
   BehaviorSchema,
   CallbackConditionSchema,
+  CreateEntitySchema,
   EffectSchema,
   EntityConditionSchema,
-  StateConditionSchema
+  RemoveComponentSchema,
+  RemoveEntitySchema,
+  SetComponentSchema,
+  StateConditionSchema,
+  TransitionSchema
 } from '@ir-engine/engine/src/scene/components/BehaviorComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getState, NO_PROXY, none, StateDefinitions, useHookstate } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import Button from '../../../../primitives/tailwind/Button'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import { OptionType } from '../../../../primitives/tailwind/Select'
 import InputGroup from '../../input/Group'
+import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
 
@@ -102,6 +123,27 @@ const ConditionOptions = [
   { label: 'Not Contains', value: 'notContains' }
 ]
 
+// todo, add a dedicated easing input component
+const EasingOptions = [
+  { label: 'Linear', value: 'linear' },
+  { label: 'Quadratic', value: 'quadratic' },
+  { label: 'Cubic', value: 'cubic' },
+  { label: 'Quartic', value: 'quartic' },
+  { label: 'Quintic', value: 'quintic' },
+  { label: 'Sinusoidal', value: 'sine' },
+  { label: 'Exponential', value: 'exponential' },
+  { label: 'Circular', value: 'circle' },
+  { label: 'Elastic', value: 'elastic' },
+  { label: 'Back', value: 'back' },
+  { label: 'Bounce', value: 'bounce' }
+]
+
+const EasingModeOptions = [
+  { label: 'In', value: 'in' },
+  { label: 'Out', value: 'out' },
+  { label: 'InOut', value: 'inOut' }
+]
+
 /**
  * BehaviorNodeEditor used to render editor view for property customization.
  */
@@ -141,7 +183,7 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
 
   const behavior = useComponent(props.entity, BehaviorComponent)
 
-  const handleChange = useCallback((value: string, index: number, addRemove?: 'add' | 'remove') => {
+  const handleChangeBehavior = useCallback((value: string, index: number, addRemove?: 'add' | 'remove') => {
     const behaviors = behavior.behaviors
     if (addRemove === 'add') {
       behaviors.merge([
@@ -454,7 +496,550 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
         ) : (
           <StateConditionInput behaviorIndex={behaviorIndex} index={index} condition={condition} />
         )}
+        <Button onClick={() => handleChangeCondition(behaviorIndex, index, 'remove')}>Remove Condition</Button>
       </>
+    )
+  }
+
+  const getSchemaFromPath = (schema: JSONSchema, path: string) => {
+    const pathParts = path.split('.')
+    let currentSchema = schema
+    for (const part of pathParts) {
+      if (currentSchema && currentSchema.properties) {
+        currentSchema = currentSchema.properties[part]
+      }
+    }
+    return currentSchema
+  }
+
+  /**
+   * schema: JSONSchema
+   * values: data represented by the schema
+   * path: period separated path to the data
+   */
+  const ObjectEditor = (props: { schema: JSONSchema; values: any; path: string; pathContext: string }) => {
+    const { schema, values, path, pathContext } = props
+    console.log(props)
+    const newValueOptions = Object.keys(flattenSchema(schema)).map((key) => ({
+      label: key,
+      value: key
+    }))
+    newValueOptions.unshift({ label: 'Select Property', value: '' })
+    const newValue = useHookstate('')
+    if (schema.type === 'array') return <></> // todo: handle arrays
+    return (
+      <>
+        {Object.keys(values).map((key: any, index: number) => {
+          const currentPath = path ? `${pathContext}.${path}.${key}` : (`${pathContext}.${key}` as any)
+          const subSchema = getSchemaFromPath(schema, key)
+          const schemaType = subSchema?.type
+          console.log({ values, key, schemaType, currentPath })
+          let Editor = <></>
+          if (schemaType === 'object') {
+            Editor = (
+              <ObjectEditor schema={subSchema} values={values[key]} path={currentPath} pathContext={pathContext} />
+            )
+          } else if (schemaType === 'boolean') {
+            Editor = (
+              <Checkbox
+                key={index}
+                variantTextPlacement={'right'}
+                checked={values[key]}
+                onChange={commitProperty(BehaviorComponent, currentPath)}
+              />
+            )
+          } else if (schemaType === 'string') {
+            Editor = (
+              <StringInput
+                key={index}
+                labelProps={{ text: index.toString(), position: 'left' }}
+                value={values[key]}
+                onRelease={commitProperty(BehaviorComponent, currentPath)}
+              />
+            )
+          } else if (schemaType === 'number') {
+            Editor = (
+              <NumericInput
+                key={index}
+                value={values[key]}
+                onChange={updateProperty(BehaviorComponent, currentPath)}
+                onRelease={commitProperty(BehaviorComponent, currentPath)}
+              />
+            )
+          }
+          return (
+            <InputGroup key={key} name={key.toString()} label={key.toString()}>
+              {Editor}
+              <button
+                className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+                onClick={() => {
+                  const newValues = { ...values }
+                  delete newValues[key]
+                  commitProperties(BehaviorComponent, { [path ? `${pathContext}.${path}` : pathContext]: newValues })
+                }}
+              >
+                <HiMinus className="m-auto" />
+              </button>
+            </InputGroup>
+          )
+        })}
+        {/* dropdown for new text value key */}
+        <SelectInput
+          labelProps={{ text: 'New Property', position: 'left' }}
+          value={newValue.value}
+          onChange={(val: string) => {
+            newValue.set(val)
+          }}
+          options={newValueOptions}
+        />
+        {newValue.value && (
+          <button
+            className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+            onClick={commitProperty(
+              BehaviorComponent,
+              path ? `${pathContext}.${path}.${newValue.value}` : (`${pathContext}.${newValue.value}` as any)
+            )}
+          >
+            <HiPlus className="m-auto" />
+          </button>
+        )}
+      </>
+    )
+  }
+
+  const handleChangeCondition = useCallback(
+    (behaviorIndex: number, index: number, addRemove?: 'add' | 'remove') => {
+      const behaviors = behavior.behaviors
+      if (addRemove === 'add') {
+        behaviors[behaviorIndex].conditions.merge([
+          {
+            type: 'callback',
+            callback: '',
+            nodeID: '' as NodeID,
+            sourceNodeID: '' as NodeID
+          }
+        ])
+      } else if (addRemove === 'remove') {
+        behaviors[behaviorIndex].conditions[index].set(none)
+      }
+      commitProperties(
+        BehaviorComponent,
+        { behaviors: structuredClone(behaviors.get(NO_PROXY)) as Static<typeof BehaviorSchema>[] },
+        [props.entity]
+      )
+    },
+    [behavior]
+  )
+  const handleChangeEffect = useCallback(
+    (behaviorIndex: number, index: number, addRemove?: 'add' | 'remove') => {
+      const behaviors = behavior.behaviors
+      if (addRemove === 'add') {
+        behaviors[behaviorIndex].effects.merge([
+          {
+            type: 'setComponent',
+            nodeID: '' as NodeID,
+            jsonID: '',
+            values: {}
+          }
+        ])
+      } else if (addRemove === 'remove') {
+        behaviors[behaviorIndex].effects[index].set(none)
+      }
+      commitProperties(
+        BehaviorComponent,
+        { behaviors: structuredClone(behaviors.get(NO_PROXY)) as Static<typeof BehaviorSchema>[] },
+        [props.entity]
+      )
+    },
+    [behavior]
+  )
+
+  const SetComponentInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof SetComponentSchema>
+    behaviorIndex: number
+  }) => {
+    const sourceNodeEntity = effect.sourceNodeID
+      ? UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(assetContextSource, effect.sourceNodeID),
+          Layers.Authoring
+        )
+      : assetContextEntity
+    const sourceID = GLTFComponent.useInstanceID(sourceNodeEntity)
+    const nodeIDOptions = SourceComponent.useEntitiesBySource(sourceID).map((entity) => ({
+      label: getComponent(entity, NameComponent),
+      value: getComponent(entity, NodeIDComponent)
+    }))
+
+    const selectedEntityUUID = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, effect.nodeID)
+    const selectedEntity = UUIDComponent.useEntityByUUID(selectedEntityUUID, Layers.Authoring)
+
+    const componentOptions = getAllComponents(selectedEntity)
+      .filter((c) => !!c.jsonID)
+      .map((component) => ({
+        label: component.name,
+        value: component.jsonID!
+      }))
+    const selectedComponent = componentOptions.find((option) => option.value === effect.jsonID)
+
+    const selectedComponentDef = selectedComponent?.value ? ComponentJSONIDMap.get(selectedComponent.value) : undefined
+
+    // serialiableProperties is a JSONSchema document
+    const serialiableProperties =
+      selectedComponentDef && selectedComponentDef.schema ? GenerateJSONSchema(selectedComponentDef.schema) : undefined
+
+    return (
+      <InputGroup
+        name="Set Component"
+        label={t('editor:properties.behavior.lbl-setComponent')}
+        info={t('editor:properties.behavior.lbl-setComponent-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Node', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+          options={nodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Component', position: 'left' }}
+          value={effect.jsonID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.jsonID` as any)}
+          options={componentOptions}
+        />
+        {serialiableProperties && serialiableProperties.type === 'object' && (
+          <ObjectEditor
+            key={index}
+            schema={serialiableProperties}
+            pathContext={`behaviors.${behaviorIndex}.effects.${index}.values`}
+            path={''}
+            values={effect.values}
+          />
+        )}
+      </InputGroup>
+    )
+  }
+
+  const RemoveComponentInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof RemoveComponentSchema>
+    behaviorIndex: number
+  }) => {
+    const sourceNodeEntity = effect.sourceNodeID
+      ? UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(assetContextSource, effect.sourceNodeID),
+          Layers.Authoring
+        )
+      : assetContextEntity
+    const sourceID = GLTFComponent.useInstanceID(sourceNodeEntity)
+    const nodeIDOptions = SourceComponent.useEntitiesBySource(sourceID).map((entity) => ({
+      label: getComponent(entity, NameComponent),
+      value: getComponent(entity, NodeIDComponent)
+    }))
+    const selectedEntityUUID = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, effect.nodeID)
+    const selectedEntity = UUIDComponent.useEntityByUUID(selectedEntityUUID, Layers.Authoring)
+    const componentOptions = getAllComponents(selectedEntity)
+      .filter((c) => !!c.jsonID)
+      .map((component) => ({
+        label: component.name,
+        value: component.jsonID!
+      }))
+    return (
+      <InputGroup
+        name="Remove Component"
+        label={t('editor:properties.behavior.lbl-removeComponent')}
+        info={t('editor:properties.behavior.lbl-removeComponent-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Node', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+          options={nodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Component', position: 'left' }}
+          value={effect.jsonID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.jsonID` as any)}
+          options={componentOptions}
+        />
+      </InputGroup>
+    )
+  }
+
+  /**
+   *
+   * CreateEntityInput:
+   *    type: S.Literal('createEntity'),
+   *    nodeID: NodeIDSchema(),
+   *    sourceNodeID: S.Optional(NodeIDSchema()),
+   *    parentID: NodeIDSchema(),
+   *    components: S.Array(ComponentSchema)
+   * @param param0
+   * @returns
+   */
+  const CreateEntityInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof CreateEntitySchema>
+    behaviorIndex: number
+  }) => {
+    const sourceNodeEntity = effect.sourceNodeID
+      ? UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(assetContextSource, effect.sourceNodeID),
+          Layers.Authoring
+        )
+      : assetContextEntity
+    const sourceID = GLTFComponent.useInstanceID(sourceNodeEntity)
+    const nodeIDOptions = SourceComponent.useEntitiesBySource(sourceID).map((entity) => ({
+      label: getComponent(entity, NameComponent),
+      value: getComponent(entity, NodeIDComponent)
+    }))
+
+    const componentOptions = [...ComponentJSONIDMap.entries()].map(([jsonID, Component]) => ({
+      label: Component.name,
+      value: jsonID
+    }))
+
+    const handleAddComponent = useCallback(
+      (jsonID: string) => {
+        commitProperties(
+          BehaviorComponent,
+          {
+            [`behaviors.${behaviorIndex}.effects.${index}.components.${jsonID}` as any]: {}
+          },
+          [props.entity]
+        )
+      },
+      [effect.components]
+    )
+
+    const handleRemoveComponent = useCallback(
+      (jsonID: string) => {
+        const componentsClone = structuredClone(effect.components)
+        delete componentsClone[jsonID]
+        commitProperties(
+          BehaviorComponent,
+          {
+            [`behaviors.${behaviorIndex}.effects.${index}.components` as any]: componentsClone
+          },
+          [props.entity]
+        )
+      },
+      [effect.components]
+    )
+
+    const selectedComponent = useHookstate('')
+
+    return (
+      <InputGroup
+        name="Create Entity"
+        label={t('editor:properties.behavior.lbl-createEntity')}
+        info={t('editor:properties.behavior.lbl-createEntity-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
+        <StringInput
+          labelProps={{ text: 'Node ID', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+        />
+        <SelectInput
+          labelProps={{ text: 'Parent', position: 'left' }}
+          value={effect.parentID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.parentID` as any)}
+          options={nodeIDOptions}
+        />
+        {Object.entries(effect.components).map(([jsonID, values]) => (
+          <InputGroup
+            key={jsonID}
+            name="Component"
+            label={t('editor:properties.behavior.lbl-components') + (jsonID as string)}
+            info={t('editor:properties.behavior.lbl-components-info')}
+          >
+            <ObjectEditor
+              key={index}
+              schema={GenerateJSONSchema(ComponentJSONIDMap.get(jsonID)!.schema)!}
+              pathContext={`behaviors.${behaviorIndex}.effects.${index}.components.${index}`}
+              path={''}
+              values={values}
+            />
+            <button
+              className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+              onClick={() => handleRemoveComponent(jsonID)}
+            >
+              <HiMinus className="m-auto" />
+            </button>
+          </InputGroup>
+        ))}
+        <SelectInput
+          labelProps={{ text: 'Add Component', position: 'left' }}
+          value={selectedComponent.value}
+          onChange={(val: string) => {
+            selectedComponent.set(val)
+          }}
+          options={componentOptions}
+        />
+        {selectedComponent.value && (
+          <button
+            className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+            onClick={() => {
+              handleAddComponent(selectedComponent.value)
+              selectedComponent.set('')
+            }}
+          >
+            <HiPlus className="m-auto" />
+          </button>
+        )}
+      </InputGroup>
+    )
+  }
+
+  const RemoveEntityInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof RemoveEntitySchema>
+    behaviorIndex: number
+  }) => {
+    return (
+      <InputGroup
+        name="Remove Entity"
+        label={t('editor:properties.behavior.lbl-removeEntity')}
+        info={t('editor:properties.behavior.lbl-removeEntity-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
+        <StringInput
+          labelProps={{ text: 'Node ID', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+        />
+      </InputGroup>
+    )
+  }
+
+  const TransitionInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof TransitionSchema>
+    behaviorIndex: number
+  }) => {
+    const sourceNodeEntity = effect.sourceNodeID
+      ? UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(assetContextSource, effect.sourceNodeID),
+          Layers.Authoring
+        )
+      : assetContextEntity
+    const sourceID = GLTFComponent.useInstanceID(sourceNodeEntity)
+    const nodeIDOptions = SourceComponent.useEntitiesBySource(sourceID).map((entity) => ({
+      label: getComponent(entity, NameComponent),
+      value: getComponent(entity, NodeIDComponent)
+    }))
+
+    const componentOptions = [...ComponentJSONIDMap.entries()].map(([jsonID, Component]) => ({
+      label: Component.name,
+      value: jsonID
+    }))
+
+    const [easingType, easingMode] = effect.easing.split('.')
+
+    const onChangeEasing = (type: string, mode: string) => {
+      commitProperties(BehaviorComponent, {
+        [`behaviors.${behaviorIndex}.effects.${index}.easing` as any]: `${type}.${mode}`
+      })
+    }
+
+    return (
+      <InputGroup
+        name="Transition"
+        label={t('editor:properties.behavior.lbl-transition')}
+        info={t('editor:properties.behavior.lbl-transition-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Node', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+          options={nodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Component', position: 'left' }}
+          value={effect.jsonID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.jsonID` as any)}
+          options={componentOptions}
+        />
+        <StringInput
+          labelProps={{ text: 'Property Path', position: 'left' }}
+          value={effect.propertyPath}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.propertyPath` as any
+          )}
+        />
+        <StringInput
+          labelProps={{ text: 'Value', position: 'left' }}
+          value={effect.value}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.value` as any)}
+        />
+        <NumericInput
+          value={effect.duration}
+          onChange={updateProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.duration` as any)}
+          onRelease={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.duration` as any)}
+        />
+        <SelectInput
+          labelProps={{ text: 'Easing', position: 'left' }}
+          value={effect.easing.split('.')[0]}
+          onChange={(val: string) => {
+            onChangeEasing(val, easingMode)
+          }}
+          options={EasingOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Easing Mode', position: 'left' }}
+          value={effect.easing.split('.')[1]}
+          onChange={(val: string) => {
+            onChangeEasing(easingType, val)
+          }}
+          options={EasingModeOptions}
+        />
+      </InputGroup>
     )
   }
 
@@ -467,12 +1052,61 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     effect: Static<typeof EffectSchema>
     behaviorIndex: number
   }) => {
-    const effectOptions = getAllComponents(props.entity)
-      .filter((c) => !!c.jsonID)
-      .map((component) => ({
-        label: component.name,
-        value: component.jsonID!
-      }))
+    const effectOptions = [
+      // { label: 'Callback', value: 'callback' },
+      { label: 'Set Component', value: 'setComponent' },
+      { label: 'Remove Component', value: 'removeComponent' },
+      { label: 'Create Entity', value: 'createEntity' },
+      { label: 'Remove Entity', value: 'removeEntity' },
+      { label: 'Transition', value: 'transition' }
+    ]
+
+    let Editor = <></>
+    if (effect.type === 'setComponent') {
+      Editor = (
+        <SetComponentInput
+          index={index}
+          behaviorIndex={behaviorIndex}
+          effect={effect as Static<typeof SetComponentSchema>}
+        />
+      )
+    } else if (effect.type === 'removeComponent') {
+      Editor = (
+        <RemoveComponentInput
+          index={index}
+          behaviorIndex={behaviorIndex}
+          effect={effect as Static<typeof RemoveComponentSchema>}
+        />
+      )
+    }
+    // else if (effect.type === 'callback') {
+    //   Editor = <CallbackInput index={index} behaviorIndex={behaviorIndex} effect={effect as Static<typeof CallbackEffectSchema>} />
+    // }
+    else if (effect.type === 'createEntity') {
+      Editor = (
+        <CreateEntityInput
+          index={index}
+          behaviorIndex={behaviorIndex}
+          effect={effect as Static<typeof CreateEntitySchema>}
+        />
+      )
+    } else if (effect.type === 'removeEntity') {
+      Editor = (
+        <RemoveEntityInput
+          index={index}
+          behaviorIndex={behaviorIndex}
+          effect={effect as Static<typeof RemoveEntitySchema>}
+        />
+      )
+    } else if (effect.type === 'transition') {
+      Editor = (
+        <TransitionInput
+          index={index}
+          behaviorIndex={behaviorIndex}
+          effect={effect as Static<typeof TransitionSchema>}
+        />
+      )
+    }
 
     return (
       <InputGroup
@@ -481,18 +1115,68 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.behavior.lbl-effects-info')}
       >
         <SelectInput
-          value={effect.component}
-          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.component` as any)}
+          labelProps={{ text: 'Effect', position: 'left' }}
+          value={effect.type}
+          onChange={(type) => {
+            switch (type) {
+              case 'setComponent':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'setComponent',
+                    nodeID: '' as NodeID,
+                    jsonID: '',
+                    values: {}
+                  }
+                })
+                break
+              case 'removeComponent':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'removeComponent',
+                    nodeID: '' as NodeID,
+                    jsonID: ''
+                  }
+                })
+                break
+              case 'createEntity':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'createEntity',
+                    nodeID: '' as NodeID,
+                    parentID: '' as NodeID,
+                    components: {}
+                  }
+                })
+                break
+              case 'removeEntity':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'removeEntity',
+                    nodeID: '' as NodeID,
+                    sourceNodeID: '' as NodeID
+                  }
+                })
+                break
+              case 'transition':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'transition',
+                    nodeID: '' as NodeID,
+                    sourceNodeID: '' as NodeID,
+                    jsonID: '',
+                    propertyPath: '',
+                    value: '',
+                    duration: 0,
+                    easing: 'linear.inOut'
+                  }
+                })
+                break
+            }
+          }}
           options={effectOptions}
         />
-        <StringInput
-          value={effect.property}
-          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.property` as any)}
-        />
-        <StringInput
-          value={effect.value}
-          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.value` as any)}
-        />
+        {Editor}
+        <Button onClick={() => handleChangeEffect(behaviorIndex, index, 'remove')}>Remove Effect</Button>
       </InputGroup>
     )
   }
@@ -511,14 +1195,13 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
       >
         <SelectInput value={selectedPreset.value} onChange={onChangePreset} options={presetOptions} />
       </InputGroup>
-      {behavior.behaviors.value.map((behavior, index) => (
+      {behavior.behaviors.get(NO_PROXY).map((behavior, index) => (
         <InputGroup
           key={index}
           name="Behavior"
           label={t('editor:properties.behavior.lbl-behaviors') + (index + 1)}
           info={t('editor:properties.behavior.lbl-behaviors-info')}
         >
-          {/* conditions */}
           {behavior.conditions.map((condition, conditionIndex) => (
             <InputGroup
               key={conditionIndex}
@@ -529,7 +1212,7 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
               <ConditionInput condition={condition} index={conditionIndex} behaviorIndex={index} />
             </InputGroup>
           ))}
-          {/* effects */}
+          <Button onClick={() => handleChangeCondition(index, 0, 'add')}>Add Condition</Button>
           {behavior.effects.map((effect, effectIndex) => (
             <InputGroup
               key={index}
@@ -540,28 +1223,21 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
               <EffectInput behaviorIndex={index} index={effectIndex} effect={effect as Static<typeof EffectSchema>} />
             </InputGroup>
           ))}
-          {/* networked */}
+          <Button onClick={() => handleChangeEffect(index, 0, 'add')}>Add Effect</Button>
           <Checkbox
             label={t('editor:properties.media.lbl-muteEditor')}
             variantTextPlacement={'right'}
             checked={behavior.networked}
             onChange={commitProperty(BehaviorComponent, `behaviors.${index}.networked` as any)}
           />
-          <button
-            className=" h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
-            onClick={() => handleChange('', index, 'remove')}
-          >
+          <Button onClick={() => handleChangeBehavior('', index, 'remove')}>
+            Remove Behavior
             <HiMinus className="m-auto" />
-          </button>
+          </Button>
         </InputGroup>
       ))}
       <div className="my-1 flex w-full justify-end gap-1">
-        <button
-          className=" h-8 w-8 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
-          onClick={() => handleChange('', 0, 'add')}
-        >
-          <HiPlus className="m-auto" />
-        </button>
+        <button onClick={() => handleChangeBehavior('', 0, 'add')}>Add Behavior</button>
       </div>
     </NodeEditor>
   )
