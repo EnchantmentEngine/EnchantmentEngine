@@ -25,18 +25,17 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   defineComponent,
+  deserializeComponent,
   Easing,
   getAuthoringCounterpart,
   getComponent,
-  getOptionalComponent,
   removeComponent,
   S,
-  setComponent,
   useEntityContext
 } from '@ir-engine/ecs'
+import { StandardCallbacks } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { useEffect } from 'react'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
-import { NodeID, NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
+import { NodeID, NodeIDSchema } from '../../gltf/NodeIDComponent'
 import { BehaviorComponent } from './BehaviorComponent'
 import { MediaComponent } from './MediaComponent'
 import { TriggerCallbackComponent } from './TriggerCallbackComponent'
@@ -46,7 +45,7 @@ import { TriggerCallbackComponent } from './TriggerCallbackComponent'
  * - automatically migrates to BehaviorComponent
  * @deprecated
  */
-const VideoTriggerComponent = defineComponent({
+export const VideoTriggerComponent = defineComponent({
   name: 'VideoTriggerComponent',
   jsonID: 'EE_video_trigger',
 
@@ -64,58 +63,38 @@ const VideoTriggerComponent = defineComponent({
     useEffect(() => {
       const component = getComponent(entity, VideoTriggerComponent)
 
-      const mediaEnity = NodeFunctions.getEntityFromNodeID(entity, component.mediaEntityUUID)
-      if (!mediaEnity) {
-        return removeComponent(entity, VideoTriggerComponent)
-      }
-      const checkMedia = getOptionalComponent(mediaEnity, MediaComponent)
-      if (!checkMedia) {
-        return removeComponent(entity, VideoTriggerComponent)
-      }
-
-      setComponent(entity, TriggerCallbackComponent, {
+      deserializeComponent(entity, TriggerCallbackComponent, {
         triggers: [
           {
-            onEnter: 'onVideoTriggerEnter',
-            onExit: 'onVideoTriggerExit',
+            onEnter: 'onEnter',
+            onExit: 'onExit',
             target: '' as NodeID
-          }
+          },
+          ...(getComponent(entity, TriggerCallbackComponent)?.triggers || [])
         ]
       })
 
-      setComponent(entity, BehaviorComponent, {
+      deserializeComponent(entity, BehaviorComponent, {
         behaviors: [
           // enter
           {
             conditions: [
               {
                 type: 'callback',
-                callback: 'onVideoTriggerEnter',
-                nodeID: component.mediaEntityUUID
+                callback: 'onEnter',
+                nodeID: '' as NodeID
               }
-              // {
-              //   type: 'entity',
-              //   nodeID: component.mediaEntityUUID,
-              //   component: MediaComponent.jsonID,
-              //   property: 'activeClipIndex',
-              //   value: -1,
-              //   condition: 'equal'
-              // }
             ],
             effects: [
               {
-                type: 'setComponent',
-                nodeID: getComponent(mediaEnity, NodeIDComponent),
-                jsonID: MediaComponent.jsonID,
-                values: {
-                  volume: 0,
-                  paused: false,
-                  seekTime: 0
-                }
+                type: 'callback',
+                callback: StandardCallbacks.PLAY,
+                nodeID: component.mediaEntityUUID,
+                parameters: [component.resetEnter ? true : false] // reset
               },
               {
                 type: 'transition',
-                nodeID: getComponent(mediaEnity, NodeIDComponent),
+                nodeID: component.mediaEntityUUID,
                 jsonID: MediaComponent.jsonID,
                 propertyPath: 'volume',
                 value: component.targetAudioVolume,
@@ -123,21 +102,21 @@ const VideoTriggerComponent = defineComponent({
                 easing: Easing.exponential.in.path
               }
             ],
-            networked: true
+            networked: false
           },
           // exit
           {
             conditions: [
               {
                 type: 'callback',
-                callback: 'onVideoTriggerExit',
-                nodeID: component.mediaEntityUUID
+                callback: 'onExit',
+                nodeID: '' as NodeID
               }
             ],
             effects: [
               {
                 type: 'transition',
-                nodeID: getComponent(mediaEnity, NodeIDComponent),
+                nodeID: component.mediaEntityUUID,
                 jsonID: MediaComponent.jsonID,
                 propertyPath: 'volume',
                 value: 0,
@@ -145,19 +124,18 @@ const VideoTriggerComponent = defineComponent({
                 easing: Easing.exponential.out.path
               },
               {
-                type: 'setComponent',
-                nodeID: getComponent(mediaEnity, NodeIDComponent),
-                jsonID: MediaComponent.jsonID,
-                values: {
-                  paused: true,
-                  seekTime: 0
-                }
+                type: 'callback',
+                callback: StandardCallbacks.PAUSE,
+                nodeID: component.mediaEntityUUID,
+                parameters: []
               }
             ],
-            networked: true
+            networked: false
           }
         ]
       })
+
+      removeComponent(entity, VideoTriggerComponent)
     }, [])
 
     return null

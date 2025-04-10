@@ -56,7 +56,7 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 import { NetworkTopics } from '@ir-engine/network'
-import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
+import { getCallback, removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import React, { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { NodeID, NodeIDComponent, NodeIDSchema } from '../../gltf/NodeIDComponent'
@@ -157,23 +157,23 @@ const BehaviorCalledReactor = (props: { item: { entityUUID: EntityUUID; indices:
           })
         }
         // callback
-        // else if ('callback' in effect) {
-        //   const targetEntity = UUIDComponent.getEntityByUUID(
-        //     NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.target)
-        //   )
-        //   const callback = getCallback(targetEntity, effect.callback)
-        //   if (!callback) continue
-        //   const parameters = effect.parameters.map((parameter) => {
-        //     if (typeof parameter === 'string') {
-        //       return parameter
-        //     } else if (typeof parameter === 'number') {
-        //       return parameter
-        //     } else if (typeof parameter === 'boolean') {
-        //       return parameter
-        //     }
-        //   })
-        //   callback(...parameters)
-        // }
+        else if (effect.type === 'callback') {
+          const targetEntity = effect.nodeID
+            ? UUIDComponent.getEntityByUUID(NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, effect.nodeID))
+            : entity
+          const callback = getCallback(targetEntity, effect.callback)
+          if (!callback) continue
+          const parameters = effect.parameters.map((parameter) => {
+            if (typeof parameter === 'string') {
+              return parameter
+            } else if (typeof parameter === 'number') {
+              return parameter
+            } else if (typeof parameter === 'boolean') {
+              return parameter
+            }
+          })
+          callback(...parameters)
+        }
       }
     }
   }, [])
@@ -264,19 +264,21 @@ export const TransitionSchema = S.Object({
   easing: S.String()
 })
 
-// export const CallbackSchema = S.Object({
-//   callback: S.String(),
-//   target: NodeIDSchema(),
-//   parameters: S.Array(ValueSchema)
-// })
+export const CallbackSchema = S.Object({
+  type: S.Literal('callback'),
+  callback: S.String(),
+  nodeID: NodeIDSchema(),
+  sourceNodeID: S.Optional(NodeIDSchema()),
+  parameters: S.Array(ValueSchema)
+})
 
 export const EffectSchema = S.Union([
   SetComponentSchema,
   RemoveComponentSchema,
   CreateEntitySchema,
   RemoveEntitySchema,
-  TransitionSchema
-  // CallbackSchema
+  TransitionSchema,
+  CallbackSchema
 ])
 
 export const BehaviorSchema = S.Object({
@@ -307,30 +309,35 @@ const validEffect = (
     | Static<typeof CreateEntitySchema>
     | Static<typeof RemoveEntitySchema>
     | Static<typeof TransitionSchema>
-  // | Static<typeof CallbackSchema>
+    | Static<typeof CallbackSchema>
 ) => {
-  if ('nodeID' in effect && 'jsonID' in effect) {
+  if (effect.type === 'setComponent' || effect.type === 'removeComponent') {
     // SetComponentSchema | RemoveComponentSchema
     return effect.nodeID !== '' && effect.jsonID !== '' && ComponentJSONIDMap.has(effect.jsonID)
-  } else if ('nodeID' in effect && 'parentID' in effect) {
+  } else if (effect.type === 'createEntity') {
     // CreateEntitySchema
     return effect.nodeID !== '' && effect.parentID !== ''
-  } else if ('nodeID' in effect) {
+  } else if (effect.type === 'removeEntity') {
     // RemoveEntitySchema
     return effect.nodeID !== ''
+  } else if (effect.type === 'transition') {
+    // TransitionSchema
+    return effect.nodeID !== '' && effect.jsonID !== '' && effect.propertyPath !== ''
+  } else if (effect.type === 'callback') {
+    // CallbackSchema
+    return effect.callback !== '' && effect.parameters.length > 0
   }
-  //  else if ('callback' in effect) {
-  //   return effect.callback !== '' && effect.parameters.length > 0
-  // }
 }
 
-const conditionsMet = (sourceID: SourceID, conditions: Static<typeof ConditionsSchema>) => {
+const conditionsMet = (selfEntity: Entity, sourceID: SourceID, conditions: Static<typeof ConditionsSchema>) => {
   for (const condition of conditions) {
     if (condition.type === 'entity') {
       const componentDefinition = ComponentJSONIDMap.get(condition.component)
       if (!componentDefinition) return false
       const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
-      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+      const uuid = condition.nodeID
+        ? NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+        : getComponent(selfEntity, UUIDComponent)
       const observedEntity = UUIDComponent.getEntityByUUID(uuid)
       const component = getComponent(observedEntity, componentDefinition)
       const property = getNestedObject(component, condition.property).result
@@ -401,13 +408,14 @@ const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
     for (const condition of conditions as any as Static<typeof CallbackConditionSchema>[]) {
       if (condition.type === 'callback') {
         const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
-        const targetEntity = UUIDComponent.getEntityByUUID(
-          NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
-        )
+        const targetEntity = condition.nodeID
+          ? UUIDComponent.getEntityByUUID(NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID))
+          : entity
 
         setCallback(targetEntity, condition.callback, () => {
+          console.log('callback', condition.callback)
           // Check conditions
-          const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
+          const success = conditionsMet(entity, sourceID, conditions as Static<typeof ConditionsSchema>)
           if (!success) return
 
           const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}
@@ -438,7 +446,9 @@ const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
       if (!componentDefinition) return null
       // todo this might need to be made reactive
       const targetSource = condition.sourceNodeID ? getSourceIDFromNodeID(sourceID, condition.sourceNodeID) : sourceID
-      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+      const uuid = condition.nodeID
+        ? NodeIDComponent.getUUIDBySourceAndNodeID(targetSource, condition.nodeID)
+        : getComponent(entity, UUIDComponent)
       const observedEntity = UUIDComponent.useEntityByUUID(uuid)
       const component = useComponent(observedEntity, componentDefinition).value
       const value = getNestedObject(component, condition.property).result
@@ -454,7 +464,7 @@ const BehaviorReactor = (props: { entity: Entity; behaviorIndex: number }) => {
     const sourceID = getComponent(entity, SourceComponent)
 
     // Check conditions
-    const success = conditionsMet(sourceID, conditions as Static<typeof ConditionsSchema>)
+    const success = conditionsMet(entity, sourceID, conditions as Static<typeof ConditionsSchema>)
     if (!success) return
 
     const networkParams = behavior.networked.value ? { $cached: true, $topic: NetworkTopics.world } : {}

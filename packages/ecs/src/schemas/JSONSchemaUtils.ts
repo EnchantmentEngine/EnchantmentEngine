@@ -185,6 +185,25 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       return newValue
     }
 
+    /** @todo fix this */
+    // case 'Union': {
+    //   if (!validValue(value)) return value
+    //   // Use first union schema that matches the value
+    //   // @todo does this handle deserialize side effects? like the deserialize function
+    //   const props = schema.properties as TUnionSchema<Schema[]>['properties']
+    //   // find the first schema that does not specify a property that is in the value
+    //   const propToUse =
+    //     typeof value === 'object' && value !== null // todo prob should do schema validation here instead of value validation
+    //       ? props.find((prop) => {
+    //           const propKeys = Object.keys(prop.properties as TProperties)
+    //           return propKeys.every((key) => key in value)
+    //         })
+    //       : props.find((prop) => CheckSchemaValue(prop, value))
+    //   console.log({ propToUse, value, schema })
+    //   if (propToUse) return DeserializeSchemaValue(entity, propToUse, curr, value)
+    //   return undefined
+    // }
+
     case 'Class': {
       if (!validValue(value)) return value
 

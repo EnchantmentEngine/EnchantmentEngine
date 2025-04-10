@@ -48,7 +48,6 @@ import {
   Layers,
   removeComponent,
   removeEntity,
-  serializeComponent,
   SerializedComponentType,
   setComponent,
   SetComponentType
@@ -58,7 +57,7 @@ import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxCo
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { TransformSpace } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
-import { getMutableState, getState, setNestedObject } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -98,12 +97,9 @@ const addOrRemoveComponent = <C extends Component<any, any>>(
   const modifiedNodes = [] as NodeID[]
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
+    // todo - need to handle scene deltas here
     if (add) {
-      if (args) {
-        EditorControlFunctions.modifyProperty([entity], component, args)
-      } else {
-        deserializeComponent(entity, component, args)
-      }
+      deserializeComponent(entity, component, args)
     } else {
       removeComponent(entity, component)
     }
@@ -138,17 +134,8 @@ const modifyProperty = <C extends Component<any, any>>(
     if (!EditorState.isInActiveScene(entity)) {
       SceneDeltaState.registerDelta(entity, component, properties)
     }
-    const currentComponent = hasComponent(entity, component) ? serializeComponent(entity, component) : {}
-    for (const [key, val] of Object.entries(properties)) {
-      if (key.includes('.')) {
-        setNestedObject(currentComponent, key, val)
-      } else {
-        currentComponent[key] = val
-      }
-    }
-    deserializeComponent(entity, component, currentComponent)
+    deserializeComponent(entity, component, properties)
     EditorState.markModifiedScene(entity)
-
     affectedNodes.push(getComponent(entity, NodeIDComponent))
   }
 

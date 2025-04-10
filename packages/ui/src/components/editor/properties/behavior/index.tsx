@@ -25,10 +25,12 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   ComponentJSONIDMap,
+  deserializeComponent,
   getAllComponents,
   getComponent,
   hasComponent,
   Layers,
+  removeComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import React, { useCallback } from 'react'
@@ -53,6 +55,7 @@ import {
   useChildrenWithComponents,
   UUIDComponent
 } from '@ir-engine/ecs'
+import { EditorHistoryFunctions } from '@ir-engine/editor/src/services/EditorHistoryState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import {
@@ -69,9 +72,12 @@ import {
   TransitionSchema
 } from '@ir-engine/engine/src/scene/components/BehaviorComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { getState, NO_PROXY, none, StateDefinitions, useHookstate } from '@ir-engine/hyperflux'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import Button from '../../../../primitives/tailwind/Button'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import { OptionType } from '../../../../primitives/tailwind/Select'
@@ -89,18 +95,18 @@ const inferPreset = (entity: Entity) => {
     if (
       behaviors.length === 2 &&
       behaviors[0].conditions.length === 1 &&
-      'type' in behaviors[0].conditions &&
-      behaviors[0].conditions.type === 'callback' &&
+      'type' in behaviors[0].conditions[0] &&
+      behaviors[0].conditions[0].type === 'callback' &&
       behaviors[1].conditions.length === 1 &&
-      'type' in behaviors[1].conditions &&
-      behaviors[1].conditions.type === 'callback'
+      'type' in behaviors[1].conditions[0] &&
+      behaviors[1].conditions[0].type === 'callback'
     ) {
       return 'trigger'
     } else if (
       behaviors.length === 1 &&
       behaviors[0].conditions.length === 1 &&
-      'type' in behaviors[0].conditions &&
-      behaviors[0].conditions.type === 'callback'
+      'type' in behaviors[0].conditions[0] &&
+      behaviors[0].conditions[0].type === 'callback'
     ) {
       return 'callback'
     }
@@ -154,31 +160,62 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
 
   const onChangePreset = useCallback((value: 'trigger' | 'callback' | 'none') => {
     selectedPreset.set(value)
-    const behaviors = [] as Static<typeof BehaviorSchema>[]
     if (value === 'trigger') {
-      behaviors.push(
-        {
-          conditions: [{ type: 'callback', callback: '', nodeID: '' as NodeID, sourceNodeID: '' as NodeID }],
-          effects: [],
-          networked: true
-        },
-        {
-          conditions: [{ type: 'callback', callback: '', nodeID: '' as NodeID, sourceNodeID: '' as NodeID }],
-          effects: [],
-          networked: true
-        }
-      )
-    } else if (value === 'callback') {
-      behaviors.push({
-        conditions: [{ type: 'callback', callback: '', nodeID: '' as NodeID, sourceNodeID: '' as NodeID }],
-        effects: [],
-        networked: true
+      deserializeComponent(props.entity, BehaviorComponent, {
+        behaviors: [
+          {
+            conditions: [
+              {
+                type: 'callback',
+                callback: 'onEnter',
+                nodeID: '' as NodeID,
+                sourceNodeID: '' as NodeID
+              }
+            ],
+            effects: [],
+            networked: true
+          },
+          {
+            conditions: [
+              {
+                type: 'callback',
+                callback: 'onExit',
+                nodeID: '' as NodeID,
+                sourceNodeID: '' as NodeID
+              }
+            ],
+            effects: [],
+            networked: true
+          }
+        ]
       })
+      deserializeComponent(props.entity, TriggerCallbackComponent, {
+        triggers: [
+          {
+            onEnter: 'onEnter',
+            onExit: 'onExit',
+            target: '' as NodeID // self
+          }
+        ]
+      })
+      EditorHistoryFunctions.snapshot()
+      return
+    } else if (value === 'callback') {
+      deserializeComponent(props.entity, BehaviorComponent, {
+        behaviors: [
+          {
+            conditions: [{ type: 'callback', callback: '', nodeID: '' as NodeID, sourceNodeID: '' as NodeID }],
+            effects: [],
+            networked: true
+          }
+        ]
+      })
+      removeComponent(props.entity, TriggerCallbackComponent)
+      removeComponent(props.entity, ColliderComponent)
+      removeComponent(props.entity, RigidBodyComponent)
+      EditorHistoryFunctions.snapshot()
+      return
     }
-    if (!behaviors.length) return
-    commitProperties(BehaviorComponent, { behaviors: structuredClone(behaviors) as Static<typeof BehaviorSchema>[] }, [
-      props.entity
-    ])
   }, [])
 
   const behavior = useComponent(props.entity, BehaviorComponent)
@@ -519,7 +556,6 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
    */
   const ObjectEditor = (props: { schema: JSONSchema; values: any; path: string; pathContext: string }) => {
     const { schema, values, path, pathContext } = props
-    console.log(props)
     const newValueOptions = Object.keys(flattenSchema(schema)).map((key) => ({
       label: key,
       value: key
@@ -533,7 +569,6 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
           const currentPath = path ? `${pathContext}.${path}.${key}` : (`${pathContext}.${key}` as any)
           const subSchema = getSchemaFromPath(schema, key)
           const schemaType = subSchema?.type
-          console.log({ values, key, schemaType, currentPath })
           let Editor = <></>
           if (schemaType === 'object') {
             Editor = (
@@ -1181,6 +1216,39 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     )
   }
 
+  /**
+   * Simpler UI that just exposes a list of nodes to target, automatically sets the callback, and allows transition and immediate entity effect configuration.
+   */
+  const TriggerUI = () => {
+    const enterBehavior = behavior.get(NO_PROXY).behaviors[0]
+
+    return (
+      <>
+        <InputGroup
+          name="Enter Trigger Effects"
+          label={t('editor:properties.behavior.lbl-enterTrigger')}
+          info={t('editor:properties.behavior.lbl-enterTrigger-info')}
+        >
+          {/* Effect editor */}
+          {enterBehavior.effects.map((effect, index) => (
+            <EffectInput key={index} behaviorIndex={0} index={index} effect={effect as Static<typeof EffectSchema>} />
+          ))}
+          <Button onClick={() => handleChangeEffect(0, 0, 'add')}>Add Effect</Button>
+        </InputGroup>
+        <InputGroup
+          name="Exit Trigger Effects"
+          label={t('editor:properties.behavior.lbl-exitTrigger')}
+          info={t('editor:properties.behavior.lbl-exitTrigger-info')}
+        >
+          {behavior.get(NO_PROXY).behaviors[1].effects.map((effect, index) => (
+            <EffectInput key={index} behaviorIndex={1} index={index} effect={effect as Static<typeof EffectSchema>} />
+          ))}
+          <Button onClick={() => handleChangeEffect(1, 0, 'add')}>Add Effect</Button>
+        </InputGroup>
+      </>
+    )
+  }
+
   return (
     <NodeEditor
       {...props}
@@ -1195,47 +1263,62 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
       >
         <SelectInput value={selectedPreset.value} onChange={onChangePreset} options={presetOptions} />
       </InputGroup>
-      {behavior.behaviors.get(NO_PROXY).map((behavior, index) => (
-        <InputGroup
-          key={index}
-          name="Behavior"
-          label={t('editor:properties.behavior.lbl-behaviors') + (index + 1)}
-          info={t('editor:properties.behavior.lbl-behaviors-info')}
-        >
-          {behavior.conditions.map((condition, conditionIndex) => (
-            <InputGroup
-              key={conditionIndex}
-              name="Condition"
-              label={t('editor:properties.behavior.lbl-conditions') + (conditionIndex + 1)}
-              info={t('editor:properties.behavior.lbl-conditions-info')}
-            >
-              <ConditionInput condition={condition} index={conditionIndex} behaviorIndex={index} />
-            </InputGroup>
-          ))}
-          <Button onClick={() => handleChangeCondition(index, 0, 'add')}>Add Condition</Button>
-          {behavior.effects.map((effect, effectIndex) => (
+      {selectedPreset.value === 'none' && (
+        <>
+          {behavior.behaviors.get(NO_PROXY).map((behavior, index) => (
             <InputGroup
               key={index}
-              name="Effect"
-              label={t('editor:properties.behavior.lbl-effects') + (index + 1)}
-              info={t('editor:properties.behavior.lbl-effects-info')}
+              name="Behavior"
+              label={t('editor:properties.behavior.lbl-behaviors') + (index + 1)}
+              info={t('editor:properties.behavior.lbl-behaviors-info')}
             >
-              <EffectInput behaviorIndex={index} index={effectIndex} effect={effect as Static<typeof EffectSchema>} />
+              {behavior.conditions.map((condition, conditionIndex) => (
+                <InputGroup
+                  key={conditionIndex}
+                  name="Condition"
+                  label={t('editor:properties.behavior.lbl-conditions') + (conditionIndex + 1)}
+                  info={t('editor:properties.behavior.lbl-conditions-info')}
+                >
+                  <ConditionInput condition={condition} index={conditionIndex} behaviorIndex={index} />
+                </InputGroup>
+              ))}
+              <Button onClick={() => handleChangeCondition(index, 0, 'add')}>Add Condition</Button>
+              {behavior.effects.map((effect, effectIndex) => (
+                <InputGroup
+                  key={index}
+                  name="Effect"
+                  label={t('editor:properties.behavior.lbl-effects') + (index + 1)}
+                  info={t('editor:properties.behavior.lbl-effects-info')}
+                >
+                  <EffectInput
+                    behaviorIndex={index}
+                    index={effectIndex}
+                    effect={effect as Static<typeof EffectSchema>}
+                  />
+                </InputGroup>
+              ))}
+              <Button onClick={() => handleChangeEffect(index, 0, 'add')}>Add Effect</Button>
+              <Checkbox
+                label={t('editor:properties.media.lbl-muteEditor')}
+                variantTextPlacement={'right'}
+                checked={behavior.networked}
+                onChange={commitProperty(BehaviorComponent, `behaviors.${index}.networked` as any)}
+              />
+              <Button onClick={() => handleChangeBehavior('', index, 'remove')}>
+                Remove Behavior
+                <HiMinus className="m-auto" />
+              </Button>
             </InputGroup>
           ))}
-          <Button onClick={() => handleChangeEffect(index, 0, 'add')}>Add Effect</Button>
-          <Checkbox
-            label={t('editor:properties.media.lbl-muteEditor')}
-            variantTextPlacement={'right'}
-            checked={behavior.networked}
-            onChange={commitProperty(BehaviorComponent, `behaviors.${index}.networked` as any)}
-          />
-          <Button onClick={() => handleChangeBehavior('', index, 'remove')}>
-            Remove Behavior
-            <HiMinus className="m-auto" />
-          </Button>
-        </InputGroup>
-      ))}
+        </>
+      )}
+      {/* Assume one behavior, one callback condition and one effect */}
+      {selectedPreset.value === 'callback' && (
+        <></>
+        // TODO
+      )}
+      {/* Assume two behaviors, one callback condition, and any number of effects */}
+      {selectedPreset.value === 'trigger' && <TriggerUI />}
       <div className="my-1 flex w-full justify-end gap-1">
         <button onClick={() => handleChangeBehavior('', 0, 'add')}>Add Behavior</button>
       </div>
