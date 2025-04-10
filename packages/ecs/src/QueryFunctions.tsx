@@ -39,10 +39,12 @@ import {
   useHookstate
 } from '@ir-engine/hyperflux'
 
+import { OpReturnType } from 'bitecs'
 import { Component, EntityContext, LayerComponents, LayerID, Layers, useOptionalComponent } from './ComponentFunctions'
 import { Entity } from './Entity'
-// import { OpReturnType } from 'bitecs'
-// import { $opTerms, $opType } from 'bitecs/dist/core/Query'
+
+export const $opType = Symbol.for('bitecs-opType')
+export const $opTerms = Symbol.for('bitecs-opTerms')
 
 export type { QueryTerm } from 'bitecs'
 
@@ -200,11 +202,11 @@ export const QuerySubReactor = memo(
       if (queryTerm.isComponent) {
         components.push(queryTerm)
       } else {
-        // const q = queryTerm() as OpReturnType
-        // const type = q[$opType]
-        // if (type === 'Or' || type === 'And') {
-        //   components.push(...q[$opTerms])
-        // }
+        const q = queryTerm() as OpReturnType
+        const type = q[$opType]
+        if (type === 'Or' || type === 'And') {
+          components.push(...q[$opTerms])
+        }
       }
     }
 
