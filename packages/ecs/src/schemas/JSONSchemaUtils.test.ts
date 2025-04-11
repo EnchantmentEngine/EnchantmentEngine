@@ -764,6 +764,60 @@ describe('DeserializeSchemaValue', () => {
       expect(result).toBe(Expected)
     })
   }) //:: Kind -> default
+
+  describe('case: Kind.Union', () => {
+    it('should return undefined when value is null or undefined', () => {
+      const schema = {
+        [Kind]: 'Union',
+        properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
+      } as Schema
+      const curr = {}
+      const value = null
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(null)
+    })
+
+    it('should return undefined when properties array is empty', () => {
+      const schema = {
+        [Kind]: 'Union',
+        properties: []
+      } as Schema
+      const curr = {}
+      const value = 42
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(undefined)
+    })
+
+    it('should deserialize using the first matching schema in the Union array', () => {
+      const schema = {
+        [Kind]: 'Union',
+        properties: [{ [Kind]: 'String' } as Schema, { [Kind]: 'Number' } as Schema]
+      } as Schema
+      const curr = {}
+      const value = 42
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(42)
+    })
+
+    it('should return undefined if no schema in the Union array matches', () => {
+      const schema = {
+        [Kind]: 'Union',
+        properties: [{ [Kind]: 'String' } as Schema, { [Kind]: 'Bool' } as Schema]
+      } as Schema
+      const curr = {}
+      const value = 42
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(undefined)
+    })
+  }) //:: Kind.Union
 }) //:: DeserializeSchemaValue
 
 describe('HasSchemaDeserializers', () => {
