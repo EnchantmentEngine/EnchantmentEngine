@@ -56,85 +56,88 @@ export const VideoTriggerComponent = defineComponent({
     targetAudioVolume: S.Number(1)
   }),
 
+  onSet: (simulationEntity, c, json) => {
+    const entity = getAuthoringCounterpart(simulationEntity) || simulationEntity
+    const component = getComponent(entity, VideoTriggerComponent)
+
+    deserializeComponent(entity, TriggerCallbackComponent, {
+      triggers: [
+        {
+          onEnter: 'onEnter',
+          onExit: 'onExit',
+          target: '' as NodeID
+        },
+        ...(getComponent(entity, TriggerCallbackComponent)?.triggers || [])
+      ]
+    })
+
+    deserializeComponent(entity, BehaviorComponent, {
+      behaviors: [
+        // enter
+        {
+          conditions: [
+            {
+              type: 'callback',
+              callback: 'onEnter',
+              nodeID: '' as NodeID
+            }
+          ],
+          effects: [
+            {
+              type: 'callback',
+              callback: StandardCallbacks.PLAY,
+              nodeID: component.mediaEntityUUID,
+              parameters: [component.resetEnter ? true : false] // reset
+            },
+            {
+              type: 'transition',
+              nodeID: component.mediaEntityUUID,
+              jsonID: MediaComponent.jsonID,
+              propertyPath: 'volume',
+              value: component.targetAudioVolume,
+              duration: 1000,
+              easing: Easing.exponential.in.path
+            }
+          ],
+          networked: false
+        },
+        // exit
+        {
+          conditions: [
+            {
+              type: 'callback',
+              callback: 'onExit',
+              nodeID: '' as NodeID
+            }
+          ],
+          effects: [
+            {
+              type: 'transition',
+              nodeID: component.mediaEntityUUID,
+              jsonID: MediaComponent.jsonID,
+              propertyPath: 'volume',
+              value: 0,
+              duration: 1000,
+              easing: Easing.exponential.out.path
+            },
+            {
+              type: 'callback',
+              callback: StandardCallbacks.PAUSE,
+              nodeID: component.mediaEntityUUID,
+              parameters: []
+            }
+          ],
+          networked: false
+        }
+      ]
+    })
+  },
+
   reactor: () => {
     const simulationEntity = useEntityContext()
     const entity = getAuthoringCounterpart(simulationEntity) || simulationEntity
 
     useEffect(() => {
-      const component = getComponent(entity, VideoTriggerComponent)
-
-      deserializeComponent(entity, TriggerCallbackComponent, {
-        triggers: [
-          {
-            onEnter: 'onEnter',
-            onExit: 'onExit',
-            target: '' as NodeID
-          },
-          ...(getComponent(entity, TriggerCallbackComponent)?.triggers || [])
-        ]
-      })
-
-      deserializeComponent(entity, BehaviorComponent, {
-        behaviors: [
-          // enter
-          {
-            conditions: [
-              {
-                type: 'callback',
-                callback: 'onEnter',
-                nodeID: '' as NodeID
-              }
-            ],
-            effects: [
-              {
-                type: 'callback',
-                callback: StandardCallbacks.PLAY,
-                nodeID: component.mediaEntityUUID,
-                parameters: [component.resetEnter ? true : false] // reset
-              },
-              {
-                type: 'transition',
-                nodeID: component.mediaEntityUUID,
-                jsonID: MediaComponent.jsonID,
-                propertyPath: 'volume',
-                value: component.targetAudioVolume,
-                duration: 1000,
-                easing: Easing.exponential.in.path
-              }
-            ],
-            networked: false
-          },
-          // exit
-          {
-            conditions: [
-              {
-                type: 'callback',
-                callback: 'onExit',
-                nodeID: '' as NodeID
-              }
-            ],
-            effects: [
-              {
-                type: 'transition',
-                nodeID: component.mediaEntityUUID,
-                jsonID: MediaComponent.jsonID,
-                propertyPath: 'volume',
-                value: 0,
-                duration: 1000,
-                easing: Easing.exponential.out.path
-              },
-              {
-                type: 'callback',
-                callback: StandardCallbacks.PAUSE,
-                nodeID: component.mediaEntityUUID,
-                parameters: []
-              }
-            ],
-            networked: false
-          }
-        ]
-      })
-
       removeComponent(entity, VideoTriggerComponent)
     }, [])
 

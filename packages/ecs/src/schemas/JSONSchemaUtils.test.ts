@@ -3009,6 +3009,215 @@ describe('ConvertToSchema', () => {
 
         expect(result).toBe(Expected)
       })
+
+      describe('with arrays of object unions', () => {
+        it('should correctly serialize an array of union of different object types', () => {
+          // Create schemas for different object types
+          const userObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'user' } as Schema,
+              name: { [Kind]: 'String' } as Schema,
+              age: { [Kind]: 'Number' } as Schema
+            }
+          } as Schema
+
+          const postObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'post' } as Schema,
+              title: { [Kind]: 'String' } as Schema,
+              content: { [Kind]: 'String' } as Schema
+            }
+          } as Schema
+
+          const commentObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'comment' } as Schema,
+              text: { [Kind]: 'String' } as Schema,
+              likes: { [Kind]: 'Number' } as Schema
+            }
+          } as Schema
+
+          // Create a union schema that accepts all three object types
+          const unionSchema = {
+            [Kind]: 'Union',
+            properties: [userObjectSchema, postObjectSchema, commentObjectSchema]
+          } as Schema
+
+          // Create an array schema that contains the union schema
+          const arraySchema = {
+            [Kind]: 'Array',
+            properties: unionSchema
+          } as Schema
+
+          // Test with an array containing mixed object types
+          const value = [
+            { type: 'user', name: 'John', age: 30 },
+            { type: 'post', title: 'Hello World', content: 'This is a post' },
+            { type: 'comment', text: 'Great post!', likes: 5 }
+          ]
+
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(arraySchema, value)
+
+          // Check that all objects were properly serialized
+          expect(result).toEqual([
+            { type: 'user', name: 'John', age: 30 },
+            { type: 'post', title: 'Hello World', content: 'This is a post' },
+            { type: 'comment', text: 'Great post!', likes: 5 }
+          ])
+        })
+
+        it('should correctly serialize an array of union of different object types with some invalid objects', () => {
+          // Create schemas for different object types
+          const userObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'user' } as Schema,
+              name: { [Kind]: 'String' } as Schema,
+              age: { [Kind]: 'Number' } as Schema
+            }
+          } as Schema
+
+          const postObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'post' } as Schema,
+              title: { [Kind]: 'String' } as Schema,
+              content: { [Kind]: 'String' } as Schema
+            }
+          } as Schema
+
+          // Create a union schema that accepts only user and post object types
+          const unionSchema = {
+            [Kind]: 'Union',
+            properties: [userObjectSchema, postObjectSchema]
+          } as Schema
+
+          // Create an array schema that contains the union schema
+          const arraySchema = {
+            [Kind]: 'Array',
+            properties: unionSchema
+          } as Schema
+
+          // Test with an array containing mixed object types including invalid ones
+          const value = [
+            { type: 'user', name: 'John', age: 30 },
+            { type: 'post', title: 'Hello World', content: 'This is a post' },
+            { type: 'comment', text: 'Great post!', likes: 5 }, // Should be null (not in union)
+            { type: 'invalid', data: 'This should be null' }, // Should be null (not in union)
+            { name: 'Missing type field' } // Should be null (not in union)
+          ]
+
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(arraySchema, value)
+
+          // Check that only valid objects were properly serialized
+          // Invalid objects should be converted to null
+          expect(result).toEqual([
+            { type: 'user', name: 'John', age: 30 },
+            { type: 'post', title: 'Hello World', content: 'This is a post' },
+            null,
+            null,
+            null
+          ])
+        })
+
+        it('should correctly serialize an array of union of different object types with nested objects', () => {
+          // Create schemas for nested object types
+          const addressSchema = {
+            [Kind]: 'Object',
+            properties: {
+              street: { [Kind]: 'String' } as Schema,
+              city: { [Kind]: 'String' } as Schema,
+              zipCode: { [Kind]: 'String' } as Schema
+            }
+          } as Schema
+
+          const userObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'user' } as Schema,
+              name: { [Kind]: 'String' } as Schema,
+              address: addressSchema
+            }
+          } as Schema
+
+          const companyObjectSchema = {
+            [Kind]: 'Object',
+            properties: {
+              type: { [Kind]: 'Literal', properties: 'company' } as Schema,
+              name: { [Kind]: 'String' } as Schema,
+              employees: {
+                [Kind]: 'Array',
+                properties: {
+                  [Kind]: 'Object',
+                  properties: {
+                    name: { [Kind]: 'String' } as Schema,
+                    role: { [Kind]: 'String' } as Schema
+                  }
+                } as Schema
+              } as Schema
+            }
+          } as Schema
+
+          // Create a union schema that accepts both object types
+          const unionSchema = {
+            [Kind]: 'Union',
+            properties: [userObjectSchema, companyObjectSchema]
+          } as Schema
+
+          // Create an array schema that contains the union schema
+          const arraySchema = {
+            [Kind]: 'Array',
+            properties: unionSchema
+          } as Schema
+
+          // Test with an array containing nested object types
+          const value = [
+            {
+              type: 'user',
+              name: 'John',
+              address: {
+                street: '123 Main St',
+                city: 'Anytown',
+                zipCode: '12345'
+              }
+            },
+            {
+              type: 'company',
+              name: 'Acme Inc',
+              employees: [
+                { name: 'Alice', role: 'Developer' },
+                { name: 'Bob', role: 'Designer' }
+              ]
+            }
+          ]
+
+          const result = JSONSchemaUtilsFunctions.ConvertToSchema(arraySchema, value)
+
+          // Check that nested objects were properly serialized
+          expect(result).toEqual([
+            {
+              type: 'user',
+              name: 'John',
+              address: {
+                street: '123 Main St',
+                city: 'Anytown',
+                zipCode: '12345'
+              }
+            },
+            {
+              type: 'company',
+              name: 'Acme Inc',
+              employees: [
+                { name: 'Alice', role: 'Developer' },
+                { name: 'Bob', role: 'Designer' }
+              ]
+            }
+          ])
+        })
+      })
     }) //:: case 'Union'
 
     it.each(['Partial', 'Required', 'Proxy'])(

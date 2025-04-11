@@ -229,7 +229,7 @@ export const SetComponentSchema = S.Object({
   nodeID: NodeIDSchema(),
   sourceNodeID: S.Optional(NodeIDSchema()),
   jsonID: S.String(),
-  values: S.Any() /** @todo use ValuesSchema once Union deserialization is fixed */
+  values: S.Any()
 })
 
 export const RemoveComponentSchema = S.Object({
@@ -269,7 +269,7 @@ export const CallbackSchema = S.Object({
   callback: S.String(),
   nodeID: NodeIDSchema(),
   sourceNodeID: S.Optional(NodeIDSchema()),
-  parameters: S.Array(S.Any()) /** @todo use ValuesSchema once Union deserialization is fixed */
+  parameters: S.Array(S.Any())
 })
 
 export const EffectSchema = S.Union([
