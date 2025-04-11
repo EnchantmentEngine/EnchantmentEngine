@@ -817,6 +817,166 @@ describe('DeserializeSchemaValue', () => {
 
       expect(result).toBe(undefined)
     })
+
+    it('should use custom deserializers in Union schemas if available', () => {
+      const customValue = 'custom value'
+      const schema = {
+        [Kind]: 'Union',
+        properties: [
+          {
+            [Kind]: 'Number',
+            static: 0,
+            options: { deserialize: () => customValue }
+          } as Schema,
+          { [Kind]: 'String', static: '' } as Schema
+        ]
+      } as Schema
+      const curr = {}
+      const value = 42
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(customValue)
+    })
+
+    it('should correctly deserialize objects with different shapes in a union', () => {
+      // Create two different object schemas
+      const objectSchema1 = {
+        [Kind]: 'Object',
+        static: { type: 'type1', value: 0 },
+        properties: {
+          type: { [Kind]: 'Literal', static: 'type1', properties: 'type1' } as Schema,
+          value: { [Kind]: 'Number', static: 0 } as Schema
+        }
+      } as Schema
+
+      const objectSchema2 = {
+        [Kind]: 'Object',
+        static: { type: 'type2', name: '' },
+        properties: {
+          type: { [Kind]: 'Literal', static: 'type2', properties: 'type2' } as Schema,
+          name: { [Kind]: 'String', static: '' } as Schema
+        }
+      } as Schema
+
+      const schema = {
+        [Kind]: 'Union',
+        static: { type: 'type1', value: 0 },
+        properties: [objectSchema1, objectSchema2]
+      } as Schema
+
+      // Test with first object shape
+      const value1 = { type: 'type1', value: 42 }
+      const curr1 = {}
+      const result1 = DeserializeSchemaValue(testEntity, schema, curr1, value1)
+      expect(result1).toEqual({ type: 'type1', value: 42 })
+
+      // Test with second object shape
+      const value2 = { type: 'type2', name: 'test' }
+      const curr2 = {}
+      const result2 = DeserializeSchemaValue(testEntity, schema, curr2, value2)
+      expect(result2).toEqual({ type: 'type2', name: 'test' })
+    })
+
+    it('should correctly identify the right schema based on string literal discriminators', () => {
+      // Create schemas with string literal discriminators
+      const schema1 = {
+        [Kind]: 'Object',
+        static: { kind: 'circle', radius: 0 },
+        properties: {
+          kind: { [Kind]: 'Literal', static: 'circle', properties: 'circle' } as Schema,
+          radius: { [Kind]: 'Number', static: 0 } as Schema
+        }
+      } as Schema
+
+      const schema2 = {
+        [Kind]: 'Object',
+        static: { kind: 'rectangle', width: 0, height: 0 },
+        properties: {
+          kind: { [Kind]: 'Literal', static: 'rectangle', properties: 'rectangle' } as Schema,
+          width: { [Kind]: 'Number', static: 0 } as Schema,
+          height: { [Kind]: 'Number', static: 0 } as Schema
+        }
+      } as Schema
+
+      const unionSchema = {
+        [Kind]: 'Union',
+        static: { kind: 'circle', radius: 0 },
+        properties: [schema1, schema2]
+      } as Schema
+
+      // Test with circle shape
+      const circle = { kind: 'circle', radius: 5 }
+      const currCircle = {}
+      const resultCircle = DeserializeSchemaValue(testEntity, unionSchema, currCircle, circle)
+      expect(resultCircle).toEqual({ kind: 'circle', radius: 5 })
+
+      // Test with rectangle shape
+      const rectangle = { kind: 'rectangle', width: 10, height: 20 }
+      const currRect = {}
+      const resultRect = DeserializeSchemaValue(testEntity, unionSchema, currRect, rectangle)
+      expect(resultRect).toEqual({ kind: 'rectangle', width: 10, height: 20 })
+
+      // Test with invalid shape (should return undefined)
+      const invalid = { kind: 'triangle', sides: 3 }
+      const currInvalid = {}
+      const resultInvalid = DeserializeSchemaValue(testEntity, unionSchema, currInvalid, invalid)
+      expect(resultInvalid).toBe(undefined)
+    })
+
+    it('should handle nested unions correctly', () => {
+      // Create a nested union schema
+      const numberSchema = { [Kind]: 'Number', static: 0 } as Schema
+      const stringSchema = { [Kind]: 'String', static: '' } as Schema
+
+      const innerUnionSchema = {
+        [Kind]: 'Union',
+        static: 0,
+        properties: [numberSchema, stringSchema]
+      } as Schema
+
+      const objectWithUnionSchema = {
+        [Kind]: 'Object',
+        static: { type: 'complex', value: 0 },
+        properties: {
+          type: { [Kind]: 'Literal', static: 'complex', properties: 'complex' } as Schema,
+          value: innerUnionSchema
+        }
+      } as Schema
+
+      const simpleObjectSchema = {
+        [Kind]: 'Object',
+        static: { type: 'simple', value: false },
+        properties: {
+          type: { [Kind]: 'Literal', static: 'simple', properties: 'simple' } as Schema,
+          value: { [Kind]: 'Bool', static: false } as Schema
+        }
+      } as Schema
+
+      const outerUnionSchema = {
+        [Kind]: 'Union',
+        static: { type: 'complex', value: 0 },
+        properties: [objectWithUnionSchema, simpleObjectSchema]
+      } as Schema
+
+      // Test with complex object with number
+      const complexNumber = { type: 'complex', value: 42 }
+      const currComplexNum = {}
+      const resultComplexNum = DeserializeSchemaValue(testEntity, outerUnionSchema, currComplexNum, complexNumber)
+      expect(resultComplexNum).toEqual({ type: 'complex', value: 42 })
+
+      // Test with complex object with string
+      const complexString = { type: 'complex', value: 'test' }
+      const currComplexStr = {}
+      const resultComplexStr = DeserializeSchemaValue(testEntity, outerUnionSchema, currComplexStr, complexString)
+      expect(resultComplexStr).toEqual({ type: 'complex', value: 'test' })
+
+      // Test with simple object
+      const simple = { type: 'simple', value: true }
+      const currSimple = {}
+      const resultSimple = DeserializeSchemaValue(testEntity, outerUnionSchema, currSimple, simple)
+      expect(resultSimple).toEqual({ type: 'simple', value: true })
+    })
   }) //:: Kind.Union
 }) //:: DeserializeSchemaValue
 
