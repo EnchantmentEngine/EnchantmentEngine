@@ -62,9 +62,17 @@ export function computeTransformPivot(
   computeWorldBounds(entities, r.bounds)
 
   const firstEntity = entities[0]
-  if (transformSpace === 'local' && hasComponent(firstEntity, TransformComponent)) {
+  if (!hasComponent(firstEntity, TransformComponent)) {
+    r.position = undefined
+    r.rotation = undefined
+    return r
+  }
+
+  if (transformSpace === 'local') {
+    TransformComponent.getWorldPosition(firstEntity, r.position)
     TransformComponent.getWorldRotation(firstEntity, r.rotation)
   } else {
+    TransformComponent.getWorldPosition(firstEntity, r.position)
     r.rotation.set(0, 0, 0, 1)
   }
 
@@ -74,40 +82,17 @@ export function computeTransformPivot(
       r.rotation.set(0, 0, 0, 1)
       break
     case TransformPivot.FirstSelected:
-      if (hasComponent(entities[0], TransformComponent)) {
-        TransformComponent.getWorldPosition(entities[0], r.position)
-        TransformComponent.getWorldRotation(entities[0], r.rotation)
-      } else {
-        r.position = undefined
-        r.rotation = undefined
-      }
       break
     case TransformPivot.Center:
-      if (r.bounds.isEmpty()) {
-        if (hasComponent(entities[0], TransformComponent)) {
-          TransformComponent.getWorldPosition(entities[0], r.position)
-          TransformComponent.getWorldRotation(entities[0], r.rotation)
-        } else {
-          r.position = undefined
-          r.rotation = undefined
-        }
-        break
+      if (!r.bounds.isEmpty()) {
+        r.bounds.getCenter(r.position)
       }
-      r.bounds.getCenter(r.position)
       break
     case TransformPivot.Bottom: {
-      if (r.bounds.isEmpty()) {
-        if (hasComponent(entities[0], TransformComponent)) {
-          TransformComponent.getWorldPosition(entities[0], r.position)
-          TransformComponent.getWorldRotation(entities[0], r.rotation)
-        } else {
-          r.position = undefined
-          r.rotation = undefined
-        }
-        break
+      if (!r.bounds.isEmpty()) {
+        r.bounds.getCenter(r.position)
+        r.position.y = r.bounds.min.y
       }
-      r.bounds.getCenter(r.position)
-      r.position.y = r.bounds.min.y
       break
     }
   }
