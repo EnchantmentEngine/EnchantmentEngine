@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -62,6 +62,7 @@ import {
   BehaviorComponent,
   BehaviorSchema,
   CallbackConditionSchema,
+  CallbackSchema,
   CreateEntitySchema,
   EffectSchema,
   EntityConditionSchema,
@@ -1010,6 +1011,119 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     )
   }
 
+  const CallbackInput = ({
+    index,
+    effect,
+    behaviorIndex
+  }: {
+    index: number
+    effect: Static<typeof CallbackSchema>
+    behaviorIndex: number
+  }) => {
+    const sourceNodeEntity = effect.sourceNodeID
+      ? UUIDComponent.getEntityByUUID(
+          NodeIDComponent.getUUIDBySourceAndNodeID(assetContextSource, effect.sourceNodeID),
+          Layers.Authoring
+        )
+      : assetContextEntity
+    const sourceID = GLTFComponent.useInstanceID(sourceNodeEntity)
+    const nodeIDOptions = SourceComponent.useEntitiesBySource(sourceID).map((entity) => ({
+      label: getComponent(entity, NameComponent),
+      value: getComponent(entity, NodeIDComponent)
+    }))
+
+    const nodeID = effect.nodeID
+    const nodeEntityUUID = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID)
+    const nodeEntity = UUIDComponent.useEntityByUUID(nodeEntityUUID, Layers.Authoring)
+    const callbackOptions =
+      nodeEntity && hasComponent(nodeEntity, CallbackComponent)
+        ? [...getComponent(nodeEntity, CallbackComponent).keys()].map((callback) => ({
+            label: callback,
+            value: callback
+          }))
+        : []
+
+    // State to manage parameters
+    const handleAddParameter = useCallback(() => {
+      const parameters = [...effect.parameters, '']
+      commitProperties(BehaviorComponent, {
+        [`behaviors.${behaviorIndex}.effects.${index}.parameters`]: parameters
+      })
+    }, [effect.parameters])
+
+    const handleRemoveParameter = useCallback(
+      (paramIndex: number) => {
+        const parameters = [...effect.parameters]
+        parameters.splice(paramIndex, 1)
+        commitProperties(BehaviorComponent, {
+          [`behaviors.${behaviorIndex}.effects.${index}.parameters`]: parameters
+        })
+      },
+      [effect.parameters]
+    )
+
+    const handleChangeParameter = useCallback(
+      (value: string, paramIndex: number) => {
+        const parameters = [...effect.parameters]
+        parameters[paramIndex] = value
+        commitProperties(BehaviorComponent, {
+          [`behaviors.${behaviorIndex}.effects.${index}.parameters`]: parameters
+        })
+      },
+      [effect.parameters]
+    )
+
+    return (
+      <InputGroup
+        name="Callback"
+        label={t('editor:properties.behavior.lbl-callback')}
+        info={t('editor:properties.behavior.lbl-callback-info')}
+      >
+        <SelectInput
+          labelProps={{ text: 'Source Node', position: 'left' }}
+          value={effect.sourceNodeID}
+          onChange={commitProperty(
+            BehaviorComponent,
+            `behaviors.${behaviorIndex}.effects.${index}.sourceNodeID` as any
+          )}
+          options={sourceNodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Node', position: 'left' }}
+          value={effect.nodeID}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.nodeID` as any)}
+          options={nodeIDOptions}
+        />
+        <SelectInput
+          labelProps={{ text: 'Callback', position: 'left' }}
+          value={effect.callback}
+          onChange={commitProperty(BehaviorComponent, `behaviors.${behaviorIndex}.effects.${index}.callback` as any)}
+          options={callbackOptions}
+        />
+        <div className="mt-2">
+          <h4 className="mb-2 text-sm font-medium">Parameters</h4>
+          {effect.parameters.map((param, paramIndex) => (
+            <div key={paramIndex} className="mb-2 flex items-center gap-2">
+              <StringInput value={param as string} onChange={(value) => handleChangeParameter(value, paramIndex)} />
+              <button
+                className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+                onClick={() => handleRemoveParameter(paramIndex)}
+              >
+                <HiMinus className="m-auto" />
+              </button>
+            </div>
+          ))}
+          <button
+            className="h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
+            onClick={handleAddParameter}
+          >
+            <HiPlus className="m-auto" />
+          </button>
+        </div>
+      </InputGroup>
+    )
+  }
+
   const TransitionInput = ({
     index,
     effect,
@@ -1119,7 +1233,7 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
     behaviorIndex: number
   }) => {
     const effectOptions = [
-      // { label: 'Callback', value: 'callback' },
+      { label: 'Callback', value: 'callback' },
       { label: 'Set Component', value: 'setComponent' },
       { label: 'Remove Component', value: 'removeComponent' },
       { label: 'Create Entity', value: 'createEntity' },
@@ -1144,11 +1258,11 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
           effect={effect as Static<typeof RemoveComponentSchema>}
         />
       )
-    }
-    // else if (effect.type === 'callback') {
-    //   Editor = <CallbackInput index={index} behaviorIndex={behaviorIndex} effect={effect as Static<typeof CallbackEffectSchema>} />
-    // }
-    else if (effect.type === 'createEntity') {
+    } else if (effect.type === 'callback') {
+      Editor = (
+        <CallbackInput index={index} behaviorIndex={behaviorIndex} effect={effect as Static<typeof CallbackSchema>} />
+      )
+    } else if (effect.type === 'createEntity') {
       Editor = (
         <CreateEntityInput
           index={index}
@@ -1204,6 +1318,17 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
                   }
                 })
                 break
+              case 'callback':
+                commitProperties(BehaviorComponent, {
+                  [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
+                    type: 'callback',
+                    nodeID: '' as NodeID,
+                    sourceNodeID: '' as NodeID,
+                    callback: '',
+                    parameters: []
+                  }
+                })
+                break
               case 'createEntity':
                 commitProperties(BehaviorComponent, {
                   [`behaviors.${behaviorIndex}.effects.${index}` as any]: {
@@ -1248,7 +1373,7 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
   }
 
   /**
-   * Simpler UI that just exposes a list of nodes to target, automatically sets the callback, and allows transition and immediate entity effect configuration.
+   * Simpler UI for trigger
    */
   const TriggerUI = () => {
     const enterBehavior = behavior.get(NO_PROXY).behaviors[0]
@@ -1358,8 +1483,38 @@ export const BehaviorNodeEditor: EditorComponentType = (props) => {
       )}
       {/* Assume one behavior, one callback condition and one effect */}
       {selectedPreset.value === 'callback' && (
-        <></>
-        // TODO
+        <>
+          <InputGroup
+            name="Callback Condition"
+            label={t('editor:properties.behavior.lbl-callbackCondition')}
+            info={t('editor:properties.behavior.lbl-callbackCondition-info')}
+          >
+            {behavior.behaviors[0]?.conditions[0] && (
+              <CallbackConditionInput
+                behaviorIndex={0}
+                index={0}
+                condition={behavior.behaviors[0].conditions[0].get(NO_PROXY) as Static<typeof CallbackConditionSchema>}
+              />
+            )}
+          </InputGroup>
+          <InputGroup
+            name="Callback Effects"
+            label={t('editor:properties.behavior.lbl-callbackEffects')}
+            info={t('editor:properties.behavior.lbl-callbackEffects-info')}
+          >
+            {behavior.behaviors[0]?.effects.map((effect, index) => (
+              <EffectInput
+                key={index}
+                behaviorIndex={0}
+                index={index}
+                effect={effect.get(NO_PROXY) as Static<typeof EffectSchema>}
+              />
+            ))}
+            <Button onClick={() => handleChangeEffect(0, behavior.behaviors[0]?.effects.length || 0, 'add')}>
+              Add Effect
+            </Button>
+          </InputGroup>
+        </>
       )}
       {/* Assume two behaviors, one callback condition, and any number of effects */}
       {selectedPreset.value === 'trigger' && <TriggerUI />}

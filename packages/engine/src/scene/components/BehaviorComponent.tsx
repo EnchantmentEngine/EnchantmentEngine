@@ -269,7 +269,7 @@ export const CallbackSchema = S.Object({
   callback: S.String(),
   nodeID: NodeIDSchema(),
   sourceNodeID: S.Optional(NodeIDSchema()),
-  parameters: S.Array(ValueSchema)
+  parameters: S.Array(S.Any()) /** @todo use ValuesSchema once Union deserialization is fixed */
 })
 
 export const EffectSchema = S.Union([
