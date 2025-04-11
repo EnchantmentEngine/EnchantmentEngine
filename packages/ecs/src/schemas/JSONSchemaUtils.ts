@@ -144,7 +144,10 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
     case 'Array': {
       if (!validValue(value)) return value
       if (!Array.isArray(value)) return undefined
-      const props = schema.properties as TArraySchema<Schema>['properties']
+      const arraySchema = schema as TArraySchema<Schema>
+      const props = arraySchema.properties
+      if (!props || !isSerializable(props)) return curr
+
       const _curr = curr as Array<any>
       const currentLength = _curr.length
       if (currentLength < value.length) {
@@ -193,7 +196,44 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       const props = schema.properties as TUnionSchema<Schema[]>['properties']
       if (!props.length) return undefined
 
-      // Try each schema in the Union array
+      // For arrays, we need to handle each element individually
+      if (Array.isArray(value) && Array.isArray(curr)) {
+        // Make sure curr has enough elements
+        while (curr.length < value.length) {
+          curr.push(undefined)
+        }
+
+        // Process each element in the array
+        for (let i = 0; i < value.length; i++) {
+          let elementProcessed = false
+
+          // Try each schema for this element
+          for (const unionSchema of props) {
+            try {
+              if (CheckSchemaValue(unionSchema, value[i])) {
+                const deserializedValue = DeserializeSchemaValue(entity, unionSchema, curr[i], value[i])
+                if (validValue(deserializedValue)) {
+                  curr[i] = deserializedValue
+                  elementProcessed = true
+                  break
+                }
+              }
+            } catch (e) {
+              // Continue to the next schema if this one fails
+              continue
+            }
+          }
+
+          // If no schema matched for this element, set it to undefined so it can be filtered out
+          if (!elementProcessed) {
+            curr[i] = undefined
+          }
+        }
+
+        return curr as Val
+      }
+
+      // For non-array values, try each schema
       for (const unionSchema of props) {
         try {
           // First check if the value is valid for this schema
@@ -482,6 +522,7 @@ export const CloneSerializable = <Val>(value: Val) => {
 }
 
 const isSerializable = <T extends Schema>(schema: T) => {
+  if (!schema) return false
   const kind = schema[Kind]
   return kind !== 'Func' && kind !== 'NonSerialized'
 }
@@ -540,14 +581,15 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
       return true
 
     case 'Array': {
-      const props = schema.properties as TArraySchema<Schema>['properties']
-      if (!isSerializable(props)) return true
+      const arraySchema = schema as TArraySchema<Schema>
+      const itemSchema = arraySchema.properties
+      if (!itemSchema || !isSerializable(itemSchema)) return true
 
       if (!Array.isArray(value)) return false
       else if (value.length === 0) return true
       else {
         for (const item of value) {
-          if (!CheckSchemaValue(props, item)) return false
+          if (!CheckSchemaValue(itemSchema, item)) return false
         }
 
         return true
