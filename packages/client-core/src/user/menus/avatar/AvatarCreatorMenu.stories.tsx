@@ -23,7 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AvatarCreatorMenu from './AvatarCreatorMenu'
+import { ArgTypes } from '@storybook/react'
+import React from 'react'
+import AvatarCreatorMenu, { SupportedSdks } from './AvatarCreatorMenu'
+
+const argTypes: ArgTypes = {
+  selectedSdk: {
+    control: { type: 'select' },
+    options: Object.values(SupportedSdks)
+  },
+  showBackButton: {
+    control: { type: 'boolean' }
+  },
+  previewEnabled: {
+    control: { type: 'boolean' }
+  }
+}
 
 export default {
   title: 'client/user/menus/avatar/AvatarCreatorMenu',
@@ -34,9 +49,20 @@ export default {
       type: 'figma',
       url: ''
     }
-  }
+  },
+  argTypes
 }
 
 export const Default = {
-  args: {}
+  render: (args) => {
+    const Menu = AvatarCreatorMenu(args.selectedSdk)
+
+    return <Menu showBackButton={args.showBackButton} previewEnabled={args.previewEnabled} />
+  },
+
+  args: {
+    selectedSdk: SupportedSdks.ReadyPlayerMe,
+    showBackButton: false,
+    previewEnabled: false
+  }
 }

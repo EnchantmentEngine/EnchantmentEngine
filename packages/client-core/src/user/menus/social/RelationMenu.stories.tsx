@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AvatarContextMenu from './RelationMenu'
+import RelationMenu from './RelationMenu'
 
 export default {
-  title: 'client/user/menus/social/AvatarContextMenu',
-  component: AvatarContextMenu,
+  title: 'client/user/menus/social/RelationMenu',
+  component: RelationMenu,
   parameters: {
-    componentSubtitle: 'AvatarContextMenu',
+    componentSubtitle: 'RelationMenu',
     design: {
       type: 'figma',
       url: ''

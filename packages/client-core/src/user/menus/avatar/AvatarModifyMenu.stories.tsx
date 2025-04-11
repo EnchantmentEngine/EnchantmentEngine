@@ -23,7 +23,24 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { AvatarType } from '@ir-engine/common/src/schemas/user/avatar.schema'
+import { ArgTypes } from '@storybook/react'
 import AvatarModifyMenu from './AvatarModifyMenu'
+
+const argTypes: ArgTypes = {
+  'selectedAvatar.name': {
+    control: 'text',
+    description: 'Name of the avatar'
+  },
+  'selectedAvatar.isPublic': {
+    control: 'boolean',
+    description: 'Visibility of the avatar'
+  },
+  'selectedAvatar.project': {
+    control: 'text',
+    description: 'Associated project'
+  }
+}
 
 export default {
   title: 'client/user/menus/avatar/AvatarModifyMenu',
@@ -34,9 +51,26 @@ export default {
       type: 'figma',
       url: ''
     }
-  }
+  },
+  argTypes
 }
 
 export const Default = {
-  args: {}
+  args: {
+    selectedAvatar: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Sample Avatar',
+      identifierName: 'sample_avatar',
+      modelResourceId: '123e4567-e89b-12d3-a456-426614174001',
+      thumbnailResourceId: '123e4567-e89b-12d3-a456-426614174002',
+      isPublic: true,
+      userId: '123e4567-e89b-12d3-a456-426614174003',
+      project: 'Sample Project',
+      user: null,
+      modelResource: null,
+      thumbnailResource: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as unknown as AvatarType
+  }
 }

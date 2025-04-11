@@ -38,5 +38,8 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    skipGuests: false,
+    search: ''
+  }
 }

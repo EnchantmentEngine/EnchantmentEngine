@@ -38,5 +38,7 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    showUrl: true
+  }
 }

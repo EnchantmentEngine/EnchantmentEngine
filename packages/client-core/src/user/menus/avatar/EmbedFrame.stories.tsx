@@ -38,5 +38,9 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    component: {
+      src: 'https://example.com/embed'
+    }
+  }
 }

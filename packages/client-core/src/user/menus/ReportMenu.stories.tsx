@@ -23,7 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { ArgTypes } from '@storybook/react'
 import ReportMenu from './ReportMenu'
+
+const argTypes: ArgTypes = {
+  type: {
+    control: { type: 'select' },
+    options: ['user', 'location']
+  }
+}
 
 export default {
   title: 'client/user/menus/ReportMenu',
@@ -34,9 +42,12 @@ export default {
       type: 'figma',
       url: ''
     }
-  }
+  },
+  argTypes
 }
 
 export const Default = {
-  args: {}
+  args: {
+    type: 'user'
+  }
 }

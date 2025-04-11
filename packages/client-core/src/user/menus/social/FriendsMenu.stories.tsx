@@ -25,8 +25,17 @@ Infinite Reality Engine. All Rights Reserved.
 
 import FriendsMenu from './FriendsMenu'
 
+const argTypes = {
+  selectedTab: {
+    control: {
+      type: 'select',
+      options: ['friends', 'blocked', 'find', 'messages']
+    }
+  }
+}
+
 export default {
-  title: 'client/user/menus/avatar/FriendsMenu',
+  title: 'client/user/menus/social/FriendsMenu',
   component: FriendsMenu,
   parameters: {
     componentSubtitle: 'FriendsMenu',
@@ -34,7 +43,8 @@ export default {
       type: 'figma',
       url: ''
     }
-  }
+  },
+  argTypes
 }
 
 export const Default = {

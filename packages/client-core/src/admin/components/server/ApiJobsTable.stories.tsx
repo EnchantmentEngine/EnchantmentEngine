@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import ApiJobsTable from './ApiJobsTable'
 
 export default {
-  title: 'admin/routes/ApiJobsTable',
+  title: 'admin/server/ApiJobsTable',
   component: ApiJobsTable,
   parameters: {
     componentSubtitle: 'ApiJobsTable',

@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import MessagesMenu from './MessagesMenu'
 
 export default {
-  title: 'client/user/menus/avatar/MessagesMenu',
+  title: 'client/user/menus/social/MessagesMenu',
   component: MessagesMenu,
   parameters: {
     componentSubtitle: 'MessagesMenu',
@@ -38,5 +38,7 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    name: 'username'
+  }
 }

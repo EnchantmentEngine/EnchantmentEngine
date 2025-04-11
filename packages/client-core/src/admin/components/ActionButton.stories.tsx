@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import ActionButton from './ActionButton'
 
 export default {
-  title: 'admin/avatar/ActionButton',
+  title: 'admin/ActionButton',
   component: ActionButton,
   parameters: {
     componentSubtitle: 'ActionButton',

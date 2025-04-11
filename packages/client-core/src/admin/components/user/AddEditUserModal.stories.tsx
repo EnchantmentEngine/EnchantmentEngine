@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { UserType } from '@ir-engine/common/src/schemas/user/user.schema'
 import AddEditUserModal from './AddEditUserModal'
 
 export default {
@@ -38,5 +39,20 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    user: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'John Doe',
+      ageVerified: true,
+      isGuest: false,
+      inviteCode: 'INVITE123',
+      lastLogin: {
+        // Assuming lastLogin has a specific structure
+        timestamp: new Date().toISOString(),
+        ipAddress: '192.168.1.1'
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as unknown as UserType
+  }
 }
