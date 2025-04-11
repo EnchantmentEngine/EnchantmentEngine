@@ -216,11 +216,12 @@ export function FileContextMenu({
       condition: hasFiles,
       label: t('editor:layout.assetGrid.placeObjectAtOrigin'),
       action: () => {
+        const position = getSpawnPositionAtCenter(new Vector3())
         selectedFiles
           .filter((file) => !file.isFolder.value)
           .map((file) => {
             addMediaNode(file.url.value, undefined, undefined, [
-              { name: TransformComponent.jsonID, props: { position: new Vector3() } }
+              { name: TransformComponent.jsonID, props: { position } }
             ])
           })
         setAnchorEvent(undefined)
