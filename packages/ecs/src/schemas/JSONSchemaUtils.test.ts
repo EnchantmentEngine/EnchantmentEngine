@@ -94,6 +94,109 @@ describe('DeserializeSchemaValue', () => {
     expect(result).toBe(Expected)
   })
 
+  describe('case: Kind.Any', () => {
+    const TestSchemaKind = 'Any'
+
+    it('should return `@param value` as is for null value', () => {
+      const Expected = null
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return `@param value` as is for undefined value', () => {
+      const Expected = undefined
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return `@param value` as is for number value', () => {
+      const Expected = 42
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return `@param value` as is for string value', () => {
+      const Expected = 'test string'
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return `@param value` as is for boolean value', () => {
+      const Expected = true
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return `@param value` as is for object value', () => {
+      const Expected = { test: 'value', nested: { prop: 42 } }
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toEqual(Expected)
+    })
+
+    it('should return `@param value` as is for array value', () => {
+      const Expected = [1, 'string', true, { prop: 'value' }]
+
+      const schema = { [Kind]: TestSchemaKind } as Schema
+      const curr = {}
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toEqual(Expected)
+    })
+
+    it('should respect custom deserializer if provided', () => {
+      const CustomValue = 'custom deserialized value'
+      const schema = {
+        [Kind]: TestSchemaKind,
+        static: {},
+        options: { deserialize: () => CustomValue }
+      } as Schema
+      const curr = {}
+      const value = 'original value'
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+
+      expect(result).toBe(CustomValue)
+    })
+  })
+
   describe('case: Kind.Number', () => {
     const TestSchemaKind = 'Number'
 
