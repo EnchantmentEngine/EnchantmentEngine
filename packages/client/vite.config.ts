@@ -31,6 +31,7 @@ import { mergeWith } from 'lodash'
 import path from 'path'
 import { UserConfig, defineConfig } from 'vite'
 import viteCompression from 'vite-plugin-compression2'
+import dynamicImportmap from 'vite-plugin-dynamic-importmap'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
@@ -307,6 +308,7 @@ export default defineConfig(async ({ command }) => {
       viteCommonjs({
         include: ['use-sync-external-store']
       }),
+      dynamicImportmap({ importmap: '/importmap.json' }),
       importMap(
         command,
         projectsWithConfigs.reduce((acc, project) => {
