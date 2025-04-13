@@ -43,11 +43,14 @@ import DragLayer from './dnd/DragLayer'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { useZendesk } from '@ir-engine/client-core/src/hooks/useZendesk'
+import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import { API } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import { EntityUUID } from '@ir-engine/ecs'
+import { EngineState, EntityUUID, getComponent } from '@ir-engine/ecs'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
+import { useEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEngineCanvas'
 import { Button, Tooltip } from '@ir-engine/ui'
 import 'rc-dock/dist/rc-dock.css'
 import { useTranslation } from 'react-i18next'
@@ -139,9 +142,12 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
 }
 
 const EditorContainer = () => {
-  const { sceneAssetID, sceneName, projectName, scenePath, uiEnabled } = useMutableState(EditorState)
+  const { sceneAssetID, sceneName, projectName, scenePath, uiEnabled, rootEntity, canvasRef } =
+    useMutableState(EditorState)
   const editorUIAddon = useMutableState(UIAddonsState).editor
   const currentLoadedSceneURL = useHookstate(null as string | null)
+
+  useEngineCanvas(canvasRef.value as React.RefObject<HTMLElement> | null)
 
   /**
    * what is our source of truth for which scene is loaded?
@@ -186,6 +192,18 @@ const EditorContainer = () => {
 
   /** Call get state since it needs to be created */
   getState(EditorHistoryState)
+
+  const engineState = useHookstate(getMutableState(EngineState))
+
+  useEffect(() => {
+    if (engineState.isEditing.value || !rootEntity.value) return
+    /** @todo upon saving the scene, the GLTFComponent src is not with the new hash, so we need to get the old src */
+    const loadedSceneURL = getComponent(rootEntity.value, GLTFComponent).src
+    getMutableState(LocationState).currentLocation.location.sceneURL.set(loadedSceneURL)
+    return () => {
+      getMutableState(LocationState).currentLocation.location.sceneURL.set('')
+    }
+  }, [engineState.isEditing.value, rootEntity.value])
 
   const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
 
