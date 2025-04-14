@@ -121,19 +121,22 @@ export const GLTFComponent = defineComponent({
   },
 
   getInstanceID: (entity: Entity) => {
-    if (!hasComponent(entity, GLTFComponent)) return getOptionalComponent(entity, SourceComponent) ?? ('' as SourceID)
+    if (!hasComponent(entity, GLTFComponent))
+      return getOptionalComponent(entity, SourceComponent) ?? ([''] as SourceID[])
     const uuid = getOptionalComponent(entity, UUIDComponent)
     const src = getOptionalComponent(entity, GLTFComponent)?.src
-    if (!uuid || !src) return '' as SourceID
-    return SourceComponent.getSourceID(uuid, src)
+    if (!uuid || !src) return [''] as SourceID[]
+    return uuid as unknown as SourceID[]
+    //return SourceComponent.getSourceID(uuid, src)
   },
 
   useInstanceID: (entity: Entity) => {
     const uuid = useOptionalComponent(entity, UUIDComponent)?.value
     const src = useOptionalComponent(entity, GLTFComponent)?.src.value
     const source = useOptionalComponent(entity, SourceComponent)?.value
-    if (!uuid || !src) return source ?? ('' as SourceID)
-    return SourceComponent.getSourceID(uuid, src)
+    if (!uuid?.length || !src) return source ?? ('' as SourceID)
+    return uuid as unknown as SourceID[]
+    //return SourceComponent.getSourceID(uuid, src)
   },
   removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
     return url.replaceAll(/\?hash=[^-]+/g, '') as T
@@ -175,7 +178,7 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as NodeID
       const sourceID = GLTFComponent.getInstanceID(entity)
-      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID)
+      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID).toString()
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -228,9 +231,10 @@ export const GLTFComponentReactor = () => {
   const sourceID = GLTFComponent.getInstanceID(entity)
 
   useEffect(() => {
-    getMutableState(AssetState)[sourceID].set(entity)
+    const stringSourceID = sourceID.toString()
+    getMutableState(AssetState)[stringSourceID].set(entity)
     return () => {
-      getMutableState(AssetState)[sourceID].set(none)
+      getMutableState(AssetState)[stringSourceID].set(none)
     }
   }, [gltfComponent.src])
 
@@ -291,7 +295,7 @@ export const GLTFComponentReactor = () => {
   )
 }
 
-const ResourceReactor = (props: { documentID: string; entity: Entity; documentLoaded: boolean }) => {
+const ResourceReactor = (props: { documentID: string[]; entity: Entity; documentLoaded: boolean }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
   const resourceQuery = useQuery([SourceComponent, ResourcePendingComponent])
 
@@ -340,7 +344,7 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 
   const removeGLTFDependency = () => {
     const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    const uuid = getComponent(entity, UUIDComponent)
+    const uuid = getComponent(entity, UUIDComponent).toString()
     ;(gltfComponent.dependencies as State<ComponentDependencies>).componentDependencies.set((prev) => {
       const dependencyArr = prev![uuid] as Component[]
       if (!dependencyArr) return prev
@@ -380,6 +384,7 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: string; components: Component[] }) => {
   const { gltfComponentEntity, uuid, components } = props
   const layer = LayerComponent.get(gltfComponentEntity)
+  console.log('dependency entry reactor', uuid, components)
   const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID, layer) as Entity | undefined
   const hasComponents = useHasComponents(entity ?? UndefinedEntity, components)
   const dynamicLoad = useHasComponent(entity ?? UndefinedEntity, SceneDynamicLoadComponent)

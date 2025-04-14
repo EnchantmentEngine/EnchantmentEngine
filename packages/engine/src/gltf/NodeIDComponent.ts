@@ -27,7 +27,7 @@ import {
   createEntity,
   defineComponent,
   Entity,
-  EntityUUID,
+  EntityUUIDArray,
   LayerID,
   Layers,
   S,
@@ -67,7 +67,7 @@ export const NodeIDComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const nodeID = useComponent(entity, NodeIDComponent).value
-    const sourceID = useComponent(entity, SourceComponent).value
+    const sourceID = useComponent(entity, SourceComponent).value.toString()
 
     useEffect(() => {
       const state = getMutableState(NodesBySourceState)
@@ -88,13 +88,14 @@ export const NodeIDComponent = defineComponent({
     return null
   },
 
-  getUUIDBySourceAndNodeID: (source: SourceID, nodeID: NodeID) => `${source}-${nodeID}` as EntityUUID,
+  //todo uuid should be a tuple
+  getUUIDBySourceAndNodeID: (source: SourceID[], nodeID: NodeID) => [...source, nodeID] as unknown as EntityUUIDArray,
 
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
    */
-  create: (sourceID: SourceID, nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
+  create: (sourceID: SourceID[], nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
     setComponent(entity, NodeIDComponent, nodeID)
     setComponent(entity, SourceComponent, sourceID)

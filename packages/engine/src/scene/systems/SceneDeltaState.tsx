@@ -23,23 +23,20 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Component, Entity, EntityUUID, getComponent, SerializedComponentType, UUIDComponent } from '@ir-engine/ecs'
+import { NodeID } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import {
-  Component,
-  Entity,
-  getComponent,
-  hasComponent,
-  SerializedComponentType,
-  traverseEntityNodeParent
-} from '@ir-engine/ecs'
-import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { defineState, getMutableState, getState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+  defineState,
+  getMutableState,
+  getState,
+  NO_PROXY_STEALTH,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { SceneState } from '../../gltf/GLTFState'
 
-export interface SceneDelta {
-  [key: NodeID]: { children?: SceneDelta; delta?: { [key: string]: SceneDeltaEntry<any> } }
-}
-
+export type SceneDeltaRegistry = Record<EntityUUID, SceneDeltaEntry<any>>
 export type SceneDeltaEntry<C extends Component> = Record<NodeID, Record<string, Partial<SerializedComponentType<C>>>>
 export type MaterialDeltaEntry = Record<typeof MATERIAL_JSON_ID, any>
 
@@ -48,44 +45,18 @@ export const MATERIAL_PROTOTYPE_JSON_ID = 'prototypeConstructor' as const
 
 export const SceneDeltaState = defineState({
   name: 'SceneDeltaState',
-  initial: {} as SceneDelta,
-  getSource: (entity: Entity, ceiling?: NodeID) => {
-    const parentIds = [] as NodeID[]
-    traverseEntityNodeParent(entity, (parentEntity) => {
-      if (hasComponent(parentEntity, NodeIDComponent)) {
-        const nodeID = getComponent(parentEntity, NodeIDComponent)
-        if (nodeID === ceiling) return true
-        parentIds.unshift(nodeID)
-      }
-    })
-
-    return [...parentIds, getComponent(entity, NodeIDComponent)]
-  },
-  getDelta: (source: NodeID[]) => {
-    let current = getState(SceneDeltaState) as SceneDelta | undefined
-    for (let i = 0; i < source.length; i++) {
-      if (!current) break
-      console.log(current)
-      if (i !== source.length - 1) current = current[source[i]]?.children
-      else current = current[source[i]]?.delta
-    }
-    return current
+  initial: {} as SceneDeltaRegistry,
+  getDelta: (entity: Entity) => {
+    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+    return getState(SceneDeltaState)[uuid] as SceneDeltaEntry<any>
   },
   setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
-    const parentIds = SceneDeltaState.getSource(entity)
-    const deltaRegistry = getMutableState(SceneDeltaState)
-    let current = deltaRegistry.get(NO_PROXY) as SceneDelta | undefined
-    for (let i = 0; i < parentIds.length; i++) {
-      if (!current) break
-      const nodeId = parentIds[i]
-      current[nodeId] = current[nodeId] ?? (i < parentIds.length - 1 ? { children: {} } : ({} as SceneDelta))
-      if (getComponent(entity, NodeIDComponent) === nodeId) {
-        current[nodeId].delta = { [component.jsonID!]: { ...current[nodeId][component.jsonID!], ...delta } }
-
-        break
-      }
-      current = current[nodeId].children
-    }
+    if (!component.jsonID) return
+    const deltaState = getMutableState(SceneDeltaState)
+    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+    if (!deltaState[uuid].value) deltaState[uuid].set({} as SceneDeltaEntry<C>)
+    const componentDelta = deltaState[uuid].get(NO_PROXY_STEALTH) as SceneDeltaEntry<C>
+    componentDelta[component.jsonID] = { ...componentDelta[component.jsonID], ...delta }
   },
 
   registerMaterialDelta(entity: Entity, props?: any, prototype?: string) {

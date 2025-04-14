@@ -38,7 +38,6 @@ import {
   deserializeComponent,
   getComponent,
   getMutableComponent,
-  getOptionalComponent,
   hasComponent,
   iterateEntityNode,
   removeComponent,
@@ -112,7 +111,7 @@ import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { SourceID } from '../scene/components/SourceComponent'
-import { SceneDelta, SceneDeltaEntry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
+import { SceneDeltaEntry, SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -853,7 +852,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
 
   const material = new materialConstructor(materialConstructorParameters)
   const uuid = getComponent(materialEntity, UUIDComponent)
-  material.uuid = uuid
   material.name = materialDef.name ?? 'Material-' + materialIndex
 
   setComponent(materialEntity, MaterialStateComponent, { material })
@@ -1179,7 +1177,7 @@ const _createAnimationTracks = (
 ) => {
   const tracks = [] as KeyframeTrack[]
 
-  const targetName = getComponent(node, UUIDComponent)
+  const targetName = getComponent(node, UUIDComponent).toString()
   if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
 
@@ -1188,7 +1186,7 @@ const _createAnimationTracks = (
       const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(getComponent(entity, UUIDComponent))
+        targetNames.push(getComponent(entity, UUIDComponent).toString())
       }
     })
   } else {
@@ -1428,8 +1426,9 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   const layerID = LayerComponent.get(options.entity)
 
-  const nodeID = getNodeID(nodeDef, options.documentID, nodeIndex)
-  const nodeEntity = NodeIDComponent.create(options.documentID, nodeID, layerID)
+  const nodeID = getNodeID(nodeDef, nodeIndex)
+  const nodeEntity = NodeIDComponent.create(options.documentID as any, nodeID, layerID)
+  console.log(options.documentID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
 
@@ -1538,20 +1537,17 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   await Promise.all(extensionPending)
 
-  const rootNodeID = getOptionalComponent(options.entity, NodeIDComponent)
+  const uuid = UUIDComponent.getUUID(getComponent(options.entity, UUIDComponent))
 
   //apply deltas if they exist in state
-  // const deltas = rootNodeID ? getState(SceneDeltaState)?.[rootNodeID] : null
-  // console.log(getComponent(nodeEntity, NameComponent), getOptionalComponent(nodeEntity, EntityTreeComponent), 'our root is', rootNodeID)
-  // if (deltas) {
-
-  //   console.log()
-  //   for (const [componentName, delta] of Object.entries(deltas)) {
-  //     const Component = ComponentJSONIDMap.get(componentName)
-  //     if (!Component) continue
-  //     deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
-  //   }
-  // }
+  const deltas = getState(SceneDeltaState)?.[uuid]
+  if (deltas) {
+    for (const [componentName, delta] of Object.entries(deltas)) {
+      const Component = ComponentJSONIDMap.get(componentName)
+      if (!Component) continue
+      deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
+    }
+  }
 
   return nodeEntity
 }
@@ -1565,6 +1561,11 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const sceneDef = json.scenes![sceneIndex]
 
   const nodeIds = sceneDef.nodes || []
+
+  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDeltaRegistry
+  if (deltas) {
+    getMutableState(SceneDeltaState).merge(deltas)
+  }
 
   const pending = [] as Promise<Entity>[]
 
@@ -1582,33 +1583,12 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
 
   const loadedNodeEntities = await Promise.all(pending)
 
-  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDelta | null
-  if (deltas) {
-    getMutableState(SceneDeltaState).merge(deltas)
-  }
-
   for (const entity of loadedNodeEntities) {
     setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
     iterateEntityNode(entity, (e) => {
       if (hasComponent(e, TransformComponent)) {
         computeTransformMatrix(e)
         TransformComponent.dirty[e] = 1
-      }
-
-      const deltas = getState(SceneDeltaState)
-      if (deltas) {
-        const source = SceneDeltaState.getSource(e)
-        console.log('source', source, 'for node id', getComponent(e, NodeIDComponent))
-        if (source.length < 1) return
-        const delta = SceneDeltaState.getDelta(source)
-        if (!delta) return
-        for (const [componentName, partial] of Object.entries(delta)) {
-          console.log('deserializing component', componentName, 'for node id', getComponent(e, NodeIDComponent))
-
-          const Component = ComponentJSONIDMap.get(componentName)
-          if (!Component) continue
-          deserializeComponent(e, Component, partial as SceneDeltaEntry<typeof Component>)
-        }
       }
     })
   }
@@ -1733,12 +1713,12 @@ export const getDependency = <
   return dependency
 }
 
-export const getNodeID = (node: GLTF.INode, documentID: SourceID, nodeIndex: number) =>
+export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
   (node.extensions?.[NodeIDComponent.jsonID] as NodeID) ?? (`${nodeIndex}` as NodeID)
 
 export type GLTFParserOptions = {
   url: string
-  documentID: SourceID
+  documentID: SourceID[]
   document: GLTF.IGLTF
   entity: Entity
   body: null | ArrayBuffer

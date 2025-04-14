@@ -28,7 +28,7 @@ import { defineComponent, LayerComponent, LayerID, Layers } from '@ir-engine/ecs
 import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineState, getMutableState, getState, none, OpaqueType, useHookstate } from '@ir-engine/hyperflux'
-import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
+import { NonEmptyArray, NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 /**
  * A source ID is expeced to in the format of `<nodeid>-<src>` where src is the source of the model and nodeid is the node id of the entity
@@ -42,29 +42,33 @@ export const EntitiesBySourceState = defineState({
 })
 
 export const SourceIDSchema = () =>
-  S.String('', {
-    validate: NonEmptyString('SourceComponent expects a non-empty string'),
-    id: 'SourceID'
-  }) as unknown as TTypedSchema<SourceID>
+  S.Array(
+    S.String('', {
+      validate: NonEmptyString('SourceComponent array expects a non-empty string'),
+      id: 'SourceID'
+    }),
+    [''],
+    { validate: NonEmptyArray('SourceComponent expects an array of IDs') }
+  ) as unknown as TTypedSchema<Array<SourceID>>
 
 export const SourceComponent = defineComponent({
   name: 'SourceComponent',
 
   schema: S.Required(SourceIDSchema()),
 
-  onSet: (entity, component, source: SourceID) => {
+  onSet: (entity, component, source: SourceID[]) => {
     const layer = LayerComponent.get(entity)
-    const currentSource = component.value
+    const currentSource = component.value.toString()
     if (currentSource) {
-      if (currentSource === source) return
-      if (currentSource && currentSource !== source) {
+      if (currentSource === source.toString()) return
+      if (currentSource && currentSource !== source.toString()) {
         SourceComponent.onRemove(entity, component)
       }
     }
     component.set(source)
     const state = getMutableState(EntitiesBySourceState)
     if (!getState(EntitiesBySourceState)[layer]) state[layer].set({})
-    const entitiesBySourceState = state[layer][source]
+    const entitiesBySourceState = state[layer][source.toString()]
     if (!entitiesBySourceState.value) {
       entitiesBySourceState.set([entity])
     } else {
@@ -74,25 +78,24 @@ export const SourceComponent = defineComponent({
 
   onRemove: (entity, component) => {
     const layer = LayerComponent.get(entity)
-    const entities = getState(EntitiesBySourceState)[layer][component.value].filter(
-      (currentEntity) => currentEntity !== entity
-    )
+    const source = component.value.toString()
+    const entities = getState(EntitiesBySourceState)[layer][source].filter((currentEntity) => currentEntity !== entity)
     const layerState = getMutableState(EntitiesBySourceState)[layer]
     if (entities.length === 0) {
-      layerState[component.value].set(none)
+      layerState[source].set(none)
     } else {
-      layerState[component.value].set(entities)
+      layerState[source].set(entities)
     }
   },
 
-  useEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID) => {
+  useEntitiesBySource: (sourceID: SourceID[], layer = Layers.Simulation as LayerID) => {
     const state = useHookstate(getMutableState(EntitiesBySourceState)[layer]).value
-    return state?.[sourceID] || []
+    return state?.[sourceID.toString()] || []
   },
 
-  getEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID) => {
-    return getState(EntitiesBySourceState)[layer]?.[sourceID] || []
+  getEntitiesBySource: (sourceID: SourceID[], layer = Layers.Simulation as LayerID) => {
+    return getState(EntitiesBySourceState)[layer]?.[sourceID.toString()] || []
   },
 
-  getSourceID: (uuid: EntityUUID, src: string) => `${uuid}-${src}` as SourceID
+  getSourceID: (uuid: EntityUUID[], src: string) => [...uuid, src] as SourceID[]
 })

@@ -23,45 +23,32 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import {
-  getAncestorWithComponents,
-  getComponent,
-  getOptionalComponent,
-  hasComponent,
-  iterateEntityNode
-} from '@ir-engine/ecs'
+import { getComponent, iterateEntityNode, UUIDComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { cleanStorageProviderURLs } from '../assets/functions/parseSceneJSON'
-import { SceneDelta, SceneDeltaState } from '../scene/systems/SceneDeltaState'
+import { SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFSceneExportExtension } from './exportGLTFScene'
-import { GLTFComponent } from './GLTFComponent'
-import { NodeIDComponent } from './NodeIDComponent'
 
 export const SCENE_DELTA_EXTENSION_NAME = 'IR_scene_delta'
 
 export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () => ({
   after: (rootEntity, gltf) => {
+    const deltaState = getState(SceneDeltaState)
     let usedSceneDelta = false
     iterateEntityNode(rootEntity, (entity) => {
       if (entity === rootEntity) return
-      if (!hasComponent(entity, NodeIDComponent)) return
-      const nodeID = getComponent(entity, NodeIDComponent)
-      const rootID = getOptionalComponent(
-        getAncestorWithComponents(entity, [GLTFComponent, NodeIDComponent]),
-        NodeIDComponent
-      )
-      if (!rootID) return
-      const deltaState = getState(SceneDeltaState)
-      const sourceDelta = deltaState[rootID]
-      if (!sourceDelta) return
-      const nodeDelta = SceneDeltaState.getDelta(SceneDeltaState.getSource(entity))
+      const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+      if (!deltaState[uuid]) return
+      const nodeDelta = SceneDeltaState.getDelta(entity)
+      console.log(nodeDelta)
       if (!nodeDelta) return
       gltf.extensions ??= {}
       const extensions: Record<string, any> = gltf.extensions
       extensions[SCENE_DELTA_EXTENSION_NAME] ??= {}
-      const extension: SceneDelta = extensions[SCENE_DELTA_EXTENSION_NAME]
-      extension[rootID] ??= {}
-      extension[rootID] = deltaState[rootID]
+      const extension: SceneDeltaRegistry = extensions[SCENE_DELTA_EXTENSION_NAME]
+      extension[uuid] ??= {}
+      extension[uuid] = deltaState[uuid]
+      console.log(extension[uuid])
       usedSceneDelta = true
     })
     if (usedSceneDelta) {
