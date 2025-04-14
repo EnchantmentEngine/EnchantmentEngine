@@ -42,6 +42,7 @@ import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComp
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { addError } from '@ir-engine/engine/src/scene/functions/ErrorFunctions'
 import { startReactor } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import { NotificationService } from '../common/services/NotificationService'
 import { LinkErrorSystem } from './LinkErrorSystem'
 
@@ -79,7 +80,9 @@ describe('LinkErrorSystem', () => {
     expect(errorComponentBefore).toBeDefined()
     expect(errorComponentBefore).toHaveProperty(LinkComponent.name)
 
-    startReactor(system.reactor!)
+    const root = startReactor(system.reactor!)
+    await act(async () => render(null))
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(spy).toHaveBeenCalled()
 
     const errorComponentAfter = getOptionalComponent(linkEntity, ErrorComponent)
@@ -94,7 +97,9 @@ describe('LinkErrorSystem', () => {
     expect(errorComponentBefore).toBeDefined()
     expect(errorComponentBefore).toHaveProperty(LinkComponent.name)
 
-    startReactor(system.reactor!)
+    const root = startReactor(system.reactor!)
+    await act(async () => render(null))
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
     expect(spy).not.toHaveBeenCalled()
 
     const errorComponentAfter = getOptionalComponent(linkEntity, ErrorComponent)

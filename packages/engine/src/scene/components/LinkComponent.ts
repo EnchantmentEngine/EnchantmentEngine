@@ -96,7 +96,7 @@ export const LinkComponent = defineComponent({
   linkCallback,
   interactMessage,
 
-  errors: ['INVALID_URL'],
+  errors: ['INVALID_URL', 'WINDOW_BLOCKED'],
 
   reactor: function () {
     if (!isClient) return null
