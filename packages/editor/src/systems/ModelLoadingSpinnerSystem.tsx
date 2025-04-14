@@ -39,8 +39,19 @@ import {
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { createLoadingSpinner } from '@ir-engine/engine/src/scene/functions/spatialLoadingSpinner'
+import { defineState, getMutableState } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { useEffect } from 'react'
+
+type ModelLoadingStateType = {
+  loading?: boolean
+  error?: string | null
+  entity?: Entity
+}
+export const ModelLoadingState = defineState({
+  name: 'ModelLoadingState',
+  initial: {} as Record<string, ModelLoadingStateType>
+})
 
 const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const { entity } = props
@@ -48,15 +59,18 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const errors = !!useOptionalComponent(entity, ErrorComponent)?.value?.[GLTFComponent.name]
   const loaded = GLTFComponent.useSceneLoaded(entity)
   const isScene = useHasComponent(entity, SceneComponent)
+  const loadingState = getMutableState(ModelLoadingState)
 
   const loadingEntity = useHookstate<Entity>(UndefinedEntity)
 
   const createLoadingGeo = () => {
+    loadingState.loading.set(true)
     const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
     loadingEntity.set(spinnerEntity)
   }
-
+  console.log(loadingState, 'loadingState')
   const removeLoadingGeo = () => {
+    loadingState.loading.set(false)
     if (!loadingEntity.value) return
     removeEntityNodeRecursively(loadingEntity.value)
     loadingEntity.set(UndefinedEntity)
