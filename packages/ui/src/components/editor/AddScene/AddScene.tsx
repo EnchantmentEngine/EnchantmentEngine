@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { createScene } from '@ir-engine/client-core/src/world/SceneAPI'
 import { UIAddonsState } from '@ir-engine/editor/src/services/UIAddonsState'
 import { NO_PROXY, getMutableState, useMutableState } from '@ir-engine/hyperflux'
@@ -202,7 +202,7 @@ export const AddScene = ({ projectName }: AddNewSceneProps) => {
         </div>
 
         <div className="grid w-full grid-cols-[228px,1fr,228px] border-t-[0.5px] border-surface-outline-4-1 py-6">
-          <Button size="sm" variant="secondary" className="w-[228px]" onClick={() => PopoverState.hidePopupover()}>
+          <Button size="sm" variant="secondary" className="w-[228px]" onClick={() => ModalState.closeModal()}>
             {t(cancelText ?? 'editor:dialog.addScene.cancel')}
           </Button>
           {!!selectedSceneOption && (

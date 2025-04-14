@@ -393,7 +393,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             'flex h-[2rem] w-[2rem] items-center justify-center justify-self-end rounded-full text-ui-secondary hover:text-ui-hover-secondary focus:bg-ui-select-primary'
           )}
           onClick={() => {
-            PopoverState.hidePopupover()
+            ModalState.closeModal()
           }}
         >
           <XCloseMd className="h-[1.5rem] w-[1.5rem]" />
