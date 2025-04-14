@@ -1428,7 +1428,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   const nodeID = getNodeID(nodeDef, nodeIndex)
   const nodeEntity = NodeIDComponent.create(options.documentID as any, nodeID, layerID)
-  console.log(options.documentID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
 

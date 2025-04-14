@@ -40,7 +40,6 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
       const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
       if (!deltaState[uuid]) return
       const nodeDelta = SceneDeltaState.getDelta(entity)
-      console.log(nodeDelta)
       if (!nodeDelta) return
       gltf.extensions ??= {}
       const extensions: Record<string, any> = gltf.extensions
@@ -48,7 +47,6 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
       const extension: SceneDeltaRegistry = extensions[SCENE_DELTA_EXTENSION_NAME]
       extension[uuid] ??= {}
       extension[uuid] = deltaState[uuid]
-      console.log(extension[uuid])
       usedSceneDelta = true
     })
     if (usedSceneDelta) {
