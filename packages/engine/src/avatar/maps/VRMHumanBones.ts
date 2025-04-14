@@ -23,24 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createSwaggerServiceOptions } from 'feathers-swagger'
+import { Entity } from '@ir-engine/ecs'
+import { VRMHumanBoneName } from './VRMHumanBoneName'
+import { VRMRequiredHumanBoneName } from './VRMRequiredHumanBoneNames'
 
-import {
-  locationBanDataSchema,
-  locationBanPatchSchema,
-  locationBanQuerySchema,
-  locationBanSchema
-} from '@ir-engine/common/src/schemas/social/location-ban.schema'
-
-export default createSwaggerServiceOptions({
-  schemas: {
-    locationBanDataSchema,
-    locationBanPatchSchema,
-    locationBanQuerySchema,
-    locationBanSchema
-  },
-  docs: {
-    description: 'Location ban service description',
-    securities: ['all']
-  }
-})
+export type VRMHumanBones = {
+  [bone in VRMHumanBoneName]?: Entity
+} & { [bone in VRMRequiredHumanBoneName]: Entity }
