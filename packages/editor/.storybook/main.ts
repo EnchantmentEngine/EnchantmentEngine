@@ -60,7 +60,8 @@ const config: StorybookConfig = {
       ...userConfig,
       define: {
         ...userConfig?.define,
-        'process.env': process.env
+        'process.env': process.env,
+        'process.browser': true
       },
       resolve: {
         ...userConfig?.resolve,
@@ -69,6 +70,8 @@ const config: StorybookConfig = {
           path: require.resolve('path-browserify'),
           crypto: require.resolve('crypto-browserify'),
           stream: require.resolve('stream-browserify'),
+          process: require.resolve('process/browser'),
+
           // alias public folder to root
           '@': require('path').resolve(__dirname, '../../client/public')
         }

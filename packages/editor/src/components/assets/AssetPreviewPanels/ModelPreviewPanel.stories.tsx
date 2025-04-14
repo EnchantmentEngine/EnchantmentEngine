@@ -39,6 +39,8 @@ export default {
 
 export const Default = {
   args: {
-    resourceProps: { resourceUrl: '' }
+    resourceProps: {
+      resourceUrl: 'https://github.com/KhronosGroup/glTF-Sample-Models/blob/main/2.0/Lantern/glTF-Binary/Lantern.glb'
+    }
   }
 }

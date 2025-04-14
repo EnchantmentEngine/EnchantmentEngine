@@ -43,10 +43,10 @@ export const Default = {
     selectedFiles: [
       {
         key: '1',
-        path: 'hello/world.glb',
-        name: 'helloworld.glb',
-        fullName: 'helloworld.glb',
-        url: 'hello/world.glb',
+        path: 'Lantern.glb',
+        name: 'Lantern.glb',
+        fullName: 'Lantern.glb',
+        url: 'https://github.com/KhronosGroup/glTF-Sample-Models/blob/main/2.0/Lantern/glTF-Binary/Lantern.glb',
         type: 'glb',
         isFolder: false
       } as FileDataType
