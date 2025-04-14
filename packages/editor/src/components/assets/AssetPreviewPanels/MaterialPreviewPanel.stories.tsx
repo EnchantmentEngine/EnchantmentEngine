@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AssetsPreviewPanel } from './AssetsPreviewPanel'
+import { MaterialPreviewPanel } from './MaterialPreviewPanel'
 
 export default {
-  title: 'editor/assets/AssetsPreviewPanel',
-  component: AssetsPreviewPanel,
+  title: 'editor/assets/preview/material',
+  component: MaterialPreviewPanel,
   parameters: {
-    componentSubtitle: 'AssetsPreviewPanel',
+    componentSubtitle: 'MaterialPreviewPanel',
     design: {
       type: 'figma',
       url: ''
@@ -37,8 +37,4 @@ export default {
   }
 }
 
-export const Default = {
-  args: {
-    hideHeading: false
-  }
-}
+export const Default = {}

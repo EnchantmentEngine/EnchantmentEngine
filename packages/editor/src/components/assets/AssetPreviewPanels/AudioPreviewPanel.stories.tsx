@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AssetsPreviewPanel } from './AssetsPreviewPanel'
+import { AudioPreviewPanel } from './AudioPreviewPanel'
 
 export default {
-  title: 'editor/assets/AssetsPreviewPanel',
-  component: AssetsPreviewPanel,
+  title: 'editor/assets/preview/audio',
+  component: AudioPreviewPanel,
   parameters: {
-    componentSubtitle: 'AssetsPreviewPanel',
+    componentSubtitle: 'AudioPreviewPanel',
     design: {
       type: 'figma',
       url: ''
@@ -39,6 +39,6 @@ export default {
 
 export const Default = {
   args: {
-    hideHeading: false
+    resourceProps: { resourceUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }
   }
 }
