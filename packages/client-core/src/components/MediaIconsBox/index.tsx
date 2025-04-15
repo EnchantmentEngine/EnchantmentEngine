@@ -159,6 +159,7 @@ export const MediaIconsBox = () => {
           }}
           icon={isCamAudioEnabled ? (isMobile ? Microphone01Md : Microphone01Lg) : MicrophoneOff}
           id="UserAudio"
+          data-testid={`toggle-mic-${isCamAudioEnabled ? 'off' : 'on'}-button`}
           onClick={MediaStreamState.toggleMicrophonePaused}
         />
       ) : null}
@@ -178,6 +179,7 @@ export const MediaIconsBox = () => {
                 : VideoRecorderOffLg
             }
             id="UserVideo"
+            data-testid={`toggle-camera-${isCamVideoEnabled ? 'off' : 'on'}-button`}
             onClick={() => {
               MediaStreamState.toggleWebcamPaused()
               logger.analytics({ event_name: 'toggle_camera', value: isCamVideoEnabled })
@@ -224,6 +226,7 @@ export const MediaIconsBox = () => {
           }}
           icon={Screenshare}
           id="UserScreenSharing"
+          data-testid={`toggle-screenshare-${isScreenVideoEnabled ? 'off' : 'on'}-button`}
           onClick={MediaStreamState.toggleScreenshare}
         />
       ) : null}
