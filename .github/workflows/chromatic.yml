@@ -25,7 +25,7 @@ jobs:
       - name: Run stories check script
         id: check_stories
         run: |
-          node scripts/check-modified-files.js
+          npx tsx packages/ui/scripts/check-modified-files.ts
         continue-on-error: true
 
       - name: Publish to Chromatic
