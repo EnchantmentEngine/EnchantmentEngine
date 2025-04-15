@@ -28,7 +28,6 @@ import React from 'react'
 import { getMutableComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -38,7 +37,6 @@ import { PauseCircleLg, PlayLg } from '@ir-engine/ui/src/icons'
 export function createMediaControlsView(entity: Entity) {
   const MediaControls = () => <MediaControlsView entity={entity} />
   const videoTransform = getOptionalComponent(entity, TransformComponent)
-  const videoComponent = getOptionalComponent(entity, VideoComponent)
   const scaleX = videoTransform?.scale.x ?? 1
   const scaleY = videoTransform?.scale.y ?? 1
 

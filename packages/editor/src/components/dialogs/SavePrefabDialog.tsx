@@ -45,7 +45,7 @@ export default function SavePrefabPanel({ entity }) {
   const srcPath = useHookstate(STATIC_ASSET_REGEX.exec(gltfComponent.src)?.[3].replace(/\.[^.]*$/, ''))
   const fileName = (srcPath.value ?? '').split('/').pop() ?? ''
   const resultFileName = useHookstate(isValidFileName(fileName))
-  const { refetchResources } = useAssetsQuery()
+  useAssetsQuery()
 
   const onSavePrefab = async () => {
     const saveName = srcPath.value + '.gltf'
