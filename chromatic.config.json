@@ -1,5 +1,6 @@
 {
   "$schema": "https://www.chromatic.com/config-file.schema.json",
   "projectId": "Project:infinite-reality",
-  "buildCommand": "cd packages/ui && npm run build:storybook"
+  "buildCommand": "cd packages/ui && npm run build:storybook",
+  "outputDir": "./packages/ui/build/"
 }
