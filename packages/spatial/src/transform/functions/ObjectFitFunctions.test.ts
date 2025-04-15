@@ -61,7 +61,6 @@ snapToSideOfScreen: (
 */
 
 import { createEngine, createEntity, destroyEngine, getComponent, setComponent } from '@ir-engine/ecs'
-import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import { WebContainer3D } from '@ir-engine/xrui'
 import { Object3D, Vector2, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -73,7 +72,6 @@ describe('ObjectFitFunctions', () => {
   beforeEach(() => {
     createEngine()
     mockSpatialEngine()
-    startEngineReactor()
   })
 
   afterEach(() => {
