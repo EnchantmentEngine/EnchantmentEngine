@@ -62,7 +62,7 @@ export const ObjectFitFunctions = {
     containerWidth: number,
     containerHeight: number,
     fit: ContentFitType = 'contain'
-  ) => {
+  ): number => {
     if (fit === 'stretch') {
       return 1
     }
@@ -92,7 +92,7 @@ export const ObjectFitFunctions = {
   computeFrustumSizeAtDistance: (
     distance: number,
     camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
-  ) => {
+  ): Vector2 => {
     // const vFOV = camera.fov * DEG2RAD
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert()
     const inverseProjection = camera.projectionMatrixInverse
@@ -123,7 +123,7 @@ export const ObjectFitFunctions = {
     horizontalSnap: 'left' | 'right' | 'center' | number, // where number is range from -1 to 1
     verticalSnap: 'top' | 'bottom' | 'center' | number, // where number is range from -1 to 1
     cameraEntity = getState(ReferenceSpaceState).viewerEntity
-  ) => {
+  ): void => {
     const camera = getComponent(cameraEntity, CameraComponent)
     const containerSize = ObjectFitFunctions.computeFrustumSizeAtDistance(distance, camera)
     const screenSize = getComponent(cameraEntity, RendererComponent).renderer!.getSize(SCREEN_SIZE)
@@ -179,7 +179,7 @@ export const ObjectFitFunctions = {
     transform.matrixWorld.decompose(transform.position, transform.rotation, transform.scale)
   },
 
-  attachObjectInFrontOfCamera: (entity: Entity, scale: number, distance: number) => {
+  attachObjectInFrontOfCamera: (entity: Entity, scale: number, distance: number): void => {
     const transform = getComponent(entity, TransformComponent)
     _mat4.makeTranslation(0, 0, -distance).scale(_vec3.set(scale, scale, 1))
     transform.matrixWorld.multiplyMatrices(
@@ -189,7 +189,7 @@ export const ObjectFitFunctions = {
     transform.matrixWorld.decompose(transform.position, transform.rotation, transform.scale)
   },
 
-  lookAtCameraFromPosition: (container: WebContainer3D, position: Vector3) => {
+  lookAtCameraFromPosition: (container: WebContainer3D, position: Vector3): void => {
     const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     container.scale.setScalar(Math.max(1, camera.position.distanceTo(position) / 3))
     container.position.copy(position)
