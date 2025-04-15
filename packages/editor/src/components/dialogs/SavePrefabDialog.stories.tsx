@@ -23,9 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, setComponent } from '@ir-engine/ecs'
+import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import React from 'react'
+import React, { useEffect } from 'react'
 import SavePrefabPanel from './SavePrefabDialog'
 
 export default {
@@ -43,6 +43,13 @@ export default {
 const SavePrefabPanelRenderer = () => {
   const entity = createEntity()
   setComponent(entity, GLTFComponent)
+
+  useEffect(() => {
+    return () => {
+      removeEntity(entity)
+    }
+  }, [])
+
   return <SavePrefabPanel entity={entity} />
 }
 

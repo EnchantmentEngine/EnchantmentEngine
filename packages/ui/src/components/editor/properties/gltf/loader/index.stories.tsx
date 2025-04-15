@@ -23,20 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import React, { useEffect } from 'react'
 import Component from './index'
 
 const argTypes = {}
 
 export default {
-  title: 'Editor/Properties/Scene/PreviewCamera',
+  title: 'Editor/Properties/Gltf/Loader',
   component: Component,
   parameters: {
-    componentSubtitle: 'ScenePreviewCameraNodeEditor',
-    jest: 'scenePreviewCameraNodeEditor.test.tsx',
+    componentSubtitle: 'GltfNodeEditor',
+    jest: 'gltfNodeEditor.test.tsx',
     design: {
       type: 'figma',
       url: ''
@@ -44,10 +43,10 @@ export default {
   },
   argTypes
 }
-
 const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
-  getMutableState(ReferenceSpaceState).viewerEntity.set(entity)
+  setComponent(entity, GLTFComponent)
+
   useEffect(() => {
     return () => {
       removeEntity(entity)

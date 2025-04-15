@@ -23,20 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import React, { useEffect } from 'react'
 import Component from './index'
 
 const argTypes = {}
 
 export default {
-  title: 'Editor/Properties/Scene/PreviewCamera',
+  title: 'Editor/Properties/Scene/Settings',
   component: Component,
   parameters: {
-    componentSubtitle: 'ScenePreviewCameraNodeEditor',
-    jest: 'scenePreviewCameraNodeEditor.test.tsx',
+    componentSubtitle: 'SceneSettingsNodeEditor',
+    jest: 'sceneSettingsNodeEditor.test.tsx',
     design: {
       type: 'figma',
       url: ''
@@ -47,7 +46,8 @@ export default {
 
 const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
-  getMutableState(ReferenceSpaceState).viewerEntity.set(entity)
+  setComponent(entity, SceneSettingsComponent)
+
   useEffect(() => {
     return () => {
       removeEntity(entity)

@@ -23,12 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/components/LegacyVolumetricComponent'
+import React, { useEffect } from 'react'
 import Component from './index'
 
 const argTypes = {}
 
 export default {
-  title: 'Editor/Properties/Volumetric',
+  title: 'Editor/Properties/Volumetric/Legacy',
   component: Component,
   parameters: {
     componentSubtitle: 'VolumetricNodeEditor',
@@ -40,4 +43,18 @@ export default {
   },
   argTypes
 }
-export const Default = { args: {} }
+
+const ComponentNodeEditorRenderer = () => {
+  const entity = createEntity()
+  setComponent(entity, LegacyVolumetricComponent)
+
+  useEffect(() => {
+    return () => {
+      removeEntity(entity)
+    }
+  }, [])
+
+  return <Component entity={entity} />
+}
+
+export const Default = { args: {}, render: ComponentNodeEditorRenderer }

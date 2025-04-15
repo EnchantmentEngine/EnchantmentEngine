@@ -24,19 +24,17 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { createEntity, removeEntity } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
 import Component from './index'
 
 const argTypes = {}
 
 export default {
-  title: 'Editor/Properties/Scene/PreviewCamera',
+  title: 'Editor/Properties/Grab',
   component: Component,
   parameters: {
-    componentSubtitle: 'ScenePreviewCameraNodeEditor',
-    jest: 'scenePreviewCameraNodeEditor.test.tsx',
+    componentSubtitle: 'GrabNodeEditor',
+    jest: 'grabNodeEditor.test.tsx',
     design: {
       type: 'figma',
       url: ''
@@ -47,7 +45,7 @@ export default {
 
 const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
-  getMutableState(ReferenceSpaceState).viewerEntity.set(entity)
+
   useEffect(() => {
     return () => {
       removeEntity(entity)

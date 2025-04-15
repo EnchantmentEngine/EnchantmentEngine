@@ -23,6 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { createEntity, LayerComponents, Layers, removeEntity, setComponent } from '@ir-engine/ecs'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import React, { useEffect } from 'react'
 import Component from './index'
 
 const argTypes = {}
@@ -40,4 +43,18 @@ export default {
   },
   argTypes
 }
-export const Default = { args: {} }
+
+const ComponentNodeEditorRenderer = () => {
+  const entity = createEntity()
+  setComponent(entity, ColliderComponent)
+  setComponent(entity, LayerComponents[Layers.Authoring])
+  useEffect(() => {
+    return () => {
+      removeEntity(entity)
+    }
+  }, [])
+
+  return <Component entity={entity} />
+}
+
+export const Default = { args: {}, render: ComponentNodeEditorRenderer }
