@@ -165,7 +165,7 @@ packages/server/upload_test/
 project-package-jsons/*
 
 feathers/*
-./packages/ui/build/*
+packages/ui/build/*
 /packages/ui/tests/jest-test-results.json
 packages/ui/tests/jest-test-results.json
 
