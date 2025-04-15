@@ -43,7 +43,7 @@ export default function BlockSlider({
   return (
     <>
       <div className="flex items-center gap-x-4 lg:hidden">
-        <span className="flex text-right text-sm text-text-tertiary">
+        <span className="w-52 text-right text-sm text-text-tertiary" data-testid="slider-label">
           {label}
           {info && (
             <Tooltip content={info}>
