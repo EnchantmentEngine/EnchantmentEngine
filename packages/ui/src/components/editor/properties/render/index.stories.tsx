@@ -23,8 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
-import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
+import { createEntity, removeEntity } from '@ir-engine/ecs'
 import React, { useEffect } from 'react'
 import Component from './index'
 
@@ -46,7 +45,7 @@ export default {
 
 const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
-  setComponent(entity, RenderSettingsComponent)
+  //setComponent(entity, RenderSettingsComponent)
 
   useEffect(() => {
     return () => {

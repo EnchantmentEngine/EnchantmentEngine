@@ -24,15 +24,14 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useQuery } from '@ir-engine/ecs'
-import { getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { NodeFunctions } from '@ir-engine/engine/src/gltf/NodeFunctions'
-import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { NodeID } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { DirectionalLightComponent } from '@ir-engine/spatial'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Checkbox } from '@ir-engine/ui'
 import { Slider } from '@ir-engine/ui/editor'
 import React, { useEffect } from 'react'
@@ -109,7 +108,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
   const rendererSettingsState = useComponent(entity, RenderSettingsComponent)
 
   const query = useQuery([DirectionalLightComponent, SourceComponent])
-
+  /*
   const directionalLightOptions = [
     {
       label: 'None',
@@ -122,7 +121,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         value: getComponent(entity, NodeIDComponent)
       }
     })
-  )
+  )*/
 
   useEffect(() => {
     if (!NodeFunctions.getEntityFromNodeID(entity, rendererSettingsState.primaryLight.value)) {
@@ -145,11 +144,12 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         label={t('editor:properties.renderSettings.lbl-primaryLight')}
         info={t('editor:properties.renderSettings.info-primaryLight')}
       >
-        <SelectInput
+        {<></>}
+        {/*<SelectInput
           options={directionalLightOptions}
           value={rendererSettingsState.primaryLight.value}
           onChange={commitProperty(RenderSettingsComponent, 'primaryLight')}
-        />
+        />*/}
       </InputGroup>
       <InputGroup
         name="Use Cascading Shadow Maps"

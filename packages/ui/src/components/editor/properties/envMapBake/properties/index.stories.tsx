@@ -25,10 +25,17 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { createEntity, getComponent, removeEntity, setComponent } from '@ir-engine/ecs'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
+import { ArgTypes } from '@storybook/react'
 import React, { useEffect } from 'react'
+import { BakePropertyTypes } from '..'
 import Component from './index'
 
-const argTypes = {}
+const argTypes: ArgTypes = {
+  bakePropertyTypes: {
+    control: { type: 'select' },
+    options: ['Boolean', 'BakeType', 'RefreshMode', 'Resolution', 'Vector']
+  }
+}
 
 export default {
   title: 'Editor/Properties/EnvMapBake/Properties',
@@ -44,7 +51,8 @@ export default {
   argTypes
 }
 
-const ComponentNodeEditorRenderer = () => {
+const ComponentNodeEditorRenderer = (args) => {
+  console.log('args', args)
   const entity = createEntity()
   setComponent(entity, EnvMapBakeComponent)
   const bakeComponent = getComponent(entity, EnvMapBakeComponent)
@@ -55,7 +63,32 @@ const ComponentNodeEditorRenderer = () => {
     }
   }, [])
 
-  return <Component entity={entity} bakeComponent={bakeComponent} element={undefined} />
+  let bakeProperty
+  switch (args.bakePropertyTypes) {
+    case 'Boolean':
+      bakeProperty = BakePropertyTypes.Boolean
+      break
+    case 'BakeType':
+      bakeProperty = BakePropertyTypes.BakeType
+      break
+    case 'RefreshMode':
+      bakeProperty = BakePropertyTypes.RefreshMode
+      break
+    case 'Resolution':
+      bakeProperty = BakePropertyTypes.Resolution
+      break
+    case 'Vector':
+      bakeProperty = BakePropertyTypes.Vector
+      break
+  }
+  const element = { type: bakeProperty, label: 'test', propertyName: 'test-property-name' }
+
+  return <Component entity={entity} bakeComponent={bakeComponent} element={element} />
 }
 
-export const Default = { args: {}, render: ComponentNodeEditorRenderer }
+export const Default = {
+  render: ComponentNodeEditorRenderer,
+  args: {
+    bakePropertyTypes: 'Boolean'
+  }
+}

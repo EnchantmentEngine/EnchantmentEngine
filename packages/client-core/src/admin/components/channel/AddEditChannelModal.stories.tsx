@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { ChannelType } from '@ir-engine/common/src/schemas/social/channel.schema'
 import AddEditChannelModal from './AddEditChannelModal'
 
-const argtypes = {
+const argTypes = {
   'channel.name': {
     control: 'text',
     description: 'Name of the channel'
@@ -56,7 +56,7 @@ export default {
       url: ''
     }
   },
-  argtypes
+  argTypes
 }
 
 export const Default = {
