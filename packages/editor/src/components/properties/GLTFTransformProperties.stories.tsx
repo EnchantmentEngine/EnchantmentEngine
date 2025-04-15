@@ -23,6 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { useHookstate } from '@ir-engine/hyperflux'
+import React from 'react'
 import GLTFTransformProperties from './GLTFTransformProperties'
 
 export default {
@@ -37,6 +40,69 @@ export default {
   }
 }
 
+const defaultModelTransformParameters: ModelTransformParameters = {
+  flipY: false,
+  linear: false,
+  mipmap: false,
+  maxTextureSize: 2048,
+  textureFormat: 'default',
+  textureCompressionType: 'etc1',
+  textureCompressionQuality: 75,
+  uastcLevel: 2,
+  compLevel: 6,
+  maxCodebooks: false,
+  dst: '',
+  resourceUri: '',
+  split: false,
+  combineMaterials: false,
+  instance: false,
+  dedup: false,
+  flatten: false,
+  join: {
+    enabled: false,
+    options: {
+      // Populate with default values for JoinOptions
+    }
+  },
+  palette: {
+    enabled: false,
+    options: {
+      // Populate with default values for PaletteOptions
+    }
+  },
+  prune: false,
+  reorder: false,
+  resample: false,
+  weld: {
+    enabled: false
+  },
+  meshoptCompression: {
+    enabled: false
+  },
+  dracoCompression: {
+    enabled: false,
+    options: {
+      // Populate with default values for DracoOptions
+    }
+  },
+  simplifyRatio: 1.0,
+  simplifyErrorThreshold: 0.01,
+  modelFormat: 'glb',
+  resources: {
+    geometries: [],
+    images: []
+  }
+}
+
+const GLTFTransformPropertiesRenderer = (args) => {
+  const dummyTransformParams = useHookstate<ModelTransformParameters>(args.transformParms)
+  return <GLTFTransformProperties transformParms={dummyTransformParams} itemCount={args.itemCount} />
+}
+
 export const Default = {
-  args: {}
+  args: {
+    transformParms: defaultModelTransformParameters,
+    itemCount: 0
+  },
+  render: GLTFTransformPropertiesRenderer
 }
