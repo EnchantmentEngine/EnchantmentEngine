@@ -22,7 +22,8 @@
     "build-storybook": "storybook build",
     "prebuild:storybook": "npm run test:generate-output",
     "build:storybook": "storybook build -c .storybook -o build/",
-    "predeploy": "npm run build:storybook"
+    "predeploy": "npm run build:storybook",
+    "test": "exit 0"
   },
   "resolutions": {
     "@types/react": "18.2.0",
