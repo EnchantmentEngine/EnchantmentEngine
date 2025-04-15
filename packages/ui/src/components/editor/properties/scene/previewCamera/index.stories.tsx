@@ -24,8 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { createEntity, removeEntity } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
 import Component from './index'
 
@@ -47,7 +45,6 @@ export default {
 
 const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
-  getMutableState(ReferenceSpaceState).viewerEntity.set(entity)
   useEffect(() => {
     return () => {
       removeEntity(entity)
