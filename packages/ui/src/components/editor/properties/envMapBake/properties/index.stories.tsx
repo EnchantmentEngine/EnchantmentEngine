@@ -38,6 +38,7 @@ export default {
       url: ''
     }
   },
-  argTypes
+  argTypes,
+  chromatic: { disable: true }
 }
 export const Default = { args: {} }
