@@ -568,6 +568,21 @@ describe('DeserializeSchemaValue', () => {
 
       expect(result).toBe(Expected)
     })
+
+    it('should return a new array with the deserialized values of `@param value`, if `@param curr` is not an array', () => {
+      const Expected = [40, 41, 42, 43, 44]
+
+      const properties = { [Kind]: 'Number' } as TArraySchema<Schema>['properties']
+      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+
+      // This occurs in the case that the array is optional
+      const curr = null
+      const value = Expected
+
+      const result = DeserializeSchemaValue(testEntity, schema, curr, value)!
+
+      expect(result).toEqual(Expected)
+    })
   }) //:: Kind.Array
 
   describe('case: Kind.Tuple', () => {

@@ -57,8 +57,9 @@ export const VideoTriggerComponent = defineComponent({
   }),
 
   onSet: (simulationEntity, c, json) => {
+    if (!json) return
+
     const entity = getAuthoringCounterpart(simulationEntity) || simulationEntity
-    const component = getComponent(entity, VideoTriggerComponent)
 
     deserializeComponent(entity, TriggerCallbackComponent, {
       triggers: [
@@ -86,15 +87,15 @@ export const VideoTriggerComponent = defineComponent({
             {
               type: 'callback',
               callback: StandardCallbacks.PLAY,
-              nodeID: component.mediaEntityUUID,
-              parameters: [component.resetEnter ? true : false] // reset
+              nodeID: json.mediaEntityUUID ?? ('' as NodeID),
+              parameters: [json.resetEnter ? true : false] // reset
             },
             {
               type: 'transition',
-              nodeID: component.mediaEntityUUID,
+              nodeID: json.mediaEntityUUID ?? ('' as NodeID),
               jsonID: MediaComponent.jsonID,
               propertyPath: 'volume',
-              value: component.targetAudioVolume,
+              value: json.targetAudioVolume ?? 1,
               duration: 1000,
               easing: Easing.exponential.in.path
             }
@@ -113,7 +114,7 @@ export const VideoTriggerComponent = defineComponent({
           effects: [
             {
               type: 'transition',
-              nodeID: component.mediaEntityUUID,
+              nodeID: json.mediaEntityUUID ?? ('' as NodeID),
               jsonID: MediaComponent.jsonID,
               propertyPath: 'volume',
               value: 0,
@@ -123,7 +124,7 @@ export const VideoTriggerComponent = defineComponent({
             {
               type: 'callback',
               callback: StandardCallbacks.PAUSE,
-              nodeID: component.mediaEntityUUID,
+              nodeID: json.mediaEntityUUID ?? ('' as NodeID),
               parameters: []
             }
           ],

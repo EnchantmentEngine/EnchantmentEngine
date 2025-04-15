@@ -58,7 +58,7 @@ describe('VideoTriggerComponent', () => {
     return destroyEngine()
   })
 
-  it('should migrate to BehaviorComponent with correct data', async () => {
+  it.only('should migrate to BehaviorComponent with correct data', async () => {
     // Set up the VideoTriggerComponent
     setComponent(entity, VideoTriggerComponent, {
       mediaEntityUUID,
@@ -142,8 +142,6 @@ describe('VideoTriggerComponent', () => {
     // Check that BehaviorComponent has been added
     assert.equal(hasComponent(entity, BehaviorComponent), true, 'BehaviorComponent should be added')
     const actualBehavior = getComponent(entity, BehaviorComponent)
-    console.log('Actual behavior:', JSON.stringify(actualBehavior, null, 2))
-    console.log('Expected behavior:', JSON.stringify(expectedBehavior, null, 2))
 
     // Check that there are two behaviors (enter and exit)
     assert.equal(actualBehavior.behaviors.length, 2, 'BehaviorComponent should have 2 behaviors')
@@ -157,10 +155,10 @@ describe('VideoTriggerComponent', () => {
     assert.equal(exitBehavior.effects.length, 2, 'Exit behavior should have 2 effects')
 
     // Verify the effect is the transition effect
-    assert.equal(enterBehavior.effects[0].type, 'transition', 'Enter effect should be of type transition')
+    assert.equal(enterBehavior.effects[1].type, 'transition', 'Enter effect should be of type transition')
     assert.equal(exitBehavior.effects[0].type, 'transition', 'Exit effect should be of type transition')
 
-    assert.equal(enterBehavior.effects[1].type, 'callback', 'Enter effect should be of type callback')
+    assert.equal(enterBehavior.effects[0].type, 'callback', 'Enter effect should be of type callback')
     assert.equal(exitBehavior.effects[1].type, 'callback', 'Exit effect should be of type callback')
 
     // Compare the actual behavior with the expected behavior

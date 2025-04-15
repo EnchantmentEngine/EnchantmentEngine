@@ -67,7 +67,7 @@ const CreateObject = (entity: Entity, props?: TProperties) => {
 }
 
 const validValue = (value) => {
-  return value !== undefined && value !== null
+  return value !== undefined && value !== null /* @todo get rid of null here if possible */
 }
 
 const IterateSchema = <T extends Schema>(schema: T, pred: (curr: T) => boolean): boolean => {
@@ -148,7 +148,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       const props = arraySchema.properties
       if (!props || !isSerializable(props)) return curr
 
-      const _curr = curr as Array<any>
+      const _curr = (curr as Array<any>) ?? []
       const currentLength = _curr.length
       if (currentLength < value.length) {
         for (let i = currentLength; i < value.length; i++) {
@@ -157,10 +157,10 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       }
       try {
         return value
-          .map((item, i) => DeserializeSchemaValue(entity, props, curr[i], item))
+          .map((item, i) => DeserializeSchemaValue(entity, props, _curr[i], item))
           .filter((item) => validValue(item)) as Val
       } catch (e) {
-        console.log(e)
+        console.error('Failed to deserialize array', e)
         return curr
       }
     }
@@ -196,57 +196,15 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       const props = schema.properties as TUnionSchema<Schema[]>['properties']
       if (!props.length) return undefined
 
-      // For arrays, we need to handle each element individually
-      if (Array.isArray(value) && Array.isArray(curr)) {
-        // Make sure curr has enough elements
-        while (curr.length < value.length) {
-          curr.push(undefined)
-        }
-
-        // Process each element in the array
-        for (let i = 0; i < value.length; i++) {
-          let elementProcessed = false
-
-          // Try each schema for this element
-          for (const unionSchema of props) {
-            try {
-              if (CheckSchemaValue(unionSchema, value[i])) {
-                const deserializedValue = DeserializeSchemaValue(entity, unionSchema, curr[i], value[i])
-                if (validValue(deserializedValue)) {
-                  curr[i] = deserializedValue
-                  elementProcessed = true
-                  break
-                }
-              }
-            } catch (e) {
-              // Continue to the next schema if this one fails
-              continue
-            }
-          }
-
-          // If no schema matched for this element, set it to undefined so it can be filtered out
-          if (!elementProcessed) {
-            curr[i] = undefined
-          }
-        }
-
-        return curr as Val
-      }
-
       // For non-array values, try each schema
       for (const unionSchema of props) {
-        try {
-          // First check if the value is valid for this schema
-          if (CheckSchemaValue(unionSchema, value)) {
-            // If valid, deserialize using this schema
-            const deserializedValue = DeserializeSchemaValue(entity, unionSchema, curr, value)
-            if (validValue(deserializedValue)) {
-              return deserializedValue
-            }
+        // First check if the value is valid for this schema
+        if (CheckSchemaValue(unionSchema, value)) {
+          // If valid, deserialize using this schema
+          const deserializedValue = DeserializeSchemaValue(entity, unionSchema, curr, value)
+          if (validValue(deserializedValue)) {
+            return deserializedValue
           }
-        } catch (e) {
-          // Continue to the next schema if this one fails
-          continue
         }
       }
 
