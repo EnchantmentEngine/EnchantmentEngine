@@ -32,6 +32,7 @@
     "predeploy": "npm run build:storybook",
     "deploy": "gh-pages -d build/",
     "storybook": "./scripts/start-storybook.sh",
+    "chromatic": "chromatic --exit-zero-on-changes",
     "build-storybook": "storybook build",
     "copy-icona": "./scripts/copy-icona-json.sh",
     "build-icons": "npx tsx scripts/build-icons.ts"
