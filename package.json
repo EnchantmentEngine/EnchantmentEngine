@@ -92,7 +92,8 @@
     "record-build-error": "ts-node --swc scripts/record-build-error.ts",
     "record-build-success": "ts-node --swc scripts/record-build-success.ts",
     "add-license-headers": "ts-node --swc scripts/add-license-headers.ts",
-    "storybook": "cd packages/ui && npm run storybook"
+    "storybook": "cd packages/ui && npm run storybook",
+    "build:storybook": "cd packages/ui && npm run build:storybook"
   },
   "types": "lib/",
   "pre-commit": [
