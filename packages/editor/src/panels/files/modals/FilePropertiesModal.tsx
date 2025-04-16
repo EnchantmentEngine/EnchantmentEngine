@@ -23,7 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
+import {
+  FileThumbnailJobState,
+  uploadThumbnail
+} from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import { API, useFind } from '@ir-engine/common'
@@ -34,7 +37,18 @@ import {
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { NO_PROXY, State, getMutableState, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getComponent } from '@ir-engine/ecs'
+import {
+  NO_PROXY,
+  State,
+  getMutableState,
+  getState,
+  startReactor,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -43,6 +57,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiPencil, HiPlus, HiXMark } from 'react-icons/hi2'
 import { RiSave2Line } from 'react-icons/ri'
+import { takeScreenshot } from '../../../functions/takeScreenshot'
 import { FilesState, SelectedFilesState } from '../../../services/FilesState'
 import { createFileDigest, createStaticResourceDigest } from '../helpers'
 import FilePropertiesSaveConfirmationModal from './FilePropertiesSaveConfirmationModal'
@@ -84,7 +99,7 @@ export default function FilePropertiesModal() {
     }
   }
 
-  const handleRegenerateThumbnail = () => {
+  const handleRegenerateThumbnailFromModel = () => {
     for (const resource of fileStaticResources.value) {
       getMutableState(FileThumbnailJobState).jobs.merge([
         {
@@ -92,6 +107,17 @@ export default function FilePropertiesModal() {
           project: resource.project!
         }
       ])
+    }
+  }
+
+  const handleRegenerateThumbnailFromScene = async () => {
+    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
+    const camera = getComponent(cameraEntity, CameraComponent)
+    const thumbnailBlob = await takeScreenshot(camera, cameraEntity, 256, 256, 0.9, 'png')
+    if (!thumbnailBlob) return
+
+    for (const resource of fileStaticResources.value) {
+      uploadThumbnail(resource.url, resource.project!, thumbnailBlob)
     }
   }
 
@@ -246,14 +272,22 @@ export default function FilePropertiesModal() {
           />
         )}
         <Button
-          title={t('editor:layout.filebrowser.fileProperties.regenerateThumbnail')}
+          title={t('editor:layout.filebrowser.fileProperties.regenerateThumbnailFromModel')}
           data-testid="files-panel-file-item-properties-regenerate-thumbnail-button"
-          onClick={handleRegenerateThumbnail}
+          onClick={handleRegenerateThumbnailFromModel}
           className="mt-2 text-xs"
         >
-          {t('editor:layout.filebrowser.fileProperties.regenerateThumbnail')}
+          {t('editor:layout.filebrowser.fileProperties.regenerateThumbnailFromModel')}
         </Button>
-        <div className="mt-1 rounded-md px-4 py-1 text-base">
+        <Button
+          title={t('editor:layout.filebrowser.fileProperties.regenerateThumbnailFromScene')}
+          data-testid="files-panel-file-item-properties-regenerate-thumbnail-button"
+          onClick={handleRegenerateThumbnailFromScene}
+          className="mt-2 text-xs"
+        >
+          {t('editor:layout.filebrowser.fileProperties.regenerateThumbnailFromScene')}
+        </Button>
+        <div className="mt-1 rounded-md bg-ui-primary px-4 py-1 text-base">
           {/* Use a label to trigger the file input click, no ref needed */}
           <label className="mt-1 cursor-pointer text-xs">
             <input

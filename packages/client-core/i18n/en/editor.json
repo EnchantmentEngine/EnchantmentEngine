@@ -1379,7 +1379,8 @@
       "fileProperties": {
         "header": "Info for {{fileName}}",
         "header-plural": "Info for {{itemCount}} Items",
-        "regenerateThumbnail": "Regenerate Thumbnail",
+        "regenerateThumbnailFromModel": "Regenerate Thumbnail from Model",
+        "regenerateThumbnailFromScene": "Regenerate Thumbnail from Scene",
         "name": "Name",
         "fileName": "File Name",
         "type": "Type",
