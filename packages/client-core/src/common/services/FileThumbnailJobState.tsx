@@ -129,7 +129,6 @@ export const uploadThumbnail = async (src: string, projectName: string, blob: Bl
   const thumbnailKey = generateThumbnailKey(src, projectName)
   const mimetype = mime.lookup(thumbnailKey) || 'application/octet-stream'
   const file = new File([blob], thumbnailKey, { type: mimetype })
-  console.log('Uploading thumbnail: ', file, thumbnailKey, ' for ', src)
   try {
     const thumbnailURL = new URL(
       await uploadToFeathersService(fileBrowserUploadPath, [file], {
@@ -168,7 +167,6 @@ export const uploadThumbnail = async (src: string, projectName: string, blob: Bl
               .service(staticResourcePath)
               .patch(staticResourceId, { thumbnailKey: _thumbnailKey, thumbnailMode, project: projectName })
           }
-          console.log('Updating thumbnail key for static resource: ', staticResourceId, fileKeyKey)
           updateThumbnailKey(staticResourceId)
         } else {
           console.error('static Resource not found for key - ', fileKeyKey)
@@ -377,7 +375,6 @@ const renderThumbnail = (
   cameraEntity: Entity,
   props: RenderThumbnailProps
 ) => {
-  console.log('Rendering thumbnail for: ', props)
   const { src, project, onError } = props
 
   tryCatch(() => {
@@ -400,7 +397,6 @@ const renderThumbnail = (
       tryCatch(
         () =>
           uploadThumbnail(src, project, blob).then(() => {
-            console.log('Thumbnail uploaded successfully', src)
             FileThumbnailJobState.removeCurrentJob()
           }),
         (err) => {
@@ -454,7 +450,6 @@ const RenderImageThumbnail = (props: RenderThumbnailProps) => {
 }
 
 const RenderModelThumbnail = (props: RenderThumbnailProps) => {
-  console.log('Rendering model thumbnail: ', props)
   const { src, onError } = props
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
@@ -578,7 +573,6 @@ const ThumbnailJobReactor = () => {
   const jobState = useHookstate(getMutableState(FileThumbnailJobState))
   const currentJob = useHookstate(null as ThumbnailJob | null)
   const { key: src, project } = currentJob.value ?? { key: '', project: '', id: '' }
-  console.log('ThumbnailJobReactor Rendering thumbnail for: ', src, project)
   const strippedSrc = stripSearchFromURL(src)
   let extension = strippedSrc
   if (strippedSrc.endsWith('.material.gltf')) {
