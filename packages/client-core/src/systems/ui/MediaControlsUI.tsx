@@ -28,13 +28,13 @@ import React from 'react'
 import { getMutableComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
+import { createXRUI, XRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { PauseCircleLg, PlayLg } from '@ir-engine/ui/src/icons'
 
-export function createMediaControlsView(entity: Entity) {
+export function createMediaControlsView(entity: Entity): XRUI<null> {
   const MediaControls = () => <MediaControlsView entity={entity} />
   const videoTransform = getOptionalComponent(entity, TransformComponent)
   const scaleX = videoTransform?.scale.x ?? 1

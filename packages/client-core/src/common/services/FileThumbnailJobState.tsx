@@ -87,7 +87,7 @@ const getFilename = (url) => {
   return path.substring(path.lastIndexOf('/') + 1) // Get the filename after the last "/"
 }
 
-export function generateThumbnailKey(src: string, projectName: string) {
+export function generateThumbnailKey(src: string, projectName: string): string {
   const uniqueFileName = `${projectName}-${getFilename(src)}-${Date.now()}`
   const encoder = new TextEncoder()
   const buffer = encoder.encode(uniqueFileName)
