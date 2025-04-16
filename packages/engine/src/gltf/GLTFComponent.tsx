@@ -121,23 +121,21 @@ export const GLTFComponent = defineComponent({
   },
 
   getInstanceID: (entity: Entity) => {
-    if (!hasComponent(entity, GLTFComponent))
-      return getOptionalComponent(entity, SourceComponent) ?? ([''] as SourceID[])
     const uuid = getOptionalComponent(entity, UUIDComponent)
-    const src = getOptionalComponent(entity, GLTFComponent)?.src
-    if (!uuid || !src) return [''] as SourceID[]
-    return uuid as unknown as SourceID[]
-    //return SourceComponent.getSourceID(uuid, src)
+    const nodeID = getOptionalComponent(entity, NodeIDComponent)
+    if (!uuid) return '' as SourceID
+    if (!nodeID) return uuid?.instanceID as SourceID
+    return SourceComponent.getSourceID(uuid.instanceID, nodeID) as SourceID
   },
 
   useInstanceID: (entity: Entity) => {
     const uuid = useOptionalComponent(entity, UUIDComponent)?.value
-    const src = useOptionalComponent(entity, GLTFComponent)?.src.value
-    const source = useOptionalComponent(entity, SourceComponent)?.value
-    if (!uuid?.length || !src) return source ?? ('' as SourceID)
-    return uuid as unknown as SourceID[]
-    //return SourceComponent.getSourceID(uuid, src)
+    const nodeID = useOptionalComponent(entity, NodeIDComponent)?.value
+    if (!uuid) return '' as SourceID
+    if (!nodeID) return uuid?.instanceID as SourceID
+    return SourceComponent.getSourceID(uuid.instanceID, nodeID) as SourceID
   },
+
   removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
     return url.replaceAll(/\?hash=[^-]+/g, '') as T
   }
@@ -178,7 +176,7 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as NodeID
       const sourceID = GLTFComponent.getInstanceID(entity)
-      const uuid = NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID).toString()
+      const uuid = UUIDComponent.getUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -211,7 +209,7 @@ export const GLTFComponentReactor = () => {
     if (!sceneLoaded) return
 
     const occlusion = gltfComponent.cameraOcclusion.value
-    const entities = SourceComponent.getEntitiesBySource(GLTFComponent.getInstanceID(entity))
+    const entities = SourceComponent.getEntitiesBySource(entity)
 
     if (!occlusion) {
       ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
@@ -231,7 +229,7 @@ export const GLTFComponentReactor = () => {
   const sourceID = GLTFComponent.getInstanceID(entity)
 
   useEffect(() => {
-    const stringSourceID = sourceID.toString()
+    const stringSourceID = sourceID
     getMutableState(AssetState)[stringSourceID].set(entity)
     return () => {
       getMutableState(AssetState)[stringSourceID].set(none)
@@ -251,7 +249,7 @@ export const GLTFComponentReactor = () => {
 
     const layer = LayerComponent.get(entity)
     const unloadEntities = () => {
-      const loadedEntities = SourceComponent.getEntitiesBySource(sourceID, layer)
+      const loadedEntities = SourceComponent.getEntitiesBySource(entity, layer)
       for (const entity of loadedEntities) removeEntity(entity)
     }
 
@@ -285,6 +283,7 @@ export const GLTFComponentReactor = () => {
   }, [sceneLoaded, !!scene])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
+
   return (
     <>
       <ResourceReactor documentID={sourceID} entity={entity} documentLoaded={documentLoaded.value} />
@@ -295,7 +294,7 @@ export const GLTFComponentReactor = () => {
   )
 }
 
-const ResourceReactor = (props: { documentID: string[]; entity: Entity; documentLoaded: boolean }) => {
+const ResourceReactor = (props: { documentID: SourceID; entity: Entity; documentLoaded: boolean }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
   const resourceQuery = useQuery([SourceComponent, ResourcePendingComponent])
 
@@ -305,7 +304,7 @@ const ResourceReactor = (props: { documentID: string[]; entity: Entity; document
   useEffect(() => {
     if (!hasComponent(props.entity, GLTFComponent) || !props.documentLoaded) return
     if (getComponent(props.entity, GLTFComponent).progress === 100) return
-    const entities = resourceQuery.filter((e) => getComponent(e, SourceComponent) === props.documentID)
+    const entities = resourceQuery.filter((e) => getComponent(e, SourceComponent) === props.entity)
     if (!entities.length) {
       if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)
       return
@@ -344,7 +343,7 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 
   const removeGLTFDependency = () => {
     const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    const uuid = getComponent(entity, UUIDComponent).toString()
+    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
     ;(gltfComponent.dependencies as State<ComponentDependencies>).componentDependencies.set((prev) => {
       const dependencyArr = prev![uuid] as Component[]
       if (!dependencyArr) return prev
@@ -363,7 +362,6 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
       if (!dep.eval(compValue[dep.key])) return
     }
 
-    // console.log(`All dependencies loaded for entity: ${entity} on component: ${component.jsonID}`)
     removeGLTFDependency()
   }, [...dependencies.map((dep) => comp[dep.key])])
 
@@ -381,10 +379,9 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
   return null
 }
 
-const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: string; components: Component[] }) => {
+const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: EntityUUID; components: Component[] }) => {
   const { gltfComponentEntity, uuid, components } = props
   const layer = LayerComponent.get(gltfComponentEntity)
-  console.log('dependency entry reactor', uuid, components)
   const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID, layer) as Entity | undefined
   const hasComponents = useHasComponents(entity ?? UndefinedEntity, components)
   const dynamicLoad = useHasComponent(entity ?? UndefinedEntity, SceneDynamicLoadComponent)
@@ -424,7 +421,7 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: C
           <DependencyEntryReactor
             key={uuid}
             gltfComponentEntity={gltfComponentEntity}
-            uuid={uuid}
+            uuid={uuid as EntityUUID}
             components={components}
           />
         )
@@ -501,7 +498,6 @@ const useGLTFDocument = (entity: Entity) => {
 
   useEffect(() => {
     if (dynamicLoadAndNotEditing) return
-
     if (!url) {
       addError(entity, GLTFComponent, 'INVALID_SOURCE', 'Invalid URL')
       return
@@ -602,14 +598,12 @@ export const useHasModelOrIndependentMesh = (entity: Entity) => {
 
 export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
   const gltfComponent = getComponent(entity, GLTFComponent)
-  const documentID = GLTFComponent.getInstanceID(entity)
   const document = gltfComponent.document!
   const manager = getState(AssetLoaderState).manager
 
   return {
     entity,
     document,
-    documentID,
     url: gltfComponent.src,
     path: LoaderUtils.extractUrlBase(gltfComponent.src),
     body: gltfComponent.body,

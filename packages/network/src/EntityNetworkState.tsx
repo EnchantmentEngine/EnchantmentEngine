@@ -29,7 +29,7 @@ import {
   Engine,
   EntityTreeComponent,
   EntityUUID,
-  EntityUUIDArray,
+  EntityUUIDPair,
   getOptionalComponent,
   removeEntity,
   setComponent,
@@ -60,7 +60,7 @@ export const EntityNetworkState = defineState({
   initial: {} as Record<
     EntityUUID,
     {
-      UUIDArray: EntityUUIDArray
+      UUIDPair: EntityUUIDPair
       parentUUID: EntityUUID
       ownerId: UserID | typeof SceneUser
       ownerPeer: PeerID
@@ -72,7 +72,7 @@ export const EntityNetworkState = defineState({
   receptors: {
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
-        getMutableState(EntityNetworkState)[UUIDComponent.getUUID(action.entityUUIDArray)].merge({
+        getMutableState(EntityNetworkState)[UUIDComponent.getUUID(action.entityUUIDPair)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
@@ -138,7 +138,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     if (!userConnected) return
-    const entity = UUIDComponent.getOrCreateEntityByUUID(state.UUIDArray.value as EntityUUIDArray)
+    const entity = UUIDComponent.getOrCreateEntityByUUID(state.UUIDPair.value)
     return () => {
       removeEntity(entity)
     }

@@ -27,7 +27,8 @@ import {
   createEntity,
   defineComponent,
   Entity,
-  EntityUUIDArray,
+  EntityUUIDPair,
+  getComponent,
   LayerID,
   Layers,
   S,
@@ -88,18 +89,21 @@ export const NodeIDComponent = defineComponent({
     return null
   },
 
-  //todo uuid should be a tuple
-  getUUIDBySourceAndNodeID: (source: SourceID[], nodeID: NodeID) => [...source, nodeID] as unknown as EntityUUIDArray,
+  getUUIDBySourceAndNodeID: (source: string, nodeID: NodeID): EntityUUIDPair => ({ instanceID: source, id: nodeID }),
 
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
    */
-  create: (sourceID: SourceID[], nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
+  create: (sourceID: Entity, nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
     setComponent(entity, NodeIDComponent, nodeID)
     setComponent(entity, SourceComponent, sourceID)
-    setComponent(entity, UUIDComponent, NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
+    setComponent(
+      entity,
+      UUIDComponent,
+      NodeIDComponent.getUUIDBySourceAndNodeID(UUIDComponent.getUUID(getComponent(sourceID, UUIDComponent)), nodeID)
+    )
     return entity
   },
 

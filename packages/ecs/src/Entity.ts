@@ -27,10 +27,10 @@ import { matches, OpaqueType, Validator } from '@ir-engine/hyperflux'
 
 export type Entity = OpaqueType<'entity'> & number
 export type EntityUUID = OpaqueType<'EntityUUID'> & string
-export type EntityUUIDArray = OpaqueType<'EntityUUID'> & Array<string>
+export type EntityUUIDPair = { instanceID: string; id: string }
 
 export const UndefinedEntity = 0 as Entity
 
 export const matchesEntity = matches.number as Validator<unknown, Entity>
 export const matchesEntityUUID = matches.string as Validator<unknown, EntityUUID>
-export const matchesEntityUUIDArray = matches.arrayOf(matches.string) as Validator<unknown, EntityUUIDArray>
+export const matchesEntityUUIDPair = matches.object as Validator<unknown, EntityUUIDPair>

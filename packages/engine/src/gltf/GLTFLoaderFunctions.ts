@@ -110,7 +110,6 @@ import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SourceID } from '../scene/components/SourceComponent'
 import { SceneDeltaEntry, SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
@@ -644,7 +643,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialDef = json.materials![materialIndex]
 
   const nodeID = ('material-' + materialIndex) as NodeID
-  const materialEntity = NodeIDComponent.create(options.documentID, nodeID, layer)
+  const materialEntity = NodeIDComponent.create(entity, nodeID, layer)
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
@@ -1427,7 +1426,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   const layerID = LayerComponent.get(options.entity)
 
   const nodeID = getNodeID(nodeDef, nodeIndex)
-  const nodeEntity = NodeIDComponent.create(options.documentID as any, nodeID, layerID)
+  const nodeEntity = NodeIDComponent.create(options.entity, nodeID, layerID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
 
@@ -1717,7 +1716,6 @@ export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
 
 export type GLTFParserOptions = {
   url: string
-  documentID: SourceID[]
   document: GLTF.IGLTF
   entity: Entity
   body: null | ArrayBuffer

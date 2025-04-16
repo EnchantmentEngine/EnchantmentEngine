@@ -294,7 +294,6 @@ const createObjectFromSceneElement = (
     componentJson.find((comp) => comp.name === NodeIDComponent.jsonID)?.props.uuid ?? generateEntityUUID()
 
   const gltfEntity = getAncestorWithComponents(parentEntity, [GLTFComponent])
-  const sourceID = GLTFComponent.getInstanceID(gltfEntity)
   let name = 'New Object'
   if (requestedName) {
     name = requestedName
@@ -314,7 +313,7 @@ const createObjectFromSceneElement = (
     extensions[VisibleComponent.jsonID] = true
   }
 
-  const entity = NodeIDComponent.create(sourceID, nodeID, Layers.Authoring)
+  const entity = NodeIDComponent.create(gltfEntity, nodeID, Layers.Authoring)
 
   setComponent(entity, NameComponent, name)
 
@@ -335,7 +334,10 @@ const createObjectFromSceneElement = (
 
   EditorState.markModifiedScene(gltfEntity)
 
-  return { entityUUID: getComponent(entity, UUIDComponent), sourceID }
+  return {
+    entityUUID: UUIDComponent.getUUID(getComponent(entity, UUIDComponent)),
+    sourceID: GLTFComponent.getInstanceID(gltfEntity)
+  }
 }
 
 /**
@@ -566,14 +568,8 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    const newSourceID = hasComponent(parent, GLTFComponent)
-      ? GLTFComponent.getInstanceID(parent)
-      : getComponent(parent, SourceComponent)
-    setComponent(entity, SourceComponent, newSourceID)
-    setComponent(
-      entity,
-      UUIDComponent,
-      NodeIDComponent.getUUIDBySourceAndNodeID(newSourceID, getComponent(entity, NodeIDComponent))
+    getMutableComponent(entity, UUIDComponent).instanceID.set(
+      UUIDComponent.getUUID(getComponent(parent, UUIDComponent))
     )
 
     EditorState.markModifiedScene(entity)
@@ -590,8 +586,7 @@ const groupObjects = (entities: Entity[]) => {
   if (hasComponent(firstEntity, SceneComponent)) return
   const parentEntity = getComponent(firstEntity, EntityTreeComponent).parentEntity
   const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent])
-  const sourceID = GLTFComponent.getInstanceID(gltfEntity)
-  const newParent = NodeIDComponent.create(sourceID, NodeIDComponent.generate(), Layers.Authoring)
+  const newParent = NodeIDComponent.create(gltfEntity, NodeIDComponent.generate(), Layers.Authoring)
   setComponent(newParent, NameComponent, 'New Group')
   setComponent(newParent, EntityTreeComponent, { parentEntity })
   setComponent(newParent, VisibleComponent)

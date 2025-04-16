@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { matchesEntityUUID, matchesEntityUUIDArray } from '@ir-engine/ecs'
+import { matchesEntityUUID, matchesEntityUUIDPair } from '@ir-engine/ecs'
 import { defineAction, getState, matchesPeerID, matchesWithDefault } from '@ir-engine/hyperflux'
 
 import { EngineState } from '@ir-engine/ecs'
@@ -33,7 +33,7 @@ import { matchesUserID } from './matchesUserID'
 export class WorldNetworkAction {
   static spawnEntity = defineAction({
     type: 'ee.network.SPAWN_ENTITY',
-    entityUUIDArray: matchesEntityUUIDArray,
+    entityUUIDPair: matchesEntityUUIDPair,
     parentUUID: matchesEntityUUID,
     ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     authorityPeerId: matchesPeerID.optional(),

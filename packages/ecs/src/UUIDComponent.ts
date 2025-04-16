@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { NO_PROXY_STEALTH, State, destroy, hookstate, useHookstate } from '@ir-engine/hyperflux'
 import { v4 as uuidv4 } from 'uuid'
 import { LayerComponent, LayerID, Layers, defineComponent, setComponent } from './ComponentFunctions'
-import { Entity, EntityUUID, EntityUUIDArray, UndefinedEntity } from './Entity'
+import { Entity, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
 import { createEntity } from './EntityFunctions'
 import { S } from './schemas/JSONSchemas'
 
@@ -34,14 +34,18 @@ export const UUIDComponent = defineComponent({
   name: 'UUIDComponent',
 
   schema: S.Required(
-    S.EntityUUIDArray({
-      validate: (idArray, prev, entity) => {
-        if (!idArray?.length) {
-          console.error('UUID cannot be empty')
+    S.EntityUUIDPair({
+      validate: (idPair, prev, entity) => {
+        if (idPair === prev) return true
+        if (!idPair.instanceID) {
+          console.error('UUID context cannot be empty')
           return false
         }
-        if (idArray === prev) return true
-        const uuid = UUIDComponent.getUUID(idArray)
+        if (!idPair.id) {
+          console.error('UUID id cannot be empty')
+          return false
+        }
+        const uuid = UUIDComponent.getUUID(idPair)
         const layer = LayerComponent.get(entity)
         if (!UUIDComponent.entitiesByUUIDState[layer]) {
           UUIDComponent.entitiesByUUIDState[layer] = {}
@@ -59,9 +63,9 @@ export const UUIDComponent = defineComponent({
     })
   ),
 
-  onSet(entity, component, idArray: EntityUUIDArray) {
+  onSet(entity, component, idPair: EntityUUIDPair) {
     const layer = LayerComponent.get(entity)
-    const prev = UUIDComponent.getUUID(component.value as EntityUUIDArray)
+    const prev = UUIDComponent.getUUID(component.value)
     // remove old uuid
     if (prev) {
       const currentUUID = prev
@@ -70,13 +74,14 @@ export const UUIDComponent = defineComponent({
     }
 
     // set new uuid
-    UUIDComponentFunctions._getUUIDState(UUIDComponent.getUUID(idArray) as EntityUUID, layer).set(entity)
+    UUIDComponentFunctions._getUUIDState(UUIDComponent.getUUID(idPair) as EntityUUID, layer).set(entity)
 
-    component.set(idArray)
+    component.set(idPair)
+    console.log('setting component to', idPair, entity)
   },
 
   onRemove: (entity, component) => {
-    const uuid = component.value.toString()
+    const uuid = UUIDComponent.getUUID(component.value)
     const layer = LayerComponent.get(entity)
     destroy(UUIDComponent.entitiesByUUIDState[layer][uuid])
     delete UUIDComponent.entitiesByUUIDState[layer][uuid]
@@ -92,14 +97,14 @@ export const UUIDComponent = defineComponent({
     return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
-  getUUID: (idArray: EntityUUIDArray) => idArray.toString() as EntityUUID,
+  getUUID: (idPair: EntityUUIDPair) => (idPair.instanceID + idPair.id) as EntityUUID,
 
-  getOrCreateEntityByUUID(idArray: EntityUUIDArray, layer = Layers.Simulation as LayerID) {
-    const uuid = UUIDComponent.getUUID(idArray)
+  getOrCreateEntityByUUID(idPair: EntityUUIDPair, layer = Layers.Simulation as LayerID) {
+    const uuid = UUIDComponent.getUUID(idPair)
     const state = UUIDComponentFunctions._getUUIDState(uuid, layer)
     if (!state.value) {
       const entity = createEntity(layer)
-      setComponent(entity, UUIDComponent, idArray)
+      setComponent(entity, UUIDComponent, idPair)
     }
     return state.value
   },
@@ -115,11 +120,11 @@ function _getUUIDState(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
     layerState = {}
     UUIDComponent.entitiesByUUIDState[layer] = layerState
   }
-  const flatUUID = uuid.toString()
-  let entityState = layerState[flatUUID]
+
+  let entityState = layerState[uuid]
   if (!entityState) {
     entityState = hookstate(UndefinedEntity)
-    layerState[flatUUID] = entityState
+    layerState[uuid] = entityState
   }
   return entityState
 }
