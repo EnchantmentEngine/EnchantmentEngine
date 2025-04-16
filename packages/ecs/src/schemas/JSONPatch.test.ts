@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,14 +19,64 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { describe, expect, it } from 'vitest'
-import { applyJSONPatch, JSONPatch } from './JSONPatch'
+import { applyJSONPatch, escapePathSegment, JSONPatch, splitPath, unescapePathSegment } from './JSONPatch'
 
 describe('JSONPatch', () => {
+  describe('escapePathSegment', () => {
+    it('should escape ~ as ~0', () => {
+      expect(escapePathSegment('foo~bar')).toBe('foo~0bar')
+    })
+
+    it('should escape / as ~1', () => {
+      expect(escapePathSegment('foo/bar')).toBe('foo~1bar')
+    })
+
+    it('should escape both ~ and /', () => {
+      expect(escapePathSegment('foo~/bar')).toBe('foo~0~1bar')
+    })
+
+    it('should handle empty string', () => {
+      expect(escapePathSegment('')).toBe('')
+    })
+  })
+
+  describe('unescapePathSegment', () => {
+    it('should unescape ~0 as ~', () => {
+      expect(unescapePathSegment('foo~0bar')).toBe('foo~bar')
+    })
+
+    it('should unescape ~1 as /', () => {
+      expect(unescapePathSegment('foo~1bar')).toBe('foo/bar')
+    })
+
+    it('should unescape both ~0 and ~1', () => {
+      expect(unescapePathSegment('foo~0~1bar')).toBe('foo~/bar')
+    })
+
+    it('should handle empty string', () => {
+      expect(unescapePathSegment('')).toBe('')
+    })
+  })
+
+  describe('splitPath', () => {
+    it('should split a path into segments', () => {
+      expect(splitPath('/foo/bar')).toEqual(['foo', 'bar'])
+    })
+
+    it('should unescape segments', () => {
+      expect(splitPath('/foo~1bar/baz~0qux')).toEqual(['foo/bar', 'baz~qux'])
+    })
+
+    it('should handle empty segments', () => {
+      expect(splitPath('/foo//bar')).toEqual(['foo', '', 'bar'])
+    })
+  })
+
   describe('applyJSONPatch', () => {
     it('should apply "add" operation to an object', () => {
       const obj = { foo: 'bar' }
@@ -119,7 +169,7 @@ describe('JSONPatch', () => {
     it('should throw error for invalid path', () => {
       const obj = { foo: 'bar' }
       const patch: JSONPatch = [{ op: 'remove', path: '/baz' }]
-      expect(() => applyJSONPatch(obj, patch)).toThrow('Path baz does not exist')
+      expect(() => applyJSONPatch(obj, patch)).toThrow('Path /baz does not exist')
     })
 
     it('should throw error for "move" operation without "from" field', () => {
@@ -148,6 +198,44 @@ describe('JSONPatch', () => {
       const patch: JSONPatch = [{ op: 'add', path: '/foo/bar/baz', value: 'qux' }]
       const result = applyJSONPatch(obj, patch)
       expect(result).toEqual({ foo: { bar: { baz: 'qux' } } })
+    })
+
+    it('should handle escaped path segments as per RFC 6902 example', () => {
+      // Example from RFC 6902 section 4
+      const obj = {
+        '/': 9,
+        '~1': 10
+      }
+      const patch: JSONPatch = [{ op: 'test', path: '/~01', value: 10 }]
+      const result = applyJSONPatch(obj, patch)
+      // The test should pass and the object should remain unchanged
+      expect(result).toEqual({
+        '/': 9,
+        '~1': 10
+      })
+    })
+
+    it('should handle complex escaped path segments', () => {
+      const obj = {
+        'a/b': { 'c~d': 'value' },
+        'e~f': { 'g/h': 'another value' }
+      }
+
+      // Test accessing a/b -> c~d
+      const patch1: JSONPatch = [{ op: 'test', path: '/a~1b/c~0d', value: 'value' }]
+      expect(applyJSONPatch(obj, patch1)).toEqual(obj)
+
+      // Test accessing e~f -> g/h
+      const patch2: JSONPatch = [{ op: 'test', path: '/e~0f/g~1h', value: 'another value' }]
+      expect(applyJSONPatch(obj, patch2)).toEqual(obj)
+
+      // Test replacing a/b -> c~d
+      const patch3: JSONPatch = [{ op: 'replace', path: '/a~1b/c~0d', value: 'new value' }]
+      const result = applyJSONPatch(obj, patch3)
+      expect(result).toEqual({
+        'a/b': { 'c~d': 'new value' },
+        'e~f': { 'g/h': 'another value' }
+      })
     })
   })
 })

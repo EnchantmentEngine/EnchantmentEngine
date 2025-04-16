@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -98,6 +98,37 @@ export type JSONPatchOperation =
 export type JSONPatch = JSONPatchOperation[]
 
 /**
+ * Unescapes a JSON Pointer path segment by replacing ~1 with / and ~0 with ~
+ * @param segment The path segment to unescape
+ * @returns The unescaped path segment
+ */
+export function unescapePathSegment(segment: string): string {
+  return segment.replace(/~1/g, '/').replace(/~0/g, '~')
+}
+
+/**
+ * Escapes a JSON Pointer path segment by replacing / with ~1 and ~ with ~0
+ * @param segment The path segment to escape
+ * @returns The escaped path segment
+ */
+export function escapePathSegment(segment: string): string {
+  return segment.replace(/~/g, '~0').replace(/\//g, '~1')
+}
+
+/**
+ * Splits a JSON Pointer path into its segments and unescapes each segment
+ * @param path The JSON Pointer path to split
+ * @returns An array of unescaped path segments
+ */
+export function splitPath(path: string): string[] {
+  // Split the path by / and remove the empty string at the beginning
+  const segments = path.split('/').slice(1)
+
+  // Unescape each segment
+  return segments.map(unescapePathSegment)
+}
+
+/**
  * Applies a JSON Patch to an object
  * @param obj The object to patch
  * @param patch The JSON Patch to apply
@@ -109,7 +140,7 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
   const result = JSON.parse(JSON.stringify(obj))
 
   for (const operation of patch) {
-    const pathParts = operation.path.split('/').slice(1) // Remove empty string from split
+    const pathParts = splitPath(operation.path)
 
     switch (operation.op) {
       case 'add': {
@@ -133,7 +164,7 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
           throw new Error('Move operation requires "from" field')
         }
         const moveOp = operation as JSONPatchMoveOperation
-        const fromParts = moveOp.from.split('/').slice(1)
+        const fromParts = splitPath(moveOp.from)
         const valueToMove = getValueAtPath(result, fromParts)
         applyRemove(result, fromParts)
         applyAdd(result, pathParts, valueToMove)
@@ -146,7 +177,7 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
           throw new Error('Copy operation requires "from" field')
         }
         const copyOp = operation as JSONPatchCopyOperation
-        const fromParts = copyOp.from.split('/').slice(1)
+        const fromParts = splitPath(copyOp.from)
         const valueToCopy = getValueAtPath(result, fromParts)
         applyAdd(result, pathParts, JSON.parse(JSON.stringify(valueToCopy)))
         break
@@ -182,7 +213,9 @@ function getValueAtPath(obj: any, pathParts: string[]): any {
   let current = obj
   for (const part of pathParts) {
     if (current === undefined || current[part] === undefined) {
-      throw new Error(`Path ${pathParts.join('/')} does not exist`)
+      // Create a path string for the error message
+      const pathStr = '/' + pathParts.map(escapePathSegment).join('/')
+      throw new Error(`Path ${pathStr} does not exist`)
     }
     current = current[part]
   }
@@ -229,12 +262,18 @@ function applyRemove(obj: any, pathParts: string[]): void {
   let parent = obj
 
   for (const part of parentPath) {
-    if (parent[part] === undefined) throw new Error(`Path ${pathParts.join('/')} does not exist`)
+    if (parent[part] === undefined) {
+      // Create a path string for the error message
+      const pathStr = '/' + pathParts.map(escapePathSegment).join('/')
+      throw new Error(`Path ${pathStr} does not exist`)
+    }
     parent = parent[part]
   }
 
   if (parent[lastPart] === undefined) {
-    throw new Error(`Path ${pathParts.join('/')} does not exist`)
+    // Create a path string for the error message
+    const pathStr = '/' + pathParts.map(escapePathSegment).join('/')
+    throw new Error(`Path ${pathStr} does not exist`)
   }
 
   if (Array.isArray(parent)) {
@@ -258,12 +297,18 @@ function applyReplace(obj: any, pathParts: string[], value: any): void {
   let parent = obj
 
   for (const part of parentPath) {
-    if (parent[part] === undefined) throw new Error(`Path ${pathParts.join('/')} does not exist`)
+    if (parent[part] === undefined) {
+      // Create a path string for the error message
+      const pathStr = '/' + pathParts.map(escapePathSegment).join('/')
+      throw new Error(`Path ${pathStr} does not exist`)
+    }
     parent = parent[part]
   }
 
   if (parent[lastPart] === undefined) {
-    throw new Error(`Path ${pathParts.join('/')} does not exist`)
+    // Create a path string for the error message
+    const pathStr = '/' + pathParts.map(escapePathSegment).join('/')
+    throw new Error(`Path ${pathStr} does not exist`)
   }
 
   parent[lastPart] = value
