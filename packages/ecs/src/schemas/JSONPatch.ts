@@ -144,8 +144,7 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
 
     switch (operation.op) {
       case 'add': {
-        const addOp = operation as JSONPatchAddOperation
-        applyAdd(result, pathParts, addOp.value)
+        applyAdd(result, pathParts, operation.value)
         break
       }
       case 'remove': {
@@ -153,8 +152,7 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
         break
       }
       case 'replace': {
-        const replaceOp = operation as JSONPatchReplaceOperation
-        applyReplace(result, pathParts, replaceOp.value)
+        applyReplace(result, pathParts, operation.value)
         break
       }
       case 'move': {
@@ -163,8 +161,8 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
         if (!('from' in operation)) {
           throw new Error('Move operation requires "from" field')
         }
-        const moveOp = operation as JSONPatchMoveOperation
-        const fromParts = splitPath(moveOp.from)
+
+        const fromParts = splitPath(operation.from)
         const valueToMove = getValueAtPath(result, fromParts)
         applyRemove(result, fromParts)
         applyAdd(result, pathParts, valueToMove)
@@ -176,16 +174,15 @@ export function applyJSONPatch<T>(obj: T, patch: JSONPatch): T {
         if (!('from' in operation)) {
           throw new Error('Copy operation requires "from" field')
         }
-        const copyOp = operation as JSONPatchCopyOperation
-        const fromParts = splitPath(copyOp.from)
+
+        const fromParts = splitPath(operation.from)
         const valueToCopy = getValueAtPath(result, fromParts)
         applyAdd(result, pathParts, JSON.parse(JSON.stringify(valueToCopy)))
         break
       }
       case 'test': {
-        const testOp = operation as JSONPatchTestOperation
         const currentValue = getValueAtPath(result, pathParts)
-        if (JSON.stringify(currentValue) !== JSON.stringify(testOp.value)) {
+        if (JSON.stringify(currentValue) !== JSON.stringify(operation.value)) {
           throw new Error(`Test failed: ${operation.path} does not match expected value`)
         }
         break
