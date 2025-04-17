@@ -77,7 +77,6 @@ export const UUIDComponent = defineComponent({
     UUIDComponentFunctions._getUUIDState(UUIDComponent.getUUID(idPair) as EntityUUID, layer).set(entity)
 
     component.set(idPair)
-    console.log('setting component to', idPair, entity)
   },
 
   onRemove: (entity, component) => {
@@ -97,7 +96,7 @@ export const UUIDComponent = defineComponent({
     return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
-  getUUID: (idPair: EntityUUIDPair) => (idPair.instanceID + idPair.id) as EntityUUID,
+  getUUID: (idPair: EntityUUIDPair) => `${idPair.instanceID}${idPair.id}` as EntityUUID,
 
   getOrCreateEntityByUUID(idPair: EntityUUIDPair, layer = Layers.Simulation as LayerID) {
     const uuid = UUIDComponent.getUUID(idPair)

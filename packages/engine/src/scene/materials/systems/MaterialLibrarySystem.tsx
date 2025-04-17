@@ -29,6 +29,7 @@ import {
   createEntity,
   Entity,
   EntityUUID,
+  EntityUUIDPair,
   getComponent,
   getMutableComponent,
   PresentationSystemGroup,
@@ -72,7 +73,10 @@ const reactor = () => {
       material: fallbackMaterial,
       instances: [UndefinedEntity]
     })
-    setComponent(fallbackMaterialEntity, UUIDComponent, MaterialStateComponent.fallbackMaterialUUID)
+    setComponent(fallbackMaterialEntity, UUIDComponent, {
+      instanceID: MaterialStateComponent.fallbackMaterialUUID,
+      id: 'fallbackMaterial'
+    })
     setComponent(fallbackMaterialEntity, NameComponent, 'Fallback Material')
   }, [])
 
@@ -118,9 +122,11 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
   const shouldMakeBasic =
     (forceBasicMaterials || isMobileXRHeadset) && ExpensiveMaterials.has(materialComponent.material.type)
 
-  const uuid = getComponent(material, UUIDComponent)
-  const basicUuid = ('basic-' + uuid) as EntityUUID
-  const existingMaterialEntity = UUIDComponent.getEntityByUUID(basicUuid)
+  const uuidPair = getComponent(material, UUIDComponent)
+  const uuid = UUIDComponent.getUUID(uuidPair)
+  const basicUuidPair = { instanceID: uuidPair.instanceID, id: uuidPair.id + '-basic' } as EntityUUIDPair
+  const basicUuid = UUIDComponent.getUUID(basicUuidPair)
+  const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(basicUuidPair))
   if (shouldMakeBasic) {
     if (existingMaterialEntity) {
       removeEntity(existingMaterialEntity)
@@ -135,7 +141,6 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     else newBasicMaterial.map = prevMaterial.map
     newBasicMaterial.reflectivity = prevMaterial.metalness
     newBasicMaterial.envMap = prevMaterial.envMap
-    newBasicMaterial.uuid = basicUuid
     newBasicMaterial.alphaTest = prevMaterial.alphaTest
     newBasicMaterial.side = prevMaterial.side
 
@@ -144,7 +149,7 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
       material: newBasicMaterial,
       instances: materialComponent.instances
     })
-    setComponent(newMaterialEntity, UUIDComponent, basicUuid)
+    setComponent(newMaterialEntity, UUIDComponent, basicUuidPair)
     setComponent(newMaterialEntity, NameComponent, 'basic-' + getComponent(material, NameComponent))
     setMaterial(uuid, basicUuid)
   } else if (!forceBasicMaterials) {
@@ -153,7 +158,7 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     const nonBasicUUID = uuid.slice(6) as EntityUUID
     const materialEntity = UUIDComponent.getEntityByUUID(nonBasicUUID)
     if (!materialEntity) return
-    setMaterial(uuid, nonBasicUUID)
+    setMaterial(UUIDComponent.getUUID(uuidPair), nonBasicUUID)
   }
 }
 

@@ -121,19 +121,21 @@ export const GLTFComponent = defineComponent({
   },
 
   getInstanceID: (entity: Entity) => {
-    const uuid = getOptionalComponent(entity, UUIDComponent)
+    const uuidPair = getOptionalComponent(entity, UUIDComponent)
     const nodeID = getOptionalComponent(entity, NodeIDComponent)
-    if (!uuid) return '' as SourceID
-    if (!nodeID) return uuid?.instanceID as SourceID
-    return SourceComponent.getSourceID(uuid.instanceID, nodeID) as SourceID
+    if (!uuidPair) return '' as SourceID
+    const uuid = UUIDComponent.getUUID(uuidPair)
+    if (!nodeID) return uuid as string as SourceID
+    return SourceComponent.getSourceID(uuid, nodeID) as SourceID
   },
 
   useInstanceID: (entity: Entity) => {
-    const uuid = useOptionalComponent(entity, UUIDComponent)?.value
+    const uuidPair = useOptionalComponent(entity, UUIDComponent)?.value
     const nodeID = useOptionalComponent(entity, NodeIDComponent)?.value
-    if (!uuid) return '' as SourceID
-    if (!nodeID) return uuid?.instanceID as SourceID
-    return SourceComponent.getSourceID(uuid.instanceID, nodeID) as SourceID
+    if (!uuidPair) return '' as SourceID
+    const uuid = UUIDComponent.getUUID(uuidPair)
+    if (!nodeID) return uuid as string as SourceID
+    return SourceComponent.getSourceID(uuid, nodeID) as SourceID
   },
 
   removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
@@ -229,10 +231,9 @@ export const GLTFComponentReactor = () => {
   const sourceID = GLTFComponent.getInstanceID(entity)
 
   useEffect(() => {
-    const stringSourceID = sourceID
-    getMutableState(AssetState)[stringSourceID].set(entity)
+    getMutableState(AssetState)[sourceID].set(entity)
     return () => {
-      getMutableState(AssetState)[stringSourceID].set(none)
+      getMutableState(AssetState)[sourceID].set(none)
     }
   }, [gltfComponent.src])
 
