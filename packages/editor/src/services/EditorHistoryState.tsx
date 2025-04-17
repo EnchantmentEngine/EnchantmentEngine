@@ -215,6 +215,8 @@ const SourceReactor = (props: { entity: Entity }) => {
 
     const sourceData = getSourceSnapshot(sourceID)
 
+    console.log('snapshotting', sourceID, sourceData)
+
     dispatchAction(EditorHistoryActions.snapshot({ sourceID, partialState: sourceData }))
   }, [loaded])
 
@@ -340,8 +342,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
 
 export const getSourceSnapshot = (sourceID: SourceID) => {
   const sourceEntities = SourceComponent.getEntitiesBySource(
-    UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID),
-    Layers.Authoring
+    UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
   )
 
   const sourceData = {} as SourceData

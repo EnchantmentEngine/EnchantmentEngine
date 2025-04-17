@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, LayerComponent, LayerID, Layers } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, LayerComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineState, getMutableState, getState, none, OpaqueType, useHookstate } from '@ir-engine/hyperflux'
@@ -37,7 +37,7 @@ export type SourceID = OpaqueType<'SourceID'> & string
 
 export const EntitiesBySourceState = defineState({
   name: 'ir.world.EntitiesBySourceState',
-  initial: {} as Record<LayerID, Record<SourceID, Entity[]>>
+  initial: {} as Record<SourceID, Entity[]>
 })
 
 export const SourceComponent = defineComponent({
@@ -46,7 +46,6 @@ export const SourceComponent = defineComponent({
   schema: S.Required(S.Entity()),
 
   onSet: (entity, component, source: Entity) => {
-    const layer = LayerComponent.get(entity)
     const currentSource = component.value
     if (currentSource) {
       if (currentSource === source) return
@@ -56,8 +55,7 @@ export const SourceComponent = defineComponent({
     }
     component.set(source)
     const state = getMutableState(EntitiesBySourceState)
-    if (!getState(EntitiesBySourceState)[layer]) state[layer].set({})
-    const entitiesBySourceState = state[layer][source]
+    const entitiesBySourceState = state[source]
     if (!entitiesBySourceState.value) {
       entitiesBySourceState.set([entity])
     } else {
@@ -77,13 +75,13 @@ export const SourceComponent = defineComponent({
     }
   },
 
-  useEntitiesBySource: (source: Entity, layer = Layers.Simulation as LayerID) => {
-    const state = useHookstate(getMutableState(EntitiesBySourceState)[layer]).value
+  useEntitiesBySource: (source: Entity) => {
+    const state = useHookstate(EntitiesBySourceState).value
     return state?.[source] || []
   },
 
-  getEntitiesBySource: (source: Entity, layer = Layers.Simulation as LayerID): Entity[] => {
-    return getState(EntitiesBySourceState)[layer]?.[source] || []
+  getEntitiesBySource: (source: Entity): Entity[] => {
+    return getState(EntitiesBySourceState)[source] || []
   },
 
   getSourceID: (context: string, nodeID: NodeID) => `${context}-${nodeID}` as SourceID
