@@ -176,11 +176,15 @@ jobs:
       - run: mv packages_moved/hyperflux packages/
       - run: cd packages/hyperflux && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_hyperflux }}
         with:
           projectBaseDir: packages/hyperflux/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   test_ecs:
     needs: install-modules
@@ -218,6 +222,7 @@ jobs:
       - run: mv packages_moved/ecs packages/
       - run: cd packages/ecs && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_ecs }}
@@ -263,11 +268,15 @@ jobs:
       - run: mv packages_moved/network packages/
       - run: cd packages/network && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_network }}
         with:
           projectBaseDir: packages/network/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   test_spatial:
     needs: install-modules
@@ -314,11 +323,15 @@ jobs:
       - run: mv packages_moved/spatial packages/
       - run: cd packages/spatial && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_spatial }}
         with:
           projectBaseDir: packages/spatial/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   test_engine:
     needs: install-modules
@@ -371,11 +384,15 @@ jobs:
       - run: mv packages_moved/projects packages/
       - run: cd packages/engine && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_engine }}
         with:
           projectBaseDir: packages/engine/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   test_client:
     needs: install-modules
@@ -418,11 +435,15 @@ jobs:
       - run: rm -rf packages/taskserver
       - run: cd packages/${{ matrix.package }} && npm run test
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets[format('SONAR_TOKEN', matrix.package)] }}
         with:
           projectBaseDir: packages/${{ matrix.package }}/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   test_server:
     needs: install-modules
@@ -469,11 +490,15 @@ jobs:
       - run: cd packages/${{ matrix.package }} && npm run test
         timeout-minutes: 20
       - name: SonarQube Scan
+        id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets[format('SONAR_TOKEN', matrix.package)] }}
         with:
           projectBaseDir: packages/${{ matrix.package }}/
+      - name: SonarQube Failure
+        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
+        run: cat $SONARQUBE-HOME/logs/access.log
 
   npm_builds:
     needs: install-modules
