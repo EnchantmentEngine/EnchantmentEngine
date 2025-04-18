@@ -34,6 +34,8 @@ import {
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
+  removeComponent,
+  setComponent,
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -67,7 +69,7 @@ import { twMerge } from 'tailwind-merge'
 import { IconComponent } from '../../components/panels/IconComponent'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
 import { EditorHelperState, PlacementMode } from '../../services/EditorHelperState'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
+import { EditorHistoryState } from '../../services/EditorHistoryState'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { deleteNode, HierarchyTreeNodeType } from './helpers'
@@ -132,7 +134,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       document.removeEventListener('mousedown', handleClickOutside)
       if (saveRename) {
         EditorControlFunctions.modifyName([entity], toValidHierarchyNodeName(entity, currentRenameNode.value))
-        EditorHistoryFunctions.snapshot(getComponent(entity, SourceComponent))
+        EditorHistoryState.snapshot(getComponent(entity, SourceComponent))
         currentRenameNode.set(getComponent(entity, NameComponent))
       }
       renamingNode.clear()
@@ -303,9 +305,11 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const onHideUnhideNode = (event: React.MouseEvent) => {
     event.stopPropagation()
     if (visible) {
-      EditorHistoryFunctions.removeComponent([entity], VisibleComponent)
+      removeComponent(entity, VisibleComponent)
+      EditorHistoryState.snapshotEntities([entity])
     } else {
-      EditorHistoryFunctions.setComponent([entity], VisibleComponent)
+      setComponent(entity, VisibleComponent)
+      EditorHistoryState.snapshotEntities([entity])
     }
   }
 

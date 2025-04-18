@@ -77,7 +77,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { TransformGizmoControlledComponent } from '../classes/gizmo/transform/TransformGizmoControlledComponent'
 import { isEntityGlb } from '../functions/utils.ts'
-import { EditorHistoryActions, EditorHistoryFunctions, EditorHistoryState } from '../services/EditorHistoryState'
+import { EditorHistoryActions, EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
@@ -198,7 +198,7 @@ const onMinus = () => {
 
 const onDelete = () => {
   EditorControlFunctions.removeObject(SelectionState.getSelectedEntities())
-  EditorHistoryFunctions.snapshot()
+  EditorHistoryState.snapshot()
 }
 
 function copy(event) {

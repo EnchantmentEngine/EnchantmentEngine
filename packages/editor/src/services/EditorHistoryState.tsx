@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,12 +19,11 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  Component,
   ComponentMap,
   deserializeComponent,
   Entity,
@@ -37,7 +36,6 @@ import {
   removeComponent,
   removeEntity,
   serializeComponent,
-  SetComponentType,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -52,118 +50,139 @@ import {
   getState,
   matches,
   NO_PROXY,
-  PeerID,
+  none,
   useMutableState,
+  UserID,
   Validator
 } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { Suspense, useEffect } from 'react'
-import { EditorControlFunctions } from '../functions/EditorControlFunctions'
-import { EditorState } from './EditorServices'
+import { applyPatch, createPatch, Operation } from 'rfc6902'
 
-export type HistoryCommandTypes = 'undo' | 'redo' | 'addEntity' | 'snapshot'
-
-export type NodeData = Record<string, string | number | object | undefined> // ComponentName => SerializableComponent
-
-export type SourceData = Record<NodeID, NodeData>
+export type SourceData = Record<NodeID, object>
 
 export type UndoCommand = {
   type: 'undo'
   sourceID: SourceID
+  author: UserID
 }
 
 export type RedoCommand = {
   type: 'redo'
   sourceID: SourceID
+  author: UserID
 }
 
-/**
- * We need to use snapshots instead of specific reversable commands, since the ECS can be
- */
-export type StateSnapshotCommand = {
-  type: 'snapshot'
-  sourceID: SourceID
-  partialState: SourceData
-}
+export type JSONPatchCommand = Operation & { sourceID: SourceID; author: UserID }
 
-export type HistoryCommand = UndoCommand | RedoCommand | StateSnapshotCommand
+export type HistoryCommand = UndoCommand | RedoCommand | JSONPatchCommand[]
 
 export const EditorHistoryActions = {
+  /**
+   * Use to initialize the history state for a source
+   */
+  initialize: defineAction({
+    type: 'ir.editor.history.INITIALIZE',
+    sourceID: matches.string as Validator<unknown, SourceID>,
+    partialState: matches.object as Validator<unknown, SourceData>
+  }),
+
+  /**
+   * Use to uninitialize the history state for a source
+   */
+  uninitialize: defineAction({
+    type: 'ir.editor.history.UNINITIALIZE',
+    sourceID: matches.string as Validator<unknown, SourceID>
+  }),
+
+  /**
+   * Use to undo the last done command
+   */
   undo: defineAction({
     type: 'ir.editor.history.UNDO',
     sourceID: matches.string as Validator<unknown, SourceID>
   }),
 
+  /**
+   * Use to redo the last undone command
+   */
   redo: defineAction({
     type: 'ir.editor.history.REDO',
     sourceID: matches.string as Validator<unknown, SourceID>
   }),
 
-  snapshot: defineAction({
-    type: 'ir.editor.history.SNAPSHOT',
+  /**
+   * Use to add entities or components
+   */
+  ops: defineAction({
+    type: 'ir.editor.history.ADD',
     sourceID: matches.string as Validator<unknown, SourceID>,
-    partialState: matches.object as Validator<unknown, SourceData>
+    ops: matches.array as Validator<unknown, Operation[]>
   })
 }
 
 export const EditorHistoryState = defineState({
   name: 'ir.editor.history.EditorHistoryState',
-  initial: {} as Record<
-    SourceID,
-    { commands: Record<PeerID, HistoryCommand[]>; initial: SourceData; current: SourceData }
-  >,
+  initial: {
+    commands: {} as Record<UserID, HistoryCommand[]>,
+    sources: {} as Record<SourceID, { initial: SourceData; latest: SourceData }>
+  },
 
   receptors: {
+    initialize: EditorHistoryActions.initialize.receive((action) => {
+      if (!getState(EditorHistoryState).sources[action.sourceID]) {
+        getMutableState(EditorHistoryState).sources.set({})
+      }
+      getMutableState(EditorHistoryState).sources[action.sourceID].set({
+        initial: action.partialState,
+        latest: action.partialState
+      })
+    }),
+    uninitialize: EditorHistoryActions.uninitialize.receive((action) => {
+      getMutableState(EditorHistoryState).sources[action.sourceID].set(none)
+    }),
     undo: EditorHistoryActions.undo.receive((action) => {
-      const history = getMutableState(EditorHistoryState)[action.sourceID]
-      if (!history.value.commands) history.commands.set({})
-      const peerID = action.$peer
-      if (!history.commands.value[peerID]) history.commands[peerID].set([])
-
-      const commands = history.commands[peerID]
-      commands.merge([
+      if (!getState(EditorHistoryState).commands[action.$user]) {
+        getMutableState(EditorHistoryState).commands[action.$user].set([])
+      }
+      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      history.merge([
         {
           type: 'undo',
+          author: action.$user,
           sourceID: action.sourceID
         }
       ])
     }),
     redo: EditorHistoryActions.redo.receive((action) => {
-      const history = getMutableState(EditorHistoryState)[action.sourceID]
-      if (!history.value.commands) history.commands.set({})
-      const peerID = action.$peer
-      if (!history.commands.value[peerID]) history.commands[peerID].set([])
-
-      const commands = history.commands[peerID]
-      commands.merge([
+      if (!getState(EditorHistoryState).commands[action.$user]) {
+        getMutableState(EditorHistoryState).commands[action.$user].set([])
+      }
+      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      history.merge([
         {
           type: 'redo',
+          author: action.$user,
           sourceID: action.sourceID
         }
       ])
     }),
-    snapshot: EditorHistoryActions.snapshot.receive((action) => {
-      if (!getState(EditorHistoryState)[action.sourceID]) {
-        getMutableState(EditorHistoryState)[action.sourceID].set({
-          commands: {},
-          initial: action.partialState,
-          current: action.partialState
-        })
+    ops: EditorHistoryActions.ops.receive((action) => {
+      if (!getState(EditorHistoryState).commands[action.$user]) {
+        getMutableState(EditorHistoryState).commands[action.$user].set([])
       }
-      const history = getMutableState(EditorHistoryState)[action.sourceID]
-      if (!history.value.commands) history.commands.set({})
-      const peerID = action.$peer
-      if (!history.commands.value[peerID]) history.commands[peerID].set([])
-
-      const commands = history.commands[peerID]
-      commands.merge([
-        {
-          type: 'snapshot',
-          sourceID: action.sourceID,
-          partialState: action.partialState
-        }
+      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      history.merge([
+        action.ops.map(
+          (op) =>
+            ({
+              ...op,
+              author: action.$user,
+              sourceID: action.sourceID
+            }) as JSONPatchCommand
+        )
       ])
     })
   },
@@ -178,7 +197,7 @@ export const EditorHistoryState = defineState({
           ChildEntityReactor={SourceReactor}
           layer={Layers.Authoring}
         />
-        {state.keys.map((sourceID: SourceID) => (
+        {state.sources.keys.map((sourceID: SourceID) => (
           <ErrorBoundary key={sourceID}>
             <Suspense>
               <SourceHistoryReactor sourceID={sourceID} />
@@ -201,6 +220,21 @@ export const EditorHistoryState = defineState({
     const commands = Object.values(history.commands).flat() as HistoryCommand[]
     const { doneStack } = computeCommands(commands)
     return doneStack.length > 1 // 1 such that you cannot undo the first snapshot
+  },
+
+  snapshot: (sourceID: SourceID) => {
+    const newData = getSourceSnapshot(sourceID)
+    const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
+    dispatchAction(EditorHistoryActions.ops({ sourceID, ops: patch }))
+  },
+
+  snapshotEntities: (entities: Entity[]) => {
+    const affectedSources = new Set<SourceID>(entities.map((entity) => GLTFComponent.getInstanceID(entity)))
+    for (const sourceID of affectedSources) {
+      const newData = getSourceSnapshot(sourceID)
+      const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
+      dispatchAction(EditorHistoryActions.ops({ sourceID, ops: patch }))
+    }
   }
 })
 
@@ -214,7 +248,11 @@ const SourceReactor = (props: { entity: Entity }) => {
 
     const sourceData = getSourceSnapshot(sourceID)
 
-    dispatchAction(EditorHistoryActions.snapshot({ sourceID, partialState: sourceData }))
+    dispatchAction(EditorHistoryActions.initialize({ sourceID, partialState: sourceData }))
+
+    return () => {
+      dispatchAction(EditorHistoryActions.uninitialize({ sourceID }))
+    }
   }, [loaded])
 
   return null
@@ -232,23 +270,21 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
   useEffect(() => {
     if (commandLength === 0) return
 
-    /** @todo support editing models loaded as part of the base scene */
-    if (props.sourceID !== GLTFComponent.getInstanceID(getState(EditorState).rootEntity)) return
-
     // parse our undo/redo stack and return a new list of commands that represent the final graph path
     const { doneStack } = computeCommands(commands)
     if (!doneStack.length) return
 
-    // get the final state of the history
-    const finalState = doneStack[doneStack.length - 1] as StateSnapshotCommand
-
     // get the readonly state and treat it as mutable so we have a non-reactive copy of the current state
-    const readonlyState = getState(EditorHistoryState)[props.sourceID] as { current: SourceData }
+    const readonlyState = getState(EditorHistoryState).sources[props.sourceID]
+
+    // get the final state of the history
+    const finalState = structuredClone(readonlyState.initial)
+    applyPatch(finalState, doneStack)
 
     // update the state to the ECS
-    applyCommandsToECS(props.sourceID, readonlyState.current, finalState.partialState)
+    applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
 
-    readonlyState.current = finalState.partialState
+    readonlyState.latest = finalState
   }, [commandLength])
 
   return null
@@ -261,21 +297,23 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
  */
 export const computeCommands = (commands: HistoryCommand[]) => {
   const commandLength = commands.length
-  const doneStack: HistoryCommand[] = []
-  const redoStack: HistoryCommand[] = []
+  const doneStack: JSONPatchCommand[][] = []
+  const redoStack: JSONPatchCommand[][] = []
   for (let i = 0; i < commandLength; i++) {
     const command = commands[i]
-    if (command.type === 'undo') {
-      // Undo the most recent command, if there is one.
-      if (doneStack.length > 0) {
-        const undoneCmd = doneStack.pop()!
-        redoStack.push(undoneCmd)
-      }
-    } else if (command.type === 'redo') {
-      // Redo the most recent undone command.
-      if (redoStack.length > 0) {
-        const redoneCmd = redoStack.pop()!
-        doneStack.push(redoneCmd)
+    if ('type' in command) {
+      if (command.type === 'undo') {
+        // Undo the most recent command, if there is one.
+        if (doneStack.length > 0) {
+          const undoneCmd = doneStack.pop()!
+          redoStack.push(undoneCmd)
+        }
+      } else if (command.type === 'redo') {
+        // Redo the most recent undone command.
+        if (redoStack.length > 0) {
+          const redoneCmd = redoStack.pop()!
+          doneStack.push(redoneCmd)
+        }
       }
     } else {
       // A normal command: push it onto the done stack
@@ -285,7 +323,7 @@ export const computeCommands = (commands: HistoryCommand[]) => {
     }
   }
 
-  return { doneStack, redoStack }
+  return { doneStack: doneStack.flat(), redoStack: redoStack.flat() }
 }
 
 /**
@@ -309,7 +347,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
         deserializeComponent(entity, Component, componentData)
       }
       if (currentState[nodeID]) {
-        for (const componentName of Object.keys(currentState[nodeID] as NodeData)) {
+        for (const componentName of Object.keys(currentState[nodeID])) {
           if (!finalState[nodeID][componentName]) {
             // component does not exist, remove component
             const Component = ComponentMap.get(componentName)
@@ -389,74 +427,4 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
   }
 
   return sourceData
-}
-
-export const EditorHistoryFunctions = {
-  setComponent: <C extends Component<any, any>>(
-    entities: Entity[],
-    component: C,
-    args: SetComponentType<C> | undefined = undefined
-  ) => {
-    const affectedNodes = EditorControlFunctions.addOrRemoveComponent(entities, component, true, args)
-    const sourceID = GLTFComponent.getInstanceID(getState(EditorState).rootEntity)
-    dispatchAction(
-      EditorHistoryActions.snapshot({
-        sourceID,
-        /** @todo make this a partial */
-        partialState: getSourceSnapshot(sourceID)
-      })
-    )
-    return affectedNodes
-  },
-  removeComponent: <C extends Component<any, any>>(entities: Entity[], component: C) => {
-    const affectedNodes = EditorControlFunctions.addOrRemoveComponent(entities, component, false)
-    const sourceID = GLTFComponent.getInstanceID(getState(EditorState).rootEntity)
-    dispatchAction(
-      EditorHistoryActions.snapshot({
-        sourceID,
-        /** @todo make this a partial */
-        partialState: getSourceSnapshot(sourceID)
-      })
-    )
-    return affectedNodes
-  },
-  createEntity: (nodeID: NodeID, components: NodeData) => {
-    const componentJson = Object.entries(components).map(([componentName, componentData]) => {
-      const Component = ComponentMap.get(componentName)
-      if (!Component?.jsonID) return
-      return { name: Component.jsonID, props: componentData } as any
-    })
-    componentJson[NodeIDComponent.jsonID] = { name: NodeIDComponent.jsonID, props: nodeID }
-    const root = getState(EditorState).rootEntity
-    EditorControlFunctions.createObjectFromSceneElement(componentJson, root)
-    const sourceID = GLTFComponent.getInstanceID(root)
-    dispatchAction(
-      EditorHistoryActions.snapshot({
-        sourceID,
-        /** @todo make this a partial */
-        partialState: getSourceSnapshot(sourceID)
-      })
-    )
-  },
-  removeEntity: (entities: Entity[]) => {
-    EditorControlFunctions.removeObject(entities)
-    const sourceID = GLTFComponent.getInstanceID(getState(EditorState).rootEntity)
-    dispatchAction(
-      EditorHistoryActions.snapshot({
-        sourceID,
-        /** @todo make this a partial */
-        partialState: getSourceSnapshot(sourceID)
-      })
-    )
-  },
-  snapshot: (sourceID?: SourceID) => {
-    if (!sourceID) sourceID = GLTFComponent.getInstanceID(getState(EditorState).rootEntity)
-    dispatchAction(
-      EditorHistoryActions.snapshot({
-        sourceID,
-        /** @todo make this a partial */
-        partialState: getSourceSnapshot(sourceID)
-      })
-    )
-  }
 }

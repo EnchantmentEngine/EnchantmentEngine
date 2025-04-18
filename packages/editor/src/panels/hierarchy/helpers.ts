@@ -30,6 +30,7 @@ import {
   getOptionalComponent,
   hasComponent,
   Layers,
+  removeEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { AllFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
@@ -42,7 +43,7 @@ import { t } from 'i18next'
 import { CopyPasteFunctions, EntityCopyDataType } from '../../functions/CopyPasteFunctions'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
 import { isEntityGlb } from '../../functions/utils'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
+import { EditorHistoryState } from '../../services/EditorHistoryState'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { SelectionState } from '../../services/SelectionServices'
 
@@ -76,17 +77,21 @@ const getSelectedEntities = (entity?: Entity) => {
 }
 
 export const deleteNode = (entity: Entity) => {
-  EditorHistoryFunctions.removeEntity(getSelectedEntities(entity))
+  const entities = getSelectedEntities(entity)
+  entities.map(removeEntity)
+  EditorHistoryState.snapshotEntities(entities)
 }
 
 export const duplicateNode = (entity?: Entity) => {
-  EditorControlFunctions.duplicateObject(getSelectedEntities(entity))
-  EditorHistoryFunctions.snapshot()
+  const entities = getSelectedEntities(entity)
+  EditorControlFunctions.duplicateObject(entities)
+  EditorHistoryState.snapshotEntities(entities)
 }
 
 export const groupNodes = (entity?: Entity) => {
-  EditorControlFunctions.groupObjects(getSelectedEntities(entity))
-  EditorHistoryFunctions.snapshot()
+  const entities = getSelectedEntities(entity)
+  EditorControlFunctions.groupObjects(entities)
+  EditorHistoryState.snapshotEntities
 }
 
 export const copyNodes = (entity?: Entity) => {
@@ -120,7 +125,7 @@ export const pasteNodes = (parentEntity?: Entity) => {
       parentEntities.forEach((entity) => {
         ProcessEntityData(entity, nodeEntitiesData)
       })
-      EditorHistoryFunctions.snapshot()
+      EditorHistoryState.snapshotEntities(parentEntities)
     })
     .catch(() => {
       NotificationService.dispatchNotify(t('editor:hierarchy.copy-paste.no-hierarchy-nodes') as string, {

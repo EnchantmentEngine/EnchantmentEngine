@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useQuery } from '@ir-engine/ecs'
-import { Component } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Component, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { PrefabIcon, PrefabShelfItem, PrefabShelfState } from '@ir-engine/editor/src/components/prefabs/PrefabEditors'
 import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
@@ -45,7 +45,8 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GrStatusPlaceholder } from 'react-icons/gr'
 import { twMerge } from 'tailwind-merge'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
+import { EditorHistoryState } from '../../services/EditorHistoryState'
+import { EditorState } from '../../services/EditorServices'
 
 type ElementsType = 'components' | 'prefabs'
 
@@ -74,7 +75,10 @@ const ComponentListItem = ({ item, onSelect }: { item: Component; onSelect: () =
       className="flex w-full items-center justify-center gap-1 rounded-md bg-ui-background p-2 text-text-secondary hover:bg-ui-hover-primary hover:text-text-primary-button"
       onClick={() => {
         const entities = SelectionState.getSelectedEntities()
-        EditorHistoryFunctions.setComponent(entities, item)
+        for (const entity of entities) {
+          setComponent(entity, item)
+        }
+        EditorHistoryState.snapshotEntities(entities)
         onSelect()
       }}
     >
@@ -102,7 +106,7 @@ const PrefabListItem = ({ item, onSelect }: { item: PrefabShelfItem; onSelect: (
               name: TransformComponent.jsonID
             }
           ])
-          EditorHistoryFunctions.snapshot()
+          EditorHistoryState.snapshotEntities([getState(EditorState).rootEntity])
         } else {
           addMediaNode(url)
         }

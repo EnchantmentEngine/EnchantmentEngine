@@ -61,7 +61,7 @@ import { TransformGizmoControlComponent } from '../classes/gizmo/transform/Trans
 import { TransformGizmoVisualComponent } from '../classes/gizmo/transform/TransformGizmoVisualComponent'
 import { GizmoMaterial, gizmoMaterialProperties } from '../constants/GizmoPresets'
 import { SelectionBoxState } from '../panels/viewport/tools/SelectionBoxTool'
-import { EditorHistoryFunctions } from '../services/EditorHistoryState'
+import { EditorHistoryState } from '../services/EditorHistoryState'
 import { ObjectGridSnapState } from '../systems/ObjectGridSnapSystem'
 import { EditorControlFunctions } from './EditorControlFunctions'
 
@@ -937,7 +937,7 @@ export function onGizmoCommit(gizmoEntity) {
   }
   gizmoControlComponent.dragging.set(false)
   gizmoControlComponent.axis.set(null)
-  EditorHistoryFunctions.setComponent(gizmoControlComponent.controlledEntities.value as Entity[], TransformComponent)
+  EditorHistoryState.snapshotEntities(gizmoControlComponent.controlledEntities.value as Entity[])
 }
 
 function pointerUp(gizmoEntity) {

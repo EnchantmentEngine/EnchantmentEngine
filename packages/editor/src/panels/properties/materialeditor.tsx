@@ -64,7 +64,7 @@ import ParameterInput from '@ir-engine/ui/src/components/editor/properties/param
 import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Material, Texture, Uniform } from 'three'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
+import { EditorHistoryState } from '../../services/EditorHistoryState'
 
 type ThumbnailData = {
   src: string
@@ -225,7 +225,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     if (prototypeName.value === material.type) return
 
     EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
-    EditorHistoryFunctions.snapshot()
+    EditorHistoryState.snapshot()
   }, [prototypeName])
 
   return (
@@ -274,7 +274,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
               currentSelectedMaterial.value!,
               [{ [key]: texture?.isTexture ? value : property }]
             )
-            EditorHistoryFunctions.snapshot()
+            EditorHistoryState.snapshot()
             await checkThumbs()
           }}
           defaults={prototype.arguments!.value}
