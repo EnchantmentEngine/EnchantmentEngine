@@ -40,6 +40,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NO_PROXY,
   none,
   PeerID,
   useHookstate,
@@ -76,7 +77,8 @@ export const EntityNetworkState = defineState({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
-          ownerPeer: action.$peer
+          ownerPeer: action.$peer,
+          UUIDPair: action.entityUUIDPair
         })
       })
       .validate((action) => {
@@ -138,7 +140,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     if (!userConnected) return
-    const entity = UUIDComponent.getOrCreateEntityByUUID(state.UUIDPair.value)
+    const entity = UUIDComponent.getOrCreateEntityByUUID(state.UUIDPair.get(NO_PROXY))
     return () => {
       removeEntity(entity)
     }

@@ -105,7 +105,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   useEffect(() => {
     if (isSpectating || !userAvatar) return
 
-    const rootUUID = getComponent(sceneEntity, UUIDComponent)
+    const rootUUID = UUIDComponent.getUUID(getComponent(sceneEntity, UUIDComponent))
     const avatarSpawnPose = getRandomSpawnPoint(userID)
     const user = getState(AuthState).user
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
@@ -129,7 +129,11 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
 
       // if we are the last peer in the world for this user, destroy the object
       if (!peersCountForUser || peersCountForUser === 1) {
-        dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID: getComponent(selfAvatarEntity, UUIDComponent) }))
+        dispatchAction(
+          WorldNetworkAction.destroyEntity({
+            entityUUID: UUIDComponent.getUUID(getComponent(selfAvatarEntity, UUIDComponent))
+          })
+        )
       }
     }
   }, [isSpectating, !!userAvatar])
@@ -158,7 +162,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     dispatchAction(
       AvatarNetworkAction.setAvatarURL({
         avatarURL,
-        entityUUID: (userID + '_avatar') as any as EntityUUID
+        entityUUID: UUIDComponent.getUUID({ instanceID: userID, id: 'avatar' })
       })
     )
   }, [isSpectating, userAvatar])
