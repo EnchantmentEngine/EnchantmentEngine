@@ -225,7 +225,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     if (prototypeName.value === material.type) return
 
     EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
-    EditorHistoryState.snapshot()
+    EditorHistoryState.snapshotEntities([entity])
   }, [prototypeName])
 
   return (
@@ -274,7 +274,11 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
               currentSelectedMaterial.value!,
               [{ [key]: texture?.isTexture ? value : property }]
             )
-            EditorHistoryState.snapshot()
+            const entity = UUIDComponent.getEntityByUUID(
+              materialComponent.material.value!.uuid as EntityUUID,
+              Layers.Authoring
+            )
+            EditorHistoryState.snapshotEntities([entity])
             await checkThumbs()
           }}
           defaults={prototype.arguments!.value}

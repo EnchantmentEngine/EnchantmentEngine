@@ -40,7 +40,7 @@ import {
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { DropTargetMonitor, useDrop } from 'react-dnd'
@@ -311,7 +311,7 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
         parentNode,
         beforeNode
       )
-      EditorHistoryState.snapshot()
+      EditorHistoryState.snapshotEntities([getState(EditorState).rootEntity])
       return
     }
 
@@ -325,7 +325,7 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
       afterNode,
       parentNode
     )
-    EditorHistoryState.snapshot()
+    EditorHistoryState.snapshotEntities([getState(EditorState).rootEntity])
   }
 
   const [{ canDrop, isOver }, dropTarget] = useDrop({

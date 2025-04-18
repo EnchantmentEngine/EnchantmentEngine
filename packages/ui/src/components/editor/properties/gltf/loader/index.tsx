@@ -179,7 +179,7 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
             onClick={() => {
               const nodes = SelectionState.getSelectedEntities()
               EditorControlFunctions.addOrRemoveComponent(nodes, RigidBodyComponent, true, { type: 'fixed' })
-              EditorHistoryState.snapshot()
+              EditorHistoryState.snapshotEntities(nodes)
             }}
           >
             <HiPlus />

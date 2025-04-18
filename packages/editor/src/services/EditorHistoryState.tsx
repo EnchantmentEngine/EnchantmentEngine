@@ -59,7 +59,7 @@ import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { Suspense, useEffect } from 'react'
-import { applyPatch, createPatch, Operation } from 'rfc6902'
+import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 
 export type SourceData = Record<NodeID, object>
 
@@ -75,9 +75,9 @@ export type RedoCommand = {
   author: UserID
 }
 
-export type JSONPatchCommand = Operation & { sourceID: SourceID; author: UserID }
+export type JSONPatchCommands = { sourceID: SourceID; author: UserID; ops: Patch }
 
-export type HistoryCommand = UndoCommand | RedoCommand | JSONPatchCommand[]
+export type HistoryCommand = UndoCommand | RedoCommand | JSONPatchCommands
 
 export const EditorHistoryActions = {
   /**
@@ -175,14 +175,11 @@ export const EditorHistoryState = defineState({
       }
       const history = getMutableState(EditorHistoryState).commands[action.$user]
       history.merge([
-        action.ops.map(
-          (op) =>
-            ({
-              ...op,
-              author: action.$user,
-              sourceID: action.sourceID
-            }) as JSONPatchCommand
-        )
+        {
+          author: action.$user,
+          sourceID: action.sourceID,
+          ops: action.ops
+        }
       ])
     })
   },
@@ -263,23 +260,29 @@ const SourceReactor = (props: { entity: Entity }) => {
  * This component replays the history of a source to keep the current state in sync.
  */
 const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
-  const state = useMutableState(EditorHistoryState)[props.sourceID]
-  const commands = Object.values(state.commands.get(NO_PROXY)).flat() as HistoryCommand[]
-  const commandLength = commands.length
+  const commands = useMutableState(EditorHistoryState).commands
+  const sourceCommands = Object.values(commands.get(NO_PROXY))
+    .flat()
+    .filter((command) => command.sourceID === props.sourceID) as HistoryCommand[]
+  const commandLength = sourceCommands.length
 
   useEffect(() => {
     if (commandLength === 0) return
 
     // parse our undo/redo stack and return a new list of commands that represent the final graph path
-    const { doneStack } = computeCommands(commands)
+    const { doneStack } = computeCommands(sourceCommands)
     if (!doneStack.length) return
 
     // get the readonly state and treat it as mutable so we have a non-reactive copy of the current state
     const readonlyState = getState(EditorHistoryState).sources[props.sourceID]
 
+    const operations = doneStack.flatMap((command) => command.ops)
+
     // get the final state of the history
     const finalState = structuredClone(readonlyState.initial)
-    applyPatch(finalState, doneStack)
+    applyPatch(finalState, operations)
+
+    console.log(finalState)
 
     // update the state to the ECS
     applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
@@ -297,8 +300,8 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
  */
 export const computeCommands = (commands: HistoryCommand[]) => {
   const commandLength = commands.length
-  const doneStack: JSONPatchCommand[][] = []
-  const redoStack: JSONPatchCommand[][] = []
+  const doneStack: JSONPatchCommands[] = []
+  const redoStack: JSONPatchCommands[] = []
   for (let i = 0; i < commandLength; i++) {
     const command = commands[i]
     if ('type' in command) {
