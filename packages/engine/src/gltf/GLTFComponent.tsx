@@ -250,7 +250,7 @@ export const GLTFComponentReactor = () => {
 
     const layer = LayerComponent.get(entity)
     const unloadEntities = () => {
-      const loadedEntities = SourceComponent.getEntitiesBySource(entity, layer)
+      const loadedEntities = SourceComponent.getEntitiesBySource(entity)
       for (const entity of loadedEntities) removeEntity(entity)
     }
 

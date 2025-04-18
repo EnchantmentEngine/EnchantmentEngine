@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, LayerComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineState, getMutableState, getState, none, OpaqueType, useHookstate } from '@ir-engine/hyperflux'
@@ -64,10 +64,9 @@ export const SourceComponent = defineComponent({
   },
 
   onRemove: (entity, component) => {
-    const layer = LayerComponent.get(entity)
     const source = component.value.toString()
-    const entities = getState(EntitiesBySourceState)[layer][source].filter((currentEntity) => currentEntity !== entity)
-    const layerState = getMutableState(EntitiesBySourceState)[layer]
+    const entities = getState(EntitiesBySourceState)[source].filter((currentEntity) => currentEntity !== entity)
+    const layerState = getMutableState(EntitiesBySourceState)
     if (entities.length === 0) {
       layerState[source].set(none)
     } else {
