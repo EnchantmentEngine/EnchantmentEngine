@@ -393,10 +393,7 @@ const execute = () => {
       const selectedEntities = SelectionState.getSelectedEntities()
       const clickParentEntity = getAncestorWithComponents(clickStartEntity, [GLTFComponent])
 
-      if (
-        (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) ||
-        selectedEntities[0] === clickParentEntity
-      ) {
+      if (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) {
         onFocusCamera(viewerEntity)
       }
 
