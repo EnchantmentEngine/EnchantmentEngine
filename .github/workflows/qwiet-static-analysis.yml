@@ -3,7 +3,10 @@ name: Qwiet.AI Static Analysis
 on:
   push:
     branches:
-      - irene/IR-8651_Qwiet.AI  
+      - '**'
+  pull_request:
+    branches:
+      - '**'
   workflow_dispatch: #enables the “Run workflow” button in the Actions UI
     inputs: # optional
       scan-path:
@@ -30,7 +33,6 @@ jobs:
       - name: Run Qwiet.AI scan
         run: |
           curl https://cdn.shiftleft.io/download/sl > /usr/local/bin/sl && chmod a+rx /usr/local/bin/sl
-          sl analyze --app "${GITHUB_REPOSITORY_OWNER}_${GITHUB_REPOSITORY#*/}" --verbose .
-          
+          sl analyze --app "${GITHUB_REPOSITORY_OWNER}_${GITHUB_REPOSITORY#*/}" --verbose .          
         env:
           SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}  #Make sure this secret is set
