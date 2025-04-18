@@ -277,7 +277,7 @@ jobs:
           projectBaseDir: packages/network/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat /opt/sonarqube/logs/access.log
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
 
   test_spatial:
     needs: install-modules
@@ -333,7 +333,7 @@ jobs:
           projectBaseDir: packages/spatial/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat /opt/sonarqube/logs/access.log
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
 
   test_engine:
     needs: install-modules
@@ -395,7 +395,7 @@ jobs:
           projectBaseDir: packages/engine/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat /opt/sonarqube/logs/access.log
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
 
   test_client:
     needs: install-modules
@@ -447,7 +447,7 @@ jobs:
           projectBaseDir: packages/${{ matrix.package }}/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat /opt/sonarqube/logs/access.log
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
 
   test_server:
     needs: install-modules
@@ -503,7 +503,7 @@ jobs:
           projectBaseDir: packages/${{ matrix.package }}/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat /opt/sonarqube/logs/access.log
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
 
   npm_builds:
     needs: install-modules
