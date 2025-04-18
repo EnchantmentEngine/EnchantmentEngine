@@ -183,9 +183,7 @@ jobs:
         with:
           projectBaseDir: packages/hyperflux/
       - name: SonarQube Failure
-        run: ls /opt/sonarqube/logs/ || true
-        run: ls /.sonar/logs/ || true
-        run: ls ${{ github.workspace }}/.sonar/logs || true
+        run: ls /opt/sonarqube/logs/ ||  ls /.sonar/logs/ || ls ${{ github.workspace }}/.sonar/logs || true
 
   test_ecs:
     needs: install-modules
