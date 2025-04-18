@@ -183,7 +183,7 @@ jobs:
         with:
           projectBaseDir: packages/hyperflux/
       - name: SonarQube Failure
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   test_ecs:
     needs: install-modules
@@ -275,7 +275,7 @@ jobs:
           projectBaseDir: packages/network/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   test_spatial:
     needs: install-modules
@@ -330,7 +330,7 @@ jobs:
           projectBaseDir: packages/spatial/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   test_engine:
     needs: install-modules
@@ -391,7 +391,7 @@ jobs:
           projectBaseDir: packages/engine/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   test_client:
     needs: install-modules
@@ -442,7 +442,7 @@ jobs:
           projectBaseDir: packages/${{ matrix.package }}/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   test_server:
     needs: install-modules
@@ -497,7 +497,7 @@ jobs:
           projectBaseDir: packages/${{ matrix.package }}/
       - name: SonarQube Failure
         if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
-        run: cat ${{ github.workspace }}/.sonar/logs/access.log
+        run: cat /opt/sonarqube/logs/access.log
 
   npm_builds:
     needs: install-modules
