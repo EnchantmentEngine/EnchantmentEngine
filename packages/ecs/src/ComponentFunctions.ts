@@ -35,14 +35,17 @@ import type from 'react/experimental'
 import {
   DeepReadonly,
   HyperFlux,
+  Identifiable,
   NO_PROXY_STEALTH,
   Path,
   ReactorRoot,
   SetPartialStateAction,
   State,
   destroy,
+  extend,
   getState,
   hookstate,
+  identifiable,
   none,
   resolveObject,
   startReactor,
@@ -193,7 +196,7 @@ export interface Component<
   reactor?: any
   reactorRoot?: ReactorRoot
   storage?: StorageType
-  stateMap: Record<Entity, State<ComponentType>>
+  stateMap: Record<Entity, State<ComponentType, Identifiable>>
   valueMap: Record<Entity, ComponentType>
   errors: ErrorTypes[]
   storageSize: number
@@ -370,12 +373,18 @@ export const defineComponent = <
   ComponentMap.set(Component.name, Component)
 
   function setTransition<P extends ComponentPropertyPath<ComponentType>>(
+    /** @description The entity to transition the property of. */
     entity: Entity,
+    /** @description The path to the property to transition. */
     propertyPath: P,
+    /** @description The value to transition to. */
     value: ComponentPropertyFromPath<ComponentType, P> & TransitionableTypes,
     options: {
+      /** @description The duration of the transition in milliseconds. */
       duration?: number
+      /** @description The easing function to use for the transition. */
       easing?: EasingFunction
+      /** @description The type of transition to use. */
       type?: keyof typeof Transitionable
     }
   ) {
@@ -398,13 +407,16 @@ export const defineComponent = <
 export const getOptionalMutableComponent = <C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined => {
+): State<ComponentType<C>, Identifiable> | undefined => {
   return !bitECS.hasComponent(HyperFlux.store, entity, component)
     ? undefined
-    : (component.stateMap[entity]! as State<ComponentType<C>> | undefined)
+    : (component.stateMap[entity]! as State<ComponentType<C>, Identifiable> | undefined)
 }
 
-export const getMutableComponent = <C extends Component>(entity: Entity, component: C): State<ComponentType<C>> => {
+export const getMutableComponent = <C extends Component>(
+  entity: Entity,
+  component: C
+): State<ComponentType<C>, Identifiable> => {
   const componentState = getOptionalMutableComponent(entity, component)
   if (componentState === undefined) {
     console.warn(
@@ -483,22 +495,29 @@ const resizeComponent = (component: Component, size: number) => {
   component.storageSize = size
 }
 
+let componentInstanceCount = 0
+
 const _getComponentState = <C extends Component>(entity: Entity, component: C) => {
   const layer = LayerComponent.get(entity) ?? Layers.Simulation
   if (!component.stateMap[entity]) {
+    const id = `${component.name}_${entity}_${componentInstanceCount++}`
+    // optimized path for simulation layer without onSet callback
     if (layer === Layers.Simulation) {
       if (!component.stateMap[entity]) {
-        component.stateMap[entity] = hookstate(none)
+        component.stateMap[entity] = hookstate(none, identifiable(id))
       }
       return component.stateMap[entity]
     }
-    component.stateMap[entity] = hookstate(none, () => ({
-      onSet: (s, d) => {
-        const rootState = component.stateMap[entity]
-        component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
-        LayerFunctions.propagateLayer(entity, component)
-      }
-    }))
+    component.stateMap[entity] = hookstate(
+      none,
+      extend(identifiable(id), () => ({
+        onSet: (s, d) => {
+          const rootState = component.stateMap[entity]
+          component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
+          LayerFunctions.propagateLayer(entity, component)
+        }
+      }))
+    )
   }
   return component.stateMap[entity]
 }
@@ -737,7 +756,7 @@ export function _use(promise) {
 /**
  * Use a component in a reactive context (a React component)
  */
-export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>> {
+export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>, Identifiable> {
   if (entity === UndefinedEntity) throw new Error('InvalidUsage: useComponent called with UndefinedEntity')
 
   const state = _getComponentState(entity, component)
@@ -747,7 +766,7 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
     ;(React.use ?? _use)(state.promise)
   }
 
-  return useHookstate(state) as State<ComponentType<C>>
+  return useHookstate(state) as State<ComponentType<C>, Identifiable>
 }
 
 export function useHasComponent<C extends Component>(entity: Entity, component: C): boolean {
@@ -761,8 +780,8 @@ export function useHasComponent<C extends Component>(entity: Entity, component: 
 export function useOptionalComponent<C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined {
-  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>>
+): State<ComponentType<C>, Identifiable> | undefined {
+  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>, Identifiable>
   return componentState.promised ? undefined : componentState
 }
 
@@ -1307,13 +1326,11 @@ export const TransitionComponent = defineComponent({
       transitionableType: S.String(),
       duration: S.Number(500),
       easing: S.String(Easing.exponential.inOut.path),
-      initialValue: S.NonSerialized(S.Type<TransitionableTypes>()),
-      outputValue: S.NonSerialized(S.Type<TransitionableTypes>()),
+      initialValue: S.NonSerialized(S.Optional(S.Type<TransitionableTypes>())),
       events: S.NonSerialized(
         S.Array(
           S.Object({
             age: S.Number(),
-            fromValue: S.Type<TransitionableTypes>(),
             toValue: S.Type<TransitionableTypes>(),
             duration: S.Number(),
             easing: S.String()
@@ -1363,12 +1380,10 @@ export const TransitionComponent = defineComponent({
     if (target.duration && transition.duration !== target.duration) transition.duration = target.duration
     if (target.easing && transition.easing !== target.easing.path) transition.easing = target.easing.path
     if (target.type && transition.transitionableType !== type) transition.transitionableType = type
-    TransitionComponent.updateTransition(entity, transition, 0, false)
     transition.events.push({
       age: 0,
       duration: transition.duration,
       easing: transition.easing,
-      fromValue: transition.outputValue,
       toValue: target.value
     })
   },
@@ -1379,6 +1394,8 @@ export const TransitionComponent = defineComponent({
     deltaMilliSeconds: number,
     setProperty: boolean = true
   ) {
+    if (transition.events.length === 0) return
+
     const Component = ComponentJSONIDMap.get(transition.componentJsonID)
     if (!Component) return
     const component = getComponent(entity, Component)
@@ -1388,11 +1405,6 @@ export const TransitionComponent = defineComponent({
 
     if (transition.initialValue === undefined) {
       transition.initialValue = typeof propertyValue === 'number' ? propertyValue : propertyValue.clone()
-    }
-
-    if (transition.events.length === 0) {
-      transition.outputValue = transition.initialValue
-      return
     }
 
     const transitionable = Transitionable[transition.transitionableType] as Transitionable
@@ -1431,7 +1443,9 @@ export const TransitionComponent = defineComponent({
       return true
     })
 
-    transition.outputValue = output
+    if (transition.events.length === 0) {
+      transition.initialValue = undefined
+    }
 
     if (setProperty) {
       if (typeof output === 'number') {
