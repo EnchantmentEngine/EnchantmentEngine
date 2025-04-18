@@ -3,10 +3,7 @@ name: Qwiet.AI Static Analysis
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - irene/IR-8651_Qwiet.AI  
   workflow_dispatch: #enables the “Run workflow” button in the Actions UI
     inputs: # optional
       scan-path:
