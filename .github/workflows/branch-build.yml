@@ -183,7 +183,6 @@ jobs:
         with:
           projectBaseDir: packages/hyperflux/
       - name: SonarQube Failure
-        if: ${{ failure() && steps.sonarScan.conclusion == 'failure'  }}
         run: cat $SONARQUBE-HOME/logs/access.log
 
   test_ecs:
