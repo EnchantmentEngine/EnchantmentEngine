@@ -184,8 +184,7 @@ jobs:
         with:
           projectBaseDir: packages/hyperflux/
       - name: SonarQube Failure
-        run: ls /var/log/ || true
-
+        run: "curl -H \"Authorization: Bearer ${{ secrets.SONAR_TOKEN_hyperflux }}\" -v https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64"
   test_ecs:
     needs: install-modules
     runs-on: ubuntu-latest
