@@ -1,0 +1,15 @@
+version: 1.0
+app:
+  name: "${GITHUB_REPOSITORY_OWNER}_${GITHUB_REPOSITORY#*/}"
+  # We will adjust the app name or other configurations as needed.
+
+scan:
+  directory: '.'   # Directory to scan
+  includePatterns:
+    - '**/*.js'
+    - '**/*.java'  # Add other patterns if necessary
+  excludePatterns:
+    - '**/test/*'  # Exclude test directories if needed
+
+fail:
+  severity: 'HIGH'  # Set the minimum severity for failing the scan
