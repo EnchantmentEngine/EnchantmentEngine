@@ -23,19 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { Params } from '@feathersjs/feathers'
-import { KnexAdapterParams, KnexService } from '@feathersjs/knex'
+import { createEngine, createEntity, destroyEngine, Entity, removeEntity } from '@ir-engine/ecs'
+import { test as base } from 'vitest'
 
-import {
-  LocationBanData,
-  LocationBanPatch,
-  LocationBanQuery,
-  LocationBanType
-} from '@ir-engine/common/src/schemas/social/location-ban.schema'
-
-export interface LocationBanParams extends KnexAdapterParams<LocationBanQuery> {}
-
-export class LocationBanService<
-  T = LocationBanType,
-  ServiceParams extends Params = LocationBanParams
-> extends KnexService<LocationBanType, LocationBanData, LocationBanParams, LocationBanPatch> {}
+export const it = base.extend<{ entity: Entity }>({
+  // eslint-disable-next-line no-empty-pattern
+  entity: async ({}, use) => {
+    createEngine()
+    const entity = createEntity()
+    await use(entity)
+    removeEntity(entity)
+    destroyEngine()
+  }
+})

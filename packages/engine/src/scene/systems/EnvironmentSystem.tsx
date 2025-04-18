@@ -42,7 +42,7 @@ import {
   useQuery
 } from '@ir-engine/ecs'
 
-import { State } from '@ir-engine/hyperflux'
+import { Identifiable, State } from '@ir-engine/hyperflux'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
@@ -153,8 +153,10 @@ const clearMaterialEnvMap = (entity: Entity): void => {
 const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
   const backgroundQuery = useQuery([BackgroundComponent])
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
   const backgroundEntity = backgroundQuery.find((curr) => haveCommonAncestor(entity, curr))
   const backgroundComponent = useOptionalComponent(backgroundEntity!, BackgroundComponent)
 
@@ -178,8 +180,10 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
 const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
 
   useEffect(() => {
@@ -213,8 +217,10 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
 
 const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
 
   const probeQuery = useQuery([ReflectionProbeComponent])
 
@@ -240,8 +246,10 @@ const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
   const [envMapTexture, error] = useTexture(envMapComponent.envMapSourceURL.value, entity)
 
   useEffect(() => {
@@ -269,8 +277,10 @@ const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entit
 
 const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
   const bakeEntity =
     NodeFunctions.useEntityFromNodeID(props.rootEntity, envMapComponent.envMapSourceEntityUUID.value) ?? UndefinedEntity
@@ -316,8 +326,10 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 const tempColor = new Color(0, 0, 1)
 const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)
-    ?.material as State<MeshStandardMaterial>
+  const materialComponent = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
+    MeshStandardMaterial,
+    Identifiable
+  >
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
 
   useEffect(() => {
