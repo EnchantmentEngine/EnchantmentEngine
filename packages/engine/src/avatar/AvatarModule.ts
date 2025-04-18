@@ -24,6 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { AvatarIKTargetState } from './state/AvatarIKTargetState'
+import { SpawnEffectState } from './state/SpawnEffectState'
 import { AnimationSystem } from './systems/AnimationSystem'
 import { AvatarAnimationSystem } from './systems/AvatarAnimationSystem'
 import { AvatarAutopilotSystem } from './systems/AvatarAutopilotSystem'
@@ -48,5 +49,6 @@ export default {
   AvatarMovementSystem,
   AvatarTeleportSystem,
   AvatarTransparencySystem,
-  ReferenceSpaceTransformSystem
+  ReferenceSpaceTransformSystem,
+  SpawnEffectState
 }

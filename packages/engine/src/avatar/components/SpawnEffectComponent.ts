@@ -23,18 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Easing, Tween } from '@tweenjs/tween.js'
 import { useEffect } from 'react'
 import { AdditiveBlending, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
 import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  getMutableComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, getComponent, getMutableComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Easing } from '@ir-engine/ecs/src/EasingFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -46,16 +40,17 @@ import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsType
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 
 export const SpawnEffectComponent = defineComponent({
   name: 'SpawnEffectComponent',
+  jsonID: 'IR_spawnEffect',
 
   schema: S.Object({
     sourceEntity: S.Entity(),
     opacityMultiplier: S.Number(1),
     plateEntity: S.Entity(),
-    lightEntities: S.Array(S.Entity())
+    lightEntities: S.Array(S.Entity()),
+    isFadingOut: S.Bool(false)
   }),
 
   reactor: () => {
@@ -93,42 +88,28 @@ export const SpawnEffectComponent = defineComponent({
   },
 
   fadeIn: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 1
-          },
-          1000
-        )
-        .easing(Easing.Exponential.Out)
-        .start()
-        .onComplete(() => {
-          removeComponent(entity, TweenComponent)
-        })
-    )
+    // Set the local component state
+    const component = getMutableComponent(entity, SpawnEffectComponent)
+    component.isFadingOut.set(false)
+
+    // Use TransitionComponent to animate the opacityMultiplier property
+    SpawnEffectComponent.setTransition(entity, 'opacityMultiplier', 1, {
+      duration: 1000,
+      easing: Easing.exponential.out
+    })
   },
 
   fadeOut: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 0
-          },
-          2000
-        )
-        .start()
-        .onComplete(() => {
-          removeEntity(entity)
-        })
-    )
+    // Mark this entity as fading out in the local component state
+    const component = getMutableComponent(entity, SpawnEffectComponent)
+    component.isFadingOut.set(true)
+
+    // Use TransitionComponent to animate the opacityMultiplier property
+    SpawnEffectComponent.setTransition(entity, 'opacityMultiplier', 0, {
+      duration: 2000,
+      easing: Easing.exponential.out
+    })
+    // The entity will be removed when the transition completes via the receptor
   },
 
   lightMesh: new Mesh(

@@ -40,16 +40,20 @@ import {
   ReactorRoot,
   SetPartialStateAction,
   State,
+  defineAction,
   destroy,
+  dispatchAction,
   extend,
   getState,
   hookstate,
   identifiable,
+  matches,
   none,
   resolveObject,
   startReactor,
   useHookstate
 } from '@ir-engine/hyperflux'
+import { matchesEntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import { ECSState } from './ECSState'
 import { Easing, EasingFunction } from './EasingFunctions'
 import { Entity, UndefinedEntity } from './Entity'
@@ -1306,6 +1310,18 @@ export function getSimulationCounterpart(entity: Entity) {
  * Component Transitions
  */
 
+/**
+ * Actions related to component transitions
+ */
+export class TransitionActions {
+  static transitionComplete = defineAction({
+    type: 'ee.engine.transitions.TRANSITION_COMPLETE',
+    entityUUID: matchesEntityUUID,
+    componentJsonID: matches.string,
+    propertyPath: matches.string
+  })
+}
+
 export const TransitionComponent = defineComponent({
   name: 'TransitionComponent',
 
@@ -1426,10 +1442,18 @@ export const TransitionComponent = defineComponent({
       previousValue = ev.toValue
     }
 
-    // Remove completed events and update initial value
+    // Remove completed events, update initial value, and dispatch completion actions
     transition.events = transition.events.filter((ev) => {
       if (ev.age >= ev.duration) {
         transition.initialValue = ev.toValue
+        // If a transition is complete, dispatch an action to notify receptors
+        dispatchAction(
+          TransitionActions.transitionComplete({
+            entityUUID: getComponent(entity, UUIDComponent),
+            componentJsonID: transition.componentJsonID,
+            propertyPath: transition.propertyPath
+          })
+        )
         return false
       }
       return true
