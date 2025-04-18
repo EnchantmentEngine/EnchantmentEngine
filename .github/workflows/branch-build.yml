@@ -225,6 +225,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_ecs }}
         with:
           projectBaseDir: packages/ecs/
@@ -271,6 +272,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_network }}
         with:
           projectBaseDir: packages/network/
@@ -326,6 +328,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_spatial }}
         with:
           projectBaseDir: packages/spatial/
@@ -387,6 +390,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_engine }}
         with:
           projectBaseDir: packages/engine/
@@ -438,6 +442,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets[format('SONAR_TOKEN', matrix.package)] }}
         with:
           projectBaseDir: packages/${{ matrix.package }}/
@@ -493,6 +498,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: "1"
           SONAR_TOKEN: ${{ secrets[format('SONAR_TOKEN', matrix.package)] }}
         with:
           projectBaseDir: packages/${{ matrix.package }}/
