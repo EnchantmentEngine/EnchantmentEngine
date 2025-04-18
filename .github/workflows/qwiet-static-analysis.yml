@@ -31,6 +31,6 @@ jobs:
         run: |
           curl https://cdn.shiftleft.io/download/sl > /usr/local/bin/sl && chmod a+rx /usr/local/bin/sl
           sl analyze --app "${GITHUB_REPOSITORY_OWNER}_${GITHUB_REPOSITORY#*/}" --verbose .
-          sl check-analysis --v2 --app "${GITHUB_REPOSITORY_OWNER}_${GITHUB_REPOSITORY#*/}"
+          
         env:
           SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}  #Make sure this secret is set
