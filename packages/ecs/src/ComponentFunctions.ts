@@ -498,16 +498,8 @@ const resizeComponent = (component: Component, size: number) => {
 let componentInstanceCount = 0
 
 const _getComponentState = <C extends Component>(entity: Entity, component: C) => {
-  const layer = LayerComponent.get(entity) ?? Layers.Simulation
   if (!component.stateMap[entity]) {
     const id = `${component.name}_${entity}_${componentInstanceCount++}`
-    // optimized path for simulation layer without onSet callback
-    if (layer === Layers.Simulation) {
-      if (!component.stateMap[entity]) {
-        component.stateMap[entity] = hookstate(none, identifiable(id))
-      }
-      return component.stateMap[entity]
-    }
     component.stateMap[entity] = hookstate(
       none,
       extend(identifiable(id), () => ({
