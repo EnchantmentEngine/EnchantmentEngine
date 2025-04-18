@@ -184,7 +184,7 @@ jobs:
         with:
           projectBaseDir: packages/hyperflux/
       - name: SonarQube Failure
-        run: cat /var/log/syslog || true
+        run: ls /var/log/ || true
 
   test_ecs:
     needs: install-modules
