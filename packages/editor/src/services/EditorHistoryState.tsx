@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   ComponentMap,
   deserializeComponent,
+  EngineState,
   Entity,
   EntityTreeComponent,
   getAllComponents,
@@ -36,6 +37,7 @@ import {
   removeComponent,
   removeEntity,
   serializeComponent,
+  setComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -57,7 +59,6 @@ import {
 } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 
@@ -66,16 +67,14 @@ export type SourceData = Record<NodeID, object>
 export type UndoCommand = {
   type: 'undo'
   sourceID: SourceID
-  author: UserID
 }
 
 export type RedoCommand = {
   type: 'redo'
   sourceID: SourceID
-  author: UserID
 }
 
-export type JSONPatchCommands = { sourceID: SourceID; author: UserID; ops: Patch }
+export type JSONPatchCommands = Record<SourceID, Patch>
 
 export type HistoryCommand = UndoCommand | RedoCommand | JSONPatchCommands
 
@@ -118,8 +117,7 @@ export const EditorHistoryActions = {
    */
   ops: defineAction({
     type: 'ir.editor.history.ADD',
-    sourceID: matches.string as Validator<unknown, SourceID>,
-    ops: matches.array as Validator<unknown, Operation[]>
+    ops: matches.object as Validator<unknown, Record<SourceID, Operation[]>>
   })
 }
 
@@ -132,9 +130,6 @@ export const EditorHistoryState = defineState({
 
   receptors: {
     initialize: EditorHistoryActions.initialize.receive((action) => {
-      if (!getState(EditorHistoryState).sources[action.sourceID]) {
-        getMutableState(EditorHistoryState).sources.set({})
-      }
       getMutableState(EditorHistoryState).sources[action.sourceID].set({
         initial: action.partialState,
         latest: action.partialState
@@ -151,7 +146,6 @@ export const EditorHistoryState = defineState({
       history.merge([
         {
           type: 'undo',
-          author: action.$user,
           sourceID: action.sourceID
         }
       ])
@@ -164,7 +158,6 @@ export const EditorHistoryState = defineState({
       history.merge([
         {
           type: 'redo',
-          author: action.$user,
           sourceID: action.sourceID
         }
       ])
@@ -174,13 +167,7 @@ export const EditorHistoryState = defineState({
         getMutableState(EditorHistoryState).commands[action.$user].set([])
       }
       const history = getMutableState(EditorHistoryState).commands[action.$user]
-      history.merge([
-        {
-          author: action.$user,
-          sourceID: action.sourceID,
-          ops: action.ops
-        }
-      ])
+      history.merge([action.ops])
     })
   },
 
@@ -189,11 +176,7 @@ export const EditorHistoryState = defineState({
 
     return (
       <>
-        <QueryReactor
-          Components={[SceneComponent, GLTFComponent]}
-          ChildEntityReactor={SourceReactor}
-          layer={Layers.Authoring}
-        />
+        <QueryReactor Components={[GLTFComponent]} ChildEntityReactor={SourceReactor} layer={Layers.Authoring} />
         {state.sources.keys.map((sourceID: SourceID) => (
           <ErrorBoundary key={sourceID}>
             <Suspense>
@@ -205,33 +188,36 @@ export const EditorHistoryState = defineState({
     )
   },
 
-  canRedo: (sourceID: SourceID) => {
-    const history = getState(EditorHistoryState)[sourceID]
-    const commands = Object.values(history.commands).flat() as HistoryCommand[]
-    const { redoStack } = computeCommands(commands)
+  canRedo: () => {
+    const commands = getState(EditorHistoryState).commands
+    const authoredCommands = commands[getState(EngineState).userID]
+    const { redoStack } = computeCommands(authoredCommands)
     return redoStack.length > 0
   },
 
-  canUndo: (sourceID: SourceID) => {
-    const history = getState(EditorHistoryState)[sourceID]
-    const commands = Object.values(history.commands).flat() as HistoryCommand[]
-    const { doneStack } = computeCommands(commands)
-    return doneStack.length > 1 // 1 such that you cannot undo the first snapshot
+  canUndo: () => {
+    const commands = getState(EditorHistoryState).commands
+    const authoredCommands = commands[getState(EngineState).userID]
+    const { doneStack } = computeCommands(authoredCommands)
+    return doneStack.length > 0
   },
 
   snapshot: (sourceID: SourceID) => {
     const newData = getSourceSnapshot(sourceID)
     const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
-    dispatchAction(EditorHistoryActions.ops({ sourceID, ops: patch }))
+    dispatchAction(EditorHistoryActions.ops({ ops: { [sourceID]: patch } }))
   },
 
   snapshotEntities: (entities: Entity[]) => {
     const affectedSources = new Set<SourceID>(entities.map((entity) => GLTFComponent.getInstanceID(entity)))
+    if (affectedSources.size === 0) return
+    const ops = {} as Record<SourceID, Operation[]>
     for (const sourceID of affectedSources) {
       const newData = getSourceSnapshot(sourceID)
       const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
-      dispatchAction(EditorHistoryActions.ops({ sourceID, ops: patch }))
+      ops[sourceID] = patch
     }
+    dispatchAction(EditorHistoryActions.ops({ ops }))
   }
 })
 
@@ -260,29 +246,29 @@ const SourceReactor = (props: { entity: Entity }) => {
  * This component replays the history of a source to keep the current state in sync.
  */
 const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
-  const commands = useMutableState(EditorHistoryState).commands
-  const sourceCommands = Object.values(commands.get(NO_PROXY))
-    .flat()
-    .filter((command) => command.sourceID === props.sourceID) as HistoryCommand[]
+  const commands = useMutableState(EditorHistoryState).commands.get(NO_PROXY)
+  const sourceCommands = commands[getState(EngineState).userID]
+    ? (Object.values(commands[getState(EngineState).userID])
+        .filter((command) => 'type' in command || command[props.sourceID])
+        .flat() as HistoryCommand[])
+    : []
+
   const commandLength = sourceCommands.length
 
   useEffect(() => {
     if (commandLength === 0) return
 
     // parse our undo/redo stack and return a new list of commands that represent the final graph path
-    const { doneStack } = computeCommands(sourceCommands)
-    if (!doneStack.length) return
+    const { doneStack } = computeCommands(sourceCommands, props.sourceID)
+
+    const operations = doneStack.map((command) => command[props.sourceID]).flat()
 
     // get the readonly state and treat it as mutable so we have a non-reactive copy of the current state
     const readonlyState = getState(EditorHistoryState).sources[props.sourceID]
 
-    const operations = doneStack.flatMap((command) => command.ops)
-
     // get the final state of the history
     const finalState = structuredClone(readonlyState.initial)
     applyPatch(finalState, operations)
-
-    console.log(finalState)
 
     // update the state to the ECS
     applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
@@ -298,7 +284,7 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
  * @param commands
  * @returns
  */
-export const computeCommands = (commands: HistoryCommand[]) => {
+export const computeCommands = (commands: HistoryCommand[], sourceID?: SourceID) => {
   const commandLength = commands.length
   const doneStack: JSONPatchCommands[] = []
   const redoStack: JSONPatchCommands[] = []
@@ -321,6 +307,7 @@ export const computeCommands = (commands: HistoryCommand[]) => {
     } else {
       // A normal command: push it onto the done stack
       // and clear the redo stack (as new commands invalidate the redo history).
+      if (sourceID && !command[sourceID]) continue
       doneStack.push(command)
       redoStack.length = 0
     }
@@ -347,7 +334,11 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
       for (const [componentName, componentData] of Object.entries(finalState[nodeID])) {
         const Component = ComponentMap.get(componentName)
         if (!Component) continue
-        deserializeComponent(entity, Component, componentData)
+        if (Component === EntityTreeComponent || Component === NameComponent) {
+          setComponent(entity, Component, componentData)
+        } else {
+          deserializeComponent(entity, Component, componentData)
+        }
       }
       if (currentState[nodeID]) {
         for (const componentName of Object.keys(currentState[nodeID])) {
@@ -388,17 +379,22 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
     for (const component of components) {
       if (component === NodeIDComponent) continue
       const sceneComponentID = component.jsonID
-      if (sceneComponentID) {
-        const data = serializeComponent(entity, component)
-        if (data) {
-          sourceData[nodeID][component.name] = data
-        }
+      if (!sceneComponentID) continue
+      const data = serializeComponent(entity, component)
+      if (data) {
+        sourceData[nodeID][component.name] = data
       }
     }
 
     // special case components that do not have a jsonID but are required if available
     if (hasComponent(entity, NameComponent)) {
       sourceData[nodeID][NameComponent.name] = getComponent(entity, NameComponent)
+    }
+    if (hasComponent(entity, EntityTreeComponent)) {
+      sourceData[nodeID][EntityTreeComponent.name] = {
+        parentEntity: getComponent(entity, EntityTreeComponent).parentEntity,
+        childIndex: getComponent(entity, EntityTreeComponent).childIndex
+      }
     }
     if (hasComponent(entity, TransformComponent)) {
       const component = getComponent(entity, TransformComponent)
@@ -419,12 +415,6 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
           y: component.scale.y,
           z: component.scale.z
         }
-      }
-    }
-    if (hasComponent(entity, EntityTreeComponent)) {
-      sourceData[nodeID][EntityTreeComponent.name] = {
-        parentEntity: getComponent(entity, EntityTreeComponent).parentEntity,
-        childIndex: getComponent(entity, EntityTreeComponent).childIndex
       }
     }
   }
