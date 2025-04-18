@@ -179,6 +179,7 @@ jobs:
         id: sonarScan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          RUNNER_DEBUG: true
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_hyperflux }}
         with:
           projectBaseDir: packages/hyperflux/
