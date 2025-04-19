@@ -81,6 +81,7 @@ import {
   UVMapping
 } from 'three'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
+import { overrideCubemapLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { EnvMapComponent } from '../components/EnvmapComponent'
 import { ErrorComponent } from '../components/ErrorComponent'
 import { EnvMapSourceType } from '../constants/EnvMapEnum'
@@ -347,6 +348,8 @@ describe('EnvMapCubemapReactor', () => {
   })
 
   describe('on change [envMapComponent.envMapCubemapURL])', () => {
+    overrideCubemapLoaderLoad()
+
     it('should call loadCubeMapTexture', async () => {
       // 3. Set input & dependencies data
       const rootEntity = createEntity()
@@ -522,42 +525,48 @@ describe('EnvMapCubemapReactor', () => {
         expect(result).toBe(Expected)
       })
 
-      /** @todo What is the correct way to check for the removeError case ? */
-      it.todo(
-        "should call removeError for (closure)entity.EnvMapComponent with 'MISSING_FILE' as the error id",
-        async () => {
-          // 3. Set input & dependencies data
-          const TestErrorHandle = 'MISSING_FILE'
-          const rootEntity = createEntity()
-          setComponent(rootEntity, EnvMapComponent)
-          setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
-          const Reactor = () => {
-            return React.createElement(testReactor, {
-              entity: testEntity,
-              rootEntity: rootEntity
-            })
-          }
-          expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
-          const root = startReactor(Reactor)
-          await act(() => render(null))
-          addError(testEntity, EnvMapComponent, TestErrorHandle)
-          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-          const envMapCubemapURL = lastCall[0]
-          const onLoad = lastCall[1]
-          const onProgress = lastCall[2]
-          const onError = lastCall[3]
-          // 1. Sanity check (input & dependencies)
-          const before = hasComponent(testEntity, ErrorComponent)
-          expect(before).toBeTruthy()
-          // 2. Run the process
-          onLoad((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-          const result = hasComponent(testEntity, ErrorComponent)
-          // 4. Check the result (output)
-          expect(result).toBeFalsy()
+      it("should call removeError for (closure)entity.EnvMapComponent with 'MISSING_FILE' as the error id", async () => {
+        // 3. Set input & dependencies data
+        const TestErrorHandle = 'MISSING_FILE'
+        const rootEntity = createEntity()
+        setComponent(rootEntity, EnvMapComponent)
+        setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
+        const Reactor = () => {
+          return React.createElement(testReactor, {
+            entity: testEntity,
+            rootEntity: rootEntity
+          })
         }
-      )
+        expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
+        const root = startReactor(Reactor)
+        await act(() => render(null))
+
+        addError(testEntity, EnvMapComponent, TestErrorHandle)
+
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+        const envMapCubemapURL = lastCall[0]
+        const onLoad = lastCall[1]
+        const onProgress = lastCall[2]
+        const onError = lastCall[3]
+
+        // 1. Sanity check (input & dependencies)
+        const before = hasComponent(testEntity, ErrorComponent)
+        expect(before).toBeTruthy()
+
+        // 2. Run the process
+        const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<
+          MeshStandardMaterial,
+          Identifiable
+        >
+        material.envMap.set(new Texture())
+        onLoad((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
+        const result = hasComponent(testEntity, ErrorComponent)
+
+        // 4. Check the result (output)
+        expect(result).toBeFalsy()
+      })
 
       it('should not do anything if `@param texture` is falsy', async () => {
         const Initial = new Texture()
@@ -842,47 +851,36 @@ describe('EnvMapEquirectangularReactor', () => {
       () => {}
     )
 
-    /** @todo Overrides the output of useTexture, but the component does not get the result??? */
-    // it.todo('should set `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.mapping to EquirectangularReflectionMapping', async () => {
-    //   const Expected = EquirectangularReflectionMapping
-    //   const Initial = UVMapping
-    //   // 3. Set input & dependencies data
-    //   const material = new MeshStandardMaterial({ envMap: new Texture(/* image=*/ undefined, /* mapping=*/ Initial) })
-    //   const rootEntity = createEntity()
-    //   setComponent(rootEntity, EnvMapComponent)
-    //   setComponent(testEntity, MaterialStateComponent, { material: material })
-    //   const Reactor = () => {
-    //     return React.createElement(testReactor, {
-    //       entity: testEntity,
-    //       rootEntity: rootEntity
-    //     })
-    //   }
-    //   const ExpectedTexture = new Texture(/* image=*/ undefined, /* mapping=*/ Expected)
-    //   useTextureSpy.mockImplementation((_url, _entity) => [ExpectedTexture, () => {}])
-    //   // 1. Sanity check (input & dependencies)
-    //   const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-    //     ?.mapping
-    //   expect(before).toBe(Initial)
-    //   expect(before).not.toBe(Expected)
-    //   expect(useTextureSpy).not.toHaveBeenCalled()
-    //   // 2. Run the process
-    //
-    //   console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-    //   const root = startReactor(Reactor)
-    //   await act(() => render(null))
-    //   // ?? null ?? Why ??
-    //   console.log((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-    //
-    //   const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-    //     ?.mapping
-    //   // 4. Check the result (output)
-    //   expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    //   expect(useTextureSpy).toHaveBeenCalled()
-    //   expect(result).not.toBe(Initial)
-    //   expect(result).toBe(Expected)
-    //   // 5? Cleanup (dependencies)
-    //   useTextureSpy.mockClear()
-    // })
+    it('should set `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.mapping to EquirectangularReflectionMapping', async () => {
+      const Expected = EquirectangularReflectionMapping
+      const Initial = UVMapping
+      // 3. Set input & dependencies data
+      const material = new MeshStandardMaterial({ envMap: new Texture(/* image=*/ undefined, /* mapping=*/ Initial) })
+      const rootEntity = createEntity()
+      setComponent(rootEntity, EnvMapComponent, {
+        type: EnvMapSourceType.Equirectangular,
+        envMapSourceURL: '/packages/projects/default-project/assets/galaxyTexture.jpg'
+      })
+      setComponent(testEntity, MaterialStateComponent, { material: material })
+      const Reactor = () => {
+        return React.createElement(testReactor, {
+          entity: testEntity,
+          rootEntity: rootEntity
+        })
+      }
+      // 1. Sanity check (input & dependencies)
+      const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap?.mapping
+      expect(before).toBe(Initial)
+      expect(before).not.toBe(Expected)
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      await act(() => render(null))
+      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap?.mapping
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
 
     /** @todo How to override the output of useTexture without getting null ?? */
     it.todo(
