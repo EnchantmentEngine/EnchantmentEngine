@@ -180,8 +180,9 @@ describe('LineSegmentComponent', () => {
         geometry: new BoxGeometry(1, 1, 1),
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, ObjectComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, ObjectComponent), true)
+      })
     })
 
     it('should set a VisibleComponent to the entity when it mounts', async () => {
@@ -191,8 +192,9 @@ describe('LineSegmentComponent', () => {
         geometry: new BoxGeometry(1, 1, 1),
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, VisibleComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, VisibleComponent), true)
+      })
     })
 
     it('should call removeObjectFromGroup(lineSegment) with the entity when it unmounts', async () => {
@@ -202,11 +204,13 @@ describe('LineSegmentComponent', () => {
         geometry: new BoxGeometry(1, 1, 1),
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, ObjectComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, ObjectComponent), true)
+      })
       removeComponent(testEntity, ObjectComponent)
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, ObjectComponent), false)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, ObjectComponent), false)
+      })
     })
 
     it('should trigger when component.name changes', async () => {
@@ -218,16 +222,18 @@ describe('LineSegmentComponent', () => {
         geometry: geometry,
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, NameComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, NameComponent), true)
+      })
       setComponent(testEntity, LineSegmentComponent, {
         name: Expected,
         geometry: geometry,
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      const result = getComponent(testEntity, NameComponent)
-      assert.equal(result, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, NameComponent)
+        assert.equal(result, Expected)
+      })
     })
 
     it('should trigger when component.layerMask changes', async () => {
@@ -239,16 +245,18 @@ describe('LineSegmentComponent', () => {
         geometry: geometry,
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(hasComponent(testEntity, ObjectLayerMaskComponent), true)
-      assert.notEqual(ObjectLayerMaskComponent.mask[testEntity], Expected)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, ObjectLayerMaskComponent), true)
+        assert.notEqual(ObjectLayerMaskComponent.mask[testEntity], Expected)
+      })
       setComponent(testEntity, LineSegmentComponent, {
         layerMask: Expected,
         geometry: geometry,
         material: new MeshBasicMaterial({ color: 0x111111 })
       })
-      await act(() => render(null))
-      assert.equal(ObjectLayerMaskComponent.mask[testEntity], Expected)
+      await vi.waitFor(() => {
+        assert.equal(ObjectLayerMaskComponent.mask[testEntity], Expected)
+      })
     })
 
     it('should set the LineSegment layerMask correctly', async () => {
@@ -270,12 +278,13 @@ describe('LineSegmentComponent', () => {
         assert(hasComponent(entity, ObjectComponent))
         assert(hasComponent(entity, ObjectLayerMaskComponent))
         assert(hasComponent(entity, ObjectLayerComponents[layer]))
+
+        const object = getComponent(entity, ObjectComponent)
+        const lineSegments = object as LineSegments
+        assert(lineSegments.isLineSegments)
+        assert(lineSegments.layers.mask === layerMask)
       })
 
-      const object = getComponent(entity, ObjectComponent)
-      const lineSegments = object as LineSegments
-      assert(lineSegments.isLineSegments)
-      assert(lineSegments.layers.mask === layerMask)
       removeEntity(entity)
     })
 
@@ -289,19 +298,21 @@ describe('LineSegmentComponent', () => {
         geometry: geometry,
         material: material
       })
-      await act(() => render(null))
-      assert.notDeepEqual(
-        (getComponent(testEntity, LineSegmentComponent).material as MeshBasicMaterial).color,
-        Expected
-      )
+      await vi.waitFor(() => {
+        assert.notDeepEqual(
+          (getComponent(testEntity, LineSegmentComponent).material as MeshBasicMaterial).color,
+          Expected
+        )
+      })
       setComponent(testEntity, LineSegmentComponent, {
         color: Expected,
         geometry: geometry,
         material: material
       })
-      await act(() => render(null))
-      const result = (getComponent(testEntity, LineSegmentComponent).material as MeshBasicMaterial).color
-      assert.deepEqual(result, Expected)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, LineSegmentComponent).material as MeshBasicMaterial).color
+        assert.deepEqual(result, Expected)
+      })
     })
 
     it('should create a LineSegmentComponent correctly', async () => {
@@ -311,14 +322,15 @@ describe('LineSegmentComponent', () => {
 
       setComponent(entity, LineSegmentComponent, { geometry: geometry, material: material })
 
-      await act(() => render(null))
+      await vi.waitFor(() => {
+        assert(hasComponent(entity, LineSegmentComponent))
+      })
 
-      assert(hasComponent(entity, LineSegmentComponent))
       removeEntity(entity)
 
-      await act(() => render(null))
-
-      assert(!hasComponent(entity, LineSegmentComponent))
+      await vi.waitFor(() => {
+        assert(!hasComponent(entity, LineSegmentComponent))
+      })
     })
 
     it('should update the LineSegmentComponent data correctly', async () => {
@@ -338,9 +350,9 @@ describe('LineSegmentComponent', () => {
 
       setComponent(entity, LineSegmentComponent, { geometry: geometry, material: material })
 
-      await act(() => render(null))
-
-      assert(hasComponent(entity, LineSegmentComponent))
+      await vi.waitFor(() => {
+        assert(hasComponent(entity, LineSegmentComponent))
+      })
 
       const lineSegmentComponent = getMutableComponent(entity, LineSegmentComponent)
       lineSegmentComponent.geometry.set(geometry2)
@@ -348,7 +360,9 @@ describe('LineSegmentComponent', () => {
 
       await act(() => render(null))
 
-      sinon.assert.calledTwice(spy)
+      await vi.waitFor(() => {
+        sinon.assert.calledTwice(spy)
+      })
     })
 
     it('should remove the LineSegmentComponent resources when it is unmounted', async () => {
@@ -362,15 +376,18 @@ describe('LineSegmentComponent', () => {
 
       setComponent(entity, LineSegmentComponent, { geometry: geometry, material: material })
 
-      await act(() => render(null))
-
-      assert(hasComponent(entity, LineSegmentComponent))
+      await vi.waitFor(() => {
+        assert(hasComponent(entity, LineSegmentComponent))
+      })
 
       removeComponent(entity, LineSegmentComponent)
 
       await act(() => render(null))
-      assert(!hasComponent(entity, LineSegmentComponent))
-      sinon.assert.calledTwice(spy)
+
+      await vi.waitFor(() => {
+        assert(!hasComponent(entity, LineSegmentComponent))
+        sinon.assert.calledTwice(spy)
+      })
       removeEntity(entity)
     })
   }) //:: reactor
