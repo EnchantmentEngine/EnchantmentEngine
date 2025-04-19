@@ -62,7 +62,7 @@ export type Static<T extends Schema> = T['static']
 
 export interface Options<V = unknown> {
   id?: string
-  default?: any
+  default?: V
   serialize?: (value: V) => unknown
   deserialize?: (curr: V, value: V) => V
   validate?: (value: V, prev: V, entity: Entity) => boolean

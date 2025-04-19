@@ -907,8 +907,8 @@ export const MozillaHubsLightMapComponent = defineComponent({
   name: 'MozillaHubsLightMapComponent',
   jsonID: 'MOZ_lightmap',
   schema: S.Object({
-    index: S.Number(1),
-    intensity: S.Number(1.0)
+    index: S.Number({ default: 1 }),
+    intensity: S.Number({ default: 1.0 })
   }),
 
   extendMaterialParams(
