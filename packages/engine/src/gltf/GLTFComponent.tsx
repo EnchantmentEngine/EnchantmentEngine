@@ -63,11 +63,6 @@ import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/Scene
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { LoaderUtils } from 'three'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
-import {
-  BINARY_EXTENSION_CHUNK_TYPES,
-  BINARY_EXTENSION_HEADER_LENGTH,
-  BINARY_EXTENSION_HEADER_MAGIC
-} from '../assets/loaders/gltf/GLTFExtensions'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
@@ -75,7 +70,6 @@ import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadC
 import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
-import { migrateSceneJSONToGLTF } from './convertJsonToGLTF'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
 import { NodeID, NodeIDComponent } from './NodeIDComponent'
@@ -89,7 +83,7 @@ export const GLTFComponent = defineComponent({
   schema: S.Object({
     src: S.String(''),
     /** @todo move this to it's own component */
-    cameraOcclusion: S.Bool(false),
+    cameraOcclusion: S.Bool(true),
 
     //collision info
     applyColliders: S.Bool(false),
@@ -141,7 +135,7 @@ export const GLTFComponent = defineComponent({
     if (!uuid || !src) return source ?? ('' as SourceID)
     return SourceComponent.getSourceID(uuid, src)
   },
-  removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
+  removeHashes: <T extends EntityUUID | SourceID | NodeID | string>(url: T) => {
     return url.replaceAll(/\?hash=[^-]+/g, '') as T
   }
 })
@@ -208,12 +202,26 @@ export const GLTFComponentReactor = () => {
   const entity = useEntityContext()
   const gltfComponent = useComponent(entity, GLTFComponent)
   const documentLoaded = useHookstate(false)
+  const sceneLoaded = GLTFComponent.useSceneLoaded(entity)
 
   useEffect(() => {
+    if (!sceneLoaded) return
+
     const occlusion = gltfComponent.cameraOcclusion.value
-    if (!occlusion) ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
-    else ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
-  }, [gltfComponent.cameraOcclusion])
+    const entities = SourceComponent.getEntitiesBySource(GLTFComponent.getInstanceID(entity))
+
+    if (!occlusion) {
+      ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.disableLayer(curr, ObjectLayers.Camera)
+      }
+    } else {
+      ObjectLayerMaskComponent.enableLayer(entity, ObjectLayers.Camera)
+      for (const curr of entities) {
+        ObjectLayerMaskComponent.enableLayer(curr, ObjectLayers.Camera)
+      }
+    }
+  }, [gltfComponent.cameraOcclusion.value, sceneLoaded])
 
   useGLTFDocument(entity)
 
@@ -242,18 +250,27 @@ export const GLTFComponentReactor = () => {
       const loadedEntities = SourceComponent.getEntitiesBySource(sourceID, layer)
       for (const entity of loadedEntities) removeEntity(entity)
     }
+    const unhashedUrl = GLTFComponent.removeHashes(url)
+    if (unhashedUrl.endsWith('.material.gltf')) {
+      GLTFLoaderFunctions.loadMaterialGLTF(options).then(() => {
+        documentLoaded.set(true)
+        if (aborted) {
+          unloadEntities()
+        }
+      })
+    } else {
+      GLTFLoaderFunctions.loadScene(options, sceneIndex).then(() => {
+        documentLoaded.set(true)
 
-    GLTFLoaderFunctions.loadScene(options, sceneIndex).then(() => {
-      documentLoaded.set(true)
+        // force transform update for all entities in the model.
+        // required to propagate dirty update auth to sim layers
+        TransformComponent.dirty[entity] = 1
 
-      // force transform update for all entities in the model.
-      // required to propagate dirty update auth to sim layers
-      TransformComponent.dirty[entity] = 1
-
-      if (aborted) {
-        unloadEntities()
-      }
-    })
+        if (aborted) {
+          unloadEntities()
+        }
+      })
+    }
     return () => {
       documentLoaded.set(false)
       GLTFLoaderFunctions.unloadScene(url, entity)
@@ -264,8 +281,6 @@ export const GLTFComponentReactor = () => {
       }
     }
   }, [gltfComponent.document])
-
-  const sceneLoaded = GLTFComponent.useSceneLoaded(entity)
 
   const scene = useOptionalComponent(entity, SceneComponent)
 
@@ -426,6 +441,11 @@ const onProgress: (event: ProgressEvent) => void = (event) => {
   // console.log(event)
 }
 
+/* BINARY EXTENSION */
+export const BINARY_EXTENSION_HEADER_MAGIC = 'glTF'
+export const BINARY_EXTENSION_HEADER_LENGTH = 12
+export const BINARY_EXTENSION_CHUNK_TYPES = { JSON: 0x4e4f534a, BIN: 0x004e4942 }
+
 export const loadGLTFFile = (
   url: string,
   onLoad: (gltf: GLTF.IGLTF, body: ArrayBuffer | null) => void,
@@ -455,11 +475,6 @@ export const loadGLTFFile = (
         }
       } else {
         json = data
-      }
-
-      /** Migrate old scene json format */
-      if ('entities' in json && 'root' in json) {
-        json = migrateSceneJSONToGLTF(json)
       }
 
       onLoad(parseStorageProviderURLs(JSON.parse(JSON.stringify(json))), body)
@@ -593,7 +608,7 @@ export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
   const gltfComponent = getComponent(entity, GLTFComponent)
   const documentID = GLTFComponent.getInstanceID(entity)
   const document = gltfComponent.document!
-  const gltfLoader = getState(AssetLoaderState).gltfLoader
+  const manager = getState(AssetLoaderState).manager
 
   return {
     entity,
@@ -603,6 +618,6 @@ export const getGLTFOptions = (entity: Entity): GLTFParserOptions => {
     path: LoaderUtils.extractUrlBase(gltfComponent.src),
     body: gltfComponent.body,
     requestHeader: {},
-    manager: gltfLoader.manager
+    manager
   }
 }

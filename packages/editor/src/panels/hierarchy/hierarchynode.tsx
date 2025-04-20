@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { userHasProjectPermission } from '@ir-engine/client-core/src/hooks/useUserProjectPermission'
 import { API } from '@ir-engine/common'
 import { projectPermissionPath } from '@ir-engine/common/src/schema.type.module'
@@ -31,8 +31,8 @@ import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunction
 import { EngineState, EntityTreeComponent, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
+  getSimulationCounterpart,
   hasComponent,
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -51,6 +51,8 @@ import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/Ma
 import { getMutableState, getState, none, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { TransformPivot, TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { Button, Input } from '@ir-engine/ui'
@@ -287,9 +289,10 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     } else if (event.detail === 2) {
       const cameraEntity = getState(ReferenceSpaceState).viewerEntity
       if (entity && getOptionalComponent(cameraEntity, CameraOrbitComponent)) {
-        const editorCameraState = getMutableComponent(cameraEntity, CameraOrbitComponent)
-        editorCameraState.focusedEntities.set([entity])
-        editorCameraState.refocus.set(true)
+        const simulationEntity = getSimulationCounterpart(entity)
+        const pivot = computeTransformPivot([simulationEntity], TransformPivot.Center, TransformSpace.world)
+        if (!pivot?.position) return
+        CameraOrbitComponent.setFocus(cameraEntity, pivot.position, pivot.bounds)
       }
     }
   }
@@ -466,7 +469,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
                   className="p-0"
                   title={t('common:components.save')}
                   onClick={() =>
-                    PopoverState.showPopupover(
+                    ModalState.openModal(
                       <ConfirmDialog
                         onSubmit={onSaveChanges}
                         title={t('editor:dialog.saveModel.title')}
@@ -483,7 +486,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
                   className="p-0"
                   title={t('editor:dialog.revertModel.lbl-name')}
                   onClick={() =>
-                    PopoverState.showPopupover(
+                    ModalState.openModal(
                       <ConfirmDialog
                         onSubmit={onRevert}
                         title={t('editor:dialog.revertModel.title')}
@@ -500,7 +503,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
             <button
               type="button"
               className="m-0 h-5 w-5 flex-shrink-0 border-none p-0 hover:opacity-80"
-              data-testid={`hierarchy-panel-scene-item-${visible ? 'hide' : 'unhide'}-button`}
+              data-testid={`hierarchy-panel-scene-item-${locked ? 'unlock' : 'lock'}-button`}
               onClick={onLockUnlockNode}
             >
               {locked ? (

@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { REMOVE_EDGE_SLASH_REGEX } from '@ir-engine/common/src/regex'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
@@ -72,12 +72,12 @@ export const showMultipleFileModal = (projectName: string, directoryPath: string
 
   const onSubmit = async () => {
     await handleUploadFiles(projectName, directoryPath, files)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
-  PopoverState.showPopupover(
+  ModalState.openModal(
     <>
-      <Modal title={'test'} className="w-[50vw] max-w-2xl" onSubmit={onSubmit} onClose={PopoverState.hidePopupover}>
+      <Modal title={'test'} className="w-[50vw] max-w-2xl" onSubmit={onSubmit} onClose={ModalState.closeModal}>
         <div className="flex flex-col rounded-lg bg-[#0e0f11] px-5 py-10 text-center">
           Warning: You will overwrite existing files by uploading these. Do you wish to continue? <br />
           {fileNames.length > 0 && `Files: ${fileNames.join(', ')}`}
@@ -160,7 +160,7 @@ const ViewModeSettings = () => {
       position={'bottom left'}
       trigger={
         <Tooltip content={t('editor:layout.filebrowser.view-mode.settings.name')}>
-          <ViewportButton data-testid="files-panel-view-options-button" icon={CogSm} />
+          <ViewportButton data-testid="view-options-button" icon={CogSm} />
         </Tooltip>
       }
     >
@@ -245,7 +245,12 @@ export default function FilesToolbar() {
           data-testid="files-panel-search-input"
         />
       }
-      dataTestIdJson={{}}
+      dataTestIdJson={{
+        topbarId: 'files-panel-top-bar',
+        backButtonId: 'files-panel-back-directory-button',
+        refreshButtonId: 'files-panel-refresh-directory-button',
+        createNewFolderButtonId: 'files-panel-create-new-folder-button'
+      }}
       utilsComponent={
         <>
           <Tooltip
@@ -263,13 +268,19 @@ export default function FilesToolbar() {
             />
           </Tooltip>
           <div className="flex h-7 items-center gap-2 rounded p-2">
-            <button className="p-1 text-text-secondary hover:text-text-primary">
+            <button
+              className="p-1 text-text-secondary hover:text-text-primary"
+              data-testid="files-panel-view-mode-list-button"
+            >
               <FaList
                 className={twMerge('h-5 w-5', filesViewMode.value === 'list' ? 'cursor-auto text-ui-primary' : '')}
                 onClick={() => filesViewMode.set('list')}
               />
             </button>
-            <button className="p-1 text-text-secondary hover:text-text-primary">
+            <button
+              className="p-1 text-text-secondary hover:text-text-primary"
+              data-testid="files-panel-view-mode-icons-button"
+            >
               <Grid01Sm
                 className={twMerge('h-5 w-5', filesViewMode.value === 'icons' ? 'cursor-auto text-ui-primary' : '')}
                 onClick={() => filesViewMode.set('icons')}
@@ -379,7 +390,11 @@ export function PanelToolbar({
             </Tooltip>
           </div>
           <Tooltip content={t('editor:layout.filebrowser.addNewFolder')}>
-            <ViewportButton onClick={createNewFolder} icon={FolderPlusSm} />
+            <ViewportButton
+              data-testid={dataTestIdJson?.createNewFolderButtonId}
+              onClick={createNewFolder}
+              icon={FolderPlusSm}
+            />
           </Tooltip>
           <ViewModeSettings />
         </div>

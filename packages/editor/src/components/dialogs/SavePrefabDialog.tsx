@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { isValidFileName } from '@ir-engine/common/src/utils/validateFileName'
 import { getComponent, hasComponent } from '@ir-engine/ecs'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
@@ -34,6 +34,7 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
+import { useAssetsQuery } from '../../panels/assets/hooks'
 import { EditorState } from '../../services/EditorServices'
 
 export default function SavePrefabPanel({ entity }) {
@@ -44,11 +45,12 @@ export default function SavePrefabPanel({ entity }) {
   const srcPath = useHookstate(STATIC_ASSET_REGEX.exec(gltfComponent.src)?.[3].replace(/\.[^.]*$/, ''))
   const fileName = (srcPath.value ?? '').split('/').pop() ?? ''
   const resultFileName = useHookstate(isValidFileName(fileName))
+  useAssetsQuery()
 
   const onSavePrefab = async () => {
     const saveName = srcPath.value + '.gltf'
     await exportRelativeGLTF(entity, getState(EditorState).projectName!, saveName, false)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   return (
@@ -57,7 +59,7 @@ export default function SavePrefabPanel({ entity }) {
       onSubmit={onSavePrefab}
       submitButtonDisabled={!resultFileName.isValid.value}
       className="w-[50vw] max-w-2xl"
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
     >
       <Input
         value={srcPath.value}

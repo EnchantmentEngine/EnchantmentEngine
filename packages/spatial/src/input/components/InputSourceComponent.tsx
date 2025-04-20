@@ -31,18 +31,20 @@ import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState } from '@ir-engine/hyperflux'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { isMobile } from '../../common/functions/isMobile'
 import { XRHandComponent, XRSpaceComponent } from '../../xr/XRComponents'
 import { ReferenceSpace, XRState } from '../../xr/XRState'
 import { ButtonStateMap } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
-import { DefaultButtonAlias } from './InputComponent'
+import { DefaultButtonBindings } from './InputComponent'
 
 export const InputSourceComponent = defineComponent({
   name: 'InputSourceComponent',
 
   schema: S.Object({
+    sourceEntity: S.Entity(),
     source: S.Type<XRInputSource>({} as XRInputSource),
-    buttons: S.Type<Readonly<ButtonStateMap<typeof DefaultButtonAlias>>>({}),
+    buttons: S.Type<Readonly<ButtonStateMap<typeof DefaultButtonBindings>>>({}),
     raycaster: S.Class(() => new Raycaster()),
     intersections: S.Array(
       S.Object({
@@ -52,7 +54,11 @@ export const InputSourceComponent = defineComponent({
     )
   }),
 
-  onSet: (entity, component, args: { source?: XRInputSource; gamepad?: Gamepad } = {}) => {
+  onSet: (
+    entity,
+    component,
+    args: { sourceEntity?: Entity; buttons?: ButtonStateMap<any>; source?: XRInputSource; gamepad?: Gamepad } = {}
+  ) => {
     const source =
       args.source ??
       ({
@@ -69,7 +75,7 @@ export const InputSourceComponent = defineComponent({
             hapticActuators: [],
             id: 'emulated-gamepad-' + entity,
             index: 0,
-            mapping: '',
+            mapping: isMobile ? 'xr-standard' : '',
             timestamp: performance.now(),
             vibrationActuator: null
           } as unknown as Gamepad),
@@ -91,6 +97,14 @@ export const InputSourceComponent = defineComponent({
 
     if (source.hand) {
       setComponent(entity, XRHandComponent)
+    }
+
+    if (args.buttons) {
+      component.buttons.set(args.buttons)
+    }
+
+    if (typeof args.sourceEntity === 'number') {
+      component.sourceEntity.set(args.sourceEntity)
     }
   },
 

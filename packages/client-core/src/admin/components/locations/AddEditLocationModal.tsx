@@ -21,7 +21,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { lazy, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useFind, useMutation } from '@ir-engine/common'
 import { config } from '@ir-engine/common/src/config'
 import { ModelTransformStatus, transformModel } from '@ir-engine/common/src/model/ModelTransformFunctions'
@@ -62,12 +62,13 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
-import { Button, DropdownItem, Input, Select } from '@ir-engine/ui'
+import { Button, DropdownItem, Input, Select, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
+import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
 import CompressedPublishConfirmation from './CompressedPublishConfirmation'
@@ -222,7 +223,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
     if (!isValid) {
       return
     }
-    PopoverState.showPopupover(<CompressedPublishConfirmation />)
+    ModalState.openModal(<CompressedPublishConfirmation />)
     const { projectName, sceneName, rootEntity, sceneAssetID, scenePath } = getState(EditorState)
     const abortController = new AbortController()
     try {
@@ -381,10 +382,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         //re-open the original scene
         const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`
         window.open(studioUrl, '_blank')?.focus()
-        PopoverState.hidePopupover()
+        ModalState.closeModal()
       }
     } catch (error) {
-      PopoverState.showPopupover(
+      ModalState.openModal(
         <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
       )
     }
@@ -474,21 +475,23 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   }, [location, props.onPublishSuccess, isNewPublished.value])
 
   return (
-    <div className="absolute z-50 bg-surface-2 px-8 pt-6">
+    <div className="absolute z-50 bg-surface-2 px-8 pt-6" data-testid="publish-panel">
       <div className="relative rounded-lg py-2">
         <div className="flex justify-between pb-6">
           <span className="text-xl">
             {location?.id ? t('editor:toolbar.publishLocation.update') : t('editor:toolbar.publishLocation.create')}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" data-testid="publish-panel-publish-status">
             {location ? (
-              <span className="text-xs text-green-500">
+              <span className="text-xs text-green-500" data-testid="publish-panel-published-date">
                 {t('editor:toolbar.publishLocation.publishDate', formatPublishedDate(location.createdAt))}
               </span>
             ) : (
-              <span className="text-text-primary">{t('editor:toolbar.publishLocation.notYetPublished')}</span>
+              <span className="text-text-primary" data-testid="publish-panel-not-yet-published-message">
+                {t('editor:toolbar.publishLocation.notYetPublished')}
+              </span>
             )}
-            <button onClick={(event) => anchorEvent.set(event)}>
+            <button data-testid="publish-panel-ellipsis-icon" onClick={(event) => anchorEvent.set(event)}>
               <EllipsisVertical />
             </button>
           </div>
@@ -598,11 +601,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         </div>
 
         <div className="grid grid-flow-col border-t border-t-ui-outline px-6 py-5">
-          <Button
-            variant="tertiary"
-            data-testid="publish-panel-cancel-button"
-            onClick={() => PopoverState.hidePopupover()}
-          >
+          <Button variant="tertiary" data-testid="publish-panel-cancel-button" onClick={() => ModalState.closeModal()}>
             {t('common:components.cancel')}
           </Button>
           <div className="ml-auto flex items-center gap-2">
@@ -617,6 +616,16 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                 {unPublishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
               </Button>
             )}
+            <Tooltip content={t('editor:toolbar.publishLocation.createCompressedScenePublishInfo')}>
+              <Button
+                className="bg-[#2F3A4D]"
+                data-testid="publish-panel-compress-and-publish-button"
+                onClick={handlePublishFolder}
+              >
+                <HiOutlineInformationCircle />
+                {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
+              </Button>
+            </Tooltip>
             <Button
               data-testid="publish-panel-publish-or-update-button"
               disabled={isLoading}
@@ -628,9 +637,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                 ? t('editor:toolbar.publishLocation.saveAndPublish')
                 : t('editor:toolbar.publishLocation.title')}
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
-            </Button>
-            <Button onClick={handlePublishFolder}>
-              {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
             </Button>
           </div>
         </div>
@@ -710,7 +716,11 @@ const LocationPublishSuccess = ({ published, url }: { published: boolean; url: s
                 ? t('editor:toolbar.publishLocation.publishSuccess')
                 : t('editor:toolbar.publishLocation.publicUrl')}
             </span>
-            <span className="cursor-pointer py-1 text-sm font-light text-text-primary" onClick={() => window.open(url)}>
+            <span
+              className="cursor-pointer py-1 text-sm font-light text-text-primary"
+              data-testid="publish-panel-location-link"
+              onClick={() => window.open(url)}
+            >
               {url}
             </span>
           </div>
@@ -722,6 +732,7 @@ const LocationPublishSuccess = ({ published, url }: { published: boolean; url: s
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-white transition ${
               published ? 'bg-ui-success hover:bg-[#0e5026]' : 'bg-black bg-opacity-50'
             }`}
+            data-testid="publish-panel-copy-location-link-button"
           >
             <Copy02Sm className="text-white" />
             {published ? t('editor:toolbar.publishLocation.copy') : t('editor:toolbar.publishLocation.copyPublicUrl')}
