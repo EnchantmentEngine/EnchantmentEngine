@@ -87,14 +87,12 @@ function MaterialsLibrary() {
         ? [...materialsBySource[source], materialEntity]
         : [materialEntity]
     }
-    console.log(materialsBySource)
     const materialsBySourceArray = Object.entries(materialsBySource)
     const flattenedMaterials = materialsBySourceArray.reduce(
       (acc: (Entity | string)[], [source, uuids]) => acc.concat([source], uuids),
       []
     ) as Entity[]
     nodes.set(flattenedMaterials)
-    console.log(flattenedMaterials)
   }, [materialQuery.length, selectedEntities, showLayers, layer])
 
   return (
