@@ -46,7 +46,7 @@ export const MaterialPreviewCanvas = () => {
     const { sceneEntity, cameraEntity } = renderPanel
     setComponent(sceneEntity, NameComponent, 'Material Preview Entity')
     const uuid = UUIDComponent.generateUUID()
-    setComponent(sceneEntity, UUIDComponent, uuid)
+    setComponent(sceneEntity, UUIDComponent, { instanceID: uuid, id: 'preview' })
     setComponent(sceneEntity, VisibleComponent, true)
     const material = getComponent(
       UUIDComponent.getEntityByUUID(getState(MaterialSelectionState).selectedMaterial!, Layers.Authoring),
