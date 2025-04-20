@@ -61,19 +61,14 @@ import { Quaternion, Vector3 } from 'three'
  * This function creates the necessary components, state management, and spawn functionality
  * for a prefab type.
  *
- * @template S - The schema type extending TObjectSchema
- * @template P - The properties type extending TProperties
- *
  * @param definition - The prefab definition object
  * @param definition.name - The name of the prefab, used for component naming and action types
  * @param definition.jsonID - The JSON identifier for serialization/deserialization
  * @param definition.schema - The schema defining the prefab's properties and their types
- * @param definition.reactor - React component that renders the prefab's visual representation
+ * @param definition.reactor - React component that implements the prefab's functionality
  *
- * @returns An object containing:
- *   - spawnPrefab: Function to spawn the prefab dynamically at runtime
- *   - Component: The ECS component for using the prefab in static scenes
- *   - State: The state management for the prefab instances
+ * @returns Component: The ECS component for using the prefab in static scenes,
+ *  with Component.spawn: The function to spawn the prefab dynamically at runtime.
  *
  * @example
  * // Define a prefab
@@ -114,7 +109,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
   }
 
   const $State = defineState({
-    name: 'hexafield.rpg-tools.PrefabState',
+    name: 'ir.engine.prefab_' + definition.name,
 
     initial: {} as Record<EntityUUID, Static<S>>,
 
