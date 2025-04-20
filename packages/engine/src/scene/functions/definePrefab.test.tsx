@@ -23,17 +23,38 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Quaternion, Vector3 } from 'three'
+import { v4 as uuidv4 } from 'uuid'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Entity, createEngine, createEntity, destroyEngine, getComponent, setComponent } from '@ir-engine/ecs'
+import {
+  Engine,
+  Entity,
+  EntityUUID,
+  UUIDComponent,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  getComponent,
+  setComponent
+} from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NetworkTopics } from '@ir-engine/network'
+import { NetworkObjectComponent, NetworkTopics } from '@ir-engine/network'
 import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 
+import { applyIncomingActions } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
 import { definePrefab } from './definePrefab'
+
+/**
+ * Specification:
+ * 1. definePrefab should create a component with the specified name, jsonID, and schema
+ * 2. definePrefab should create a component with a reactor function
+ * 3. definePrefab should return a Component with a functional spawn method
+ */
 
 describe('definePrefab', () => {
   let sceneEntity: Entity
@@ -54,42 +75,46 @@ describe('definePrefab', () => {
   })
 
   /**
-   * Specification 1: definePrefab MUST create a component with the specified name and schema
+   * Specification 1: definePrefab should create a component with the specified name, jsonID, and schema
    */
-  it('MUST create a component with the specified name and schema', () => {
-    // Define a test prefab
+  it('should create a component with the specified name, jsonID, and schema', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefab',
       jsonID: 'test-prefab',
       schema: S.Object({
         health: S.Number(100),
-        name: S.String('Default')
+        name: S.String('Default'),
+        isActive: S.Bool(true)
       }),
       reactor: () => null
     })
 
-    // Verify the component has the correct name
     expect(TestPrefabComponent.name).toBe('TestPrefab')
     expect(TestPrefabComponent.jsonID).toBe('test-prefab')
+    expect(TestPrefabComponent.schema).toBeDefined()
 
-    // Create an entity and add the component
     const entity = createEntity()
-    setComponent(entity, TestPrefabComponent, { health: 200, name: 'Test Entity' })
+    setComponent(entity, TestPrefabComponent)
+    const defaultData = getComponent(entity, TestPrefabComponent)
+    expect(defaultData.health).toBe(100)
+    expect(defaultData.name).toBe('Default')
+    expect(defaultData.isActive).toBe(true)
 
-    // Verify the component data is correctly set
-    const componentData = getComponent(entity, TestPrefabComponent)
-    expect(componentData.health).toBe(200)
-    expect(componentData.name).toBe('Test Entity')
+    const customEntity = createEntity()
+    setComponent(customEntity, TestPrefabComponent, { health: 200, name: 'Custom Entity', isActive: false })
+    const customData = getComponent(customEntity, TestPrefabComponent)
+    expect(customData.health).toBe(200)
+    expect(customData.name).toBe('Custom Entity')
+    expect(customData.isActive).toBe(false)
   })
 
   /**
-   * Specification 2: definePrefab MUST create a component with the correct schema
+   * Specification 2: definePrefab should create a component with a reactor function
    */
-  it('MUST create a component with the correct schema', () => {
-    // Define a test prefab
+  it('should create a component with a reactor function', () => {
     const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabState',
-      jsonID: 'test-prefab-state',
+      name: 'TestPrefabReactor',
+      jsonID: 'test-prefab-reactor',
       schema: S.Object({
         health: S.Number(100),
         name: S.String('Default')
@@ -97,17 +122,14 @@ describe('definePrefab', () => {
       reactor: () => null
     })
 
-    // Verify the component has the correct schema
-    expect(TestPrefabComponent.schema).toBeDefined()
-    expect(TestPrefabComponent.schema.properties.health).toBeDefined()
-    expect(TestPrefabComponent.schema.properties.name).toBeDefined()
+    expect(TestPrefabComponent.reactor).toBeDefined()
+    expect(typeof TestPrefabComponent.reactor).toBe('function')
   })
 
   /**
-   * Specification 3: definePrefab.spawn MUST be defined on the component
+   * Specification 3: definePrefab should return a Component with a functional spawn method
    */
-  it('MUST have a spawn method on the component', () => {
-    // Define a test prefab
+  it('should return a Component with a functional spawn method', async () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn',
       jsonID: 'test-prefab-spawn',
@@ -118,55 +140,35 @@ describe('definePrefab', () => {
       reactor: () => null
     })
 
-    // Verify the spawn method exists
     expect(TestPrefabComponent.spawn).toBeDefined()
     expect(typeof TestPrefabComponent.spawn).toBe('function')
-  })
 
-  /**
-   * Specification 4: definePrefab MUST create a component with a reactor
-   */
-  it('MUST create a component with a reactor', () => {
-    // Define a test prefab with a mock reactor function
-    const mockReactorFn = vi.fn(() => null)
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabReactor',
-      jsonID: 'test-prefab-reactor',
-      schema: S.Object({
-        health: S.Number(100),
-        name: S.String('Default')
-      }),
-      reactor: mockReactorFn
+    const entityUUID = uuidv4() as EntityUUID
+    const parentUUID = getComponent(sceneEntity, UUIDComponent)
+
+    expect(() => {
+      TestPrefabComponent.spawn({
+        entityUUID,
+        parentUUID,
+        position: new Vector3(1, 2, 3),
+        rotation: new Quaternion(0, 0, 0, 1),
+        data: { health: 150, name: 'Spawned Entity' }
+      })
+    }).not.toThrow()
+
+    applyIncomingActions()
+
+    const actions = Engine.instance.store.actions.history
+    expect(actions.length).toBe(2)
+    expect(actions[0].type).toBe('ir.engine.prefab_TestPrefabSpawn')
+    expect(actions[1].type).toStrictEqual(['ee.engine.world.SPAWN_OBJECT', 'ee.network.SPAWN_ENTITY'])
+
+    await vi.waitFor(() => {
+      const entity = UUIDComponent.getEntityByUUID(entityUUID)
+      expect(entity).toBeDefined()
+      expect(getComponent(entity, NetworkObjectComponent)).toBeDefined()
+      expect(getComponent(entity, TestPrefabComponent)).toBeDefined()
+      expect(getComponent(entity, TransformComponent)).toBeDefined()
     })
-
-    // Verify the component has a reactor
-    expect(TestPrefabComponent.reactor).toBeDefined()
-    expect(typeof TestPrefabComponent.reactor).toBe('function')
-  })
-
-  /**
-   * Specification 5: definePrefab MUST create a component that can be added to an entity
-   */
-  it('MUST create a component that can be added to an entity', () => {
-    // Define a test prefab
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabScene',
-      jsonID: 'test-prefab-scene',
-      schema: S.Object({
-        health: S.Number(100),
-        name: S.String('Default')
-      }),
-      reactor: () => null
-    })
-
-    // Create an entity and add the component
-    const entity = createEntity()
-    setComponent(entity, TestPrefabComponent, { health: 400, name: 'Scene Entity' })
-
-    // Verify the component was added correctly
-    const componentData = getComponent(entity, TestPrefabComponent)
-    expect(componentData).toBeDefined()
-    expect(componentData.health).toBe(400)
-    expect(componentData.name).toBe('Scene Entity')
   })
 })

@@ -27,6 +27,7 @@ import React, { useEffect } from 'react'
 
 import {
   defineComponent,
+  deserializeComponent,
   Entity,
   EntityUUID,
   getComponent,
@@ -46,6 +47,7 @@ import {
   NO_PROXY,
   none,
   useHookstate,
+  useImmediateEffect,
   useMutableState,
   Validator
 } from '@ir-engine/hyperflux'
@@ -129,18 +131,28 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
       return (
         <>
           {prefabState.keys.map((entityUUID: EntityUUID) => (
-            <SubReactor key={entityUUID} entityUUID={entityUUID} />
+            <EntityExistsReactor key={entityUUID} entityUUID={entityUUID} />
           ))}
         </>
       )
     }
   })
 
-  const SubReactor = (props: { entityUUID: EntityUUID }) => {
+  const EntityExistsReactor = (props: { entityUUID: EntityUUID }) => {
+    /** Suspend context until entity exists */
+    const entity = UUIDComponent.useEntityByUUID(props.entityUUID)
+    if (!entity) return null
+    return <EntityReadyReactor entityUUID={props.entityUUID} />
+  }
+
+  const EntityReadyReactor = (props: { entityUUID: EntityUUID }) => {
     /** Suspend context until entity exists */
     const entity = UUIDComponent.useEntityByUUID(props.entityUUID)
     useComponent(entity, TransformComponent)
     const prefab = useHookstate(getMutableState($State)[props.entityUUID]).get(NO_PROXY)
+    useImmediateEffect(() => {
+      deserializeComponent(entity, $Component, prefab)
+    }, [])
     return <definition.reactor entity={entity} prefab={prefab} />
   }
 
