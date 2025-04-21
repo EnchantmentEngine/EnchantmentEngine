@@ -59,15 +59,15 @@ import { Quaternion, Vector3 } from 'three'
 /**
  * Creates a prefab definition that can be used both statically in scenes and dynamically at runtime.
  *
- * A prefab is a reusable entity template with predefined components and properties.
+ * A prefab is a spawnable networked ECS component.
  * This function creates the necessary components, state management, and spawn functionality
  * for a prefab type.
  *
- * @param definition - The prefab definition object
- * @param definition.name - The name of the prefab, used for component naming and action types
- * @param definition.jsonID - The JSON identifier for serialization/deserialization
- * @param definition.schema - The schema defining the prefab's properties and their types
- * @param definition.reactor - React component that implements the prefab's functionality
+ * @param definition - Definition object
+ * @param definition.name - Prefab name
+ * @param definition.jsonID - JSON identifier string for serialization/deserialization
+ * @param definition.schema - JSON Schema defining the prefab's properties and its types
+ * @param definition.reactor - Reactor for component functionality
  *
  * @returns Component: The ECS component for using the prefab in static scenes,
  *  with Component.spawn: The function to spawn the prefab dynamically at runtime.
@@ -78,11 +78,13 @@ import { Quaternion, Vector3 } from 'three'
  *   name: 'MyPrefab',
  *   jsonID: 'my-prefab',
  *   schema: S.Object({
- *     health: S.Number(),
  *     name: S.String()
  *   }),
  *   reactor: ({ entity, prefab }) => {
- *     // React component for implementing functionality
+ *     useEffect(() => {
+ *       setComponent(entity, NameComponent, name)
+ *     }, [prefab.name])
+ *     return null
  *   }
  * })
  *
@@ -92,14 +94,14 @@ import { Quaternion, Vector3 } from 'three'
  *   parentUUID: 'parent-id',
  *   position: new Vector3(0, 0, 0),
  *   rotation: new Quaternion(),
- *   data: { health: 100, name: "Dynamic Prefab" }
+ *   data: { name: "Prefab Instance 123" }
  * })
  */
 export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(definition: {
   name: string
   jsonID: string
   schema: S
-  reactor: (props: { entity: Entity; prefab: Static<S> }) => null | JSX.Element
+  reactor?: (props: { entity: Entity; prefab: Static<S> }) => null | JSX.Element
 }) => {
   const $Actions = {
     spawn: defineAction({
@@ -153,6 +155,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     useImmediateEffect(() => {
       deserializeComponent(entity, $Component, prefab)
     }, [])
+    if (!definition.reactor) return null
     return <definition.reactor entity={entity} prefab={prefab} />
   }
 
