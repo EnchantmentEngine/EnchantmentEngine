@@ -45,8 +45,6 @@ type Kinds =
   | 'Tuple'
   | 'Union'
   | 'Func'
-  | 'Required'
-  | 'NonSerialized'
   | 'Class'
   | 'Proxy'
   | 'Any'
@@ -207,27 +205,6 @@ export interface TFuncSchema<Params extends Schema[], Return extends Schema> ext
   options?: Options<this['static']>
 }
 
-export interface TRequired {
-  [Required]?: true
-}
-export interface TRequiredSchema<T extends Schema> extends Schema {
-  [Kind]: 'Required'
-  static: Static<T>
-  properties: T
-  options?: Options<this['static']>
-  validator?: (value: Options<this['static']>) => boolean
-}
-
-export interface TNonSerializable {
-  [NonSerializable]?: true
-}
-export interface TNonSerializedSchema<T extends Schema> extends Schema {
-  [Kind]: 'NonSerialized'
-  static: Static<T>
-  properties: T
-  options?: Options<this['static']>
-}
-
 export interface TClassSchema<T extends TProperties, Class> extends Schema {
   [Kind]: 'Class'
   static: Class
@@ -240,18 +217,6 @@ export interface TTypedSchema<T> extends Schema {
   static: T
   options?: Options<this['static']>
 }
-
-export type SerializedType<T> = T extends object
-  ? {
-      [K in keyof T]: [T[K]] extends [TNonSerializable]
-        ? never
-        : [T[K]] extends [(...args: any[]) => any]
-        ? never
-        : SerializedType<T[K]>
-    }
-  : T extends TNonSerializable
-  ? never
-  : T
 
 export interface TProxySchema<T extends Schema> extends Schema {
   [Kind]: 'Proxy'
