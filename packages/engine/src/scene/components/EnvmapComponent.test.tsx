@@ -45,6 +45,7 @@ import {
 } from '@ir-engine/ecs'
 import { ReactorRoot, startReactor } from '@ir-engine/hyperflux'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { act, render } from '@testing-library/react'
 import React from 'react'
 import { MeshBasicMaterial } from 'three'
 import { BoxProjectionPlugin, EnvMapComponent } from './EnvmapComponent'
@@ -94,18 +95,19 @@ describe('BoxProjectionPlugin', () => {
     })
 
     describe('on mount', () => {
-      it('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', () => {
+      it('should call setPlugin with (entityContext.MaterialStateComponent, callback) as arguments', async () => {
         setComponent(testEntity, MaterialStateComponent, { material: new MeshBasicMaterial() })
-
-        const root = startReactor(() => {
+        const Reactor = () => {
           return React.createElement(
             EntityContext.Provider,
             { value: testEntity },
             React.createElement(BoxProjectionPlugin.reactor, {})
           )
-        }) as ReactorRoot
+        }
 
-        // expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()  // @todo Uncomment when .reflection is merged to dev
+        const root = startReactor(Reactor) as ReactorRoot
+        await act(() => render(null))
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(setPluginSpy).toHaveBeenCalled()
       })
 

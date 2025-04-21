@@ -26,7 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createEngine, createEntity, destroyEngine, EntityContext, removeEntity, UndefinedEntity } from '@ir-engine/ecs'
-import { ReactorRoot, startReactor } from '@ir-engine/hyperflux'
+import { startReactor } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import React from 'react'
 import { EnvMapBakeComponent } from './EnvMapBakeComponent'
 
@@ -71,14 +72,17 @@ describe('EnvMapBakeComponent', () => {
       destroyEngine()
     })
 
-    it('should call useHelperEntity with (entityContext, helperFactory) as arguments', () => {
-      const root = startReactor(() => {
+    it('should call useHelperEntity with (entityContext, helperFactory) as arguments', async () => {
+      const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
           React.createElement(EnvMapBakeComponent.reactor, {})
         )
-      }) as ReactorRoot
+      }
+      const root = startReactor(Reactor)
+      await act(() => render(null))
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
       expect(useHelperEntitySpy).toHaveBeenCalledOnce()
     })
   }) //:: reactor
