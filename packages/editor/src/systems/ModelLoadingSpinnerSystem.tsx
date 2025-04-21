@@ -23,18 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@hookstate/core'
 import {
   Entity,
-  Layers,
   PresentationSystemGroup,
-  UndefinedEntity,
+  QueryReactor,
   defineSystem,
   removeEntityNodeRecursively,
   useComponent,
   useHasComponent,
-  useOptionalComponent,
-  useQuery
+  useOptionalComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
@@ -48,55 +45,20 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const errors = !!useOptionalComponent(entity, ErrorComponent)?.value?.[GLTFComponent.name]
   const loaded = GLTFComponent.useSceneLoaded(entity)
   const isScene = useHasComponent(entity, SceneComponent)
-
-  const loadingEntity = useHookstate<Entity>(UndefinedEntity)
-
-  const createLoadingGeo = () => {
+  const shouldHaveSpinned = !isScene && !!gltfComponent.src.value && !errors && !loaded
+  console.log(loaded, 'loaded', entity, gltfComponent)
+  useEffect(() => {
     const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
-    loadingEntity.set(spinnerEntity)
-  }
-
-  const removeLoadingGeo = () => {
-    if (!loadingEntity.value) return
-    removeEntityNodeRecursively(loadingEntity.value)
-    loadingEntity.set(UndefinedEntity)
-  }
-
-  useEffect(() => {
-    if (isScene) return
-    if (loadingEntity.value) return
-    if (!gltfComponent.src.value) return
-    createLoadingGeo()
-  }, [gltfComponent.src.value])
-
-  useEffect(() => {
-    if (isScene) return
-    if (!errors) return
-    removeLoadingGeo()
-  }, [errors])
-
-  useEffect(() => {
-    if (isScene) return
-    if (!loaded) return
-    removeLoadingGeo()
-  }, [loaded])
+    return () => {
+      removeEntityNodeRecursively(spinnerEntity)
+    }
+  }, [shouldHaveSpinned])
 
   return null
-}
-
-const reactor = () => {
-  const entities = useQuery([GLTFComponent], Layers.Authoring)
-  return (
-    <>
-      {entities.map((entity) => (
-        <LoadingSpinnerReactor key={entity} entity={entity} />
-      ))}
-    </>
-  )
 }
 
 export const ModelLoadingSpinnerSystem = defineSystem({
   uuid: 'ee.editor.ModelLoadingSpinnerSystem',
   insert: { before: PresentationSystemGroup },
-  reactor
+  reactor: () => <QueryReactor ChildEntityReactor={LoadingSpinnerReactor} Components={[GLTFComponent]} />
 })
