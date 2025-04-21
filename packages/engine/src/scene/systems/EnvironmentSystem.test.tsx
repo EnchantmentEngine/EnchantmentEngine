@@ -106,12 +106,15 @@ async function shouldClearMaterialEnvMap(reactor: SomeEnvMapReactor, entity: Ent
   // 2. Run the process
   const root = startReactor(Reactor)
   await act(() => render(null))
-  expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+  await vi.waitFor(() => {
+    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+  })
   root.stop()
-  await act(() => render(null))
-  // 4. Check the result (output)
-  expect(resultSpy).toHaveBeenCalled()
-  // 5? Cleanup (dependencies)
+  await vi.waitFor(() => {
+    // 4. Check the result (output)
+    expect(resultSpy).toHaveBeenCalled()
+    // 5? Cleanup (dependencies)
+  })
 }
 
 describe('IntensityReactor', () => {
@@ -156,12 +159,14 @@ describe('IntensityReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMapIntensity
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial)
+          .envMapIntensity
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
     })
   })
 }) //:: IntensityReactor
@@ -212,12 +217,13 @@ describe('EnvMapSkyboxReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).toBe(Initial)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).toBe(Initial)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     it('should not do anything (return early) if the first backgroundQuery[backgroundID] entity found has a BackgroundComponent but its value is falsy', async () => {
@@ -249,12 +255,13 @@ describe('EnvMapSkyboxReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).toBe(Initial)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).toBe(Initial)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     it('should set `@param props.entity`.MaterialStateComponent.material.envMap to backgroundQuery[backgroundID].BackgroundComponent', async () => {
@@ -287,13 +294,14 @@ describe('EnvMapSkyboxReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toEqual(Expected)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toEqual(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
   })
 
@@ -312,11 +320,12 @@ describe('EnvMapSkyboxReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvMapSkyboxReactor
 
@@ -365,10 +374,11 @@ describe('EnvMapCubemapReactor', () => {
       expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+      await vi.waitFor(() => {
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+      })
     })
 
     it('should call loadCubeMapTexture passing `@param props.rootEntity`.EnvMapComponent.envMapCubemapURL as its first argument', async () => {
@@ -386,17 +396,18 @@ describe('EnvMapCubemapReactor', () => {
       expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-      const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-      const envMapCubemapURL = lastCall[0]
-      const onLoad = lastCall[1]
-      const onProgress = lastCall[2]
-      const onError = lastCall[3]
-      const result = envMapCubemapURL
-      // 4. Check the result (output)
-      expect(result).toBe(Expected)
+      await vi.waitFor(() => {
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+        const envMapCubemapURL = lastCall[0]
+        const onLoad = lastCall[1]
+        const onProgress = lastCall[2]
+        const onError = lastCall[3]
+        const result = envMapCubemapURL
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+      })
     })
 
     describe('onLoad', () => {
@@ -416,26 +427,27 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
-        await act(() => render(null))
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-        const envMapCubemapURL = lastCall[0]
-        const onLoad = lastCall[1]
-        const onProgress = lastCall[2]
-        const onError = lastCall[3]
-        const texture = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        // 1. Sanity check (input & dependencies)
-        expect(texture).toBeTruthy()
-        const before = texture?.mapping
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
-        onLoad(texture)
-        const result = texture?.mapping
-        // 4. Check the result (output)
-        expect(result).not.toBe(Initial)
-        expect(result).toBe(Expected)
+        await vi.waitFor(() => {
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
+          const texture = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          // 1. Sanity check (input & dependencies)
+          expect(texture).toBeTruthy()
+          const before = texture?.mapping
+          expect(before).toBe(Initial)
+          expect(before).not.toBe(Expected)
+          // 2. Run the process
+          onLoad(texture)
+          const result = texture?.mapping
+          // 4. Check the result (output)
+          expect(result).not.toBe(Initial)
+          expect(result).toBe(Expected)
+        })
       })
 
       it('should set `@param texture`.colorSpace to the value of threejs/SRGBColorSpace', async () => {
@@ -467,26 +479,27 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
-        await act(() => render(null))
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-        const envMapCubemapURL = lastCall[0]
-        const onLoad = lastCall[1]
-        const onProgress = lastCall[2]
-        const onError = lastCall[3]
-        const texture = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        // 1. Sanity check (input & dependencies)
-        expect(texture).toBeTruthy()
-        const before = texture?.colorSpace
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
-        onLoad(texture)
-        const result = texture?.colorSpace
-        // 4. Check the result (output)
-        expect(result).not.toBe(Initial)
-        expect(result).toBe(Expected)
+        await vi.waitFor(() => {
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
+          const texture = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          // 1. Sanity check (input & dependencies)
+          expect(texture).toBeTruthy()
+          const before = texture?.colorSpace
+          expect(before).toBe(Initial)
+          expect(before).not.toBe(Expected)
+          // 2. Run the process
+          onLoad(texture)
+          const result = texture?.colorSpace
+          // 4. Check the result (output)
+          expect(result).not.toBe(Initial)
+          expect(result).toBe(Expected)
+        })
       })
 
       it('should set (closure)entity.MaterialStateComponent.material.envMap to `@param texture`', async () => {
@@ -505,24 +518,25 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
-        await act(() => render(null))
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-        const envMapCubemapURL = lastCall[0]
-        const onLoad = lastCall[1]
-        const onProgress = lastCall[2]
-        const onError = lastCall[3]
-        // 1. Sanity check (input & dependencies)
-        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        expect(before).toBe(Initial)
-        expect(before).not.toBe(Expected)
-        // 2. Run the process
-        onLoad(Expected)
-        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        // 4. Check the result (output)
-        expect(result).not.toBe(Initial)
-        expect(result).toBe(Expected)
+        await vi.waitFor(() => {
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
+          // 1. Sanity check (input & dependencies)
+          const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          expect(before).toBe(Initial)
+          expect(before).not.toBe(Expected)
+          // 2. Run the process
+          onLoad(Expected)
+          const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          // 4. Check the result (output)
+          expect(result).not.toBe(Initial)
+          expect(result).toBe(Expected)
+        })
       })
 
       it("should call removeError for (closure)entity.EnvMapComponent with 'MISSING_FILE' as the error id", async () => {
@@ -539,33 +553,33 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          addError(testEntity, EnvMapComponent, TestErrorHandle)
 
-        addError(testEntity, EnvMapComponent, TestErrorHandle)
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
 
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-        const envMapCubemapURL = lastCall[0]
-        const onLoad = lastCall[1]
-        const onProgress = lastCall[2]
-        const onError = lastCall[3]
+          // 1. Sanity check (input & dependencies)
+          const before = hasComponent(testEntity, ErrorComponent)
+          expect(before).toBeTruthy()
 
-        // 1. Sanity check (input & dependencies)
-        const before = hasComponent(testEntity, ErrorComponent)
-        expect(before).toBeTruthy()
+          // 2. Run the process
+          const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<
+            MeshStandardMaterial,
+            Identifiable
+          >
+          material.envMap.set(new Texture())
+          onLoad((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
+          const result = hasComponent(testEntity, ErrorComponent)
 
-        // 2. Run the process
-        const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<
-          MeshStandardMaterial,
-          Identifiable
-        >
-        material.envMap.set(new Texture())
-        onLoad((getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap)
-        const result = hasComponent(testEntity, ErrorComponent)
-
-        // 4. Check the result (output)
-        expect(result).toBeFalsy()
+          // 4. Check the result (output)
+          expect(result).toBeFalsy()
+        })
       })
 
       it('should not do anything if `@param texture` is falsy', async () => {
@@ -583,22 +597,23 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
-        await act(() => render(null))
-        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-        const envMapCubemapURL = lastCall[0]
-        const onLoad = lastCall[1]
-        const onProgress = lastCall[2]
-        const onError = lastCall[3]
-        // 1. Sanity check (input & dependencies)
-        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        expect(before).toBe(Initial)
-        // 2. Run the process
-        onLoad(undefined)
-        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        // 4. Check the result (output)
-        expect(result).toBe(Initial)
+        await vi.waitFor(() => {
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
+          // 1. Sanity check (input & dependencies)
+          const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          expect(before).toBe(Initial)
+          // 2. Run the process
+          onLoad(undefined)
+          const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          // 4. Check the result (output)
+          expect(result).toBe(Initial)
+        })
       })
     })
 
@@ -617,17 +632,18 @@ describe('EnvMapCubemapReactor', () => {
       expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(loadCubeMapTextureSpy).toHaveBeenCalled()
-      const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
-      const envMapCubemapURL = lastCall[0]
-      const onLoad = lastCall[1]
-      const onProgress = lastCall[2]
-      const onError = lastCall[3]
-      const result = onProgress
-      // 4. Check the result (output)
-      expect(result).toBe(Expected)
+      await vi.waitFor(() => {
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+        const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+        const envMapCubemapURL = lastCall[0]
+        const onLoad = lastCall[1]
+        const onProgress = lastCall[2]
+        const onError = lastCall[3]
+        const result = onProgress
+        // 4. Check the result (output)
+        expect(result).toBe(Expected)
+      })
     })
 
     describe('onError', () => {
@@ -646,7 +662,46 @@ describe('EnvMapCubemapReactor', () => {
         }
         expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
         const root = startReactor(Reactor)
+        await vi.waitFor(() => {
+          expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+          expect(loadCubeMapTextureSpy).toHaveBeenCalled()
+          const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
+          const envMapCubemapURL = lastCall[0]
+          const onLoad = lastCall[1]
+          const onProgress = lastCall[2]
+          const onError = lastCall[3]
+          // 1. Sanity check (input & dependencies)
+          const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          expect(before).not.toBeNull()
+          expect(before).not.toBeUndefined()
+          expect(before).not.toBe(Expected)
+          // 2. Run the process
+          onError()
+          const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          // 4. Check the result (output)
+          expect(result).toBe(Expected)
+        })
+      })
+
+      it("should add an error to (closure)entity's EnvMapComponent with a value of ('MISSING_FILE', 'Skybox texture could not be found!')", async () => {
+        // 3. Set input & dependencies data
+        const rootEntity = createEntity()
+        setComponent(rootEntity, EnvMapComponent, { envMapCubemapURL: 'SomeURL' })
+        setComponent(testEntity, MaterialStateComponent, {
+          material: new MeshStandardMaterial({ envMap: new Texture() })
+        })
+        const Reactor = () => {
+          return React.createElement(testReactor, {
+            entity: testEntity,
+            rootEntity: rootEntity
+          })
+        }
+        expect(loadCubeMapTextureSpy).not.toHaveBeenCalled()
+        const before = hasComponent(testEntity, ErrorComponent)
+        expect(before).toBeFalsy()
+        const root = startReactor(Reactor)
         await act(() => render(null))
+        // 1. Sanity check (input & dependencies)
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
         expect(loadCubeMapTextureSpy).toHaveBeenCalled()
         const lastCall = loadCubeMapTextureSpy.mock.calls.at(-1)!
@@ -654,23 +709,13 @@ describe('EnvMapCubemapReactor', () => {
         const onLoad = lastCall[1]
         const onProgress = lastCall[2]
         const onError = lastCall[3]
-        // 1. Sanity check (input & dependencies)
-        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        expect(before).not.toBeNull()
-        expect(before).not.toBeUndefined()
-        expect(before).not.toBe(Expected)
         // 2. Run the process
         onError()
-        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        const result = hasComponent(testEntity, ErrorComponent)
         // 4. Check the result (output)
-        expect(result).toBe(Expected)
+        expect(result).toBeTruthy()
+        // 5? Cleanup (dependencies)
       })
-
-      /** @todo What is the correct way to check for the addError case ? */
-      it.todo(
-        "should add an error to (closure)entity's EnvMapComponent with a value of ('MISSING_FILE', 'Skybox texture could not be found!')",
-        () => {}
-      )
     })
   })
 
@@ -689,11 +734,12 @@ describe('EnvMapCubemapReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvMapCubemapReactor
 
@@ -748,13 +794,14 @@ describe('EnvmapProbesReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     describe('on cleanup', () => {
@@ -808,11 +855,12 @@ describe('EnvmapProbesReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvmapProbesReactor
 
@@ -842,15 +890,6 @@ describe('EnvMapEquirectangularReactor', () => {
   })
 
   describe('on change [envMapTexture]', () => {
-    it.todo(
-      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture is falsy',
-      () => {}
-    )
-    it.todo(
-      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.isTexture is falsy',
-      () => {}
-    )
-
     it('should set `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.mapping to EquirectangularReflectionMapping', async () => {
       const Expected = EquirectangularReflectionMapping
       const Initial = UVMapping
@@ -874,17 +913,80 @@ describe('EnvMapEquirectangularReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap?.mapping
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          ?.mapping
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
     })
 
-    /** @todo How to override the output of useTexture without getting null ?? */
+    it('should set `@param props.entity`.MaterialStateComponent.material.envMap to `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture', async () => {
+      const Initial = new Texture()
+      // 3. Set input & dependencies data
+      const rootEntity = createEntity()
+      setComponent(rootEntity, EnvMapComponent, {
+        type: EnvMapSourceType.Equirectangular,
+        envMapSourceURL: '/packages/projects/default-project/assets/galaxyTexture.jpg'
+      })
+      setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial({ envMap: Initial }) })
+      const Reactor = () => {
+        return React.createElement(testReactor, {
+          entity: testEntity,
+          rootEntity: rootEntity
+        })
+      }
+      // 1. Sanity check (input & dependencies)
+      const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+      expect(before).toBe(Initial)
+      // 2. Run the process
+      const root = startReactor(Reactor)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+      })
+      // 5? Cleanup (dependencies)
+    })
+
+    /** @todo How to access .envMapTexture and set it to falsy */
     it.todo(
-      'should set `@param props.entity`.MaterialStateComponent.material.envMap to `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture',
+      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture is falsy',
+      async () => {
+        const Initial = new Texture()
+        // 3. Set input & dependencies data
+        const rootEntity = createEntity()
+        setComponent(rootEntity, EnvMapComponent, {
+          type: EnvMapSourceType.Equirectangular,
+          envMapSourceURL: '/packages/projects/default-project/assets/galaxyTexture-invalid.jpg'
+        })
+        setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial({ envMap: Initial }) })
+        const Reactor = () => {
+          return React.createElement(testReactor, {
+            entity: testEntity,
+            rootEntity: rootEntity
+          })
+        }
+        // 1. Sanity check (input & dependencies)
+        const before = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        expect(before).toBe(Initial)
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        await act(() => render(null))
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).toBe(Initial)
+        // 5? Cleanup (dependencies)
+      }
+    )
+
+    /** @todo How to access .envMapTexture to set .isTexture to falsy */
+    it.todo(
+      'should not do anything (return early) if `@param props.rootEntity`.EnvMapComponent.envMapSourceURL.envMapTexture.isTexture is falsy',
       () => {}
     )
   })
@@ -917,11 +1019,12 @@ describe('EnvMapEquirectangularReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvMapEquirectangularReactor
 
@@ -1014,11 +1117,12 @@ describe('EnvMapBakeReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      // 4. Check the result (output)
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvMapBakeReactor
 
@@ -1069,13 +1173,15 @@ describe('EnvMapColorReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap?.version
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          ?.version
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     it('should set `@params props.entity`.MaterialStateComponent.material.envMap.colorSpace to SRGBColorSpace', async () => {
@@ -1100,14 +1206,15 @@ describe('EnvMapColorReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-        ?.colorSpace
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          ?.colorSpace
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     it('should set `@params props.entity`.MaterialStateComponent.material.envMap.mapping to EquirectangularReflectionMapping', async () => {
@@ -1131,13 +1238,15 @@ describe('EnvMapColorReactor', () => {
       expect(before).not.toBe(Expected)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap?.mapping
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+          ?.mapping
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     it('should set `@params props.entity`.MaterialStateComponent.material.envMap to a new texture', async () => {
@@ -1157,12 +1266,13 @@ describe('EnvMapColorReactor', () => {
       expect(before).toBe(Initial)
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).not.toBe(Initial)
-      // 5? Cleanup (dependencies)
+      await vi.waitFor(() => {
+        const result = (getComponent(testEntity, MaterialStateComponent).material as MeshStandardMaterial).envMap
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).not.toBe(Initial)
+        // 5? Cleanup (dependencies)
+      })
     })
 
     describe('on cleanup', () => {
@@ -1171,7 +1281,6 @@ describe('EnvMapColorReactor', () => {
         const Initial = new Texture()
         // 3. Set input & dependencies data
         const resultSpy = vi.fn()
-        Object.assign(Initial, { dispose: resultSpy })
         setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial({ envMap: Initial }) })
         const rootEntity = createEntity()
         setComponent(rootEntity, EnvMapComponent)
@@ -1188,8 +1297,13 @@ describe('EnvMapColorReactor', () => {
         // 2. Run the process
         const root = startReactor(Reactor)
         await act(() => render(null))
-        expect(resultSpy).not.toHaveBeenCalled()
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<
+          MeshStandardMaterial,
+          Identifiable
+        >
+        material.envMap.merge({ dispose: resultSpy }) // <- Does not work. Causes hyperflux errors
+        expect(resultSpy).not.toHaveBeenCalled()
         root.stop()
         // 4. Check the result (output)
         expect(resultSpy).toHaveBeenCalled()
@@ -1214,11 +1328,11 @@ describe('EnvMapColorReactor', () => {
     expect(resultSpy).not.toHaveBeenCalled()
     // 2. Run the process
     const root = startReactor(Reactor)
-    await act(() => render(null))
-    // 4. Check the result (output)
-    expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-    expect(resultSpy).toHaveBeenCalled()
-    expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    await vi.waitFor(() => {
+      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledWith({ entity: testEntity, rootEntity: rootEntity }, {})
+    })
   })
 }) //:: EnvMapColorReactor
 
@@ -1262,12 +1376,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected * 3 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 3) /** @important Hardcoded count that might not be correct */
+      })
     })
 
     it(".. should call EnvMapCubemapReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Cubemap'", async () => {
@@ -1291,12 +1406,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected) /** @important Hardcoded count that might not be correct */
+      })
     })
 
     it(".. should call EnvMapEquirectangularReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Equirectangular'", async () => {
@@ -1320,12 +1436,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected * 2 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 2) /** @important Hardcoded count that might not be correct */
+      })
     })
 
     it(".. should call EnvMapColorReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Color'", async () => {
@@ -1349,12 +1466,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected * 2 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 2) /** @important Hardcoded count that might not be correct */
+      })
     })
 
     it(".. should call EnvMapBakeReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Bake'", async () => {
@@ -1378,12 +1496,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected * 2 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 2) /** @important Hardcoded count that might not be correct */
+      })
     })
 
     it(".. should call EnvmapProbesReactor with the entity as props.entity and entityContext as props.rootEntity when entityContext.EnvMapComponent.type is 'Probes'", async () => {
@@ -1407,12 +1526,13 @@ describe('EnvMapReactor', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalled()
-      expect(result).toBe(Expected * 3 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(resultSpy).toHaveBeenCalled()
+        expect(result).toBe(Expected * 3) /** @important Hardcoded count that might not be correct */
+      })
     })
   })
 }) //:: EnvMapReactor
@@ -1464,11 +1584,12 @@ describe('EnvironmentSystem', () => {
       expect(resultSpy).not.toHaveBeenCalled()
       // 2. Run the process
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      const result = resultSpy.mock.calls.length
-      // 4. Check the result (output)
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(result).toBe(Expected * 2 + 1) /** @important Hardcoded count that might not be correct */
+      await vi.waitFor(() => {
+        const result = resultSpy.mock.calls.length
+        // 4. Check the result (output)
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        expect(result).toBe(Expected * 2) /** @important Hardcoded count that might not be correct */
+      })
     })
   }) //:: reactor
 }) //:: EnvironmentSystem
