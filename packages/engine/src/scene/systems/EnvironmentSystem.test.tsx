@@ -1616,7 +1616,10 @@ describe('EnvironmentSystemFunctions', () => {
       const Initial = new Texture()
 
       setComponent(testEntity, MaterialStateComponent, { material: new MeshStandardMaterial() })
-      const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<MeshStandardMaterial>
+      const material = getMutableComponent(testEntity, MaterialStateComponent).material as State<
+        MeshStandardMaterial,
+        Identifiable
+      >
       material.envMap.set(Initial)
 
       EnvironmentSystemFunctions.clearMaterialEnvMap(testEntity)
