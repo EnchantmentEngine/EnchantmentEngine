@@ -146,7 +146,7 @@ const disallowedMaterials = new Set(['MeshMatcapMaterial', 'MeshToonMaterial'])
 const clearMaterialEnvMap = (entity: Entity): void => {
   const materialState = getOptionalMutableComponent(entity, MaterialStateComponent)
   if (materialState === undefined) return
-  const material = materialState!.material as State<MeshStandardMaterial>
+  const material = materialState!.material as State<MeshStandardMaterial, Identifiable>
   if (material?.envMap?.value) material.envMap.set(null)
 }
 
