@@ -240,7 +240,7 @@ export const GLTFComponentReactor = () => {
     if (!gltfComponent.document) return
 
     const options = getGLTFOptions(entity)
-    const url = options.url
+    const url = options.url as SourceID
 
     const sceneIndex = options.document.scene || 0
     let aborted = false
