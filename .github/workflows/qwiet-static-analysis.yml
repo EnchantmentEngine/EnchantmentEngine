@@ -4,21 +4,6 @@ on:
   pull_request:
     branches:
       - '**'
-  workflow_dispatch: #enables the “Run workflow” button in the Actions UI
-    inputs: # optional
-      scan-path:
-        description: 'Directory (or glob) to scan'    # optional
-        required: false
-        default: '.'
-      fail-on-severity:
-        description: 'Minimum severity to fail (e.g., LOW, MEDIUM, HIGH, CRITICAL)'    # optional
-        required: false
-        default: 'HIGH'
-      custom-message:
-        description: 'Custom message to include in the scan result'    # optional
-        required: false
-        default: 'Scanning codebase'
-
 jobs:
   qwiet-nextgen-scan:
     runs-on: ubuntu-latest
