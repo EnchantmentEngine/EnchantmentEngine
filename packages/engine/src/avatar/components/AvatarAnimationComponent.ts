@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import type * as V0VRM from '@pixiv/types-vrm-0.0'
 
-import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
+import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion } from 'three'
 
 import { EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
 import {
@@ -37,7 +37,7 @@ import {
   setComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -106,8 +106,6 @@ export const AvatarRigComponent = defineComponent({
   errors: ['UNSUPPORTED_AVATAR']
 })
 
-const _rightHandPos = new Vector3(),
-  _rightUpperArmPos = new Vector3()
 const yFlip = new Quaternion().setFromEuler(new Euler(0, Math.PI, 0))
 
 export function createVRM(rootEntity: Entity) {
@@ -154,7 +152,10 @@ export function createVRM(rootEntity: Entity) {
   })
 
   for (const bone of humanBonesArray) {
-    const nodeID = `${documentID}-${bone.node}` as EntityUUID
+    const nodeID = UUIDComponent.getUUID({
+      instanceID: UUIDComponent.getUUID(getComponent(rootEntity, UUIDComponent)),
+      id: bone.node!.toString()
+    })
     const entity = UUIDComponent.getEntityByUUID(nodeID)
     AvatarRigComponent.setBone(rootEntity, entity, bone.bone as VRMHumanBoneName)
     AvatarRigComponent.setPose(rootEntity, entity, bone.bone as VRMHumanBoneName)

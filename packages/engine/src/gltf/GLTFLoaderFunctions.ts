@@ -1176,7 +1176,7 @@ const _createAnimationTracks = (
 ) => {
   const tracks = [] as KeyframeTrack[]
 
-  const targetName = getComponent(node, UUIDComponent).toString()
+  const targetName = UUIDComponent.getUUID(getComponent(node, UUIDComponent))
   if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
 
@@ -1185,7 +1185,7 @@ const _createAnimationTracks = (
       const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(getComponent(entity, UUIDComponent).toString())
+        targetNames.push(UUIDComponent.getUUID(getComponent(entity, UUIDComponent)))
       }
     })
   } else {
