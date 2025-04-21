@@ -165,7 +165,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
           clipName: 'Fall',
           loop: true,
           layer: 1,
-          entityUUID: getComponent(entity, UUIDComponent)
+          entityUUID: UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
         })
       )
       beganFalling = true
@@ -179,7 +179,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
             loop: true,
             layer: 1,
             needsSkip: true,
-            entityUUID: getComponent(entity, UUIDComponent)
+            entityUUID: UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
           })
         )
       }
@@ -499,7 +499,7 @@ const _slerpBodyTowardsVelocity = (entity: Entity, alpha: number) => {
   let prevVector = prevVectors.get(entity)!
   if (!prevVector) {
     prevVector = new Vector3(0, 0, 1).applyQuaternion(
-      getState(SpawnPoseState)[getComponent(entity, UUIDComponent)].spawnRotation
+      getState(SpawnPoseState)[UUIDComponent.getUUID(getComponent(entity, UUIDComponent))].spawnRotation
     )
     prevVectors.set(entity, prevVector)
   }

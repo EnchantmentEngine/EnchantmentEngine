@@ -56,7 +56,9 @@ export const AvatarState = defineState({
 
   receptors: {
     onSpawn: AvatarNetworkAction.spawn.receive((action) => {
-      getMutableState(AvatarState)[UUIDComponent.getUUID(action.entityUUIDPair)].set({
+      getMutableState(AvatarState)[
+        UUIDComponent.getUUID({ instanceID: action.entityInstanceID!, id: action.entityID })
+      ].set({
         avatarURL: action.avatarURL,
         name: action.name
       })

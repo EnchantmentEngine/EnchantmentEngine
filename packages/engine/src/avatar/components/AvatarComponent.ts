@@ -23,11 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Engine, EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { EngineState, EntityUUIDPair, UUIDComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { UserID } from '@ir-engine/hyperflux'
+import { getState, UserID } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent } from '@ir-engine/network'
 
 export const AvatarComponent = defineComponent({
@@ -55,6 +55,8 @@ export const AvatarComponent = defineComponent({
     eyeHeight: S.Number(0)
   }),
 
+  selfAvatarUUID: { instanceID: getState(EngineState).userID, id: 'avatar' } as EntityUUIDPair,
+
   /**
    * Get the user avatar entity (the network object w/ an Avatar component)
    * @param userId
@@ -65,11 +67,11 @@ export const AvatarComponent = defineComponent({
   },
 
   getSelfAvatarEntity() {
-    return UUIDComponent.getEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+    return UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(AvatarComponent.selfAvatarUUID))
   },
 
   useSelfAvatarEntity() {
-    return UUIDComponent.useEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+    return UUIDComponent.useEntityByUUID(UUIDComponent.getUUID(AvatarComponent.selfAvatarUUID))
   }
 })
 

@@ -26,12 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 // spawnPose is temporary - just so portals work for now - will be removed in favor of instanceserver-instanceserver communication
 import { Quaternion, Vector3 } from 'three'
 
-import { EngineState, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs'
-import { Action, PeerID, dispatchAction, getState } from '@ir-engine/hyperflux'
+import { EntityUUID } from '@ir-engine/ecs'
+import { Action, PeerID, dispatchAction } from '@ir-engine/hyperflux'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 
-import { ikTargets } from '@ir-engine/engine/src/avatar/animation/Util'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
+import { AvatarComponent } from '../components/AvatarComponent'
 
 export enum AuthError {
   MISSING_ACCESS_TOKEN = 'MISSING_ACCESS_TOKEN',
@@ -62,37 +62,55 @@ export type SpawnInWorldProps = {
 
 export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
   const { avatarSpawnPose, avatarURL, parentUUID } = props
-  const instanceID = getState(EngineState).userID
+  const entityInstanceID = AvatarComponent.selfAvatarUUID.instanceID
   dispatchAction(
     AvatarNetworkAction.spawn({
       ...avatarSpawnPose,
       parentUUID,
       avatarURL,
-      entityUUIDPair: { instanceID, id: 'avatar' } as EntityUUIDPair,
+      entityID: AvatarComponent.selfAvatarUUID.id,
+      entityInstanceID,
       name: props.name
     })
   )
-  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityUUIDPair: { instanceID, id: 'camera' } }))
-
-  const headUUID = { instanceID, id: ikTargets.head } as EntityUUIDPair
-  const leftHandUUID = { instanceID, id: ikTargets.leftHand } as EntityUUIDPair
-  const rightHandUUID = { instanceID, id: ikTargets.rightHand } as EntityUUIDPair
-  const leftFootUUID = { instanceID, id: ikTargets.leftFoot } as EntityUUIDPair
-  const rightFootUUID = { instanceID, id: ikTargets.rightFoot } as EntityUUIDPair
-
+  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera' }))
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityUUIDPair: headUUID, name: 'head', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityID: 'head', entityInstanceID, name: 'head', blendWeight: 0 })
   )
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityUUIDPair: leftHandUUID, name: 'leftHand', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({
+      parentUUID,
+      entityID: 'leftHand',
+      entityInstanceID,
+      name: 'leftHand',
+      blendWeight: 0
+    })
   )
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityUUIDPair: rightHandUUID, name: 'rightHand', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({
+      parentUUID,
+      entityID: 'rightHand',
+      entityInstanceID,
+      name: 'rightHand',
+      blendWeight: 0
+    })
   )
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityUUIDPair: leftFootUUID, name: 'leftFoot', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({
+      parentUUID,
+      entityID: 'leftFoot',
+      entityInstanceID,
+      name: 'leftFoot',
+      blendWeight: 0
+    })
   )
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityUUIDPair: rightFootUUID, name: 'rightFoot', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({
+      parentUUID,
+      entityID: 'rightFoot',
+      entityInstanceID,
+      name: 'rightFoot',
+      blendWeight: 0
+    })
   )
 }

@@ -162,7 +162,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     dispatchAction(
       AvatarNetworkAction.setAvatarURL({
         avatarURL,
-        entityUUID: UUIDComponent.getUUID({ instanceID: userID, id: 'avatar' })
+        entityUUID: UUIDComponent.getUUID(AvatarComponent.selfAvatarUUID)
       })
     )
   }, [isSpectating, userAvatar])
