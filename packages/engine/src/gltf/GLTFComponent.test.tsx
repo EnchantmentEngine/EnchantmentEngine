@@ -32,11 +32,14 @@ import {
   createEntity,
   defineComponent,
   destroyEngine,
+  Entity,
   EntityContext,
+  entityExists,
   EntityTreeComponent,
   getComponent,
   getMutableComponent,
   hasComponent,
+  LayerComponent,
   removeEntity,
   setComponent,
   UndefinedEntity,
@@ -586,17 +589,18 @@ describe('GLTFComponentReactor', () => {
   })
 
   describe('on change [gltfComponent.src]', () => {
-    /** @todo Why is this test failing ? */
+    // @warning This test passes only intermitently. Don't know why
     it.todo('should set AssetState[GLTFComponent.getInstanceID(entityContext)] to entityContext', async () => {
       const Expected = testEntity
       const Initial = createEntity()
 
       const uuid = UUIDComponent.generateUUID()
       const src = TestScenePath
-      const sourceID = `${uuid}-${src}` as SourceID
-      getMutableState(AssetState)[sourceID].set(Initial)
       setComponent(testEntity, UUIDComponent, uuid)
       setComponent(testEntity, GLTFComponent, { src: src })
+      setComponent(testEntity, AnimationComponent)
+      const sourceID = GLTFComponent.getInstanceID(testEntity)
+      getMutableState(AssetState)[sourceID].set(Initial)
       const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
@@ -606,11 +610,12 @@ describe('GLTFComponentReactor', () => {
       }
 
       const root = startReactor(Reactor)
-      await act(() => render(null))
-      expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      const result = getState(AssetState)[sourceID]
-      expect(result).not.toBe(Initial)
-      expect(result).toBe(Expected)
+      await vi.waitFor(() => {
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        const result = getState(AssetState)[sourceID]
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
     })
 
     describe('on cleanup', () => {
@@ -750,11 +755,66 @@ describe('GLTFComponentReactor', () => {
     )
 
     describe('on cleanup', () => {
-      it.todo(
-        'should call GLTFLoaderFunctions.unloadScene with (entityContex.GLTFDocument.src, entityContext) as arguments',
-        () => {}
-      )
-      it.todo('should call (closure)unloadEntities', () => {})
+      it('should call GLTFLoaderFunctions.unloadScene with (entityContex.GLTFDocument.src, entityContext) as arguments', async () => {
+        // 3. Set input & dependencies data
+        const resultSpy = vi.spyOn(GLTFLoaderFunctions, 'unloadScene')
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        setComponent(testEntity, UUIDComponent, uuid)
+        setComponent(testEntity, GLTFComponent, { src: src })
+        setComponent(testEntity, AnimationComponent)
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        // 1. Sanity check (input & dependencies)
+        expect(resultSpy).not.toHaveBeenCalled()
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        await act(() => render(null))
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        // 4. Check the result (output)
+        expect(resultSpy).toHaveBeenCalled()
+        // 5? Cleanup (dependencies)
+      })
+
+      it('should should call removeEntity on all entities in SourceComponent.getEntitiesBySource(sourceID, layer)', async () => {
+        // 3. Set input & dependencies data
+        const uuid = UUIDComponent.generateUUID()
+        const src = TestScenePath
+        setComponent(testEntity, UUIDComponent, uuid)
+        setComponent(testEntity, GLTFComponent, { src: src })
+        setComponent(testEntity, AnimationComponent)
+        const Reactor = () => {
+          return React.createElement(
+            EntityContext.Provider,
+            { value: testEntity },
+            React.createElement(GLTFComponentReactor, {})
+          )
+        }
+        const layer = LayerComponent.get(testEntity)
+        const sourceID = GLTFComponent.getInstanceID(testEntity)
+        const sourceEntitiesCount = 10
+        const sourceEntities: Entity[] = []
+        for (let id = 0; id < sourceEntitiesCount; ++id) {
+          const entity = createEntity(layer)
+          setComponent(entity, SourceComponent, sourceID)
+          sourceEntities.push(entity)
+        }
+        expect(SourceComponent.getEntitiesBySource(sourceID, layer).length).toBe(sourceEntitiesCount)
+        // 1. Sanity check (input & dependencies)
+        for (const entity of sourceEntities) expect(entityExists(entity)).toBeTruthy()
+        // 2. Run the process
+        const root = startReactor(Reactor)
+        await act(() => render(null))
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        // 4. Check the result (output)
+        for (const result of sourceEntities) expect(entityExists(result)).toBeFalsy()
+        // 5? Cleanup (dependencies)
+      })
 
       it('should set entityContext.GLTFComponent.progress to 0 if entityContext has a GLTFComponent', async () => {
         const Expected = 0
