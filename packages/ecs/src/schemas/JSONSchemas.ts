@@ -53,12 +53,12 @@ import {
 } from './JSONSchemaTypes'
 
 const buildOptions = (kind: Kinds, options?: Options): Options => {
-  options ??= {
+  const defaultOptions = {
     serialized: true,
     default: defaultSchemaValues[kind]
   }
 
-  return options
+  return { ...defaultOptions, ...options }
 }
 
 const buildSchema = <Opt extends Options>(kind: Kinds, options?: Opt) => {
