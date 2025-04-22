@@ -28,6 +28,7 @@ import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThu
 import { useFind } from '@ir-engine/common'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import InfiniteScroll from '@ir-engine/ui/src/components/tailwind/InfiniteScroll'
 import React, { useEffect, useState } from 'react'
 import { useDrop } from 'react-dnd'
 import { twMerge } from 'tailwind-merge'
@@ -39,6 +40,7 @@ import { FileContextMenu } from './contextmenu'
 import FileItem, { TableWrapper } from './fileitem'
 import { FILES_PAGE_LIMIT, canDropOnFileBrowser, useCurrentFiles, useFileBrowserDrop } from './helpers'
 import FilesLoaders from './loaders'
+
 export function Browser() {
   const [anchorEvent, setAnchorEvent] = useState<undefined | React.MouseEvent>(undefined)
   const dropOnFileBrowser = useFileBrowserDrop()
@@ -51,7 +53,7 @@ export function Browser() {
   })
   const isListView = useMutableState(FilesViewModeState).viewMode.value === 'list'
   const selectedFiles = useMutableState(SelectedFilesState)
-  const { files, refreshDirectory } = useCurrentFiles()
+  const { files, refreshDirectory, filesQuery } = useCurrentFiles()
   const thumbnailJobState = useMutableState(FileThumbnailJobState)
   const { projectName } = useMutableState(FilesState)
   const staticResourceData = useHookstate<Record<string, Record<string, string>>>({})
@@ -131,25 +133,34 @@ export function Browser() {
 
   const FileItems = () => (
     <>
-      {sortedFiles.map((file, idx) => {
-        const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
-        return (
-          <FileItem
-            file={{ ...file, ...staticResourceData.value[file?.key] }}
-            onContextMenu={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
-                selectedFiles.set([file])
-              }
-              setAnchorEvent(event)
-            }}
-            key={file.key}
-            data-testid="files-panel-file-item"
-            className={`${isListView ? `${backgroundColor}` : ''}`}
-          />
-        )
-      })}
+      <InfiniteScroll
+        disableEvent={!filesQuery || filesQuery.limit >= filesQuery?.total}
+        onScrollBottom={() => {
+          filesQuery?.setLimit(filesQuery.limit + 10)
+        }}
+      >
+        <div className="relative mt-auto flex h-full w-full flex-wrap gap-2">
+          {sortedFiles.map((file, idx) => {
+            const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
+            return (
+              <FileItem
+                file={{ ...file, ...staticResourceData.value[file?.key] }}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
+                    selectedFiles.set([file])
+                  }
+                  setAnchorEvent(event)
+                }}
+                key={file.key}
+                data-testid="files-panel-file-item"
+                className={`${isListView ? `${backgroundColor}` : ''}`}
+              />
+            )
+          })}
+        </div>
+      </InfiniteScroll>
     </>
   )
 

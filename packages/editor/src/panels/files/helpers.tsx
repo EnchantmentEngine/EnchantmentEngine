@@ -76,7 +76,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
-      $limit: FILES_PAGE_LIMIT,
+      $limit: 10,
       directory,
       recursive: !!filesState.searchText.value
     }
