@@ -37,8 +37,8 @@ import {
 } from '@ir-engine/ecs'
 import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { EditorHistoryState } from '@ir-engine/editor/src/services/EditorHistoryState'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { ColliderComponent, supportedColliderShapes } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
@@ -112,7 +112,7 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
             onClick={() => {
               const entities = SelectionState.getSelectedEntities()
               for (const entity of entities) setComponent(entity, RigidBodyComponent, { type: 'fixed' })
-              EditorHistoryState.snapshotEntities(entities)
+              AuthoringState.snapshotEntities(entities)
               // trigger the rerender for the editor panel
               SelectionState.updateSelection(entities.map((node) => getComponent(node, UUIDComponent)))
             }}

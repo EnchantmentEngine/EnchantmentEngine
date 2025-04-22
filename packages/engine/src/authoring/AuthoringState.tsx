@@ -78,12 +78,12 @@ export type JSONPatchCommands = Record<SourceID, Patch>
 
 export type HistoryCommand = UndoCommand | RedoCommand | JSONPatchCommands
 
-export const EditorHistoryActions = {
+export const AuthoringActions = {
   /**
    * Use to initialize the history state for a source
    */
   initialize: defineAction({
-    type: 'ir.editor.history.INITIALIZE',
+    type: 'ir.engine.authoring.INITIALIZE',
     sourceID: matches.string as Validator<unknown, SourceID>,
     partialState: matches.object as Validator<unknown, SourceData>
   }),
@@ -92,7 +92,7 @@ export const EditorHistoryActions = {
    * Use to uninitialize the history state for a source
    */
   uninitialize: defineAction({
-    type: 'ir.editor.history.UNINITIALIZE',
+    type: 'ir.engine.authoring.UNINITIALIZE',
     sourceID: matches.string as Validator<unknown, SourceID>
   }),
 
@@ -100,7 +100,7 @@ export const EditorHistoryActions = {
    * Use to undo the last done command
    */
   undo: defineAction({
-    type: 'ir.editor.history.UNDO',
+    type: 'ir.engine.authoring.UNDO',
     sourceID: matches.string as Validator<unknown, SourceID>
   }),
 
@@ -108,7 +108,7 @@ export const EditorHistoryActions = {
    * Use to redo the last undone command
    */
   redo: defineAction({
-    type: 'ir.editor.history.REDO',
+    type: 'ir.engine.authoring.REDO',
     sourceID: matches.string as Validator<unknown, SourceID>
   }),
 
@@ -116,33 +116,33 @@ export const EditorHistoryActions = {
    * Use to add entities or components
    */
   ops: defineAction({
-    type: 'ir.editor.history.ADD',
+    type: 'ir.engine.authoring.ADD',
     ops: matches.object as Validator<unknown, Record<SourceID, Operation[]>>
   })
 }
 
-export const EditorHistoryState = defineState({
-  name: 'ir.editor.history.EditorHistoryState',
+export const AuthoringState = defineState({
+  name: 'ir.engine.authoring.AuthoringState',
   initial: {
     commands: {} as Record<UserID, HistoryCommand[]>,
     sources: {} as Record<SourceID, { initial: SourceData; latest: SourceData }>
   },
 
   receptors: {
-    initialize: EditorHistoryActions.initialize.receive((action) => {
-      getMutableState(EditorHistoryState).sources[action.sourceID].set({
+    initialize: AuthoringActions.initialize.receive((action) => {
+      getMutableState(AuthoringState).sources[action.sourceID].set({
         initial: action.partialState,
         latest: action.partialState
       })
     }),
-    uninitialize: EditorHistoryActions.uninitialize.receive((action) => {
-      getMutableState(EditorHistoryState).sources[action.sourceID].set(none)
+    uninitialize: AuthoringActions.uninitialize.receive((action) => {
+      getMutableState(AuthoringState).sources[action.sourceID].set(none)
     }),
-    undo: EditorHistoryActions.undo.receive((action) => {
-      if (!getState(EditorHistoryState).commands[action.$user]) {
-        getMutableState(EditorHistoryState).commands[action.$user].set([])
+    undo: AuthoringActions.undo.receive((action) => {
+      if (!getState(AuthoringState).commands[action.$user]) {
+        getMutableState(AuthoringState).commands[action.$user].set([])
       }
-      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      const history = getMutableState(AuthoringState).commands[action.$user]
       history.merge([
         {
           type: 'undo',
@@ -150,11 +150,11 @@ export const EditorHistoryState = defineState({
         }
       ])
     }),
-    redo: EditorHistoryActions.redo.receive((action) => {
-      if (!getState(EditorHistoryState).commands[action.$user]) {
-        getMutableState(EditorHistoryState).commands[action.$user].set([])
+    redo: AuthoringActions.redo.receive((action) => {
+      if (!getState(AuthoringState).commands[action.$user]) {
+        getMutableState(AuthoringState).commands[action.$user].set([])
       }
-      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      const history = getMutableState(AuthoringState).commands[action.$user]
       history.merge([
         {
           type: 'redo',
@@ -162,17 +162,17 @@ export const EditorHistoryState = defineState({
         }
       ])
     }),
-    ops: EditorHistoryActions.ops.receive((action) => {
-      if (!getState(EditorHistoryState).commands[action.$user]) {
-        getMutableState(EditorHistoryState).commands[action.$user].set([])
+    ops: AuthoringActions.ops.receive((action) => {
+      if (!getState(AuthoringState).commands[action.$user]) {
+        getMutableState(AuthoringState).commands[action.$user].set([])
       }
-      const history = getMutableState(EditorHistoryState).commands[action.$user]
+      const history = getMutableState(AuthoringState).commands[action.$user]
       history.merge([action.ops])
     })
   },
 
   reactor: () => {
-    const state = useMutableState(EditorHistoryState)
+    const state = useMutableState(AuthoringState)
 
     return (
       <>
@@ -189,14 +189,14 @@ export const EditorHistoryState = defineState({
   },
 
   canRedo: () => {
-    const commands = getState(EditorHistoryState).commands
+    const commands = getState(AuthoringState).commands
     const authoredCommands = commands[getState(EngineState).userID]
     const { redoStack } = computeCommands(authoredCommands)
     return redoStack.length > 0
   },
 
   canUndo: () => {
-    const commands = getState(EditorHistoryState).commands
+    const commands = getState(AuthoringState).commands
     const authoredCommands = commands[getState(EngineState).userID]
     const { doneStack } = computeCommands(authoredCommands)
     return doneStack.length > 0
@@ -204,8 +204,8 @@ export const EditorHistoryState = defineState({
 
   snapshot: (sourceID: SourceID) => {
     const newData = getSourceSnapshot(sourceID)
-    const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
-    dispatchAction(EditorHistoryActions.ops({ ops: { [sourceID]: patch } }))
+    const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
+    dispatchAction(AuthoringActions.ops({ ops: { [sourceID]: patch } }))
   },
 
   snapshotEntities: (entities: Entity[]) => {
@@ -214,10 +214,10 @@ export const EditorHistoryState = defineState({
     const ops = {} as Record<SourceID, Operation[]>
     for (const sourceID of affectedSources) {
       const newData = getSourceSnapshot(sourceID)
-      const patch = createPatch(getState(EditorHistoryState).sources[sourceID].latest, newData)
+      const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
       ops[sourceID] = patch
     }
-    dispatchAction(EditorHistoryActions.ops({ ops }))
+    dispatchAction(AuthoringActions.ops({ ops }))
   }
 })
 
@@ -231,10 +231,10 @@ const SourceReactor = (props: { entity: Entity }) => {
 
     const sourceData = getSourceSnapshot(sourceID)
 
-    dispatchAction(EditorHistoryActions.initialize({ sourceID, partialState: sourceData }))
+    dispatchAction(AuthoringActions.initialize({ sourceID, partialState: sourceData }))
 
     return () => {
-      dispatchAction(EditorHistoryActions.uninitialize({ sourceID }))
+      dispatchAction(AuthoringActions.uninitialize({ sourceID }))
     }
   }, [loaded])
 
@@ -246,7 +246,7 @@ const SourceReactor = (props: { entity: Entity }) => {
  * This component replays the history of a source to keep the current state in sync.
  */
 const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
-  const commands = useMutableState(EditorHistoryState).commands.get(NO_PROXY)
+  const commands = useMutableState(AuthoringState).commands.get(NO_PROXY)
   const sourceCommands = commands[getState(EngineState).userID]
     ? (Object.values(commands[getState(EngineState).userID])
         .filter((command) => 'type' in command || command[props.sourceID])
@@ -264,7 +264,7 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
     const operations = doneStack.map((command) => command[props.sourceID]).flat()
 
     // get the readonly state and treat it as mutable so we have a non-reactive copy of the current state
-    const readonlyState = getState(EditorHistoryState).sources[props.sourceID]
+    const readonlyState = getState(AuthoringState).sources[props.sourceID]
 
     // get the final state of the history
     const finalState = structuredClone(readonlyState.initial)

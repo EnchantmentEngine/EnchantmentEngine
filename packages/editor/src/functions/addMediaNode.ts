@@ -59,6 +59,7 @@ import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serialize
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { getState, none } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -70,7 +71,6 @@ import {
   MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
 import { EditorControlFunctions } from './EditorControlFunctions'
 import { getIntersectingNodeOnScreen } from './getIntersectingNode'
@@ -186,7 +186,7 @@ export async function addMediaNode(
           removeEntity(entity)
           const rootEntity = getState(EditorState).rootEntity
           const newSource = GLTFComponent.getInstanceID(rootEntity)
-          EditorHistoryState.snapshot(newSource)
+          AuthoringState.snapshot(newSource)
         }
       )
     } else if (contentType.startsWith('model/prefab')) {
@@ -221,7 +221,7 @@ export async function addMediaNode(
           removeEntity(entity)
           const gltfEntity = getAncestorWithComponents(parent ?? rootEntity, [GLTFComponent])
           EditorState.markModifiedScene(gltfEntity)
-          EditorHistoryState.snapshot(newSource)
+          AuthoringState.snapshot(newSource)
         }
       )
     } else {
@@ -239,7 +239,7 @@ export async function addMediaNode(
 
       const rootEntity = getState(EditorState).rootEntity
       const newSource = GLTFComponent.getInstanceID(rootEntity)
-      EditorHistoryState.snapshot(newSource)
+      AuthoringState.snapshot(newSource)
       return entityUUID
     }
   } else if (contentType.startsWith('video/') || hostname.includes('twitch.tv') || hostname.includes('youtube.com')) {
@@ -256,7 +256,7 @@ export async function addMediaNode(
     )
     const rootEntity = getState(EditorState).rootEntity
     const newSource = GLTFComponent.getInstanceID(rootEntity)
-    EditorHistoryState.snapshot(newSource)
+    AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('image/')) {
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
@@ -267,7 +267,7 @@ export async function addMediaNode(
     )
     const rootEntity = getState(EditorState).rootEntity
     const newSource = GLTFComponent.getInstanceID(rootEntity)
-    EditorHistoryState.snapshot(newSource)
+    AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('audio/')) {
     const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
@@ -278,7 +278,7 @@ export async function addMediaNode(
     )
     const rootEntity = getState(EditorState).rootEntity
     const newSource = GLTFComponent.getInstanceID(rootEntity)
-    EditorHistoryState.snapshot(newSource)
+    AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (url.includes('.uvol')) {
     // TODO: detect whether to add LegacyVolumetricComponent or VolumetricComponent
@@ -294,7 +294,7 @@ export async function addMediaNode(
     )
     const rootEntity = getState(EditorState).rootEntity
     const newSource = GLTFComponent.getInstanceID(rootEntity)
-    EditorHistoryState.snapshot(newSource)
+    AuthoringState.snapshot(newSource)
     return entityUUID
   }
   return null

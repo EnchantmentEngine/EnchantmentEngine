@@ -70,6 +70,7 @@ import { EditorErrorState } from '../services/EditorErrorServices'
 import { EditorHelperState, PlacementMode } from '../services/EditorHelperState'
 
 import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions'
+import { AuthoringActions, AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState.tsx'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { InputButtonBindings } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -79,7 +80,6 @@ import { computeWorldBounds } from '@ir-engine/spatial/src/transform/functions/B
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent.ts'
 import { isEntityGlb } from '../functions/utils.ts'
 import { SelectionBoxState } from '../panels/viewport/tools/SelectionBoxTool.tsx'
-import { EditorHistoryActions, EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
@@ -158,14 +158,14 @@ const onUndo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
   const sourceID = GLTFComponent.getInstanceID(rootEntity)
-  if (EditorHistoryState.canUndo()) dispatchAction(EditorHistoryActions.undo({ sourceID }))
+  if (AuthoringState.canUndo()) dispatchAction(AuthoringActions.undo({ sourceID }))
 }
 
 const onRedo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
   const sourceID = GLTFComponent.getInstanceID(rootEntity)
-  if (EditorHistoryState.canRedo()) dispatchAction(EditorHistoryActions.redo({ sourceID }))
+  if (AuthoringState.canRedo()) dispatchAction(AuthoringActions.redo({ sourceID }))
 }
 
 const onIncreaseGridHeight = () => {
@@ -181,7 +181,7 @@ const onDecreaseGridHeight = () => {
 const onDeleteSelection = () => {
   const entities = SelectionState.getSelectedEntities()
   EditorControlFunctions.removeObject(entities)
-  EditorHistoryState.snapshotEntities(entities)
+  AuthoringState.snapshotEntities(entities)
 }
 
 let lastDistanceToCenter = 10

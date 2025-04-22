@@ -32,6 +32,7 @@ import { addMediaNode } from '@ir-engine/editor/src/functions/addMediaNode'
 import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentEditors'
 import { ComponentShelfCategoriesState } from '@ir-engine/editor/src/services/ComponentShelfCategoriesState'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
@@ -45,7 +46,6 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GrStatusPlaceholder } from 'react-icons/gr'
 import { twMerge } from 'tailwind-merge'
-import { EditorHistoryState } from '../../services/EditorHistoryState'
 import { EditorState } from '../../services/EditorServices'
 
 type ElementsType = 'components' | 'prefabs'
@@ -78,7 +78,7 @@ const ComponentListItem = ({ item, onSelect }: { item: Component; onSelect: () =
         for (const entity of entities) {
           setComponent(entity, item)
         }
-        EditorHistoryState.snapshotEntities(entities)
+        AuthoringState.snapshotEntities(entities)
         onSelect()
       }}
     >
@@ -106,7 +106,7 @@ const PrefabListItem = ({ item, onSelect }: { item: PrefabShelfItem; onSelect: (
               name: TransformComponent.jsonID
             }
           ])
-          EditorHistoryState.snapshotEntities([getState(EditorState).rootEntity])
+          AuthoringState.snapshotEntities([getState(EditorState).rootEntity])
         } else {
           addMediaNode(url)
         }

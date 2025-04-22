@@ -33,10 +33,10 @@ import {
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { setNestedObject } from '@ir-engine/hyperflux'
 
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SourceID } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
-import { EditorHistoryState } from '../../services/EditorHistoryState'
 import { SelectionState } from '../../services/SelectionServices'
 
 export type EditorPropType = {
@@ -101,6 +101,6 @@ export const commitProperties = <C extends Component>(
   const affectedAssets = new Set<SourceID>(nodes.map((entity) => GLTFComponent.getInstanceID(entity)))
 
   for (const assetID of affectedAssets) {
-    EditorHistoryState.snapshot(assetID)
+    AuthoringState.snapshot(assetID)
   }
 }

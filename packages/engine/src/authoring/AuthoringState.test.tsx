@@ -36,20 +36,14 @@ import {
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { SourceID } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  applyCommandsToECS,
-  computeCommands,
-  getSourceSnapshot,
-  HistoryCommand,
-  SourceData
-} from './EditorHistoryState'
+import { applyCommandsToECS, computeCommands, getSourceSnapshot, HistoryCommand, SourceData } from './AuthoringState'
 
 const sourceID1 = 'source1' as SourceID
 const sourceID2 = 'source2' as SourceID
 const nodeID1 = 'node1' as NodeID
 const nodeID2 = 'node2' as NodeID
 
-describe('EditorHistoryState', () => {
+describe('AuthoringState', () => {
   describe('computeCommands', () => {
     it('should handle undo and redo commands correctly', () => {
       const commands: HistoryCommand[] = [

@@ -28,12 +28,12 @@ import React, { Suspense, useEffect } from 'react'
 import { hasComponent, removeComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { EditorPropType } from '@ir-engine/editor/src/components/properties/Util'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import ComponentDropdown, { ComponentDropdownProps } from '@ir-engine/ui/src/components/editor/ComponentDropdown'
 import { ComponentDropdownState } from '@ir-engine/ui/src/components/editor/ComponentDropdown/ComponentDropdownState'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { useTranslation } from 'react-i18next'
-import { EditorHistoryState } from '../../../services/EditorHistoryState'
 
 interface INodeErrorProps {
   name?: string
@@ -108,7 +108,7 @@ const NodeEditor = ({
           ? () => {
               const entities = SelectionState.getSelectedEntities()
               for (const entity of entities) removeComponent(entity, component)
-              EditorHistoryState.snapshotEntities(entities)
+              AuthoringState.snapshotEntities(entities)
             }
           : undefined
       }

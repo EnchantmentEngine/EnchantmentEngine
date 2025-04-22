@@ -49,7 +49,7 @@ import { TransformComponent } from '@ir-engine/spatial'
 import { TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 
 import { PresentationSystemGroup, useExecute } from '@ir-engine/ecs'
-import { EditorHistoryState } from '@ir-engine/editor/src/services/EditorHistoryState'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { Checkbox } from '@ir-engine/ui'
 import ComponentDropdown from '../../ComponentDropdown'
 import EulerInput from '../../input/Euler'
@@ -109,7 +109,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
       ObjectGridSnapState.apply()
     }
     const entities = SelectionState.getSelectedEntities()
-    EditorHistoryState.snapshotEntities(entities)
+    AuthoringState.snapshotEntities(entities)
   }
 
   const onChangeDynamicLoad = (value) => {
@@ -118,7 +118,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
       if (value === true) setComponent(entity, SceneDynamicLoadComponent)
       else removeComponent(entity, SceneDynamicLoadComponent)
     }
-    EditorHistoryState.snapshotEntities(entities)
+    AuthoringState.snapshotEntities(entities)
   }
 
   const onChangePosition = (value: Vector3) => {
