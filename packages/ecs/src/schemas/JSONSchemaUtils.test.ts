@@ -98,7 +98,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -110,7 +110,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -122,7 +122,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'number'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = false
 
@@ -134,7 +134,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when its typeof is 'number'", () => {
       const Expected = 42
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -151,7 +151,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -163,7 +163,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -175,7 +175,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'boolean'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = 'IncorrectValue'
 
@@ -187,7 +187,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when its typeof is 'boolean'", () => {
       const Expected = false
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -205,7 +205,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -217,7 +217,7 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -229,7 +229,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'string'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = false
 
@@ -241,7 +241,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when `@param value` is '__proto__'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = '__proto__'
 
@@ -253,7 +253,7 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when it is not null/undefined, its typeof is 'string' and its value is not '__proto__'", () => {
       const Expected = 'SomeTestString'
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -892,7 +892,7 @@ describe('HasRequiredSchema', () => {
   it('should return true if `@param schema` has a Kind.Required field', () => {
     const Expected = true
 
-    const schema = { [Kind]: 'Required', properties: undefined } as Schema
+    const schema = S.Number({ required: true })
 
     const result = HasRequiredSchema(schema)
 
@@ -904,13 +904,15 @@ describe('HasRequiredSchema', () => {
     const Expected = true
 
     const child = { [Kind]: 'Any', properties: undefined } as Schema
-    const required = { [Kind]: 'Required', properties: child } as Schema
+    const required = S.Object({
+      child: S.Number({ required: true })
+    })
     const children = {
       child1: child,
       child2: required,
       child3: child
     }
-    const schema = { [Kind]: 'Object', properties: children } as Schema
+    const schema = S.Object(children)
 
     const result = HasRequiredSchema(schema)
 
@@ -922,7 +924,7 @@ describe('HasSchemaValidators', () => {
   it('should return false if `@param schema` has no children and does not have an .options.validate field', () => {
     const Expected = false
 
-    const schema = { [Kind]: 'Number', properties: undefined } as Schema
+    const schema = S.Number()
 
     const result = HasSchemaValidators(schema)
 
@@ -1160,7 +1162,7 @@ describe('HasRequiredSchemaValues', () => {
         container: {
           [Kind]: 'Object',
           properties: {
-            wrongKey: { [Kind]: 'Required' } as Schema
+            wrongKey: S.Number({ required: true })
           }
         } as Schema
       }
@@ -1200,7 +1202,7 @@ describe('HasRequiredSchemaValues', () => {
         properties: {
           one: { [Kind]: 'Number' } as Schema,
           two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
+          [OtherKey]: S.Number({ required: true })
         }
       }
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
@@ -1215,76 +1217,6 @@ describe('HasRequiredSchemaValues', () => {
     })
   }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized]
 
-  describe('case: Kind.Required', () => {
-    const TestSchemaKind = 'Required'
-
-    it('should return [false, `@param current`] when `@param value` is null', () => {
-      const Expected = [false, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = null
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-
-    it('should return [false, `@param current`] when `@param value` is undefined', () => {
-      const Expected = [false, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = undefined
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-
-    it('should return [true, `@param current`] when `@param value` is not null or undefined', () => {
-      const Expected = [true, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = { one: 1, two: 'TWO' }
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-  }) //:: Kind.Required
-
   describe('case: default', () => {
     const TestSchemaKind = 'UnknownKind' as any
 
@@ -1296,7 +1228,7 @@ describe('HasRequiredSchemaValues', () => {
         properties: {
           one: { [Kind]: 'Number' } as Schema,
           two: { [Kind]: 'String' } as Schema,
-          otherKey: { [Kind]: 'Required' } as Schema
+          otherKey: S.Number({ required: true })
         }
       }
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
@@ -1757,11 +1689,11 @@ describe('CheckSchemaValue', () => {
       const properties = {
         one: { [Kind]: 'Number' } as Schema,
         two: { [Kind]: 'String' } as Schema,
-        ignored1: { [Kind]: 'NonSerialized' } as Schema,
+        ignored1: S.Number({ serialized: false }),
         ignored2: {
           [Kind]: 'Object',
           properties: {
-            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
+            ignoredChild1: S.Number({ serialized: false })
           }
         } as Schema
       }
@@ -1779,11 +1711,11 @@ describe('CheckSchemaValue', () => {
       const properties = {
         one: { [Kind]: 'Number' } as Schema,
         two: { [Kind]: 'String' } as Schema,
-        ignored1: { [Kind]: 'NonSerialized' } as Schema,
+        ignored1: S.Number({ serialized: false }),
         ignored2: {
           [Kind]: 'Object',
           properties: {
-            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
+            ignoredChild1: S.Number({ serialized: false })
           }
         } as Schema
       }
@@ -1829,7 +1761,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = null
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
+      const properties = { key: { [Kind]: 'String' } as Schema, value: S.Number({ serialized: false }) }
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
       const result = CheckSchemaValue(schema, value)
@@ -1853,7 +1785,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = { One: 1, Two: 2 } as Record<string, number>
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
+      const properties = { key: { [Kind]: 'String' } as Schema, value: S.Number({ serialized: false }) }
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
       const result = CheckSchemaValue(schema, value)
@@ -1893,7 +1825,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = { [Kind]: 'NonSerialized' } as Schema
+      const properties = S.Number({ serialized: false })
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
       const result = CheckSchemaValue(schema, value)
@@ -2021,10 +1953,7 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = [
-        { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema,
-        { [Kind]: 'String' } as Schema
-      ]
+      const properties = [S.Number({ serialized: false }), { [Kind]: 'String' } as Schema]
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
       const result = CheckSchemaValue(schema, value)
@@ -2258,7 +2187,7 @@ describe('ConvertToSchema', () => {
           const value = { one: 42, two: undefined }
           const properties = {
             one: { [Kind]: 'Number' } as Schema,
-            two: { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
+            two: S.Number({ serialized: false })
           }
           const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
@@ -2370,7 +2299,7 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = 42
-        const properties = { [Kind]: 'NonSerialized' } as Schema
+        const properties = S.Number({ serialized: false })
         const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
@@ -2485,7 +2414,7 @@ describe('ConvertToSchema', () => {
         const properties = [
           { [Kind]: 'String' } as Schema,
           { [Kind]: 'Void' } as Schema,
-          { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
+          { [Kind]: 'Number', options: { serialized: false } } as Schema
         ]
         const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
 
@@ -2514,11 +2443,13 @@ describe('ConvertToSchema', () => {
 
     it("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {
       const Expected = undefined
-      const TestSchemaKind = 'NonSerialized'
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = {
+        [Kind]: 'Array',
+        properties: { [Kind]: 'Number' } as Schema,
+        options: { default: value, serialized: false }
+      } as Schema
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2580,7 +2511,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for Number type', () => {
-    const schema = S.Number(0, { maximum: 100, minimum: 0 })
+    const schema = S.Number({ maximum: 100, minimum: 0 })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       type: 'number',
@@ -2590,19 +2521,19 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for Bool type', () => {
-    const schema = S.Bool(false)
+    const schema = S.Bool()
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({ type: 'boolean' })
   })
 
   it('should generate schema for String type', () => {
-    const schema = S.String('test')
+    const schema = S.String({ default: 'test' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({ type: 'string' })
   })
 
   it('should generate schema for Enum type', () => {
-    const schema = S.Enum({ A: 'a', B: 'b' }, 'a')
+    const schema = S.Enum({ A: 'a', B: 'b' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       enum: ['a', 'b']
@@ -2637,7 +2568,7 @@ describe('GenerateJSONSchema', () => {
 
   it('should generate schema for Object type with required fields', () => {
     const schema = S.Object({
-      name: S.Required(S.String()),
+      name: S.String({ required: true }),
       age: S.Number(),
       active: S.Bool()
     })
@@ -2680,7 +2611,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for Array type', () => {
-    const schema = S.Array(S.Number(), [], { minItem: 1, maxItem: 10 })
+    const schema = S.Array(S.Number(), { minItem: 1, maxItem: 10 })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       type: 'array',
@@ -2716,7 +2647,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for NonSerialized type', () => {
-    const schema = S.NonSerialized(S.String())
+    const schema = S.String({ serialized: false })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({ type: 'null' })
   })
@@ -2746,7 +2677,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should include $id when provided in options', () => {
-    const schema = S.String('test', { id: 'test-id' })
+    const schema = S.String({ id: 'test-id', default: 'test' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       type: 'string',

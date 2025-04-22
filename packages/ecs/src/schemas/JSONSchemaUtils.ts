@@ -210,6 +210,8 @@ export const HasRequiredSchema = <T extends Schema>(schema: T): boolean => {
 }
 
 export const HasRequiredSchemaValues = <T extends Schema>(schema: T, value, current = ''): [boolean, string] => {
+  if (schema.options?.required) return [validValue(value), current]
+
   switch (schema[Kind]) {
     case 'Object':
     case 'Class': {
@@ -611,6 +613,12 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
 // Generate a JSON Schema from the Typebox Schema
 export const GenerateJSONSchema = <T extends Schema>(schema: T) => {
   const jsonSchema: any = {}
+
+  if (schema.options?.serialized === false) {
+    // Non-serialized fields are not included in JSON Schema
+    jsonSchema.type = 'null'
+    return jsonSchema
+  }
 
   // Add type based on schema kind
   switch (schema[Kind]) {

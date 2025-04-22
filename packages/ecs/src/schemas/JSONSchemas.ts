@@ -110,7 +110,7 @@ export const S = {
    */
   Enum: <T extends Record<string, string | number>>(item: T, options?: TEnumSchema<T>['options']) =>
     ({
-      ...buildSchema('Enum', options),
+      ...buildSchema('Enum', { default: Object.values(item)[0], ...options }),
       properties: item
     }) as TEnumSchema<T>,
 
@@ -120,7 +120,7 @@ export const S = {
    */
   Literal: <T extends TLiteralValue>(item: T, options?: TLiteralSchema<T>['options']) =>
     ({
-      ...buildSchema('Literal', options),
+      ...buildSchema('Literal', { default: item, ...options }),
       properties: item
     }) as TLiteralSchema<T>,
 
@@ -225,7 +225,6 @@ export const S = {
   Func: <Params extends Schema[], Return extends Schema, Initial extends (...params: any[]) => any>(
     parameters: [...Params],
     returns: Return,
-    init?: Initial,
     options?: TFuncSchema<Params, Return>['options']
   ) =>
     ({
@@ -233,10 +232,8 @@ export const S = {
       properties: { params: parameters, return: returns }
     }) as TFuncSchema<Params, Return>,
 
-  Call: <Initial extends (...params: any[]) => any>(
-    init?: Initial,
-    options?: TFuncSchema<Schema[], TVoidSchema>['options']
-  ) => S.Func([], S.Void(), init, options),
+  Call: <Initial extends (...params: any[]) => any>(options?: TFuncSchema<Schema[], TVoidSchema>['options']) =>
+    S.Func([], S.Void(), options),
 
   /**
    * Schemas wrapped in this schema are optional values that can be undefined, will default to undefined if not default value is provided
