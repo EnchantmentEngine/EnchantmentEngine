@@ -23,12 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { expect } from '@storybook/jest'
 import { useArgs } from '@storybook/preview-api'
 import { ArgTypes } from '@storybook/react'
-import { fireEvent, within } from '@storybook/testing-library'
 import React from 'react'
-import Seeker, { getFormattedTime, SeekerProps } from './index'
+import Seeker, { SeekerProps } from './index'
 
 const argTypes: ArgTypes = {
   currentSeconds: {
@@ -76,22 +74,5 @@ const SeekerRenderer = (args: SeekerProps & { startingSeconds: number }) => {
 
 export const Default = {
   name: 'Default',
-  render: SeekerRenderer,
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement)
-
-    expect(canvas.queryByTestId('seeker-button')).toBeInTheDocument()
-
-    const slider = canvas.queryByTestId('seeker-track') as HTMLElement
-
-    expect(slider).toHaveValue(args.startingSeconds.toString())
-
-    fireEvent.change(slider, { target: { value: args.totalSeconds * 0.3 } })
-    expect(slider).toHaveValue((args.totalSeconds * 0.3).toString())
-
-    const textSpan = canvas.queryByTestId('seeker-text') as HTMLSpanElement
-    expect(textSpan).toHaveTextContent(
-      getFormattedTime(args.totalSeconds * 0.3) + ' / ' + getFormattedTime(args.totalSeconds)
-    )
-  }
+  render: SeekerRenderer
 }

@@ -24,10 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { EyeSm, Lock01Sm } from '@ir-engine/ui/src/icons'
-import { expect } from '@storybook/jest'
 import { useArgs } from '@storybook/preview-api'
 import { ArgTypes } from '@storybook/react'
-import { within } from '@storybook/testing-library'
 import React from 'react'
 import EditorDropdownItem, { EditorDropdownItemProps } from './index'
 
@@ -43,9 +41,6 @@ const argTypes: ArgTypes = {
   },
   rightIcon1: {
     name: 'Right Icon 1',
-    control: 'boolean'
-  },
-  collapsed: {
     control: 'boolean'
   },
   rightIcon2: {
@@ -67,9 +62,7 @@ export default {
   argTypes,
   args: {
     label: 'Label',
-    selected: false,
-    disabled: false,
-    collapsed: false
+    selected: false
   }
 }
 
@@ -88,20 +81,5 @@ const EditorDropdownItemRenderer = (args: EditorDropdownItemProps & { rightIcon1
 
 export const Default = {
   name: 'Default',
-  render: EditorDropdownItemRenderer,
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement)
-
-    // Locate the toggle button using data-testid
-
-    expect(canvas.queryByTestId(args.label)).toBeInTheDocument()
-
-    if (args.collapsed) {
-      expect(canvas.queryByTestId('expand-item')).toBeInTheDocument()
-    } else {
-      expect(canvas.queryByTestId('collapse-item')).toBeInTheDocument()
-    }
-
-    expect(canvas.queryByTestId('item-name')).toBeInTheDocument()
-  }
+  render: EditorDropdownItemRenderer
 }

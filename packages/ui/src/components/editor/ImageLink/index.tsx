@@ -93,7 +93,6 @@ export default function ImageLink({ src, onChange, onBlur, variant = 'full', ...
           !onChange && !onBlur && variant === 'full' && 'h-[370px]'
         )}
         ref={imageRef}
-        data-testid="image-container"
         {...props}
       />
       {(onChange || onBlur) && (
@@ -102,7 +101,6 @@ export default function ImageLink({ src, onChange, onBlur, variant = 'full', ...
           onChange={(event) => onChange?.(event.target.value)}
           onBlur={(event) => onBlur?.(event.target.value)}
           fullWidth
-          data-testid="img-input"
           endComponent={
             <button
               className="h-4 w-4 text-text-secondary"
@@ -110,7 +108,6 @@ export default function ImageLink({ src, onChange, onBlur, variant = 'full', ...
                 onChange?.('')
                 onBlur?.('')
               }}
-              data-testid="img-clear-button"
             >
               <XCloseLg />
             </button>

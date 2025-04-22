@@ -36,7 +36,7 @@ export interface SeekerProps {
   onPlayButtonClick: () => void
 }
 
-export function getFormattedTime(seconds: number) {
+function getFormattedTime(seconds: number) {
   let time = ''
   if (seconds / 60 < 10) {
     time += '0'
@@ -72,11 +72,7 @@ export default function Seeker({ currentSeconds, totalSeconds, onChange, isPause
 
   return (
     <div ref={parentRef} className="group/editor-seeker flex flex-nowrap items-center gap-x-2 bg-[#141619] px-2 py-1">
-      <button
-        className="text-[#42454D] group-hover/editor-seeker:text-[#9CA0AA]"
-        onClick={onPlayButtonClick}
-        data-testid="seeker-button"
-      >
+      <button className="text-[#42454D] group-hover/editor-seeker:text-[#9CA0AA]" onClick={onPlayButtonClick}>
         {isPaused ? <MdPauseCircleOutline /> : <MdPlayCircleOutline />}
       </button>
       <input
@@ -114,13 +110,8 @@ export default function Seeker({ currentSeconds, totalSeconds, onChange, isPause
           [&::-webkit-slider-thumb]:bg-[#213869]
           group-hover/editor-seeker:[&::-webkit-slider-thumb]:bg-[#879ECF]
         "
-        data-testid="seeker-track"
       />
-      <span
-        ref={textRef}
-        className="whitespace-nowrap text-sm text-[#B2B5BD] group-hover/editor-seeker:text-[#F5F5F5]"
-        data-testid="seeker-text"
-      >
+      <span ref={textRef} className="whitespace-nowrap text-sm text-[#B2B5BD] group-hover/editor-seeker:text-[#F5F5F5]">
         {getFormattedTime(currentSeconds)} / {getFormattedTime(totalSeconds)}
       </span>
     </div>

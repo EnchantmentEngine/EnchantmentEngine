@@ -87,12 +87,10 @@ export default function ComponentDropdown({
               className="my-1 text-text-secondary"
               //title={isMinimized.value ? 'maximize' : 'minimize'}
               onClick={toggleMinimized}
-              data-testid="toggle-button"
             >
               <HiOutlineChevronRight
                 className={twMerge('h-4 w-4 transition-transform duration-300', !isMinimized.value ? 'rotate-90' : '')}
                 onClick={toggleMinimized}
-                data-testid="toggle-button-icon"
               />
             </button>
           </Tooltip>
@@ -104,25 +102,18 @@ export default function ComponentDropdown({
             {name}
           </span>
           {onClose && (
-            <button className="ml-auto text-text-inactive" onClick={onClose} data-testid="close-button">
+            <button className="ml-auto text-text-inactive" onClick={onClose}>
               <HiMiniXMark className="h-4 w-4" />
             </button>
           )}
         </div>
 
         {!isMinimized.value && (
-          <div
-            className="col-span-1 ml-6 mt-2 w-full text-start text-xs text-text-secondary"
-            data-testid="dropdown-description"
-          >
-            {description}
-          </div>
+          <div className="col-span-1 ml-6 mt-2 w-full text-start text-xs text-text-secondary">{description}</div>
         )}
       </div>
 
-      <div className={isMinimized.value ? 'hidden' : ''} data-testid="dropdown-content">
-        {children}
-      </div>
+      <div className={isMinimized.value ? 'hidden' : ''}>{children}</div>
     </div>
   )
 }
