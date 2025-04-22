@@ -46,7 +46,7 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const loaded = GLTFComponent.useSceneLoaded(entity)
   const isScene = useHasComponent(entity, SceneComponent)
   const shouldHaveSpinned = !isScene && !!gltfComponent.src.value && !errors && !loaded
-  console.log(loaded, 'loaded', entity, gltfComponent)
+
   useEffect(() => {
     const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
     return () => {
