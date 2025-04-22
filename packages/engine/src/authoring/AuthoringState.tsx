@@ -66,12 +66,10 @@ export type SourceData = Record<NodeID, object>
 
 export type UndoCommand = {
   type: 'undo'
-  sourceID: SourceID
 }
 
 export type RedoCommand = {
   type: 'redo'
-  sourceID: SourceID
 }
 
 export type JSONPatchCommands = Record<SourceID, Patch>
@@ -100,16 +98,14 @@ export const AuthoringActions = {
    * Use to undo the last done command
    */
   undo: defineAction({
-    type: 'ir.engine.authoring.UNDO',
-    sourceID: matches.string as Validator<unknown, SourceID>
+    type: 'ir.engine.authoring.UNDO'
   }),
 
   /**
    * Use to redo the last undone command
    */
   redo: defineAction({
-    type: 'ir.engine.authoring.REDO',
-    sourceID: matches.string as Validator<unknown, SourceID>
+    type: 'ir.engine.authoring.REDO'
   }),
 
   /**
@@ -145,8 +141,7 @@ export const AuthoringState = defineState({
       const history = getMutableState(AuthoringState).commands[action.$user]
       history.merge([
         {
-          type: 'undo',
-          sourceID: action.sourceID
+          type: 'undo'
         }
       ])
     }),
@@ -157,8 +152,7 @@ export const AuthoringState = defineState({
       const history = getMutableState(AuthoringState).commands[action.$user]
       history.merge([
         {
-          type: 'redo',
-          sourceID: action.sourceID
+          type: 'redo'
         }
       ])
     }),

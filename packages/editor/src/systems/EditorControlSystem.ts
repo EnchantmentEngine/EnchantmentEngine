@@ -157,15 +157,13 @@ const onToggleTransformSpace = () => {
 const onUndo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
-  const sourceID = GLTFComponent.getInstanceID(rootEntity)
-  if (AuthoringState.canUndo()) dispatchAction(AuthoringActions.undo({ sourceID }))
+  if (AuthoringState.canUndo()) dispatchAction(AuthoringActions.undo({}))
 }
 
 const onRedo = () => {
   const rootEntity = getState(EditorState).rootEntity
   if (!rootEntity) return
-  const sourceID = GLTFComponent.getInstanceID(rootEntity)
-  if (AuthoringState.canRedo()) dispatchAction(AuthoringActions.redo({ sourceID }))
+  if (AuthoringState.canRedo()) dispatchAction(AuthoringActions.redo({}))
 }
 
 const onIncreaseGridHeight = () => {
