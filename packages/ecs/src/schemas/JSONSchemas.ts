@@ -25,7 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { PeerID, UserID } from '@ir-engine/hyperflux'
 import { Entity, EntityUUID } from '../Entity'
 import {
+  defaultSchemaValues,
   Kind,
+  Kinds,
   Options,
   Schema,
   TArraySchema,
@@ -50,65 +52,65 @@ import {
   TVoidSchema
 } from './JSONSchemaTypes'
 
-const buildOptions = (defaultValue: any, options?: Options) => {
-  return defaultValue !== undefined
-    ? {
-        default: defaultValue,
-        ...options
-      }
-    : options
+const buildOptions = (kind: Kinds, options?: Options): Options => {
+  options ??= {
+    serialized: true,
+    default: defaultSchemaValues[kind]
+  }
+
+  return options
+}
+
+const buildSchema = <Opt extends Options>(kind: Kinds, options?: Opt) => {
+  return {
+    [Kind]: kind,
+    options: buildOptions(kind, options)
+  }
 }
 
 export const S = {
   /** Schema that infers as a null */
   Null: (options?: TNullSchema['options']) =>
     ({
-      [Kind]: 'Null',
-      options: options
+      ...buildSchema('Null', options)
     }) as TNullSchema,
 
   /** Schema that infers as a undefined */
   Undefined: (options?: TUndefinedSchema['options']) =>
     ({
-      [Kind]: 'Undefined',
-      options: options
+      ...buildSchema('Undefined', options)
     }) as TUndefinedSchema,
 
   /** Schema that infers as a void for use with S.Func as a return schema */
   Void: (options?: TVoidSchema['options']) =>
     ({
-      [Kind]: 'Void',
-      options: options
+      ...buildSchema('Void', options)
     }) as TVoidSchema,
 
   /** Schema that infers as a number, defaults to 0 */
   Number: (options?: TNumberSchema['options']) =>
     ({
-      [Kind]: 'Number',
-      options: buildOptions(0, options)
+      ...buildSchema('Number', options)
     }) as TNumberSchema,
 
   /** Schema that infers as a boolean, defaults to false */
   Bool: (options?: TBoolSchema['options']) =>
     ({
-      [Kind]: 'Bool',
-      options: buildOptions(false, options)
+      ...buildSchema('Bool', options)
     }) as TBoolSchema,
 
   /** Schema that infers as a string, defaults to '' */
   String: (options?: TStringSchema['options']) =>
     ({
-      [Kind]: 'String',
-      options: buildOptions('', options)
+      ...buildSchema('String', options)
     }) as TStringSchema,
 
   /**
-   * Schema that infers as a enum, requires that the enum to infer as be passed in
+   * Schema that infers as a enum, requires that the enum to infer as be passed in, default to the first value of the enum
    */
   Enum: <T extends Record<string, string | number>>(item: T, options?: TEnumSchema<T>['options']) =>
     ({
-      [Kind]: 'Enum',
-      options: buildOptions(Object.values(item)[0], options),
+      ...buildSchema('Enum', options),
       properties: item
     }) as TEnumSchema<T>,
 
@@ -118,30 +120,27 @@ export const S = {
    */
   Literal: <T extends TLiteralValue>(item: T, options?: TLiteralSchema<T>['options']) =>
     ({
-      [Kind]: 'Literal',
-      options: buildOptions(item, options),
+      ...buildSchema('Literal', options),
       properties: item
     }) as TLiteralSchema<T>,
 
   /**
-   * Schema that infers as an object type of the properties provided
+   * Schema that infers as an object type of the properties provided, defaults to an empty object ({})
    * S.Object({ test: S.Number() }) -> { test: number }
    */
   Object: <T extends TProperties>(properties: T, options?: TObjectSchema<T>['options']) =>
     ({
-      [Kind]: 'Object',
-      options: buildOptions({}, options),
+      ...buildSchema('Object', options),
       properties: properties
     }) as TObjectSchema<T>,
 
   /**
-   * Schema that infers as a record type of key and value schemas passed in
+   * Schema that infers as a record type of key and value schemas passed in, defaults to an empty object ({})
    * S.Record(S.String(), S.Number()) -> Record<string, number>
    */
   Record: <K extends Schema, V extends Schema>(key: K, value: V, options?: TRecordSchema<K, V>['options']) =>
     ({
-      [Kind]: 'Record',
-      options: buildOptions({}, options),
+      ...buildSchema('Record', options),
       properties: { key, value }
     }) as TRecordSchema<K, V>,
 
@@ -151,8 +150,7 @@ export const S = {
    */
   Partial: <T extends Schema>(item: T, options?: TPartialSchema<T>['options']) =>
     ({
-      [Kind]: 'Partial',
-      options: buildOptions({}, options),
+      ...buildSchema('Partial', options),
       properties: item
     }) as TPartialSchema<T>,
 
@@ -162,8 +160,7 @@ export const S = {
    */
   Array: <T extends Schema>(item: T, options?: TArraySchema<T>['options']) =>
     ({
-      [Kind]: 'Array',
-      options: buildOptions([], options),
+      ...buildSchema('Array', options),
       properties: item
     }) as TArraySchema<T>,
 
@@ -173,19 +170,17 @@ export const S = {
    */
   Tuple: <T extends Schema[]>(items: [...T], options?: TTupleSchema<T>['options']) =>
     ({
-      [Kind]: 'Tuple',
-      options: buildOptions([], options),
+      ...buildSchema('Tuple', options),
       properties: items
     }) as TTupleSchema<T>,
 
   /**
-   * Schema that infers as a union type of the schemas provided, defaults to null
+   * Schema that infers as a union type of the schemas provided, defaults to the default value of the first element in the union
    * It will serialize as the first schema in the array that matches the value's shape
    * */
   Union: <T extends Schema[]>(schemas: [...T], options?: TUnionSchema<T>['options']) =>
     ({
-      [Kind]: 'Union',
-      options: buildOptions(null, options),
+      ...buildSchema('Union', options),
       properties: schemas
     }) as TUnionSchema<T>,
 
@@ -198,9 +193,8 @@ export const S = {
    */
   Class: <T extends TProperties, Class>(init: () => Class, options?: TClassSchema<T, Class>['options']) =>
     ({
-      [Kind]: 'Class',
-      options: buildOptions(init, options),
-      properties: {}
+      ...buildSchema('Class', options),
+      properties: {} as T
     }) as TClassSchema<T, Class>,
 
   /**
@@ -214,12 +208,7 @@ export const S = {
     options?: TClassSchema<T, Class>['options']
   ) =>
     ({
-      [Kind]: 'Class',
-      options: {
-        ...options,
-        id: 'SerializedClass',
-        default: init
-      },
+      ...buildSchema('Class', { ...options, serialized: true, id: 'SerializedClass', default: init }),
       properties: items
     }) as TClassSchema<T, Class>,
 
@@ -240,8 +229,7 @@ export const S = {
     options?: TFuncSchema<Params, Return>['options']
   ) =>
     ({
-      [Kind]: 'Func',
-      options: buildOptions(() => init, options),
+      ...buildSchema('Func', options),
       properties: { params: parameters, return: returns }
     }) as TFuncSchema<Params, Return>,
 
@@ -267,38 +255,35 @@ export const S = {
    * @returns
    */
   Type: <T>(init?: T, props?: TProperties, options?: TTypedSchema<T>['options']) =>
-    S.SerializedClass(init as () => any, props ?? {}, options ?? {}) as unknown as TTypedSchema<T>,
+    S.SerializedClass(init as () => any, props ?? {}, options) as unknown as TTypedSchema<T>,
 
   /**
    * Create a schema object that infers as an any type, the value is serialized
    */
   Any: () =>
     ({
-      [Kind]: 'Any'
+      ...buildSchema('Any')
     }) as TTypedSchema<any>,
 
   /** Entity type schema helper, Entities will not be serialized, defaults to UndefinedEntity */
   Entity: (options?: TTypedSchema<Entity>['options']) =>
-    S.Number({ ...options, id: 'Entity' }) as unknown as TTypedSchema<Entity>,
+    S.Number({ ...options, serialized: false, id: 'Entity' }) as unknown as TTypedSchema<Entity>,
 
   /** EntityUUID type schema helper, defaults to '' */
   EntityUUID: (options?: TTypedSchema<EntityUUID>['options']) =>
-    S.String({ ...options, id: 'EntityUUID' }) as unknown as TTypedSchema<EntityUUID>,
+    S.String({ serialized: true, ...options, id: 'EntityUUID' }) as unknown as TTypedSchema<EntityUUID>,
 
   /** UserID type schema helper, defaults to '' */
   UserID: (options?: TTypedSchema<UserID>['options']) =>
-    S.String({ ...options, id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
+    S.String({ serialized: true, ...options, id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
 
   /** PeerID type schema helper, defaults to '' */
   PeerID: (options?: TTypedSchema<PeerID>['options']) =>
-    S.String({ ...options, id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
+    S.String({ serialized: true, ...options, id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
 
   Proxy: <T extends Schema>(schema: T, proxy: (entity: Entity, property: string, obj: object) => PropertyDescriptor) =>
     ({
-      [Kind]: 'Proxy',
-      options: {
-        create: proxy
-      },
+      ...buildSchema('Proxy', { create: proxy, serialized: true }),
       properties: schema
     }) as TProxySchema<T>
 }

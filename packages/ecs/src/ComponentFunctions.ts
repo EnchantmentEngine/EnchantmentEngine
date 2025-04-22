@@ -1316,18 +1316,17 @@ export const TransitionComponent = defineComponent({
       componentJsonID: S.String(),
       propertyPath: S.String(),
       transitionableType: S.String(),
-      duration: S.Number(500),
-      easing: S.String(Easing.exponential.inOut.path),
-      initialValue: S.NonSerialized(S.Optional(S.Type<TransitionableTypes>())),
-      events: S.NonSerialized(
-        S.Array(
-          S.Object({
-            age: S.Number(),
-            toValue: S.Type<TransitionableTypes>(),
-            duration: S.Number(),
-            easing: S.String()
-          })
-        )
+      duration: S.Number({ default: 500 }),
+      easing: S.String({ default: Easing.exponential.inOut.path }),
+      initialValue: S.Optional(S.Type<TransitionableTypes>(), { serialized: false }),
+      events: S.Array(
+        S.Object({
+          age: S.Number(),
+          toValue: S.Type<TransitionableTypes>(),
+          duration: S.Number(),
+          easing: S.String()
+        }),
+        { serialized: false }
       )
     })
   ),
