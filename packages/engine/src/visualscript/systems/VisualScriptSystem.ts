@@ -30,9 +30,10 @@ import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { defineAction, defineActionQueue, useEffect } from '@ir-engine/hyperflux'
+import { defineAction, defineActionQueue } from '@ir-engine/hyperflux'
 import { VisualScriptState } from '@ir-engine/visual-script'
 
+import { useEffect } from 'react'
 import { VisualScriptComponent, VisualScriptDomain } from '../components/VisualScriptComponent'
 import { registerEngineProfile } from '../nodes/profiles/engine/registerEngineProfile'
 
