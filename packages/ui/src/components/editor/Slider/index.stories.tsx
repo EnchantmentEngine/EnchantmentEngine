@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { expect } from '@storybook/jest'
 import { ArgTypes } from '@storybook/react'
+import { fireEvent, within } from '@storybook/testing-library'
 import React, { useState } from 'react'
 import Slider, { SliderProps } from './index'
 
@@ -72,5 +74,18 @@ const SliderRenderer = (args: SliderProps & { startingValue: number }) => {
 
 export const Default = {
   name: 'Default',
-  render: SliderRenderer
+  render: SliderRenderer,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+
+    const input = canvas.queryByTestId('slider-text-value-input') as HTMLElement
+    expect(input).toHaveValue(args.startingValue.toString())
+
+    const slider = canvas.queryByTestId('slider-draggable-value-input') as HTMLElement
+    expect(slider).toHaveValue(args.startingValue.toString())
+
+    fireEvent.change(slider, { target: { value: args.max * 0.3 } })
+    expect(input).toHaveValue((args.max * 0.3).toString())
+    expect(slider).toHaveValue((args.max * 0.3).toString())
+  }
 }

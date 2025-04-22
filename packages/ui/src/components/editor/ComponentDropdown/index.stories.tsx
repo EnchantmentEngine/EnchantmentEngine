@@ -23,8 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { expect } from '@storybook/jest'
 import { useArgs } from '@storybook/preview-api'
 import { ArgTypes } from '@storybook/react'
+import { userEvent, within } from '@storybook/testing-library'
 import React from 'react'
 import ComponentDropdown, { ComponentDropdownProps } from './index'
 
@@ -77,5 +79,33 @@ const ImageLinkRenderer = (args: ComponentDropdownProps) => {
 
 export const Default = {
   name: 'Default',
-  render: ImageLinkRenderer
+  render: ImageLinkRenderer,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    // Locate the toggle button using data-testid
+    const toggleButton = canvas.getByTestId('toggle-button')
+
+    await userEvent.click(toggleButton)
+
+    const toggleButtonIcon = canvas.getByTestId('toggle-button-icon')
+
+    expect(canvas.queryByTestId('dropdown-description')).not.toBeInTheDocument()
+
+    // Click to maximize
+    await userEvent.click(toggleButtonIcon)
+
+    // Verify that the children are hidden
+    expect(canvas.queryByTestId('dropdown-description')).toBeInTheDocument()
+
+    await userEvent.click(toggleButton)
+
+    // Click to minimize
+    await userEvent.click(toggleButtonIcon)
+
+    // Verify that the children are visible again
+
+    // Locate and click the close button using data-testid
+    expect(canvas.queryByTestId('close-button')).toBeInTheDocument()
+  }
 }

@@ -23,8 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { expect } from '@storybook/jest'
 import { useArgs } from '@storybook/preview-api'
 import { ArgTypes } from '@storybook/react'
+import { within } from '@storybook/testing-library'
 import React from 'react'
 import ImageLink, { ImageLinkProps } from './index'
 
@@ -65,5 +67,19 @@ const ImageLinkRenderer = (args: ImageLinkProps & { previewOnly: boolean }) => {
 
 export const Default = {
   name: 'Default',
-  render: ImageLinkRenderer
+  render: ImageLinkRenderer,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.queryByTestId('image-container')).toBeInTheDocument()
+
+    const input = canvas.queryByTestId('img-input')
+
+    expect(input).toHaveValue(args.src)
+
+    expect(canvas.getByDisplayValue(args.src)).toBeInTheDocument()
+
+    if (args.onChange || args.onBlur) {
+      expect(canvas.queryByTestId('img-clear-button')).toBeInTheDocument()
+    }
+  }
 }
