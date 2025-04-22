@@ -25,7 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { calculateAndApplyYOffset } from '@ir-engine/common/src/utils/offsets'
 import { Entity, EntityUUID, PresentationSystemGroup, UUIDComponent, useExecute } from '@ir-engine/ecs'
-import { Component, Layers, getAllComponents, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  Component,
+  ComponentJSONIDMap,
+  Layers,
+  getAllComponents,
+  useHasComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentEditors'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
@@ -66,13 +72,20 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
 
   const entity = UUIDComponent.getEntityByUUID(entityUUID, Layers.Authoring)
   const componentEditors = useHookstate(getMutableState(ComponentEditorsState)).get(NO_PROXY)
-  const components = useHookstate([] as Component[])
+  const components = useHookstate([] as string[])
 
   useExecute(
     () => {
-      const entityComponents = getAllComponents(entity).filter(
-        (component) => component.name && componentEditors[component.name] && component.name !== TransformComponent.name
-      )
+      const entityComponents = getAllComponents(entity)
+        .filter(
+          (component) =>
+            component.name &&
+            componentEditors[component.name] &&
+            component.name !== TransformComponent.name &&
+            component.jsonID !== undefined
+        )
+        .map((component) => component.jsonID!)
+
       if (JSON.stringify(entityComponents) !== JSON.stringify(components.get(NO_PROXY))) {
         components.set(entityComponents)
       }
@@ -135,16 +148,19 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
           </Suspense>
         </ErrorBoundary>
       )}
-      {components.get(NO_PROXY).map((c) => (
-        <ErrorBoundary
-          key={`${entityUUID + entity}-${c.name}`}
-          fallback={<div>Error occured displaying properties for {c.name}</div>}
-        >
-          <Suspense>
-            <EntityComponentEditor multiEdit={multiEdit} entity={entity} component={c as Component} />
-          </Suspense>
-        </ErrorBoundary>
-      ))}
+      {components.get(NO_PROXY).map((c) => {
+        const component = ComponentJSONIDMap.get(c)
+        return component ? (
+          <ErrorBoundary
+            key={`${entityUUID + entity}-${component.name}`}
+            fallback={<div>Error occured displaying properties for {component.name}</div>}
+          >
+            <Suspense>
+              <EntityComponentEditor multiEdit={multiEdit} entity={entity} component={component as Component} />
+            </Suspense>
+          </ErrorBoundary>
+        ) : null
+      })}
     </>
   )
 }

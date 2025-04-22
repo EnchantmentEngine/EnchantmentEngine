@@ -310,7 +310,6 @@ const findNextSelectionEntity = (topLevelParent: Entity, child: Entity): Entity 
 }
 
 let clickStartEntity = UndefinedEntity
-let hierarchyFeatureFlagEnabled = false
 
 const execute = () => {
   const avatarEntity = AvatarComponent.getSelfAvatarEntity()
@@ -366,7 +365,7 @@ const execute = () => {
         selectedParentEntity === clickStartEntity ? closestIntersection.entity : selectedParentEntity
 
       // If hiding children of GLB, don't allow those children to be selected (clicking in scene view)
-      if (hierarchyFeatureFlagEnabled && selectedParentEntity) {
+      if (!getState(EditorHelperState).showGlbChildren && selectedParentEntity) {
         const forceSelectGlbParent = isEntityGlb(selectedParentEntity) // && hasComponent(selectedParentEntity, SceneComponent)
         clickStartEntity = forceSelectGlbParent ? selectedParentEntity : selectedEntity //selectedEntity vs clickStartEntity so that we allow closest intersection drill down above to work
       } else {
@@ -394,10 +393,7 @@ const execute = () => {
       const selectedEntities = SelectionState.getSelectedEntities()
       const clickParentEntity = getAncestorWithComponents(clickStartEntity, [GLTFComponent])
 
-      if (
-        (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) ||
-        selectedEntities[0] === clickParentEntity
-      ) {
+      if (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) {
         onFocusCamera(viewerEntity)
       }
 
@@ -469,9 +465,6 @@ const reactor = () => {
   const selectionBoxState = useMutableState(SelectionBoxState)
   const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
 
-  //@todo remove hardcoded value once feature flag is added to MT
-  const hideGlbChildrenFeatureFlag = [true] // useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.HideGlbChildren])
-
   useEffect(() => {
     // todo figure out how to do these with our input system
     window.addEventListener('copy', copy)
@@ -524,10 +517,6 @@ const reactor = () => {
     if (!sceneLoaded) return
     onFocusCamera(viewerEntity)
   }, [sceneLoaded])
-
-  useEffect(() => {
-    hierarchyFeatureFlagEnabled = hideGlbChildrenFeatureFlag[0]
-  }, [hideGlbChildrenFeatureFlag])
 
   return null
 }
