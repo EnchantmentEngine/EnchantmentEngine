@@ -23,6 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { expect } from '@storybook/jest'
+import { userEvent, within } from '@storybook/testing-library'
 import React, { ReactNode } from 'react'
 import Component from './index'
 
@@ -49,6 +51,22 @@ export const Default = {
     values: ['test name 1', 'test value 2', 'test 3', 'test 4'],
     inputLabel: 'Path',
     onChange: (values: string[]) => {}
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const values = args.values as string[]
+
+    values.forEach((text) => {
+      expect(canvas.getByDisplayValue(text)).toBeInTheDocument()
+    })
+
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length)
+
+    await userEvent.click(canvas.getByTestId('array-remove-button'))
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length - 1)
+
+    await userEvent.click(canvas.getByTestId('array-add-button'))
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length)
   }
 }
 
@@ -66,11 +84,31 @@ export const CustomerRender = {
     onChange: () => {},
     renderFunction: (value: ReactNode) => {
       return (
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-between" data-testid="array-node-button">
           {value}
           <button className="rounded bg-blue-500 px-2 py-1 text-white">Click Me</button>
         </div>
       )
     }
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const values = args.values as React.ReactElement[]
+
+    values.forEach((node) => {
+      const text = typeof node.props.children === 'string' ? node.props.children : String(node.props.children)
+      expect(canvas.getByText(text)).toBeInTheDocument()
+    })
+
+    expect(canvas.getAllByTestId('array-node-button')).toHaveLength(values.length)
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length)
+
+    await userEvent.click(canvas.getByTestId('array-remove-button'))
+    expect(canvas.getAllByTestId('array-node-button')).toHaveLength(values.length - 1)
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length - 1)
+
+    await userEvent.click(canvas.getByTestId('array-add-button'))
+    expect(canvas.getAllByTestId('array-node-button')).toHaveLength(values.length)
+    expect(canvas.getAllByTestId('array-node-item')).toHaveLength(values.length)
   }
 }

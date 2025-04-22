@@ -126,6 +126,7 @@ const DiscardableInput = ({
       ref={(node) => {
         inputElementDropRef(previewRef(node))
       }}
+      data-testid="array-node-item"
     >
       <div
         ref={fileDropRef}
@@ -294,6 +295,7 @@ export default function ArrayInputGroup({
             <button
               className=" h-8 w-9 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
               onClick={() => handleChange('', inputElements.length - 1, 'remove')}
+              data-testid="array-remove-button"
             >
               <HiMinus className="m-auto" />
             </button>
@@ -301,6 +303,7 @@ export default function ArrayInputGroup({
           <button
             className=" h-8 w-8 cursor-pointer rounded-md bg-surface-2 text-text-primary-button"
             onClick={() => handleChange('', 0, 'add')}
+            data-testid="array-add-button"
           >
             <HiPlus className="m-auto" />
           </button>
