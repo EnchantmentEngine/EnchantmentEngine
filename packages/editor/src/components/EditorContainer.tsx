@@ -43,9 +43,11 @@ import DragLayer from './dnd/DragLayer'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { useZendesk } from '@ir-engine/client-core/src/hooks/useZendesk'
+import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import { API } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import { EntityUUID } from '@ir-engine/ecs'
+import { EngineState, EntityUUID, getComponent } from '@ir-engine/ecs'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { Button, Tooltip } from '@ir-engine/ui'
@@ -54,6 +56,8 @@ import { useTranslation } from 'react-i18next'
 import { IoHelpCircleOutline } from 'react-icons/io5'
 import { onSaveScene, setCurrentEditorScene } from '../functions/sceneFunctions'
 import { AssetsPanelTab } from '../panels/assets'
+import { AssetsQueryProvider } from '../panels/assets/hooks'
+import { CurrentFilesQueryProvider } from '../panels/files/helpers'
 import { HierarchyPanelTab } from '../panels/hierarchy'
 import { MaterialsPanelTab } from '../panels/materials'
 import { PropertiesPanelTab } from '../panels/properties'
@@ -102,7 +106,7 @@ const onEditorError = (error) => {
 }
 
 const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData => {
-  const tabs = [ScenePanelTab, AssetsPanelTab]
+  const tabs = [AssetsPanelTab]
   flags.visualScriptPanelEnabled && tabs.push(VisualScriptPanelTab)
 
   return {
@@ -126,7 +130,7 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
           size: 3,
           children: [
             {
-              tabs: [HierarchyPanelTab, MaterialsPanelTab]
+              tabs: [HierarchyPanelTab, ScenePanelTab, MaterialsPanelTab]
             },
             {
               tabs: [PropertiesPanelTab]
@@ -139,7 +143,7 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
 }
 
 const EditorContainer = () => {
-  const { sceneAssetID, sceneName, projectName, scenePath, uiEnabled } = useMutableState(EditorState)
+  const { sceneAssetID, sceneName, projectName, scenePath, uiEnabled, rootEntity } = useMutableState(EditorState)
   const editorUIAddon = useMutableState(UIAddonsState).editor
   const currentLoadedSceneURL = useHookstate(null as string | null)
 
@@ -186,6 +190,18 @@ const EditorContainer = () => {
 
   /** Call get state since it needs to be created */
   getState(EditorHistoryState)
+
+  const engineState = useHookstate(getMutableState(EngineState))
+
+  useEffect(() => {
+    if (engineState.isEditing.value || !rootEntity.value) return
+    /** @todo upon saving the scene, the GLTFComponent src is not with the new hash, so we need to get the old src */
+    const loadedSceneURL = getComponent(rootEntity.value, GLTFComponent).src
+    getMutableState(LocationState).currentLocation.location.sceneURL.set(loadedSceneURL)
+    return () => {
+      getMutableState(LocationState).currentLocation.location.sceneURL.set('')
+    }
+  }, [engineState.isEditing.value, rootEntity.value])
 
   const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
 
@@ -239,36 +255,44 @@ const EditorContainer = () => {
 
   return (
     <main className="pointer-events-auto">
-      <div id="editor-container" className="flex flex-col" style={scenePath.value ? { background: 'transparent' } : {}}>
-        {uiEnabled.value && (
-          <DndWrapper id="editor-container">
-            <DragLayer />
-            <Toolbar />
-            <div className="mt-1 flex overflow-hidden">
-              <DockContainer>
-                <DockLayout
-                  ref={dockPanelRef}
-                  defaultLayout={defaultLayout({ visualScriptPanelEnabled })}
-                  style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
-                />
-              </DockContainer>
+      <CurrentFilesQueryProvider>
+        <AssetsQueryProvider>
+          <div
+            id="editor-container"
+            className="flex flex-col"
+            style={scenePath.value ? { background: 'transparent' } : {}}
+          >
+            {uiEnabled.value && (
+              <DndWrapper id="editor-container">
+                <DragLayer />
+                <Toolbar />
+                <div className="mt-1 flex overflow-hidden">
+                  <DockContainer>
+                    <DockLayout
+                      ref={dockPanelRef}
+                      defaultLayout={defaultLayout({ visualScriptPanelEnabled })}
+                      style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
+                    />
+                  </DockContainer>
+                </div>
+              </DndWrapper>
+            )}
+            {Object.entries(editorUIAddon.container.get(NO_PROXY)).map(([key, value]) => {
+              return value
+            })}
+          </div>
+          <PopupMenu />
+          {!isWidgetVisible && initialized && (
+            <div className="absolute bottom-3 right-4">
+              <Tooltip position="left" key={t('editor:help')} content={t('editor:help')}>
+                <Button size="sm" className="h-8 w-8 p-0" onClick={openChat}>
+                  <IoHelpCircleOutline fontSize={24} />
+                </Button>
+              </Tooltip>
             </div>
-          </DndWrapper>
-        )}
-        {Object.entries(editorUIAddon.container.get(NO_PROXY)).map(([key, value]) => {
-          return value
-        })}
-      </div>
-      <PopupMenu />
-      {!isWidgetVisible && initialized && (
-        <div className="absolute bottom-3 right-4">
-          <Tooltip position="left" key={t('editor:help')} content={t('editor:help')}>
-            <Button size="sm" className="h-8 w-8 p-0" onClick={openChat}>
-              <IoHelpCircleOutline fontSize={24} />
-            </Button>
-          </Tooltip>
-        </div>
-      )}
+          )}
+        </AssetsQueryProvider>
+      </CurrentFilesQueryProvider>
     </main>
   )
 }

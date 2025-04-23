@@ -22,16 +22,14 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-import {
-  FileThumbnailJobState,
-  removeFromFileThumbnailsSeen
-} from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
+import { removeFromFileThumbnailsSeen } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThumbnails'
 import ProgressBar from '@ir-engine/client-core/src/systems/ui/LoadingDetailView/SimpleProgressBar'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
 import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
-import { getMutableState, State, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { State, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import InfiniteScroll from '@ir-engine/ui/src/components/tailwind/InfiniteScroll'
@@ -41,7 +39,6 @@ import { DragPreviewImage, useDrag } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
-import { FilesViewModeSettings } from '../../services/FilesState'
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { FileIcon } from '../files/fileicon'
 import DeleteFileModal from '../files/modals/DeleteFileModal'
@@ -131,7 +128,7 @@ function ResourceFileContextMenu({
                   onComplete={(err?: unknown) => {
                     if (!err) {
                       removeFromFileThumbnailsSeen([resource.key])
-                      refetchResources()
+                      refetchResources(true)
                     }
                   }}
                 />
@@ -161,7 +158,6 @@ export function FileCard({
   onLoad,
   onLoadStart
 }) {
-  const iconSize = useHookstate(getMutableState(FilesViewModeSettings).icons.iconSize).value
   const thumbnailURL = item.thumbnailURL
   return (
     <>
@@ -178,14 +174,9 @@ export function FileCard({
       >
         <div
           className={twMerge(
-            `box-border rounded border border-0 font-figtree`,
+            `box-border h-20 w-16 rounded font-figtree text-sm`,
             isSelected ? 'rounded border border-[#375DAF] bg-[#2C2E30]' : 'group-hover:bg-[#202225]'
           )}
-          style={{
-            height: iconSize,
-            width: iconSize,
-            fontSize: iconSize
-          }}
           data-testid={dataTestIdJson?.fileIconId}
         >
           <FileIcon
@@ -385,7 +376,7 @@ function BottomPaginationNavBar({ handleScrollToPage }) {
 
 function ResourceItems() {
   const { t } = useTranslation()
-  const { resourcesLoading, resources, staticResourcesPagination, refetchResources } = useAssetsQuery()
+  const { category, resourcesLoading, resources, staticResourcesPagination, refetchResources } = useAssetsQuery()
   const pages = Math.ceil(resources.length / (ASSETS_PAGE_LIMIT + calculateItemsToFetch()))
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]) // Create a ref array
   const fileIconsLoaded = useHookstate(0)
@@ -407,10 +398,18 @@ function ResourceItems() {
     fileIconsLoaded.set(fileIconsLoaded.get() + 1)
   }
 
-  const thumbnailJobState = useMutableState(FileThumbnailJobState)
+  const isLoading = useHookstate(false)
+  useLoadingThumbnails(isLoading)
+
   useEffect(() => {
+    if (isLoading.value) return
     refetchResources()
-  }, [thumbnailJobState.jobs.length])
+  }, [isLoading.value])
+
+  useEffect(() => {
+    fileIconsLoaded.set(0)
+    fileIconsToLoad.set(0)
+  }, [category.currentCategoryPath])
 
   return (
     <div className="relative flex w-full ">
