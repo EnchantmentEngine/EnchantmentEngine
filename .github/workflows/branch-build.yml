@@ -352,6 +352,7 @@ jobs:
       - run: mkdir -p packages_moved/network/
       - run: mkdir -p packages_moved/xrui/
       - run: mkdir -p packages_moved/spatial/
+      - run: mkdir -p packages_moved/visual-script/
       - run: mkdir -p packages_moved/engine/
       - run: mkdir -p packages_moved/projects/
       - run: mv packages/hyperflux packages_moved/
@@ -359,6 +360,7 @@ jobs:
       - run: mv packages/network packages_moved/
       - run: mv packages/xrui packages_moved/
       - run: mv packages/spatial packages_moved/
+      - run: mv packages/visual-script packages_moved/
       - run: mv packages/engine packages_moved/
       - run: mv packages/projects packages_moved/
       - run: rm -rf packages/*
@@ -367,6 +369,7 @@ jobs:
       - run: mv packages_moved/network packages/
       - run: mv packages_moved/xrui packages/
       - run: mv packages_moved/spatial packages/
+      - run: mv packages_moved/visual-script packages/
       - run: mv packages_moved/engine packages/
       - run: mv packages_moved/projects packages/
       - run: cd packages/engine && npm run test
