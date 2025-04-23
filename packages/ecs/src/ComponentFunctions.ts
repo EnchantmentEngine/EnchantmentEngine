@@ -58,7 +58,7 @@ import { defineSystem } from './SystemFunctions'
 import { PresentationSystemGroup } from './SystemGroups'
 import { Transitionable, TransitionableTypes, getTransitionableKeyForType } from './Transitionable'
 import { createResizableTypeArray } from './bitecsLegacy'
-import { Kind, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
+import { Kind, Schema, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
 import {
   CreateSchemaValue,
   DeserializeSchemaValue,
@@ -841,7 +841,7 @@ function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Number
  * */
 function createPropagationArgsNumber<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -867,7 +867,7 @@ function createPropagationArgsNumber<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is of type any
  * */
 function createPropagationArgsAny<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -889,7 +889,7 @@ function createPropagationArgsAny<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Class
  * */
 function createPropagationArgsClass<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -917,7 +917,7 @@ function createPropagationArgsClass<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Object
  * */
 function createPropagationArgsObject<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -940,7 +940,7 @@ function createPropagationArgsObject<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Record
  * */
 function createPropagationArgsRecord<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -963,7 +963,7 @@ function createPropagationArgsRecord<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Array
  * */
 function createPropagationArgsArray<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -985,7 +985,7 @@ function createPropagationArgsArray<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Tuple
  * */
 function createPropagationArgsTuple<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -1007,7 +1007,7 @@ function createPropagationArgsTuple<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Union
  * */
 function createPropagationArgsUnion<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -1027,7 +1027,7 @@ function createPropagationArgsUnion<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} for the default case
  * */
 function createPropagationArgsDefault<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -1054,7 +1054,7 @@ function createPropagationArgsDefault<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs}
  * */
 function createPropagationArgsInner<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   data: any,
   layer: LayerID,
@@ -1064,7 +1064,9 @@ function createPropagationArgsInner<C extends Component>(
 ) {
   const obj = key === '' ? data : data[key]
   if (typeof obj === 'undefined') return undefined
-  switch (schema[Kind] as any) {
+  if (!schema.options?.serialized) return undefined
+
+  switch (schema[Kind]) {
     case 'Null':
     case 'Undefined':
     case 'Void':
@@ -1098,11 +1100,7 @@ function createPropagationArgsInner<C extends Component>(
     case 'Union': {
       return CreatePropagationArgs.Union(schema, key, obj, layer, linkedLayer, entity, component)
     }
-    case 'NonSerialized': {
-      return undefined
-    }
     case 'Partial':
-    case 'Required':
     case 'Proxy':
     default: {
       return CreatePropagationArgs.Default(schema, key, obj, layer, linkedLayer, entity, component)

@@ -729,7 +729,7 @@ describe('DeserializeSchemaValue', () => {
     })
   }) //:: Kind.Class
 
-  describe.each(['Required', 'Proxy', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value', () => {
@@ -744,7 +744,7 @@ describe('DeserializeSchemaValue', () => {
 
       expect(result).toBe(Expected)
     })
-  }) //:: [Kind.Required, Kind.Proxy, Kind.NonSerialized, Kind.Partial]
+  }) //:: [Kind.Proxy, Kind.Partial]
 
   describe('case: Kind -> default', () => {
     const TestSchemaKind = 'UnknownKind'
@@ -1125,7 +1125,7 @@ describe('IsSingleValueSchema', () => {
     })
   }) //:: Kind.Union
 
-  describe.each(['NonSerialized', 'Required', 'Proxy'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy'])('case: Kind.%s', (kind) => {
     it('should return the result of IsSingleValueSchema( `@param schema`.properties )', () => {
       const properties = { [Kind]: kind } as Schema
       const schema = { [Kind]: kind, properties: properties } as Schema
@@ -1215,22 +1215,20 @@ describe('HasRequiredSchemaValues', () => {
       expect(result).toEqual(Expected)
       expect(result[1]).toBe(OtherKey)
     })
-  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized]
+  }) //:: [Kind.Proxy, Kind.Partial]
 
   describe('case: default', () => {
     const TestSchemaKind = 'UnknownKind' as any
 
-    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]", () => {
+    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial]", () => {
       const Expected = [true, ''] as [boolean, string]
 
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          otherKey: S.Number({ required: true })
-        }
-      }
+      const properties = S.Object({
+        one: S.Number(),
+        two: S.String(),
+        otherKey: S.Number({ required: true })
+      })
+
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
       const value = { one: 1, two: 'TWO' }
       const currentKey = 'TestKey'
@@ -1295,25 +1293,19 @@ describe('HasValidSchemaValues', () => {
     })
   }) //:: [Kind.Object, Kind.Class]
 
-  describe.each(['Proxy', 'Partial', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return the result of calling HasValidSchemaValues with (`@param schema`.properties, `@param value`, `@param prev`, `@param entity`) as arguments', () => {
       const Expected = [false, 'wrongKey'] as [boolean, string]
 
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          container: {
-            [Kind]: 'Object',
-            properties: {
-              [Expected[1]]: { [Kind]: 'Number', options: { validate: (_, __, ___) => false } } as Schema
-            }
-          } as Schema
-        }
-      }
+      const properties = S.Object({
+        one: S.Number(),
+        two: S.String(),
+        container: S.Object({
+          [Expected[1]]: S.Number({ validate: (_, __, ___) => false })
+        })
+      })
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
       const value = { one: 1, two: 'TWO', container: { [Expected[1]]: 'InvalidNumber' } }
       const prev = { one: 61, two: 'prev_TWO', container: { [Expected[1]]: 'prev_InvalidNumber' } }
@@ -1324,12 +1316,12 @@ describe('HasValidSchemaValues', () => {
 
       expect(result).toEqual(Expected)
     })
-  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Partial]
+  }) //:: [Kind.Proxy, Kind.Partial, Kind.Partial]
 
   describe('case: default', () => {
     const TestSchemaKind = 'UnknownKind' as any
 
-    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]", () => {
+    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial]", () => {
       const Expected = [true, ''] as [boolean, string]
 
       const properties = {
@@ -1542,7 +1534,7 @@ describe('CreateSchemaValue', () => {
 
     const kind = 'UnknownKind' as any
     const properties = { [Kind]: 'Union', properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema] }
-    const schema = { [Kind]: kind, properties: properties } as Schema
+    const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
     const testEntity = 12345 as Entity
 
     const result = CreateSchemaValue(testEntity, schema)
@@ -1967,7 +1959,7 @@ describe('CheckSchemaValue', () => {
 
       expect(result).toBe(Expected)
     })
-  }) //:: [Kind.Required, Kind.Proxy]
+  }) //:: [Kind.Proxy]
 
   it.each(['Partial', 'Func'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
     const Expected = true
