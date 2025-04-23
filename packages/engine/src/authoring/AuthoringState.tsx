@@ -212,6 +212,21 @@ export const AuthoringState = defineState({
       ops[sourceID] = patch
     }
     dispatchAction(AuthoringActions.ops({ ops }))
+  },
+
+  hasEdits: (sourceID: SourceID) => {
+    if (!getState(AuthoringState).commands[getState(EngineState).userID]) return false
+    return Object.values(getState(AuthoringState).commands[getState(EngineState).userID])
+      .filter((command) => 'type' in command || command[sourceID])
+      .some((command) => command[sourceID]?.length > 0)
+  },
+
+  useHasEdits: (sourceID: SourceID) => {
+    const commands = useMutableState(AuthoringState).commands.get(NO_PROXY)
+    const authoredCommands = commands[getState(EngineState).userID]
+    return Object.values(authoredCommands)
+      .filter((command) => 'type' in command || command[sourceID])
+      .some((command) => command[sourceID]?.length > 0)
   }
 })
 
