@@ -86,10 +86,14 @@ import { ClickPlacementState } from './ClickPlacementSystem'
 import { ObjectGridSnapState } from './ObjectGridSnapSystem'
 
 export const EditorButtonBindings = {
-  Undo: [[KeyboardButton.ControlLeft, KeyboardButton.KeyZ]],
+  Undo: [[usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft, KeyboardButton.KeyZ]],
   Redo: [
-    [KeyboardButton.ControlLeft, KeyboardButton.ShiftLeft, KeyboardButton.KeyZ],
-    [KeyboardButton.ControlLeft, KeyboardButton.KeyY]
+    [
+      usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft,
+      KeyboardButton.ShiftLeft,
+      KeyboardButton.KeyZ
+    ],
+    [usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft, KeyboardButton.KeyY]
   ],
   ObjectGridSnap: [KeyboardButton.KeyB],
   TransformModeTranslate: [KeyboardButton.KeyW],
