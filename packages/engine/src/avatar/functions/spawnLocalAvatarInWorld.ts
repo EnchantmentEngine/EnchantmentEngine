@@ -62,26 +62,32 @@ export type SpawnInWorldProps = {
 
 export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
   const { avatarSpawnPose, avatarURL, parentUUID } = props
-  const entityInstanceID = AvatarComponent.selfAvatarUUID.instanceID
+  const uuid = AvatarComponent.getSelfAvatarUUID()
   dispatchAction(
     AvatarNetworkAction.spawn({
       ...avatarSpawnPose,
       parentUUID,
       avatarURL,
-      entityID: AvatarComponent.selfAvatarUUID.id,
-      entityInstanceID,
+      entityID: uuid.id,
+      entityInstanceID: uuid.instanceID,
       name: props.name
     })
   )
-  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera' }))
+  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera', entityInstanceID: uuid.instanceID }))
   dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({ parentUUID, entityID: 'head', entityInstanceID, name: 'head', blendWeight: 0 })
+    AvatarNetworkAction.spawnIKTarget({
+      parentUUID,
+      entityID: 'head',
+      entityInstanceID: uuid.instanceID,
+      name: 'head',
+      blendWeight: 0
+    })
   )
   dispatchAction(
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'leftHand',
-      entityInstanceID,
+      entityInstanceID: uuid.instanceID,
       name: 'leftHand',
       blendWeight: 0
     })
@@ -90,7 +96,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'rightHand',
-      entityInstanceID,
+      entityInstanceID: uuid.instanceID,
       name: 'rightHand',
       blendWeight: 0
     })
@@ -99,7 +105,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'leftFoot',
-      entityInstanceID,
+      entityInstanceID: uuid.instanceID,
       name: 'leftFoot',
       blendWeight: 0
     })
@@ -108,7 +114,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'rightFoot',
-      entityInstanceID,
+      entityInstanceID: uuid.instanceID,
       name: 'rightFoot',
       blendWeight: 0
     })

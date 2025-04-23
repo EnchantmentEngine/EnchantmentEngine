@@ -34,7 +34,7 @@ export class WorldNetworkAction {
   static spawnEntity = defineAction({
     type: 'ee.network.SPAWN_ENTITY',
     entityID: matches.string,
-    entityInstanceID: matches.string.optional(),
+    entityInstanceID: matches.string,
     parentUUID: matchesEntityUUID,
     ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     authorityPeerId: matchesPeerID.optional(),

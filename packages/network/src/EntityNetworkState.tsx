@@ -73,7 +73,7 @@ export const EntityNetworkState = defineState({
   receptors: {
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
-        const uuid = { id: action.entityID, instanceID: action.entityInstanceID ?? action.parentUUID } as EntityUUIDPair
+        const uuid = { id: action.entityID, instanceID: action.entityInstanceID } as EntityUUIDPair
         getMutableState(EntityNetworkState)[UUIDComponent.getUUID(uuid)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,

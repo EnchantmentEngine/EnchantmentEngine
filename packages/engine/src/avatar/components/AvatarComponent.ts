@@ -55,7 +55,9 @@ export const AvatarComponent = defineComponent({
     eyeHeight: S.Number(0)
   }),
 
-  selfAvatarUUID: { instanceID: getState(EngineState).userID, id: 'avatar' } as EntityUUIDPair,
+  getSelfAvatarUUID(): EntityUUIDPair {
+    return { instanceID: getState(EngineState).userID, id: 'avatar' }
+  },
 
   /**
    * Get the user avatar entity (the network object w/ an Avatar component)
@@ -67,11 +69,11 @@ export const AvatarComponent = defineComponent({
   },
 
   getSelfAvatarEntity() {
-    return UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(AvatarComponent.selfAvatarUUID))
+    return UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(AvatarComponent.getSelfAvatarUUID()))
   },
 
   useSelfAvatarEntity() {
-    return UUIDComponent.useEntityByUUID(UUIDComponent.getUUID(AvatarComponent.selfAvatarUUID))
+    return UUIDComponent.useEntityByUUID(UUIDComponent.getUUID(AvatarComponent.getSelfAvatarUUID()))
   }
 })
 

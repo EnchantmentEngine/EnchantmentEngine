@@ -57,6 +57,7 @@ import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import {
   MaterialInstanceComponent,
+  MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
@@ -104,13 +105,20 @@ import {
   VectorKeyframeTrack
 } from 'three'
 import { loadResource, unloadResourcesForEntity } from '../assets/functions/resourceLoaderFunctions'
+import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SceneDeltaEntry, SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
+import {
+  MATERIAL_JSON_ID,
+  MATERIAL_PROTOTYPE_JSON_ID,
+  SceneDeltaEntry,
+  SceneDeltaRegistry,
+  SceneDeltaState
+} from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -809,43 +817,43 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const deltaState = getState(SceneDeltaState)
   const sourceDelta = deltaState[getComponent(options.entity, NodeIDComponent)]
 
-  // if (sourceDelta) {
-  //   const nodeID = getComponent(materialEntity, NodeIDComponent)
-  //   const nodeDelta = sourceDelta[nodeID]
-  //   if (nodeDelta) {
-  //     const materialDelta = nodeDelta[MATERIAL_JSON_ID]
-  //     const materialPrototype = nodeDelta[MATERIAL_PROTOTYPE_JSON_ID]
-  //     if (materialDelta && materialPrototype) {
-  //       const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
-  //       materialConstructor = prototype.prototypeConstructor
-  //       // optionally serializing the uuid to determine if we need to replace the material -
-  //       // this is insanely brittle but will do for now
-  //       if (materialDelta.uuid || materialPrototype) materialConstructorParameters = {}
+  if (sourceDelta) {
+    const nodeID = getComponent(materialEntity, NodeIDComponent)
+    const nodeDelta = sourceDelta[nodeID]
+    if (nodeDelta) {
+      const materialDelta = nodeDelta[MATERIAL_JSON_ID]
+      const materialPrototype = nodeDelta[MATERIAL_PROTOTYPE_JSON_ID]
+      if (materialDelta && materialPrototype) {
+        const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
+        materialConstructor = prototype.prototypeConstructor
+        // optionally serializing the uuid to determine if we need to replace the material -
+        // this is insanely brittle but will do for now
+        if (materialDelta.uuid || materialPrototype) materialConstructorParameters = {}
 
-  //       for (const key in materialDelta) {
-  //         if (materialDelta[key] === null) continue
-  //         switch (prototype.arguments[key]?.type) {
-  //           case 'color':
-  //             materialConstructorParameters[key] = new Color(materialDelta[key])
-  //             break
-  //           case 'texture':
-  //             deltaPromises.push(
-  //               getTextureAsync(materialDelta[key]).then(([texture]) => {
-  //                 if (texture) {
-  //                   texture.colorSpace = SRGBColorSpace
-  //                   materialConstructorParameters[key] = texture
-  //                 }
-  //               })
-  //             )
-  //             break
-  //           default:
-  //             materialConstructorParameters[key] = materialDelta[key]
-  //             break
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+        for (const key in materialDelta) {
+          if (materialDelta[key] === null) continue
+          switch (prototype.arguments[key]?.type) {
+            case 'color':
+              materialConstructorParameters[key] = new Color(materialDelta[key])
+              break
+            case 'texture':
+              deltaPromises.push(
+                getTextureAsync(materialDelta[key]).then(([texture]) => {
+                  if (texture) {
+                    texture.colorSpace = SRGBColorSpace
+                    materialConstructorParameters[key] = texture
+                  }
+                })
+              )
+              break
+            default:
+              materialConstructorParameters[key] = materialDelta[key]
+              break
+          }
+        }
+      }
+    }
+  }
 
   await Promise.all(deltaPromises)
 
