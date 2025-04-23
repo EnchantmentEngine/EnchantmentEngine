@@ -527,7 +527,9 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
 }
 
 const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
+  if (!isSerializable(schema)) return null
   if (schema.options?.serialize) return schema.options?.serialize(value)
+
   switch (schema[Kind]) {
     case 'Null':
     case 'Undefined':

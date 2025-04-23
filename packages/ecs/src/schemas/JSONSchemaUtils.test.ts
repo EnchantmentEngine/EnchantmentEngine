@@ -1192,7 +1192,7 @@ describe('HasRequiredSchemaValues', () => {
     })
   }) //:: [Kind.Object, Kind.Class]
 
-  describe.each(['Proxy', 'Partial', 'NonSerialized'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return the result of calling HasRequiredSchemaValues with (`@param schema`.properties, `@param value`) as arguments', () => {
@@ -1537,26 +1537,6 @@ describe('CreateSchemaValue', () => {
     expect(result).not.toEqual('')
   })
 
-  it.each(['Required', 'NonSerialized'])(
-    'should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is %s',
-    (kind) => {
-      const Expected = 0
-
-      const properties = {
-        [Kind]: 'Union',
-        properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-      }
-      const schema = { [Kind]: kind, properties: properties } as Schema
-      const testEntity = 12345 as Entity
-
-      const result = CreateSchemaValue(testEntity, schema)
-
-      expect(result).toBe(Expected)
-      expect(result).toEqual(Expected)
-      expect(result).not.toEqual('')
-    }
-  )
-
   it('should return undefined for every other `@param schema`[Kind] (case: default)', () => {
     const Expected = undefined
 
@@ -1687,17 +1667,14 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 41, two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema,
+        one: S.Number(),
+        two: S.String(),
         ignored1: S.Number({ serialized: false }),
-        ignored2: {
-          [Kind]: 'Object',
-          properties: {
-            ignoredChild1: S.Number({ serialized: false })
-          }
-        } as Schema
+        ignored2: S.Object({
+          ignoredChild1: S.Number({ serialized: false })
+        })
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1709,17 +1686,14 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 'ShouldBeNumber', two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema,
+        one: S.Number(),
+        two: S.String(),
         ignored1: S.Number({ serialized: false }),
-        ignored2: {
-          [Kind]: 'Object',
-          properties: {
-            ignoredChild1: S.Number({ serialized: false })
-          }
-        } as Schema
+        ignored2: S.Object({
+          ignoredChild1: S.Number({ serialized: false })
+        })
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1731,10 +1705,10 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 41, two: 'SomeString' }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema
+        one: S.Number(),
+        two: S.String()
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1761,8 +1735,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = null
-      const properties = { key: { [Kind]: 'String' } as Schema, value: S.Number({ serialized: false }) }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number({ serialized: false }))
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1773,8 +1746,7 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = { One: 1, Two: 2, 3: 'test' } as Record<number, string>
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1785,8 +1757,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = { One: 1, Two: 2 } as Record<string, number>
-      const properties = { key: { [Kind]: 'String' } as Schema, value: S.Number({ serialized: false }) }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number({ serialized: false }))
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1797,8 +1768,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = null
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1809,8 +1779,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1826,7 +1795,7 @@ describe('CheckSchemaValue', () => {
 
       const value = 42
       const properties = S.Number({ serialized: false })
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1837,8 +1806,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1849,8 +1818,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = []
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1861,8 +1830,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = [42, 'invalid']
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1873,8 +1842,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1923,14 +1892,12 @@ describe('CheckSchemaValue', () => {
   }) //:: Kind.Tuple
 
   describe('case Kind.Union', () => {
-    const TestSchemaKind = 'Union'
-
     it('should return false if `@param schema`.properties.length is 0', () => {
       const Expected = false
 
       const value = 42
       const properties = []
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1941,8 +1908,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Number(), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1953,8 +1920,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = [S.Number({ serialized: false }), { [Kind]: 'String' } as Schema]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Number({ serialized: false }), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1965,8 +1932,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = [{ [Kind]: 'Bool' } as Schema, { [Kind]: 'String' } as Schema]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Bool(), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1974,7 +1941,7 @@ describe('CheckSchemaValue', () => {
     })
   }) //:: Kind.Union
 
-  describe.each(['Required', 'Proxy'])('case Kind.%s', (kind) => {
+  describe.each(['Proxy'])('case Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return true if `@param value` is a schema value of any of the `@param schema`.properties fields', () => {
@@ -2002,7 +1969,7 @@ describe('CheckSchemaValue', () => {
     })
   }) //:: [Kind.Required, Kind.Proxy]
 
-  it.each(['Partial', 'Func', 'NonSerialized'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
+  it.each(['Partial', 'Func'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
     const Expected = true
 
     const TestSchemaKind = kind
@@ -2151,7 +2118,7 @@ describe('ConvertToSchema', () => {
 
       const resultSpy = vi.fn((_: any): any => Expected)
       const value = 21
-      const schema = { options: { serialize: resultSpy as any } } as Schema
+      const schema = { options: { serialize: resultSpy as any, serialized: true } } as Schema
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2186,10 +2153,10 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {
-            one: { [Kind]: 'Number' } as Schema,
+            one: S.Number(),
             two: S.Number({ serialized: false })
           }
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2205,7 +2172,7 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {}
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2218,7 +2185,7 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {}
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2235,7 +2202,7 @@ describe('ConvertToSchema', () => {
 
         const value = { one: 42, two: undefined }
         const properties = {}
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2248,12 +2215,7 @@ describe('ConvertToSchema', () => {
         const Expected = { one: one, two: two }
 
         const value = structuredClone(Expected)
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-
+        const schema = S.Record(S.String(), S.Number())
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
         expect(result).toEqual(Expected)
@@ -2263,11 +2225,7 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = Expected
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Record(S.String(), S.Number())
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2279,11 +2237,7 @@ describe('ConvertToSchema', () => {
         const Expected = 42
 
         const value = Expected
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Record(S.String(), S.Number())
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2293,14 +2247,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Record'
 
     describe("case 'Array'", () => {
-      const TestSchemaKind = 'Array'
-
       it('should return null if `@param schema`.properties is not serializable', () => {
         const Expected = null
 
         const value = 42
         const properties = S.Number({ serialized: false })
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2311,8 +2263,8 @@ describe('ConvertToSchema', () => {
         const Expected = [41, 42]
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Number()
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2324,8 +2276,8 @@ describe('ConvertToSchema', () => {
         const Expected = { one: 42 }
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Number()
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2335,14 +2287,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Array'
 
     describe("case 'Tuple'", () => {
-      const TestSchemaKind = 'Tuple'
-
       it('should return a new tuple/array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array', () => {
         const Expected = [42, 'SomeString']
 
         const value = Expected
-        const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.Number(), S.String()]
+        const schema = S.Tuple(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2354,8 +2304,8 @@ describe('ConvertToSchema', () => {
         const Expected = { one: 42 }
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.Number()]
+        const schema = S.Tuple(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2365,14 +2315,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Tuple'
 
     describe("case 'Union'", () => {
-      const TestSchemaKind = 'Union'
-
       it('should return null if `@param schema`.properties has no values', () => {
         const Expected = null
 
         const value = 42
         const properties = []
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2383,12 +2331,8 @@ describe('ConvertToSchema', () => {
         const Expected = 42
 
         const value = Expected
-        const properties = [
-          { [Kind]: 'String' } as Schema,
-          { [Kind]: 'Void' } as Schema,
-          { [Kind]: 'Number' } as Schema
-        ]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void(), S.Number()]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2399,8 +2343,8 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = 42
-        const properties = [{ [Kind]: 'String' } as Schema, { [Kind]: 'Void' } as Schema]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void()]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2411,12 +2355,8 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = 42
-        const properties = [
-          { [Kind]: 'String' } as Schema,
-          { [Kind]: 'Void' } as Schema,
-          { [Kind]: 'Number', options: { serialized: false } } as Schema
-        ]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void(), S.Number({ serialized: false })]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2424,32 +2364,31 @@ describe('ConvertToSchema', () => {
       })
     }) //:: case 'Union'
 
-    it.each(['Partial', 'Required', 'Proxy'])(
+    it.each(['Partial', 'Proxy'])(
       'should flatten the schema and return `@param value` converted to the schema defined by `@param schema`.properties when schema[Kind] is "%s"',
       (kind) => {
         const Expected = [41, 42]
         const TestSchemaKind = kind
 
         const value = Expected
-        const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Array(S.Number())
+        const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
         expect(result).not.toBe(Expected)
         expect(result).toEqual(Expected)
       }
-    ) //:: case: ['Partial', 'Required', 'Proxy']
+    ) //:: case: ['Partial', 'Proxy']
 
     it("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {
-      const Expected = undefined
+      const Expected = null
 
       const value = [41, 42]
-      const schema = {
-        [Kind]: 'Array',
-        properties: { [Kind]: 'Number' } as Schema,
-        options: { default: value, serialized: false }
-      } as Schema
+      const schema = S.Array(S.Number(), {
+        default: value,
+        serialized: false
+      })
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2462,8 +2401,8 @@ describe('ConvertToSchema', () => {
       const TestSchemaKind = 'UnknownSchemaKind' as any
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Array(S.Number())
+      const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2479,10 +2418,10 @@ describe('SerializeSchema', () => {
 
     const value = { one: Expected.one, two: Expected.two, three: undefined, four: null }
     const properties = {
-      one: { [Kind]: 'Number' } as Schema,
-      two: { [Kind]: 'String' } as Schema
+      one: S.Number(),
+      two: S.String()
     }
-    const schema = { [Kind]: 'Object', properties: properties } as Schema
+    const schema = S.Object(properties)
 
     const result = SerializeSchema(schema, value)
 
