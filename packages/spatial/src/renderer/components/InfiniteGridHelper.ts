@@ -32,7 +32,8 @@ import {
   Mesh,
   NormalBlending,
   PlaneGeometry,
-  ShaderMaterial
+  ShaderMaterial,
+  Vector3
 } from 'three'
 
 import { Entity, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
@@ -62,20 +63,21 @@ import { ObjectLayerMaskComponent } from './ObjectLayerComponent'
  */
 const vertexShaderGrid = `
 varying vec3 worldPosition;
-      
+
 uniform float uDistance;
+
 #include <logdepthbuf_pars_vertex>
 ${LogarithmicDepthBufferMaterialChunk}
 
 void main() {
-
+  // Expand grid around camera and flatten
   vec3 pos = position.xzy * uDistance;
   pos.xz += cameraPosition.xz;
-  // avoid z fighting
-  // pos.y += 0.01;
 
-  worldPosition = pos;
+  // Output world position
+  worldPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
 
+  // Project to screen
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   #include <logdepthbuf_vertex>
@@ -88,50 +90,85 @@ varying vec3 worldPosition;
 uniform float uSize1;
 uniform float uSize2;
 uniform vec3 uColor;
-uniform float uDistance;
+uniform float uFadeDistance;
+uniform float uLineSpacing;
+uniform float uLineThickness;
+uniform vec3 uCameraPos;
 
 #include <logdepthbuf_pars_fragment>
 
+float getDashedLine(float coord, float spacing, float thickness, float dashSize) {
+  float modulo = mod(coord, spacing);
+  float dash = step(dashSize, mod(coord, spacing * 2.0));
+  float dist = min(modulo, spacing - modulo);
+  float baseLine = smoothstep(thickness, 0.0, dist);
+  return baseLine * dash;
+}
+
+float getDottedLine(float x, float z, float spacing, float thickness) {
+  float mx = mod(x, spacing);
+  float mz = mod(z, spacing);
+  float dx = min(mx, spacing - mx);
+  float dz = min(mz, spacing - mz);
+  float dotDist = length(vec2(dx, dz));
+  return smoothstep(thickness, 0.0, dotDist);
+}
+
 float getGrid(float size) {
-    vec2 r = worldPosition.xz / size;
-    vec2 grid = abs(fract(r - 0.5) - 0.5) / fwidth(r);
-    float line = min(grid.x, grid.y);
-    return 1.0 - min(line, 1.0);
+  float gx = getGridLine(worldPosition.x / size);
+  float gz = getGridLine(worldPosition.z / size);
+  return max(gx, gz);
+}
+
+float getGridLine(float coord) {
+  float modulo = mod(coord, uLineSpacing);
+  float dist = min(modulo, uLineSpacing - modulo);
+  return smoothstep(uLineThickness, 0.0, dist);
 }
 
 float getXAxisLine() {
-  float lineWidth = 0.1; // Adjust line width if needed
-  float xLine = smoothstep(-lineWidth, lineWidth, abs(worldPosition.x));
-  return 1.0 - xLine;
+  float lineWidth = 0.1;
+  return 1.0 - smoothstep(-lineWidth, lineWidth, abs(worldPosition.x));
 }
 
 float getZAxisLine() {
-  float lineWidth = 0.1; // Adjust line width if needed
-  float zLine = smoothstep(-lineWidth, lineWidth, abs(worldPosition.z));
-  return 1.0 - zLine;
+  float lineWidth = 0.1;
+  return 1.0 - smoothstep(-lineWidth, lineWidth, abs(worldPosition.z));
+}
+
+float randNoise(vec2 co, float t) {
+  return fract(sin(dot(co + t, vec2(12.9898,78.233))) * 43758.5453);
 }
 
 void main() {
   #include <logdepthbuf_fragment>
 
-  float d = 1.0 - min(distance(cameraPosition.xz, worldPosition.xz) / uDistance, 1.0);
+  float dist = distance(worldPosition.xz, uCameraPos.xz);
+  float fade = 1.0 - smoothstep(uFadeDistance * 0.5, uFadeDistance, dist);
+  fade = pow(fade, 3.0);
 
   float g1 = getGrid(uSize1);
   float g2 = getGrid(uSize2);
-  float xAxisLine = getXAxisLine();
-  float zAxisLine = getZAxisLine();
+  float tileBlend = mix(g2, g1, g1);
 
-  if (xAxisLine > 0.0 || zAxisLine > 0.0) {
-    discard;
-  } else {
-    gl_FragColor = vec4(uColor.rgb, mix(g2, g1, g1));
-    gl_FragColor.a = mix(0.5 * gl_FragColor.a, gl_FragColor.a, g2);
-    gl_FragColor.a *= pow(d, 3.0);
-}
+  float lineX = getDashedLine(worldPosition.x, uLineSpacing, uLineThickness, 0.5);
+  float lineZ = getDashedLine(worldPosition.z, uLineSpacing, uLineThickness, 0.5);
+  float lineGrid = max(lineX, lineZ);
+  float dotted = getDottedLine(worldPosition.x, worldPosition.z, uLineSpacing, uLineThickness);
 
-  if ( gl_FragColor.a <= 0.0 ) discard;
-}
-`
+  // Discard near center axis
+  if (getXAxisLine() > 0.95 || getZAxisLine() > 0.95) discard;
+
+  float noise = randNoise(worldPosition.xz * 0.5, 0.0);
+  float noiseFactor = 0.98 + 0.02 * noise;
+
+  vec4 color = vec4(uColor.rgb * noiseFactor, tileBlend * fade);
+  color.a = mix(0.5 * color.a, color.a, g2);
+  color.a *= smoothstep(0.01, 1.0, lineGrid);
+
+  if (color.a <= 0.05) discard;
+  gl_FragColor = color;
+}`
 
 export const InfiniteGridComponent = defineComponent({
   name: 'InfiniteGridComponent',
@@ -144,7 +181,6 @@ export const InfiniteGridComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-
     const component = useComponent(entity, InfiniteGridComponent)
     const engineRendererSettings = useMutableState(RendererState)
 
@@ -161,14 +197,19 @@ export const InfiniteGridComponent = defineComponent({
               uColor: { value: component.color.value },
               uSize1: { value: component.size.value },
               uSize2: { value: component.size.value * 10 },
-              uDistance: { value: component.distance.value }
+              uDistance: { value: component.distance.value },
+              uFadeDistance: { value: 100.0 },
+              uLineSpacing: { value: component.size.value },
+              uLineThickness: { value: 0.01 },
+              uCameraPos: { value: new Vector3() }
             },
             transparent: true,
             vertexShader: vertexShaderGrid,
             fragmentShader: fragmentShaderGrid,
             polygonOffset: true,
-            polygonOffsetFactor: -1,
-            polygonOffsetUnits: 0.01,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -1.0,
+            depthWrite: false,
             extensions: {
               derivatives: true
             }

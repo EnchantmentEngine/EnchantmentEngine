@@ -63,6 +63,10 @@ import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/Avat
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
+import {
+  InfiniteGridComponent,
+  createInfiniteGridHelper
+} from '@ir-engine/spatial/src/renderer/components/InfiniteGridHelper'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { useRemoveEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEngineCanvas'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
@@ -87,6 +91,7 @@ export const LoadingUISystemState = defineState({
       },
       meshEntity: UndefinedEntity,
       transition,
+      infiniteGridEntity: UndefinedEntity,
       /**
        * Ready is set to true either when the loading screen is ready to be shown,
        *   the scene is ready to be viewed, or an error condition has been met - whichever comes first
@@ -244,6 +249,15 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
     getMutableState(LoadingUISystemState).ready.set(true)
   }, [error])
 
+  // add infinite grid component to mask grey grid lines
+  useEffect(() => {
+    if (state?.infiniteGridEntity.value) return
+    const infiniteGridEntity = createInfiniteGridHelper()
+    setComponent(infiniteGridEntity, EntityTreeComponent, { parentEntity: props.entity })
+    setComponent(infiniteGridEntity, InfiniteGridComponent)
+    state.infiniteGridEntity.set(infiniteGridEntity)
+  }, [state?.infiniteGridEntity.value])
+
   /** Scene data changes */
   useEffect(() => {
     const colors = getMutableState(LoadingUISystemState).colors
@@ -260,7 +274,6 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
 
   return null
 }
-
 const HideCanvas = () => {
   useRemoveEngineCanvas()
   return null
