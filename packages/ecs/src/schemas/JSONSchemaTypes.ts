@@ -49,27 +49,6 @@ export type Kinds =
   | 'Proxy'
   | 'Any'
 
-export const defaultSchemaValues = {
-  ['Null']: null,
-  ['Undefined']: null,
-  ['Void']: null,
-  ['Number']: 0,
-  ['Bool']: false,
-  ['String']: '',
-  ['Enum']: null,
-  ['Literal']: 0,
-  ['Object']: {},
-  ['Record']: {},
-  ['Partial']: {},
-  ['Array']: [],
-  ['Tuple']: [],
-  ['Union']: null,
-  ['Func']: null,
-  ['Class']: null,
-  ['Proxy']: null,
-  ['Any']: null
-} as Record<Kinds, any>
-
 export interface Schema {
   [Kind]: Kinds
   static: unknown

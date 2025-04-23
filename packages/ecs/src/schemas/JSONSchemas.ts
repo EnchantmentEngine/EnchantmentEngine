@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { PeerID, UserID } from '@ir-engine/hyperflux'
 import { Entity, EntityUUID } from '../Entity'
 import {
-  defaultSchemaValues,
   Kind,
   Kinds,
   Options,
@@ -54,8 +53,7 @@ import {
 
 const buildOptions = (kind: Kinds, options?: Options): Options => {
   const defaultOptions = {
-    serialized: true,
-    default: defaultSchemaValues[kind]
+    serialized: true
   }
 
   return { ...defaultOptions, ...options }
@@ -110,7 +108,7 @@ export const S = {
    */
   Enum: <T extends Record<string, string | number>>(item: T, options?: TEnumSchema<T>['options']) =>
     ({
-      ...buildSchema('Enum', { default: Object.values(item)[0], ...options }),
+      ...buildSchema('Enum', options),
       properties: item
     }) as TEnumSchema<T>,
 
@@ -120,7 +118,7 @@ export const S = {
    */
   Literal: <T extends TLiteralValue>(item: T, options?: TLiteralSchema<T>['options']) =>
     ({
-      ...buildSchema('Literal', { default: item, ...options }),
+      ...buildSchema('Literal', options),
       properties: item
     }) as TLiteralSchema<T>,
 
