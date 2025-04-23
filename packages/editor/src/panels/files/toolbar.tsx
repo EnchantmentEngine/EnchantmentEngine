@@ -243,6 +243,7 @@ export default function FilesToolbar() {
       uploadButton={
         <>
           <Button
+            variant="tertiary"
             size="l"
             disabled={!showUploadButtons}
             onClick={() =>
@@ -263,6 +264,7 @@ export default function FilesToolbar() {
           </Button>
           <Button
             size="l"
+            variant="tertiary"
             disabled={!showUploadButtons}
             className="disabled:bg-[#212226]"
             onClick={() =>
