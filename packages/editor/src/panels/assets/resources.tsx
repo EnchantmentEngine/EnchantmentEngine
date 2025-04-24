@@ -22,10 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-import {
-  FileThumbnailJobState,
-  removeFromFileThumbnailsSeen
-} from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
+import { removeFromFileThumbnailsSeen } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThumbnails'
 import ProgressBar from '@ir-engine/client-core/src/systems/ui/LoadingDetailView/SimpleProgressBar'
