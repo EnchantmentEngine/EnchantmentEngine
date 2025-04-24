@@ -30,7 +30,6 @@ import {
   ComponentJSONIDMap,
   Entity,
   EntityTreeComponent,
-  EntityUUID,
   LayerComponent,
   LayerFunctions,
   Layers,
@@ -159,7 +158,8 @@ export function getImageURIMimeType(uri) {
   return 'image/png'
 }
 
-const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, material: MeshPhysicalMaterial) => {
+const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, entity: Entity) => {
+  const material = getComponent(entity, MaterialStateComponent).material as MeshPhysicalMaterial
   const useDerivativeTangents = primitiveDef.attributes.TANGENT === undefined
   const useVertexColors = primitiveDef.attributes.COLOR_0 !== undefined
   const useFlatShading = primitiveDef.attributes.NORMAL === undefined
@@ -175,10 +175,7 @@ const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, material: MeshPh
   material.needsUpdate = true
 }
 
-const loadPrimitives = async (
-  options: GLTFParserOptions,
-  meshIndex: number
-): Promise<[BufferGeometry, Material | Material[]]> => {
+const loadPrimitives = async (options: GLTFParserOptions, meshIndex: number): Promise<[BufferGeometry, Entity[]]> => {
   const json = options.document
   const mesh = json.meshes![meshIndex]
 
@@ -201,7 +198,7 @@ const loadPrimitives = async (
 
     return [newGeometry, primitives.map(([, material]) => material)]
   } else {
-    return primitives[0]
+    return [primitives[0][0], [primitives[0][1]]]
   }
 }
 
@@ -209,18 +206,19 @@ const loadPrimitive = async (
   options: GLTFParserOptions,
   meshIndex: number,
   primitiveIndex: number
-): Promise<[BufferGeometry, Material]> => {
+): Promise<[BufferGeometry, Entity]> => {
   const json = options.document
   const mesh = json.meshes![meshIndex]
 
   const primitiveDef = mesh.primitives[primitiveIndex]
   const materialIndex = primitiveDef.material
 
-  let materialPromise: Promise<Material | MeshPhysicalMaterial>
+  let materialPromise: Promise<Entity>
 
   if (typeof materialIndex === 'number') {
     materialPromise = getDependency(options, 'material', materialIndex)
   } else {
+    //materialPromise = Promise.resolve(MaterialStateComponent.fallbackMaterial())
     materialPromise = Promise.resolve(MaterialStateComponent.fallbackMaterial())
   }
 
@@ -239,7 +237,7 @@ const loadPrimitive = async (
         GLTFLoaderFunctions.computeBounds(json, geom, primitiveDef)
         assignExtrasToUserData(geom, primitiveDef)
         materialPromise.then((material) => {
-          assignFinalMaterial(primitiveDef, material as MeshPhysicalMaterial)
+          assignFinalMaterial(primitiveDef, material)
           resolve([geom, material])
         })
       })
@@ -283,7 +281,7 @@ const loadPrimitive = async (
     GLTFLoaderFunctions.computeBounds(json, geometry, primitiveDef)
     assignExtrasToUserData(geometry, primitiveDef)
     const [material] = await Promise.all([materialPromise, Promise.all(promises)])
-    assignFinalMaterial(primitiveDef, material as MeshPhysicalMaterial)
+    assignFinalMaterial(primitiveDef, material)
     if (primitiveDef.targets) await addMorphTargets(options, geometry, primitiveDef.targets)
     return [geometry, material]
   }
@@ -858,7 +856,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   await Promise.all(deltaPromises)
 
   const material = new materialConstructor(materialConstructorParameters)
-  const uuid = getComponent(materialEntity, UUIDComponent)
   material.name = materialDef.name ?? 'Material-' + materialIndex
 
   setComponent(materialEntity, MaterialStateComponent, { material })
@@ -870,7 +867,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
 
   assignExtrasToUserData(material, materialDef)
 
-  return material
+  return materialEntity
 }
 
 const mergeMorphTargets = async (options: GLTFParserOptions, nodeIndex: number) => {
@@ -1306,7 +1303,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
 
   const node = json.nodes![nodeIndex]
 
-  const [geometry, materials] = await GLTFLoaderFunctions.loadPrimitives(options, node.mesh!)
+  const [geometry, materialEntities] = await GLTFLoaderFunctions.loadPrimitives(options, node.mesh!)
 
   const isSkinnedMesh = typeof node.skin !== 'undefined'
 
@@ -1319,7 +1316,9 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   //   primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN ||
   //   primitive.mode === undefined
   // ) {
+  const materials = materialEntities.map((entity) => getComponent(entity, MaterialStateComponent).material)
   const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, materials) : new Mesh(geometry, materials)
+  console.log('creating mesh', mesh, ' with materials', materials)
 
   //   if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
   //     mesh.geometry = toTrianglesDrawMode(mesh.geometry, TriangleStripDrawMode)
@@ -1357,7 +1356,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   setComponent(entity, NameComponent, meshDef.name ?? 'Mesh-' + meshIndex)
 
   setComponent(entity, MaterialInstanceComponent, {
-    uuid: (Array.isArray(materials) ? materials : [materials]).map((material) => material.uuid as EntityUUID)
+    uuid: materialEntities
   })
 
   if (Object.keys(mesh.geometry.morphAttributes).length > 0) {

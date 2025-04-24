@@ -28,7 +28,6 @@ import { useEffect } from 'react'
 import {
   createEntity,
   Entity,
-  EntityUUID,
   EntityUUIDPair,
   getComponent,
   getMutableComponent,
@@ -42,7 +41,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY_STEALTH, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import {
   MaterialInstanceComponent,
@@ -67,16 +66,12 @@ const reactor = () => {
       depthTest: true,
       side: FrontSide
     })
-    fallbackMaterial.uuid = MaterialStateComponent.fallbackMaterialUUID
     const fallbackMaterialEntity = createEntity()
     setComponent(fallbackMaterialEntity, MaterialStateComponent, {
       material: fallbackMaterial,
       instances: [UndefinedEntity]
     })
-    setComponent(fallbackMaterialEntity, UUIDComponent, {
-      instanceID: MaterialStateComponent.fallbackMaterialUUID,
-      id: 'fallbackMaterial'
-    })
+    setComponent(fallbackMaterialEntity, UUIDComponent, MaterialStateComponent.fallbackMaterialUUID)
     setComponent(fallbackMaterialEntity, NameComponent, 'Fallback Material')
   }, [])
 
@@ -93,6 +88,11 @@ const ChildMaterialReactor = () => {
   const forceBasicMaterials = useMutableState(RendererState).forceBasicMaterials
   const materialComponent = useComponent(entity, MaterialStateComponent)
   useEffect(() => {
+    if (materialComponent.promised || materialComponent.material.promised) {
+      // The material is still loading; don't access its value yet.
+      // This happens when setting graphics quality to 0, in many cases. HookState will throw a 103 error. see https://tsu.atlassian.net/browse/IR-8475
+      return
+    }
     if (!materialComponent.material.value || !materialComponent.instances.length) return
     convertMaterials(entity, forceBasicMaterials.value)
   }, [
@@ -108,25 +108,23 @@ const ExpensiveMaterials = new Set(['MeshStandardMaterial', 'MeshPhysicalMateria
 /**@todo refactor this to use preprocessor directives instead of new cloned materials with different shaders */
 export const convertMaterials = (material: Entity, forceBasicMaterials: boolean) => {
   const materialComponent = getComponent(material, MaterialStateComponent)
-  const setMaterial = (uuid: EntityUUID, newUuid: EntityUUID) => {
+  const setMaterial = (newMaterial: Entity) => {
     for (const instance of materialComponent.instances) {
-      const indices = getMaterialIndices(instance, uuid)
+      const indices = getMaterialIndices(instance, material)
       for (const index of indices) {
         const instanceComponent = getMutableComponent(instance, MaterialInstanceComponent)
-        const uuids = instanceComponent.uuid.get(NO_PROXY) as EntityUUID[]
-        uuids[index] = newUuid
-        instanceComponent.uuid.set(uuids)
+        const entities = instanceComponent.uuid.get(NO_PROXY_STEALTH) as Entity[]
+        entities[index] = newMaterial
+        instanceComponent.uuid.set(entities)
       }
     }
   }
   const shouldMakeBasic =
     (forceBasicMaterials || isMobileXRHeadset) && ExpensiveMaterials.has(materialComponent.material.type)
 
-  const uuidPair = getComponent(material, UUIDComponent)
-  const uuid = UUIDComponent.getUUID(uuidPair)
-  const basicUuidPair = { instanceID: uuidPair.instanceID, id: uuidPair.id + '-basic' } as EntityUUIDPair
-  const basicUuid = UUIDComponent.getUUID(basicUuidPair)
-  const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(basicUuidPair))
+  const uuid = getComponent(material, UUIDComponent)
+  const basicUuid: EntityUUIDPair = { instanceID: 'basic-' + uuid.instanceID, id: uuid.id }
+  const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(basicUuid))
   if (shouldMakeBasic) {
     if (existingMaterialEntity) {
       removeEntity(existingMaterialEntity)
@@ -149,16 +147,16 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
       material: newBasicMaterial,
       instances: materialComponent.instances
     })
-    setComponent(newMaterialEntity, UUIDComponent, basicUuidPair)
+    setComponent(newMaterialEntity, UUIDComponent, basicUuid)
     setComponent(newMaterialEntity, NameComponent, 'basic-' + getComponent(material, NameComponent))
-    setMaterial(uuid, basicUuid)
+    setMaterial(newMaterialEntity)
   } else if (!forceBasicMaterials) {
-    const basicMaterialEntity = UUIDComponent.getEntityByUUID(uuid)
+    const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(uuid))
     if (!basicMaterialEntity) return
-    const nonBasicUUID = uuid.slice(6) as EntityUUID
+    const nonBasicUUID = UUIDComponent.getUUID({ instanceID: uuid.instanceID.slice(6), id: uuid.id })
     const materialEntity = UUIDComponent.getEntityByUUID(nonBasicUUID)
     if (!materialEntity) return
-    setMaterial(UUIDComponent.getUUID(uuidPair), nonBasicUUID)
+    setMaterial(materialEntity)
   }
 }
 
