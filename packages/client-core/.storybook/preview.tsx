@@ -37,18 +37,18 @@ import '../../client/src/themes/components.css'
 import '../../client/src/themes/utilities.css'
 import i18n from './i18n'
 
-const ThemeProvider = () => {
+const ThemeProvider = ({ theme }) => {
   useThemeProvider()
-  useEffect(() => ThemeState.setTheme('dark'), [])
+  useEffect(() => ThemeState.setTheme(theme), [theme])
   return null
 }
 
 export const decorators = [
-  (Story: any) => (
+  (Story: any, context) => (
     <Engine>
       <I18nextProvider i18n={i18n}>
         <DndProvider backend={HTML5Backend}>
-          <ThemeProvider />
+          <ThemeProvider theme={context.userGlobals.theme} />
           <MetaTags>
             <link
               href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap"
@@ -68,6 +68,15 @@ const preview: Preview = {
     eeEnabled: {
       description: 'Infinite Reality Engine',
       defaultValue: false
+    },
+    theme: {
+      name: 'Theme',
+      description: 'Global theme for components',
+      defaultValue: 'dark',
+      toolbar: {
+        icon: 'circlehollow',
+        items: ['light', 'dark']
+      }
     }
   },
   parameters: {
