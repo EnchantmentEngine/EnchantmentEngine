@@ -173,7 +173,7 @@ describe('MaterialStateComponent', () => {
       setComponent(materialEntity2, MaterialStateComponent, { instances: instances, material: material2 })
 
       for (const id in instances) {
-        setComponent(instances[id], MaterialInstanceComponent, { uuid: materialEntities })
+        setComponent(instances[id], MaterialInstanceComponent, { entities: materialEntities })
         setComponent(instances[id], MeshComponent, meshes[id])
       }
 
@@ -191,7 +191,7 @@ describe('MaterialStateComponent', () => {
       // Run and Check the result
       removeComponent(materialEntity1, MaterialStateComponent)
       for (const instance of instances) {
-        const instanceMaterialEntities = getComponent(instance, MaterialInstanceComponent).uuid
+        const instanceMaterialEntities = getComponent(instance, MaterialInstanceComponent).entities
         const meshMaterials = getComponent(instance, MeshComponent).material as Material[]
         for (const id in instanceMaterialEntities) {
           const materialEntity = instanceMaterialEntities[id]
@@ -224,7 +224,7 @@ describe('MaterialStateComponent', () => {
       setComponent(materialEntity2, MaterialStateComponent, { instances: instances, material: material2 })
 
       for (const id in instances) {
-        setComponent(instances[id], MaterialInstanceComponent, { uuid: materialEntities })
+        setComponent(instances[id], MaterialInstanceComponent, { entities: materialEntities })
         setComponent(instances[id], MeshComponent, meshes[id])
       }
 
@@ -235,7 +235,7 @@ describe('MaterialStateComponent', () => {
       // Run and Check the result
       removeComponent(materialEntity1, MaterialStateComponent) // This should do nothing
       for (const instance of instances) {
-        const instanceMaterialEntities = getComponent(instance, MaterialInstanceComponent).uuid
+        const instanceMaterialEntities = getComponent(instance, MaterialInstanceComponent).entities
         const meshMaterials = getComponent(instance, MeshComponent).material as Material[]
         // Verify that the materials haven't been changed
         for (const id in instanceMaterialEntities) {
@@ -250,19 +250,19 @@ describe('MaterialStateComponent', () => {
 }) //:: MaterialStateComponent
 
 type MaterialInstanceComponentData = {
-  uuid: Entity[]
+  entities: Entity[]
 }
 
 const MaterialInstanceComponentDefaults: MaterialInstanceComponentData = {
-  uuid: [] as Entity[]
+  entities: [] as Entity[]
 }
 
 function assertMaterialInstanceComponentEq(A: MaterialInstanceComponentData, B: MaterialInstanceComponentData) {
-  assertArray.eq(A.uuid, B.uuid)
+  assertArray.eq(A.entities, B.entities)
 }
 
 function assertMaterialInstanceComponentNotEq(A: MaterialInstanceComponentData, B: MaterialInstanceComponentData) {
-  assertArray.anyNotEq(A.uuid, B.uuid)
+  assertArray.anyNotEq(A.entities, B.entities)
 }
 
 describe('MaterialInstanceComponent', () => {
@@ -310,7 +310,7 @@ describe('MaterialInstanceComponent', () => {
       const entity1 = createEntity()
       const entity2 = createEntity()
       const Expected: MaterialInstanceComponentData = {
-        uuid: [entity1, entity2] as Entity[]
+        entities: [entity1, entity2] as Entity[]
       }
       setComponent(testEntity, MaterialInstanceComponent, Expected)
       const result = getComponent(testEntity, MaterialInstanceComponent)
@@ -318,7 +318,7 @@ describe('MaterialInstanceComponent', () => {
     })
 
     it('should not change values of an initialized MaterialInstanceComponent when the data passed had incorrect types', () => {
-      const Incorrect = { uuid: 'someUUID' }
+      const Incorrect = { entities: 'someUUID' }
       const before = getComponent(testEntity, MaterialInstanceComponent)
       // @ts-ignore Coerce an incorrect type into the component's data
       setComponent(testEntity, MaterialInstanceComponent, Incorrect)
@@ -350,7 +350,7 @@ describe('MaterialInstanceComponent', () => {
         setComponent(otherEntity2, MaterialStateComponent, { instances: [testEntity], material: new Material() })
 
         // Set the data as expected
-        setComponent(testEntity, MaterialInstanceComponent, { uuid: materialEntities })
+        setComponent(testEntity, MaterialInstanceComponent, { entities: materialEntities })
 
         // Sanity check before running
         assert.equal(hasComponent(testEntity, MaterialInstanceComponent), true)

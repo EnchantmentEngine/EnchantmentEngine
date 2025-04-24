@@ -396,7 +396,7 @@ describe('materialFunctions', () => {
         dummyEntity3
       ] as Entity[]
       const Expected = [0, 2, 4]
-      setComponent(testEntity, MaterialInstanceComponent, { uuid: materialEntities })
+      setComponent(testEntity, MaterialInstanceComponent, { entities: materialEntities })
 
       // Sanity check before running
       assert.equal(hasComponent(testEntity, MaterialInstanceComponent), true)

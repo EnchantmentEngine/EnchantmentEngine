@@ -138,7 +138,7 @@ export async function addMediaNode(
                   break
                 }
               }
-              const uuids = getComponent(entity, MaterialInstanceComponent).uuid
+              const uuids = getComponent(entity, MaterialInstanceComponent).entities
 
               /**@todo we should be setting the uuid of the material instance component to the uuid of the new material */
               //const materialUUID = getComponent(material, UUIDComponent)

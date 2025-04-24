@@ -1318,7 +1318,6 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   // ) {
   const materials = materialEntities.map((entity) => getComponent(entity, MaterialStateComponent).material)
   const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, materials) : new Mesh(geometry, materials)
-  console.log('creating mesh', mesh, ' with materials', materials)
 
   //   if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
   //     mesh.geometry = toTrianglesDrawMode(mesh.geometry, TriangleStripDrawMode)
@@ -1356,7 +1355,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   setComponent(entity, NameComponent, meshDef.name ?? 'Mesh-' + meshIndex)
 
   setComponent(entity, MaterialInstanceComponent, {
-    uuid: materialEntities
+    entities: materialEntities
   })
 
   if (Object.keys(mesh.geometry.morphAttributes).length > 0) {

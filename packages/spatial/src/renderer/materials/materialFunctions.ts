@@ -118,7 +118,7 @@ export function PrototypeNotFoundError(message: string) {
 
 export const getMaterialIndices = (entity: Entity, materialEntity: Entity): number[] => {
   if (!hasComponent(entity, MaterialInstanceComponent)) return [] as number[]
-  const materialEntities = getComponent(entity, MaterialInstanceComponent).uuid
+  const materialEntities = getComponent(entity, MaterialInstanceComponent).entities
   return materialEntities
     .map((currentEntity, index) => (currentEntity === materialEntity ? index : undefined))
     .filter((x) => x !== undefined) as number[]

@@ -127,7 +127,7 @@ export const MaterialStateComponent = defineComponent({
         : [component.instances.value]
       for (const instanceEntity of instances) {
         if (!hasComponent(instanceEntity, MaterialInstanceComponent)) continue
-        setMeshMaterial(instanceEntity, getComponent(instanceEntity, MaterialInstanceComponent).uuid)
+        setMeshMaterial(instanceEntity, getComponent(instanceEntity, MaterialInstanceComponent).entities)
       }
     } catch (e) {
       // this throws errors between tests - should be moved to a reactor
@@ -138,10 +138,10 @@ export const MaterialStateComponent = defineComponent({
 export const MaterialInstanceComponent = defineComponent({
   name: 'MaterialInstanceComponent',
 
-  schema: S.Object({ uuid: S.Array(S.Entity()) }),
+  schema: S.Object({ entities: S.Array(S.Entity()) }),
 
   onRemove: (entity) => {
-    const materialEntities = getOptionalComponent(entity, MaterialInstanceComponent)?.uuid
+    const materialEntities = getOptionalComponent(entity, MaterialInstanceComponent)?.entities
     if (!materialEntities) return
     for (const materialEntity of materialEntities) {
       if (!hasComponent(materialEntity, MaterialStateComponent)) continue
@@ -154,12 +154,12 @@ export const MaterialInstanceComponent = defineComponent({
     const entity = useEntityContext()
     const materialComponent = useOptionalComponent(entity, MaterialInstanceComponent)
 
-    if (!materialComponent || materialComponent.uuid.value.length === 0) return null
+    if (!materialComponent || materialComponent.entities.value.length === 0) return null
 
-    if (materialComponent.uuid.value.length > 1)
+    if (materialComponent.entities.value.length > 1)
       return (
         <>
-          {materialComponent.uuid.value.map((materialEntity, index) => (
+          {materialComponent.entities.value.map((materialEntity, index) => (
             <MaterialInstanceSubReactor
               array={true}
               key={`${materialEntity}-${index}`}
@@ -174,9 +174,9 @@ export const MaterialInstanceComponent = defineComponent({
     return (
       <MaterialInstanceSubReactor
         array={false}
-        key={`${materialComponent.uuid.value[0]}`}
+        key={`${materialComponent.entities.value[0]}`}
         index={0}
-        materialEntity={materialComponent.uuid.value[0]}
+        materialEntity={materialComponent.entities.value[0]}
         entity={entity}
       />
     )
