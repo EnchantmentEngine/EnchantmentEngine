@@ -30,6 +30,7 @@ import {
   EngineState,
   Entity,
   EntityTreeComponent,
+  EntityUUID,
   Layers,
   setComponent,
   UUIDComponent
@@ -44,6 +45,7 @@ import { TransformComponent } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
+import '@testing-library/jest-dom'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { Cache } from 'three'
@@ -89,7 +91,7 @@ describe('HierarchyPanel component', () => {
     mockSpatialEngine()
     await Physics.load()
     physicsWorldEntity = createEntity()
-    setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID as EntityUUID)
     setComponent(physicsWorldEntity, SceneComponent)
     setComponent(physicsWorldEntity, TransformComponent)
     setComponent(physicsWorldEntity, EntityTreeComponent)

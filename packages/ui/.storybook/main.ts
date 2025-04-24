@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import type { StorybookConfig } from '@storybook/react-vite'
 import { dirname, join } from 'path'
 import { mergeConfig } from 'vite'
-
 const config: StorybookConfig = {
   env: (config) => ({
     ...config,
@@ -39,7 +38,9 @@ const config: StorybookConfig = {
   },
   stories: [
     '../src/primitives/tailwind/!(TruncatedText)/*.stories.@(js|jsx|ts|tsx)',
-    // '../src/components/editor/**/*.stories.@(js|jsx|ts|tsx)',
+    '../src/components/editor/**/*.stories.@(js|jsx|ts|tsx)',
+    '../src/components/editor/properties/**/*.stories.@(js|jsx|ts|tsx)',
+
     '../src/components/tailwind/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/icons/**/*.stories.@(js|jsx|ts|tsx)'
   ],
@@ -52,7 +53,8 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-a11y'),
     getAbsolutePath('@storybook/addon-jest'),
     getAbsolutePath('storybook-addon-react-router-v6'),
-    getAbsolutePath('storybook-addon-sass-postcss')
+    getAbsolutePath('storybook-addon-sass-postcss'),
+    getAbsolutePath('storybook-addon-vite-mock')
   ],
   core: {},
   framework: {

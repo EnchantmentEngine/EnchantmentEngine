@@ -37,7 +37,7 @@ const config: StorybookConfig = {
   typescript: {
     reactDocgen: false
   },
-  stories: ['../src/components/**/**/*.stories.@(js|jsx|ts|tsx)'],
+  stories: ['../src/components/**/**/*.stories.@(js|jsx|ts|tsx)', '../src/panels/**/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
     getAbsolutePath('@storybook/addon-links'),
     getAbsolutePath('@storybook/addon-toolbars'),
@@ -47,7 +47,8 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-a11y'),
     getAbsolutePath('@storybook/addon-jest'),
     getAbsolutePath('storybook-addon-react-router-v6'),
-    getAbsolutePath('storybook-addon-sass-postcss')
+    getAbsolutePath('storybook-addon-sass-postcss'),
+    getAbsolutePath('storybook-addon-vite-mock')
   ],
   core: {},
   framework: {
