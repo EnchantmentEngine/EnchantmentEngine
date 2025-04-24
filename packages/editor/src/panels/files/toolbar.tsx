@@ -93,12 +93,12 @@ export const showGifFileConfimation = (projectName: string, directoryPath: strin
 
   const onSubmit = async () => {
     await handleConvertGifFileToVideoAndUpload(projectName, directoryPath, files)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
-  PopoverState.showPopupover(
+  ModalState.openModal(
     <>
-      <Modal title={'test'} className="w-[50vw] max-w-2xl" onSubmit={onSubmit} onClose={PopoverState.hidePopupover}>
+      <Modal title={'test'} className="w-[50vw] max-w-2xl" onSubmit={onSubmit} onClose={ModalState.closeModal}>
         <div className="flex flex-col rounded-lg bg-[#0e0f11] px-5 py-10 text-center">
           Warning: We don't support animated GIF files, do you want to convert them to Video? <br />
           {fileNames.length > 0 && `Files: ${fileNames.join(', ')}`}
