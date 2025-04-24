@@ -53,7 +53,7 @@ import {
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
-import { iOS, isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
+import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import {
@@ -413,23 +413,18 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         <div className="col-span-3 grid grid-cols-[auto,1fr] gap-x-6">
           <div className="relative h-20 w-20">
             <AvatarImage size="large" src={avatarThumbnail} className="object-cover" />
-            {
-              /**@todo disable avatar editing on iOS. Temporary solution for memory related crashing on iOS. */
-              !iOS && (
-                <button
-                  onClick={() => {
-                    ModalState.openModal(
-                      <AvatarSelectMenu ref={avatarSelectMenuRef} showBackButton={true} previewEnabled={true} />,
-                      onAvatarSelectClose
-                    )
-                  }}
-                  className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#DDE1E5] p-2"
-                  data-testid="profile-menu-avatar-edit-button"
-                >
-                  <Edit01Lg className="place-items-center text-text-secondary" />
-                </button>
-              )
-            }
+            <button
+              onClick={() => {
+                ModalState.openModal(
+                  <AvatarSelectMenu ref={avatarSelectMenuRef} showBackButton={true} previewEnabled={true} />,
+                  onAvatarSelectClose
+                )
+              }}
+              className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#DDE1E5] p-2"
+              data-testid="profile-menu-avatar-edit-button"
+            >
+              <Edit01Lg className="place-items-center text-text-secondary" />
+            </button>
           </div>
 
           <div className="flex flex-col">
