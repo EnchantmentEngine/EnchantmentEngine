@@ -199,15 +199,11 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
   return newMaterial
 }
 
-const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [_: string]: any }[]) => {
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i]
-    if (typeof node !== 'string') return
-    const materialEntity = UUIDComponent.getEntityByUUID(materialId, Layers.Authoring)
-    const material = getComponent(materialEntity, MaterialStateComponent).material
-    if (!material) return
-    if (!material) throw new Error('Updating properties on undefined material')
-    const props = properties[i] ?? properties[0]
+const modifyMaterial = (materialEntity: Entity, properties: { [_: string]: any }[]) => {
+  const material = getComponent(materialEntity, MaterialStateComponent).material
+  if (!material) return
+  if (!material) throw new Error('Updating properties on undefined material')
+  for (const props of properties) {
     const materialComponent = getMutableComponent(materialEntity, MaterialStateComponent)
     /**@todo consolidate material prototype tracking */
     const prototype =
@@ -238,7 +234,6 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
           material[key] = value
       }
     }
-
     Promise.all(texturePromises).then(() => {
       setupMaterialParameters(materialEntity, getComponent(materialEntity, MaterialStateComponent).material)
       EditorState.markModifiedScene(materialEntity)
@@ -246,7 +241,6 @@ const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [
         SceneDeltaState.registerMaterialDelta(materialEntity, props, materialComponent.prototype.value)
       }
     })
-
     getMutableComponent(
       LayerFunctions.getLayerRelationsEntities(materialEntity)![0][1],
       MaterialStateComponent
