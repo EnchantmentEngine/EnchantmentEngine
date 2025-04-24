@@ -56,7 +56,6 @@ import { getMutableState, getState, NO_PROXY_STEALTH, none, State, useHookstate 
 import { LayerComponent, useAncestorWithComponents } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
@@ -180,8 +179,6 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as NodeID
       const sourceID = GLTFComponent.getInstanceID(entity)
       const uuid = UUIDComponent.getUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
-      console.log('adding dependency for uuid', uuid)
-      console.log(nodeID, sourceID)
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -344,7 +341,6 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
   const dependencies = loadDependencies[component.jsonID!]
   const comp = useComponent(entity, component)
   const errors = ErrorComponent.useComponentErrors(entity, component)
-  console.log('component reactor for', component, 'on ', getComponent(gltfComponentEntity, NameComponent))
 
   const removeGLTFDependency = () => {
     const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
@@ -390,8 +386,6 @@ const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: Enti
   const entity = UUIDComponent.useEntityByUUID(uuid as EntityUUID, layer) as Entity | undefined
   const hasComponents = useHasComponents(entity ?? UndefinedEntity, components)
   const dynamicLoad = useHasComponent(entity ?? UndefinedEntity, SceneDynamicLoadComponent)
-  console.log('entry reactor', getComponent(gltfComponentEntity, NameComponent), 'uuid', uuid, 'entity', entity)
-  components.map((c) => console.log('entry reactor component', c))
   return entity && !dynamicLoad && hasComponents ? (
     <>
       {components.map((component) => {
