@@ -82,8 +82,9 @@ export const GLTFComponent = defineComponent({
 
   schema: S.Object({
     src: S.String(''),
+
     /** @todo move this to it's own component */
-    cameraOcclusion: S.Bool(false),
+    cameraOcclusion: S.Bool(true),
 
     //collision info
     applyColliders: S.Bool(false),
@@ -136,10 +137,6 @@ export const GLTFComponent = defineComponent({
     const uuid = UUIDComponent.getUUID(uuidPair)
     if (!nodeID) return uuid as string as SourceID
     return SourceComponent.getSourceID(uuid, nodeID) as SourceID
-  },
-
-  removeHashes: <T extends EntityUUID | SourceID | NodeID>(url: T) => {
-    return url.replaceAll(/\?hash=[^-]+/g, '') as T
   }
 })
 
@@ -170,9 +167,6 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
     componentDependencies: {}
   } as ComponentDependencies
 
-  const meshes = new Set<number>()
-  const materials = new Set<number>()
-
   if (!json.nodes) return dependencies
   for (const node of json.nodes) {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
@@ -187,14 +181,6 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
           dependencies.componentDependencies[uuid].push(ComponentJSONIDMap.get(extension)!)
         }
       }
-    }
-
-    if (node.mesh !== undefined) {
-      meshes.add(node.mesh)
-      const mesh = json.meshes![node.mesh]
-      mesh.primitives.forEach((prim) => {
-        if (prim.material !== undefined) materials.add(prim.material)
-      })
     }
   }
 
@@ -265,6 +251,7 @@ export const GLTFComponentReactor = () => {
         unloadEntities()
       }
     })
+
     return () => {
       documentLoaded.set(false)
       GLTFLoaderFunctions.unloadScene(url, entity)

@@ -130,7 +130,7 @@ export const injectMaterialDefaults = (materialEntity: Entity) => {
   const prototype = getState(MaterialPrototypeDefinitions)[material.material.type].arguments
   if (!prototype) return
   return Object.fromEntries(
-    Object.entries(prototype).map(([k, v]: [string, any]) => [k, { ...v, default: material.parameters![k] }])
+    Object.entries(prototype).map(([k, v]: [string, any]) => [k, { ...v, default: material.parameters[k] }])
   )
 }
 

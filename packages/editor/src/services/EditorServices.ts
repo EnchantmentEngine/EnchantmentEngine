@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { LayoutData } from 'rc-dock'
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { EntityUUID, getComponent } from '@ir-engine/ecs'
+import { EntityUUID, getOptionalComponent } from '@ir-engine/ecs'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -82,7 +82,7 @@ export const EditorState = defineState({
   },
   isInActiveScene: (entity: Entity) => {
     const rootEntity = getState(EditorState).rootEntity
-    const sourceID = getComponent(entity, SourceComponent)
+    const sourceID = getOptionalComponent(entity, SourceComponent)
     return sourceID === rootEntity
   },
   reactor: () => {
