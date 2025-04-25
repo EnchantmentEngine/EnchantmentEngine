@@ -34,6 +34,7 @@ import { twMerge } from 'tailwind-merge'
 
 const ClickawayListener = (props: { children: React.ReactNode; onClickOutside: VoidFunction | null }) => {
   const backdropMode = getState(ModalState).backdrop
+  console.log('backdropMode', backdropMode)
   const callbackRef = useRef<VoidFunction | null>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
 
@@ -75,7 +76,8 @@ const ClickawayListener = (props: { children: React.ReactNode; onClickOutside: V
       ref={backdropRef}
       className={twMerge(
         'fixed inset-0 z-[1000] flex h-full w-full items-center justify-center',
-        backdropMode === 'blur' ? 'backdrop-blur-[50px]' : 'bg-transparent/50'
+        backdropMode === 'blur' ? 'backdrop-blur-[50px]' : '',
+        backdropMode === 'transparent' ? 'bg-transparent' : 'bg-transparent/50'
       )}
     >
       {props.children}

@@ -111,14 +111,18 @@ export const ViewerInteractions = () => {
       </div>
 
       <div className="pointer-events-auto absolute right-0 top-0 pb-[inherit] pr-[inherit] pt-[inherit]">
-        {Object.entries(externalInjectedMenus).map(([menuName, props]) => (
-          <LocationIconButton
-            key={menuName}
-            title={props.title}
-            icon={props.icon}
-            onClick={() => ModalState.openModal(props.component as JSX.Element)}
-          />
-        ))}
+        {Object.entries(externalInjectedMenus).map(([menuName, props]) =>
+          props.icon ? (
+            <LocationIconButton
+              key={menuName}
+              title={props.title}
+              icon={props.icon}
+              onClick={() => ModalState.openModal(props.component as JSX.Element)}
+            />
+          ) : (
+            props.component
+          )
+        )}
       </div>
 
       <ARPlacement />
