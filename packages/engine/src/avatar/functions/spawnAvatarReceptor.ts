@@ -125,6 +125,7 @@ export const createAvatarCollider = (entity: Entity) => {
     collisionMask: AvatarCollisionMask,
     matchMesh: false
   })
+  setComponent(colliderEntity, TransformComponent)
 }
 
 const avatarCapsuleOffset = 0.25
