@@ -159,7 +159,7 @@ export interface ComponentPartial<
    * `@todo` Explain what reactive is in this context
    * `@todo` Explain this function
    */
-  reactor?: any // previously <React.FC> breaks types
+  reactor?: (props: { entity: Entity }) => JSX.Element | null // previously <React.FC> breaks types
 
   storage?: StorageType
   /**
@@ -192,7 +192,7 @@ export interface Component<
   toJSON: (component: ComponentType) => JSON
   onSet: (entity: Entity, component: State<ComponentType>, json?: SetJSON) => void
   onRemove: (entity: Entity, component: State<ComponentType>) => void
-  reactor?: any
+  reactor?: (props: { entity: Entity }) => JSX.Element | null
   reactorRoot?: ReactorRoot
   storage?: StorageType
   stateMap: Record<Entity, State<ComponentType, Identifiable>>
@@ -563,7 +563,10 @@ export const setComponent = <C extends Component>(
 
   if (component.reactor && !component.reactorRoot) {
     const root = startReactor(() => {
-      return React.createElement(QueryReactor, { Components: [component], ChildEntityReactor: component.reactor })
+      return React.createElement(QueryReactor, {
+        Components: [component],
+        ChildEntityReactor: component.reactor as any
+      })
     }) as ReactorRoot
     root.cleanupFunctions.add(() => {
       component.reactorRoot = undefined
