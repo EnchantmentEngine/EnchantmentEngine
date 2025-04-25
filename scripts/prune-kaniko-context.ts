@@ -23,24 +23,36 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createSwaggerServiceOptions } from 'feathers-swagger'
+/* eslint-disable @typescript-eslint/no-var-requires */
 
 import {
-  authenticationSettingDataSchema,
-  authenticationSettingPatchSchema,
-  authenticationSettingQuerySchema,
-  authenticationSettingSchema
-} from '@ir-engine/common/src/schemas/setting/authentication-setting.schema'
+  createDefaultStorageProvider,
+  getStorageProvider
+} from '@ir-engine/server-core/src/media/storageprovider/storageprovider'
+import cli from 'cli'
 
-export default createSwaggerServiceOptions({
-  schemas: {
-    authenticationSettingDataSchema,
-    authenticationSettingPatchSchema,
-    authenticationSettingQuerySchema,
-    authenticationSettingSchema
-  },
-  docs: {
-    description: 'Authentication setting service description',
-    securities: ['all']
+cli.enable('status')
+
+cli.main(async () => {
+  try {
+    await createDefaultStorageProvider()
+    const storageProvider = getStorageProvider()
+    storageProvider.bucket = process.env.KANIKO_CONTEXT_REPO
+
+    const filesResponse = await storageProvider.provider.bucket(storageProvider.bucket).getFiles({
+      delimiter: '/'
+    })
+    const files = filesResponse[2].items
+
+    const sorted = files.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    const toDelete = sorted.slice(5).map((item) => item.name)
+    if (toDelete.length > 0) await storageProvider.deleteResources(toDelete)
+
+    console.log('Pruned old Kaniko build contexts')
+    process.exit(0)
+  } catch (err) {
+    console.log('Error in pruning Kaniko build contexts:')
+    console.log(err)
+    cli.fatal(err)
   }
 })
