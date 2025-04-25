@@ -91,6 +91,7 @@ export const spawnAvatarReceptor = (entityUUID: EntityUUID) => {
   ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.Avatar)
 
   createAvatarCollider(entity)
+  setAvatarColliderTransform(entity)
 
   setComponent(entity, RigidBodyComponent, {
     type: BodyTypes.Kinematic,
@@ -125,10 +126,9 @@ export const createAvatarCollider = (entity: Entity) => {
     collisionMask: AvatarCollisionMask,
     matchMesh: false
   })
-  setComponent(colliderEntity, TransformComponent)
 }
 
-const avatarCapsuleOffset = 0.25
+const avatarCapsuleOffset = 0.125
 export const setAvatarColliderTransform = (entity: Entity) => {
   const avatarCollider = getOptionalComponent(entity, AvatarColliderComponent)
   if (!avatarCollider) {
