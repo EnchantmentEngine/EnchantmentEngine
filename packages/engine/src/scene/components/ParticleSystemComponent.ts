@@ -66,6 +66,7 @@ import {
 } from '@ir-engine/ecs'
 import {
   defineComponent,
+  entityExists,
   getComponent,
   removeComponent,
   setComponent,
@@ -1066,7 +1067,7 @@ export const ParticleSystemComponent = defineComponent({
           }
         }
         removeComponent(entity, ObjectComponent)
-        setComponent(entity, ObjectComponent, new Object3D())
+        if (entityExists(entity)) setComponent(entity, ObjectComponent, new Object3D())
 
         nuSystem.dispose()
         emitterAsObj3D.dispose()
