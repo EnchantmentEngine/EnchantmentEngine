@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createMock } from 'storybook-addon-vite-mock'
 import { FileDataType } from '../../constants/AssetTypes'
 import { FileCard } from './resources'
 
@@ -31,14 +30,6 @@ export default {
   title: 'editor/panels/assets/FileCard',
   component: FileCard,
   parameters: {
-    moduleMock: {
-      mock: () => {
-        const mock = createMock(() => {
-          return 'hello'
-        })
-        return [mock]
-      }
-    },
     componentSubtitle: 'FileCard',
     design: {
       type: 'figma',

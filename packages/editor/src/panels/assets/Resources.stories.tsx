@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@ir-engine/hyperflux'
+import '@ir-engine/client/src/store.tsx'
 import React from 'react'
 import { AssetsQueryProvider } from './hooks'
 import Resources from './resources'
@@ -32,35 +32,6 @@ export default {
   title: 'editor/panels/assets/Resources',
   component: Resources,
   parameters: {
-    moduleMock: {
-      mock: () => {
-        const search = useHookstate({ local: '', query: '' })
-        const staticResourcesPagination = useHookstate({ total: 0, skip: 0 })
-        const currentCategoryPath = useHookstate(undefined)
-        const categorySidebarWidth = useHookstate(300)
-
-        // Mock the useAssetsQuery hook
-        const mockedHook = () => ({
-          search,
-          resources: [],
-          refetchResources: () => {},
-          resourcesLoading: false,
-          staticResourcesPagination,
-          category: {
-            currentCategoryPath,
-            sidebarWidth: categorySidebarWidth
-          }
-        })
-
-        return [
-          {
-            module: './hooks',
-            export: 'useAssetsQuery',
-            mock: mockedHook
-          }
-        ]
-      }
-    },
     componentSubtitle: 'Resources',
     design: {
       type: 'figma',
@@ -69,13 +40,11 @@ export default {
   }
 }
 
-const ResourcesRenderer = async (args) => {
+const ResourcesRenderer = (args) => {
   return (
-    <>
-      <AssetsQueryProvider>
-        <Resources />
-      </AssetsQueryProvider>
-    </>
+    <AssetsQueryProvider>
+      <Resources />
+    </AssetsQueryProvider>
   )
 }
 
