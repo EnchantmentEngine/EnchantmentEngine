@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
-import { defineQuery, defineSystem, Entity, getComponent } from '@ir-engine/ecs'
+import { defineQuery, defineSystem, Entity, getComponent, hasComponent } from '@ir-engine/ecs'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { getState } from '@ir-engine/hyperflux'
 
@@ -35,7 +35,7 @@ import { setChildrenDirtyFast, TransformComponent } from '../../transform/compon
 import { computeTransformMatrix, isDirty, TransformDirtyUpdateSystem } from '../../transform/systems/TransformSystem'
 import { Physics, PhysicsWorld } from '../classes/Physics'
 import { ColliderComponent } from '../components/ColliderComponent'
-import { RigidBodyComponent } from '../components/RigidBodyComponent'
+import { RigidBodyComponent, RigidBodyKinematicTagComponent } from '../components/RigidBodyComponent'
 
 const _localMatrix = new Matrix4()
 const _sceneRelParentMatrix = new Matrix4()
@@ -114,37 +114,35 @@ export const copyTransformToRigidBody = (entity: Entity) => {
   TransformComponent.getMatrixRelativeToScene(entity, _mat4)
   _mat4.decompose(_position, _rotation, _scale)
 
-  RigidBodyComponent.position.x[entity] =
-    RigidBodyComponent.previousPosition.x[entity] =
-    RigidBodyComponent.targetKinematicPosition.x[entity] =
-      _position.x
-  RigidBodyComponent.position.y[entity] =
-    RigidBodyComponent.previousPosition.y[entity] =
-    RigidBodyComponent.targetKinematicPosition.y[entity] =
-      _position.y
-  RigidBodyComponent.position.z[entity] =
-    RigidBodyComponent.previousPosition.z[entity] =
-    RigidBodyComponent.targetKinematicPosition.z[entity] =
-      _position.z
-  RigidBodyComponent.rotation.x[entity] =
-    RigidBodyComponent.previousRotation.x[entity] =
-    RigidBodyComponent.targetKinematicRotation.x[entity] =
-      _rotation.x
-  RigidBodyComponent.rotation.y[entity] =
-    RigidBodyComponent.previousRotation.y[entity] =
-    RigidBodyComponent.targetKinematicRotation.y[entity] =
-      _rotation.y
-  RigidBodyComponent.rotation.z[entity] =
-    RigidBodyComponent.previousRotation.z[entity] =
-    RigidBodyComponent.targetKinematicRotation.z[entity] =
-      _rotation.z
-  RigidBodyComponent.rotation.w[entity] =
-    RigidBodyComponent.previousRotation.w[entity] =
-    RigidBodyComponent.targetKinematicRotation.w[entity] =
-      _rotation.w
+  RigidBodyComponent.previousPosition.x[entity] = RigidBodyComponent.position.x[entity]
+  RigidBodyComponent.previousPosition.y[entity] = RigidBodyComponent.position.y[entity]
+  RigidBodyComponent.previousPosition.z[entity] = RigidBodyComponent.position.z[entity]
+  RigidBodyComponent.previousRotation.x[entity] = RigidBodyComponent.rotation.x[entity]
+  RigidBodyComponent.previousRotation.y[entity] = RigidBodyComponent.rotation.y[entity]
+  RigidBodyComponent.previousRotation.z[entity] = RigidBodyComponent.rotation.z[entity]
+  RigidBodyComponent.previousRotation.w[entity] = RigidBodyComponent.rotation.w[entity]
+
+  const isKinematic = hasComponent(entity, RigidBodyKinematicTagComponent)
+
+  const position = isKinematic ? RigidBodyComponent.targetKinematicPosition : RigidBodyComponent.position
+  const rotation = isKinematic ? RigidBodyComponent.targetKinematicRotation : RigidBodyComponent.rotation
+  position.x[entity] = _position.x
+  position.y[entity] = _position.y
+  position.z[entity] = _position.z
+  rotation.x[entity] = _rotation.x
+  rotation.y[entity] = _rotation.y
+  rotation.z[entity] = _rotation.z
+  rotation.w[entity] = _rotation.w
 
   const rigidbody = getComponent(entity, RigidBodyComponent)
-  Physics.setRigidbodyPose(world, entity, rigidbody.position, rigidbody.rotation, Vector3_Zero, Vector3_Zero)
+  Physics.setRigidbodyPose(
+    world,
+    entity,
+    isKinematic ? rigidbody.targetKinematicPosition : rigidbody.position,
+    isKinematic ? rigidbody.targetKinematicRotation : rigidbody.rotation,
+    Vector3_Zero,
+    Vector3_Zero
+  )
 
   /** set all children dirty deeply, but set this entity to clean */
   setChildrenDirtyFast(entity)

@@ -130,12 +130,31 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
     return
   }
 
-  if (additionalMovement) desiredMovement.add(additionalMovement)
-
   const avatarCollisionGroups = getInteractionGroups(
     bodyCollider.collisionLayer,
     bodyCollider.collisionMask & ~CollisionGroups.Trigger
   )
+
+  avatarGroundRaycast.origin.copy(rigidbody.position)
+  avatarGroundRaycast.groups = avatarCollisionGroups
+  avatarGroundRaycast.origin.y += avatarGroundRaycastDistanceOffset
+
+  // apply velocity of ground beneath avatar
+  if (!controller.isInAir) {
+    const groundHitsBefore = Physics.castRay(world, avatarGroundRaycast)
+    if (groundHitsBefore.length) {
+      const hitEntity = groundHitsBefore[0].body.entity
+      console.log(
+        RigidBodyComponent.position.x[hitEntity] - RigidBodyComponent.previousPosition.x[hitEntity],
+        RigidBodyComponent.position.y[hitEntity] - RigidBodyComponent.previousPosition.y[hitEntity],
+        RigidBodyComponent.position.z[hitEntity] - RigidBodyComponent.previousPosition.z[hitEntity]
+      )
+      desiredMovement.x += RigidBodyComponent.position.x[hitEntity] - RigidBodyComponent.previousPosition.x[hitEntity]
+      desiredMovement.z += RigidBodyComponent.position.z[hitEntity] - RigidBodyComponent.previousPosition.z[hitEntity]
+    }
+  }
+
+  if (additionalMovement) desiredMovement.add(additionalMovement)
 
   Physics.computeColliderMovement(world, entity, colliderEntity, desiredMovement, avatarCollisionGroups)
   Physics.getComputedMovement(world, entity, computedMovement)
@@ -147,7 +166,6 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   // const grounded = controller.controller.computedGrounded()
   /** rapier's computed movement is a bit bugged, so do a small raycast at the avatar's feet to snap it to the ground if it's close enough */
   avatarGroundRaycast.origin.copy(rigidbody.targetKinematicPosition)
-  avatarGroundRaycast.groups = avatarCollisionGroups
   avatarGroundRaycast.origin.y += avatarGroundRaycastDistanceOffset
   const groundHits = Physics.castRay(world, avatarGroundRaycast)
   controller.isInAir = true

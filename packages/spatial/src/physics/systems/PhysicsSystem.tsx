@@ -56,7 +56,7 @@ import { getInteractionGroups } from '../functions/getInteractionGroups'
 import { PhysicsSerialization } from '../PhysicsSerialization'
 import { ColliderHitEvent, CollisionEvents, SceneQueryType } from '../types/PhysicsTypes'
 
-const nonFixedRigidbodyQuery = defineQuery([RigidBodyComponent, Not(RigidBodyFixedTagComponent)])
+const nonFixedRigidBodiesQuery = defineQuery([RigidBodyComponent, Not(RigidBodyFixedTagComponent)])
 const collisionQuery = defineQuery([CollisionComponent])
 
 const kinematicQuery = defineQuery([RigidBodyComponent, RigidBodyKinematicTagComponent, TransformComponent])
@@ -75,12 +75,12 @@ const execute = () => {
     }
   }
 
-  const allRigidBodies = nonFixedRigidbodyQuery()
-  Physics.updatePreviousRigidbodyPose(allRigidBodies)
+  const dynamicRigidBodies = nonFixedRigidBodiesQuery()
+  Physics.updatePreviousRigidbodyPose(dynamicRigidBodies)
   const { simulationTimestep } = getState(ECSState)
   const kinematicEntities = kinematicQuery()
   Physics.simulate(simulationTimestep, kinematicEntities)
-  Physics.updateRigidbodyPose(allRigidBodies)
+  Physics.updateRigidbodyPose(dynamicRigidBodies)
 
   /** process collisions */
   for (const { entity, collisionEntity, hit } of existingColliderHits) {
