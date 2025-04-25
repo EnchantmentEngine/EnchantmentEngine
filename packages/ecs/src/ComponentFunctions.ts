@@ -159,7 +159,7 @@ export interface ComponentPartial<
    * `@todo` Explain what reactive is in this context
    * `@todo` Explain this function
    */
-  reactor?: (props: { entity: Entity }) => JSX.Element | null // previously <React.FC> breaks types
+  reactor?: (props: { entity: Entity }) => JSX.Element | null | void // previously <React.FC> breaks types
 
   storage?: StorageType
   /**
@@ -192,7 +192,7 @@ export interface Component<
   toJSON: (component: ComponentType) => JSON
   onSet: (entity: Entity, component: State<ComponentType>, json?: SetJSON) => void
   onRemove: (entity: Entity, component: State<ComponentType>) => void
-  reactor?: (props: { entity: Entity }) => JSX.Element | null
+  reactor?: (props: { entity: Entity }) => JSX.Element | null | void
   reactorRoot?: ReactorRoot
   storage?: StorageType
   stateMap: Record<Entity, State<ComponentType, Identifiable>>
