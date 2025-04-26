@@ -23,7 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '@ir-engine/client/src/store.tsx'
+import React from 'react'
 import CategoriesList from './categories'
+import { AssetsQueryProvider } from './hooks'
 
 export default {
   title: 'editor/panels/assets/Categories',
@@ -37,6 +40,15 @@ export default {
   }
 }
 
+const CategoriesListRenderer = (args) => {
+  return (
+    <AssetsQueryProvider>
+      <CategoriesList selected={args.selected} onClick={() => {}} />
+    </AssetsQueryProvider>
+  )
+}
+
 export const Default = {
-  args: {}
+  args: { selected: false },
+  render: CategoriesListRenderer
 }

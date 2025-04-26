@@ -25,6 +25,12 @@ Infinite Reality Engine. All Rights Reserved.
 
 import ElementList from './elementlist'
 
+const argTypes = {
+  type: {
+    control: { type: 'select' },
+    options: ['components', 'prefab']
+  }
+}
 export default {
   title: 'editor/panels/properties/ElementList',
   component: ElementList,
@@ -34,9 +40,12 @@ export default {
       type: 'figma',
       url: ''
     }
-  }
+  },
+  argTypes
 }
 
 export const Default = {
-  args: {}
+  args: {
+    type: 'components'
+  }
 }

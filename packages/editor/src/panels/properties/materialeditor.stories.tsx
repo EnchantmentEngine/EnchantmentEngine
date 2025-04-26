@@ -23,6 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { createEntity, getComponent, Layers, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import React from 'react'
+import { MeshBasicMaterial } from 'three'
+import { MaterialStateComponent } from '../../../../spatial/src/renderer/materials/MaterialComponent'
 import MaterialEditor from './materialeditor'
 
 export default {
@@ -37,6 +42,16 @@ export default {
   }
 }
 
+const MaterialEditorRenderer = (args) => {
+  const simulationEntity = createEntity(Layers.Authoring)
+  setComponent(simulationEntity, UUIDComponent, UUIDComponent.generateUUID())
+  setComponent(simulationEntity, NameComponent, 'test object ')
+  setComponent(simulationEntity, MaterialStateComponent, { material: new MeshBasicMaterial() })
+  const uuid = getComponent(simulationEntity, UUIDComponent)
+
+  return <MaterialEditor materialUUID={uuid} />
+}
 export const Default = {
-  args: {}
+  args: {},
+  render: MaterialEditorRenderer
 }

@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ScenePanelTab } from '.'
+import { Topbar } from './hierarchytree'
 
 export default {
-  title: 'editor/panels/scenes',
-  component: ScenePanelTab,
+  title: 'editor/panels/hierarchy/TopBar',
+  component: Topbar,
   parameters: {
-    componentSubtitle: 'ScenePanelTab',
+    componentSubtitle: 'HierarchyTreeTopBar',
     design: {
       type: 'figma',
       url: ''

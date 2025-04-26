@@ -23,6 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { getMutableState } from '@ir-engine/hyperflux'
+import React from 'react'
+import { FileDataType } from '../../../constants/AssetTypes'
+import { SelectedFilesState } from '../../../services/FilesState'
 import FilePropertiesModal from './FilePropertiesModal'
 
 export default {
@@ -37,6 +41,23 @@ export default {
   }
 }
 
+const FilePropertiesModalRenderer = (args) => {
+  getMutableState(SelectedFilesState).set([
+    {
+      key: '1',
+      path: 'Lantern.glb',
+      name: 'Lantern.glb',
+      fullName: 'Lantern.glb',
+      url: 'https://github.com/KhronosGroup/glTF-Sample-Models/blob/main/2.0/Lantern/glTF-Binary/Lantern.glb',
+      type: 'glb',
+      thumbnailURL:
+        'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Lantern/screenshot/screenshot.jpg',
+      isFolder: false
+    }
+  ] as FileDataType[])
+  return <FilePropertiesModal />
+}
+
 export const Default = {
-  args: {}
+  render: FilePropertiesModalRenderer
 }

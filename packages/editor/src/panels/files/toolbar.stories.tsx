@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ProjectDownloadProgress } from './loaders'
+import FilesToolbar from './toolbar'
 
 export default {
   title: 'editor/panels/files/toolbar',
-  component: ProjectDownloadProgress,
+  component: FilesToolbar,
   parameters: {
-    componentSubtitle: 'FileLoader',
+    componentSubtitle: 'Toolbar',
     design: {
       type: 'figma',
       url: ''

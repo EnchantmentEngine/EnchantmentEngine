@@ -23,6 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import '@ir-engine/client/src/store.tsx'
+import React from 'react'
+import { AssetsQueryProvider } from './hooks'
 import Topbar from './topbar'
 
 export default {
@@ -37,6 +40,14 @@ export default {
   }
 }
 
+const TopBarRenderer = (args) => {
+  return (
+    <AssetsQueryProvider>
+      <Topbar />
+    </AssetsQueryProvider>
+  )
+}
+
 export const Default = {
-  args: {}
+  render: TopBarRenderer
 }

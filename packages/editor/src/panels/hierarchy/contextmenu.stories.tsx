@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
+import HierarchyTreeContextMenu from './contextmenu'
 
 export default {
   title: 'editor/panels/hierarchy/ContextMenu',
-  component: ContextMenu,
+  component: HierarchyTreeContextMenu,
   parameters: {
-    componentSubtitle: 'ContextMenu',
+    componentSubtitle: 'HierarchyTreeContextMenu',
     design: {
       type: 'figma',
       url: ''

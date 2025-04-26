@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { MaterialsPanelTab } from '.'
+import { FileContextMenu } from './contextmenu'
 
 export default {
-  title: 'editor/panels/material',
-  component: MaterialsPanelTab,
+  title: 'editor/panels/files/contextmenu',
+  component: FileContextMenu,
   parameters: {
-    componentSubtitle: 'MaterialsPanelTab',
+    componentSubtitle: 'FileContextMenu',
     design: {
       type: 'figma',
       url: ''
@@ -38,5 +38,7 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    hideHeading: false
+  }
 }

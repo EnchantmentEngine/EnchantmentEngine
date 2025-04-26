@@ -26,10 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { Contents } from './hierarchytree'
 
 export default {
-  title: 'editor/panels/hierarchy/Tree',
+  title: 'editor/panels/hierarchy/Contents',
   component: Contents,
   parameters: {
-    componentSubtitle: 'HierarchyTree',
+    componentSubtitle: 'HierarchyTreeContents',
     design: {
       type: 'figma',
       url: ''

@@ -38,5 +38,8 @@ export default {
 }
 
 export const Default = {
-  args: {}
+  args: {
+    options: ['option 1', 'option 2'],
+    value: 'option 1'
+  }
 }

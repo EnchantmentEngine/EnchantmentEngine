@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import React from 'react'
 import HierarchyTreeNode from './hierarchynode'
+import { HierarchyPanelProvider } from './hooks'
 
 export default {
   title: 'editor/panels/hierarchy/TreeNode',
@@ -37,6 +39,14 @@ export default {
   }
 }
 
+const CategoriesListRenderer = (args) => {
+  return (
+    <HierarchyPanelProvider>
+      <HierarchyTreeNode index={0} style={{}} data={undefined} />
+    </HierarchyPanelProvider>
+  )
+}
+
 export const Default = {
-  args: {}
+  render: CategoriesListRenderer
 }

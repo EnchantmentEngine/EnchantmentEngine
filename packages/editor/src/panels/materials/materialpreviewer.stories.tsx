@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { MaterialPreviewer } from './materialpreviewer'
 
+// need to figure out how to mockup a material
 export default {
   title: 'editor/panels/material/MaterialPreviewer',
   component: MaterialPreviewer,
