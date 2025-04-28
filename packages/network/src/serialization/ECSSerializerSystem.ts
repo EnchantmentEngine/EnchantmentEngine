@@ -113,7 +113,7 @@ const createSerializer = ({ entities, schema, chunkLength, onCommitChunk }: Seri
 
     const buffer = sliceViewCursor(view)
 
-    data.changes.push(buffer)
+    data.changes.push(buffer as ArrayBuffer)
 
     frame++
 
