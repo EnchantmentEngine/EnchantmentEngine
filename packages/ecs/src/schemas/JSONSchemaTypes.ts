@@ -58,9 +58,11 @@ export interface Schema {
 
 export type Static<T extends Schema> = T['static']
 
+type ValueOrInitializer<T> = T | ((entity: Entity) => T)
+
 export interface Options<V = unknown> {
   id?: string
-  default?: V
+  default?: ValueOrInitializer<V>
   serialized?: boolean
   serialize?: (value: V) => unknown
   deserialize?: (curr: V, value: V) => V
