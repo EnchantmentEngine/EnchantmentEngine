@@ -83,7 +83,7 @@ export const LoopAnimationComponent = defineComponent({
     weight: S.Number({ default: 1 }),
 
     // internal
-    _action: S.Type<AnimationAction | null>(null, {}, { serialized: false })
+    _action: S.Type<AnimationAction | null>({ serialized: false, default: null })
   }),
 
   reactor: function () {

@@ -249,8 +249,8 @@ export const S = {
    * @param options schema options
    * @returns
    */
-  Type: <T>(init?: T, props?: TProperties, options?: TTypedSchema<T>['options']) =>
-    S.SerializedClass(init as () => any, props ?? {}, options) as unknown as TTypedSchema<T>,
+  Type: <T>(options?: TTypedSchema<T>['options'], props?: TProperties) =>
+    S.SerializedClass(options?.default as () => T, props ?? {}, options) as unknown as TTypedSchema<T>,
 
   /**
    * Create a schema object that infers as an any type, the value is serialized

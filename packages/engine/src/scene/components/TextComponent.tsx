@@ -61,7 +61,7 @@ type TroikaColor = string | number | Color
  * @notes troika.Text direction type, as declared by `troika-three-text` in its Text.direction `@member` property.
  */
 export type TroikaTextDirection = 'auto' | 'ltr' | 'rtl'
-const TroikaTextDirectionSchema = S.LiteralUnion(['auto', 'ltr', 'rtl'], 'auto')
+const TroikaTextDirectionSchema = S.LiteralUnion(['auto', 'ltr', 'rtl'])
 
 /**
  * @description
@@ -69,7 +69,7 @@ const TroikaTextDirectionSchema = S.LiteralUnion(['auto', 'ltr', 'rtl'], 'auto')
  * @notes troika.Text alignment type, as declared by `troika-three-text` in its Text.textAlign `@member` property.
  */
 export type TroikaTextAlignment = 'left' | 'center' | 'right' | 'justify'
-const TroikaTextAlignmentSchema = S.LiteralUnion(['left', 'center', 'right', 'justify'], 'justify')
+const TroikaTextAlignmentSchema = S.LiteralUnion(['left', 'center', 'right', 'justify'], { default: 'justify' })
 
 /**
  * @description
@@ -79,7 +79,7 @@ const TroikaTextAlignmentSchema = S.LiteralUnion(['left', 'center', 'right', 'ju
  * @notes troika.Text wrap, as declared by `troika-three-text` in its Text.whiteSpace `@member` property.
  */
 export type TroikaTextWrap = 'normal' | 'nowrap'
-const TroikaTextWrapSchema = S.LiteralUnion(['normal', 'nowrap'], 'normal')
+const TroikaTextWrapSchema = S.LiteralUnion(['normal', 'nowrap'])
 
 /**
  * @description
@@ -89,7 +89,7 @@ const TroikaTextWrapSchema = S.LiteralUnion(['normal', 'nowrap'], 'normal')
  * @notes troika.Text wrapping kind, as declared by `troika-three-text` in its Text.overflowWrap `@member` property.
  */
 export type TroikaTextWrapKind = 'normal' | 'break-word'
-const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'], 'normal')
+const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'])
 
 /**
  * @description
@@ -98,7 +98,7 @@ const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'], 'norma
  * @notes troika.Text line height format, as declared by `troika-three-text`in its Text.lineHeight `@member` property.
  */
 export type TroikaTextLineHeight = number | 'normal'
-const TroikaTextLineHeightSchema = S.Union([S.Number(), S.Literal('normal')], 'normal')
+const TroikaTextLineHeightSchema = S.Union([S.Number(), S.Literal('normal')], { default: 'normal' })
 
 /**
  * @summary

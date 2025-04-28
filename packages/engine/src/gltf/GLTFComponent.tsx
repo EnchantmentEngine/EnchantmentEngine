@@ -94,7 +94,7 @@ export const GLTFComponent = defineComponent({
     document: S.Type<GLTF.IGLTF | null>(),
     progress: S.Number({ default: 0, serialized: false }),
     extensions: S.Record(S.String(), S.Any(), { serialized: false }),
-    dependencies: S.Optional(S.Type<ComponentDependencies>(), { serialized: false })
+    dependencies: S.Type<ComponentDependencies | undefined>({ serialized: false })
   }),
 
   errors: ['LOADING_ERROR', 'INVALID_SOURCE'],
