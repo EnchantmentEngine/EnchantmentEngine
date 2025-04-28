@@ -44,14 +44,14 @@ export const AudioAnalysisComponent = defineComponent({
   jsonID: 'audio-analyzer',
 
   schema: S.Object({
-    src: S.String(''),
+    src: S.String(),
     session: S.Type<AudioAnalysisSession | null>(),
-    bassEnabled: S.Bool(true),
-    midEnabled: S.Bool(true),
-    trebleEnabled: S.Bool(true),
-    bassMultiplier: S.Number(1),
-    midMultiplier: S.Number(1),
-    trebleMultiplier: S.Number(1)
+    bassEnabled: S.Bool({ default: true }),
+    midEnabled: S.Bool({ default: true }),
+    trebleEnabled: S.Bool({ default: true }),
+    bassMultiplier: S.Number({ default: 1 }),
+    midMultiplier: S.Number({ default: 1 }),
+    trebleMultiplier: S.Number({ default: 1 })
   }),
 
   reactor: () => {

@@ -55,7 +55,7 @@ export const ColliderComponent = defineComponent({
     //shape specific parameters
     matchMesh: S.Bool({ default: true }),
     centerOffset: T.Vec3(),
-    boxSize: T.Vec3({ default: Vector3_One }),
+    boxSize: T.Vec3(Vector3_One),
     radius: S.Number({ default: 1 }),
     height: S.Number({ default: 2 })
   }),

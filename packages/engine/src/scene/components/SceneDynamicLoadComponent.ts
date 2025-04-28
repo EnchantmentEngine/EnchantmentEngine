@@ -30,7 +30,7 @@ import { defineComponent, hasComponent, removeComponent, useComponent } from '@i
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { CallbackComponent, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
-const LoadTagModeSchema = S.LiteralUnion(['distance', 'trigger'], 'distance')
+const LoadTagModeSchema = S.LiteralUnion(['distance', 'trigger'], { default: 'distance' })
 
 export const SceneDynamicLoadComponent = defineComponent({
   name: 'SceneDynamicLoadComponent',
@@ -38,7 +38,7 @@ export const SceneDynamicLoadComponent = defineComponent({
 
   schema: S.Object({
     mode: LoadTagModeSchema,
-    distance: S.Number(20),
+    distance: S.Number({ default: 20 }),
     loaded: S.Bool({ default: false, serialized: false })
   }),
 

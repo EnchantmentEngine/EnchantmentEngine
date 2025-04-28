@@ -102,7 +102,7 @@ export const MaterialStateComponent = defineComponent({
 
   schema: S.Object({
     // material & material specific data
-    material: S.Type<Material>({} as Material),
+    material: S.Type<Material>({ default: {} as Material }),
     parameters: S.Record(S.String(), S.Any()),
     // all entities using this material. an undefined entity at index 0 is a fake user
     /**@todo move to state */

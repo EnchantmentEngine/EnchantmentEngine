@@ -95,12 +95,11 @@ class VideoTexturePriorityQueue extends VideoTexture {
   update() {}
 }
 
-const WrappingSchema = S.LiteralUnion(
-  [RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping],
-  ClampToEdgeWrapping
-)
+const WrappingSchema = S.LiteralUnion([RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping], {
+  default: ClampToEdgeWrapping
+})
 
-const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], 'Flat')
+const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], { default: 'Flat' })
 
 export const VideoComponent = defineComponent({
   name: 'EE_video',

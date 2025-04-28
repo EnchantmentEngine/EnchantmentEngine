@@ -157,7 +157,7 @@ export const InputComponent = defineComponent({
     //internal
     /** populated automatically by ClientInputSystem */
     inputSources: S.Array(S.Entity(), { serialized: false }),
-    cachedButtons: S.Type<ButtonStateMap<any>>({}, { serialized: false }),
+    cachedButtons: S.Type<ButtonStateMap<any>>({ serialized: false }),
 
     /** if true, the input component will automatically capture input when a button is consumed */
     autoCapture: S.Bool({ default: false }),
