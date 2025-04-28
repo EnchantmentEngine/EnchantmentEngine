@@ -67,7 +67,7 @@ export const SkyboxComponent = defineComponent({
     equirectangularPath: S.String({ default: '' }),
     cubemapPath: S.String({ default: '' }),
     backgroundType: S.Number({ default: 1 }),
-    sky: S.Type<Sky | null>(), // Not serialized
+    sky: S.Type<Sky | null>({ serialized: false }),
     skyboxProps: S.Object({
       turbidity: S.Number({ default: 10 }),
       rayleigh: S.Number({ default: 1 }),

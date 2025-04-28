@@ -191,7 +191,7 @@ export const S = {
    */
   Class: <T extends TProperties, Class>(init: () => Class, options?: TClassSchema<T, Class>['options']) =>
     ({
-      ...buildSchema('Class', options),
+      ...buildSchema('Class', { default: init, ...options }),
       properties: {} as T
     }) as TClassSchema<T, Class>,
 
@@ -206,7 +206,7 @@ export const S = {
     options?: TClassSchema<T, Class>['options']
   ) =>
     ({
-      ...buildSchema('Class', { ...options, serialized: true, id: 'SerializedClass', default: init }),
+      ...buildSchema('Class', { serialized: true, id: 'SerializedClass', default: init, ...options }),
       properties: items
     }) as TClassSchema<T, Class>,
 
