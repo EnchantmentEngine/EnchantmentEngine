@@ -252,9 +252,9 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         EditorControlFunctions.modifyProperty([combinedMeshEntity], EntityTreeComponent, { parentEntity: rootEntity })
         setComponent(combinedMeshEntity, NameComponent, 'combined mesh entity')
         setComponent(combinedMeshEntity, TransformComponent)
-        setComponent(combinedMeshEntity, UUIDComponent, UUIDComponent.generateUUID())
         const newSource = GLTFComponent.getInstanceID(rootEntity)
-        setComponent(combinedMeshEntity, SourceComponent, newSource)
+        setComponent(combinedMeshEntity, UUIDComponent, { instanceID: newSource, id: UUIDComponent.generateUUID() })
+        setComponent(combinedMeshEntity, SourceComponent, rootEntity)
         const srcURL = pathJoin(config.client.fileServer, saveScenePath + '/' + scenename + '/combined-mesh.gltf')
         iterateEntityNode(rootEntity, (entity) => {
           if (hasComponent(entity, MeshComponent)) {

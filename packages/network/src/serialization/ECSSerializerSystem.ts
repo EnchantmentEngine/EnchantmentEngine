@@ -98,7 +98,7 @@ const createSerializer = ({ entities, schema, chunkLength, onCommitChunk }: Seri
 
     let count = 0
     for (const entity of entities()) {
-      const uuid = getComponent(entity, UUIDComponent)
+      const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
       if (!data.entities.includes(uuid)) {
         data.entities.push(uuid)
       }
