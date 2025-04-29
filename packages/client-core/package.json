@@ -68,7 +68,7 @@
     "esbuild": "0.17.12",
     "react-dom": "18.2.0",
     "rimraf": "4.4.0",
-    "sass": "1.59.3",
+    "sass": "^1.70.0",
     "trace-unhandled": "2.0.1"
   },
   "license": "CPAL",
