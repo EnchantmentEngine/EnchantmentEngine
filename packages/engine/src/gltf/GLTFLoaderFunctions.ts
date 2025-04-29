@@ -1181,7 +1181,7 @@ const _createAnimationTracks = (
 ) => {
   const tracks = [] as KeyframeTrack[]
 
-  const targetName = UUIDComponent.getUUID(getComponent(node, UUIDComponent))
+  const targetName = UUIDComponent.getUUID(node)
   if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
 
@@ -1190,7 +1190,7 @@ const _createAnimationTracks = (
       const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(UUIDComponent.getUUID(getComponent(entity, UUIDComponent)))
+        targetNames.push(UUIDComponent.getUUID(entity))
       }
     })
   } else {
@@ -1542,7 +1542,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   await Promise.all(extensionPending)
 
-  const uuid = UUIDComponent.getUUID(getComponent(options.entity, UUIDComponent))
+  const uuid = UUIDComponent.getUUID(options.entity)
 
   //apply deltas if they exist in state
   const deltas = getState(SceneDeltaState)?.[uuid]

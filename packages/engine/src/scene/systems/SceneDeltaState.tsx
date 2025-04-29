@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Component, Entity, EntityUUID, getComponent, SerializedComponentType, UUIDComponent } from '@ir-engine/ecs'
+import { Component, Entity, EntityUUID, SerializedComponentType, UUIDComponent } from '@ir-engine/ecs'
 import { NodeID } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import {
   defineState,
@@ -47,13 +47,13 @@ export const SceneDeltaState = defineState({
   name: 'SceneDeltaState',
   initial: {} as SceneDeltaRegistry,
   getDelta: (entity: Entity) => {
-    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+    const uuid = UUIDComponent.getUUID(entity)
     return getState(SceneDeltaState)[uuid] as SceneDeltaEntry<any>
   },
   setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
     if (!component.jsonID) return
     const deltaState = getMutableState(SceneDeltaState)
-    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+    const uuid = UUIDComponent.getUUID(entity)
     if (!deltaState[uuid].value) deltaState[uuid].set({} as SceneDeltaEntry<C>)
     const componentDelta = deltaState[uuid].get(NO_PROXY_STEALTH) as SceneDeltaEntry<C>
     componentDelta[component.jsonID] = { ...componentDelta[component.jsonID], ...delta }

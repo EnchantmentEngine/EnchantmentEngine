@@ -152,11 +152,11 @@ export function createVRM(rootEntity: Entity) {
   })
 
   for (const bone of humanBonesArray) {
-    const nodeID = UUIDComponent.getUUID({
-      instanceID: UUIDComponent.getUUID(getComponent(rootEntity, UUIDComponent)),
+    const uuid = UUIDComponent.concatenateUUID({
+      instanceID: UUIDComponent.concatenateUUID(getComponent(rootEntity, UUIDComponent)),
       id: bone.node!.toString()
     })
-    const entity = UUIDComponent.getEntityByUUID(nodeID)
+    const entity = UUIDComponent.getEntityByUUID(uuid)
     AvatarRigComponent.setBone(rootEntity, entity, bone.bone as VRMHumanBoneName)
     AvatarRigComponent.setPose(rootEntity, entity, bone.bone as VRMHumanBoneName)
   }

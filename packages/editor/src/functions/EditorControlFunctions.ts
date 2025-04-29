@@ -329,7 +329,7 @@ const createObjectFromSceneElement = (
   EditorState.markModifiedScene(gltfEntity)
 
   return {
-    entityUUID: UUIDComponent.getUUID(getComponent(entity, UUIDComponent)),
+    entityUUID: UUIDComponent.getUUID(entity),
     sourceID: GLTFComponent.getInstanceID(gltfEntity)
   }
 }
@@ -353,7 +353,7 @@ const duplicateObject = (entities: Entity[]) => {
       }
 
       // Store the UUID of new entity for selection
-      newEntities.push(getComponent(newEntity, UUIDComponent))
+      newEntities.push(UUIDComponent.getUUID(newEntity))
 
       if (hasComponent(entity, GLTFComponent)) return
       const children = getComponent(entity, EntityTreeComponent).children as Entity[]
@@ -566,9 +566,7 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    getMutableComponent(entity, UUIDComponent).instanceID.set(
-      UUIDComponent.getUUID(getComponent(parent, UUIDComponent))
-    )
+    getMutableComponent(entity, UUIDComponent).instanceID.set(UUIDComponent.getUUID(parent))
 
     EditorState.markModifiedScene(entity)
   }

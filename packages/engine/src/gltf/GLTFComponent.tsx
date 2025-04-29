@@ -125,7 +125,7 @@ export const GLTFComponent = defineComponent({
     const uuidPair = getOptionalComponent(entity, UUIDComponent)
     const nodeID = getOptionalComponent(entity, NodeIDComponent)
     if (!uuidPair) return '' as SourceID
-    const uuid = UUIDComponent.getUUID(uuidPair)
+    const uuid = UUIDComponent.concatenateUUID(uuidPair)
     if (!nodeID) return uuid as string as SourceID
     return SourceComponent.getSourceID(uuid, nodeID) as SourceID
   },
@@ -134,7 +134,7 @@ export const GLTFComponent = defineComponent({
     const uuidPair = useOptionalComponent(entity, UUIDComponent)?.value
     const nodeID = useOptionalComponent(entity, NodeIDComponent)?.value
     if (!uuidPair) return '' as SourceID
-    const uuid = UUIDComponent.getUUID(uuidPair)
+    const uuid = UUIDComponent.concatenateUUID(uuidPair)
     if (!nodeID) return uuid as string as SourceID
     return SourceComponent.getSourceID(uuid, nodeID) as SourceID
   }
@@ -172,7 +172,7 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as NodeID
       const sourceID = GLTFComponent.getInstanceID(entity)
-      const uuid = UUIDComponent.getUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
+      const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -331,7 +331,7 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 
   const removeGLTFDependency = () => {
     const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+    const uuid = UUIDComponent.getUUID(entity)
     ;(gltfComponent.dependencies as State<ComponentDependencies>).componentDependencies.set((prev) => {
       const dependencyArr = prev![uuid] as Component[]
       if (!dependencyArr) return prev

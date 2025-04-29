@@ -40,7 +40,6 @@ import {
   dispatchAction,
   getMutableState,
   getState,
-  NO_PROXY,
   none,
   PeerID,
   useHookstate,
@@ -61,7 +60,8 @@ export const EntityNetworkState = defineState({
   initial: {} as Record<
     EntityUUID,
     {
-      UUIDPair: EntityUUIDPair
+      entityID: string
+      entityInstanceID: string
       parentUUID: EntityUUID
       ownerId: UserID | typeof SceneUser
       ownerPeer: PeerID
@@ -74,12 +74,13 @@ export const EntityNetworkState = defineState({
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
         const uuid = { id: action.entityID, instanceID: action.entityInstanceID } as EntityUUIDPair
-        getMutableState(EntityNetworkState)[UUIDComponent.getUUID(uuid)].merge({
+        getMutableState(EntityNetworkState)[UUIDComponent.concatenateUUID(uuid)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
           ownerPeer: action.$peer,
-          UUIDPair: uuid
+          entityID: action.entityID,
+          entityInstanceID: action.entityInstanceID
         })
       })
       .validate((action) => {
@@ -141,7 +142,10 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     if (!userConnected) return
-    const entity = UUIDComponent.getOrCreateEntityByUUID(state.UUIDPair.get(NO_PROXY))
+    const entity = UUIDComponent.getOrCreateEntityByUUID({
+      id: state.entityID.value,
+      instanceID: state.entityInstanceID.value
+    })
     return () => {
       removeEntity(entity)
     }

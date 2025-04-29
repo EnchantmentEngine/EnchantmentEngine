@@ -90,7 +90,7 @@ export const setMeshMaterial = (groupEntity: Entity, newMaterialEntities: Entity
   }
 }
 
-type MaterialCallback = (shader: Shader) => void
+type MaterialCallback = (shader: Shader, renderer: any) => void
 
 export const setPlugin = (material: Material, callback: MaterialCallback) => {
   if (hasPlugin(material, callback)) removePlugin(material, callback)

@@ -59,8 +59,12 @@ export const AvatarComponent = defineComponent({
     eyeHeight: S.Number(0)
   }),
 
-  getSelfAvatarUUID(): EntityUUIDPair {
+  getSelfAvatarUUIDPair(): EntityUUIDPair {
     return { instanceID: getState(EngineState).userID, id: 'avatar' }
+  },
+
+  getSelfAvatarUUID() {
+    return UUIDComponent.concatenateUUID(AvatarComponent.getSelfAvatarUUIDPair())
   },
 
   /**
@@ -73,11 +77,11 @@ export const AvatarComponent = defineComponent({
   },
 
   getSelfAvatarEntity() {
-    return UUIDComponent.getEntityByUUID(UUIDComponent.getUUID(AvatarComponent.getSelfAvatarUUID()))
+    return UUIDComponent.getEntityByUUID(AvatarComponent.getSelfAvatarUUID())
   },
 
   useSelfAvatarEntity() {
-    return UUIDComponent.useEntityByUUID(UUIDComponent.getUUID(AvatarComponent.getSelfAvatarUUID()))
+    return UUIDComponent.useEntityByUUID(AvatarComponent.getSelfAvatarUUID())
   },
 
   reactor: ({ entity }) => {

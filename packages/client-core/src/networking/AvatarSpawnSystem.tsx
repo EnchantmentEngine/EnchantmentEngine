@@ -30,7 +30,6 @@ import {
   defineSystem,
   Entity,
   EntityUUID,
-  getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
   useHasComponent,
@@ -105,7 +104,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   useEffect(() => {
     if (isSpectating || !userAvatar) return
 
-    const rootUUID = UUIDComponent.getUUID(getComponent(sceneEntity, UUIDComponent))
+    const rootUUID = UUIDComponent.getUUID(sceneEntity)
     const avatarSpawnPose = getRandomSpawnPoint(userID)
     const user = getState(AuthState).user
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
@@ -131,7 +130,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
       if (!peersCountForUser || peersCountForUser === 1) {
         dispatchAction(
           WorldNetworkAction.destroyEntity({
-            entityUUID: UUIDComponent.getUUID(getComponent(selfAvatarEntity, UUIDComponent))
+            entityUUID: UUIDComponent.getUUID(selfAvatarEntity)
           })
         )
       }
@@ -162,7 +161,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     dispatchAction(
       AvatarNetworkAction.setAvatarURL({
         avatarURL,
-        entityUUID: UUIDComponent.getUUID(AvatarComponent.getSelfAvatarUUID())
+        entityUUID: AvatarComponent.getSelfAvatarUUID()
       })
     )
   }, [isSpectating, userAvatar])

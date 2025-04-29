@@ -95,14 +95,14 @@ export const NodeIDComponent = defineComponent({
    * Creates a new entity with the NodeIDComponent and SourceComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
    */
-  create: (sourceID: Entity, nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
+  create: (sourceEntity: Entity, nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
     setComponent(entity, NodeIDComponent, nodeID)
-    setComponent(entity, SourceComponent, sourceID)
+    setComponent(entity, SourceComponent, sourceEntity)
     setComponent(
       entity,
       UUIDComponent,
-      NodeIDComponent.getUUIDBySourceAndNodeID(GLTFComponent.getInstanceID(sourceID), nodeID)
+      NodeIDComponent.getUUIDBySourceAndNodeID(GLTFComponent.getInstanceID(sourceEntity), nodeID)
     )
     return entity
   },

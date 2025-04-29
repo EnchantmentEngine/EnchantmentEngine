@@ -62,7 +62,7 @@ export type SpawnInWorldProps = {
 
 export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
   const { avatarSpawnPose, avatarURL, parentUUID } = props
-  const uuid = AvatarComponent.getSelfAvatarUUID()
+  const uuid = AvatarComponent.getSelfAvatarUUIDPair()
   dispatchAction(
     AvatarNetworkAction.spawn({
       ...avatarSpawnPose,

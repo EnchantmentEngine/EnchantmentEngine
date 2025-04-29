@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent, hasComponent, iterateEntityNode, UUIDComponent } from '@ir-engine/ecs'
+import { hasComponent, iterateEntityNode, UUIDComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { cleanStorageProviderURLs } from '../assets/functions/parseSceneJSON'
 import { SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
@@ -38,7 +38,7 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
     iterateEntityNode(rootEntity, (entity) => {
       if (entity === rootEntity) return
       if (!hasComponent(entity, UUIDComponent)) return
-      const uuid = UUIDComponent.getUUID(getComponent(entity, UUIDComponent))
+      const uuid = UUIDComponent.getUUID(entity)
       if (!deltaState[uuid]) return
       const nodeDelta = SceneDeltaState.getDelta(entity)
       if (!nodeDelta) return

@@ -210,8 +210,10 @@ export const EXTMeshGPUInstancingComponent = defineComponent({
 
     const results = await Promise.all(pending)
 
-    const nodeID = getNodeID(nodeDef, options.documentID, nodeIndex)
-    const nodeUUID = NodeIDComponent.getUUIDBySourceAndNodeID(options.documentID, nodeID)
+    const nodeID = getNodeID(nodeDef, nodeIndex)
+    const nodeUUID = UUIDComponent.concatenateUUID(
+      NodeIDComponent.getUUIDBySourceAndNodeID(UUIDComponent.getUUID(options.entity), nodeID)
+    )
     const entity = UUIDComponent.getEntityByUUID(nodeUUID)
     const mesh = getComponent(entity, MeshComponent)
 
