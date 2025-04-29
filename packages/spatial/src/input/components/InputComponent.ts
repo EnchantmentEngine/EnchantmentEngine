@@ -42,7 +42,7 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
@@ -147,7 +147,7 @@ export const InputComponent = defineComponent({
   jsonID: 'EE_input',
 
   schema: S.Object({
-    inputSinks: S.Array(S.EntityUUID(), ['Self']),
+    inputSinks: S.Array(S.EntityUUID(), { default: ['Self' as EntityUUID] }),
     activationDistance: S.Number({ default: 2 }),
     highlight: S.Bool({ default: false }),
     grow: S.Bool({ default: false }),
@@ -157,7 +157,7 @@ export const InputComponent = defineComponent({
     //internal
     /** populated automatically by ClientInputSystem */
     inputSources: S.Array(S.Entity(), { serialized: false }),
-    cachedButtons: S.Type<ButtonStateMap<any>>({ serialized: false }),
+    cachedButtons: S.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
 
     /** if true, the input component will automatically capture input when a button is consumed */
     autoCapture: S.Bool({ default: false }),
