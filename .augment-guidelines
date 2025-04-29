@@ -1,22 +1,10 @@
-## Performance Considerations
-
-- Minimize garbage collection by reusing objects
-- Be mindful of performance in update loops
-
-## Documentation Standards
-
-- Document public APIs with JSDoc comments
-- Include parameter descriptions, and only include return type if it's not obvious from the function signature
-- Provide examples for complex functions
-- Keep documentation up-to-date with code changes
-- When writing new modules, include a README file with an overview and usage examples that do not draw from the code but a generic and isolated case
-
 ## Testing Guidelines
 
 - Write unit tests for core functionality
 - Test edge cases and error conditions
 - Mock dependencies appropriately
 - Ensure tests are deterministic
+- Run isolated tests with `npm run test -- <filename>` in the respective package's root
 
 # Meta
 
@@ -27,13 +15,16 @@
 - Do not make assumptions
 - Never pander or appeal to the user, be objective and question if the solution actually meets what the user is requesting
 - Be concise and clear in your communication, but not to the degree that your become unhelpful
+- Ensure that any code and files that are no longer needed are removed
+- Do not leave unnecessary code comments explaining what you've changed, only leave comments that provide information about the code itself that isn't immediately obvious from the code
 
 # CLI Browser Bridge
 
-- Execute JavaScript in browser: npx cli-browser-bridge exec "window.document.title"
-- Execute with formatted output: npx cli-browser-bridge run "window.location.href"
-- Reload browser: npx cli-browser-bridge reload
+- Execute JavaScript in browser: `npx cli-browser-bridge exec "window.document.title"`
+- Reload browser: `npx cli-browser-bridge reload`
+- Open the Vite development server in the default browser: `npx cli-browser-bridge open`
+- Close all browser tabs: `npx cli-browser-bridge close`
 - Commands execute in browser context and return results to CLI
-- Use standard DOM methods: document.querySelector(), document.querySelectorAll()
-- Any valid JavaScript can be executed that returns a value
+- Any valid JavaScript can be executed
 - Objects are automatically JSON-stringified in the response
+- Common usages can be found at .ai-cli-examples
