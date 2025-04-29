@@ -47,7 +47,7 @@
     "js-sha3": "^0.8.0",
     "lodash": "4.17.21",
     "noisejs": "2.1.0",
-    "postprocessing": "6.33.2",
+    "postprocessing": "6.33.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "realism-effects": "1.1.2",
