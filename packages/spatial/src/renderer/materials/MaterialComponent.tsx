@@ -92,7 +92,7 @@ export const MaterialPrototypeDefinitions = defineState({
     }) as Record<string, MaterialPrototypeDefinition>
 })
 
-export const MaterialPlugins = { TransparencyDitheringPluginComponent, NoiseOffsetPluginComponent } as Record<
+export const MaterialPluginComponents = { TransparencyDitheringPluginComponent, NoiseOffsetPluginComponent } as Record<
   string,
   Component<any, any, any>
 >

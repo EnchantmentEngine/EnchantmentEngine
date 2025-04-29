@@ -44,7 +44,7 @@ import { NO_PROXY, none, useHookstate, useMutableState } from '@ir-engine/hyperf
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import {
-  MaterialPlugins,
+  MaterialPluginComponents,
   MaterialPrototypeDefinitions,
   MaterialStateComponent,
   PrototypeArgument
@@ -96,7 +96,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   const prototype = definitions.value[prototypeName.value]
   const thumbnails = useHookstate<Record<string, ThumbnailData>>({})
   const textureUnloadMap = useHookstate<Record<string, (() => void) | undefined>>({})
-  const selectedPlugin = useHookstate(Object.keys(MaterialPlugins)[0])
+  const selectedPlugin = useHookstate(Object.keys(MaterialPluginComponents)[0])
 
   const createThumbnail = async (field: string, texture: Texture) => {
     if (texture?.isTexture) {
@@ -194,9 +194,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     )
   }, [materialComponent.parameters])
 
-  //for each parameter type, default values
   const pluginParameters = useHookstate({})
-  //for the current values of the parameters
   const pluginValues = useHookstate({})
 
   useEffect(() => {
@@ -205,9 +203,9 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   }, [selectedPlugin, currentSelectedMaterial])
 
   useEffect(() => {
-    for (const pluginComponent of Object.values(MaterialPlugins)) {
+    for (const pluginComponent of Object.values(MaterialPluginComponents)) {
       const component = getOptionalComponent(entity, pluginComponent)
-      if (!component || pluginComponent != MaterialPlugins[selectedPlugin.value]) {
+      if (!component || pluginComponent != MaterialPluginComponents[selectedPlugin.value]) {
         continue
       }
       const pluginParameterValues = {}
@@ -219,7 +217,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
       for (const key in component) pluginValues[key].set(component[key].value)
       return
     }
-  }, [selectedPlugin, useOptionalComponent(entity, MaterialPlugins[selectedPlugin.value])])
+  }, [selectedPlugin, useOptionalComponent(entity, MaterialPluginComponents[selectedPlugin.value])])
 
   useEffect(() => {
     if (prototypeName.value === material.type) return
@@ -286,27 +284,27 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
       <div className="border-grey-500 flex flex-row justify-between rounded-lg border-2 border-solid p-1 align-middle">
         <SelectInput
           value={selectedPlugin.value}
-          options={Object.keys(MaterialPlugins).map((key) => ({ label: key, value: key }))}
+          options={Object.keys(MaterialPluginComponents).map((key) => ({ label: key, value: key }))}
           onChange={(value) => selectedPlugin.set(value as string)}
         />
         <Button
           variant="tertiary"
           size="sm"
           onClick={() => {
-            setComponent(entity, MaterialPlugins[selectedPlugin.value])
+            setComponent(entity, MaterialPluginComponents[selectedPlugin.value])
           }}
         >
           {t('editor:properties.mesh.material.setPlugin')}
         </Button>
       </div>
-      {hasComponent(entity, MaterialPlugins[selectedPlugin.value]) && (
+      {hasComponent(entity, MaterialPluginComponents[selectedPlugin.value]) && (
         <div className={styles.contentContainer}>
           <ParameterInput
             entity={props.materialUUID}
             values={pluginValues.value}
             onChange={(key) => async (value) => {
               const property = await shouldLoadTexture(value, key, pluginParameters)
-              getComponent(entity, MaterialPlugins[selectedPlugin.value])[key].value = property
+              getComponent(entity, MaterialPluginComponents[selectedPlugin.value])[key].value = property
               pluginValues[key].set(property)
             }}
             defaults={pluginParameters.value}
@@ -315,7 +313,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
             variant="tertiary"
             size="sm"
             onClick={() => {
-              removeComponent(entity, MaterialPlugins[selectedPlugin.value])
+              removeComponent(entity, MaterialPluginComponents[selectedPlugin.value])
             }}
           >
             Remove Plugin

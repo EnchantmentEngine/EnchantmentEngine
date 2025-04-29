@@ -224,6 +224,7 @@ export const S = {
     ({
       [Kind]: 'Class',
       options: {
+        ...options,
         default: init
       },
       properties: {}
