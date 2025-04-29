@@ -100,6 +100,8 @@ export const MaterialPlugins = { TransparencyDitheringPluginComponent, NoiseOffs
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',
 
+  jsonID: 'IR_material_component',
+
   schema: S.Object({
     // material & material specific data
     material: S.Type<Material>({} as Material),

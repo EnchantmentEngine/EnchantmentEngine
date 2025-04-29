@@ -193,7 +193,9 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
 
   EditorState.markModifiedScene(materialEntity)
   if (!EditorState.isInActiveScene(materialEntity)) {
-    SceneDeltaState.registerMaterialDelta(materialEntity, {}, newPrototype)
+    SceneDeltaState.setDelta<typeof MaterialStateComponent>(materialEntity, MaterialStateComponent, {
+      prototype: newPrototype
+    })
   }
 
   return newMaterial
@@ -238,7 +240,9 @@ const modifyMaterial = (materialEntity: Entity, properties: { [_: string]: any }
       setupMaterialParameters(materialEntity, getComponent(materialEntity, MaterialStateComponent).material)
       EditorState.markModifiedScene(materialEntity)
       if (!EditorState.isInActiveScene(materialEntity)) {
-        SceneDeltaState.registerMaterialDelta(materialEntity, props, materialComponent.prototype.value)
+        SceneDeltaState.setDelta<typeof MaterialStateComponent>(materialEntity, MaterialStateComponent, {
+          parameters: props
+        })
       }
     })
     getMutableComponent(

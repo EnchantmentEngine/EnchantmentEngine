@@ -30,6 +30,7 @@ import {
   getMutableState,
   getState,
   NO_PROXY_STEALTH,
+  none,
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
@@ -58,16 +59,11 @@ export const SceneDeltaState = defineState({
     const componentDelta = deltaState[uuid].get(NO_PROXY_STEALTH) as SceneDeltaEntry<C>
     componentDelta[component.jsonID] = { ...componentDelta[component.jsonID], ...delta }
   },
-
-  registerMaterialDelta(entity: Entity, props?: any, prototype?: string) {
-    // if (!hasComponent(entity, NodeIDComponent)) return
-    // const source = SceneDeltaState.getSource(entity)
-    // const nodeID = getComponent(entity, NodeIDComponent)
-    // if (!source.value[nodeID]) source[nodeID].set({} as MaterialDeltaEntry)
-    // const componentMap = source[nodeID].get(NO_PROXY_STEALTH) as MaterialDeltaEntry
-    // if (props) componentMap[MATERIAL_JSON_ID] = { ...componentMap[MATERIAL_JSON_ID], ...props }
-    // if (prototype) componentMap[MATERIAL_PROTOTYPE_JSON_ID] = prototype
-    // source[nodeID].set(componentMap)
+  removeDelta: (entity: Entity) => {
+    const deltaState = getMutableState(SceneDeltaState)
+    const uuid = UUIDComponent.getUUID(entity)
+    if (!deltaState[uuid].value) return
+    deltaState[uuid].set(none)
   },
   reactor: () => {
     const sceneState = useMutableState(SceneState)
