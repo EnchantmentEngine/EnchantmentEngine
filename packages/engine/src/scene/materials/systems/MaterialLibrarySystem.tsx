@@ -71,7 +71,7 @@ const reactor = () => {
       material: fallbackMaterial,
       instances: [UndefinedEntity]
     })
-    setComponent(fallbackMaterialEntity, UUIDComponent, MaterialStateComponent.fallbackMaterialUUID)
+    setComponent(fallbackMaterialEntity, UUIDComponent, MaterialStateComponent.fallbackMaterialUUIDPair)
     setComponent(fallbackMaterialEntity, NameComponent, 'Fallback Material')
   }, [])
 

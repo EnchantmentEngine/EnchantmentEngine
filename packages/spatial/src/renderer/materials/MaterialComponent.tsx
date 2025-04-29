@@ -111,10 +111,10 @@ export const MaterialStateComponent = defineComponent({
     prototype: S.String()
   }),
 
-  fallbackMaterialUUID: { instanceID: uuidv4() as EntityUUID, id: 'fallback-material' } as EntityUUIDPair,
+  fallbackMaterialUUIDPair: { instanceID: uuidv4() as EntityUUID, id: 'fallback-material' } as EntityUUIDPair,
   fallbackMaterial: () => {
     const fallbackMaterialEntity = UUIDComponent.getEntityByUUID(
-      UUIDComponent.getUUID(MaterialStateComponent.fallbackMaterialUUID)
+      UUIDComponent.concatenateUUID(MaterialStateComponent.fallbackMaterialUUIDPair)
     )
     return fallbackMaterialEntity
   },

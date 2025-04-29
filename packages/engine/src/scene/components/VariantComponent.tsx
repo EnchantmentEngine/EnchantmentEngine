@@ -28,7 +28,7 @@ import { useEffect } from 'react'
 import {
   Entity,
   EntityTreeComponent,
-  EntityUUID,
+  EntityUUIDPair,
   Static,
   UUIDComponent,
   UndefinedEntity,
@@ -210,11 +210,10 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
 
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
-    setComponent(
-      entity,
-      UUIDComponent,
-      (getComponent(props.entity, UUIDComponent) + '-LOD-' + props.level) as EntityUUID
-    )
+    setComponent(entity, UUIDComponent, {
+      instanceID: UUIDComponent.getUUID(props.entity),
+      id: 'LOD-' + props.level
+    } as EntityUUIDPair)
     setComponent(entity, NameComponent, getComponent(props.entity, NameComponent) + ' LOD ' + props.level)
     setComponent(entity, TransformComponent)
     setComponent(entity, EntityTreeComponent, { parentEntity: props.entity })

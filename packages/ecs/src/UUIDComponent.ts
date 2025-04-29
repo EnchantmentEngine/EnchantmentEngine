@@ -45,7 +45,7 @@ export const UUIDComponent = defineComponent({
           console.error('UUID id cannot be empty')
           return false
         }
-        const uuid = UUIDComponent.getUUID(entity)
+        const uuid = UUIDComponent.concatenateUUID(idPair)
         const layer = LayerComponent.get(entity)
         if (!UUIDComponent.entitiesByUUIDState[layer]) {
           UUIDComponent.entitiesByUUIDState[layer] = {}
@@ -65,7 +65,7 @@ export const UUIDComponent = defineComponent({
 
   onSet(entity, component, idPair: EntityUUIDPair) {
     const layer = LayerComponent.get(entity)
-    const prev = UUIDComponent.getUUID(entity)
+    const prev = UUIDComponent.concatenateUUID(component.value)
     // remove old uuid
     if (prev) {
       const currentUUID = prev
@@ -74,13 +74,13 @@ export const UUIDComponent = defineComponent({
     }
 
     // set new uuid
-    UUIDComponentFunctions._getUUIDState(UUIDComponent.getUUID(entity) as EntityUUID, layer).set(entity)
+    UUIDComponentFunctions._getUUIDState(UUIDComponent.concatenateUUID(idPair), layer).set(entity)
 
     component.set(idPair)
   },
 
   onRemove: (entity, component) => {
-    const uuid = UUIDComponent.getUUID(entity)
+    const uuid = UUIDComponent.concatenateUUID(component.value)
     const layer = LayerComponent.get(entity)
     destroy(UUIDComponent.entitiesByUUIDState[layer][uuid])
     delete UUIDComponent.entitiesByUUIDState[layer][uuid]
@@ -98,7 +98,7 @@ export const UUIDComponent = defineComponent({
 
   getUUID: (entity: Entity) => UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)),
 
-  concatenateUUID: (idPair: EntityUUIDPair) => `${idPair.instanceID}-${idPair.id}` as EntityUUID,
+  concatenateUUID: (idPair: EntityUUIDPair) => `${idPair.instanceID}${idPair.id}` as EntityUUID,
 
   getOrCreateEntityByUUID(idPair: EntityUUIDPair, layer = Layers.Simulation as LayerID) {
     const state = UUIDComponentFunctions._getUUIDState(UUIDComponent.concatenateUUID(idPair), layer)

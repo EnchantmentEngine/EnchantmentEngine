@@ -47,7 +47,7 @@ export const SpawnPoseState = defineState({
   receptors: {
     onSpawnObject: SpawnObjectActions.spawnObject.receive((action) => {
       getMutableState(SpawnPoseState)[
-        UUIDComponent.getUUID({ instanceID: action.entityInstanceID ?? action.parentUUID, id: action.entityID })
+        UUIDComponent.concatenateUUID({ instanceID: action.entityInstanceID ?? action.parentUUID, id: action.entityID })
       ].merge({
         spawnPosition: action.position ? new Vector3().copy(action.position) : new Vector3(),
         spawnRotation: action.rotation ? new Quaternion().copy(action.rotation) : new Quaternion()

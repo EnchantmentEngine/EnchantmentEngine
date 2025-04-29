@@ -77,7 +77,7 @@ export const setMeshMaterial = (groupEntity: Entity, newMaterialEntities: Entity
 
   const mesh = getComponent(groupEntity, MeshComponent) as Mesh
   const fallbackMaterial = UUIDComponent.getEntityByUUID(
-    UUIDComponent.getUUID(MaterialStateComponent.fallbackMaterialUUID)
+    UUIDComponent.concatenateUUID(MaterialStateComponent.fallbackMaterialUUIDPair)
   )
   if (!Array.isArray(mesh.material)) {
     const materialEntity = newMaterialEntities[0] ?? fallbackMaterial

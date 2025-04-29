@@ -119,9 +119,6 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     })
 
     return () => {
-      const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
-      if (!selfAvatarEntity) return
-
       const network = NetworkState.worldNetwork
 
       const peersCountForUser = network?.users?.[userID]?.length
@@ -130,7 +127,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
       if (!peersCountForUser || peersCountForUser === 1) {
         dispatchAction(
           WorldNetworkAction.destroyEntity({
-            entityUUID: UUIDComponent.getUUID(selfAvatarEntity)
+            entityUUID: AvatarComponent.getSelfAvatarUUID()
           })
         )
       }
