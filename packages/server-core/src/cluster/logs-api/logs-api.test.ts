@@ -23,15 +23,39 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { HookContext } from '../../declarations'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { copyDataToParam } from './logs-api.hooks'
 
-export default (...params: string[]) => {
-  const args = Array.from(params)
-  return (hook: HookContext): boolean => {
-    return (
-      (hook.params?.query && args.includes(hook.params.query.action)) ||
-      (hook.params?.actualQuery && args.includes(hook.params.actualQuery.action)) ||
-      (hook.data?.action && args.includes(hook.data.action))
-    )
-  }
-}
+describe('logs-api.hooks', () => {
+  let mockContext
+
+  beforeEach(async () => {
+    mockContext = {
+      type: 'before',
+      method: 'create',
+      app: {},
+      params: {},
+      data: {}
+    }
+  })
+
+  describe('copyDataToParam', () => {
+    it('should copy the specified property from context.data to context.params', async () => {
+      mockContext.data = { action: 'testAction' }
+      await copyDataToParam('action')(mockContext)
+      expect(mockContext.params.action).toBe('testAction')
+    })
+
+    it('should do nothing if context.data is missing', async () => {
+      mockContext.data = undefined
+      await copyDataToParam('action')(mockContext)
+      expect(mockContext.params.action).toBeUndefined()
+    })
+
+    it('should do nothing if the property is missing in context.data', async () => {
+      mockContext.data = {}
+      await copyDataToParam('action')(mockContext)
+      expect(mockContext.params.action).toBeUndefined()
+    })
+  })
+})
