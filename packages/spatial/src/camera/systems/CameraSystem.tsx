@@ -56,7 +56,9 @@ export const CameraEntityState = defineState({
 
   receptors: {
     onCameraSpawn: CameraActions.spawnCamera.receive((action) => {
-      getMutableState(CameraEntityState)[action.entityUUID].set(true)
+      getMutableState(CameraEntityState)[
+        UUIDComponent.concatenateUUID({ id: action.entityID, instanceID: action.entityInstanceID })
+      ].set(true)
     }),
     onEntityDestroy: WorldNetworkAction.destroyEntity.receive((action) => {
       getMutableState(CameraEntityState)[action.entityUUID].set(none)
