@@ -98,7 +98,6 @@
     "storybook-addon-deep-controls": "^0.9.2",
     "storybook-addon-react-router-v6": "^2.0.15",
     "storybook-addon-sass-postcss": "^0.2.0",
-    "storybook-addon-vite-mock": "^0.0.15",
     "stream-browserify": "^3.0.0",
     "ts-jest": "^29.0.5",
     "vite-plugin-node-polyfills": "^0.23.0"
