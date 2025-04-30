@@ -22,7 +22,7 @@
     "prebuild:storybook": "npm run test:generate-output",
     "build:storybook": "storybook build -c .storybook -o build/",
     "predeploy": "npm run build:storybook",
-    "test": "exit 0"
+    "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts"
   },
   "resolutions": {
     "@types/react": "18.2.0",
