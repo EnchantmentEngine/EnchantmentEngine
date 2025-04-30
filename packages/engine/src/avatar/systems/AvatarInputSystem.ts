@@ -210,10 +210,7 @@ const execute = () => {
   if (!isMovementControlsEnabled) return
 
   if (!isCameraAttachedToAvatar && !getState(XRState).session) {
-    const firstWalkableEntityWithInput = walkableQuery().find((entity) => {
-      const controller = getComponent(entity, AvatarControllerComponent)
-      return controller.enableCameraAttachment && findWalkableWithInput(entity)
-    })
+    const firstWalkableEntityWithInput = walkableQuery().find(findWalkableWithInput)
 
     if (firstWalkableEntityWithInput) {
       const inputComponent = getComponent(firstWalkableEntityWithInput, InputComponent)
