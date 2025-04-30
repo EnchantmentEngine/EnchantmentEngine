@@ -35,7 +35,7 @@ import { InteractableComponent } from '@ir-engine/engine/src/interaction/compone
 import { MountPoint, MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { NO_PROXY } from '@ir-engine/hyperflux'
 import { Checkbox } from '@ir-engine/ui'
-import { MdClose } from 'react-icons/md'
+import { LuUsers2 } from 'react-icons/lu'
 import { Vector3 } from 'three'
 import InputGroup from '../../input/Group'
 import SelectInput from '../../input/Select'
@@ -106,6 +106,6 @@ export const MountPointNodeEditor: EditorComponentType = (props) => {
   )
 }
 
-MountPointNodeEditor.iconComponent = MdClose
+MountPointNodeEditor.iconComponent = LuUsers2
 
 export default MountPointNodeEditor
