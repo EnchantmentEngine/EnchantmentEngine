@@ -30,7 +30,6 @@ import {
   createEntity,
   Entity,
   entityExists,
-  generateEntityUUID,
   removeEntity,
   setComponent,
   UndefinedEntity,
@@ -191,7 +190,10 @@ export function useGLTFComponent(url: string, parentEntity: Entity): Entity | nu
     if (!url || !parentEntity) return
     const gltfEntity = createEntity()
     setComponent(gltfEntity, EntityTreeComponent, { parentEntity })
-    setComponent(gltfEntity, UUIDComponent, generateEntityUUID())
+    setComponent(gltfEntity, UUIDComponent, {
+      instanceID: UUIDComponent.getUUID(parentEntity),
+      id: UUIDComponent.generateUUID()
+    })
     setComponent(gltfEntity, GLTFComponent, { src: url })
     gltfEntityState.set(gltfEntity)
 

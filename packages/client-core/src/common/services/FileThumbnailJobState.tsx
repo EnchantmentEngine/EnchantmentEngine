@@ -313,7 +313,7 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
     const cameraEntity = createEntity()
 
     setComponent(entity, NameComponent, 'thumbnail job asset ' + src)
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { id: generateEntityUUID(), instanceID: 'thumbnail-job' })
     setComponent(entity, VisibleComponent)
     setComponent(entity, ShadowComponent, { cast: true, receive: true })
     setComponent(entity, BoundingBoxComponent)

@@ -40,7 +40,7 @@ import {
   Layers,
   serializeComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity } from '@ir-engine/ecs/src/Entity'
 import { destroy, getState, hookstate, startReactor, State, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -209,7 +209,6 @@ export interface GLTFSceneExportExtension {
 
 type GLTFSceneExportContext = {
   rootEntity: Entity
-  sourceID: string
   buffers: ArrayBuffer[]
   extensionsUsed: Set<string>
   exportExtensions: GLTFSceneExportExtension[]
@@ -395,9 +394,6 @@ export async function exportGLTFScene(
 
   const context: GLTFSceneExportContext = {
     rootEntity: entity,
-    sourceID: hasComponent(entity, GLTFComponent)
-      ? GLTFComponent.getInstanceID(entity)
-      : getComponent(entity, SourceComponent),
     buffers: [] as ArrayBuffer[],
     extensionsUsed: new Set<string>(),
     exportExtensions,
@@ -479,7 +475,8 @@ export async function exportGLTFScene(
 
 const awaitMaterial = (materialEntity: Entity, context: GLTFSceneExportContext) => {
   const source = getOptionalComponent(materialEntity, SourceComponent)
-  if (source !== context.sourceID) return Promise.resolve(-1)
+  console.log('source', source, 'root', context.rootEntity)
+  if (source !== context.rootEntity) return Promise.resolve(-1)
   return new Promise<number>((resolve) => {
     if (typeof context.materialPromises.value[materialEntity] === 'number')
       return resolve(context.materialPromises.value[materialEntity])
@@ -582,9 +579,8 @@ const exportMesh = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneEx
 
   const materialInstances = getOptionalComponent(entity, MaterialInstanceComponent)
   if (materialInstances) {
-    for (let i = 0; i < materialInstances.uuid.length; i++) {
-      const materialInstance = materialInstances.uuid[i]
-      const materialEntity = UUIDComponent.getEntityByUUID(materialInstance, layer)
+    for (let i = 0; i < materialInstances.entities.length; i++) {
+      const materialEntity = materialInstances.entities[i]
       materialPromises.push(
         new Promise<void>((resolve) => {
           awaitMaterial(materialEntity, context).then((materialIndex) => {
@@ -895,10 +891,10 @@ const exportMaterial = async (
   const cache = context.cache.materials
   if (cache.has(material)) return cache.get(material)!
 
-  const materialEntityUUID = material.uuid as EntityUUID
+  const materialEntityUUID = getComponent(entity, UUIDComponent)
 
   //do not export fallback material
-  if (materialEntityUUID === MaterialStateComponent.fallbackMaterialUUID) return null
+  if (materialEntityUUID === MaterialStateComponent.fallbackMaterialUUIDPair) return null
 
   const materialDef: GLTF.IMaterial = {}
 
@@ -915,7 +911,7 @@ const exportMaterial = async (
 
   if (material.side === DoubleSide) materialDef.doubleSided = true
 
-  const argData = injectMaterialDefaults(materialEntityUUID)
+  const argData = injectMaterialDefaults(entity)
   if (!argData) {
     throw new Error('Unsupported material ' + JSON.stringify(material))
   }
@@ -1198,7 +1194,7 @@ const exportEntity = async (
   const childrenIndicies = [] as number[]
   if (children && children.length > 0) {
     for (const child of children) {
-      if (getComponent(child, SourceComponent) !== context.sourceID) continue
+      if (getComponent(child, SourceComponent) !== context.rootEntity) continue
       const childPromise = new Promise<void>((resolve) => {
         exportEntity(child, gltf, context).then((childIndex) => {
           if (typeof childIndex === 'number') childrenIndicies.push(childIndex)
@@ -1284,8 +1280,7 @@ const _trsRotation = new Quaternion()
 const _trsScale = new Vector3()
 
 const exportAnimations = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneExportContext) => {
-  if (!hasComponent(entity, AnimationComponent) || getOptionalComponent(entity, SourceComponent) !== context.sourceID)
-    return
+  if (!hasComponent(entity, AnimationComponent) || getComponent(entity, SourceComponent) !== context.rootEntity) return
 
   const animationsDef = [] as GLTF.IAnimation[]
   const animations = getComponent(entity, AnimationComponent).animations as AnimationClip[]

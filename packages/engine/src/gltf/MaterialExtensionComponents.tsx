@@ -24,11 +24,14 @@ Ethereal Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { Component, ComponentType, defineComponent, S } from '@ir-engine/ecs'
+import { Component, ComponentType, defineComponent, getComponent, S } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { Vector2_One, Vector2_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
-import { MaterialPrototypeDefinitions } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import {
+  MaterialPrototypeDefinitions,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   CanvasTexture,
   Color,
@@ -930,8 +933,9 @@ export const MozillaHubsLightMapComponent = defineComponent({
         materialParams.lightMap = lightMap
         materialParams.lightMapIntensity = extensionDef.intensity ?? 1.0
 
-        getDependency(options, 'material', materialIndex).then((material) => {
+        getDependency(options, 'material', materialIndex).then((entity) => {
           // fix for change to MeshBasicMaterial shading WRT lightmaps
+          const material = getComponent(entity, MaterialStateComponent).material as MeshBasicMaterial
           if (material.type === 'MeshBasicMaterial') {
             material.lightMapIntensity *= Math.PI
           }

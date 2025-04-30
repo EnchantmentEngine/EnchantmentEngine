@@ -25,7 +25,15 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { NO_PROXY_STEALTH, State, destroy, hookstate, useHookstate } from '@ir-engine/hyperflux'
 import { v4 as uuidv4 } from 'uuid'
-import { LayerComponent, LayerID, Layers, defineComponent, getComponent, setComponent } from './ComponentFunctions'
+import {
+  LayerComponent,
+  LayerID,
+  Layers,
+  defineComponent,
+  getComponent,
+  setComponent,
+  useComponent
+} from './ComponentFunctions'
 import { Entity, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
 import { createEntity } from './EntityFunctions'
 import { S } from './schemas/JSONSchemas'
@@ -97,6 +105,7 @@ export const UUIDComponent = defineComponent({
   },
 
   getUUID: (entity: Entity) => UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)),
+  useUUID: (entity: Entity) => UUIDComponent.concatenateUUID(useComponent(entity, UUIDComponent).value),
 
   concatenateUUID: (idPair: EntityUUIDPair) => `${idPair.instanceID}${idPair.id}` as EntityUUID,
 

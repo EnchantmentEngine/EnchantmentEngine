@@ -81,7 +81,7 @@ const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props
     if (!avatarUrl) return
 
     avatar.set(createEntity())
-    setComponent(avatar.value, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(avatar.value, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'avatar-preview' })
     setComponent(avatar.value, TransformComponent)
     setComponent(avatar.value, VisibleComponent)
     setComponent(avatar.value, EntityTreeComponent, { parentEntity: sceneEntity })

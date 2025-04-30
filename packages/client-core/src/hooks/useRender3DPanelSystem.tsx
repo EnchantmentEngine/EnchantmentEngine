@@ -27,11 +27,9 @@ import React, { useEffect } from 'react'
 
 import {
   EntityTreeComponent,
-  EntityUUID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
-  generateEntityUUID,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -53,15 +51,15 @@ export function useRender3DPanelSystem(canvas: React.MutableRefObject<HTMLCanvas
 
   const panelState = useHookstate(() => {
     const sceneEntity = createEntity()
-    const uuid = generateEntityUUID()
-    setComponent(sceneEntity, UUIDComponent, (uuid + '-scene') as EntityUUID)
+    const instanceID = UUIDComponent.generateUUID()
+    setComponent(sceneEntity, UUIDComponent, { instanceID, id: 'scene' })
     setComponent(sceneEntity, TransformComponent)
     setComponent(sceneEntity, VisibleComponent)
     setComponent(sceneEntity, SceneComponent)
     setComponent(sceneEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
 
     const cameraEntity = createEntity()
-    setComponent(cameraEntity, UUIDComponent, (uuid + '-camera') as EntityUUID)
+    setComponent(cameraEntity, UUIDComponent, { instanceID, id: 'camera' })
     setComponent(cameraEntity, CameraComponent)
     setComponent(cameraEntity, TransformComponent)
     setComponent(cameraEntity, VisibleComponent)

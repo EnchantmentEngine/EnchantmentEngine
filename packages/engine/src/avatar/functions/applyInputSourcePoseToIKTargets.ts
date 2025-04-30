@@ -128,7 +128,7 @@ export const applyInputSourcePoseToIKTargets = () => {
   const xrFrame = getState(XRState).xrFrame!
   const referenceSpace = ReferenceSpace.origin
   const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
-  const uuid = getComponent(selfAvatarEntity, UUIDComponent)
+  const uuid = UUIDComponent.getUUID(selfAvatarEntity)
   const ikTargetLeftHand = AvatarIKTargetComponent.getTargetEntity(uuid, ikTargets.leftHand)
   const ikTargetRightHand = AvatarIKTargetComponent.getTargetEntity(uuid, ikTargets.rightHand)
   const ikTargetHead = AvatarIKTargetComponent.getTargetEntity(uuid, ikTargets.head)
