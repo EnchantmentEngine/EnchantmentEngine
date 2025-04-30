@@ -25,10 +25,8 @@ Ethereal Engine. All Rights Reserved.
 
 import { GLTF } from '@gltf-transform/core'
 import { Component, ComponentType, defineComponent, S } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
 import { Vector2_One, Vector2_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
-import { MaterialPrototypeDefinitions } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   CanvasTexture,
   Color,
@@ -40,7 +38,6 @@ import {
   Vector2
 } from 'three'
 import { getDependency, GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
-import { NodeIDSchema } from './NodeIDComponent'
 
 export type MaterialTextureValue = {
   contents: { index: number; texCoord: number }
@@ -1035,52 +1032,3 @@ const invertGlossinessMap = async (glossinessMap: Texture) => {
 }
 
 export type MaterialExtensionPluginType = { id: string; uniforms: { [key: string]: any } }
-const MaterialExtensionPluginTypeSchema = S.Object({ id: S.String(), uniforms: S.Record(S.String(), S.Any()) })
-
-export const EEMaterialComponent = defineComponent({
-  name: 'EEMaterialComponent',
-  jsonID: 'EE_material',
-  schema: S.Object({
-    uuid: NodeIDSchema(),
-    name: S.String(),
-    prototype: S.String(),
-    args: S.Record(
-      S.String(),
-      S.Object({
-        type: S.String(),
-        contents: S.Any()
-      })
-    ),
-    plugins: S.Array(MaterialExtensionPluginTypeSchema)
-  }),
-
-  getMaterialType(materialDef: GLTF.IMaterial) {
-    const extension = materialDef.extensions![EEMaterialComponent.jsonID] as ComponentType<typeof EEMaterialComponent>
-    return getState(MaterialPrototypeDefinitions)[extension.prototype]?.prototypeConstructor
-  },
-
-  async extendMaterialParams(options: GLTFParserOptions, materialParams: any, materialDef: GLTF.IMaterial) {
-    const pending = [] as Promise<any>[]
-    const extension = materialDef.extensions![EEMaterialComponent.jsonID] as ComponentType<typeof EEMaterialComponent>
-
-    for (const [k, v] of Object.entries(extension.args)) {
-      if (v.type === 'texture') {
-        if (v.contents) {
-          pending.push(
-            GLTFLoaderFunctions.assignTexture(options, v.contents).then((texture) => {
-              if (!texture) return
-              if (k === 'map') texture.colorSpace = SRGBColorSpace
-              materialParams[k] = texture
-            })
-          )
-        }
-      } else if (v.type === 'color') {
-        materialParams[k] = new Color(v.contents)
-      } else {
-        materialParams[k] = v.contents
-      }
-    }
-
-    return Promise.all(pending)
-  }
-})

@@ -52,25 +52,21 @@ import {
 
 type MaterialStateComponentData = {
   material: Material
-  parameters: { [key: string]: any }
   instances: Entity[]
 }
 
 const MaterialStateComponentDefaults: MaterialStateComponentData = {
   material: {} as Material,
-  parameters: {} as { [key: string]: any },
   instances: [] as Entity[]
 }
 
 function assertMaterialStateComponentEq(A: MaterialStateComponentData, B: MaterialStateComponentData) {
   assert.equal(A.material.uuid, B.material.uuid)
-  assert.deepEqual(A.parameters, B.parameters)
   assertArray.eq(A.instances, B.instances)
 }
 
 function assertMaterialStateComponentNotEq(A: MaterialStateComponentData, B: MaterialStateComponentData) {
   assert.notEqual(A.material.uuid, B.material.uuid)
-  assert.notDeepEqual(A.parameters, B.parameters)
   assertArray.eq(A.instances, B.instances)
 }
 
@@ -118,7 +114,6 @@ describe('MaterialStateComponent', () => {
     it('should change the values of an initialized MaterialStateComponent', () => {
       const Expected: MaterialStateComponentData = {
         material: new Material(),
-        parameters: [],
         instances: []
       }
       setComponent(testEntity, MaterialStateComponent, Expected)

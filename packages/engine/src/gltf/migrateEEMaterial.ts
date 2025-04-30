@@ -1,6 +1,4 @@
 import { GLTF } from '@gltf-transform/core'
-import { SerializedComponentType } from '@ir-engine/ecs'
-import { EEMaterialComponent } from './MaterialExtensionComponents'
 
 export const EEMaterialMigrationRegistry = {} as Record<string, string> // prototype name to jsonID
 
@@ -25,12 +23,12 @@ export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
 
   for (const material of gltf.materials || []) {
     if (!material.extensions) continue
-    const eeMaterial = material.extensions!.EE_material as SerializedComponentType<typeof EEMaterialComponent>
+    const eeMaterial = material.extensions!.EE_material as any
     if (!eeMaterial?.prototype) continue
     if (!EEMaterialMigrationRegistry[eeMaterial.prototype]) continue
     const jsonID = EEMaterialMigrationRegistry[eeMaterial.prototype]
     material.extensions[jsonID] = {
-      ...Object.fromEntries(Object.entries(eeMaterial.args).map(([k, v]) => [k, v.contents]))
+      ...Object.fromEntries(Object.entries(eeMaterial.args).map(([k, v]) => [k, (v as any).contents]))
     }
     delete material.extensions.EE_material
   }

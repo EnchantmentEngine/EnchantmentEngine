@@ -25,38 +25,10 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Color, Material, Mesh, Texture } from 'three'
 
-import {
-  Entity,
-  EntityUUID,
-  getComponent,
-  getOptionalComponent,
-  hasComponent,
-  setComponent,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { Entity, EntityUUID, getComponent, hasComponent, UUIDComponent } from '@ir-engine/ecs'
 
-import { getState } from '@ir-engine/hyperflux'
 import { MeshComponent } from '../components/MeshComponent'
-import {
-  MaterialInstanceComponent,
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent,
-  PrototypeArgument
-} from './MaterialComponent'
-
-export const extractDefaults = (defaultArgs: PrototypeArgument) => {
-  return formatMaterialArgs(
-    Object.fromEntries(Object.entries(defaultArgs).map(([k, v]: [string, any]) => [k, v.default])),
-    defaultArgs
-  )
-}
-
-export const extractValues = (defaultArgs: PrototypeArgument, material: Material) => {
-  return formatMaterialArgs(
-    Object.fromEntries(Object.entries(defaultArgs).map(([k, v]: [string, any]) => [k, material[k]])),
-    defaultArgs
-  )
-}
+import { MaterialInstanceComponent, MaterialStateComponent, PrototypeArgument } from './MaterialComponent'
 
 export const formatMaterialArgs = (args: any, defaultArgs?: PrototypeArgument) => {
   if (!args) return args
@@ -111,55 +83,10 @@ export const removePlugin = (material: Material, callback) => {
   if (pluginIndex !== undefined && pluginIndex >= 0) material.plugins?.splice(pluginIndex, 1)
 }
 
-export function MaterialNotFoundError(message: string) {
-  this.name = 'MaterialNotFound'
-  this.message = message
-}
-
-export function PrototypeNotFoundError(message: string) {
-  this.name = 'PrototypeNotFound'
-  this.message = message
-}
-
 export const getMaterialIndices = (entity: Entity, materialUUID: EntityUUID): number[] => {
   if (!hasComponent(entity, MaterialInstanceComponent)) return [] as number[]
   const uuids = getComponent(entity, MaterialInstanceComponent).uuid
   return uuids
     .map((uuid, index) => (uuid === materialUUID ? index : undefined))
     .filter((x) => x !== undefined) as number[]
-}
-
-export const injectMaterialDefaults = (materialUUID: EntityUUID) => {
-  const material = getOptionalComponent(UUIDComponent.getEntityByUUID(materialUUID), MaterialStateComponent)
-  if (!material) return
-  const prototype = getState(MaterialPrototypeDefinitions)[material.material.type].arguments
-  if (!prototype) return
-  return Object.fromEntries(
-    Object.entries(prototype).map(([k, v]: [string, any]) => [k, { ...v, default: material.parameters[k] }])
-  )
-}
-
-/**sets up parameters for editing and serialization into a scene delta */
-export const setupMaterialParameters = (entity: Entity, properties: { [_: string]: any }) => {
-  const params = {} as any
-  Object.entries(properties).map(([k, v]) => {
-    if (!properties[k]) return
-    if (typeof v === 'function') return
-    if (v.isTexture) {
-      const url = v.userData?.url
-      if (url) params[k] = url
-      return
-    }
-    if (v.isColor) {
-      params[k] = (v as Color).getHex()
-      return
-    }
-    if (typeof v === 'object') return
-    params[k] = v
-  })
-  setComponent(entity, MaterialStateComponent, {
-    parameters: params,
-    prototype: properties.userData?.type || properties.type
-  })
-  return params
 }

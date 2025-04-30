@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Euler, Material, Matrix4, Quaternion, SRGBColorSpace, Vector3 } from 'three'
+import { Euler, Matrix4, Quaternion, SRGBColorSpace, Vector3 } from 'three'
 
 import {
   EntityTreeComponent,
@@ -42,7 +42,6 @@ import {
   deserializeComponent,
   getComponent,
   getMutableComponent,
-  getOptionalMutableComponent,
   hasComponent,
   LayerFunctions,
   Layers,
@@ -75,7 +74,7 @@ import {
   MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { extractDefaults, setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { Color } from 'three'
 import { EditorHelperState } from '../services/EditorHelperState'
@@ -154,49 +153,6 @@ const modifyProperty = <C extends Component<any, any>>(
   }
 
   return affectedNodes
-}
-
-/**Updates the materialEntity's threejs material using the the newPrototype to look up the new constructor */
-const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) => {
-  const materialComponent = getOptionalMutableComponent(materialEntity, MaterialStateComponent)
-  if (!materialComponent) return
-  const material = materialComponent.material.value
-  materialComponent.prototype.set(newPrototype)
-  if (!material || newPrototype === material.type) return
-  const prototype = getState(MaterialPrototypeDefinitions)[newPrototype]
-  if (!prototype) return
-  const fullParameters = { ...extractDefaults(prototype.arguments) }
-  const newMaterial = new prototype.prototypeConstructor(fullParameters) as Material
-
-  if (newMaterial.plugins) {
-    newMaterial.customProgramCacheKey = () =>
-      (newMaterial.shader ? newMaterial.shader.fragmentShader + newMaterial.shader.vertexShader : '') +
-      newMaterial.plugins!.map((plugin) => plugin?.toString() ?? '').reduce((x, y) => x + y, '')
-  }
-  newMaterial.uuid = material.uuid
-  if (material.defines?.['USE_COLOR']) {
-    newMaterial.defines = newMaterial.defines ?? {}
-    newMaterial.defines!['USE_COLOR'] = material.defines!['USE_COLOR']
-  }
-  if (material.userData) {
-    newMaterial.userData = {
-      ...newMaterial.userData,
-      ...Object.fromEntries(Object.entries(material.userData).filter(([k, _v]) => k !== 'type'))
-    }
-  }
-
-  newMaterial.type = newPrototype
-  newMaterial.name = material.name
-
-  materialComponent.material.set(newMaterial)
-  materialComponent.parameters.set({})
-
-  EditorState.markModifiedScene(materialEntity)
-  if (!EditorState.isInActiveScene(materialEntity)) {
-    SceneDeltaState.registerMaterialDelta(materialEntity, {}, newPrototype)
-  }
-
-  return newMaterial
 }
 
 const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [_: string]: any }[]) => {
@@ -684,7 +640,6 @@ export const EditorControlFunctions = {
   modifyProperty,
   modifyName,
   modifyMaterial,
-  updateMaterialPrototype,
   createObjectFromSceneElement,
   duplicateObject,
   positionObject,

@@ -36,7 +36,6 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import sinon from 'sinon'
 import { BoxGeometry, Color, Material, Mesh, Texture } from 'three'
@@ -45,21 +44,11 @@ import { assertArray } from '../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
 import { TransformComponent } from '../RendererModule'
 import { MeshComponent } from '../components/MeshComponent'
+import { MaterialInstanceComponent, MaterialStateComponent, PrototypeArgumentValue } from './MaterialComponent'
 import {
-  MaterialInstanceComponent,
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent,
-  PrototypeArgument,
-  PrototypeArgumentValue
-} from './MaterialComponent'
-import {
-  MaterialNotFoundError,
-  PrototypeNotFoundError,
-  extractDefaults,
   formatMaterialArgs,
   getMaterialIndices,
   hasPlugin,
-  injectMaterialDefaults,
   removePlugin,
   setMeshMaterial,
   setPlugin
@@ -397,84 +386,6 @@ describe('materialFunctions', () => {
     })
   }) //:: getMaterialIndices
 
-  describe('injectMaterialDefaults', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(() => {
-      createEngine()
-      mockSpatialEngine()
-      testEntity = createEntity()
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
-    it('should return an object that contains all of the expected keys/values', () => {
-      const type = 'stereotomy'
-      const key = 'voyager'
-      const prototypeArgumentValue = {
-        type,
-        default: {},
-        min: 42,
-        max: 43,
-        options: []
-      }
-      const prototypeArguments = { [key]: prototypeArgumentValue }
-      const materialParameters = { [key]: { thing: 42 } }
-      getMutableState(MaterialPrototypeDefinitions)[type].set({
-        arguments: prototypeArguments,
-        prototypeConstructor: Material
-      })
-      const Expected = { ...prototypeArguments }
-      Expected[key].default = materialParameters[key]
-
-      // Set the data as expected
-      const material = new Material()
-      material.type = type
-      const materialEntity = createEntity()
-      const materialUUID = UUIDComponent.generateUUID()
-      material.uuid = materialUUID
-      setComponent(materialEntity, UUIDComponent, materialUUID)
-      setComponent(materialEntity, MaterialStateComponent, {
-        material: material,
-        parameters: materialParameters
-      })
-      // Run and Check the result
-      const result = injectMaterialDefaults(materialUUID)
-      assert.deepEqual(result, Expected)
-    })
-  }) //:: injectMaterialDefaults
-
-  describe('MaterialNotFoundError', () => {
-    it('should assign the expected name to the error when it is instanced', () => {
-      const Expected = 'MaterialNotFound'
-      const result = new MaterialNotFoundError('thing')
-      assert.equal(result.name, Expected)
-    })
-
-    it('should assign the expected message to the error when it is instanced', () => {
-      const Expected = 'thing'
-      const result = new MaterialNotFoundError(Expected)
-      assert.equal(result.message, Expected)
-    })
-  }) //:: MaterialNotFoundError
-
-  describe('PrototypeNotFoundError', () => {
-    it('should assign the expected name to the error when it is instanced', () => {
-      const Expected = 'PrototypeNotFound'
-      const result = new PrototypeNotFoundError('thing')
-      assert.equal(result.name, Expected)
-    })
-
-    it('should assign the expected message to the error when it is instanced', () => {
-      const Expected = 'thing'
-      const result = new PrototypeNotFoundError(Expected)
-      assert.equal(result.message, Expected)
-    })
-  }) //:: PrototypeNotFoundError
-
   describe('formatMaterialArgs', () => {
     it('should return `@param args` if it is falsy', () => {
       // Set the data as expected
@@ -555,23 +466,4 @@ describe('materialFunctions', () => {
       })
     })
   }) //:: formatMaterialArgs
-
-  describe('extractDefaults', () => {
-    it('should return an object that has all of the `@param defaultArgs`.default properties', () => {
-      // Set the data as expected
-      const defaultArg1 = { str: '0x111111', num: 0xff1111, col: new Color(0, 0, 0.1), one: 1 }
-      const defaultArg2 = { str: '0x222222', num: 0xff2222, col: new Color(0, 0, 0.2), two: 2 }
-      const defaultArg3 = { str: '0x333333', num: 0xff3333, col: new Color(0, 0, 0.3), three: 3 }
-      const defaultArg4 = { str: '0x444444', num: 0xff4444, col: new Color(0, 0, 0.4), four: 4 }
-      const arg1: PrototypeArgumentValue = { ...prototypeDefaultArgs, default: defaultArg1 }
-      const arg2: PrototypeArgumentValue = { ...prototypeDefaultArgs, default: defaultArg2 }
-      const arg3: PrototypeArgumentValue = { ...prototypeDefaultArgs, default: defaultArg3 }
-      const arg4: PrototypeArgumentValue = { ...prototypeDefaultArgs, default: defaultArg4 }
-      const defaultArgs: PrototypeArgument = { arg1: arg1, arg2: arg2, arg3: arg3, arg4: arg4 }
-      const Expected = { arg1: defaultArg1, arg2: defaultArg2, arg3: defaultArg3, arg4: defaultArg4 }
-      // Run and Check the result
-      const result = extractDefaults(defaultArgs)
-      assert.deepEqual(result, Expected)
-    })
-  }) //:: extractDefaults
 }) //:: materialFunctions
