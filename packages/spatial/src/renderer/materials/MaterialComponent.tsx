@@ -31,7 +31,6 @@ import {
   defineComponent,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   useEntityContext,
   useOptionalComponent
@@ -40,7 +39,7 @@ import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
 import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { MeshComponent } from '../components/MeshComponent'
@@ -100,13 +99,11 @@ export const MaterialPluginComponents = { TransparencyDitheringPluginComponent, 
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',
 
+  jsonID: 'IR_material',
+
   schema: S.Object({
     // material & material specific data
-    material: S.Type<Material>({} as Material),
-    // parameters: S.Record(S.String(), S.Any()),
-    // all entities using this material. an undefined entity at index 0 is a fake user
-    /**@todo move to state */
-    instances: S.NonSerialized(S.Array(S.Entity()))
+    material: S.NonSerialized(S.Type<Material>({} as Material))
   }),
 
   fallbackMaterialUUID: uuidv4() as EntityUUID,
@@ -116,19 +113,17 @@ export const MaterialStateComponent = defineComponent({
   },
 
   onRemove: (entity, component) => {
-    if (!component.instances.value) return
-    try {
-      const instances = Array.isArray(component.instances.value)
-        ? component.instances.value
-        : [component.instances.value]
-      for (const instanceEntity of instances) {
-        if (!hasComponent(instanceEntity, MaterialInstanceComponent)) continue
-        setMeshMaterial(instanceEntity, getComponent(instanceEntity, MaterialInstanceComponent).uuid)
-      }
-    } catch (e) {
-      // this throws errors between tests - should be moved to a reactor
+    const instances = getState(MaterialReferenceState)[entity]
+    for (const instanceEntity of instances) {
+      if (!hasComponent(instanceEntity, MaterialInstanceComponent)) continue
+      setMeshMaterial(instanceEntity, getComponent(instanceEntity, MaterialInstanceComponent).uuid)
     }
   }
+})
+
+export const MaterialReferenceState = defineState({
+  name: 'MaterialReferenceState',
+  initial: () => ({}) as Record<Entity, Entity[]> // map of MaterialStateComponent to MaterialInstanceComponent
 })
 
 export const MaterialInstanceComponent = defineComponent({
@@ -141,12 +136,12 @@ export const MaterialInstanceComponent = defineComponent({
     if (!uuids) return
     for (const uuid of uuids) {
       const materialEntity = UUIDComponent.getEntityByUUID(uuid)
-      if (!hasComponent(materialEntity, MaterialStateComponent)) continue
-      const materialComponent = getOptionalMutableComponent(materialEntity, MaterialStateComponent)
-      if (materialComponent?.instances.value)
-        materialComponent.instances.set(materialComponent.instances.value.filter((instance) => instance !== entity))
+      const references = getMutableState(MaterialReferenceState)[materialEntity]
+      if (references.value) references.set(references.value.filter((instance) => instance !== entity))
+      if (!references.value.length) references.set(none)
     }
   },
+
   reactor: () => {
     const entity = useEntityContext()
     const materialComponent = useOptionalComponent(entity, MaterialInstanceComponent)
@@ -186,6 +181,7 @@ const MaterialInstanceSubReactor = (props: { array: boolean; uuid: EntityUUID; e
   const materialStateEntity = UUIDComponent.useEntityByUUID(uuid)
   const materialStateComponent = useOptionalComponent(materialStateEntity, MaterialStateComponent)
   const meshComponent = useOptionalComponent(entity, MeshComponent)
+
   useEffect(() => {
     if (!meshComponent || !materialStateComponent) return
     const material = getComponent(materialStateEntity, MaterialStateComponent).material
@@ -196,7 +192,9 @@ const MaterialInstanceSubReactor = (props: { array: boolean; uuid: EntityUUID; e
       meshComponent.material.set(material)
     }
 
-    materialStateComponent.instances.merge([entity])
+    const references = getMutableState(MaterialReferenceState)[materialStateEntity]
+    if (!references.value) references.set([entity])
+    else references.merge([entity])
   }, [materialStateComponent?.material, !!meshComponent])
 
   return null

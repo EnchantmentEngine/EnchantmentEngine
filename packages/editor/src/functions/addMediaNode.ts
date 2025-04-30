@@ -160,13 +160,13 @@ export async function addMediaNode(
                 getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
                 existingDelta.set(none)
               }
-              EditorControlFunctions.updateMaterialPrototype(
-                materialToMutate,
-                materialComponent.material.userData?.type ?? materialComponent.material.type
-              )
-              EditorControlFunctions.modifyMaterial([uuids[materialIndex]], uuids[materialIndex], [
-                getComponent(material, MaterialStateComponent).parameters
-              ])
+              // EditorControlFunctions.updateMaterialPrototype(
+              //   materialToMutate,
+              //   materialComponent.material.userData?.type ?? materialComponent.material.type
+              // )
+              // EditorControlFunctions.modifyMaterial([uuids[materialIndex]], uuids[materialIndex], [
+              //   getComponent(material, MaterialStateComponent).parameters
+              // ])
               removeEntity(assetEntity)
               foundTarget = true
             })

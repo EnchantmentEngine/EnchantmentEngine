@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Euler, Matrix4, Quaternion, SRGBColorSpace, Vector3 } from 'three'
+import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
 import {
   EntityTreeComponent,
@@ -43,7 +43,6 @@ import {
   getComponent,
   getMutableComponent,
   hasComponent,
-  LayerFunctions,
   Layers,
   removeComponent,
   removeEntity,
@@ -62,7 +61,6 @@ import { TransformSpace } from '@ir-engine/spatial/src/common/constants/Transfor
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
@@ -70,13 +68,7 @@ import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaS
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import {
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { Color } from 'three'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -153,61 +145,6 @@ const modifyProperty = <C extends Component<any, any>>(
   }
 
   return affectedNodes
-}
-
-const modifyMaterial = (nodes: string[], materialId: EntityUUID, properties: { [_: string]: any }[]) => {
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i]
-    if (typeof node !== 'string') return
-    const materialEntity = UUIDComponent.getEntityByUUID(materialId, Layers.Authoring)
-    const material = getComponent(materialEntity, MaterialStateComponent).material
-    if (!material) return
-    if (!material) throw new Error('Updating properties on undefined material')
-    const props = properties[i] ?? properties[0]
-    const materialComponent = getMutableComponent(materialEntity, MaterialStateComponent)
-    /**@todo consolidate material prototype tracking */
-    const prototype =
-      getState(MaterialPrototypeDefinitions)[
-        materialComponent.prototype.value ||
-          materialComponent.material.value.userData?.type ||
-          materialComponent.material.type.value
-      ].arguments
-    const texturePromises = [] as Promise<void>[]
-    for (const [key, value] of Object.entries(props)) {
-      switch (prototype[key]?.type) {
-        case 'texture':
-          texturePromises.push(
-            new Promise<void>(async (resolve) => {
-              const texture = await getTextureAsync(value)
-              if (texture[0]) {
-                texture[0].colorSpace = SRGBColorSpace
-                material[key] = texture[0]
-              }
-              resolve()
-            })
-          )
-          break
-        case 'color':
-          material[key] = value.isColor ? value : new Color(value)
-          break
-        default:
-          material[key] = value
-      }
-    }
-
-    Promise.all(texturePromises).then(() => {
-      setupMaterialParameters(materialEntity, getComponent(materialEntity, MaterialStateComponent).material)
-      EditorState.markModifiedScene(materialEntity)
-      if (!EditorState.isInActiveScene(materialEntity)) {
-        SceneDeltaState.registerMaterialDelta(materialEntity, props, materialComponent.prototype.value)
-      }
-    })
-
-    getMutableComponent(
-      LayerFunctions.getLayerRelationsEntities(materialEntity)![0][1],
-      MaterialStateComponent
-    ).material.plugins.set(material.plugins)
-  }
 }
 
 const lookDevComponent: Component[] = [
@@ -639,7 +576,6 @@ export const EditorControlFunctions = {
   addOrRemoveComponent,
   modifyProperty,
   modifyName,
-  modifyMaterial,
   createObjectFromSceneElement,
   duplicateObject,
   positionObject,
