@@ -203,7 +203,6 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
 
 const modifyMaterial = (materialEntity: Entity, properties: { [_: string]: any }[]) => {
   const material = getComponent(materialEntity, MaterialStateComponent).material
-  if (!material) return
   if (!material) throw new Error('Updating properties on undefined material')
   for (const props of properties) {
     const materialComponent = getMutableComponent(materialEntity, MaterialStateComponent)

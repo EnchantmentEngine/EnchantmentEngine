@@ -38,6 +38,7 @@ import {
   getComponent,
   getOptionalComponent,
   hasComponent,
+  LayerFunctions,
   LayerID,
   Layers,
   setComponent
@@ -146,7 +147,7 @@ export async function addMediaNode(
               //setComponent(entity, MaterialInstanceComponent, { uuid: uuids })
               /**scene deltas do not yet support this, so a temporary hackfix is to modify existing materials to match */
               const materialComponent = getComponent(material, MaterialStateComponent)
-              const materialToMutate = materialEntities[materialIndex]
+              const materialToMutate = LayerFunctions.getAuthoringCounterpart(materialEntities[materialIndex])
               // wipe out any existing deltas for this material
               SceneDeltaState.removeDelta(materialToMutate)
               // if (existingDelta) {
