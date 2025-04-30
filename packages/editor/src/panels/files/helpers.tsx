@@ -138,6 +138,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   })
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
+  FileThumbnailJobState.useGenerateDimensions(filesQuery.data)
 
   const projectName = useMutableState(EditorState).projectName.value
 
@@ -347,7 +348,10 @@ export const createStaticResourceDigest = (staticResources: ImmutableArray<Stati
     updatedAt: '',
 
     url: '',
-    userId: '' as UserID
+    userId: '' as UserID,
+    width: null,
+    height: null,
+    depth: null
   }
   for (const key in digest) {
     const allValues = new Set(staticResources.map((resource) => resource[key]))
