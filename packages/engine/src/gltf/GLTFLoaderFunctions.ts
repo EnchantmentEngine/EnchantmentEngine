@@ -808,7 +808,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const deltaPromises = [] as Promise<void>[]
   //apply deltas
   const nodeDelta = SceneDeltaState.getDelta(materialEntity)
-  console.log(nodeDelta)
   if (nodeDelta) {
     const materialDelta = nodeDelta[MaterialStateComponent.jsonID] as ComponentType<typeof MaterialStateComponent>
     const materialPrototype = materialDelta.prototype
