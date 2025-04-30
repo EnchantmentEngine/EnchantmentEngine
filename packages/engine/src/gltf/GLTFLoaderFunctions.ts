@@ -28,6 +28,7 @@ import { KHRDracoMeshCompression } from '@gltf-transform/extensions'
 import {
   Component,
   ComponentJSONIDMap,
+  ComponentType,
   Entity,
   EntityTreeComponent,
   LayerComponent,
@@ -111,13 +112,7 @@ import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import {
-  MATERIAL_JSON_ID,
-  MATERIAL_PROTOTYPE_JSON_ID,
-  SceneDeltaEntry,
-  SceneDeltaRegistry,
-  SceneDeltaState
-} from '../scene/systems/SceneDeltaState'
+import { SceneDeltaEntry, SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -812,42 +807,38 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
 
   const deltaPromises = [] as Promise<void>[]
   //apply deltas
-  const deltaState = getState(SceneDeltaState)
-  const sourceDelta = deltaState[getComponent(options.entity, NodeIDComponent)]
+  const nodeDelta = SceneDeltaState.getDelta(materialEntity)
+  console.log(nodeDelta)
+  if (nodeDelta) {
+    const materialDelta = nodeDelta[MaterialStateComponent.jsonID] as ComponentType<typeof MaterialStateComponent>
+    const materialPrototype = materialDelta.prototype
+    const parameters = materialDelta.parameters
+    if (materialDelta && materialPrototype) {
+      const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
+      materialConstructor = prototype.prototypeConstructor
+      // optionally serializing the uuid to determine if we need to replace the material -
+      // this is insanely brittle but will do for now
+      if (parameters.uuid) materialConstructorParameters = {}
 
-  if (sourceDelta) {
-    const nodeID = getComponent(materialEntity, NodeIDComponent)
-    const nodeDelta = sourceDelta[nodeID]
-    if (nodeDelta) {
-      const materialDelta = nodeDelta[MATERIAL_JSON_ID]
-      const materialPrototype = nodeDelta[MATERIAL_PROTOTYPE_JSON_ID]
-      if (materialDelta && materialPrototype) {
-        const prototype = getState(MaterialPrototypeDefinitions)[materialPrototype]
-        materialConstructor = prototype.prototypeConstructor
-        // optionally serializing the uuid to determine if we need to replace the material -
-        // this is insanely brittle but will do for now
-        if (materialDelta.uuid || materialPrototype) materialConstructorParameters = {}
-
-        for (const key in materialDelta) {
-          if (materialDelta[key] === null) continue
-          switch (prototype.arguments[key]?.type) {
-            case 'color':
-              materialConstructorParameters[key] = new Color(materialDelta[key])
-              break
-            case 'texture':
-              deltaPromises.push(
-                getTextureAsync(materialDelta[key]).then(([texture]) => {
-                  if (texture) {
-                    texture.colorSpace = SRGBColorSpace
-                    materialConstructorParameters[key] = texture
-                  }
-                })
-              )
-              break
-            default:
-              materialConstructorParameters[key] = materialDelta[key]
-              break
-          }
+      for (const key in parameters) {
+        if (parameters[key] === null) continue
+        switch (prototype.arguments[key]?.type) {
+          case 'color':
+            materialConstructorParameters[key] = new Color(parameters[key])
+            break
+          case 'texture':
+            deltaPromises.push(
+              getTextureAsync(parameters[key]).then(([texture]) => {
+                if (texture) {
+                  texture.colorSpace = SRGBColorSpace
+                  materialConstructorParameters[key] = texture
+                }
+              })
+            )
+            break
+          default:
+            materialConstructorParameters[key] = parameters[key]
+            break
         }
       }
     }

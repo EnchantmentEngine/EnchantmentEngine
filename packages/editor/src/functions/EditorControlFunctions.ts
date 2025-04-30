@@ -241,7 +241,8 @@ const modifyMaterial = (materialEntity: Entity, properties: { [_: string]: any }
       EditorState.markModifiedScene(materialEntity)
       if (!EditorState.isInActiveScene(materialEntity)) {
         SceneDeltaState.setDelta<typeof MaterialStateComponent>(materialEntity, MaterialStateComponent, {
-          parameters: props
+          parameters: props,
+          prototype: materialComponent.prototype.value
         })
       }
     })
