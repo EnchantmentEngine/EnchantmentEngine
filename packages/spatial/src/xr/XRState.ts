@@ -60,6 +60,7 @@ export const XRState = defineState({
         'immersive-vr': false
       },
       avatarCameraMode: 'auto' as 'auto' | 'attached' | 'detached',
+      forceCameraAttachment: false, // Add this new property
       unassingedInputSources: [] as XRInputSource[],
       session: null as XRSession | null,
       sessionMode: 'none' as 'inline' | 'immersive-ar' | 'immersive-vr' | 'none',
@@ -107,11 +108,15 @@ export const XRState = defineState({
 
   /**
    * Specifies that the camera is attached to the avatar if:
+   * - forceCameraAttachment is true, or
    * - in an immersion session and not in placement mode or miniature mode
    */
   get isCameraAttachedToAvatar(): boolean {
-    const { session, sceneScale, scenePlacementMode, avatarCameraMode } = getState(XRState)
+    const { session, sceneScale, scenePlacementMode, avatarCameraMode, forceCameraAttachment } = getState(XRState)
+
+    if (forceCameraAttachment) return true
     if (!session || scenePlacementMode === 'placing') return false
+
     if (avatarCameraMode === 'auto') {
       return sceneScale === 1
     }
@@ -119,8 +124,12 @@ export const XRState = defineState({
   },
 
   useCameraAttachedToAvatar: () => {
-    const { session, sceneScale, scenePlacementMode, avatarCameraMode } = useMutableState(XRState).value
+    const { session, sceneScale, scenePlacementMode, avatarCameraMode, forceCameraAttachment } =
+      useMutableState(XRState).value
+
+    if (forceCameraAttachment) return true
     if (!session || scenePlacementMode === 'placing') return false
+
     if (avatarCameraMode === 'auto') {
       return sceneScale === 1
     }

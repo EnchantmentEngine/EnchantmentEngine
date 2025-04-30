@@ -40,7 +40,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
@@ -72,7 +72,9 @@ export const AvatarControllerComponent = defineComponent({
     /** gamepad-driven input, in the local XZ plane */
     gamepadLocalInput: T.Vec3(),
     /** gamepad-driven movement, in the world XZ plane */
-    gamepadWorldMovement: T.Vec3()
+    gamepadWorldMovement: T.Vec3(),
+    /** Whether to enable camera attachment to the avatar */
+    enableCameraAttachment: S.Bool(true)
   }),
 
   captureMovement(capturedEntity: Entity, entity: Entity): void {
@@ -91,7 +93,12 @@ export const AvatarControllerComponent = defineComponent({
     const entity = useEntityContext()
     const avatarComponent = useOptionalComponent(entity, AvatarComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
-    const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
+    const xrState = useMutableState(XRState).value
+
+    // Combine the global and local camera attachment settings
+    const isCameraAttachedToAvatar =
+      xrState.forceCameraAttachment ||
+      (avatarControllerComponent.enableCameraAttachment && XRState.useCameraAttachedToAvatar())
     const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
@@ -135,7 +142,13 @@ export const AvatarControllerComponent = defineComponent({
     }, [avatarComponent?.avatarHeight, camera.near])
 
     useEffect(() => {
-      if (!avatarComponent || isCameraAttachedToAvatar || !cameraHasTargetRotation) return
+      if (
+        !avatarComponent ||
+        !avatarControllerComponent.enableCameraAttachment ||
+        isCameraAttachedToAvatar ||
+        !cameraHasTargetRotation
+      )
+        return
 
       const controller = getComponent(entity, AvatarControllerComponent)
       const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)

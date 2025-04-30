@@ -209,6 +209,10 @@
       "lbl": "Screenshot",
       "info": "Takes a screenshot of your scene at the current view."
     },
+    "avatarAttach": {
+      "lbl": "Avatar Attach",
+      "info": "Attach your avatar to the camera."
+    },
     "publishLocation": {
       "title": "Publish",
       "create": "Publish Location",

@@ -25,23 +25,34 @@ Infinite Reality Engine. All Rights Reserved.
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { EngineState } from '@ir-engine/ecs'
 import { downloadScreenshot } from '@ir-engine/editor/src/functions/takeScreenshot'
 import { EditorHelperState, PlacementMode } from '@ir-engine/editor/src/services/EditorHelperState'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
 import { ColliderAtomsMd, RulerUnitsMd, ScreenshotMenuMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuMousePointerClick, LuMove3D } from 'react-icons/lu'
+import { RiUserFollowFill, RiUserUnfollowFill } from 'react-icons/ri'
 
 export default function SceneHelpersTool() {
   const { t } = useTranslation()
   const editorHelperState = useMutableState(EditorHelperState)
   const rendererState = useMutableState(RendererState)
   const [pointClickEnabled] = useFeatureFlags([FeatureFlags.Studio.UI.PointClick])
-
+  const xrstate = getMutableState(XRState)
+  const handleAvatarAttach = () => {
+    if (!xrstate.forceCameraAttachment.value) {
+      xrstate.avatarCameraMode.set('attached')
+    } else {
+      xrstate.avatarCameraMode.set('auto')
+    }
+    xrstate.forceCameraAttachment.set(!xrstate.forceCameraAttachment.value)
+  }
   return (
     <div className="flex items-center gap-1">
       {pointClickEnabled && (
@@ -91,6 +102,18 @@ export default function SceneHelpersTool() {
       >
         <ViewportButton onClick={() => downloadScreenshot()} icon={ScreenshotMenuMd} />
       </Tooltip>
+      {!getState(EngineState).isEditing && (
+        <Tooltip
+          title={t('editor:toolbar.avatarAttach.lbl')}
+          content={t('editor:toolbar.avatarAttach.info')}
+          position="bottom"
+        >
+          <ViewportButton
+            onClick={() => handleAvatarAttach()}
+            icon={xrstate.forceCameraAttachment.value ? RiUserFollowFill : RiUserUnfollowFill}
+          />
+        </Tooltip>
+      )}
     </div>
   )
 }
