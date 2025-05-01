@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
-import { Entity, EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, EntityUUIDPair, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { PeerID, UserID, applyIncomingActions, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
@@ -97,36 +97,40 @@ describe('GrabbableSystem', () => {
       })
     )
 
-    const avatarEntityUUID = 'avatar' as EntityUUID
+    const avatarEntityUUIDPair = { instanceID: 'user-id', id: 'avatar' } as EntityUUIDPair
+    const avatarEntityUUID = UUIDComponent.concatenateUUID(avatarEntityUUIDPair)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        parentUUID: getComponent(sceneEntity, UUIDComponent),
-        entityUUID: avatarEntityUUID,
+        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        entityID: avatarEntityUUIDPair.id,
+        entityInstanceID: avatarEntityUUIDPair.instanceID,
         avatarURL: '',
         name: ''
       })
     )
 
-    const grabbableEntityUUID = 'grabbable' as EntityUUID
+    const grabbableEntityUUIDPair = { instanceID: 'grabbable-id', id: 'grabbable' } as EntityUUIDPair
+    const grabbableEntityUUID = UUIDComponent.concatenateUUID(grabbableEntityUUIDPair)
 
     dispatchAction(
       SpawnObjectActions.spawnObject({
-        parentUUID: getComponent(sceneEntity, UUIDComponent),
+        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        entityID: grabbableEntityUUIDPair.id,
+        entityInstanceID: grabbableEntityUUIDPair.instanceID,
         ownerID: network.hostUserID!,
         $topic: NetworkTopics.world,
         $peer: hostPeerID,
-        $user: hostUserID,
-        entityUUID: grabbableEntityUUID
+        $user: hostUserID
       })
     )
 
     applyIncomingActions()
 
-    const grabbableEntity = UUIDComponent.getEntityByUUID(grabbableEntityUUID)
+    const grabbableEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(grabbableEntityUUIDPair))
     setComponent(grabbableEntity, GrabbableComponent)
 
-    const playerEntity = UUIDComponent.getEntityByUUID(avatarEntityUUID)
+    const playerEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(avatarEntityUUIDPair))
     assert.ok(hasComponent(playerEntity, GrabberComponent))
 
     assert.equal(Object.keys(getState(GrabbableState)).length, 0)
@@ -215,27 +219,31 @@ describe('GrabbableSystem', () => {
       })
     )
 
-    const avatarEntityUUID = 'avatar' as EntityUUID
+    const avatarEntityUUIDPair = { instanceID: 'user-id', id: 'avatar' } as EntityUUIDPair
+    const avatarEntityUUID = UUIDComponent.concatenateUUID(avatarEntityUUIDPair)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        parentUUID: getComponent(sceneEntity, UUIDComponent),
-        entityUUID: avatarEntityUUID,
+        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        entityID: avatarEntityUUIDPair.id,
+        entityInstanceID: avatarEntityUUIDPair.instanceID,
         avatarURL: '',
         name: ''
       })
     )
 
-    const grabbableEntityUUID = 'grabbable' as EntityUUID
+    const grabbableEntityUUIDPair = { instanceID: 'grabbable-id', id: 'grabbable' } as EntityUUIDPair
+    const grabbableEntityUUID = UUIDComponent.concatenateUUID(grabbableEntityUUIDPair)
 
     dispatchAction(
       SpawnObjectActions.spawnObject({
-        parentUUID: getComponent(sceneEntity, UUIDComponent),
+        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        entityID: grabbableEntityUUIDPair.id,
+        entityInstanceID: grabbableEntityUUIDPair.instanceID,
         ownerID: SceneUser,
         $peer: ScenePeer,
         $user: SceneUser,
-        $topic: NetworkTopics.world,
-        entityUUID: grabbableEntityUUID
+        $topic: NetworkTopics.world
       })
     )
 
