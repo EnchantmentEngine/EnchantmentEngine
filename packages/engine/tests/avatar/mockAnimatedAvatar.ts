@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   createEntity,
   EntityTreeComponent,
-  generateEntityUUID,
   getComponent,
   getOptionalComponent,
   setComponent,
@@ -46,7 +45,7 @@ import { GLTFComponent } from '../../src/gltf/GLTFComponent'
 export const createTestGLTFEntity = () => {
   const parent = createEntity()
   setComponent(parent, EntityTreeComponent)
-  setComponent(parent, UUIDComponent, generateEntityUUID())
+  setComponent(parent, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'test-gltf-entity' })
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })
   return entity
@@ -61,13 +60,13 @@ export const vrm = default_url + '/avatars/irRobot.vrm'
 export const mockAnimatedAvatar = async () => {
   const animationPackEntity = createTestGLTFEntity()
 
-  setComponent(animationPackEntity, UUIDComponent, generateEntityUUID())
+  setComponent(animationPackEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'animation-pack' })
   setComponent(animationPackEntity, GLTFComponent, { src: animation_pack })
   setComponent(animationPackEntity, NameComponent, 'animationPack')
 
   const vrmEntity = createTestGLTFEntity()
 
-  setComponent(vrmEntity, UUIDComponent, generateEntityUUID())
+  setComponent(vrmEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'vrm' })
   setComponent(vrmEntity, GLTFComponent, { src: vrm })
   setComponent(vrmEntity, AvatarRigComponent)
   setComponent(vrmEntity, AvatarAnimationComponent)

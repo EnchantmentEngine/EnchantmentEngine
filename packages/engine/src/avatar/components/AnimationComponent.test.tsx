@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   createEngine,
   destroyEngine,
-  generateEntityUUID,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -61,7 +60,7 @@ describe('AnimationComponent', () => {
     it('should bind animation tracks to entities based on node id sourced from entity UUIDs', async () => {
       const entity = createTestGLTFEntity()
 
-      setComponent(entity, UUIDComponent, generateEntityUUID())
+      setComponent(entity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'test' })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
       //extra wait for animation component to prevent race conditions

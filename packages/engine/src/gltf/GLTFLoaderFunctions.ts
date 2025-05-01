@@ -1170,9 +1170,6 @@ const _createAnimationTracks = (
   target: GLTF.IAnimationChannelTarget
 ) => {
   const tracks = [] as KeyframeTrack[]
-
-  const targetName = UUIDComponent.getUUID(node)
-  if (!targetName) throw new Error('THREE.GLTFLoader: Node has no name.')
   const targetNames = [] as string[]
 
   if (PATH_PROPERTIES[target.path] === PATH_PROPERTIES.weights) {
@@ -1180,11 +1177,11 @@ const _createAnimationTracks = (
       const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(UUIDComponent.getUUID(entity))
+        targetNames.push(getComponent(entity, NodeIDComponent))
       }
     })
   } else {
-    targetNames.push(targetName)
+    targetNames.push(getComponent(node, NodeIDComponent))
   }
 
   let TypedKeyframeTrack

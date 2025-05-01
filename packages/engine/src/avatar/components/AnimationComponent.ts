@@ -140,11 +140,7 @@ PropertyBinding.findNode = (root: Object3D, nodeName: string) => {
   if (avatarRigComponent) {
     entity = avatarRigComponent.bonesToEntities[nodeName]
   }
-
-  if (!entity)
-    entity = childEntities.find(
-      (entity) => getComponent(entity, NodeIDComponent) === nodeName.substring(nodeName.lastIndexOf('-') + 1)
-    )!
+  if (!entity) entity = childEntities.find((entity) => nodeName === getComponent(entity, NodeIDComponent))!
 
   if (!entity) {
     return null
