@@ -60,6 +60,7 @@ import {
   MaterialInstanceComponent,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import {
@@ -649,7 +650,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
-  let materialConstructorParameters = {} as any
+  const materialConstructorParameters = {} as any
   const promises = [] as Promise<void>[]
   const materialExtensions = materialDef.extensions || {}
 
@@ -836,6 +837,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   material.name = materialDef.name ?? 'Material-' + materialIndex
 
   setComponent(materialEntity, MaterialStateComponent, { material })
+  setupMaterialParameters(materialEntity, material.type, materialConstructorParameters)
 
   assignExtrasToUserData(material, materialDef)
 

@@ -53,7 +53,6 @@ import MeshPhongMaterial from './prototypes/MeshPhongMaterial.mat'
 import MeshPhysicalMaterial from './prototypes/MeshPhysicalMaterial.mat'
 import MeshStandardMaterial from './prototypes/MeshStandardMaterial.mat'
 import MeshToonMaterial from './prototypes/MeshToonMaterial.mat'
-import { ShaderMaterial } from './prototypes/ShaderMaterial.mat'
 import { ShadowMaterial } from './prototypes/ShadowMaterial.mat'
 
 export type MaterialPrototypeConstructor = new (...args: any) => any
@@ -86,7 +85,7 @@ export const MaterialPrototypeDefinitions = defineState({
       MeshPhysicalMaterial,
       MeshStandardMaterial,
       MeshToonMaterial,
-      ShaderMaterial,
+      // ShaderMaterial, // makes no sense since we can't supply shaders
       ShadowMaterial
     }) as Record<string, MaterialPrototypeDefinition>
 })
@@ -102,8 +101,8 @@ export const MaterialStateComponent = defineComponent({
   jsonID: 'IR_material',
 
   schema: S.Object({
-    // material & material specific data
-    material: S.NonSerialized(S.Type<Material>({} as Material))
+    material: S.Type<Material>({} as Material),
+    parameters: S.Object({} as any)
   }),
 
   fallbackMaterialUUID: uuidv4() as EntityUUID,
@@ -123,7 +122,8 @@ export const MaterialStateComponent = defineComponent({
 
 export const MaterialReferenceState = defineState({
   name: 'MaterialReferenceState',
-  initial: () => ({}) as Record<Entity, Entity[]> // map of MaterialStateComponent to MaterialInstanceComponent
+  // map of MaterialStateComponent entity to MaterialInstanceComponent entities
+  initial: () => ({}) as Record<Entity, Entity[]>
 })
 
 export const MaterialInstanceComponent = defineComponent({

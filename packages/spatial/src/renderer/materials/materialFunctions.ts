@@ -25,10 +25,16 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Color, Material, Mesh, Texture } from 'three'
 
-import { Entity, EntityUUID, getComponent, hasComponent, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, EntityUUID, getComponent, getMutableComponent, hasComponent, UUIDComponent } from '@ir-engine/ecs'
 
+import { getState } from '@ir-engine/hyperflux'
 import { MeshComponent } from '../components/MeshComponent'
-import { MaterialInstanceComponent, MaterialStateComponent, PrototypeArgument } from './MaterialComponent'
+import {
+  MaterialInstanceComponent,
+  MaterialPrototypeDefinitions,
+  MaterialStateComponent,
+  PrototypeArgument
+} from './MaterialComponent'
 
 export const formatMaterialArgs = (args: any, defaultArgs?: PrototypeArgument) => {
   if (!args) return args
@@ -89,4 +95,43 @@ export const getMaterialIndices = (entity: Entity, materialUUID: EntityUUID): nu
   return uuids
     .map((uuid, index) => (uuid === materialUUID ? index : undefined))
     .filter((x) => x !== undefined) as number[]
+}
+
+export const setupMaterialParameters = (entity: Entity, type: string, properties: { [_: string]: any }) => {
+  const params = getMaterialParameterDefaults(type)
+  Object.entries(properties).map(([k, v]) => {
+    if (!properties[k]) return
+    if (typeof v === 'function') return
+    if (v.isTexture) {
+      const url = v.userData?.url ?? v.userData?.src
+      if (url) params[k] = url
+      return
+    }
+    if (v.isColor) {
+      params[k] = (v as Color).getHex()
+      return
+    }
+    if (typeof v === 'object') return
+    params[k] = v
+  })
+  getMutableComponent(entity, MaterialStateComponent).parameters.set(params)
+  return params
+}
+
+export const getMaterialParameterDefaults = (type: string) => {
+  const prototype = getState(MaterialPrototypeDefinitions)[type]
+  return Object.fromEntries(Object.entries(prototype.arguments).map(([k, v]) => [k, v.default]))
+}
+
+export const getMaterialParameterKeys = (type: string) => {
+  const prototype = getState(MaterialPrototypeDefinitions)[type]
+  if (!prototype) return []
+  return Object.keys(prototype.arguments)
+}
+
+export const changeMaterialPrototype = (entity: Entity, type: string) => {
+  const params = setupMaterialParameters(entity, type, getComponent(entity, MaterialStateComponent).parameters)
+  getMutableComponent(entity, MaterialStateComponent).material.set(
+    new (getState(MaterialPrototypeDefinitions)[type].prototypeConstructor)(params)
+  )
 }
