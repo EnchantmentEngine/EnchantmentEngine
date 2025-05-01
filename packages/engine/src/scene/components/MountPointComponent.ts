@@ -69,7 +69,7 @@ const mountPointInteractMessages = {
 const mountCallbackName = 'mountEntity'
 
 const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
-  if (avatarEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
+  if (avatarEntity === UndefinedEntity || mountEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
   const mountedEntities = getState(MountPointState)
   if (UUIDComponent.getUUID(mountEntity) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
 

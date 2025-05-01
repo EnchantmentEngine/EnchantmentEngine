@@ -24,11 +24,9 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  Engine,
   EngineState,
   Entity,
   EntityTreeComponent,
-  EntityUUID,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -58,7 +56,6 @@ import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { Quaternion, Vector3 } from 'three'
-import { v4 } from 'uuid'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 import { emoteAnimations } from '../../avatar/animation/Util'
@@ -121,10 +118,13 @@ describe('MountPointComponent.ts', async () => {
         mountPointTestEntity = createEntity()
         avatarTestEntity = createEntity()
         sceneEntity = loadEmptyScene()
-        setComponent(avatarTestEntity, UUIDComponent, Engine.instance.userID as string as EntityUUID)
+        setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
 
         setComponent(sceneEntity, SceneComponent)
-        setComponent(mountPointTestEntity, UUIDComponent, v4() as EntityUUID)
+        setComponent(mountPointTestEntity, UUIDComponent, {
+          instanceID: UUIDComponent.generateUUID(),
+          id: 'mountPoint'
+        })
         setComponent(mountPointTestEntity, TransformComponent)
         setComponent(mountPointTestEntity, InteractableComponent)
         setComponent(mountPointTestEntity, MountPointComponent)
@@ -132,10 +132,11 @@ describe('MountPointComponent.ts', async () => {
 
         dispatchAction(
           AvatarNetworkAction.spawn({
-            parentUUID: getComponent(sceneEntity, UUIDComponent),
+            parentUUID: UUIDComponent.getUUID(sceneEntity),
             position: new Vector3(),
             rotation: new Quaternion(),
-            entityUUID: getComponent(avatarTestEntity, UUIDComponent),
+            entityID: getComponent(avatarTestEntity, UUIDComponent).id,
+            entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
             avatarURL: '',
             name: 'avatar1'
           })
@@ -207,8 +208,8 @@ describe('MountPointComponent.ts', async () => {
       sceneEntity = loadEmptyScene()
 
       setComponent(sceneEntity, SceneComponent)
-      setComponent(avatarTestEntity, UUIDComponent, Engine.instance.userID as string as EntityUUID)
-      setComponent(mountPointTestEntity, UUIDComponent, v4() as EntityUUID)
+      setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
+      setComponent(mountPointTestEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'mountPoint' })
       setComponent(mountPointTestEntity, TransformComponent)
       setComponent(mountPointTestEntity, InteractableComponent)
       setComponent(mountPointTestEntity, MountPointComponent)
@@ -216,10 +217,11 @@ describe('MountPointComponent.ts', async () => {
 
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: getComponent(sceneEntity, UUIDComponent),
+          parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityUUID: getComponent(avatarTestEntity, UUIDComponent),
+          entityID: getComponent(avatarTestEntity, UUIDComponent).id,
+          entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
           avatarURL: '',
           name: 'avatar1'
         })
@@ -249,13 +251,14 @@ describe('MountPointComponent.ts', async () => {
     it('Should return if avatar not seated and point occupied by another entity', async () => {
       // Create a second avatar entity that occupies the mount location
       const avatarTestEntity2 = createEntity()
-      setComponent(avatarTestEntity2, UUIDComponent, v4() as EntityUUID)
+      setComponent(avatarTestEntity2, UUIDComponent, { instanceID: 'some other avatar', id: 'avatar2' })
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: getComponent(sceneEntity, UUIDComponent),
+          parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityUUID: getComponent(avatarTestEntity2, UUIDComponent),
+          entityID: getComponent(avatarTestEntity2, UUIDComponent).id,
+          entityInstanceID: getComponent(avatarTestEntity2, UUIDComponent).instanceID,
           avatarURL: '',
           name: 'avatar2'
         })
@@ -311,8 +314,8 @@ describe('MountPointComponent.ts', async () => {
 
     it('Should dispatch the mount interaction action with the mounted entity and the target mount', () => {
       MountPointComponent.mountEntity(avatarTestEntity, mountPointTestEntity)
-      const avatarTestEntityUUID = getComponent(avatarTestEntity, UUIDComponent)
-      const mountPointTestEntityUUID = getComponent(mountPointTestEntity, UUIDComponent)
+      const avatarTestEntityUUID = UUIDComponent.getUUID(avatarTestEntity)
+      const mountPointTestEntityUUID = UUIDComponent.getUUID(mountPointTestEntity)
       const setMountInteraction = HyperFlux.store.actions.incoming[1].type === MountPointActions.mountInteraction.type
       // Check if action is dispatched
       assert.equal(setMountInteraction, true)
@@ -343,18 +346,18 @@ describe('MountPointComponent.ts', async () => {
       initializeSpatialViewer()
       await Physics.load()
 
-      setComponent(avatarTestEntity, UUIDComponent, Engine.instance.userID as string as EntityUUID)
+      setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
 
       mountPointTestEntity = createEntity()
 
-      setComponent(mountPointTestEntity, UUIDComponent, v4() as EntityUUID)
+      setComponent(mountPointTestEntity, UUIDComponent)
       setComponent(mountPointTestEntity, TransformComponent)
       setComponent(mountPointTestEntity, InteractableComponent)
       setComponent(mountPointTestEntity, MountPointComponent)
 
       sceneEntity = createEntity()
       setComponent(sceneEntity, EntityTreeComponent)
-      setComponent(sceneEntity, UUIDComponent, v4() as EntityUUID)
+      setComponent(sceneEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'scene' })
       setComponent(sceneEntity, SceneComponent)
       setComponent(sceneEntity, TransformComponent)
       physicsWorld = Physics.createWorld(sceneEntity)
@@ -364,10 +367,11 @@ describe('MountPointComponent.ts', async () => {
 
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: getComponent(sceneEntity, UUIDComponent),
+          parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityUUID: getComponent(avatarTestEntity, UUIDComponent),
+          entityID: getComponent(avatarTestEntity, UUIDComponent).id,
+          entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
           avatarURL: '',
           name: 'avatar1'
         })
@@ -479,7 +483,7 @@ describe('MountPointComponent.ts', async () => {
       MountPointComponent.mountEntity(avatarTestEntity, mountPointTestEntity)
       const groundPlaneEntity = createEntity()
       setComponent(groundPlaneEntity, EntityTreeComponent, { parentEntity: sceneEntity })
-      setComponent(groundPlaneEntity, UUIDComponent, v4() as EntityUUID)
+      setComponent(groundPlaneEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'groundPlane' })
       setComponent(groundPlaneEntity, TransformComponent, {
         position: new Vector3(0, 1, 0),
         scale: new Vector3(10, 10, 10)
