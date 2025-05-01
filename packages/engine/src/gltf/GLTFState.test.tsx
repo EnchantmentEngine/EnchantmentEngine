@@ -71,7 +71,7 @@ describe.skip('GLTFState', () => {
 
     await Physics.load()
     physicsWorldEntity = createEntity()
-    setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(physicsWorldEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'test' })
     setComponent(physicsWorldEntity, SceneComponent)
     setComponent(physicsWorldEntity, TransformComponent)
     setComponent(physicsWorldEntity, EntityTreeComponent)
