@@ -211,6 +211,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
     spawn: spawnPrefab,
 
+    action: $Actions.spawn,
+
     reactor: ({ entity }) => {
       /** Suspend the context if this component is not spawned as part of a scene */
       useComponent(entity, SourceComponent)
@@ -233,6 +235,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
           dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))
         }
       }, [])
+
+      return null
     }
   })
 
