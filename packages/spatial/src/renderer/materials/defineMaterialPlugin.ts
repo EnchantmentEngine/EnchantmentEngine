@@ -86,7 +86,7 @@ export const defineMaterialPlugin = <T extends Schema>({
   jsonID: string
   uniforms: T
   onApply: (shader: Shader, renderer: WebGLRenderer) => void
-  update: (component: Static<T>, deltaSeconds: number) => void
+  update?: (component: Static<T>, deltaSeconds: number) => void
 }) => {
   const PluginComponent = defineComponent({
     name,
@@ -126,7 +126,7 @@ export const defineMaterialPlugin = <T extends Schema>({
       useExecute(
         () => {
           const uniformValues = getComponent(entity, PluginComponent)
-          update(uniformValues, getState(ECSState).deltaSeconds)
+          if (update) update(uniformValues, getState(ECSState).deltaSeconds)
           for (const key in uniforms) {
             uniforms[key].value = uniformValues[key]
           }

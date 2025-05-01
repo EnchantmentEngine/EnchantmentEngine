@@ -23,106 +23,39 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Color, Material, Uniform } from 'three'
-
-import {
-  defineComponent,
-  defineQuery,
-  getComponent,
-  getOptionalComponent,
-  PresentationSystemGroup,
-  useEntityContext,
-  useOptionalComponent
-} from '@ir-engine/ecs'
-import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { getState } from '@ir-engine/hyperflux'
+import { Color } from 'three'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { useEffect } from 'react'
+import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
-export type HolographicParameters = {
-  speed: Uniform
-  time: Uniform
-  useBlink: Uniform
-  mix_intensity: Uniform
-  hologramColor: Uniform
-  hologramBrightness: Uniform
-  scanlineSize: Uniform
-  hologramOpacity: Uniform
-}
-
-const deserializeUniform = (curr, val) => {
-  curr.value = val
-  return curr
-}
-
-export const HolographicPluginComponent = defineComponent({
+export const HolographicPluginComponent = defineMaterialPlugin({
   name: 'HolographicPluginComponent',
 
   jsonID: 'IR_material_holographic',
 
-  schema: S.Object({
-    speed: S.Class(() => new Uniform(0.1), { deserialize: deserializeUniform }),
-    time: S.Class(() => new Uniform(0), { deserialize: deserializeUniform }),
-    useBlink: S.Class(() => new Uniform(false), { deserialize: deserializeUniform }),
-    mix_intensity: S.Class(() => new Uniform(1.0), { deserialize: deserializeUniform }),
-    hologramColor: S.Class(() => new Uniform(new Color(1, 1, 1)), {
-      deserialize: (curr, val) => {
-        curr.value.copy(val as any as Color)
-        return curr
-      }
-    }),
-    hologramBrightness: S.Class(() => new Uniform(0.5), { deserialize: deserializeUniform }),
-    scanlineSize: S.Class(() => new Uniform(15.0), { deserialize: deserializeUniform }),
-    hologramOpacity: S.Class(() => new Uniform(0.5), { deserialize: deserializeUniform })
+  uniforms: S.Object({
+    speed: S.Number(0.1),
+    time: S.Number(0),
+    useBlink: S.Bool(false),
+    mix_intensity: S.Number(1.0),
+    hologramColor: S.Class(() => new Color(1, 1, 1)),
+    hologramBrightness: S.Number(0.5),
+    scanlineSize: S.Number(15.0),
+    hologramOpacity: S.Number(0.5)
   }),
 
-  toJSON(component) {
-    return {
-      speed: component.speed.value,
-      time: component.time.value,
-      useBlink: component.useBlink.value,
-      mix_intensity: component.mix_intensity.value,
-      hologramColor: component.hologramColor.value,
-      hologramBrightness: component.hologramBrightness.value,
-      scanlineSize: component.scanlineSize.value,
-      hologramOpacity: component.hologramOpacity.value
-    }
-  },
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const materialState = useOptionalComponent(entity, MaterialStateComponent)
-
-    useEffect(() => {
-      const materialComponent = getOptionalComponent(entity, MaterialStateComponent)
-      if (!materialComponent) return
-      const callback = (shader) => {
-        const plugin = getComponent(entity, HolographicPluginComponent)
-
-        shader.uniforms.speed = plugin.speed
-        shader.uniforms.time = plugin.time
-        shader.uniforms.useBlink = plugin.useBlink
-        shader.uniforms.mix_intensity = plugin.mix_intensity
-        shader.uniforms.hologramColor = plugin.hologramColor
-        shader.uniforms.hologramBrightness = plugin.hologramBrightness
-        shader.uniforms.scanlineSize = plugin.scanlineSize
-        shader.uniforms.hologramOpacity = plugin.hologramOpacity
-
-        shader.vertexShader =
-          `
+  onApply: (shader) => {
+    shader.vertexShader =
+      `
           varying vec4 vPos;  
           varying vec2 myuv;
           varying vec3 vPositionNormal; 
           varying vec3 v_Normal; 
           ` + shader.vertexShader
 
-        shader.vertexShader = shader.vertexShader.replace(
-          'void main() {',
-          ` 
+    shader.vertexShader = shader.vertexShader.replace(
+      'void main() {',
+      ` 
 
           void main() {
             //vec3 transformed = vec3(position);
@@ -131,11 +64,11 @@ export const HolographicPluginComponent = defineComponent({
             vPositionNormal = normalize(( modelViewMatrix * vec4(position, 1.0) ).xyz);
             v_Normal = normalize( normalMatrix * normal ); 
           `
-        )
+    )
 
-        shader.fragmentShader = shader.fragmentShader.replace(
-          'void main() {',
-          `
+    shader.fragmentShader = shader.fragmentShader.replace(
+      'void main() {',
+      `
               uniform float speed;
               varying vec3 vPositionNormal; 
               varying vec3 v_Normal; 
@@ -157,9 +90,9 @@ export const HolographicPluginComponent = defineComponent({
 
            
          `
-        )
+    )
 
-        const colorFragment = `
+    const colorFragment = `
         #include <color_fragment>  
         vec2 vCoords = vPos.xy;
         vCoords /= vPos.w;
@@ -199,39 +132,19 @@ export const HolographicPluginComponent = defineComponent({
             diffuseColor = mix( initial_diffuse,vec4( scanlineMix.rgb+fresnel, 1.0),mix_intensity);
         }
         `
-        shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', colorFragment)
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', colorFragment)
 
-        const alphamapFragment = `
+    const alphamapFragment = `
         #include <alphamap_fragment>   
     
 
         diffuseColor.a = hologramOpacity;
       
         `
-        shader.fragmentShader = shader.fragmentShader.replace('#include <alphamap_fragment>', alphamapFragment)
-      }
-      setPlugin(materialComponent.material as Material, callback)
-      return () => {
-        removePlugin(materialComponent.material as Material, callback)
-      }
-    }, [!!materialState])
+    shader.fragmentShader = shader.fragmentShader.replace('#include <alphamap_fragment>', alphamapFragment)
+  },
 
-    return null
+  update: (component, deltaSeconds) => {
+    component.time += deltaSeconds
   }
-})
-
-const holographicPluginQuery = defineQuery([HolographicPluginComponent])
-const execute = () => {
-  for (const entity of holographicPluginQuery()) {
-    const holographicPlugin = getOptionalComponent(entity, HolographicPluginComponent)
-    if (!holographicPlugin) continue
-    const elapsedSeconds = getState(ECSState).elapsedSeconds
-    holographicPlugin.time.value += elapsedSeconds - (holographicPlugin.time.value || 0)
-  }
-}
-
-export const HolographicSystem = defineSystem({
-  uuid: 'ee.spatial.material.HolographicSystem',
-  insert: { before: PresentationSystemGroup },
-  execute
 })
