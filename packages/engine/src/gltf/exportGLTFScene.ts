@@ -1280,7 +1280,8 @@ const _trsRotation = new Quaternion()
 const _trsScale = new Vector3()
 
 const exportAnimations = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneExportContext) => {
-  if (!hasComponent(entity, AnimationComponent) || getComponent(entity, SourceComponent) !== context.rootEntity) return
+  if (!hasComponent(entity, AnimationComponent) || getOptionalComponent(entity, SourceComponent) !== context.rootEntity)
+    return
 
   const animationsDef = [] as GLTF.IAnimation[]
   const animations = getComponent(entity, AnimationComponent).animations as AnimationClip[]

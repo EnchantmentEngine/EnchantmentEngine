@@ -44,7 +44,9 @@ import { NodeIDComponent } from '../../gltf/NodeIDComponent'
 export const createSceneEntity = (name: string, parentEntity: Entity = UndefinedEntity): Entity => {
   const sourceID = GLTFComponent.getInstanceID(parentEntity)
   const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
-  const entity = sourceID ? NodeIDComponent.create(sourceID, NodeIDComponent.generate(), layer) : createEntity(layer)
+  const entity = sourceID
+    ? NodeIDComponent.create(parentEntity, NodeIDComponent.generate(), layer)
+    : createEntity(layer)
   setComponent(entity, NameComponent, name)
   setComponent(entity, VisibleComponent)
   setComponent(entity, TransformComponent)
@@ -53,7 +55,7 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
   if (!sourceID) {
-    setComponent(entity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(entity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: name })
   }
 
   // These additional properties and relations are required for
