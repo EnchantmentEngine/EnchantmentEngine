@@ -62,7 +62,7 @@ import { MixerComponent } from './MixerComponent'
 
 const createEntityWithUUID = () => {
   const entity = createEntity()
-  setComponent(entity, UUIDComponent, UUIDComponent.generateUUID())
+  setComponent(entity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: UUIDComponent.generateUUID() })
   return entity
 }
 
