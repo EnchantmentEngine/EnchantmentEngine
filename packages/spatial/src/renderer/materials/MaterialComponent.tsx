@@ -42,6 +42,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { NameComponent } from '../../common/NameComponent'
 import { MeshComponent } from '../components/MeshComponent'
 import { NoiseOffsetPluginComponent } from './constants/plugins/NoiseOffsetPlugin'
 import { TransparencyDitheringPluginComponent } from './constants/plugins/TransparencyDitheringComponent'
@@ -109,6 +110,31 @@ export const MaterialStateComponent = defineComponent({
   fallbackMaterial: () => {
     const fallbackMaterialEntity = UUIDComponent.getEntityByUUID(MaterialStateComponent.fallbackMaterialUUID)
     return getComponent(fallbackMaterialEntity, MaterialStateComponent).material //.clone()
+  },
+
+  onSet(entity, component, json) {
+    if (!json) return
+    if (json.material && json.material.isMaterial) {
+      component.material.set(json.material)
+      Object.assign(json.material, {
+        get uuid() {
+          return getComponent(entity, UUIDComponent)
+        },
+        set uuid(value) {
+          if (value != undefined) throw new Error('Cannot set uuid of proxified object')
+        },
+        get name() {
+          return getOptionalComponent(entity, NameComponent)
+        },
+        set name(value) {
+          if (value != undefined) throw new Error('Cannot set name of proxified object')
+        },
+        get entity() {
+          return entity
+        }
+      })
+    }
+    if (json.parameters) component.parameters.set(json.parameters)
   },
 
   onRemove: (entity, component) => {
