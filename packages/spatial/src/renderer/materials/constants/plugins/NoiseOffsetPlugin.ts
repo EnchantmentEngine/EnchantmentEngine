@@ -23,11 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Vector3 } from 'three'
-
 import { generateNoiseTexture } from '@ir-engine/spatial/src/renderer/functions/generateNoiseTexture'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Vector3 } from 'three'
+import { T } from '../../../../schema/schemaFunctions'
 import { defineMaterialPlugin } from '../../defineMaterialPlugin'
 
 export const NoiseOffsetPluginComponent = defineMaterialPlugin({
@@ -39,8 +39,8 @@ export const NoiseOffsetPluginComponent = defineMaterialPlugin({
     textureSize: S.Number(64),
     frequency: S.Number(0.00025),
     amplitude: S.Number(0.005),
-    noiseTexture: S.Class(() => generateNoiseTexture(64)),
-    offsetAxis: S.Class(() => new Vector3(0, 1, 0)),
+    noiseTexture: S.NonSerialized(S.Class(() => generateNoiseTexture(64))),
+    offsetAxis: T.Vec3(new Vector3(0, 1, 0)),
     time: S.Number(0)
   }),
 

@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Shader, Vector3 } from 'three'
+import { Shader } from 'three'
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
@@ -61,8 +61,8 @@ export const BoxProjectionPlugin = defineMaterialPlugin({
   jsonID: 'IR_envmap_box_projection',
 
   uniforms: S.Object({
-    cubeMapSize: S.Class(() => new Vector3()),
-    cubeMapPos: S.Class(() => new Vector3())
+    cubeMapSize: T.Vec3(),
+    cubeMapPos: T.Vec3()
   }),
 
   onApply: (shader: Shader) => {

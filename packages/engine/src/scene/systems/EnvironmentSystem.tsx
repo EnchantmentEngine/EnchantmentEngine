@@ -53,8 +53,7 @@ import {
   EquirectangularReflectionMapping,
   MeshStandardMaterial,
   RGBAFormat,
-  SRGBColorSpace,
-  Uniform
+  SRGBColorSpace
 } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { NodeFunctions } from '../../gltf/NodeFunctions'
@@ -311,8 +310,8 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   useEffect(() => {
     if (!bakeComponent || !bakeComponent.boxProjection.value) return
     setComponent(entity, BoxProjectionPlugin, {
-      cubeMapPos: new Uniform(bakeComponent.bakePositionOffset.value),
-      cubeMapSize: new Uniform(bakeComponent.bakeScale.value)
+      cubeMapPos: bakeComponent.bakePositionOffset.value,
+      cubeMapSize: bakeComponent.bakeScale.value
     })
 
     return () => {

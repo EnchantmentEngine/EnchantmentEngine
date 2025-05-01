@@ -23,9 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Color } from 'three'
-
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { T } from '../../../schema/schemaFunctions'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
 export const HolographicPluginComponent = defineMaterialPlugin({
@@ -38,7 +37,7 @@ export const HolographicPluginComponent = defineMaterialPlugin({
     time: S.Number(0),
     useBlink: S.Bool(false),
     mix_intensity: S.Number(1.0),
-    hologramColor: S.Class(() => new Color(1, 1, 1)),
+    hologramColor: T.Color(),
     hologramBrightness: S.Number(0.5),
     scanlineSize: S.Number(15.0),
     hologramOpacity: S.Number(0.5)

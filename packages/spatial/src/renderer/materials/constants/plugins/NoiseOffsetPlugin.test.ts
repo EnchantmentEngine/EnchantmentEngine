@@ -44,7 +44,7 @@ import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { assertVec } from '../../../../../tests/util/assert'
 import { generateNoiseTexture } from '../../../functions/generateNoiseTexture'
 import { MaterialStateComponent } from '../../MaterialComponent'
-import { NoiseOffsetPluginComponent, NoiseOffsetSystem } from './NoiseOffsetPlugin'
+import { NoiseOffsetPluginComponent } from './NoiseOffsetPlugin'
 
 type NoiseOffsetPluginComponentData = {
   textureSize: Uniform
