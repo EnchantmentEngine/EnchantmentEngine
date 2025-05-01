@@ -24,13 +24,11 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Quaternion, Vector3 } from 'three'
-import { v4 as uuidv4 } from 'uuid'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   Engine,
   Entity,
-  EntityUUID,
   UUIDComponent,
   createEngine,
   createEntity,
@@ -143,12 +141,14 @@ describe('definePrefab', () => {
     expect(TestPrefabComponent.spawn).toBeDefined()
     expect(typeof TestPrefabComponent.spawn).toBe('function')
 
-    const entityUUID = uuidv4() as EntityUUID
-    const parentUUID = getComponent(sceneEntity, UUIDComponent)
+    const entityUUIDPair = { instanceID: UUIDComponent.generateUUID(), id: 'spawned-entity' }
+    const entityUUID = UUIDComponent.concatenateUUID(entityUUIDPair)
+    const parentUUID = UUIDComponent.getUUID(sceneEntity)
 
     expect(() => {
       TestPrefabComponent.spawn({
-        entityUUID,
+        entityID: entityUUIDPair.id,
+        entityInstanceID: entityUUIDPair.instanceID,
         parentUUID,
         position: new Vector3(1, 2, 3),
         rotation: new Quaternion(0, 0, 0, 1),

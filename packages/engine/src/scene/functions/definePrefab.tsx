@@ -183,8 +183,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
   }) => {
     dispatchAction(
       $Actions.spawn({
-        entityID: matches.string,
-        entityInstanceID: matches.string,
+        entityID: props.entityID,
+        entityInstanceID: props.entityInstanceID,
         /** @todo fix when actions use JSON Schemas */
         // @ts-ignore
         data: props.data
