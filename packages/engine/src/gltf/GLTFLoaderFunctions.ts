@@ -1529,9 +1529,10 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   await Promise.all(extensionPending)
 
+  //apply deltas if they exist in state
+  if (!hasComponent(options.entity, UUIDComponent)) return nodeEntity
   const uuid = UUIDComponent.getUUID(options.entity)
 
-  //apply deltas if they exist in state
   const deltas = getState(SceneDeltaState)?.[uuid]
   if (deltas) {
     for (const [componentName, delta] of Object.entries(deltas)) {
