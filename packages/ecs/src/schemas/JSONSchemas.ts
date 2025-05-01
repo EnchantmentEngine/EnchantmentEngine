@@ -244,9 +244,8 @@ export const S = {
    * Creates a schema object that infers to the generic type provided
    * Only the properties that are passed in on the props object will be serialized, if none are provided the value will not be serialized
    *
-   * @param init the default value or function returning the default value, if it is a value it will go through a structuredClone so it must not be a non-cloneable value (ie. DOM Node)
-   * @param props the properties you want to be serialized for the type
    * @param options schema options
+   * @param props the properties you want to be serialized for the type
    * @returns
    */
   Type: <T>(options?: TTypedSchema<T>['options'], props?: TProperties) =>

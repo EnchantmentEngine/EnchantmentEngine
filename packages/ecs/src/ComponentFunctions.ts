@@ -1319,7 +1319,7 @@ export const TransitionComponent = defineComponent({
       transitionableType: S.String(),
       duration: S.Number({ default: 500 }),
       easing: S.String({ default: Easing.exponential.inOut.path }),
-      initialValue: S.Optional(S.Type<TransitionableTypes>(), { serialized: false }),
+      initialValue: S.Type<TransitionableTypes | undefined>({ serialized: false }),
       events: S.Array(
         S.Object({
           age: S.Number(),

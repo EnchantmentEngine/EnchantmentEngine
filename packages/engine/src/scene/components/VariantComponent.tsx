@@ -80,12 +80,12 @@ export enum Devices {
 }
 
 export const distanceMetadataSchema = S.Object({
-  minDistance: S.Optional(S.Number()),
-  maxDistance: S.Optional(S.Number())
+  minDistance: S.Number(),
+  maxDistance: S.Number()
 })
 
 export const deviceMetadataSchema = S.Object({
-  device: S.Optional(S.Enum(Devices))
+  device: S.Enum(Devices)
 })
 
 export type VariantMetadata = Static<typeof distanceMetadataSchema> | Static<typeof deviceMetadataSchema>
