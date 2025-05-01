@@ -23,13 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { FrontSide, Material, Uniform, Vector3 } from 'three'
+import { FrontSide, Vector3 } from 'three'
 
-import { defineComponent, getComponent, getOptionalComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, getComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { useEffect } from 'react'
+import { defineMaterialPlugin } from '../../defineMaterialPlugin'
+import { MaterialStateComponent } from '../../MaterialComponent'
 import {
   ditheringAlphatestChunk,
   ditheringFragUniform,
@@ -49,55 +49,42 @@ export const TransparencyDitheringRootComponent = defineComponent({
   schema: S.Object({ materials: S.Array(S.EntityUUID()) })
 })
 
-export const TransparencyDitheringPluginComponent = defineComponent({
+export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
   name: 'TransparencyDitheringPluginComponent',
-  schema: S.Object({
-    centers: S.Class(() => new Uniform(Array.from({ length: MAX_DITHER_POINTS }, () => new Vector3()))),
-    exponents: S.Class(() => new Uniform(Array.from({ length: MAX_DITHER_POINTS }, () => 1))),
-    distances: S.Class(() => new Uniform(Array.from({ length: MAX_DITHER_POINTS }, () => 1))),
-    useWorldCalculation: S.Class(
-      () => new Uniform(Array.from({ length: MAX_DITHER_POINTS }, () => ditherCalculationType.worldTransformed))
+
+  jsonID: 'IR_transparency_dithering',
+
+  uniforms: S.Object({
+    centers: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => new Vector3())),
+    exponents: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
+    distances: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
+    useWorldCalculation: S.Class(() =>
+      Array.from({ length: MAX_DITHER_POINTS }, () => ditherCalculationType.worldTransformed)
     )
   }),
 
-  reactor: () => {
-    const entity = useEntityContext()
-    const material = useComponent(entity, MaterialStateComponent).material
+  onApply(shader, renderer) {
+    if (!shader.vertexShader.startsWith('varying vec3 vWorldPosition')) {
+      shader.vertexShader = shader.vertexShader.replace(
+        /#include <common>/,
+        '#include <common>\n' + ditheringVertexUniform
+      )
+    }
+    shader.vertexShader = shader.vertexShader.replace(
+      /#include <worldpos_vertex>/,
+      '	#include <worldpos_vertex>\n' + ditheringVertex
+    )
+    if (!shader.fragmentShader.startsWith('varying vec3 vWorldPosition'))
+      shader.fragmentShader = shader.fragmentShader.replace(
+        /#include <common>/,
+        '#include <common>\n' + ditheringFragUniform
+      )
+    shader.fragmentShader = shader.fragmentShader.replace(/#include <alphatest_fragment>/, ditheringAlphatestChunk)
+  },
+
+  reactor: ({ entity }) => {
     useEffect(() => {
-      const materialComponent = getOptionalComponent(entity, MaterialStateComponent)
-      if (!materialComponent) return
-      const material = materialComponent.material as Material
-      const callback = (shader) => {
-        if (shader.hasTransparencyDitherShader) return
-
-        material.side = FrontSide
-        const plugin = getComponent(entity, TransparencyDitheringPluginComponent)
-
-        if (!shader.vertexShader.startsWith('varying vec3 vWorldPosition')) {
-          shader.vertexShader = shader.vertexShader.replace(
-            /#include <common>/,
-            '#include <common>\n' + ditheringVertexUniform
-          )
-        }
-        shader.vertexShader = shader.vertexShader.replace(
-          /#include <worldpos_vertex>/,
-          '	#include <worldpos_vertex>\n' + ditheringVertex
-        )
-        if (!shader.fragmentShader.startsWith('varying vec3 vWorldPosition'))
-          shader.fragmentShader = shader.fragmentShader.replace(
-            /#include <common>/,
-            '#include <common>\n' + ditheringFragUniform
-          )
-        shader.fragmentShader = shader.fragmentShader.replace(/#include <alphatest_fragment>/, ditheringAlphatestChunk)
-        shader.uniforms.centers = plugin.centers
-        shader.uniforms.exponents = plugin.exponents
-        shader.uniforms.distances = plugin.distances
-        shader.uniforms.useWorldCalculation = plugin.useWorldCalculation
-
-        shader.hasTransparencyDitherShader = true
-      }
-      setPlugin(materialComponent.material as Material, callback)
-    }, [material])
-    return null
+      getComponent(entity, MaterialStateComponent).material.side = FrontSide
+    }, [])
   }
 })

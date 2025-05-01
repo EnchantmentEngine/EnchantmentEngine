@@ -36,7 +36,7 @@ import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
 /**
  *
@@ -80,13 +80,15 @@ export const defineMaterialPlugin = <T extends Schema>({
   jsonID,
   uniforms: uniformSchema,
   onApply,
-  update
+  update,
+  reactor: Reactor
 }: {
   name: string
   jsonID: string
   uniforms: T
   onApply: (shader: Shader, renderer: WebGLRenderer) => void
   update?: (component: Static<T>, deltaSeconds: number) => void
+  reactor?: any
 }) => {
   const PluginComponent = defineComponent({
     name,
@@ -134,7 +136,7 @@ export const defineMaterialPlugin = <T extends Schema>({
         { before: PresentationSystemGroup }
       )
 
-      return null
+      return Reactor ? <Reactor entity={entity} /> : null
     }
   })
 

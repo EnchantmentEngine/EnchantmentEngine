@@ -212,5 +212,6 @@ declare module 'three/src/materials/Material.js' {
 declare module 'three/src/renderers/shaders/ShaderLib.js' {
   export interface Shader {
     uuid?: EntityUUID
+    shaderType: string
   }
 }
