@@ -212,15 +212,16 @@ describe('AvatarSpawnSystem', async () => {
     assert.ok(spawnAction.rotation)
     assert.ok(spawnAction.parentUUID)
     assert.equal(spawnAction.avatarURL, '/avatar.gltf')
-    assert.equal(spawnAction.entityUUID, userID + '_avatar')
+    assert.equal(spawnAction.entityID, 'avatar')
+    assert.equal(spawnAction.entityInstanceID, userID)
 
     const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
       AvatarNetworkAction.setAvatarURL.matches.test(action)
-    ) as typeof AvatarNetworkAction.spawn.matches._TYPE
+    ) as typeof AvatarNetworkAction.setAvatarURL.matches._TYPE
     assert.ok(avatarURLAction)
     assert.deepEqual(avatarURLAction.type as string, AvatarNetworkAction.setAvatarURL.type)
     assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
-    assert.equal(avatarURLAction.entityUUID, userID + '_avatar')
+    assert.equal(avatarURLAction.entityUUID, userID + 'avatar')
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
