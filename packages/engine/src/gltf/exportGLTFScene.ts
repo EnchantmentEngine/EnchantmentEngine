@@ -475,7 +475,6 @@ export async function exportGLTFScene(
 
 const awaitMaterial = (materialEntity: Entity, context: GLTFSceneExportContext) => {
   const source = getOptionalComponent(materialEntity, SourceComponent)
-  console.log('source', source, 'root', context.rootEntity)
   if (source !== context.rootEntity) return Promise.resolve(-1)
   return new Promise<number>((resolve) => {
     if (typeof context.materialPromises.value[materialEntity] === 'number')
@@ -1194,7 +1193,7 @@ const exportEntity = async (
   const childrenIndicies = [] as number[]
   if (children && children.length > 0) {
     for (const child of children) {
-      if (getComponent(child, SourceComponent) !== context.rootEntity) continue
+      // if (getComponent(child, SourceComponent) !== context.rootEntity) continue
       const childPromise = new Promise<void>((resolve) => {
         exportEntity(child, gltf, context).then((childIndex) => {
           if (typeof childIndex === 'number') childrenIndicies.push(childIndex)
@@ -1280,8 +1279,7 @@ const _trsRotation = new Quaternion()
 const _trsScale = new Vector3()
 
 const exportAnimations = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneExportContext) => {
-  if (!hasComponent(entity, AnimationComponent) || getOptionalComponent(entity, SourceComponent) !== context.rootEntity)
-    return
+  if (!hasComponent(entity, AnimationComponent)) return
 
   const animationsDef = [] as GLTF.IAnimation[]
   const animations = getComponent(entity, AnimationComponent).animations as AnimationClip[]

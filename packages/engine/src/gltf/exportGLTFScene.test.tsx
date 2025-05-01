@@ -54,7 +54,6 @@ import {
   createEntity,
   defineComponent,
   EntityTreeComponent,
-  EntityUUID,
   getComponent,
   S,
   SerializedComponentType,
@@ -73,7 +72,7 @@ import {
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
+import { SourceComponent } from '../scene/components/SourceComponent'
 import { createSceneEntity } from '../scene/functions/createSceneEntity'
 import { exportGLTFScene, materialExtensions } from './exportGLTFScene'
 import { EEMaterialComponent } from './MaterialExtensionComponents'
@@ -506,7 +505,7 @@ describe('exportGLTFScene', () => {
 
   it('should export skins', async () => {
     const baseEntity = createSceneEntity('base')
-    setComponent(baseEntity, SourceComponent, 'test' as SourceID)
+    setComponent(baseEntity, SourceComponent, createEntity())
 
     const skinnedMesh = new SkinnedMesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }))
     const bones = [new Bone()] as Bone[]
@@ -516,7 +515,7 @@ describe('exportGLTFScene', () => {
     skinnedMesh.skeleton = skeleton
 
     const skinnedMeshEntity = createEntity()
-    setComponent(skinnedMeshEntity, SourceComponent, getComponent(baseEntity, SourceComponent))
+    setComponent(skinnedMeshEntity, SourceComponent, baseEntity)
     setComponent(skinnedMeshEntity, MeshComponent, skinnedMesh)
     setComponent(skinnedMeshEntity, SkinnedMeshComponent, skinnedMesh)
     setComponent(skinnedMeshEntity, EntityTreeComponent, { parentEntity: baseEntity })
@@ -545,7 +544,7 @@ describe('exportGLTFScene', () => {
 
   it('should export morph targets', async () => {
     const baseEntity = createSceneEntity('base')
-    setComponent(baseEntity, SourceComponent, 'test' as SourceID)
+    setComponent(baseEntity, SourceComponent, createEntity())
 
     const morphName = 'POSITION'
     const morphMesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }))
@@ -583,7 +582,7 @@ describe('exportGLTFScene', () => {
 
   it('should export material extensions', async () => {
     const baseEntity = createSceneEntity('base')
-    setComponent(baseEntity, SourceComponent, 'test' as SourceID)
+    setComponent(baseEntity, SourceComponent, createEntity())
 
     const textureUrl = 'https://example.com/projects/ir-engine/dud-project/public/images/image.png'
     const texture = new Texture()
@@ -638,7 +637,7 @@ describe('exportGLTFScene', () => {
     const materialEntity = createEntity()
     setComponent(materialEntity, SourceComponent, getComponent(baseEntity, SourceComponent))
     setComponent(materialEntity, EntityTreeComponent, { parentEntity: baseEntity })
-    setComponent(materialEntity, UUIDComponent, material.uuid as EntityUUID)
+    setComponent(materialEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'test-material' })
     setComponent(materialEntity, MaterialStateComponent, {
       material: material
     })
