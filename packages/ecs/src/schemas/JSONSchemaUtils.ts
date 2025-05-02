@@ -614,13 +614,9 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
 
 // Generate a JSON Schema from the Typebox Schema
 export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | undefined => {
-  const jsonSchema: any = {}
+  if (schema.options?.serialized === false) return undefined
 
-  if (schema.options?.serialized === false) {
-    // Non-serialized fields are not included in JSON Schema
-    jsonSchema.type = 'null'
-    return jsonSchema
-  }
+  const jsonSchema: any = {}
 
   // Add type based on schema kind
   switch (schema[Kind]) {
@@ -649,11 +645,12 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       jsonSchema.required = []
 
       for (const [key, propSchema] of Object.entries(props)) {
+        const propJsonSchema = GenerateJSONSchema(propSchema)
+        if (!propJsonSchema || propJsonSchema.type === 'null') continue
+        if (!jsonSchema.properties) jsonSchema.properties = {}
+        jsonSchema.properties[key] = propJsonSchema
+
         if (propSchema.options?.required) {
-          const propJsonSchema = GenerateJSONSchema(propSchema)
-          if (!propJsonSchema || propJsonSchema.type === 'null') continue
-          if (!jsonSchema.properties) jsonSchema.properties = {}
-          jsonSchema.properties[key] = propJsonSchema
           jsonSchema.required.push(key)
         }
       }

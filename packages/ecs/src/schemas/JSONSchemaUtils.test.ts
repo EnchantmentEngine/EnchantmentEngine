@@ -2374,7 +2374,7 @@ describe('ConvertToSchema', () => {
     ) //:: case: ['Partial', 'Proxy']
 
     it("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {
-      const Expected = null
+      const Expected = undefined
 
       const value = [41, 42]
       const schema = S.Array(S.Number(), {
