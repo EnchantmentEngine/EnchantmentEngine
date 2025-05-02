@@ -139,6 +139,7 @@ export const MaterialStateComponent = defineComponent({
 
   onRemove: (entity, component) => {
     const instances = getState(MaterialReferenceState)[entity]
+    if (!instances) return
     for (const instanceEntity of instances) {
       if (!hasComponent(instanceEntity, MaterialInstanceComponent)) continue
       setMeshMaterial(instanceEntity, getComponent(instanceEntity, MaterialInstanceComponent).uuid)
