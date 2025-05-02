@@ -1066,7 +1066,7 @@ function createPropagationArgsInner<C extends Component>(
 ) {
   const obj = key === '' ? data : data[key]
   if (typeof obj === 'undefined') return undefined
-  if (!schema.options?.serialized) return undefined
+  if (!schema.options?.serialized && schema.options?.id !== 'Entity') return undefined
 
   switch (schema[Kind]) {
     case 'Null':
