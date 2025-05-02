@@ -56,11 +56,10 @@ import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceCo
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
-import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
-import { getState, none } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -68,13 +67,56 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { ObjectLayerMasks, ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
   MaterialInstanceComponent,
-  MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { EditorState } from '../services/EditorServices'
 import { EditorControlFunctions } from './EditorControlFunctions'
 import { getIntersectingNodeOnScreen } from './getIntersectingNode'
 import { getIncreamentedName } from './utils'
+
+export const replaceMaterialAtIntersection = (intersections: Intersection[]) => (assetEntity: Entity) => {
+  const [materialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
+  let foundTarget = false
+  const affectedEntities = [] as Entity[]
+  for (const intersection of intersections) {
+    if (!hasComponent(intersection.object.entity, VisibleComponent)) continue
+
+    iterateEntityNode(intersection.object.entity, (entity: Entity) => {
+      const mesh = getOptionalComponent(entity, MeshComponent)
+      if (!mesh || !hasComponent(entity, MaterialInstanceComponent)) return
+      let materialIndex = 0
+      for (const g of mesh.geometry.groups) {
+        if (intersection.faceIndex! * 3 >= g.start && intersection.faceIndex! * 3 < g.start + g.count) {
+          materialIndex = g.materialIndex!
+          break
+        }
+      }
+
+      /** Reparent the material to the target source */
+      const sourceEntity = getAncestorWithComponents(entity, [GLTFComponent])
+
+      const newSourceID = GLTFComponent.getInstanceID(sourceEntity)
+      setComponent(materialEntity, SourceComponent, newSourceID)
+
+      /** Generate a new ID for this entity such that it doesn't collider with others */
+      const nodeID = NodeIDComponent.generate()
+      setComponent(materialEntity, NodeIDComponent, nodeID)
+
+      /** Sync UUID */
+      setComponent(materialEntity, UUIDComponent, NodeIDComponent.getUUIDBySourceAndNodeID(newSourceID, nodeID))
+
+      /** Update the material instance component to point to the new material */
+      const materialUUID = getComponent(materialEntity, UUIDComponent)
+      getMutableComponent(entity, MaterialInstanceComponent).uuid[materialIndex].set(materialUUID)
+
+      affectedEntities.push(entity)
+      removeEntity(assetEntity)
+      foundTarget = true
+    })
+    if (foundTarget) break
+  }
+  AuthoringState.snapshotEntities(affectedEntities)
+}
 
 /**
  * Adds media node from passed url. Type of the media will be detected automatically
@@ -124,58 +166,7 @@ export async function addMediaNode(
       // setComponent(rayEntity, LineSegmentComponent, { geometry: lineGeometry })
 
       AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
-        (assetEntity) => {
-          const [materialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
-          let foundTarget = false
-          const affectedEntities = [] as Entity[]
-          for (const intersection of intersections) {
-            if (!hasComponent(intersection.object.entity, VisibleComponent)) continue
-
-            iterateEntityNode(intersection.object.entity, (entity: Entity) => {
-              const mesh = getOptionalComponent(entity, MeshComponent)
-              if (!mesh) return
-              let materialIndex = 0
-              for (const g of mesh.geometry.groups) {
-                if (intersection.faceIndex! * 3 >= g.start && intersection.faceIndex! * 3 < g.start + g.count) {
-                  materialIndex = g.materialIndex!
-                  break
-                }
-              }
-              const uuids = getComponent(entity, MaterialInstanceComponent).uuid
-
-              /**@todo we should be setting the uuid of the material instance component to the uuid of the new material */
-              //const materialUUID = getComponent(material, UUIDComponent)
-              //uuids[materialIndex] = materialUUID,
-              //setComponent(entity, MaterialInstanceComponent, { uuid: uuids })
-              /**scene deltas do not yet support this, so a temporary hackfix is to modify existing materials to match */
-              const materialComponent = getComponent(materialEntity, MaterialStateComponent)
-              const materialToMutate = UUIDComponent.getEntityByUUID(uuids[materialIndex], Layers.Authoring)
-              // wipe out any existing deltas for this material
-              const existingDelta =
-                SceneDeltaState.getSource(materialToMutate)?.[getComponent(materialToMutate, NodeIDComponent)]
-              if (existingDelta.value) {
-                //another hack
-                const mat = getComponent(materialToMutate, MaterialStateComponent).material
-                const constructor =
-                  getState(MaterialPrototypeDefinitions)[mat.userData?.type || mat.type].prototypeConstructor
-                getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
-                existingDelta.set(none)
-              }
-              EditorControlFunctions.updateMaterialPrototype(
-                materialToMutate,
-                materialComponent.material.userData?.type ?? materialComponent.material.type
-              )
-              affectedEntities.push(materialToMutate)
-              EditorControlFunctions.modifyMaterial([uuids[materialIndex]], uuids[materialIndex], [
-                getComponent(materialEntity, MaterialStateComponent).parameters
-              ])
-              removeEntity(assetEntity)
-              foundTarget = true
-            })
-            if (foundTarget) break
-          }
-          AuthoringState.snapshotEntities(affectedEntities)
-        }
+        replaceMaterialAtIntersection(intersections)
       )
     } else if (contentType.startsWith('model/lookdev')) {
       /**

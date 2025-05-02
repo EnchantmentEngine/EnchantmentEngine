@@ -464,9 +464,7 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    const newSourceID = hasComponent(parent, GLTFComponent)
-      ? GLTFComponent.getInstanceID(parent)
-      : getComponent(parent, SourceComponent)
+    const newSourceID = GLTFComponent.getInstanceID(parent)
     setComponent(entity, SourceComponent, newSourceID)
     setComponent(
       entity,
