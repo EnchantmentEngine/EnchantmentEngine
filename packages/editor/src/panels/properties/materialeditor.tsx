@@ -185,9 +185,9 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   // }, [selectedPlugin.value, currentSelectedMaterial])
 
   // useEffect(() => {
-  //   for (const pluginComponent of Object.values(MaterialPluginComponents)) {
+  //   for (const pluginComponent of Object.values(MaterialPlugins)) {
   //     const component = getOptionalComponent(entity, pluginComponent)
-  //     if (!component || pluginComponent != MaterialPluginComponents[selectedPlugin.value]) {
+  //     if (!component || pluginComponent != MaterialPlugins[selectedPlugin.value]) {
   //       continue
   //     }
   //     const pluginParameterValues = {}
@@ -199,7 +199,14 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   //     for (const key in component) pluginValues[key].set(component[key].value)
   //     return
   //   }
-  // }, [selectedPlugin.value])
+  // }, [selectedPlugin, useOptionalComponent(entity, MaterialPlugins[selectedPlugin.value])])
+
+  // useEffect(() => {
+  //   if (prototypeName.value === material.type) return
+
+  //   EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
+  //   AuthoringState.snapshotEntities([entity])
+  // }, [prototypeName])
 
   return (
     <div className="relative flex flex-col gap-2">
