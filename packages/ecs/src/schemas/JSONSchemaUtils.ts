@@ -414,7 +414,7 @@ export const CloneSerializable = <Val>(value: Val) => {
 }
 
 const isSerializable = <T extends Schema>(schema: T) => {
-  return schema?.options?.serialized
+  return !!schema?.options?.serialized
 }
 
 export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) => {
@@ -527,7 +527,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
 }
 
 const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
-  if (!isSerializable(schema)) return null
+  if (!isSerializable(schema)) return undefined
   if (schema.options?.serialize) return schema.options?.serialize(value)
 
   switch (schema[Kind]) {
