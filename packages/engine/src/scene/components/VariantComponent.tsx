@@ -80,8 +80,8 @@ export enum Devices {
 }
 
 export const distanceMetadataSchema = S.Object({
-  minDistance: S.Number(),
-  maxDistance: S.Number()
+  minDistance: S.Union([S.Number(), S.Undefined()], { default: undefined }),
+  maxDistance: S.Union([S.Number(), S.Undefined()], { default: undefined })
 })
 
 export const deviceMetadataSchema = S.Object({
