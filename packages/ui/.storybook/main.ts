@@ -40,7 +40,6 @@ const config: StorybookConfig = {
     '../src/primitives/tailwind/!(TruncatedText)/*.stories.@(js|jsx|ts|tsx)',
     '../src/components/editor/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/components/editor/properties/**/*.stories.@(js|jsx|ts|tsx)',
-
     '../src/components/tailwind/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/icons/**/*.stories.@(js|jsx|ts|tsx)'
   ],
