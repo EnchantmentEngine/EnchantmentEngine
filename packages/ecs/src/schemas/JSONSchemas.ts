@@ -362,7 +362,7 @@ export const S = {
 
   /** EntityUUIDPair type schema helper, defaults to {instanceID: '', id: ''} */
   EntityUUIDPair: (options?: TTypedSchema<EntityUUIDPair>['options']) =>
-    S.Object({ instanceID: S.String(), id: S.String() }) as unknown as TTypedSchema<EntityUUIDPair>,
+    S.Object({ entitySourceID: S.String(), entityID: S.String() }) as unknown as TTypedSchema<EntityUUIDPair>,
 
   /** UserID type schema helper, defaults to '' */
   UserID: (options?: TTypedSchema<UserID>['options']) =>

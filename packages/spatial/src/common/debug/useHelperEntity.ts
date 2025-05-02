@@ -68,7 +68,10 @@ export function useHelperEntity<TObject extends DisposableObject3D>(
     setComponent(helperEntity, EntityTreeComponent, { parentEntity: parentEntity })
     setComponent(helperEntity, TransformComponent)
     setComponent(helperEntity, ObjectComponent, helper)
-    setComponent(helperEntity, UUIDComponent, { id: 'helper-entity', instanceID: UUIDComponent.generateUUID() })
+    setComponent(helperEntity, UUIDComponent, {
+      entityID: 'helper-entity',
+      entitySourceID: UUIDComponent.generateUUID()
+    })
     setComponent(helperEntity, ObjectLayerMaskComponent, layerMask)
     setComponent(helperEntity, VisibleComponent, true)
     helperEntityState.set(helperEntity)

@@ -54,7 +54,7 @@ function MaterialPreviewCanvas() {
       return
 
     setComponent(sceneEntity, TransformComponent)
-    setComponent(sceneEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'material' })
+    setComponent(sceneEntity, UUIDComponent, { source: UUIDComponent.generateUUID(), id: 'material' })
     setComponent(sceneEntity, NameComponent, 'Material Preview Entity')
     setComponent(sceneEntity, VisibleComponent, true)
     const sphereMesh = new Mesh(new SphereGeometry(5, 32, 32))

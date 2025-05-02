@@ -31,6 +31,7 @@ import {
   ComponentJSONIDMap,
   defineComponent,
   Entity,
+  EntityID,
   EntityUUID,
   getComponent,
   getMutableComponent,
@@ -41,6 +42,7 @@ import {
   removeComponent,
   removeEntity,
   setComponent,
+  SourceID,
   UndefinedEntity,
   useComponent,
   useEntityContext,
@@ -67,12 +69,12 @@ import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadComponent'
-import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
+import { SourceComponent } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
-import { NodeID, NodeIDComponent } from './NodeIDComponent'
+import { NodeIDComponent } from './NodeIDComponent'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
@@ -170,7 +172,7 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
   if (!json.nodes) return dependencies
   for (const node of json.nodes) {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
-      const nodeID = node.extensions[NodeIDComponent.jsonID] as NodeID
+      const nodeID = node.extensions[NodeIDComponent.jsonID] as EntityID
       const sourceID = GLTFComponent.getInstanceID(entity)
       const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
       const extensions = Object.keys(node.extensions)

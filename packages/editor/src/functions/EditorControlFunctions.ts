@@ -571,7 +571,7 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    getMutableComponent(entity, UUIDComponent).instanceID.set(UUIDComponent.getUUID(parent))
+    getMutableComponent(entity, UUIDComponent).source.set(UUIDComponent.getUUID(parent))
 
     EditorState.markModifiedScene(entity)
   }

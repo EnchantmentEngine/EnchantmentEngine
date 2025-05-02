@@ -109,7 +109,7 @@ export const AssetState = defineState({
     layer = Layers.Simulation as LayerID
   ) => {
     const entity = createEntity(layer)
-    setComponent(entity, UUIDComponent, { id: uuid, instanceID: 'root' })
+    setComponent(entity, UUIDComponent, { entityID: uuid, entitySourceID: 'root' })
     setComponent(entity, NameComponent, source.split('/').pop()!)
     setComponent(entity, VisibleComponent, true)
     setComponent(entity, TransformComponent)

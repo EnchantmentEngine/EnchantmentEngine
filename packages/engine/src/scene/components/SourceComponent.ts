@@ -24,16 +24,14 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, SourceID } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState, getMutableState, getState, none, OpaqueType, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
 import { NodeID } from '../../gltf/NodeIDComponent'
 
 /**
  * A source ID is expeced to in the format of `<nodeid>-<src>` where src is the source of the model and nodeid is the node id of the entity
  */
-
-export type SourceID = OpaqueType<'SourceID'> & string
 
 export const EntitiesBySourceState = defineState({
   name: 'ir.world.EntitiesBySourceState',

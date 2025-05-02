@@ -27,11 +27,13 @@ import {
   createEntity,
   defineComponent,
   Entity,
+  EntityID,
   EntityUUIDPair,
   LayerID,
   Layers,
   S,
   setComponent,
+  SourceID,
   TTypedSchema,
   useComponent,
   useEntityContext,
@@ -41,7 +43,7 @@ import { defineState, getMutableState, getState, none, OpaqueType } from '@ir-en
 import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { SourceComponent, SourceID } from '../scene/components/SourceComponent'
+import { SourceComponent } from '../scene/components/SourceComponent'
 import { GLTFComponent } from './GLTFComponent'
 
 export type NodeID = OpaqueType<'NodeID'> & string
@@ -89,15 +91,18 @@ export const NodeIDComponent = defineComponent({
     return null
   },
 
-  getUUIDBySourceAndNodeID: (source: string, nodeID: NodeID): EntityUUIDPair => ({ instanceID: source, id: nodeID }),
+  getUUIDBySourceAndNodeID: (source: SourceID, nodeID: EntityID): EntityUUIDPair => ({
+    entitySourceID: source,
+    entityID: nodeID
+  }),
 
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
    */
-  create: (sourceEntity: Entity, nodeID: NodeID, layer = Layers.Simulation as LayerID) => {
+  create: (sourceEntity: Entity, nodeID: EntityID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
-    setComponent(entity, NodeIDComponent, nodeID)
+    setComponent(entity, NodeIDComponent, nodeID as string)
     setComponent(entity, SourceComponent, sourceEntity)
     setComponent(
       entity,

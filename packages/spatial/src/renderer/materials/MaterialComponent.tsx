@@ -36,13 +36,12 @@ import {
   useEntityContext,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { Entity, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, EntityUUIDPair, SourceID } from '@ir-engine/ecs/src/Entity'
 import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineState } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import { MeshComponent } from '../components/MeshComponent'
 import { NoiseOffsetPluginComponent } from './constants/plugins/NoiseOffsetPlugin'
 import { TransparencyDitheringPluginComponent } from './constants/plugins/TransparencyDitheringComponent'
@@ -113,7 +112,10 @@ export const MaterialStateComponent = defineComponent({
     prototype: S.String()
   }),
 
-  fallbackMaterialUUIDPair: { instanceID: uuidv4() as EntityUUID, id: 'fallback-material' } as EntityUUIDPair,
+  fallbackMaterialUUIDPair: {
+    entitySourceID: UUIDComponent.generateUUID() as string as SourceID,
+    entityID: 'fallback-material'
+  } as EntityUUIDPair,
   fallbackMaterial: () => {
     const fallbackMaterialEntity = UUIDComponent.getEntityByUUID(
       UUIDComponent.concatenateUUID(MaterialStateComponent.fallbackMaterialUUIDPair)

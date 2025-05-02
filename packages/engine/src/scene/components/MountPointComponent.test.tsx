@@ -118,12 +118,15 @@ describe('MountPointComponent.ts', async () => {
         mountPointTestEntity = createEntity()
         avatarTestEntity = createEntity()
         sceneEntity = loadEmptyScene()
-        setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
+        setComponent(avatarTestEntity, UUIDComponent, {
+          entitySourceID: getState(EngineState).userID,
+          entityID: 'avatar'
+        })
 
         setComponent(sceneEntity, SceneComponent)
         setComponent(mountPointTestEntity, UUIDComponent, {
-          instanceID: UUIDComponent.generateUUID(),
-          id: 'mountPoint'
+          entitySourceID: UUIDComponent.generateUUID(),
+          entityID: 'mountPoint'
         })
         setComponent(mountPointTestEntity, TransformComponent)
         setComponent(mountPointTestEntity, InteractableComponent)
@@ -135,8 +138,8 @@ describe('MountPointComponent.ts', async () => {
             parentUUID: UUIDComponent.getUUID(sceneEntity),
             position: new Vector3(),
             rotation: new Quaternion(),
-            entityID: getComponent(avatarTestEntity, UUIDComponent).id,
-            entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
+            entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+            entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
             avatarURL: '',
             name: 'avatar1'
           })
@@ -208,8 +211,14 @@ describe('MountPointComponent.ts', async () => {
       sceneEntity = loadEmptyScene()
 
       setComponent(sceneEntity, SceneComponent)
-      setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
-      setComponent(mountPointTestEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'mountPoint' })
+      setComponent(avatarTestEntity, UUIDComponent, {
+        entitySourceID: getState(EngineState).userID,
+        entityID: 'avatar'
+      })
+      setComponent(mountPointTestEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'mountPoint'
+      })
       setComponent(mountPointTestEntity, TransformComponent)
       setComponent(mountPointTestEntity, InteractableComponent)
       setComponent(mountPointTestEntity, MountPointComponent)
@@ -220,8 +229,8 @@ describe('MountPointComponent.ts', async () => {
           parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity, UUIDComponent).id,
-          entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
+          entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+          entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
           avatarURL: '',
           name: 'avatar1'
         })
@@ -251,14 +260,14 @@ describe('MountPointComponent.ts', async () => {
     it('Should return if avatar not seated and point occupied by another entity', async () => {
       // Create a second avatar entity that occupies the mount location
       const avatarTestEntity2 = createEntity()
-      setComponent(avatarTestEntity2, UUIDComponent, { instanceID: 'some other avatar', id: 'avatar2' })
+      setComponent(avatarTestEntity2, UUIDComponent, { entitySourceID: 'some other avatar', entityID: 'avatar2' })
       dispatchAction(
         AvatarNetworkAction.spawn({
           parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity2, UUIDComponent).id,
-          entityInstanceID: getComponent(avatarTestEntity2, UUIDComponent).instanceID,
+          entityID: getComponent(avatarTestEntity2, UUIDComponent).entityID,
+          entitySourceID: getComponent(avatarTestEntity2, UUIDComponent).entitySourceID,
           avatarURL: '',
           name: 'avatar2'
         })
@@ -346,7 +355,10 @@ describe('MountPointComponent.ts', async () => {
       initializeSpatialViewer()
       await Physics.load()
 
-      setComponent(avatarTestEntity, UUIDComponent, { instanceID: getState(EngineState).userID, id: 'avatar' })
+      setComponent(avatarTestEntity, UUIDComponent, {
+        entitySourceID: getState(EngineState).userID,
+        entityID: 'avatar'
+      })
 
       mountPointTestEntity = createEntity()
 
@@ -357,7 +369,7 @@ describe('MountPointComponent.ts', async () => {
 
       sceneEntity = createEntity()
       setComponent(sceneEntity, EntityTreeComponent)
-      setComponent(sceneEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'scene' })
+      setComponent(sceneEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'scene' })
       setComponent(sceneEntity, SceneComponent)
       setComponent(sceneEntity, TransformComponent)
       physicsWorld = Physics.createWorld(sceneEntity)
@@ -370,8 +382,8 @@ describe('MountPointComponent.ts', async () => {
           parentUUID: UUIDComponent.getUUID(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity, UUIDComponent).id,
-          entityInstanceID: getComponent(avatarTestEntity, UUIDComponent).instanceID,
+          entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+          entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
           avatarURL: '',
           name: 'avatar1'
         })
@@ -483,7 +495,10 @@ describe('MountPointComponent.ts', async () => {
       MountPointComponent.mountEntity(avatarTestEntity, mountPointTestEntity)
       const groundPlaneEntity = createEntity()
       setComponent(groundPlaneEntity, EntityTreeComponent, { parentEntity: sceneEntity })
-      setComponent(groundPlaneEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'groundPlane' })
+      setComponent(groundPlaneEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'groundPlane'
+      })
       setComponent(groundPlaneEntity, TransformComponent, {
         position: new Vector3(0, 1, 0),
         scale: new Vector3(10, 10, 10)

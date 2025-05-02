@@ -55,7 +55,7 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
   if (!sourceID) {
-    setComponent(entity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: name })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: name })
   }
 
   // These additional properties and relations are required for

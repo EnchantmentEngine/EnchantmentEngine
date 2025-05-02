@@ -45,7 +45,7 @@ import { GLTFComponent } from '../../src/gltf/GLTFComponent'
 export const createTestGLTFEntity = () => {
   const parent = createEntity()
   setComponent(parent, EntityTreeComponent)
-  setComponent(parent, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'test-gltf-entity' })
+  setComponent(parent, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test-gltf-entity' })
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })
   return entity
@@ -60,13 +60,16 @@ export const vrm = default_url + '/avatars/irRobot.vrm'
 export const mockAnimatedAvatar = async () => {
   const animationPackEntity = createTestGLTFEntity()
 
-  setComponent(animationPackEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'animation-pack' })
+  setComponent(animationPackEntity, UUIDComponent, {
+    entitySourceID: UUIDComponent.generateUUID(),
+    entityID: 'animation-pack'
+  })
   setComponent(animationPackEntity, GLTFComponent, { src: animation_pack })
   setComponent(animationPackEntity, NameComponent, 'animationPack')
 
   const vrmEntity = createTestGLTFEntity()
 
-  setComponent(vrmEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'vrm' })
+  setComponent(vrmEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'vrm' })
   setComponent(vrmEntity, GLTFComponent, { src: vrm })
   setComponent(vrmEntity, AvatarRigComponent)
   setComponent(vrmEntity, AvatarAnimationComponent)

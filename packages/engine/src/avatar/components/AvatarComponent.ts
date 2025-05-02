@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, EntityUUIDPair, UUIDComponent } from '@ir-engine/ecs'
+import { EngineState, EntityID, EntityUUIDPair, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -60,7 +60,7 @@ export const AvatarComponent = defineComponent({
   }),
 
   getSelfAvatarUUIDPair(): EntityUUIDPair {
-    return { instanceID: getState(EngineState).userID, id: 'avatar' }
+    return { entitySourceID: getState(EngineState).userID as string as SourceID, entityID: 'avatar' as EntityID }
   },
 
   getSelfAvatarUUID() {

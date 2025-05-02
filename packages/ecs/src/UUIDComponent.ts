@@ -45,11 +45,11 @@ export const UUIDComponent = defineComponent({
     S.EntityUUIDPair({
       validate: (idPair, prev, entity) => {
         if (idPair === prev) return true
-        if (!idPair.instanceID) {
+        if (!idPair.entitySourceID) {
           console.error('UUID context cannot be empty')
           return false
         }
-        if (!idPair.id) {
+        if (!idPair.entityID) {
           console.error('UUID id cannot be empty')
           return false
         }
@@ -73,7 +73,10 @@ export const UUIDComponent = defineComponent({
 
   onSet(entity, component, idPair: EntityUUIDPair) {
     const layer = LayerComponent.get(entity)
-    const prev = UUIDComponent.concatenateUUID(component.value)
+    const prev =
+      component.value.entityID && component.value.entitySourceID
+        ? UUIDComponent.concatenateUUID(component.value)
+        : undefined
     // remove old uuid
     if (prev) {
       const currentUUID = prev
@@ -107,7 +110,7 @@ export const UUIDComponent = defineComponent({
   getUUID: (entity: Entity) => UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)),
   useUUID: (entity: Entity) => UUIDComponent.concatenateUUID(useComponent(entity, UUIDComponent).value),
 
-  concatenateUUID: (idPair: EntityUUIDPair) => `${idPair.instanceID}${idPair.id}` as EntityUUID,
+  concatenateUUID: (idPair: EntityUUIDPair) => `${idPair.entitySourceID}${idPair.entityID}` as EntityUUID,
 
   getOrCreateEntityByUUID(idPair: EntityUUIDPair, layer = Layers.Simulation as LayerID) {
     const state = UUIDComponentFunctions._getUUIDState(UUIDComponent.concatenateUUID(idPair), layer)

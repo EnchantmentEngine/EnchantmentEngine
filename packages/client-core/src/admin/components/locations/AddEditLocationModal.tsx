@@ -35,6 +35,7 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import {
   Entity,
+  EntityID,
   EntityTreeComponent,
   Layers,
   UUIDComponent,
@@ -253,7 +254,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         setComponent(combinedMeshEntity, NameComponent, 'combined mesh entity')
         setComponent(combinedMeshEntity, TransformComponent)
         const newSource = GLTFComponent.getInstanceID(rootEntity)
-        setComponent(combinedMeshEntity, UUIDComponent, { instanceID: newSource, id: UUIDComponent.generateUUID() })
+        setComponent(combinedMeshEntity, UUIDComponent, {
+          entitySourceID: newSource,
+          entityID: UUIDComponent.generateUUID() as string as EntityID
+        })
         setComponent(combinedMeshEntity, SourceComponent, rootEntity)
         const srcURL = pathJoin(config.client.fileServer, saveScenePath + '/' + scenename + '/combined-mesh.gltf')
         iterateEntityNode(rootEntity, (entity) => {

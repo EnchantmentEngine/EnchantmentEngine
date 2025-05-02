@@ -191,8 +191,8 @@ export function useGLTFComponent(url: string, parentEntity: Entity): Entity | nu
     const gltfEntity = createEntity()
     setComponent(gltfEntity, EntityTreeComponent, { parentEntity })
     setComponent(gltfEntity, UUIDComponent, {
-      instanceID: UUIDComponent.getUUID(parentEntity),
-      id: UUIDComponent.generateUUID()
+      entitySourceID: UUIDComponent.getUUID(parentEntity),
+      entityID: UUIDComponent.generateUUID()
     })
     setComponent(gltfEntity, GLTFComponent, { src: url })
     gltfEntityState.set(gltfEntity)

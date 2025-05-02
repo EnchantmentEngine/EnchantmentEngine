@@ -27,12 +27,14 @@ import React, { useLayoutEffect } from 'react'
 
 import {
   Engine,
+  EntityID,
   EntityTreeComponent,
   EntityUUID,
   EntityUUIDPair,
   getOptionalComponent,
   removeEntity,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
@@ -60,8 +62,8 @@ export const EntityNetworkState = defineState({
   initial: {} as Record<
     EntityUUID,
     {
-      entityID: string
-      entityInstanceID: string
+      entityID: EntityID
+      entitySourceID: SourceID
       parentUUID: EntityUUID
       ownerId: UserID | typeof SceneUser
       ownerPeer: PeerID
@@ -73,14 +75,14 @@ export const EntityNetworkState = defineState({
   receptors: {
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
-        const uuid = { id: action.entityID, instanceID: action.entityInstanceID } as EntityUUIDPair
+        const uuid = { entityID: action.entityID, entitySourceID: action.entitySourceID } as EntityUUIDPair
         getMutableState(EntityNetworkState)[UUIDComponent.concatenateUUID(uuid)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
           ownerPeer: action.$peer,
           entityID: action.entityID,
-          entityInstanceID: action.entityInstanceID
+          entitySourceID: action.entitySourceID
         })
       })
       .validate((action) => {
@@ -143,8 +145,8 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
   useLayoutEffect(() => {
     if (!userConnected) return
     const entity = UUIDComponent.getOrCreateEntityByUUID({
-      id: state.entityID.value,
-      instanceID: state.entityInstanceID.value
+      entityID: state.entityID.value,
+      entitySourceID: state.entitySourceID.value
     })
     return () => {
       removeEntity(entity)

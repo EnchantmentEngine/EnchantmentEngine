@@ -48,7 +48,7 @@ export const AvatarIKTargetState = defineState({
   receptors: {
     onSpawn: AvatarNetworkAction.spawnIKTarget.receive((action) => {
       getMutableState(AvatarIKTargetState)[
-        UUIDComponent.concatenateUUID({ instanceID: action.parentUUID, id: action.entityID })
+        UUIDComponent.concatenateUUID({ entitySourceID: action.parentUUID, entityID: action.entityID })
       ].merge({ name: action.name })
     }),
     onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {

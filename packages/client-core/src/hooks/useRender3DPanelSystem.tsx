@@ -26,7 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 
 import {
+  EntityID,
   EntityTreeComponent,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
@@ -51,15 +53,15 @@ export function useRender3DPanelSystem(canvas: React.MutableRefObject<HTMLCanvas
 
   const panelState = useHookstate(() => {
     const sceneEntity = createEntity()
-    const instanceID = UUIDComponent.generateUUID()
-    setComponent(sceneEntity, UUIDComponent, { instanceID, id: 'scene' })
+    const sourceID = UUIDComponent.generateUUID() as string as SourceID
+    setComponent(sceneEntity, UUIDComponent, { entitySourceID: sourceID, entityID: 'scene' as EntityID })
     setComponent(sceneEntity, TransformComponent)
     setComponent(sceneEntity, VisibleComponent)
     setComponent(sceneEntity, SceneComponent)
     setComponent(sceneEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
 
     const cameraEntity = createEntity()
-    setComponent(cameraEntity, UUIDComponent, { instanceID, id: 'camera' })
+    setComponent(cameraEntity, UUIDComponent, { entitySourceID: sourceID, entityID: 'camera' as EntityID })
     setComponent(cameraEntity, CameraComponent)
     setComponent(cameraEntity, TransformComponent)
     setComponent(cameraEntity, VisibleComponent)

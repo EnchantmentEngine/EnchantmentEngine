@@ -35,6 +35,7 @@ import {
   QueryReactor,
   removeEntity,
   setComponent,
+  SourceID,
   UndefinedEntity,
   useComponent,
   useEntityContext,
@@ -123,7 +124,10 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     (forceBasicMaterials || isMobileXRHeadset) && ExpensiveMaterials.has(materialComponent.material.type)
 
   const uuid = getComponent(material, UUIDComponent)
-  const basicUuid: EntityUUIDPair = { instanceID: 'basic-' + uuid.instanceID, id: uuid.id }
+  const basicUuid: EntityUUIDPair = {
+    entitySourceID: ('basic-' + uuid.entitySourceID) as SourceID,
+    entityID: uuid.entityID
+  }
   const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(basicUuid))
   if (shouldMakeBasic) {
     if (existingMaterialEntity) {
@@ -153,7 +157,10 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
   } else if (!forceBasicMaterials) {
     const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(uuid))
     if (!basicMaterialEntity) return
-    const nonBasicUUID = UUIDComponent.concatenateUUID({ instanceID: uuid.instanceID.slice(6), id: uuid.id })
+    const nonBasicUUID = UUIDComponent.concatenateUUID({
+      entitySourceID: uuid.entitySourceID.slice(6) as SourceID,
+      entityID: uuid.entityID
+    })
     const materialEntity = UUIDComponent.getEntityByUUID(nonBasicUUID)
     if (!materialEntity) return
     setMaterial(materialEntity)

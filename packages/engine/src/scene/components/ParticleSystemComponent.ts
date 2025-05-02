@@ -107,8 +107,8 @@ const createBatchedRenderer = (entity: Entity) => {
     setComponent(rendererEntity, NameComponent, 'Particle Renderer')
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
     setComponent(rendererEntity, UUIDComponent, {
-      instanceID: UUIDComponent.getUUID(sceneEntity),
-      id: UUIDComponent.generateUUID()
+      entitySourceID: UUIDComponent.getUUID(sceneEntity),
+      entityID: UUIDComponent.generateUUID()
     })
     setComponent(rendererEntity, EntityTreeComponent, { parentEntity: sceneEntity })
     renderer.preserveChildren = true

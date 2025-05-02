@@ -46,7 +46,7 @@ import { TransformComponent } from './transform/components/TransformComponent'
 export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
   const viewerEntity = createEntity()
   setComponent(viewerEntity, NameComponent, 'viewer')
-  setComponent(viewerEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'ee.viewer' })
+  setComponent(viewerEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'ee.viewer' })
   setComponent(viewerEntity, CameraComponent)
   setComponent(viewerEntity, VisibleComponent, true)
   setComponent(viewerEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
@@ -95,14 +95,17 @@ export const useSpatialEngine = () => {
 export const initializeSpatialEngine = () => {
   const originEntity = createEntity()
   setComponent(originEntity, NameComponent, 'origin')
-  setComponent(originEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'ee.origin' })
+  setComponent(originEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'ee.origin' })
   setComponent(originEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(originEntity, TransformComponent)
   setComponent(originEntity, VisibleComponent, true)
 
   const localFloorEntity = createEntity()
   setComponent(localFloorEntity, NameComponent, 'local floor')
-  setComponent(localFloorEntity, UUIDComponent, { instanceID: UUIDComponent.generateUUID(), id: 'ee.local-floor' })
+  setComponent(localFloorEntity, UUIDComponent, {
+    entitySourceID: UUIDComponent.generateUUID(),
+    entityID: 'ee.local-floor'
+  })
   setComponent(localFloorEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(localFloorEntity, TransformComponent)
   setComponent(localFloorEntity, VisibleComponent, true)

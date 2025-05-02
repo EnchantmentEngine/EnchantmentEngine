@@ -76,8 +76,8 @@ describe('spawnAvatarReceptor', () => {
         parentUUID: UUIDComponent.getUUID(sceneEntity),
         position: new Vector3(),
         rotation: new Quaternion(),
-        entityID: AvatarComponent.getSelfAvatarUUIDPair().id,
-        entityInstanceID: AvatarComponent.getSelfAvatarUUIDPair().instanceID,
+        entityID: AvatarComponent.getSelfAvatarUUIDPair().entityID,
+        entitySourceID: AvatarComponent.getSelfAvatarUUIDPair().entitySourceID,
         avatarURL: avatarUrl,
         name: 'TestAvatar'
       })

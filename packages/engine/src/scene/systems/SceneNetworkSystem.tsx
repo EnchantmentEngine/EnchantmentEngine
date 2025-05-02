@@ -65,8 +65,8 @@ const SourcedEntityReactor = () => {
     dispatchAction(
       WorldNetworkAction.spawnEntity({
         ownerID: SceneUser,
-        entityID: entityUUID.id,
-        entityInstanceID: entityUUID.instanceID,
+        entityID: entityUUID.entityID,
+        entitySourceID: entityUUID.entitySourceID,
         parentUUID,
         $network: undefined,
         $topic: undefined,

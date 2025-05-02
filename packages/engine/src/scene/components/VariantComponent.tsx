@@ -211,8 +211,8 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
     setComponent(entity, UUIDComponent, {
-      instanceID: UUIDComponent.getUUID(props.entity),
-      id: 'LOD-' + props.level
+      entitySourceID: UUIDComponent.getUUID(props.entity),
+      entityID: 'LOD-' + props.level
     } as EntityUUIDPair)
     setComponent(entity, NameComponent, getComponent(props.entity, NameComponent) + ' LOD ' + props.level)
     setComponent(entity, TransformComponent)

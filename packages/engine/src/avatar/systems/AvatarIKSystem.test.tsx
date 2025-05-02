@@ -73,7 +73,7 @@ describe('AvatarIKSystem', () => {
   })
 
   it('should solve IK such that every tip joint world position is at the ik target', async () => {
-    const avatarUuidPair = { instanceID: UUIDComponent.generateUUID(), id: 'avatar' } as EntityUUIDPair
+    const avatarUuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'avatar' } as EntityUUIDPair
     const avatarUuid = UUIDComponent.concatenateUUID(avatarUuidPair)
     let avatarEntity = UndefinedEntity as Entity
     avatarEntity = await mockAnimatedAvatar()
@@ -114,7 +114,7 @@ describe('AvatarIKSystem', () => {
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,
         entityID: rightHandId,
-        entityInstanceID: avatarUuid,
+        entitySourceID: avatarUuid,
         name: 'rightHand',
         blendWeight: 1
       })
@@ -123,7 +123,7 @@ describe('AvatarIKSystem', () => {
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,
         entityID: leftHandId,
-        entityInstanceID: avatarUuid,
+        entitySourceID: avatarUuid,
         name: 'leftHand',
         blendWeight: 1
       })
@@ -132,7 +132,7 @@ describe('AvatarIKSystem', () => {
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,
         entityID: leftFootId,
-        entityInstanceID: avatarUuid,
+        entitySourceID: avatarUuid,
         name: 'leftFoot',
         blendWeight: 1
       })
@@ -141,7 +141,7 @@ describe('AvatarIKSystem', () => {
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,
         entityID: rightFootId,
-        entityInstanceID: avatarUuid,
+        entitySourceID: avatarUuid,
         name: 'rightFoot',
         blendWeight: 1
       })
@@ -150,7 +150,7 @@ describe('AvatarIKSystem', () => {
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,
         entityID: headId,
-        entityInstanceID: avatarUuid,
+        entitySourceID: avatarUuid,
         name: 'head',
         blendWeight: 1
       })
@@ -158,11 +158,11 @@ describe('AvatarIKSystem', () => {
     applyIncomingActions()
 
     // Create the concatenated UUIDs
-    const rightHandUuid = UUIDComponent.concatenateUUID({ instanceID: avatarUuid, id: rightHandId })
-    const leftHandUuid = UUIDComponent.concatenateUUID({ instanceID: avatarUuid, id: leftHandId })
-    const leftFootUuid = UUIDComponent.concatenateUUID({ instanceID: avatarUuid, id: leftFootId })
-    const rightFootUuid = UUIDComponent.concatenateUUID({ instanceID: avatarUuid, id: rightFootId })
-    const headUuid = UUIDComponent.concatenateUUID({ instanceID: avatarUuid, id: headId })
+    const rightHandUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuid, entityID: rightHandId })
+    const leftHandUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuid, entityID: leftHandId })
+    const leftFootUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuid, entityID: leftFootId })
+    const rightFootUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuid, entityID: rightFootId })
+    const headUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuid, entityID: headId })
 
     await vi.waitUntil(() => {
       return (

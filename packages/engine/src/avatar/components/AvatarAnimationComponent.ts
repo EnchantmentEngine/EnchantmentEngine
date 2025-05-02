@@ -37,7 +37,7 @@ import {
   setComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -153,8 +153,8 @@ export function createVRM(rootEntity: Entity) {
 
   for (const bone of humanBonesArray) {
     const uuid = UUIDComponent.concatenateUUID({
-      instanceID: UUIDComponent.concatenateUUID(getComponent(rootEntity, UUIDComponent)),
-      id: bone.node!.toString()
+      entitySourceID: UUIDComponent.concatenateUUID(getComponent(rootEntity, UUIDComponent)) as string as SourceID,
+      entityID: bone.node!.toString() as EntityID
     })
     const entity = UUIDComponent.getEntityByUUID(uuid)
     AvatarRigComponent.setBone(rootEntity, entity, bone.bone as VRMHumanBoneName)
