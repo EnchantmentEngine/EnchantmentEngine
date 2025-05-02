@@ -44,8 +44,6 @@ import React, { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { NameComponent } from '../../common/NameComponent'
 import { MeshComponent } from '../components/MeshComponent'
-import { NoiseOffsetPluginComponent } from './constants/plugins/NoiseOffsetPlugin'
-import { TransparencyDitheringPluginComponent } from './constants/plugins/TransparencyDitheringComponent'
 import { setMeshMaterial } from './materialFunctions'
 import MeshBasicMaterial from './prototypes/MeshBasicMaterial.mat'
 import MeshLambertMaterial from './prototypes/MeshLambertMaterial.mat'
@@ -91,10 +89,7 @@ export const MaterialPrototypeDefinitions = defineState({
     }) as Record<string, MaterialPrototypeDefinition>
 })
 
-export const MaterialPluginComponents = { TransparencyDitheringPluginComponent, NoiseOffsetPluginComponent } as Record<
-  string,
-  ComponentType<any>
->
+export const MaterialPluginComponents = {} as Record<string, ComponentType<any>>
 
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',

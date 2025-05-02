@@ -26,15 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   defineComponent,
   ECSState,
+  Entity,
   getComponent,
   PresentationSystemGroup,
   Schema,
   Static,
   useComponent
 } from '@ir-engine/ecs'
-import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
+import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import {
+  MaterialPluginComponents,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import React, { useEffect } from 'react'
 import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
@@ -133,12 +137,17 @@ export const defineMaterialPlugin = <T extends Schema>({
             uniforms[key].value = uniformValues[key]
           }
         },
-        { before: PresentationSystemGroup }
+        { before: PresentationSystemGroup, uuid: makeMaterialPluginUpdateSystemID(name, entity) }
       )
 
       return Reactor ? <Reactor entity={entity} /> : null
     }
   })
 
+  MaterialPluginComponents[name] = PluginComponent
+
   return PluginComponent
 }
+
+export const makeMaterialPluginUpdateSystemID = (pluginName: string, entity: Entity) =>
+  (pluginName + 'MaterialPluginUpdateSystem' + entity) as SystemUUID

@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   ECSState,
-  PresentationSystemGroup,
+  SerializedComponentType,
   SystemDefinitions,
   UndefinedEntity,
   createEngine,
@@ -38,41 +38,33 @@ import {
 } from '@ir-engine/ecs'
 import { getMutableState } from '@ir-engine/hyperflux'
 import assert from 'assert'
-import { Material, Uniform, Vector3 } from 'three'
+import { Material, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import { assertVec } from '../../../../../tests/util/assert'
 import { generateNoiseTexture } from '../../../functions/generateNoiseTexture'
+import { makeMaterialPluginUpdateSystemID } from '../../defineMaterialPlugin'
 import { MaterialStateComponent } from '../../MaterialComponent'
 import { NoiseOffsetPluginComponent } from './NoiseOffsetPlugin'
 
-type NoiseOffsetPluginComponentData = {
-  textureSize: Uniform
-  frequency: Uniform
-  amplitude: Uniform
-  noiseTexture: Uniform
-  offsetAxis: Uniform
-  time: Uniform
-}
-
-const NoiseOffsetPluginComponentDefaults: NoiseOffsetPluginComponentData = {
-  textureSize: new Uniform(64),
-  frequency: new Uniform(0.00025),
-  amplitude: new Uniform(0.005),
-  noiseTexture: new Uniform(generateNoiseTexture(64)),
-  offsetAxis: new Uniform(new Vector3(0, 1, 0)),
-  time: new Uniform(0)
+const NoiseOffsetPluginComponentDefaults: SerializedComponentType<typeof NoiseOffsetPluginComponent> = {
+  textureSize: 64,
+  frequency: 0.00025,
+  amplitude: 0.005,
+  noiseTexture: generateNoiseTexture(64),
+  offsetAxis: new Vector3(0, 1, 0),
+  time: 0
 }
 
 function assertNoiseOffsetPluginComponentEq(
-  A: NoiseOffsetPluginComponentData,
-  B: NoiseOffsetPluginComponentData
+  A: SerializedComponentType<typeof NoiseOffsetPluginComponent>,
+  B: SerializedComponentType<typeof NoiseOffsetPluginComponent>
 ): void {
   assert.deepEqual(A.textureSize, B.textureSize)
   assert.deepEqual(A.frequency, A.frequency)
   assert.deepEqual(A.amplitude, B.amplitude)
-  //assert.deepEqual((A.noiseTexture as Uniform<Texture>).value.uuid, (B.noiseTexture as Uniform<Texture>).value.uuid)
-  assertVec.approxEq((A.offsetAxis as Uniform<Vector3>).value, (B.offsetAxis as Uniform<Vector3>).value, 3)
+  //assert.deepEqual((A.noiseTexture Texture.uuid, (B.noiseTexture Texture.uuid)
+  assertVec.approxEq(A.offsetAxis as Vector3, B.offsetAxis as Vector3, 3)
   assert.deepEqual(A.time, B.time)
 }
 
@@ -140,20 +132,6 @@ describe('NoiseOffsetPluginComponent', () => {
 })
 
 describe('NoiseOffsetSystem', () => {
-  const System = SystemDefinitions.get(NoiseOffsetSystem)!
-
-  describe('Fields', () => {
-    it('should initialize the *System.uuid field with the expected value', () => {
-      assert.equal(System.uuid, 'ee.spatial.material.NoiseOffsetSystem')
-    })
-
-    it('should initialize the *System.insert field with the expected value', () => {
-      assert.notEqual(System.insert, undefined)
-      assert.notEqual(System.insert!.before, undefined)
-      assert.equal(System.insert!.before!, PresentationSystemGroup)
-    })
-  }) //:: Fields
-
   describe('execute', () => {
     let testEntity = UndefinedEntity
 
@@ -167,24 +145,26 @@ describe('NoiseOffsetSystem', () => {
       return destroyEngine()
     })
 
-    const noiseOffsetSystemExecute = System.execute
-
-    it('should set `NoiseOffsetPluginComponent.time.value` to the value of `getState(ECSState).elapsedSeconds` for every entity that has a NoiseOffsetPluginComponent', () => {
+    it('should set `NoiseOffsetPluginComponent.time` to the value of `getState(ECSState).elapsedSeconds` for every entity that has a NoiseOffsetPluginComponent', () => {
+      const System = SystemDefinitions.get(
+        makeMaterialPluginUpdateSystemID(NoiseOffsetPluginComponent.name, testEntity)
+      )!
+      const noiseOffsetSystemExecute = System.execute
       const Expected = 123456
       // Set the data as expected
       setComponent(testEntity, NoiseOffsetPluginComponent)
       const otherEntity = createEntity()
       setComponent(otherEntity, NoiseOffsetPluginComponent)
       // Sanity check before running
-      const before1 = getComponent(testEntity, NoiseOffsetPluginComponent).time.value
-      const before2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time.value
+      const before1 = getComponent(testEntity, NoiseOffsetPluginComponent).time
+      const before2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time
       assert.notEqual(before1, Expected)
       assert.notEqual(before2, Expected)
       // Run and Check the result
       getMutableState(ECSState).elapsedSeconds.set(Expected)
       noiseOffsetSystemExecute()
-      const result1 = getComponent(testEntity, NoiseOffsetPluginComponent).time.value
-      const result2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time.value
+      const result1 = getComponent(testEntity, NoiseOffsetPluginComponent).time
+      const result2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time
       assert.equal(result1, Expected)
       assert.equal(result2, Expected)
     })
