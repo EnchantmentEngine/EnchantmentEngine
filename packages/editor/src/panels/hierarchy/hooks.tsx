@@ -22,7 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService.tsx'
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { VALID_HEIRARCHY_SEARCH_REGEX } from '@ir-engine/common/src/regex'
 import {
   Entity,
@@ -45,7 +45,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent.tsx'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { DropTargetMonitor, useDrop } from 'react-dnd'
 import { useHotkeys } from 'react-hotkeys-hook'
