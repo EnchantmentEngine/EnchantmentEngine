@@ -41,30 +41,29 @@ export const EntitiesByUUIDState = defineState({
 export const UUIDComponent = defineComponent({
   name: 'UUIDComponent',
 
-  schema: S.Required(
-    S.EntityUUID({
-      validate: (uuid, prev, entity) => {
-        if (!uuid) {
-          console.error('UUID cannot be empty')
-          return false
-        }
-        if (uuid === prev) return true
-        const layer = LayerComponent.get(entity)
-        if (!getState(EntitiesByUUIDState)[layer]) {
-          getState(EntitiesByUUIDState)[layer] = {}
-          return true
-        }
-        // throw error if uuid is already in use
-        const currentEntity = getState(EntitiesByUUIDState)[layer][uuid]?.value
-        if (currentEntity && currentEntity !== entity) {
-          console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
-          return false
-        }
-
+  schema: S.EntityUUID({
+    validate: (uuid, prev, entity) => {
+      if (!uuid) {
+        console.error('UUID cannot be empty')
+        return false
+      }
+      if (uuid === prev) return true
+      const layer = LayerComponent.get(entity)
+      if (!getState(EntitiesByUUIDState)[layer]) {
+        getState(EntitiesByUUIDState)[layer] = {}
         return true
       }
-    })
-  ),
+      // throw error if uuid is already in use
+      const currentEntity = getState(EntitiesByUUIDState)[layer][uuid]?.value
+      if (currentEntity && currentEntity !== entity) {
+        console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
+        return false
+      }
+
+      return true
+    },
+    required: true
+  }),
 
   onSet(entity, component, uuid: EntityUUID) {
     const layer = LayerComponent.get(entity)
