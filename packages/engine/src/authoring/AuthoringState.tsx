@@ -33,6 +33,7 @@ import {
   EntityUUID,
   getAllComponents,
   getComponent,
+  getOptionalComponent,
   hasComponent,
   Layers,
   QueryReactor,
@@ -219,7 +220,6 @@ export const AuthoringState = defineState({
       const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
       ops[sourceID] = patch
     }
-    console.log('ops', ops)
     dispatchAction(AuthoringActions.ops({ ops }))
   },
 
@@ -343,8 +343,6 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
   for (const nodeID of Object.keys(finalState) as EntityID[]) {
     if (finalState[nodeID]) {
       const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
-      console.log('first uuid', uuid, 'source id', sourceID)
-      console.log(currentState[nodeID], UUIDComponent.getEntityByUUID(uuid, Layers.Authoring))
       if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)) {
         // entity does not exist, add entity
         const e = NodeIDComponent.create(
@@ -352,7 +350,6 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
           nodeID,
           Layers.Authoring
         )
-        console.log('created entity', e, 'with uuid', getComponent(e, UUIDComponent))
       }
       const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
       for (const [componentName, componentData] of Object.entries(finalState[nodeID])) {
@@ -383,8 +380,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
       const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
       const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
       // ensure the entity has actually been removed, and not moved to another source
-      if (getComponent(entity, UUIDComponent).entitySourceID === sourceID) {
-        console.log('removed entity', entity, 'with uuid', getComponent(entity, UUIDComponent))
+      if (getOptionalComponent(entity, UUIDComponent)?.entitySourceID === sourceID) {
         removeEntity(entity)
       }
     }

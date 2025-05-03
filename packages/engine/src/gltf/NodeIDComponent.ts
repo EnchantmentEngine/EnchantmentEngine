@@ -44,7 +44,6 @@ import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { SourceComponent } from '../scene/components/SourceComponent'
-import { GLTFComponent } from './GLTFComponent'
 
 export type NodeID = OpaqueType<'NodeID'> & string
 
@@ -107,7 +106,7 @@ export const NodeIDComponent = defineComponent({
     setComponent(
       entity,
       UUIDComponent,
-      NodeIDComponent.getUUIDBySourceAndNodeID(GLTFComponent.getInstanceID(sourceEntity), nodeID)
+      NodeIDComponent.getUUIDBySourceAndNodeID(UUIDComponent.getUUID(sourceEntity) as string as SourceID, nodeID)
     )
     return entity
   },
