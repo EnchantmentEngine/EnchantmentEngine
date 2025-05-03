@@ -145,24 +145,34 @@ describe('NoiseOffsetSystem', () => {
       return destroyEngine()
     })
 
-    it('should set `NoiseOffsetPluginComponent.time` to the value of `getState(ECSState).elapsedSeconds` for every entity that has a NoiseOffsetPluginComponent', () => {
-      const System = SystemDefinitions.get(
-        makeMaterialPluginUpdateSystemID(NoiseOffsetPluginComponent.name, testEntity)
-      )!
-      const noiseOffsetSystemExecute = System.execute
+    it('should set `NoiseOffsetPluginComponent.time` to the value of `getState(ECSState).elapsedSeconds` for every entity that has a NoiseOffsetPluginComponent', async () => {
       const Expected = 123456
       // Set the data as expected
       setComponent(testEntity, NoiseOffsetPluginComponent)
+      setComponent(testEntity, MaterialStateComponent, { material: new Material() })
+      const System1 = await vi.waitUntil(
+        () => SystemDefinitions.get(makeMaterialPluginUpdateSystemID(NoiseOffsetPluginComponent.name, testEntity))!
+      )
+      const noiseOffsetSystemExecute1 = System1.execute
+
       const otherEntity = createEntity()
       setComponent(otherEntity, NoiseOffsetPluginComponent)
+      setComponent(otherEntity, MaterialStateComponent, { material: new Material() })
+      const System2 = await vi.waitUntil(
+        () => SystemDefinitions.get(makeMaterialPluginUpdateSystemID(NoiseOffsetPluginComponent.name, otherEntity))!
+      )
+      const noiseOffsetSystemExecute2 = System2.execute
+
       // Sanity check before running
       const before1 = getComponent(testEntity, NoiseOffsetPluginComponent).time
       const before2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time
       assert.notEqual(before1, Expected)
       assert.notEqual(before2, Expected)
+
       // Run and Check the result
-      getMutableState(ECSState).elapsedSeconds.set(Expected)
-      noiseOffsetSystemExecute()
+      getMutableState(ECSState).deltaSeconds.set(Expected)
+      noiseOffsetSystemExecute1()
+      noiseOffsetSystemExecute2()
       const result1 = getComponent(testEntity, NoiseOffsetPluginComponent).time
       const result2 = getComponent(otherEntity, NoiseOffsetPluginComponent).time
       assert.equal(result1, Expected)

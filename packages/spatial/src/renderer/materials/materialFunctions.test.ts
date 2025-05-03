@@ -105,7 +105,7 @@ describe('materialFunctions', () => {
       const fallbackUUID = MaterialStateComponent.fallbackMaterialUUID
       const fallbackEntity = createEntity()
       setComponent(fallbackEntity, UUIDComponent, fallbackUUID)
-      setComponent(fallbackEntity, MaterialStateComponent, { instances: [UndefinedEntity], material: fallbackMaterial })
+      setComponent(fallbackEntity, MaterialStateComponent, { material: fallbackMaterial })
 
       // Generate all UUIDs
       const DummyUUID = UUIDComponent.generateUUID()

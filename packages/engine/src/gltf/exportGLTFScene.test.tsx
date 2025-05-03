@@ -298,10 +298,10 @@ describe('exportGLTFScene', () => {
     // Create a material entity for the material.
     const materialEntity = createEntity()
     setComponent(materialEntity, UUIDComponent, material.uuid as EntityUUID)
+    setComponent(materialEntity, NameComponent, material.name)
     setComponent(materialEntity, MaterialStateComponent, {
       material
     })
-    setComponent(materialEntity, NameComponent, material.name)
     setComponent(materialEntity, SourceComponent, 'test' as SourceID)
     setComponent(materialEntity, EntityTreeComponent, { parentEntity: baseEntity })
 

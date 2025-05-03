@@ -159,6 +159,7 @@ export const MaterialInstanceComponent = defineComponent({
     for (const uuid of uuids) {
       const materialEntity = UUIDComponent.getEntityByUUID(uuid)
       const references = getMutableState(MaterialReferenceState)[materialEntity]
+      if (!references.value) continue
       if (references.value) references.set(references.value.filter((instance) => instance !== entity))
       if (!references.value.length) references.set(none)
     }

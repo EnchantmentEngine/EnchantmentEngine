@@ -68,9 +68,9 @@ const reactor = () => {
     })
     fallbackMaterial.uuid = MaterialStateComponent.fallbackMaterialUUID
     const fallbackMaterialEntity = createEntity()
-    setComponent(fallbackMaterialEntity, MaterialStateComponent, { material: fallbackMaterial })
     setComponent(fallbackMaterialEntity, UUIDComponent, MaterialStateComponent.fallbackMaterialUUID)
     setComponent(fallbackMaterialEntity, NameComponent, 'Fallback Material')
+    setComponent(fallbackMaterialEntity, MaterialStateComponent, { material: fallbackMaterial })
   }, [])
 
   const rendererState = useMutableState(RendererState)
@@ -134,9 +134,9 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     newBasicMaterial.side = prevMaterial.side
 
     const newMaterialEntity = createEntity()
-    setComponent(newMaterialEntity, MaterialStateComponent, { material: newBasicMaterial })
     setComponent(newMaterialEntity, UUIDComponent, basicUuid)
     setComponent(newMaterialEntity, NameComponent, 'basic-' + getComponent(material, NameComponent))
+    setComponent(newMaterialEntity, MaterialStateComponent, { material: newBasicMaterial })
     setMaterial(uuid, basicUuid)
   } else if (!forceBasicMaterials) {
     const basicMaterialEntity = UUIDComponent.getEntityByUUID(uuid)

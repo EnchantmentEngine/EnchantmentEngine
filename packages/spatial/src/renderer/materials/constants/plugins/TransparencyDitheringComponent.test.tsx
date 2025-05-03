@@ -24,23 +24,24 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  EntityUUID,
-  UndefinedEntity,
   createEngine,
   createEntity,
   createInitialComponentValue,
   destroyEngine,
+  EntityUUID,
   getComponent,
   hasComponent,
   removeEntity,
-  setComponent
+  setComponent,
+  UndefinedEntity
 } from '@ir-engine/ecs'
 import assert from 'assert'
-import { Material, Uniform } from 'three'
+import { Material, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { assertArray } from '../../../../../tests/util/assert'
 import { MaterialStateComponent } from '../../MaterialComponent'
 import {
+  DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
 } from './TransparencyDitheringComponent'
@@ -102,10 +103,10 @@ describe('TransparencyDitheringRootComponent', () => {
 })
 
 type TransparencyDitheringPluginComponentData = {
-  centers: Uniform
-  exponents: Uniform
-  distances: Uniform
-  useWorldCalculation: Uniform
+  centers: Vector3[]
+  exponents: number[]
+  distances: number[]
+  useWorldCalculation: DitherCalculationType[]
 }
 
 const TransparencyDitheringPluginComponentDefaults: TransparencyDitheringPluginComponentData =

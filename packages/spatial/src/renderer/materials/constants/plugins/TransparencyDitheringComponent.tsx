@@ -37,7 +37,7 @@ import {
   ditheringVertexUniform
 } from './ditherShaderChunk'
 
-export enum ditherCalculationType {
+export enum DitherCalculationType {
   worldTransformed = 1,
   localPosition = 0
 }
@@ -59,7 +59,7 @@ export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
     exponents: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
     distances: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
     useWorldCalculation: S.Class(() =>
-      Array.from({ length: MAX_DITHER_POINTS }, () => ditherCalculationType.worldTransformed)
+      Array.from({ length: MAX_DITHER_POINTS }, () => DitherCalculationType.worldTransformed)
     )
   }),
 

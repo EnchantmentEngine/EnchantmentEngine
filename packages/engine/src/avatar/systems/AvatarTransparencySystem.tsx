@@ -45,9 +45,9 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
+  DitherCalculationType,
   TransparencyDitheringPluginComponent,
-  TransparencyDitheringRootComponent,
-  ditherCalculationType
+  TransparencyDitheringRootComponent
 } from '@ir-engine/spatial/src/renderer/materials/constants/plugins/TransparencyDitheringComponent'
 import React, { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
@@ -83,7 +83,7 @@ const execute = () => {
       pluginComponent.centers[cameraDithering].set(viewerPosition.x, viewerPosition.y, viewerPosition.z)
       pluginComponent.distances[cameraDithering] = cameraAttached ? 8 : 3
       pluginComponent.exponents[cameraDithering] = cameraAttached ? 10 : 6
-      pluginComponent.useWorldCalculation[cameraDithering] = ditherCalculationType.worldTransformed
+      pluginComponent.useWorldCalculation[cameraDithering] = DitherCalculationType.worldTransformed
       if (entity !== selfEntity) {
         pluginComponent.distances[headDithering] = 10
         continue
@@ -92,7 +92,7 @@ const execute = () => {
       pluginComponent.distances[headDithering] =
         cameraComponent && !cameraAttached ? Math.max(Math.pow(cameraComponent.distance * 5, 2.5), 3) : 3.5
       pluginComponent.exponents[headDithering] = cameraAttached ? 12 : 8
-      pluginComponent.useWorldCalculation[headDithering] = ditherCalculationType.localPosition
+      pluginComponent.useWorldCalculation[headDithering] = DitherCalculationType.localPosition
     }
   }
 }
