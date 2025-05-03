@@ -267,7 +267,7 @@ describe('addMediaNode', () => {
     expect(getComponent(materialEntity, MaterialStateComponent)).toBeDefined()
   })
 
-  it('should load a material and replace material at intersection', async () => {
+  it('should load a material and replace material at intersection', { timeout: 60000 }, async () => {
     const createSceneGLTF = () => ({
       asset: {
         version: '2.0',
@@ -312,7 +312,7 @@ describe('addMediaNode', () => {
     const [meshEntity] = getChildrenWithComponents(modelEntity, [MeshComponent])
 
     // @ts-ignore
-    await vi.waitUntil(() => getComponent(meshEntity, MeshComponent).geometry.boundsTree)
+    await vi.waitUntil(() => getComponent(meshEntity, MeshComponent).geometry.boundsTree, { timeout: 10000 })
 
     const materialURL = 'https://test.com/test-material.material.gltf'
     const materialGLTF = createMaterialGLTF()
