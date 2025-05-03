@@ -91,8 +91,8 @@ export const GLTFComponent = defineComponent({
     shape: ShapeSchema('box'),
 
     // internals
-    body: S.Type<ArrayBuffer | null>(),
-    document: S.Type<GLTF.IGLTF | null>(),
+    body: S.Type<ArrayBuffer | null>({ serialized: false }),
+    document: S.Type<GLTF.IGLTF | null>({ serialized: false }),
     progress: S.Number({ default: 0, serialized: false }),
     extensions: S.Record(S.String(), S.Any(), { serialized: false }),
     dependencies: S.Type<ComponentDependencies | undefined>({ serialized: false })
