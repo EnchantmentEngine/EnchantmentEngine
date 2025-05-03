@@ -332,6 +332,7 @@ describe('UUIDComponent', () => {
       // Set the data as expected
       const layer = Layers.Authoring
       const uuid = UUIDComponent.generateUUID()
+      getState(EntitiesByUUIDState)[layer] = {}
       // @ts-expect-error Coerce undefined into the Record entry
       getState(EntitiesByUUIDState)[layer][uuid] = Initial
       // Sanity check before running
@@ -349,6 +350,7 @@ describe('UUIDComponent', () => {
       // Set the data as expected
       const layer = Layers.Authoring
       const uuid = UUIDComponent.generateUUID()
+      getState(EntitiesByUUIDState)[layer] = {}
       // @ts-expect-error Coerce undefined into the Record entry
       getState(EntitiesByUUIDState)[layer][uuid] = Initial
       // Sanity check before running
