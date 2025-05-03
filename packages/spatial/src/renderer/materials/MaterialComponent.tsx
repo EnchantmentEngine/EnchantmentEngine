@@ -27,6 +27,7 @@ import { Material, Shader } from 'three'
 
 import {
   ComponentType,
+  TTypedSchema,
   UUIDComponent,
   defineComponent,
   getComponent,
@@ -98,7 +99,7 @@ export const MaterialStateComponent = defineComponent({
 
   schema: S.Object({
     material: S.Type<Material>({} as Material),
-    parameters: S.Object({} as any)
+    parameters: S.Any() as TTypedSchema<Record<string, any>> /** @todo proper deserialization */
   }),
 
   fallbackMaterialUUID: uuidv4() as EntityUUID,

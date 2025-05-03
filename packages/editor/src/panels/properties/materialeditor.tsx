@@ -87,9 +87,6 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     ? getComponent(entity, MaterialPluginComponents[selectedPlugin.value])
     : undefined
 
-  console.log(selectedPlugin.value, currentPlugin)
-  console.log('generateDefaults', currentPlugin ? generateDefaults(currentPlugin) : '')
-
   const pluginOptions = Object.keys(MaterialPluginComponents).map((key) => ({ label: key, value: key }))
   pluginOptions.unshift({
     label: 'None',
@@ -175,38 +172,6 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   const changePrototype = useCallback((type) => {
     changeMaterialPrototype(entity, type)
   }, [])
-
-  const pluginParameters = useHookstate({})
-  const pluginValues = useHookstate({})
-
-  // useEffect(() => {
-  //   pluginValues.set({})
-  //   pluginParameters.set({})
-  // }, [selectedPlugin.value, currentSelectedMaterial])
-
-  // useEffect(() => {
-  //   for (const pluginComponent of Object.values(MaterialPlugins)) {
-  //     const component = getOptionalComponent(entity, pluginComponent)
-  //     if (!component || pluginComponent != MaterialPlugins[selectedPlugin.value]) {
-  //       continue
-  //     }
-  //     const pluginParameterValues = {}
-  //     Object.entries(component).map(([key, uniform]) => {
-  //       const value = (uniform as Uniform).value
-  //       pluginParameterValues[key] = { type: getDefaultType(value), default: value }
-  //     })
-  //     pluginParameters.set(formatMaterialArgs(pluginParameterValues))
-  //     for (const key in component) pluginValues[key].set(component[key].value)
-  //     return
-  //   }
-  // }, [selectedPlugin, useOptionalComponent(entity, MaterialPlugins[selectedPlugin.value])])
-
-  // useEffect(() => {
-  //   if (prototypeName.value === material.type) return
-
-  //   EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
-  //   AuthoringState.snapshotEntities([entity])
-  // }, [prototypeName])
 
   return (
     <div className="relative flex flex-col gap-2">
