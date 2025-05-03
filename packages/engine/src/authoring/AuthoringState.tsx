@@ -207,11 +207,9 @@ export const AuthoringState = defineState({
 
   snapshotEntities: (entities: Entity[]) => {
     const affectedSources = new Set<SourceID>(
-      entities.map((entity) =>
-        hasComponent(entity, UUIDComponent)
-          ? (getComponent(entity, UUIDComponent).entitySourceID as string as SourceID)
-          : ('' as SourceID)
-      )
+      entities
+        .filter((entity) => hasComponent(entity, UUIDComponent))
+        .map((entity) => getComponent(entity, UUIDComponent).entitySourceID as string as SourceID)
     )
     if (affectedSources.size === 0) return
     const ops = {} as Record<SourceID, Operation[]>
@@ -221,6 +219,7 @@ export const AuthoringState = defineState({
       const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
       ops[sourceID] = patch
     }
+    console.log('ops', ops)
     dispatchAction(AuthoringActions.ops({ ops }))
   },
 
