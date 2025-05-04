@@ -27,8 +27,8 @@ import { generateNoiseTexture } from '@ir-engine/spatial/src/renderer/functions/
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3 } from 'three'
-import { T } from '../../../../schema/schemaFunctions'
-import { defineMaterialPlugin } from '../../defineMaterialPlugin'
+import { T } from '../../../schema/schemaFunctions'
+import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
 export const NoiseOffsetPluginComponent = defineMaterialPlugin({
   name: 'NoiseOffsetPluginComponent',
@@ -36,12 +36,12 @@ export const NoiseOffsetPluginComponent = defineMaterialPlugin({
   jsonID: 'IR_material_noise_offset',
 
   uniforms: S.Object({
-    textureSize: S.Number(64),
-    frequency: S.Number(0.00025),
-    amplitude: S.Number(0.005),
-    noiseTexture: S.NonSerialized(S.Class(() => generateNoiseTexture(64))),
+    textureSize: S.Number({ default: 64 }),
+    frequency: S.Number({ default: 0.00025 }),
+    amplitude: S.Number({ default: 0.005 }),
+    noiseTexture: S.Class(() => generateNoiseTexture(64), { serialized: false }),
     offsetAxis: T.Vec3(new Vector3(0, 1, 0)),
-    time: S.Number(0)
+    time: S.Number({ default: 0 })
   }),
 
   onApply: (shader) => {

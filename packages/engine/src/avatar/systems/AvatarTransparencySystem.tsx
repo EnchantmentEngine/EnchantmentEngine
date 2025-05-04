@@ -48,7 +48,7 @@ import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
-} from '@ir-engine/spatial/src/renderer/materials/constants/plugins/TransparencyDitheringComponent'
+} from '@ir-engine/spatial/src/renderer/materials/plugins/TransparencyDitheringComponent'
 import React, { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { SourceComponent } from '../../scene/components/SourceComponent'

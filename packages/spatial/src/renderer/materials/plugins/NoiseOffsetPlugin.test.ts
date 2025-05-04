@@ -41,10 +41,10 @@ import assert from 'assert'
 import { Material, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
-import { assertVec } from '../../../../../tests/util/assert'
-import { generateNoiseTexture } from '../../../functions/generateNoiseTexture'
-import { makeMaterialPluginUpdateSystemID } from '../../defineMaterialPlugin'
-import { MaterialStateComponent } from '../../MaterialComponent'
+import { assertVec } from '../../../../tests/util/assert'
+import { generateNoiseTexture } from '../../functions/generateNoiseTexture'
+import { makeMaterialPluginUpdateSystemID } from '../defineMaterialPlugin'
+import { MaterialStateComponent } from '../MaterialComponent'
 import { NoiseOffsetPluginComponent } from './NoiseOffsetPlugin'
 
 const NoiseOffsetPluginComponentDefaults: SerializedComponentType<typeof NoiseOffsetPluginComponent> = {

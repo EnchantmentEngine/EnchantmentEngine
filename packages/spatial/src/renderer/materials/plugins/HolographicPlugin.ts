@@ -33,14 +33,14 @@ export const HolographicPluginComponent = defineMaterialPlugin({
   jsonID: 'IR_material_holographic',
 
   uniforms: S.Object({
-    speed: S.Number(0.1),
-    time: S.Number(0),
-    useBlink: S.Bool(false),
-    mix_intensity: S.Number(1.0),
+    speed: S.Number({ default: 0.1 }),
+    time: S.Number({ default: 0 }),
+    useBlink: S.Bool({ default: false }),
+    mix_intensity: S.Number({ default: 1.0 }),
     hologramColor: T.Color(),
-    hologramBrightness: S.Number(0.5),
-    scanlineSize: S.Number(15.0),
-    hologramOpacity: S.Number(0.5)
+    hologramBrightness: S.Number({ default: 0.5 }),
+    scanlineSize: S.Number({ default: 15.0 }),
+    hologramOpacity: S.Number({ default: 0.5 })
   }),
 
   onApply: (shader) => {
