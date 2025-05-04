@@ -38,6 +38,7 @@ import {
   getOptionalComponent,
   getSimulationCounterpart,
   hasComponent,
+  LayerID,
   Layers,
   removeComponent,
   removeEntity,
@@ -50,7 +51,8 @@ import {
   useHasComponents,
   useOptionalComponent,
   useQuery,
-  UUIDComponent
+  UUIDComponent,
+  UUIDComponentFunctions
 } from '@ir-engine/ecs'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import { getMutableState, getState, NO_PROXY_STEALTH, none, State, useHookstate } from '@ir-engine/hyperflux'
@@ -121,6 +123,17 @@ export const GLTFComponent = defineComponent({
     const dependencies = gltfComponent.dependencies
     const progress = gltfComponent.progress
     return componentDependenciesLoaded(dependencies) && progress === 100
+  },
+
+  getEntityBySourceAndID(source: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
+    return UUIDComponentFunctions._getUUIDState(
+      ((GLTFComponent.getSourceID(source) || UUIDComponent.getUUID(source)) + id) as EntityUUID,
+      layer
+    ).get(NO_PROXY_STEALTH)
+  },
+
+  getSourceEntity(entity: Entity) {
+    return UUIDComponent.getEntityByUUID(getComponent(entity, UUIDComponent).entitySourceID as EntityUUID)
   },
 
   getSourceID: (entity: Entity): SourceID =>

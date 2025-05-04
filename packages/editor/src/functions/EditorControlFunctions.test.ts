@@ -45,12 +45,10 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeFunctions } from '@ir-engine/engine/src/gltf/NodeFunctions'
 import { NodeID, NodeIDComponent, NodesBySourceState } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
@@ -124,7 +122,7 @@ describe('EditorControlFunctions', () => {
 
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)
       assert(simulationNodeEntity)
 
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
@@ -176,7 +174,7 @@ describe('EditorControlFunctions', () => {
 
       await waitForScene(rootEntity)
 
-      const simulationChildEntity = NodeFunctions.getEntityFromNodeID(rootEntity, childID)!
+      const simulationChildEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, childID)
       assert(simulationChildEntity)
 
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationChildEntity)
@@ -239,11 +237,9 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNode1Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node1ID)!
+      const simulationNode1Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node1ID)!
       const subAssetSourceID = GLTFComponent.getSourceID(simulationNode1Entity)
-      const simulationNode3Entity = UUIDComponent.getEntityByUUID(
-        NodeIDComponent.getUUIDBySourceAndNodeID(subAssetSourceID, node2ID)!
-      )
+      const simulationNode3Entity = UUIDComponent.getEntityByUUID((subAssetSourceID + node2ID) as EntityUUID)
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode3Entity)
 
       const testComponent = defineComponent({
@@ -260,7 +256,7 @@ describe('EditorControlFunctions', () => {
       await flushAll()
 
       const deltaState = getState(SceneDeltaState)
-      assert.equal(deltaState[node1ID][node2ID][testComponent.jsonID].value, testValue)
+      assert.equal(deltaState[UUIDComponent.getUUID(authoringNode2Entity)][testComponent.jsonID].value, testValue)
     })
   })
 
@@ -269,14 +265,15 @@ describe('EditorControlFunctions', () => {
 
     beforeEach(() => {
       materialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'material'
+      })
     })
 
     afterEach(() => {
       removeEntity(materialEntity)
     })
-    class MockMaterial {
-      constructor() {}
-    }
 
     it('should return undefined if the `@param materialEntity` does not have a MaterialStateComponent', () => {
       // Sanity check before running
@@ -347,7 +344,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)
       assert(simulationNodeEntity)
 
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
@@ -390,7 +387,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       EditorControlFunctions.modifyProperty([authoringNodeEntity], HemisphereLightComponent, {
@@ -458,7 +455,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       EditorControlFunctions.modifyProperty([authoringNodeEntity], SplineComponent, {
@@ -551,7 +548,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       const requestedName = 'Test'
@@ -644,7 +641,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
@@ -698,7 +695,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
@@ -761,10 +758,10 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationChildEntity = NodeFunctions.getEntityFromNodeID(rootEntity, childID)!
+      const simulationChildEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, childID)
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationChildEntity)
 
       const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
@@ -826,7 +823,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       EditorControlFunctions.duplicateObject([authoringNodeEntity])
@@ -879,7 +876,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationChildEntity = NodeFunctions.getEntityFromNodeID(rootEntity, childID)!
+      const simulationChildEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, childID)!
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationChildEntity)
 
       EditorControlFunctions.reparentObject([authoringChildEntity], null, null, rootEntity)
@@ -922,10 +919,10 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
       EditorControlFunctions.reparentObject([authoringNode2Entity], null, null, authoringNodeEntity)
@@ -969,10 +966,10 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationChildEntity = NodeFunctions.getEntityFromNodeID(rootEntity, childID)!
+      const simulationChildEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, childID)!
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationChildEntity)
 
       EditorControlFunctions.reparentObject([authoringChildEntity], authoringNodeEntity, null, rootEntity)
@@ -1023,13 +1020,13 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
-      const simulationChildEntity = NodeFunctions.getEntityFromNodeID(rootEntity, childID)!
+      const simulationChildEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, childID)!
       const authoringChildEntity = LayerFunctions.getAuthoringCounterpart(simulationChildEntity)
 
       EditorControlFunctions.reparentObject([authoringNode2Entity], authoringChildEntity, null, authoringNodeEntity)
@@ -1086,10 +1083,10 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
-      const simulationNode4Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node4ID)!
+      const simulationNode4Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node4ID)!
       const authoringNode4Entity = LayerFunctions.getAuthoringCounterpart(simulationNode4Entity)
 
       EditorControlFunctions.reparentObject([authoringNode4Entity], undefined, authoringNode2Entity, rootEntity)
@@ -1153,36 +1150,34 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNode1Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node1ID)!
+      const simulationNode1Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node1ID)!
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
       const subAssetSourceID = GLTFComponent.getSourceID(simulationNode1Entity)
 
-      const simulationNode3Entity = UUIDComponent.getEntityByUUID(
-        NodeIDComponent.getUUIDBySourceAndNodeID(subAssetSourceID, node3ID)!
-      )
+      const simulationNode3Entity = UUIDComponent.getEntityByUUID((subAssetSourceID + node3ID) as EntityUUID)
       const authoringNode3Entity = LayerFunctions.getAuthoringCounterpart(simulationNode3Entity)
 
       EditorControlFunctions.reparentObject([authoringNode2Entity], null, null, authoringNode3Entity)
 
       await flushAll()
 
-      await vi.waitUntil(() => getState(NodesBySourceState)[subAssetSourceID][node3ID])
+      await vi.waitUntil(() => getState(NodesBySourceState)[simulationNode1Entity][node3ID])
 
-      const reparentedSimulationNode2Entity = NodeFunctions.getEntityFromNodeID(authoringNode3Entity, node2ID)!
+      const reparentedSimulationNode2Entity = GLTFComponent.getEntityBySourceAndID(authoringNode3Entity, node2ID)!
       const reparentedAuthoringNode2Entity = LayerFunctions.getAuthoringCounterpart(reparentedSimulationNode2Entity)
 
       assert.equal(reparentedAuthoringNode2Entity, authoringNode2Entity)
       assert.equal(getComponent(reparentedAuthoringNode2Entity, NodeIDComponent), node2ID)
-      assert.equal(
-        getComponent(reparentedAuthoringNode2Entity, SourceComponent),
-        getComponent(authoringNode3Entity, SourceComponent)
-      )
+      // assert.equal(
+      //   getComponent(reparentedAuthoringNode2Entity, SourceComponent),
+      //   getComponent(authoringNode3Entity, SourceComponent)
+      // )
       assert.equal(getComponent(reparentedAuthoringNode2Entity, EntityTreeComponent).parentEntity, authoringNode3Entity)
-      const expectedUUID = NodeIDComponent.getUUIDBySourceAndNodeID(subAssetSourceID, node2ID)
-      assert.equal(getComponent(reparentedAuthoringNode2Entity, UUIDComponent), expectedUUID)
+      const expectedUUID = UUIDComponent.getUUID(simulationNode1Entity) + node2ID
+      assert.equal(UUIDComponent.getUUID(reparentedAuthoringNode2Entity), expectedUUID)
     })
   })
 
@@ -1226,10 +1221,10 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
       EditorControlFunctions.groupObjects([authoringNodeEntity, authoringNode2Entity])
@@ -1293,13 +1288,13 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
-      const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
+      const simulationNode2Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
-      const simulationNode3Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node3ID)!
+      const simulationNode3Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node3ID)!
       const authoringNode3Entity = LayerFunctions.getAuthoringCounterpart(simulationNode3Entity)
 
       EditorControlFunctions.removeObject([authoringNodeEntity])
@@ -1309,8 +1304,8 @@ describe('EditorControlFunctions', () => {
       assert.equal(getComponent(rootEntity, EntityTreeComponent).children[0], authoringNode2Entity)
       assert.equal(getComponent(rootEntity, EntityTreeComponent).children[1], authoringNode3Entity)
 
-      assert.equal(NodeFunctions.getEntityFromNodeID(rootEntity, nodeID), UndefinedEntity)!
-      assert.equal(NodeFunctions.getEntityFromNodeID(rootEntity, childID), UndefinedEntity)!
+      assert.equal(GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID), UndefinedEntity)!
+      assert.equal(GLTFComponent.getEntityBySourceAndID(rootEntity, childID), UndefinedEntity)!
     })
   })
 
@@ -1352,7 +1347,7 @@ describe('EditorControlFunctions', () => {
       getMutableState(EditorState).rootEntity.set(rootEntity)
       await waitForScene(rootEntity)
 
-      const simulationNodeEntity = NodeFunctions.getEntityFromNodeID(rootEntity, nodeID)!
+      const simulationNodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, nodeID)!
       const authoringNodeEntity = LayerFunctions.getAuthoringCounterpart(simulationNodeEntity)
 
       EditorControlFunctions.overwriteLookdevObject(

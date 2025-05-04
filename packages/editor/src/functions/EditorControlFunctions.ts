@@ -342,7 +342,7 @@ const duplicateObject = (entities: Entity[]) => {
   const duplicateEntities = (entities: Entity[], parentEntity: Entity) => {
     entities.forEach((entity) => {
       const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
-      const originalSource = getComponent(entity, SourceComponent)
+      const originalSource = GLTFComponent.getSourceEntity(entity)
 
       const newEntity = NodeIDComponent.create(originalSource, NodeIDComponent.generate(), Layers.Authoring)
       const name = getComponent(entity, NameComponent)
