@@ -837,14 +837,7 @@ function getLayerComponent(entity: Entity) {
  * */
 function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
   const relation = LayerRelations[entityLayer][layer]
-  return relation === LayerRelationTypes.Propagate || relation === LayerRelationTypes.Dynamic
-}
-
-/**
- * @description Returns true if the given entity/layer pair has a dynamic relation.
- * */
-function isDynamicRelation(entityLayer: LayerID, layer: LayerID): boolean {
-  return LayerRelations[entityLayer][layer] === LayerRelationTypes.Dynamic
+  return relation === LayerRelationTypes.Propagate
 }
 
 /**
@@ -1196,7 +1189,6 @@ export const LayerFunctions = {
   getLayerComponent,
   getAuthoringCounterpart,
   shouldPropagate,
-  isDynamicRelation,
   propagateLayer,
   createLayerPropagationArgs
 }
@@ -1209,8 +1201,7 @@ export const Layers = {
 export type LayerID = (typeof Layers)[keyof typeof Layers]
 
 export const LayerRelationTypes = {
-  Propagate: 'propagate',
-  Dynamic: 'dynamic'
+  Propagate: 'propagate'
 }
 
 export const LayerRelations = {
