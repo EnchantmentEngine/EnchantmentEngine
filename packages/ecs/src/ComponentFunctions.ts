@@ -836,8 +836,7 @@ function getLayerComponent(entity: Entity) {
  * @description Returns true if the given entity/layer pair should trigger propagation behavior.
  * */
 function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
-  const relation = LayerRelations[entityLayer][layer]
-  return relation === LayerRelationTypes.Propagate
+  return LayerRelations[entityLayer][layer] === LayerRelationTypes.Propagate
 }
 
 /**
