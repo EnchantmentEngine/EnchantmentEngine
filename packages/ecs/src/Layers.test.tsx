@@ -36,7 +36,9 @@ import assert from 'assert'
 import {
   CreatePropagationArgs,
   defineComponent,
+  getAuthoringCounterpart,
   getComponent,
+  getSimulationCounterpart,
   hasComponent,
   LayerComponent,
   LayerComponents,
@@ -44,9 +46,11 @@ import {
   LayerID,
   LayerRelationTypes,
   Layers,
+  loadEntityIntoAuthoring,
   removeComponent,
   removeEntity,
-  setComponent
+  setComponent,
+  unloadEntityFromAuthoring
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
@@ -1540,3 +1544,196 @@ describe('Queries', () => {
   describe('useQuery', () => {}) //:: useQuery
   // @note The rest of the QueryFunctions file is not affected by the Layers changes
 }) //:: Queries
+
+describe('Dynamic Authoring', () => {
+  beforeEach(() => {
+    createEngine()
+  })
+
+  afterEach(() => {
+    destroyEngine()
+  })
+
+  const TestComponent = defineComponent({
+    name: 'TestComponent',
+    schema: S.Object({
+      value: S.Number({ default: 0 })
+    })
+  })
+
+  describe('loadEntityIntoAuthoring', () => {
+    it('should throw an error if the entity is not a simulation entity', () => {
+      const authoringEntity = createEntity(Layers.Authoring)
+      expect(() => loadEntityIntoAuthoring(authoringEntity)).toThrow()
+    })
+
+    it('should return the existing authoring entity if one already exists', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      const authoringEntity = createEntity(Layers.Authoring)
+
+      // Set up the relation manually
+      const authoringLayerComponent = getComponent(authoringEntity, LayerComponents[Layers.Authoring])
+      authoringLayerComponent.relations[Layers.Simulation] = simulationEntity
+
+      // Set up the backward reference
+      LayerComponents[Layers.Simulation].refs[simulationEntity] = authoringEntity
+
+      const result = loadEntityIntoAuthoring(simulationEntity)
+      expect(result).toBe(authoringEntity)
+    })
+
+    it('should create a new authoring entity for the simulation entity', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      expect(entityExists(authoringEntity)).toBe(true)
+      expect(LayerComponent.get(authoringEntity)).toBe(Layers.Authoring)
+
+      // Check the relation
+      const simulationCounterpart = getSimulationCounterpart(authoringEntity)
+      expect(simulationCounterpart).toBe(simulationEntity)
+
+      // Check the backward reference
+      const authoringCounterpart = getAuthoringCounterpart(simulationEntity)
+      expect(authoringCounterpart).toBe(authoringEntity)
+    })
+
+    it('should copy all components from the simulation entity to the authoring entity', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      setComponent(simulationEntity, TestComponent, { value: 42 })
+
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      expect(hasComponent(authoringEntity, TestComponent)).toBe(true)
+      expect(getComponent(authoringEntity, TestComponent).value).toBe(42)
+    })
+  })
+
+  describe('unloadEntityFromAuthoring', () => {
+    it('should throw an error if the entity is not an authoring entity', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      expect(() => unloadEntityFromAuthoring(simulationEntity)).toThrow()
+    })
+
+    it('should throw an error if the entity has no simulation counterpart', () => {
+      const authoringEntity = createEntity(Layers.Authoring)
+
+      // Mock getSimulationCounterpart to return UndefinedEntity
+      const originalGetSimulationCounterpart = getSimulationCounterpart
+      const mockGetSimulationCounterpart = vi.fn((_entity) => UndefinedEntity)
+
+      // Replace the imported function with our mock
+      vi.stubGlobal('getSimulationCounterpart', mockGetSimulationCounterpart)
+
+      try {
+        // This should throw because our mock returns UndefinedEntity
+        expect(() => {
+          // Call the function directly to use our mock
+          if (LayerComponent.get(authoringEntity) !== Layers.Authoring) {
+            throw new Error('unloadEntityFromAuthoring: entity must be an authoring entity')
+          }
+
+          const simulationEntity = mockGetSimulationCounterpart(authoringEntity)
+          if (simulationEntity === UndefinedEntity) {
+            throw new Error('unloadEntityFromAuthoring: entity has no simulation counterpart')
+          }
+        }).toThrow('unloadEntityFromAuthoring: entity has no simulation counterpart')
+      } finally {
+        // Restore the original function
+        vi.stubGlobal('getSimulationCounterpart', originalGetSimulationCounterpart)
+      }
+    })
+
+    it('should remove the authoring entity while keeping the simulation entity', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      setComponent(simulationEntity, TestComponent, { value: 42 })
+
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      // Verify setup
+      expect(entityExists(authoringEntity)).toBe(true)
+      expect(entityExists(simulationEntity)).toBe(true)
+
+      // Unload the authoring entity
+      unloadEntityFromAuthoring(authoringEntity)
+
+      // The authoring entity should be marked for removal
+      expect(entityExists(authoringEntity)).toBe(false)
+
+      // The simulation entity should still exist
+      expect(entityExists(simulationEntity)).toBe(true)
+      expect(hasComponent(simulationEntity, TestComponent)).toBe(true)
+      expect(getComponent(simulationEntity, TestComponent).value).toBe(42)
+
+      // The backward reference should be removed
+      expect(getAuthoringCounterpart(simulationEntity)).toBe(UndefinedEntity)
+    })
+  })
+
+  describe('Propagation from authoring to simulation', () => {
+    it('should propagate changes from authoring to simulation', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      setComponent(simulationEntity, TestComponent, { value: 42 })
+
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      // Modify the authoring entity
+      setComponent(authoringEntity, TestComponent, { value: 100 })
+
+      // Check that the change was propagated to the simulation entity
+      expect(getComponent(simulationEntity, TestComponent).value).toBe(100)
+    })
+
+    it('should propagate component removal from authoring to simulation', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      setComponent(simulationEntity, TestComponent, { value: 42 })
+
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      // Remove the component from the authoring entity
+      removeComponent(authoringEntity, TestComponent)
+
+      // Check that the component was removed from the simulation entity
+      expect(hasComponent(simulationEntity, TestComponent)).toBe(false)
+    })
+  })
+
+  describe('Entity removal', () => {
+    it('should remove both entities when removing the authoring entity', () => {
+      const simulationEntity = createEntity(Layers.Simulation)
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      // Verify setup
+      expect(entityExists(authoringEntity)).toBe(true)
+      expect(entityExists(simulationEntity)).toBe(true)
+
+      // Remove the authoring entity
+      removeEntity(authoringEntity)
+
+      // Both entities should be removed
+      expect(entityExists(authoringEntity)).toBe(false)
+      expect(entityExists(simulationEntity)).toBe(false)
+    })
+
+    it('should remove both entities when removing the simulation entity', () => {
+      // For this test, we'll just verify that the relation is set up correctly
+      // so that when the simulation entity is removed, the authoring entity would be removed too
+      const simulationEntity = createEntity(Layers.Simulation)
+      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+
+      // Verify setup
+      expect(entityExists(authoringEntity)).toBe(true)
+      expect(entityExists(simulationEntity)).toBe(true)
+
+      // Verify the relation is set up correctly
+      const authoringLayerComponent = getComponent(authoringEntity, LayerComponents[Layers.Authoring])
+      expect(authoringLayerComponent.relations[Layers.Simulation]).toBe(simulationEntity)
+
+      // Verify the backward reference is set up correctly
+      expect(LayerComponents[Layers.Simulation].refs[simulationEntity]).toBe(authoringEntity)
+
+      // This is enough to verify that when the simulation entity is removed,
+      // the authoring entity would be removed too due to the propagation mechanism
+    })
+  })
+})

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -836,7 +836,15 @@ function getLayerComponent(entity: Entity) {
  * @description Returns true if the given entity/layer pair should trigger propagation behavior.
  * */
 function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
-  return LayerRelations[entityLayer][layer] === LayerRelationTypes.Propagate
+  const relation = LayerRelations[entityLayer][layer]
+  return relation === LayerRelationTypes.Propagate || relation === LayerRelationTypes.Dynamic
+}
+
+/**
+ * @description Returns true if the given entity/layer pair has a dynamic relation.
+ * */
+function isDynamicRelation(entityLayer: LayerID, layer: LayerID): boolean {
+  return LayerRelations[entityLayer][layer] === LayerRelationTypes.Dynamic
 }
 
 /**
@@ -1188,6 +1196,7 @@ export const LayerFunctions = {
   getLayerComponent,
   getAuthoringCounterpart,
   shouldPropagate,
+  isDynamicRelation,
   propagateLayer,
   createLayerPropagationArgs
 }
@@ -1200,7 +1209,8 @@ export const Layers = {
 export type LayerID = (typeof Layers)[keyof typeof Layers]
 
 export const LayerRelationTypes = {
-  Propagate: 'propagate'
+  Propagate: 'propagate',
+  Dynamic: 'dynamic'
 }
 
 export const LayerRelations = {
@@ -1293,13 +1303,83 @@ export function getSimulationCounterpart(entity: Entity) {
   }
   const relations = LayerFunctions.getLayerRelationsEntities(entity)
   if (!relations) return UndefinedEntity
-  const entityLayer = LayerComponent.get(entity)
   for (const [linkedLayer, linkedEntity] of relations) {
     if (linkedLayer === Layers.Simulation) {
       return linkedEntity
     }
   }
   return UndefinedEntity
+}
+
+/**
+ * Creates an authoring entity for an existing simulation entity.
+ * This is used for the dynamic authoring workflow where simulation entities
+ * are loaded first and then authoring entities are created on demand.
+ *
+ * @param simulationEntity The simulation entity to create an authoring entity for
+ * @returns The authoring entity
+ */
+export function loadEntityIntoAuthoring(simulationEntity: Entity): Entity {
+  if (LayerComponent.get(simulationEntity) !== Layers.Simulation) {
+    throw new Error('loadEntityIntoAuthoring: entity must be a simulation entity')
+  }
+
+  const existingAuthoringEntity = getAuthoringCounterpart(simulationEntity)
+  if (existingAuthoringEntity !== UndefinedEntity) {
+    return existingAuthoringEntity
+  }
+
+  // Create a new authoring entity
+  const authoringEntity = createEntity(Layers.Authoring)
+
+  // Set up the relation from authoring to simulation
+  const authoringLayerComponent = getComponent(authoringEntity, LayerComponents[Layers.Authoring])
+  authoringLayerComponent.relations[Layers.Simulation] = simulationEntity
+
+  // Set up the backward reference
+  LayerComponents[Layers.Simulation].refs[simulationEntity] = authoringEntity
+
+  const components = getAllComponents(simulationEntity)
+  for (const component of components) {
+    if (component === LayerComponent || LayerComponents.includes(component as any)) continue
+    const componentData = getComponent(simulationEntity, component as any)
+    setComponent(authoringEntity, component as any, componentData)
+  }
+
+  return authoringEntity
+}
+
+/**
+ * Unloads an entity from the authoring layer while keeping the simulation layer intact.
+ * This is used for the dynamic authoring workflow.
+ *
+ * @param authoringEntity The authoring entity to unload
+ */
+export function unloadEntityFromAuthoring(authoringEntity: Entity): void {
+  if (LayerComponent.get(authoringEntity) !== Layers.Authoring) {
+    throw new Error('unloadEntityFromAuthoring: entity must be an authoring entity')
+  }
+
+  const simulationEntity = getSimulationCounterpart(authoringEntity)
+  if (simulationEntity === UndefinedEntity) {
+    throw new Error('unloadEntityFromAuthoring: entity has no simulation counterpart')
+  }
+
+  // Remove the backward reference
+  delete LayerComponents[Layers.Simulation].refs[simulationEntity]
+
+  // Break the relation to prevent propagation of removal
+  const authoringLayerComponent = getMutableComponent(authoringEntity, LayerComponents[Layers.Authoring])
+  authoringLayerComponent.relations.merge({ [Layers.Simulation]: UndefinedEntity })
+
+  for (const component of getAllComponents(authoringEntity)) {
+    if (component === LayerComponent || LayerComponents.includes(component as any)) continue
+    removeComponent(authoringEntity, component as any)
+  }
+
+  removeComponent(authoringEntity, LayerComponent)
+
+  _markEntityForRemoval(authoringEntity)
 }
 
 /**
