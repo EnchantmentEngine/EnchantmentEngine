@@ -47,6 +47,8 @@ import {
   Entity,
   getComponent,
   hasComponent,
+  LayerComponent,
+  Layers,
   PresentationSystemGroup,
   QueryReactor,
   useComponent,
@@ -459,7 +461,8 @@ export const RenderSettingsState = defineState({
 
 const rendererQuery = defineQuery([RendererComponent, CameraComponent])
 
-export const filterVisible = (entity: Entity) => hasComponent(entity, VisibleComponent)
+export const filterVisible = (entity: Entity) =>
+  hasComponent(entity, VisibleComponent) && LayerComponent.get(entity) === Layers.Simulation
 export const getNestedVisibleChildren = (entity: Entity) => getNestedChildren(entity, filterVisible)
 export const getSceneParameters = (entities: Entity[], cameraEntity: Entity) => {
   const vals = {

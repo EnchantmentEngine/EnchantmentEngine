@@ -46,11 +46,11 @@ import {
   LayerID,
   LayerRelationTypes,
   Layers,
-  loadEntityIntoAuthoring,
+  loadEntitiesIntoAuthoring,
   removeComponent,
   removeEntity,
   setComponent,
-  unloadEntityFromAuthoring
+  unloadEntitiesFromAuthoring
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
@@ -1561,10 +1561,10 @@ describe('Dynamic Authoring', () => {
     })
   })
 
-  describe('loadEntityIntoAuthoring', () => {
+  describe('loadEntitiesIntoAuthoring', () => {
     it('should throw an error if the entity is not a simulation entity', () => {
       const authoringEntity = createEntity(Layers.Authoring)
-      expect(() => loadEntityIntoAuthoring(authoringEntity)).toThrow()
+      expect(() => loadEntitiesIntoAuthoring([authoringEntity])).toThrow()
     })
 
     it('should return the existing authoring entity if one already exists', () => {
@@ -1578,13 +1578,13 @@ describe('Dynamic Authoring', () => {
       // Set up the backward reference
       LayerComponents[Layers.Simulation].refs[simulationEntity] = authoringEntity
 
-      const result = loadEntityIntoAuthoring(simulationEntity)
-      expect(result).toBe(authoringEntity)
+      const result = loadEntitiesIntoAuthoring([simulationEntity])
+      expect(result).toBe([authoringEntity])
     })
 
     it('should create a new authoring entity for the simulation entity', () => {
       const simulationEntity = createEntity(Layers.Simulation)
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       expect(entityExists(authoringEntity)).toBe(true)
       expect(LayerComponent.get(authoringEntity)).toBe(Layers.Authoring)
@@ -1602,17 +1602,17 @@ describe('Dynamic Authoring', () => {
       const simulationEntity = createEntity(Layers.Simulation)
       setComponent(simulationEntity, TestComponent, { value: 42 })
 
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       expect(hasComponent(authoringEntity, TestComponent)).toBe(true)
       expect(getComponent(authoringEntity, TestComponent).value).toBe(42)
     })
   })
 
-  describe('unloadEntityFromAuthoring', () => {
+  describe('unloadEntitiesFromAuthoring', () => {
     it('should throw an error if the entity is not an authoring entity', () => {
       const simulationEntity = createEntity(Layers.Simulation)
-      expect(() => unloadEntityFromAuthoring(simulationEntity)).toThrow()
+      expect(() => unloadEntitiesFromAuthoring([simulationEntity])).toThrow()
     })
 
     it('should throw an error if the entity has no simulation counterpart', () => {
@@ -1630,14 +1630,14 @@ describe('Dynamic Authoring', () => {
         expect(() => {
           // Call the function directly to use our mock
           if (LayerComponent.get(authoringEntity) !== Layers.Authoring) {
-            throw new Error('unloadEntityFromAuthoring: entity must be an authoring entity')
+            throw new Error('unloadEntitiesFromAuthoring: entity must be an authoring entity')
           }
 
           const simulationEntity = mockGetSimulationCounterpart(authoringEntity)
           if (simulationEntity === UndefinedEntity) {
-            throw new Error('unloadEntityFromAuthoring: entity has no simulation counterpart')
+            throw new Error('unloadEntitiesFromAuthoring: entity has no simulation counterpart')
           }
-        }).toThrow('unloadEntityFromAuthoring: entity has no simulation counterpart')
+        }).toThrow('unloadEntitiesFromAuthoring: entity has no simulation counterpart')
       } finally {
         // Restore the original function
         vi.stubGlobal('getSimulationCounterpart', originalGetSimulationCounterpart)
@@ -1648,14 +1648,14 @@ describe('Dynamic Authoring', () => {
       const simulationEntity = createEntity(Layers.Simulation)
       setComponent(simulationEntity, TestComponent, { value: 42 })
 
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       // Verify setup
       expect(entityExists(authoringEntity)).toBe(true)
       expect(entityExists(simulationEntity)).toBe(true)
 
       // Unload the authoring entity
-      unloadEntityFromAuthoring(authoringEntity)
+      unloadEntitiesFromAuthoring([authoringEntity])
 
       // The authoring entity should be marked for removal
       expect(entityExists(authoringEntity)).toBe(false)
@@ -1675,7 +1675,7 @@ describe('Dynamic Authoring', () => {
       const simulationEntity = createEntity(Layers.Simulation)
       setComponent(simulationEntity, TestComponent, { value: 42 })
 
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       // Modify the authoring entity
       setComponent(authoringEntity, TestComponent, { value: 100 })
@@ -1688,7 +1688,7 @@ describe('Dynamic Authoring', () => {
       const simulationEntity = createEntity(Layers.Simulation)
       setComponent(simulationEntity, TestComponent, { value: 42 })
 
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       // Remove the component from the authoring entity
       removeComponent(authoringEntity, TestComponent)
@@ -1701,7 +1701,7 @@ describe('Dynamic Authoring', () => {
   describe('Entity removal', () => {
     it('should remove both entities when removing the authoring entity', () => {
       const simulationEntity = createEntity(Layers.Simulation)
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       // Verify setup
       expect(entityExists(authoringEntity)).toBe(true)
@@ -1719,7 +1719,7 @@ describe('Dynamic Authoring', () => {
       // For this test, we'll just verify that the relation is set up correctly
       // so that when the simulation entity is removed, the authoring entity would be removed too
       const simulationEntity = createEntity(Layers.Simulation)
-      const authoringEntity = loadEntityIntoAuthoring(simulationEntity)
+      const [authoringEntity] = loadEntitiesIntoAuthoring([simulationEntity])
 
       // Verify setup
       expect(entityExists(authoringEntity)).toBe(true)
