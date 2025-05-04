@@ -41,24 +41,10 @@ import {
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, Material, Mesh } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { assertArray } from '../../../tests/util/assert'
 import { MeshComponent } from '../components/MeshComponent'
 import { MaterialInstanceComponent, MaterialReferenceState, MaterialStateComponent } from './MaterialComponent'
-
-type MaterialStateComponentData = {
-  material: Material
-  parameters: any
-}
-
-const MaterialStateComponentDefaults: MaterialStateComponentData = {
-  material: {} as Material,
-  parameters: {} as any
-}
-
-function assertMaterialStateComponentEq(A: MaterialStateComponentData, B: MaterialStateComponentData) {
-  assert.equal(A.material.uuid, B.material.uuid)
-}
 
 describe('MaterialStateComponent', () => {
   describe('IDs', () => {
@@ -85,7 +71,10 @@ describe('MaterialStateComponent', () => {
 
     it('should initialize the component with the expected default values', () => {
       const data = getComponent(testEntity, MaterialStateComponent)
-      assertMaterialStateComponentEq(data, MaterialStateComponentDefaults)
+      expect(data).toEqual({
+        material: undefined,
+        parameters: {}
+      })
     })
   }) //:: onInit
 
@@ -95,7 +84,7 @@ describe('MaterialStateComponent', () => {
     beforeEach(async () => {
       if (!Engine.instance) createEngine()
       testEntity = createEntity()
-      setComponent(testEntity, MaterialStateComponent)
+      setComponent(testEntity, MaterialStateComponent, { material: new Material() })
     })
 
     afterEach(() => {
@@ -106,13 +95,13 @@ describe('MaterialStateComponent', () => {
     })
 
     it('should change the values of an initialized MaterialStateComponent', () => {
-      const Expected: MaterialStateComponentData = {
+      const Expected = {
         material: new Material(),
         parameters: {}
       }
       setComponent(testEntity, MaterialStateComponent, Expected)
       const result = getComponent(testEntity, MaterialStateComponent)
-      assertMaterialStateComponentEq(result, Expected)
+      expect(result).toEqual(Expected)
     })
 
     it('should not change values of an initialized MaterialStateComponent when the data passed had incorrect types', () => {
@@ -125,7 +114,7 @@ describe('MaterialStateComponent', () => {
       // @ts-ignore Coerce an incorrect type into the component's data
       setComponent(testEntity, MaterialStateComponent, Incorrect)
       const after = getComponent(testEntity, MaterialStateComponent)
-      assertMaterialStateComponentEq(before, after)
+      expect(before).toEqual(after)
     })
   }) //:: onSet
 
