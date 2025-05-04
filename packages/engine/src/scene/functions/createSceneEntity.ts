@@ -42,7 +42,7 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { NodeIDComponent } from '../../gltf/NodeIDComponent'
 
 export const createSceneEntity = (name: string, parentEntity: Entity = UndefinedEntity): Entity => {
-  const sourceID = GLTFComponent.getInstanceID(parentEntity)
+  const sourceID = GLTFComponent.getSourceID(parentEntity)
   const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
   const entity = sourceID
     ? NodeIDComponent.create(parentEntity, NodeIDComponent.generate(), layer)

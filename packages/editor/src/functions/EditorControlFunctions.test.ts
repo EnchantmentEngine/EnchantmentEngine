@@ -29,10 +29,12 @@ import { Cache, Color, MeshPhysicalMaterial, MeshStandardMaterial } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import { UserID } from '@ir-engine/common/src/schema.type.module'
+
 import {
   createEntity,
   defineComponent,
   EngineState,
+  EntityTreeComponent,
   getComponent,
   hasComponent,
   LayerFunctions,
@@ -44,23 +46,21 @@ import {
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
-import { HemisphereLightComponent, TransformComponent } from '@ir-engine/spatial'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-
-import { EntityTreeComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { NodeFunctions } from '@ir-engine/engine/src/gltf/NodeFunctions'
 import { NodeID, NodeIDComponent, NodesBySourceState } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
+import { HemisphereLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
 import { EditorState } from '../services/EditorServices'
@@ -70,7 +70,6 @@ const waitForScene = (entity: Entity) => vi.waitUntil(() => GLTFComponent.isScen
 
 describe('EditorControlFunctions', () => {
   let physicsWorldEntity: Entity
-
   beforeEach(async () => {
     Cache.enabled = true
     createEngine()
@@ -80,7 +79,11 @@ describe('EditorControlFunctions', () => {
     mockSpatialEngine()
     await Physics.load()
     physicsWorldEntity = createEntity()
-    setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
+
+    setComponent(physicsWorldEntity, UUIDComponent, {
+      entityID: 'physicsWorld',
+      entitySourceID: UUIDComponent.generateUUID()
+    })
     setComponent(physicsWorldEntity, SceneComponent)
     setComponent(physicsWorldEntity, TransformComponent)
     setComponent(physicsWorldEntity, EntityTreeComponent)
@@ -237,7 +240,7 @@ describe('EditorControlFunctions', () => {
       await waitForScene(rootEntity)
 
       const simulationNode1Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node1ID)!
-      const subAssetSourceID = GLTFComponent.getInstanceID(simulationNode1Entity)
+      const subAssetSourceID = GLTFComponent.getSourceID(simulationNode1Entity)
       const simulationNode3Entity = UUIDComponent.getEntityByUUID(
         NodeIDComponent.getUUIDBySourceAndNodeID(subAssetSourceID, node2ID)!
       )
@@ -1155,7 +1158,7 @@ describe('EditorControlFunctions', () => {
       const simulationNode2Entity = NodeFunctions.getEntityFromNodeID(rootEntity, node2ID)!
       const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode2Entity)
 
-      const subAssetSourceID = GLTFComponent.getInstanceID(simulationNode1Entity)
+      const subAssetSourceID = GLTFComponent.getSourceID(simulationNode1Entity)
 
       const simulationNode3Entity = UUIDComponent.getEntityByUUID(
         NodeIDComponent.getUUIDBySourceAndNodeID(subAssetSourceID, node3ID)!

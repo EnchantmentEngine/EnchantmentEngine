@@ -109,7 +109,6 @@ export const AvatarRigComponent = defineComponent({
 const yFlip = new Quaternion().setFromEuler(new Euler(0, Math.PI, 0))
 
 export function createVRM(rootEntity: Entity) {
-  const documentID = GLTFComponent.getInstanceID(rootEntity)
   const gltf = getComponent(rootEntity, GLTFComponent).document!
 
   if (!hasComponent(rootEntity, ObjectComponent)) {

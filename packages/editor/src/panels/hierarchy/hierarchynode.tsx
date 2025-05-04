@@ -49,7 +49,6 @@ import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFLoaderFunctions } from '@ir-engine/engine/src/gltf/GLTFLoaderFunctions'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { SourceID } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, getState, none, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
@@ -115,7 +114,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const { collapseChildren, expandChildren, collapseNode, expandNode } = useNodeCollapseExpand()
   const renamingNode = useRenamingNode()
   const { expandedNodes, firstSelectedEntity } = useMutableState(HierarchyTreeState)
-  const sourceID = GLTFComponent.useInstanceID(rootEntity)
+  const sourceID = GLTFComponent.useSourceID(rootEntity)
   const currentRenameNode = useHookstate(getComponent(entity, NameComponent))
   const { setMenu } = useHierarchyTreeContextMenu()
   const renameRef = useRef<HTMLInputElement>(null)
@@ -136,7 +135,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       document.removeEventListener('mousedown', handleClickOutside)
       if (saveRename) {
         EditorControlFunctions.modifyName([entity], toValidHierarchyNodeName(entity, currentRenameNode.value))
-        AuthoringState.snapshot(UUIDComponent.getUUID(entity) as string as SourceID)
+        AuthoringState.snapshot(getComponent(entity, UUIDComponent).entitySourceID)
         currentRenameNode.set(getComponent(entity, NameComponent))
       }
       renamingNode.clear()
@@ -336,7 +335,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   }
 
   const isModelRoot = hasComponent(entity, GLTFComponent)
-  const isModified = isModelRoot && !!getState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)]
+  const isModified = isModelRoot && !!getState(AssetModifiedState)[GLTFComponent.getSourceID(entity)]
 
   const onSaveChanges = () => {
     const gltfComponent = getComponent(node.entity, GLTFComponent)
@@ -345,7 +344,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     const parsedName = fileName.split('?')[0]
     exportRelativeGLTF(node.entity, fullProjectName, parsedName, false).then((newSRC) => {
       EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: newSRC })
-      getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
+      getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
     })
   }
 
@@ -354,7 +353,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     GLTFLoaderFunctions.unloadScene(gltfComponent.src, node.entity)
     EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: gltfComponent.src })
     ResourceLoaderManager.reloadResource(gltfComponent.src)
-    getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
+    getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
   }
 
   useEffect(() => {

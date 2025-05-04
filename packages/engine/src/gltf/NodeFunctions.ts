@@ -35,7 +35,7 @@ export const NodeFunctions = {
    */
   getEntityFromNodeID: (sameSourceEntity: Entity, nodeID: NodeID) => {
     const sourceID =
-      getOptionalComponent(sameSourceEntity, SourceComponent) || GLTFComponent.getInstanceID(sameSourceEntity)
+      getOptionalComponent(sameSourceEntity, SourceComponent) || GLTFComponent.getSourceID(sameSourceEntity)
     if (!sourceID) return UndefinedEntity
 
     return getState(NodesBySourceState)?.[sourceID]?.[nodeID] || UndefinedEntity
@@ -47,7 +47,7 @@ export const NodeFunctions = {
   useEntityFromNodeID: (sameSourceEntity: Entity, nodeID: NodeID) => {
     const state = useHookstate(getMutableState(NodesBySourceState))
     const sourceID = useOptionalComponent(sameSourceEntity, SourceComponent)?.value
-    const sourceInstanceID = GLTFComponent.useInstanceID(sameSourceEntity)
+    const sourceInstanceID = GLTFComponent.useSourceID(sameSourceEntity)
 
     if (!sourceID || !sourceInstanceID) return UndefinedEntity
 

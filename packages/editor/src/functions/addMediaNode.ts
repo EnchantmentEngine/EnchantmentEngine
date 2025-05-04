@@ -43,7 +43,7 @@ import {
   Layers,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -185,7 +185,7 @@ export async function addMediaNode(
           EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
           removeEntity(entity)
           const rootEntity = getState(EditorState).rootEntity
-          const newSource = GLTFComponent.getInstanceID(rootEntity)
+          const newSource = GLTFComponent.getSourceID(rootEntity)
           AuthoringState.snapshot(newSource)
         }
       )
@@ -197,7 +197,7 @@ export async function addMediaNode(
         (entity) => {
           const rootEntity = getState(EditorState).rootEntity
           const entities = SourceComponent.getEntitiesBySource(entity)
-          const newSource = GLTFComponent.getInstanceID(rootEntity)
+          const newSource = GLTFComponent.getSourceID(rootEntity)
           for (const entity of entities) {
             requestedName = getIncreamentedName(requestedName, parent)
             setComponent(entity, NameComponent, requestedName)
@@ -206,7 +206,7 @@ export async function addMediaNode(
             setComponent(
               entity,
               UUIDComponent,
-              NodeIDComponent.getUUIDBySourceAndNodeID(newSource, getComponent(entity, NodeIDComponent))
+              NodeIDComponent.getUUIDBySourceAndNodeID(newSource, getComponent(entity, UUIDComponent).entityID)
             )
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
@@ -239,7 +239,7 @@ export async function addMediaNode(
       console.log('LOADING MODEL', { entityUUID })
 
       const rootEntity = getState(EditorState).rootEntity
-      const newSource = GLTFComponent.getInstanceID(rootEntity)
+      const newSource = UUIDComponent.getUUID(rootEntity)
       AuthoringState.snapshot(newSource)
       console.log('SNAPSHOTTED', { newSource })
       return entityUUID
@@ -257,7 +257,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = GLTFComponent.getInstanceID(rootEntity)
+    const newSource = UUIDComponent.getUUID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('image/')) {
@@ -268,7 +268,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = GLTFComponent.getInstanceID(rootEntity)
+    const newSource = UUIDComponent.getUUID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('audio/')) {
@@ -279,7 +279,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = GLTFComponent.getInstanceID(rootEntity)
+    const newSource = UUIDComponent.getUUID(rootEntity) as string as SourceID
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (url.includes('.uvol')) {
@@ -295,7 +295,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = GLTFComponent.getInstanceID(rootEntity)
+    const newSource = UUIDComponent.getUUID(rootEntity) as string as SourceID
     AuthoringState.snapshot(newSource)
     return entityUUID
   }

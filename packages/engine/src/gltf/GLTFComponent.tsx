@@ -123,23 +123,14 @@ export const GLTFComponent = defineComponent({
     return componentDependenciesLoaded(dependencies) && progress === 100
   },
 
-  getInstanceID: (entity: Entity) => {
-    const uuidPair = getOptionalComponent(entity, UUIDComponent)
-    const nodeID = getOptionalComponent(entity, NodeIDComponent)
-    if (!uuidPair) return '' as SourceID
-    const uuid = UUIDComponent.concatenateUUID(uuidPair)
-    if (!nodeID) return uuid as string as SourceID
-    return SourceComponent.getSourceID(uuid, nodeID) as SourceID
-  },
-
-  useInstanceID: (entity: Entity) => {
-    const uuidPair = useOptionalComponent(entity, UUIDComponent)?.value
-    const nodeID = useOptionalComponent(entity, NodeIDComponent)?.value
-    if (!uuidPair) return '' as SourceID
-    const uuid = UUIDComponent.concatenateUUID(uuidPair)
-    if (!nodeID) return uuid as string as SourceID
-    return SourceComponent.getSourceID(uuid, nodeID) as SourceID
-  }
+  getSourceID: (entity: Entity): SourceID =>
+    hasComponent(entity, GLTFComponent)
+      ? UUIDComponent.getUUID(entity)
+      : getComponent(entity, UUIDComponent).entitySourceID,
+  useSourceID: (entity: Entity): SourceID =>
+    hasComponent(entity, GLTFComponent)
+      ? UUIDComponent.useUUID(entity)
+      : useComponent(entity, UUIDComponent).entitySourceID.value
 })
 
 type DependencyEval = {
@@ -173,8 +164,8 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
   for (const node of json.nodes) {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as EntityID
-      const sourceID = GLTFComponent.getInstanceID(entity)
-      const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
+      const sourceID = GLTFComponent.getSourceID(entity)
+      const uuid = UUIDComponent.concatenateUUID({ entitySourceID: sourceID, entityID: nodeID })
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -216,7 +207,7 @@ export const GLTFComponentReactor = () => {
 
   useGLTFDocument(entity)
 
-  const sourceID = GLTFComponent.getInstanceID(entity)
+  const sourceID = GLTFComponent.getSourceID(entity)
 
   useEffect(() => {
     getMutableState(AssetState)[sourceID].set(entity)

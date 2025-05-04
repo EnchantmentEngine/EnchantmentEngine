@@ -253,7 +253,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         EditorControlFunctions.modifyProperty([combinedMeshEntity], EntityTreeComponent, { parentEntity: rootEntity })
         setComponent(combinedMeshEntity, NameComponent, 'combined mesh entity')
         setComponent(combinedMeshEntity, TransformComponent)
-        const newSource = GLTFComponent.getInstanceID(rootEntity)
+        const newSource = GLTFComponent.getSourceID(rootEntity)
         setComponent(combinedMeshEntity, UUIDComponent, {
           entitySourceID: newSource,
           entityID: UUIDComponent.generateUUID() as string as EntityID

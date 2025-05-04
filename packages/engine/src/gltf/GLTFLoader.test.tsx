@@ -573,8 +573,8 @@ describe('GLTF Loader', async () => {
     await waitForScene(entity)
     await waitForScene(entity2)
 
-    const instanceID = GLTFComponent.getInstanceID(entity)
-    const instanceID2 = GLTFComponent.getInstanceID(entity2)
+    const instanceID = GLTFComponent.getSourceID(entity)
+    const instanceID2 = GLTFComponent.getSourceID(entity2)
 
     expect(instanceID).not.toBe(instanceID2)
 
