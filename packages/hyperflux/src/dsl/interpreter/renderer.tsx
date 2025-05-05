@@ -25,7 +25,16 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { State } from '@hookstate/core'
 import React, { ReactElement, useEffect } from 'react'
-import { ComponentNode, ConditionalNode, EffectNode, EvaluationContext, HookStateNode, MapNode, Node } from '../types'
+import {
+  ComponentNode,
+  ConditionalNode,
+  EffectNode,
+  EvaluationContext,
+  HookStateNode,
+  MapNode,
+  Node,
+  TextNode
+} from '../types'
 import { evaluateExpression } from './evaluator'
 import { createEvaluationContext, useStateValue } from './state'
 
@@ -55,6 +64,8 @@ export function NodeRenderer({ node, states, localVars }: NodeRendererProps): Re
       return renderConditionalNode(node, states, context)
     case 'map':
       return renderMapNode(node, states, context)
+    case 'text':
+      return renderTextNode(node as any, context)
     default:
       console.error(`Unknown node type: ${(node as any).type}`)
       return null
@@ -220,4 +231,17 @@ function renderMapNode(node: MapNode, states: Record<string, State<any>>, contex
       })}
     </>
   )
+}
+
+/**
+ * Renders a TextNode
+ */
+function renderTextNode(node: TextNode, context: EvaluationContext): ReactElement {
+  const { props = {} } = node
+
+  // Evaluate the content
+  const content = evaluateExpression(props.children || props.value || '', context)
+
+  // Return the content as a string
+  return <>{content}</>
 }
