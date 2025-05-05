@@ -28,12 +28,19 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DSLInterpreter } from '../../src/dsl/interpreter'
 import { TreeRoot } from '../../src/dsl/types'
+import { defineState, StateDefinitions } from '../../src/functions/StateFunctions'
+import { createHyperStore, HyperFlux } from '../../src/functions/StoreFunctions'
 
 describe('DSL Interpreter', () => {
   beforeEach(() => {
     vi.resetModules()
     // Clear the DOM between tests
     document.body.innerHTML = ''
+
+    // Ensure HyperFlux store is initialized
+    if (!HyperFlux.store) {
+      createHyperStore()
+    }
   })
 
   // Test basic rendering
@@ -78,13 +85,17 @@ describe('DSL Interpreter', () => {
 
   // Test basic state rendering
   it('should render state values', () => {
+    // Define the state before using it in the DSL
+    try {
+      if (!StateDefinitions.has('counter')) {
+        defineState({ name: 'counter', initial: 42 })
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
+
     const dsl: TreeRoot = {
       tree: [
-        {
-          type: 'hookstate',
-          key: 'counter',
-          initial: 42
-        },
         {
           type: 'component',
           name: 'div',
@@ -103,7 +114,7 @@ describe('DSL Interpreter', () => {
       ]
     }
 
-    render(<DSLInterpreter dsl={dsl} />)
+    render(<DSLInterpreter dsl={dsl} initialContext={{ counter: 42 }} />)
 
     // Check that the state value is rendered
     const counter = screen.getByTestId('counter')
@@ -111,13 +122,17 @@ describe('DSL Interpreter', () => {
   })
 
   it('should handle conditional rendering', () => {
+    // Define the state before using it in the DSL
+    try {
+      if (!StateDefinitions.has('showMessage')) {
+        defineState({ name: 'showMessage', initial: true })
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
+
     const dsl: TreeRoot = {
       tree: [
-        {
-          type: 'hookstate',
-          key: 'showMessage',
-          initial: true
-        },
         {
           type: 'conditional',
           cond: { var: 'showMessage' },
@@ -159,7 +174,7 @@ describe('DSL Interpreter', () => {
       ]
     }
 
-    render(<DSLInterpreter dsl={dsl} />)
+    render(<DSLInterpreter dsl={dsl} initialContext={{ showMessage: true }} />)
 
     // The 'then' branch should be visible since showMessage is true
     expect(screen.getByTestId('message')).toBeDefined()
@@ -167,17 +182,26 @@ describe('DSL Interpreter', () => {
   })
 
   it('should handle map rendering', () => {
+    // Define the state before using it in the DSL
+    const itemsData = [
+      { id: 1, text: 'Item 1' },
+      { id: 2, text: 'Item 2' },
+      { id: 3, text: 'Item 3' }
+    ]
+
+    try {
+      if (!StateDefinitions.has('items')) {
+        defineState({
+          name: 'items',
+          initial: itemsData
+        })
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
+
     const dsl: TreeRoot = {
       tree: [
-        {
-          type: 'hookstate',
-          key: 'items',
-          initial: [
-            { id: 1, text: 'Item 1' },
-            { id: 2, text: 'Item 2' },
-            { id: 3, text: 'Item 3' }
-          ]
-        },
         {
           type: 'component',
           name: 'ul',
@@ -212,7 +236,7 @@ describe('DSL Interpreter', () => {
       ]
     }
 
-    render(<DSLInterpreter dsl={dsl} />)
+    render(<DSLInterpreter dsl={dsl} initialContext={{ items: itemsData }} />)
 
     // Check that all items are rendered
     const list = screen.getByTestId('list')

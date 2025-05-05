@@ -27,7 +27,9 @@ import { State } from '@hookstate/core'
 import { act, render } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEvaluationContext, getGlobalState, useStateValue } from '../../src/dsl/interpreter/state'
+import { createEvaluationContext, useStateValue } from '../../src/dsl/interpreter/state'
+import { defineState, getMutableState, StateDefinitions } from '../../src/functions/StateFunctions'
+import { createHyperStore, HyperFlux } from '../../src/functions/StoreFunctions'
 
 // Mock component for testing useStateValue
 function TestComponent({
@@ -43,6 +45,18 @@ function TestComponent({
   context?: any
   onRender: (value: any) => void
 }) {
+  // For global scope, we need to ensure the state is defined
+  if (scope !== 'local' && initial !== undefined) {
+    try {
+      // Try to get the state definition
+      if (!StateDefinitions.has(stateKey)) {
+        defineState({ name: stateKey, initial })
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
+  }
+
   const state = useStateValue(stateKey, scope, initial, context || {})
   onRender(state.value)
   return <div data-testid="test-component">{JSON.stringify(state.value)}</div>
@@ -52,25 +66,28 @@ describe('State Management', () => {
   beforeEach(() => {
     // Clear global states between tests
     vi.resetModules()
-  })
 
-  // Test getGlobalState
-  it('should create and retrieve global state', () => {
-    const state1 = getGlobalState('test', 42)
-    expect(state1.value).toBe(42)
-
-    // Get the same state again
-    const state2 = getGlobalState('test', 100) // Initial value should be ignored
-    expect(state2.value).toBe(42)
-
-    // They should be the same object
-    state1.set(99)
-    expect(state2.value).toBe(99)
+    // Ensure HyperFlux store is initialized
+    if (!HyperFlux.store) {
+      createHyperStore()
+    }
   })
 
   // Test useStateValue with global scope
   it('should use global state with useStateValue', () => {
     const onRender = vi.fn()
+
+    // Define the state first
+    let globalState = { name: 'counter', initial: 0 }
+    try {
+      if (!StateDefinitions.has('counter')) {
+        globalState = defineState({ name: 'counter', initial: 0 })
+      } else {
+        globalState = StateDefinitions.get('counter')!
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
 
     // Initial render
     const { rerender } = render(<TestComponent stateKey="counter" initial={0} onRender={onRender} />)
@@ -78,9 +95,8 @@ describe('State Management', () => {
     expect(onRender).toHaveBeenCalledWith(0)
 
     // Update the state externally
-    const globalState = getGlobalState('counter', 0)
     act(() => {
-      globalState.set(5)
+      getMutableState(globalState).set(5)
     })
 
     // Re-render
@@ -101,9 +117,19 @@ describe('State Management', () => {
     expect(onRender).toHaveBeenCalledWith(10)
 
     // Update the global state (should not affect local)
-    const globalState = getGlobalState('localCounter', 0)
+    let globalState = { name: 'localCounter', initial: 0 }
+    try {
+      if (!StateDefinitions.has('localCounter')) {
+        globalState = defineState({ name: 'localCounter', initial: 0 })
+      } else {
+        globalState = StateDefinitions.get('localCounter')!
+      }
+    } catch (e) {
+      // State might already be defined, ignore the error
+    }
+
     act(() => {
-      globalState.set(99)
+      getMutableState(globalState).set(99)
     })
 
     // Re-render
@@ -138,8 +164,5 @@ describe('State Management', () => {
     // Check local vars
     expect(context.item).toEqual({ id: 1, value: 'item1' })
     expect(context.$special).toBe('special')
-
-    // Check special functions
-    expect(typeof context.$.fetch).toBe('function')
   })
 })

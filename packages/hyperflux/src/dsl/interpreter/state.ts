@@ -25,26 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { hookstate, State, useHookstate } from '@hookstate/core'
 import { useRef, useState } from 'react'
+import { getMutableState, StateDefinitions } from '../../functions/StateFunctions'
 import { EvaluationContext, Expression } from '../types'
 import { evaluateExpression } from './evaluator'
-
-// Global state store for DSL states
-const globalStates: Record<string, State<any>> = {}
-
-/**
- * Creates or gets a global state
- *
- * @param key - The key for the state
- * @param initial - The initial value
- * @returns The state object
- */
-export function getGlobalState<T>(key: string, initial: T): State<T> {
-  if (!globalStates[key]) {
-    // Create a new state using hookstate directly
-    globalStates[key] = hookstate<T>(initial)
-  }
-  return globalStates[key] as State<T>
-}
 
 /**
  * Hook to use a state (global or local)
@@ -76,8 +59,9 @@ export function useStateValue<T>(
     return localStateRef.current as State<T>
   }
 
-  // For global state, use the global store
-  return useHookstate<T>(getGlobalState<T>(key, initialValue as T))
+  // For global state, use the state definitions
+  const globalState = getMutableState(StateDefinitions.get(key)!)
+  return useHookstate<T>(globalState)
 }
 
 /**
@@ -92,14 +76,7 @@ export function createEvaluationContext(
   localVars: Record<string, any> = {}
 ): EvaluationContext {
   const context: EvaluationContext = {
-    ...localVars,
-    $: {
-      // Special functions for API calls
-      fetch: async (url: string, options?: RequestInit) => {
-        const response = await fetch(url, options)
-        return await response.json()
-      }
-    }
+    ...localVars
   }
 
   // Add state values to context
