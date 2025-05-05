@@ -108,7 +108,6 @@ import {
   MaterialTextureValue,
   MaterialValue
 } from './MaterialExtensionComponents'
-import { NodeIDComponent } from './NodeIDComponent'
 import { SceneDeltaExporterExtension } from './SceneDeltaExporterExtension'
 
 const WEBGL_CONSTANTS = {
@@ -961,7 +960,7 @@ const exportMaterial = async (
   const prototype = getState(MaterialPrototypeDefinitions)[materialComponent.material.type]
   //@todo: plugins
   materialDef.extensions['EE_material'] = {
-    uuid: getComponent(entity, NodeIDComponent),
+    uuid: getComponent(entity, UUIDComponent).entityID,
     name: getComponent(entity, NameComponent),
     prototype: prototype.prototypeConstructor.name,
     args: result,

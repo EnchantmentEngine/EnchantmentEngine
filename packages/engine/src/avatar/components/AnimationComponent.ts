@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { AnimationClip, AnimationMixer, KeyframeTrack, Object3D, PropertyBinding } from 'three'
 
-import { Entity, EntityUUID, iterateEntityNode, removeEntity, UndefinedEntity } from '@ir-engine/ecs'
+import { Entity, EntityUUID, iterateEntityNode, removeEntity, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -46,7 +46,6 @@ import {
 import { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AssetState } from '../../gltf/GLTFState'
-import { NodeIDComponent } from '../../gltf/NodeIDComponent'
 import { SourceComponent } from '../../scene/components/SourceComponent'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
 
@@ -140,7 +139,7 @@ PropertyBinding.findNode = (root: Object3D, nodeName: string) => {
   if (avatarRigComponent) {
     entity = avatarRigComponent.bonesToEntities[nodeName]
   }
-  if (!entity) entity = childEntities.find((entity) => nodeName === getComponent(entity, NodeIDComponent))!
+  if (!entity) entity = childEntities.find((entity) => nodeName === getComponent(entity, UUIDComponent).entityID)!
 
   if (!entity) {
     return null

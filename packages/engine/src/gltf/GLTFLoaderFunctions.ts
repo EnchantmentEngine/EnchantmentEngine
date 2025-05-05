@@ -30,6 +30,7 @@ import {
   ComponentJSONIDMap,
   ComponentType,
   Entity,
+  EntityID,
   EntityTreeComponent,
   LayerComponent,
   LayerFunctions,
@@ -132,7 +133,7 @@ import {
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
-import { NodeID, NodeIDComponent } from './NodeIDComponent'
+import { NodeIDComponent } from './NodeIDComponent'
 import { SCENE_DELTA_EXTENSION_NAME } from './SceneDeltaExporterExtension'
 
 type ComponentExt = Component & {
@@ -643,7 +644,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const layer = LayerComponent.get(entity)
   const materialDef = json.materials![materialIndex]
 
-  const nodeID = ('material-' + materialIndex) as NodeID
+  const nodeID = ('material-' + materialIndex) as EntityID
   const materialEntity = NodeIDComponent.create(entity, nodeID, layer)
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
@@ -1177,11 +1178,11 @@ const _createAnimationTracks = (
       const object = getComponent(entity, MeshComponent)
       if (object.morphTargetInfluences) {
         if (!object.name) throw new Error('THREE.GLTFLoader: Node has no name.')
-        targetNames.push(getComponent(entity, NodeIDComponent))
+        targetNames.push(getComponent(entity, UUIDComponent).entityID)
       }
     })
   } else {
-    targetNames.push(getComponent(node, NodeIDComponent))
+    targetNames.push(getComponent(node, UUIDComponent).entityID)
   }
 
   let TypedKeyframeTrack
@@ -1421,6 +1422,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   const layerID = LayerComponent.get(options.entity)
 
   const nodeID = getNodeID(nodeDef, nodeIndex)
+
   const nodeEntity = NodeIDComponent.create(options.entity, nodeID, layerID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
@@ -1714,7 +1716,7 @@ export const getDependency = <
 }
 
 export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
-  (node.extensions?.[NodeIDComponent.jsonID] as NodeID) ?? (`${nodeIndex}` as NodeID)
+  (node.extensions?.[NodeIDComponent.jsonID] as EntityID) ?? (`${nodeIndex}` as EntityID)
 
 export type GLTFParserOptions = {
   url: string

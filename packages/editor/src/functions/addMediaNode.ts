@@ -36,6 +36,7 @@ import {
 } from '@ir-engine/ecs'
 import {
   getComponent,
+  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerFunctions,
@@ -47,7 +48,6 @@ import { Entity, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/sr
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
@@ -202,12 +202,7 @@ export async function addMediaNode(
             requestedName = getIncreamentedName(requestedName, parent)
             setComponent(entity, NameComponent, requestedName)
             setComponent(entity, SourceComponent, rootEntity)
-            setComponent(entity, NodeIDComponent, NodeIDComponent.generate())
-            setComponent(
-              entity,
-              UUIDComponent,
-              NodeIDComponent.getUUIDBySourceAndNodeID(newSource, getComponent(entity, UUIDComponent).entityID)
-            )
+            getMutableComponent(entity, UUIDComponent).entitySourceID.set(newSource)
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
                 setComponent(entity, TransformComponent, comp.props)

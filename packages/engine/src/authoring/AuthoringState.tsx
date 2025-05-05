@@ -342,12 +342,12 @@ export const computeCommands = (commands: HistoryCommand[], sourceID?: SourceID)
 export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData, finalState: SourceData) => {
   for (const nodeID of Object.keys(finalState) as EntityID[]) {
     if (finalState[nodeID]) {
-      const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
+      const uuid = UUIDComponent.concatenateUUID({ entitySourceID: sourceID, entityID: nodeID })
       if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)) {
         // entity does not exist, add entity
-        const e = NodeIDComponent.create(
-          UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring),
-          nodeID,
+        NodeIDComponent.create(
+          UUIDComponent.getEntityByUUID(sourceID, Layers.Authoring),
+          nodeID as any as NodeID,
           Layers.Authoring
         )
       }
@@ -377,7 +377,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
   for (const nodeID of Object.keys(currentState) as EntityID[]) {
     if (!finalState[nodeID]) {
       // entity does not exist, remove entity
-      const uuid = UUIDComponent.concatenateUUID(NodeIDComponent.getUUIDBySourceAndNodeID(sourceID, nodeID))
+      const uuid = (sourceID + nodeID) as EntityUUID
       const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
       // ensure the entity has actually been removed, and not moved to another source
       if (getOptionalComponent(entity, UUIDComponent)?.entitySourceID === sourceID) {

@@ -43,7 +43,6 @@ import {
   Vector2
 } from 'three'
 import { getDependency, GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
-import { NodeIDSchema } from './NodeIDComponent'
 
 export type MaterialTextureValue = {
   contents: { index: number; texCoord: number }
@@ -1045,7 +1044,7 @@ export const EEMaterialComponent = defineComponent({
   name: 'EEMaterialComponent',
   jsonID: 'EE_material',
   schema: S.Object({
-    uuid: NodeIDSchema(),
+    uuid: S.EntityUUID(),
     name: S.String(),
     prototype: S.String(),
     args: S.Record(

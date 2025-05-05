@@ -28,7 +28,6 @@ import {
   defineComponent,
   Entity,
   EntityID,
-  EntityUUIDPair,
   LayerID,
   Layers,
   S,
@@ -46,8 +45,6 @@ import { v4 as uuidv4 } from 'uuid'
 import { SourceComponent } from '../scene/components/SourceComponent'
 
 export type NodeID = OpaqueType<'NodeID'> & string
-
-export const NodeIDSchema = () => S.String('', { id: 'NodeID' }) as unknown as TTypedSchema<NodeID>
 
 export const NodesBySourceState = defineState({
   name: 'ir.world.NodesBySourceState',
@@ -90,11 +87,6 @@ export const NodeIDComponent = defineComponent({
     return null
   },
 
-  getUUIDBySourceAndNodeID: (source: SourceID, nodeID: EntityID): EntityUUIDPair => ({
-    entitySourceID: source,
-    entityID: nodeID
-  }),
-
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
@@ -103,13 +95,13 @@ export const NodeIDComponent = defineComponent({
     const entity = createEntity(layer)
     setComponent(entity, NodeIDComponent, nodeID as string)
     setComponent(entity, SourceComponent, sourceEntity)
-    setComponent(
-      entity,
-      UUIDComponent,
-      NodeIDComponent.getUUIDBySourceAndNodeID(UUIDComponent.getUUID(sourceEntity) as string as SourceID, nodeID)
-    )
+    setComponent(entity, UUIDComponent, {
+      entitySourceID: sourceEntity ? UUIDComponent.getUUID(sourceEntity) : UUIDComponent.generateUUID(),
+      entityID: nodeID
+    })
     return entity
   },
 
+  /**@deprecated use uuid component generate */
   generate: () => uuidv4() as NodeID
 })

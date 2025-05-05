@@ -29,8 +29,12 @@ import {
   defineComponent,
   deserializeComponent,
   Entity,
+  EntityID,
   EntityUUID,
   getComponent,
+  matchesEntityID,
+  matchesEntitySourceID,
+  SourceID,
   Static,
   TObjectSchema,
   TProperties,
@@ -106,8 +110,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
   const $Actions = {
     spawn: defineAction({
       type: 'ir.engine.prefab_' + definition.name,
-      entityID: matches.string,
-      entityInstanceID: matches.string,
+      entityID: matchesEntityID,
+      entitySourceID: matchesEntitySourceID,
       /** @todo once actions use JSON Schemas, we can include that strictness here */
       data: matches.object as Validator<unknown, Static<S>>
     })
@@ -121,7 +125,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     receptors: {
       onSpawn: $Actions.spawn.receive((action) => {
         getMutableState($State)[
-          UUIDComponent.concatenateUUID({ entityID: action.entityID, entitySourceID: action.entityInstanceID })
+          UUIDComponent.concatenateUUID({ entityID: action.entityID, entitySourceID: action.entitySourceID })
         ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]])))
       }),
       onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
@@ -174,8 +178,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
    * @param props.data - The prefab data matching the schema definition
    */
   const spawnPrefab = (props: {
-    entityID: string
-    entityInstanceID: string
+    entityID: EntityID
+    entitySourceID: SourceID
     parentUUID: EntityUUID
     position: Vector3
     rotation: Quaternion
@@ -184,7 +188,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     dispatchAction(
       $Actions.spawn({
         entityID: props.entityID,
-        entityInstanceID: props.entityInstanceID,
+        entitySourceID: props.entitySourceID,
         /** @todo fix when actions use JSON Schemas */
         // @ts-ignore
         data: props.data
@@ -193,7 +197,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     dispatchAction(
       SpawnObjectActions.spawnObject({
         entityID: props.entityID,
-        entitySourceID: props.entityInstanceID,
+        entitySourceID: props.entitySourceID,
         parentUUID: props.parentUUID,
         position: props.position,
         rotation: props.rotation,
@@ -224,7 +228,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
         dispatchAction(
           $Actions.spawn({
             entityID: entityUUIDPair.entityID,
-            entityInstanceID: entityUUIDPair.entitySourceID,
+            entitySourceID: entityUUIDPair.entitySourceID,
             /** @todo fix when actions use JSON Schemas */
             // @ts-ignore
             data: getComponent(entity, $Component)

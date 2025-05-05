@@ -132,21 +132,17 @@ export const GLTFComponent = defineComponent({
     ).get(NO_PROXY_STEALTH)
   },
 
-  getSourceEntity(entity: Entity) {
-    return UUIDComponent.getEntityByUUID(getComponent(entity, UUIDComponent).entitySourceID as EntityUUID)
-  },
-
   getSourceID: (entity: Entity): SourceID =>
     hasComponent(entity, UUIDComponent)
       ? hasComponent(entity, GLTFComponent)
         ? UUIDComponent.getUUID(entity)
         : getComponent(entity, UUIDComponent).entitySourceID
-      : '',
+      : ('' as SourceID),
   useSourceID: (entity: Entity): SourceID => {
     const uuid = useOptionalComponent(entity, UUIDComponent)?.value
-    if (!uuid) return ''
+    if (!uuid) return '' as SourceID
     if (hasComponent(entity, GLTFComponent)) return UUIDComponent.concatenateUUID(uuid)
-    return uuid?.entitySourceID || ''
+    return uuid?.entitySourceID || ('' as SourceID)
   }
 })
 

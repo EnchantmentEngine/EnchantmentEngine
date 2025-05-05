@@ -45,10 +45,11 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeID, NodeIDComponent, NodesBySourceState } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { NodeIDComponent, NodesBySourceState } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
@@ -79,7 +80,7 @@ describe('EditorControlFunctions', () => {
     physicsWorldEntity = createEntity()
 
     setComponent(physicsWorldEntity, UUIDComponent, {
-      entityID: 'physicsWorld',
+      entityID: 'physicsWorld' as EntityID,
       entitySourceID: UUIDComponent.generateUUID()
     })
     setComponent(physicsWorldEntity, SceneComponent)
@@ -98,7 +99,7 @@ describe('EditorControlFunctions', () => {
 
   describe('addOrRemoveComponent', () => {
     it('should add and remove component from root child', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -142,8 +143,8 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should add and remove component from root child', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const childID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -193,8 +194,8 @@ describe('EditorControlFunctions', () => {
     })
 
     it('registers a delta for adding a component', async () => {
-      const node1ID = NodeIDComponent.generate()
-      const node2ID = NodeIDComponent.generate()
+      const node1ID = 'node1ID' as EntityID
+      const node2ID = 'node2ID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -267,7 +268,7 @@ describe('EditorControlFunctions', () => {
       materialEntity = createEntity()
       setComponent(materialEntity, UUIDComponent, {
         entitySourceID: UUIDComponent.generateUUID(),
-        entityID: 'material'
+        entityID: 'material' as EntityID
       })
     })
 
@@ -321,7 +322,7 @@ describe('EditorControlFunctions', () => {
 
   describe('modifyName', () => {
     it('should modify the name of a node', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -359,7 +360,7 @@ describe('EditorControlFunctions', () => {
 
   describe('modifyProperty', () => {
     it('should modify the property of a node', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -402,7 +403,7 @@ describe('EditorControlFunctions', () => {
       assert.deepEqual(hemisphereLightComponent.skyColor, new Color('blue'))
     })
     it('should modify a nested property of a node', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -477,7 +478,7 @@ describe('EditorControlFunctions', () => {
 
   describe('createObjectFromSceneElement', () => {
     it('should create a new object from a scene element to root', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -525,7 +526,7 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should create enities in hierarchy using the requested name, adding an increment if a sibling entity with the name already exists', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -618,7 +619,7 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should create a new object from a scene element as child of node', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -672,7 +673,7 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should create a new object from a scene element before node', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -727,8 +728,8 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should create a new object from a scene element before child node', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const childID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -795,7 +796,7 @@ describe('EditorControlFunctions', () => {
 
   describe('duplicateObject', () => {
     it('should duplicate an object to root', async () => {
-      const nodeID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -845,8 +846,8 @@ describe('EditorControlFunctions', () => {
 
   describe('reparentObject', () => {
     it('should reparent a child node to root', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const childID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -889,8 +890,8 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should reparent an object to another object', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const node2ID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const node2ID = 'node2ID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -935,8 +936,8 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should reparent a child node to root before another node', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const childID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -982,9 +983,9 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should reparent an object to another object before other object', async () => {
-      const nodeID = NodeIDComponent.generate()
-      const node2ID = NodeIDComponent.generate()
-      const childID = NodeIDComponent.generate()
+      const nodeID = 'nodeID' as EntityID
+      const node2ID = 'node2ID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -1039,10 +1040,10 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should reparent inside root node', async () => {
-      const node1UUID = NodeIDComponent.generate()
-      const node2ID = NodeIDComponent.generate()
-      const node3ID = NodeIDComponent.generate()
-      const node4ID = NodeIDComponent.generate()
+      const node1UUID = UUIDComponent.generateUUID()
+      const node2ID = 'node2ID' as EntityID
+      const node3ID = 'node3ID' as EntityID
+      const node4ID = 'node4ID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -1099,9 +1100,9 @@ describe('EditorControlFunctions', () => {
     })
 
     it('should reparent to another source', async () => {
-      const node1ID = NodeIDComponent.generate()
-      const node2ID = NodeIDComponent.generate()
-      const node3ID = NodeIDComponent.generate()
+      const node1ID = 'node1ID' as EntityID
+      const node2ID = 'node2ID' as EntityID
+      const node3ID = 'node3ID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -1171,10 +1172,10 @@ describe('EditorControlFunctions', () => {
 
       assert.equal(reparentedAuthoringNode2Entity, authoringNode2Entity)
       assert.equal(getComponent(reparentedAuthoringNode2Entity, NodeIDComponent), node2ID)
-      // assert.equal(
-      //   getComponent(reparentedAuthoringNode2Entity, SourceComponent),
-      //   getComponent(authoringNode3Entity, SourceComponent)
-      // )
+      assert.equal(
+        getComponent(reparentedAuthoringNode2Entity, SourceComponent),
+        getComponent(authoringNode3Entity, SourceComponent)
+      )
       assert.equal(getComponent(reparentedAuthoringNode2Entity, EntityTreeComponent).parentEntity, authoringNode3Entity)
       const expectedUUID = UUIDComponent.getUUID(simulationNode1Entity) + node2ID
       assert.equal(UUIDComponent.getUUID(reparentedAuthoringNode2Entity), expectedUUID)
@@ -1183,9 +1184,9 @@ describe('EditorControlFunctions', () => {
 
   describe('groupObjects', () => {
     it('should group objects without affecting existing hierarchy relationships', async () => {
-      const nodeID = 'nodeID' as NodeID
-      const node2ID = 'node2ID' as NodeID
-      const childID = 'childID' as NodeID
+      const nodeID = 'nodeID' as EntityID
+      const node2ID = 'node2ID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -1243,10 +1244,10 @@ describe('EditorControlFunctions', () => {
 
   describe('removeObject', () => {
     it('should remove an object and children from the scene', async () => {
-      const nodeID = 'nodeID' as NodeID
-      const node2ID = 'node2ID' as NodeID
-      const node3ID = 'node3ID' as NodeID
-      const childID = 'childID' as NodeID
+      const nodeID = 'nodeID' as EntityID
+      const node2ID = 'node2ID' as EntityID
+      const node3ID = 'node3ID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {
@@ -1311,8 +1312,8 @@ describe('EditorControlFunctions', () => {
 
   describe('overwriteLookdevObject', () => {
     it('should overwrite a lookdev object with new components', async () => {
-      const nodeID = 'nodeID' as NodeID
-      const childID = 'childID' as NodeID
+      const nodeID = 'nodeID' as EntityID
+      const childID = 'childID' as EntityID
 
       const gltf: GLTF.IGLTF = {
         asset: {

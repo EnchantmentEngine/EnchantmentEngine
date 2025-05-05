@@ -53,7 +53,6 @@ import { AssetLoader } from '../../assets/classes/AssetLoader'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { AudioState } from '../../audio/AudioState'
 import { removePannerNode } from '../../audio/PositionalAudioFunctions'
-import { NodeIDSchema } from '../../gltf/NodeIDComponent'
 import { PlayMode } from '../constants/PlayMode'
 import { addError, clearErrors, removeError } from '../functions/ErrorFunctions'
 import isHLS from '../functions/isHLS'
@@ -157,7 +156,7 @@ export const MediaComponent = defineComponent({
     currentTrackTime: S.NonSerialized(S.Number(0)),
     currentTrackDuration: S.NonSerialized(S.Number(0)),
     isCurrentTrackLoaded: S.NonSerialized(S.Bool(false)),
-    externalMediaNodeID: NodeIDSchema()
+    externalMediaNodeID: S.EntityUUID()
     /**
      * TODO: refactor this into a ScheduleComponent for invoking callbacks at scheduled times
      * The auto start time for the playlist, in Unix/Epoch time (milliseconds).

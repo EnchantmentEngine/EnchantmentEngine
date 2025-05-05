@@ -185,7 +185,6 @@ describe('glTF: Animation Type', () => {
     it('MAY be undefined', () => {
       const options = mockGLTFOptions(mockGLTFMinimalAnimation())
       delete options.document.animations![0].name
-      console.log(GLTFLoaderFunctions.loadAnimation(options, 0))
       expect(GLTFLoaderFunctions.loadAnimation(options, 0)).resolves.not.toThrow()
     })
 

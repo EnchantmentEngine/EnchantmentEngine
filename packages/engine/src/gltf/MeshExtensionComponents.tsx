@@ -28,6 +28,7 @@ import {
   ComponentType,
   defineComponent,
   EntityTreeComponent,
+  EntityUUID,
   getAncestorWithComponents,
   getComponent,
   removeComponent,
@@ -45,7 +46,6 @@ import { InstancingComponent } from '../scene/components/InstancingComponent'
 import { getGLTFOptions, GLTFComponent } from './GLTFComponent'
 import { WEBGL_CONSTANTS } from './GLTFConstants'
 import { getDependency, getNodeID, GLTFParserOptions } from './GLTFLoaderFunctions'
-import { NodeIDComponent } from './NodeIDComponent'
 
 export type KHRPunctualLight = {
   color?: [number, number, number]
@@ -211,9 +211,8 @@ export const EXTMeshGPUInstancingComponent = defineComponent({
     const results = await Promise.all(pending)
 
     const nodeID = getNodeID(nodeDef, nodeIndex)
-    const nodeUUID = UUIDComponent.concatenateUUID(
-      NodeIDComponent.getUUIDBySourceAndNodeID(UUIDComponent.getUUID(options.entity), nodeID)
-    )
+    const nodeUUID = (UUIDComponent.getUUID(options.entity) + nodeID) as EntityUUID
+
     const entity = UUIDComponent.getEntityByUUID(nodeUUID)
     const mesh = getComponent(entity, MeshComponent)
 

@@ -29,6 +29,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   Engine,
   Entity,
+  EntityID,
+  EntityUUIDPair,
   UUIDComponent,
   createEngine,
   createEntity,
@@ -141,14 +143,17 @@ describe('definePrefab', () => {
     expect(TestPrefabComponent.spawn).toBeDefined()
     expect(typeof TestPrefabComponent.spawn).toBe('function')
 
-    const entityUUIDPair = { instanceID: UUIDComponent.generateUUID(), id: 'spawned-entity' }
+    const entityUUIDPair = {
+      entitySourceID: UUIDComponent.generateUUID(),
+      entityID: 'spawned-entity' as EntityID
+    } as EntityUUIDPair
     const entityUUID = UUIDComponent.concatenateUUID(entityUUIDPair)
     const parentUUID = UUIDComponent.getUUID(sceneEntity)
 
     expect(() => {
       TestPrefabComponent.spawn({
-        entityID: entityUUIDPair.id,
-        entityInstanceID: entityUUIDPair.instanceID,
+        entityID: entityUUIDPair.entityID,
+        entitySourceID: entityUUIDPair.entitySourceID,
         parentUUID,
         position: new Vector3(1, 2, 3),
         rotation: new Quaternion(0, 0, 0, 1),

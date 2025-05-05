@@ -54,7 +54,6 @@ import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbna
 import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -63,6 +62,7 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
+import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { Button, DropdownItem, Input, Select, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
@@ -348,25 +348,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             compressionProgress.set({ progress, caption })
           }
         )
-        // const result = createSceneEntity('container')
-        // const variant = createSceneEntity('LOD Variant', result)
-        // const heuristic = Heuristic.DISTANCE
-        // setComponent(variant, VariantComponent, {
-        //   levels: lods.map((lod, lodIndex) => ({
-        //     src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
-        //     metadata: {
-        //       ...lod.variantMetadata,
-        //       ...transformMetadata[lodIndex]
-        //     }
-        //   })),
-        //   heuristic
-        // })
-        // const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
-        // const gltfEntity = getAncestorWithComponents(result, [GLTFComponent])
-        // const uuid = getComponent(gltfEntity, UUIDComponent)
-        // const sourceID = SourceComponent.getSourceID(uuid, destinationPath)
-        // iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, sourceID))
-        // await exportGLTF(result, destinationPath, false)
+
         const compressedFilePath = srcURL.replace(/\.[^.]*$/, `-LOD2.gltf`)
         //update src from combined mesh to compressed mesh
         compressionLoading.set(false)

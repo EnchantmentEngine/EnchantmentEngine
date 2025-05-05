@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityID,
   EntityTreeComponent,
   LayerComponent,
   Layers,
@@ -45,7 +46,7 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
   const sourceID = GLTFComponent.getSourceID(parentEntity)
   const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
   const entity = sourceID
-    ? NodeIDComponent.create(parentEntity, NodeIDComponent.generate(), layer)
+    ? NodeIDComponent.create(parentEntity, UUIDComponent.generateUUID() as string as EntityID, layer)
     : createEntity(layer)
   setComponent(entity, NameComponent, name)
   setComponent(entity, VisibleComponent)
@@ -55,7 +56,7 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
   if (!sourceID) {
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: name })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: name as EntityID })
   }
 
   // These additional properties and relations are required for
