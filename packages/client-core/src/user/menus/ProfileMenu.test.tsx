@@ -28,10 +28,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { API } from '@ir-engine/common'
 import {
-  authenticationSettingPath,
   avatarPath,
+  builderInfoPath,
   clientSettingPath,
+  engineSettingPath,
   identityProviderPath,
+  projectPath,
   projectSettingPath,
   scopePath,
   staticResourcePath,
@@ -86,7 +88,7 @@ describe('ProfileMenu component', () => {
         }
       ],
       [avatarPath]: [],
-      [authenticationSettingPath]: [
+      [engineSettingPath]: [
         {
           id: 'auth-setting-id',
           authStrategies: [
@@ -96,6 +98,12 @@ describe('ProfileMenu component', () => {
               github: true
             }
           ]
+        }
+      ],
+      [builderInfoPath]: [
+        {
+          engineVersion: '1.0.0',
+          engineCommit: '1234567890'
         }
       ]
     }
@@ -141,7 +149,9 @@ describe('ProfileMenu component', () => {
       [scopePath]: createService(scopePath),
       [clientSettingPath]: createService(clientSettingPath),
       [identityProviderPath]: createService(identityProviderPath),
-      [authenticationSettingPath]: createService(authenticationSettingPath)
+      [engineSettingPath]: createService(engineSettingPath),
+      [projectPath]: createService(projectPath),
+      [builderInfoPath]: createService(builderInfoPath)
     }
     eventDispatcher = new EventDispatcher()
     ;(API.instance as any) = {
