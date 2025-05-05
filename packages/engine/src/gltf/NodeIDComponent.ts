@@ -41,7 +41,6 @@ import {
 import { defineState, getMutableState, getState, none, OpaqueType } from '@ir-engine/hyperflux'
 import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import { SourceComponent } from '../scene/components/SourceComponent'
 
 export type NodeID = OpaqueType<'NodeID'> & string
@@ -97,8 +96,5 @@ export const NodeIDComponent = defineComponent({
       entityID: nodeID
     })
     return entity
-  },
-
-  /**@deprecated use uuid component generate */
-  generate: () => uuidv4() as NodeID
+  }
 })
