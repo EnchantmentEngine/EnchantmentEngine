@@ -32,23 +32,14 @@ import {
   Layers,
   S,
   setComponent,
-  SourceID,
   TTypedSchema,
-  useComponent,
-  useEntityContext,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, getState, none, OpaqueType } from '@ir-engine/hyperflux'
+import { OpaqueType } from '@ir-engine/hyperflux'
 import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { useEffect } from 'react'
 import { SourceComponent } from '../scene/components/SourceComponent'
 
 export type NodeID = OpaqueType<'NodeID'> & string
-
-export const NodesBySourceState = defineState({
-  name: 'ir.world.NodesBySourceState',
-  initial: {} as Record<SourceID, Record<NodeID, Entity>>
-})
 
 export const NodeIDComponent = defineComponent({
   name: 'NodeIDComponent',
@@ -58,30 +49,6 @@ export const NodeIDComponent = defineComponent({
     validate: NonEmptyString('NodeIDComponent expects a non-empty string'),
     id: 'NodeID'
   }) as unknown as TTypedSchema<NodeID>,
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const nodeID = useComponent(entity, NodeIDComponent).value
-    const sourceID = useComponent(entity, SourceComponent).value.toString()
-
-    useEffect(() => {
-      const state = getMutableState(NodesBySourceState)
-
-      if (!state.value[sourceID]) state[sourceID].set({})
-
-      if (!state[sourceID].value[nodeID]) state[sourceID][nodeID].set(entity)
-
-      return () => {
-        if (!getState(NodesBySourceState)?.[sourceID]?.[nodeID]) return
-
-        state[sourceID][nodeID].set(none)
-
-        if (!state[sourceID].keys.length) state[sourceID].set(none)
-      }
-    }, [nodeID, sourceID])
-
-    return null
-  },
 
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.

@@ -48,7 +48,7 @@ import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeIDComponent, NodesBySourceState } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
@@ -247,7 +247,7 @@ describe('EditorControlFunctions', () => {
         name: 'TestComponent',
         jsonID: 'EE_test',
         schema: S.Object({
-          value: S.Number(0)
+          value: S.Number()
         })
       })
 
@@ -1164,8 +1164,6 @@ describe('EditorControlFunctions', () => {
       EditorControlFunctions.reparentObject([authoringNode2Entity], null, null, authoringNode3Entity)
 
       await flushAll()
-
-      await vi.waitUntil(() => getState(NodesBySourceState)[simulationNode1Entity][node3ID])
 
       const reparentedSimulationNode2Entity = GLTFComponent.getEntityBySourceAndID(authoringNode3Entity, node2ID)!
       const reparentedAuthoringNode2Entity = LayerFunctions.getAuthoringCounterpart(reparentedSimulationNode2Entity)
