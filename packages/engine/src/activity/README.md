@@ -17,7 +17,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineActivity } from './defineActivity'
 
 // Define a counter activity
-const counterActivity = defineActivity({
+const CounterActivity = defineActivity({
   name: 'Counter',
   jsonID: 'test.counter',
   state: {
@@ -70,11 +70,11 @@ const counterActivity = defineActivity({
 import { dispatchAction, getState } from '@ir-engine/hyperflux'
 
 // Dispatch actions to update the state
-dispatchAction(counterActivity.actions.increment({ amount: 5 }))
-dispatchAction(counterActivity.actions.setMessage({ message: 'Hello, World!' }))
+dispatchAction(CounterActivity.actions.increment({ amount: 5 }))
+dispatchAction(CounterActivity.actions.setMessage({ message: 'Hello, World!' }))
 
 // Get the current state
-const currentState = getState(counterActivity.state)
+const currentState = getState(CounterActivity.state)
 console.log(currentState.count) // 5
 console.log(currentState.message) // 'Hello, World!'
 ```
