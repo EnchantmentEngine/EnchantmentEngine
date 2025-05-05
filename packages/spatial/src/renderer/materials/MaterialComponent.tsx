@@ -103,11 +103,11 @@ export const MaterialStateComponent = defineComponent({
 
   schema: S.Object({
     // material & material specific data
-    material: S.Type<Material>({} as Material),
+    material: S.Type<Material>({ default: {} as Material }),
     parameters: S.Record(S.String(), S.Any()),
     // all entities using this material. an undefined entity at index 0 is a fake user
     /**@todo move to state */
-    instances: S.NonSerialized(S.Array(S.Entity())),
+    instances: S.Array(S.Entity(), { serialized: false }),
     // this has to exist so scene deltas can keep track of material prototype changes
     prototype: S.String()
   }),

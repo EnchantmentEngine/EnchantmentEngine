@@ -41,7 +41,7 @@ export const EntitiesBySourceState = defineState({
 export const SourceComponent = defineComponent({
   name: 'SourceComponent',
 
-  schema: S.Required(S.Entity()),
+  schema: S.Entity(),
 
   onSet: (entity, component, source: Entity) => {
     const currentSource = component.value

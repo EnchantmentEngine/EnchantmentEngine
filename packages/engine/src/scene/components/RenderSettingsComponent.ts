@@ -45,10 +45,12 @@ import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/use
 
 const ToneMappingSchema = S.LiteralUnion(
   [NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping],
-  LinearToneMapping
+  { default: LinearToneMapping }
 )
 
-const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], PCFSoftShadowMap)
+const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], {
+  default: PCFSoftShadowMap
+})
 
 export const RenderSettingsComponent = defineComponent({
   name: 'RenderSettingsComponent',
@@ -56,10 +58,10 @@ export const RenderSettingsComponent = defineComponent({
 
   schema: S.Object({
     primaryLight: S.EntityUUID(),
-    csm: S.Bool(true),
-    cascades: S.Number(5),
+    csm: S.Bool({ default: true }),
+    cascades: S.Number({ default: 5 }),
     toneMapping: ToneMappingSchema,
-    toneMappingExposure: S.Number(0.8),
+    toneMappingExposure: S.Number({ default: 0.8 }),
     shadowMapType: ShadowMapSchema
   }),
 

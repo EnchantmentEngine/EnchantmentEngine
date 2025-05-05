@@ -41,35 +41,34 @@ import { S } from './schemas/JSONSchemas'
 export const UUIDComponent = defineComponent({
   name: 'UUIDComponent',
 
-  schema: S.Required(
-    S.EntityUUIDPair({
-      validate: (idPair, prev, entity) => {
-        if (idPair === prev) return true
-        if (!idPair.entitySourceID) {
-          console.error('UUID context cannot be empty')
-          return false
-        }
-        if (!idPair.entityID) {
-          console.error('UUID id cannot be empty')
-          return false
-        }
-        const uuid = UUIDComponent.concatenateUUID(idPair)
-        const layer = LayerComponent.get(entity)
-        if (!UUIDComponent.entitiesByUUIDState[layer]) {
-          UUIDComponent.entitiesByUUIDState[layer] = {}
-          return true
-        }
-        // throw error if uuid is already in use
-        const currentEntity = UUIDComponent.entitiesByUUIDState[layer][uuid]?.value
-        if (currentEntity && currentEntity !== entity) {
-          console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
-          return false
-        }
-
+  schema: S.EntityUUIDPair({
+    validate: (idPair, prev, entity) => {
+      if (idPair === prev) return true
+      if (!idPair.entitySourceID) {
+        console.error('UUID context cannot be empty')
+        return false
+      }
+      if (!idPair.entityID) {
+        console.error('UUID id cannot be empty')
+        return false
+      }
+      const uuid = UUIDComponent.concatenateUUID(idPair)
+      const layer = LayerComponent.get(entity)
+      if (!UUIDComponent.entitiesByUUIDState[layer]) {
+        UUIDComponent.entitiesByUUIDState[layer] = {}
         return true
       }
-    })
-  ),
+      // throw error if uuid is already in use
+      const currentEntity = UUIDComponent.entitiesByUUIDState[layer][uuid]?.value
+      if (currentEntity && currentEntity !== entity) {
+        console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
+        return false
+      }
+
+      return true
+    },
+    required: true
+  }),
 
   onSet(entity, component, idPair: EntityUUIDPair) {
     const layer = LayerComponent.get(entity)

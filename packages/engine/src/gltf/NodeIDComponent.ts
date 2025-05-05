@@ -55,13 +55,10 @@ export const NodeIDComponent = defineComponent({
   name: 'NodeIDComponent',
   jsonID: 'EE_uuid',
 
-  schema: S.Required(
-    S.String('', {
-      /** @todo we should also validate to see if it currently is defined, and if not then disallow changing */
-      validate: NonEmptyString('NodeIDComponent expects a non-empty string'),
-      id: 'NodeID'
-    }) as unknown as TTypedSchema<NodeID>
-  ),
+  schema: S.String({
+    validate: NonEmptyString('NodeIDComponent expects a non-empty string'),
+    id: 'NodeID'
+  }) as unknown as TTypedSchema<NodeID>,
 
   reactor: () => {
     const entity = useEntityContext()

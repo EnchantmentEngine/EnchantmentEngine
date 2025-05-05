@@ -32,7 +32,7 @@ export const LookAtComponent = defineComponent({
 
   schema: S.Object({
     target: S.EntityUUID(),
-    xAxis: S.Bool(true),
-    yAxis: S.Bool(true)
+    xAxis: S.Bool({ default: true }),
+    yAxis: S.Bool({ default: true })
   })
 })
