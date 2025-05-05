@@ -27,7 +27,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import { BufferAttribute, Mesh, SphereGeometry } from 'three'
 
 import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
-import { getComponent, getOptionalComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, getComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -36,7 +36,6 @@ import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/T
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { MATERIALS_PANEL_ID } from './helpers'
 
@@ -48,13 +47,16 @@ function MaterialPreviewCanvas() {
   useEffect(() => {
     const { sceneEntity, cameraEntity } = renderPanel
     if (
-      !selectedMaterial.value ||
-      selectedMaterial.value === getOptionalComponent(sceneEntity, MaterialInstanceComponent)?.uuid[0]
+      !selectedMaterial.value
+      // || selectedMaterial.value === getOptionalComponent(sceneEntity, MaterialInstanceComponent)?.uuid[0]
     )
       return
 
     setComponent(sceneEntity, TransformComponent)
-    setComponent(sceneEntity, UUIDComponent, { source: UUIDComponent.generateUUID(), id: 'material' })
+    setComponent(sceneEntity, UUIDComponent, {
+      entitySourceID: UUIDComponent.generateUUID(),
+      entityID: 'material' as EntityID
+    })
     setComponent(sceneEntity, NameComponent, 'Material Preview Entity')
     setComponent(sceneEntity, VisibleComponent, true)
     const sphereMesh = new Mesh(new SphereGeometry(5, 32, 32))
@@ -64,7 +66,7 @@ function MaterialPreviewCanvas() {
     )
     sphereMesh.geometry.attributes['uv1'] = sphereMesh.geometry.attributes['uv']
     setComponent(sceneEntity, MeshComponent, sphereMesh)
-    setComponent(sceneEntity, MaterialInstanceComponent, { uuid: [selectedMaterial.value] })
+    //setComponent(sceneEntity, MaterialInstanceComponent, { uuid: [selectedMaterial.value] })
 
     const pivot = computeTransformPivot([sceneEntity])
     if (pivot.position) {

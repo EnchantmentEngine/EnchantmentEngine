@@ -27,7 +27,7 @@ import React, { useEffect, useRef } from 'react'
 import { Mesh, SphereGeometry } from 'three'
 
 import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
-import { getComponent, Layers, setComponent, useComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, getComponent, Layers, setComponent, useComponent, UUIDComponent } from '@ir-engine/ecs'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
@@ -48,7 +48,7 @@ export const MaterialPreviewCanvas = () => {
     const { sceneEntity, cameraEntity } = renderPanel
     setComponent(sceneEntity, NameComponent, 'Material Preview Entity')
     const uuid = UUIDComponent.generateUUID()
-    setComponent(sceneEntity, UUIDComponent, { source: uuid, id: 'preview' })
+    setComponent(sceneEntity, UUIDComponent, { entitySourceID: uuid, entityID: 'preview' as EntityID })
     setComponent(sceneEntity, VisibleComponent, true)
     const material = getComponent(
       UUIDComponent.getEntityByUUID(getState(MaterialSelectionState).selectedMaterial!, Layers.Authoring),
