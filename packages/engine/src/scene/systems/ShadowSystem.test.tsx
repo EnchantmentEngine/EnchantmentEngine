@@ -36,15 +36,19 @@ import {
   defineQuery,
   destroyEngine,
   EntityContext,
+  EntityID,
   EntityTreeComponent,
+  EntityUUID,
   getComponent,
   getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent,
+  SourceID,
   SystemDefinitions,
   SystemUUID,
-  UndefinedEntity
+  UndefinedEntity,
+  UUIDComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState, ReactorRoot, startReactor } from '@ir-engine/hyperflux'
 import {
@@ -71,12 +75,9 @@ import React from 'react'
 import { BoxGeometry, Color, Material, Mesh, MeshBasicMaterial, Quaternion, Raycaster, Vector2, Vector3 } from 'three'
 import { getTextureAsync } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
-import { NodeID, NodeIDComponent, NodesBySourceState } from '../../gltf/NodeIDComponent'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
 import { ShadowComponent } from '../components/ShadowComponent'
-import { SourceComponent, SourceID } from '../components/SourceComponent'
 import {
   DropShadowSystem,
   ShadowSystem,
@@ -1190,17 +1191,13 @@ describe('CSMReactor', async () => {
         setComponent(directionalLightEntity, DirectionalLightComponent)
         getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
-        const directionalLightNodeID = 'SomeNodeID' as NodeID
-        setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
-        const nodeID = directionalLightNodeID // Readability alias to match the tested code
-
-        const sourceID = 'SomeSourceID' as SourceID
+        setComponent(directionalLightEntity, UUIDComponent, {
+          entitySourceID: UUIDComponent.generateUUID(),
+          entityID: 'directionalLight' as EntityID
+        })
+        const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
         const renderSettingsEntity = createEntity()
-        setComponent(renderSettingsEntity, SourceComponent, sourceID)
-        setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-
-        const nodes = { [nodeID]: directionalLightEntity }
-        getMutableState(NodesBySourceState)[sourceID].set(nodes)
+        setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
         const Reactor = () => {
           return React.createElement(ShadowSystemReactors.CSMReactor, {
@@ -1213,8 +1210,7 @@ describe('CSMReactor', async () => {
 
         await flushAll()
 
-        const result = NodeFunctions.getEntityFromNodeID(
-          renderSettingsEntity,
+        const result = UUIDComponent.getEntityByUUID(
           getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
         )
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -1231,17 +1227,15 @@ describe('CSMReactor', async () => {
       const directionalLightEntity = createEntity()
       setComponent(directionalLightEntity, DirectionalLightComponent)
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
+      setComponent(directionalLightEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'directionalLight' as EntityID
+      })
+      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
 
-      const directionalLightNodeID = 'SomeNodeID' as NodeID
-      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
-
-      const sourceID = 'SomeSourceID' as SourceID
       const renderSettingsEntity = createEntity()
-      setComponent(renderSettingsEntity, SourceComponent, sourceID)
-      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
       getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(false)
-      const nodes = { [directionalLightNodeID]: directionalLightEntity }
-      getMutableState(NodesBySourceState)[sourceID].set(nodes)
 
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.CSMReactor, {
@@ -1265,16 +1259,10 @@ describe('CSMReactor', async () => {
 
       const directionalLightEntity = createEntity()
       setComponent(directionalLightEntity, DirectionalLightComponent)
+      const directionalLightUUID = 'some invalid uuid that points to nothing' as EntityUUID
 
-      const directionalLightNodeID = 'SomeNodeID' as NodeID
-      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
-
-      const sourceID = 'SomeSourceID' as SourceID
       const renderSettingsEntity = createEntity()
-      setComponent(renderSettingsEntity, SourceComponent, sourceID)
-      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-      const nodes = { [directionalLightNodeID]: UndefinedEntity }
-      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.CSMReactor, {
@@ -1299,15 +1287,14 @@ describe('CSMReactor', async () => {
       const directionalLightEntity = createEntity()
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
-      const directionalLightNodeID = 'SomeNodeID' as NodeID
-      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+      setComponent(directionalLightEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'directionalLight' as EntityID
+      })
+      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
 
-      const sourceID = 'SomeSourceID' as SourceID
       const renderSettingsEntity = createEntity()
-      setComponent(renderSettingsEntity, SourceComponent, sourceID)
-      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-      const nodes = { [directionalLightNodeID]: directionalLightEntity }
-      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.CSMReactor, {
@@ -1333,15 +1320,15 @@ describe('CSMReactor', async () => {
       setComponent(directionalLightEntity, DirectionalLightComponent)
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
-      const directionalLightNodeID = 'SomeNodeID' as NodeID
-      setComponent(directionalLightEntity, NodeIDComponent, directionalLightNodeID)
+      setComponent(directionalLightEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'directionalLight' as EntityID
+      })
+      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
 
       const sourceID = 'SomeSourceID' as SourceID
       const renderSettingsEntity = createEntity()
-      setComponent(renderSettingsEntity, SourceComponent, sourceID)
-      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightNodeID })
-      const nodes = { [directionalLightNodeID]: directionalLightEntity }
-      getMutableState(NodesBySourceState)[sourceID].set(nodes)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.CSMReactor, {

@@ -39,7 +39,8 @@ import {
   useComponent,
   useEntityContext,
   useOptionalComponent,
-  useQuery
+  useQuery,
+  UUIDComponent
 } from '@ir-engine/ecs'
 
 import { Identifiable, State } from '@ir-engine/hyperflux'
@@ -57,7 +58,6 @@ import {
   Uniform
 } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
 import { EnvMapBakeComponent } from '../components/EnvMapBakeComponent'
 import { BoxProjectionPlugin, EnvMapComponent } from '../components/EnvmapComponent'
 import { ReflectionProbeComponent } from '../components/ReflectionProbeComponent'
@@ -284,8 +284,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     Identifiable
   >
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
-  const bakeEntity =
-    NodeFunctions.useEntityFromNodeID(props.rootEntity, envMapComponent.envMapSourceEntityUUID.value) ?? UndefinedEntity
+  const bakeEntity = UUIDComponent.useEntityByUUID(envMapComponent.envMapSourceEntityUUID.value) ?? UndefinedEntity
   const bakeComponent = useOptionalComponent(bakeEntity, EnvMapBakeComponent)
 
   const [envMaptexture, error] = useTexture(bakeComponent?.envMapOrigin.value ?? '', bakeEntity)
