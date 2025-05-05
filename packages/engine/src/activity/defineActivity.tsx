@@ -24,8 +24,11 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { JSONSchema } from '@ir-engine/ecs'
-import { defineAction, defineState, getMutableState, getState } from '@ir-engine/hyperflux'
+import { defineAction, defineState, getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
+import { DSLInterpreter } from '@ir-engine/hyperflux/src/dsl'
+import { TreeRoot } from '@ir-engine/hyperflux/src/dsl/types'
 import jsonLogic, { RulesLogic } from 'json-logic-js'
+import React from 'react'
 import { validateRuleAgainstSchema } from './jsonLogicUtils'
 
 type ActivityActionDescription = {
@@ -44,6 +47,7 @@ type ActivityDescription = {
     }
   }
   actions: ActivityActionDescription[]
+  reactor?: TreeRoot
 }
 
 /**
@@ -75,6 +79,22 @@ export const validateRule = (rule: RulesLogic, schema: JSONSchema): boolean => {
 }
 
 /**
+ * Creates a React component from a DSL tree
+ * @param dsl The DSL tree
+ * @param stateName The name of the state to provide context to the DSL
+ * @returns A React component that renders the DSL
+ */
+const createReactorFromDSL = (dsl: TreeRoot, stateName: string) => {
+  return () => {
+    // Get the current state from the HyperFlux store
+    const currentState = HyperFlux.store.stateMap[stateName]?.get({ noproxy: true }) || {}
+
+    // Create the DSL interpreter with the current state as context
+    return <DSLInterpreter dsl={dsl} initialContext={{ state: currentState }} />
+  }
+}
+
+/**
  * Defines an activity with state, actions, and receptors using JSON Logic
  * @param description The activity description
  * @returns The defined activity with state and actions
@@ -82,18 +102,19 @@ export const validateRule = (rule: RulesLogic, schema: JSONSchema): boolean => {
 export const defineActivity = (description: ActivityDescription) => {
   const actions = description.actions.reduce(
     (acc, actionDesc) => {
+      // Create a basic action with just the type
       acc[actionDesc.name] = defineAction({
-        type: actionDesc.jsonID,
-        data: {}
+        type: actionDesc.jsonID
       })
       return acc
     },
     {} as Record<string, ReturnType<typeof defineAction>>
   )
 
-  const state = defineState({
+  // Create state definition options
+  const stateOptions: any = {
     name: description.jsonID,
-    initial: {},
+    initial: { count: 0 },
     receptors: Object.entries(description.state.receptors).reduce((acc, [actionName, rule]) => {
       const actionKey = Object.keys(actions).find((key) => actions[key].type === actionName || key === actionName)
 
@@ -106,13 +127,20 @@ export const defineActivity = (description: ActivityDescription) => {
         (action: Record<string, any>) => {
           const currentState = getState(state)
           const newState = applyStateTransformation(currentState, rule, action)
-          getMutableState(state).set(newState)
+          getMutableState(state).set({ count: newState })
         }
       )
 
       return acc
     }, {})
-  })
+  }
+
+  // Add reactor if provided
+  if (description.reactor) {
+    stateOptions.reactor = createReactorFromDSL(description.reactor, description.jsonID)
+  }
+
+  const state = defineState(stateOptions)
 
   return {
     state,

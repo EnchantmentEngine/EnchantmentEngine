@@ -23,10 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { createHyperStore, getState } from '@ir-engine/hyperflux'
 import { RulesLogic } from 'json-logic-js'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { applyStateTransformation } from './defineActivity'
+import { applyStateTransformation, defineActivity } from './defineActivity'
 import {
   comparison,
   concat,
@@ -39,6 +40,120 @@ import {
   mergeIntoState,
   setStateProperty
 } from './jsonLogicUtils'
+
+describe('defineActivity', () => {
+  beforeEach(() => {
+    // Create a new store for each test
+    createHyperStore({
+      getDispatchTime: () => Date.now(),
+      defaultDispatchDelay: () => 0
+    })
+  })
+
+  it('should define an activity with state and actions', () => {
+    // Define a simple counter activity
+    const counterActivity = defineActivity({
+      name: 'Counter',
+      jsonID: 'test.counter',
+      actions: [
+        {
+          name: 'increment',
+          jsonID: 'INCREMENT',
+          schema: {
+            type: 'object',
+            properties: {
+              amount: { type: 'number' }
+            }
+          }
+        },
+        {
+          name: 'reset',
+          jsonID: 'RESET',
+          schema: {
+            type: 'object',
+            properties: {}
+          }
+        }
+      ],
+      state: {
+        schema: {
+          type: 'object',
+          properties: {
+            count: { type: 'number' }
+          }
+        },
+        receptors: {
+          INCREMENT: { '+': [{ var: 'state.count' }, { var: 'data.amount' }] },
+          RESET: 0
+        }
+      }
+    })
+
+    // Check that the activity has the expected structure
+    expect(counterActivity).toHaveProperty('state')
+    expect(counterActivity).toHaveProperty('actions')
+    expect(counterActivity.actions).toHaveProperty('increment')
+    expect(counterActivity.actions).toHaveProperty('reset')
+
+    // Verify initial state
+    const state = counterActivity.state
+    expect(getState(state)).toEqual({ count: 0 })
+  })
+
+  it('should define an activity with a DSL reactor', () => {
+    // Define a simple counter activity with a DSL reactor
+    const counterActivity = defineActivity({
+      name: 'Counter',
+      jsonID: 'test.counter.dsl',
+      actions: [
+        {
+          name: 'increment',
+          jsonID: 'INCREMENT',
+          schema: {
+            type: 'object',
+            properties: {
+              amount: { type: 'number' }
+            }
+          }
+        }
+      ],
+      state: {
+        schema: {
+          type: 'object',
+          properties: {
+            count: { type: 'number' }
+          }
+        },
+        receptors: {
+          INCREMENT: { '+': [{ var: 'state.count' }, { var: 'data.amount' }] }
+        }
+      },
+      reactor: {
+        tree: [
+          {
+            type: 'hookstate',
+            key: 'localCount',
+            initial: 0
+          },
+          {
+            type: 'effect',
+            deps: ['state.count'],
+            body: {
+              set: [{ var: 'localCount' }, { var: 'state.count' }]
+            }
+          }
+        ]
+      }
+    })
+
+    // Check that the activity has the expected structure
+    expect(counterActivity).toHaveProperty('state')
+    expect(counterActivity).toHaveProperty('actions')
+
+    // Check that the reactor was created
+    expect(counterActivity.state).toHaveProperty('reactor')
+  })
+})
 
 describe('JSON Logic State Mutations', () => {
   it('should apply simple state transformations', () => {
