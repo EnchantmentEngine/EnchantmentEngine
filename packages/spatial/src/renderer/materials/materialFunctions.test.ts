@@ -24,6 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  Entity,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -113,7 +114,7 @@ describe('materialFunctions', () => {
     it('should add all items of `@param newMaterialEntities` to MeshComponent.material when MeshComponent.material is an array', () => {
       // Set the fallback material
       const fallbackMaterial = new Material()
-      const fallbackUUID = MaterialStateComponent.fallbackMaterialUUID
+      const fallbackUUID = MaterialStateComponent.fallbackMaterialUUIDPair
       const fallbackEntity = createEntity()
       setComponent(fallbackEntity, UUIDComponent, fallbackUUID)
       setComponent(fallbackEntity, MaterialStateComponent, { instances: [UndefinedEntity], material: fallbackMaterial })

@@ -25,7 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityID,
   EntityUUID,
+  EntityUUIDPair,
   UUIDComponent,
   createEngine,
   createEntity,
@@ -73,12 +75,12 @@ describe('SpawnPoseState', () => {
         const Expected = new Vector3().setScalar(42)
         const Initial = new Vector3().setScalar(21)
         // Set the data as expected
-        const keys: EntityUUID[] = [
-          UUIDComponent.generateUUID(),
-          UUIDComponent.generateUUID(),
-          UUIDComponent.generateUUID()
+        const keys: EntityUUIDPair[] = [
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID }
         ]
-        const entities: Entity[] = keys.map((uuid: EntityUUID) => {
+        const entities: Entity[] = keys.map((uuid: EntityUUIDPair) => {
           const entity = createEntity()
           setComponent(entity, UUIDComponent, uuid)
           setComponent(entity, TransformComponent, { position: Initial })
@@ -86,7 +88,7 @@ describe('SpawnPoseState', () => {
         })
         getMutableState(SpawnPoseState).set(
           keys.reduce((list, uuid) => {
-            list[uuid] = {
+            list[UUIDComponent.concatenateUUID(uuid)] = {
               spawnPosition: Expected,
               spawnRotation: new Quaternion(1, 2, 3, 4).normalize()
             }
@@ -106,12 +108,12 @@ describe('SpawnPoseState', () => {
         const Expected = new Quaternion(1, 2, 3, 4).normalize()
         const Initial = new Quaternion(5, 6, 7, 8).normalize()
         // Set the data as expected
-        const keys: EntityUUID[] = [
-          UUIDComponent.generateUUID(),
-          UUIDComponent.generateUUID(),
-          UUIDComponent.generateUUID()
+        const keys: EntityUUIDPair[] = [
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
+          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID }
         ]
-        const entities: Entity[] = keys.map((uuid: EntityUUID) => {
+        const entities: Entity[] = keys.map((uuid: EntityUUIDPair) => {
           const entity = createEntity()
           setComponent(entity, UUIDComponent, uuid)
           setComponent(entity, TransformComponent, { rotation: Initial })
@@ -119,7 +121,7 @@ describe('SpawnPoseState', () => {
         })
         getMutableState(SpawnPoseState).set(
           keys.reduce((list, uuid) => {
-            list[uuid] = {
+            list[UUIDComponent.concatenateUUID(uuid)] = {
               spawnPosition: Vector3_One.clone(),
               spawnRotation: Expected
             }
