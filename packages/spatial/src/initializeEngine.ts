@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { BoxGeometry, Mesh, MeshNormalMaterial } from 'three'
 
 import { createEntity, getComponent, removeEntity, setComponent, UUIDComponent } from '@ir-engine/ecs'
-import { UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { EntityID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
@@ -46,7 +46,10 @@ import { TransformComponent } from './transform/components/TransformComponent'
 export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
   const viewerEntity = createEntity()
   setComponent(viewerEntity, NameComponent, 'viewer')
-  setComponent(viewerEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'ee.viewer' })
+  setComponent(viewerEntity, UUIDComponent, {
+    entitySourceID: UUIDComponent.generateUUID(),
+    entityID: 'ee.viewer' as EntityID
+  })
   setComponent(viewerEntity, CameraComponent)
   setComponent(viewerEntity, VisibleComponent, true)
   setComponent(viewerEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
@@ -95,7 +98,10 @@ export const useSpatialEngine = () => {
 export const initializeSpatialEngine = () => {
   const originEntity = createEntity()
   setComponent(originEntity, NameComponent, 'origin')
-  setComponent(originEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'ee.origin' })
+  setComponent(originEntity, UUIDComponent, {
+    entitySourceID: UUIDComponent.generateUUID(),
+    entityID: 'ee.origin' as EntityID
+  })
   setComponent(originEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(originEntity, TransformComponent)
   setComponent(originEntity, VisibleComponent, true)
@@ -104,7 +110,7 @@ export const initializeSpatialEngine = () => {
   setComponent(localFloorEntity, NameComponent, 'local floor')
   setComponent(localFloorEntity, UUIDComponent, {
     entitySourceID: UUIDComponent.generateUUID(),
-    entityID: 'ee.local-floor'
+    entityID: 'ee.local-floor' as EntityID
   })
   setComponent(localFloorEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(localFloorEntity, TransformComponent)

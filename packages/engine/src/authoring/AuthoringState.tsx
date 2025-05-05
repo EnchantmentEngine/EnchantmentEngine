@@ -347,7 +347,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
         // entity does not exist, add entity
         NodeIDComponent.create(
           UUIDComponent.getEntityByUUID(sourceID, Layers.Authoring),
-          nodeID as any as NodeID,
+          nodeID as any as EntityID,
           Layers.Authoring
         )
       }

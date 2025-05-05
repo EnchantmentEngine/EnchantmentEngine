@@ -31,10 +31,10 @@ import {
 } from '@ir-engine/common/src/schema.type.module'
 import {
   Entity,
+  EntityID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
-  generateEntityUUID,
   getComponent,
   removeEntity,
   setComponent,
@@ -372,7 +372,10 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
     const cameraEntity = createEntity()
 
     setComponent(entity, NameComponent, 'thumbnail job asset ' + src)
-    setComponent(entity, UUIDComponent, { id: generateEntityUUID(), source: 'thumbnail-job' })
+    setComponent(entity, UUIDComponent, {
+      entitySourceID: UUIDComponent.generateUUID(),
+      entityID: 'thumbnail-job' as EntityID
+    })
     setComponent(entity, VisibleComponent)
     setComponent(entity, ShadowComponent, { cast: true, receive: true })
     setComponent(entity, BoundingBoxComponent)

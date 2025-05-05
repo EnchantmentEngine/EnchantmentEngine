@@ -65,7 +65,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 
 import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
 import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -289,7 +289,7 @@ const createObjectFromSceneElement = (
     requestedName = getIncreamentedName(requestedName, parentEntity)
   }
 
-  const nodeID: NodeID =
+  const nodeID: EntityID =
     componentJson.find((comp) => comp.name === NodeIDComponent.jsonID)?.props.uuid ?? generateEntityUUID()
 
   const gltfEntity = getAncestorWithComponents(parentEntity, [GLTFComponent])
@@ -349,7 +349,7 @@ const duplicateObject = (entities: Entity[]) => {
 
       const newEntity = NodeIDComponent.create(
         originalSource,
-        UUIDComponent.generateUUID() as string as NodeID,
+        UUIDComponent.generateUUID() as string as EntityID,
         Layers.Authoring
       )
       const name = getComponent(entity, NameComponent)
