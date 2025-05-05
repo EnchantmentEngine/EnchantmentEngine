@@ -53,6 +53,7 @@ import {
 
 import {
   Entity,
+  EntityID,
   EntityTreeComponent,
   UUIDComponent,
   createEntity,
@@ -108,7 +109,7 @@ const createBatchedRenderer = (entity: Entity) => {
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
     setComponent(rendererEntity, UUIDComponent, {
       entitySourceID: UUIDComponent.getUUID(sceneEntity),
-      entityID: UUIDComponent.generateUUID()
+      entityID: UUIDComponent.generateUUID() as string as EntityID
     })
     setComponent(rendererEntity, EntityTreeComponent, { parentEntity: sceneEntity })
     renderer.preserveChildren = true
