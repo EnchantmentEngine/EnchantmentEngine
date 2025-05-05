@@ -197,6 +197,7 @@ const MaterialInstanceSubReactor = (props: {
 
   const materialStateComponent = useOptionalComponent(materialEntity, MaterialStateComponent)
   const meshComponent = useOptionalComponent(entity, MeshComponent)
+
   useEffect(() => {
     if (!meshComponent || !materialStateComponent) return
     const material = getComponent(materialEntity, MaterialStateComponent).material
