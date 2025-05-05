@@ -44,6 +44,7 @@ import {
   destroyEngine,
   EngineState,
   Entity,
+  EntityID,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -64,7 +65,7 @@ const createEntityWithUUID = () => {
   const entity = createEntity()
   setComponent(entity, UUIDComponent, {
     entitySourceID: UUIDComponent.generateUUID(),
-    entityID: UUIDComponent.generateUUID()
+    entityID: 'id' as EntityID
   })
   return entity
 }

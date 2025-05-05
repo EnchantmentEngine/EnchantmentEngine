@@ -27,6 +27,7 @@ import {
   createEngine,
   destroyEngine,
   Entity,
+  EntityID,
   EntityUUIDPair,
   getComponent,
   getOptionalComponent,
@@ -105,11 +106,11 @@ describe('AvatarIKSystem', () => {
       ).toBeTruthy()
     })
 
-    const rightHandId = 'rightHand'
-    const leftHandId = 'leftHand'
-    const leftFootId = 'leftFoot'
-    const rightFootId = 'rightFoot'
-    const headId = 'head'
+    const rightHandId = 'rightHand' as EntityID
+    const leftHandId = 'leftHand' as EntityID
+    const leftFootId = 'leftFoot' as EntityID
+    const rightFootId = 'rightFoot' as EntityID
+    const headId = 'head' as EntityID
     dispatchAction(
       AvatarNetworkAction.spawnIKTarget({
         parentUUID: avatarUuid,

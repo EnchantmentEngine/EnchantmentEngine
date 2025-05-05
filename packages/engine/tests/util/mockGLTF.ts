@@ -27,7 +27,6 @@ import { GLTF } from '@gltf-transform/core'
 import { UndefinedEntity } from '@ir-engine/ecs'
 import { LoadingManager } from 'three'
 import { DependencyCache, GLTFParserOptions } from '../../src/gltf/GLTFLoaderFunctions'
-import { SourceID } from '../../src/scene/components/SourceComponent'
 
 /**
  * Creates an empty GLTF object with only the required asset property filled in.
@@ -60,7 +59,6 @@ export function mockGLTFOptions(gltf: GLTF.IGLTF, url = 'test.gltf'): GLTFParser
 
   return {
     url,
-    documentID: 'TestDocumentID' as SourceID,
     document: gltf,
     entity: UndefinedEntity,
     body: null,

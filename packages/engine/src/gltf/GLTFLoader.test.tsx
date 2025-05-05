@@ -30,6 +30,7 @@ import { GLTF } from '@gltf-transform/core/dist/types/gltf'
 import {
   createEntity,
   Entity,
+  EntityID,
   EntityTreeComponent,
   getChildrenWithComponents,
   getComponent,
@@ -80,7 +81,7 @@ const setupEntity = () => {
   setComponent(parent, SceneComponent)
   setComponent(parent, EntityTreeComponent)
   const uuid = UUIDComponent.generateUUID()
-  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'test' })
+  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'test' as EntityID })
 
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })
@@ -104,7 +105,7 @@ describe('GLTF Loader', async () => {
   it('can load a mesh', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
@@ -131,7 +132,7 @@ describe('GLTF Loader', async () => {
   it('can load a material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
@@ -162,7 +163,7 @@ describe('GLTF Loader', async () => {
   it('can load a draco geometry', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: draco_gltf })
 
     await waitForScene(entity)
@@ -188,7 +189,7 @@ describe('GLTF Loader', async () => {
   it('can load an unlit material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: unlit_gltf })
 
     await waitForScene(entity)
@@ -224,7 +225,7 @@ describe('GLTF Loader', async () => {
   it('can load a texture for a material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: textured_gltf })
 
     await waitForScene(entity)
@@ -260,7 +261,7 @@ describe('GLTF Loader', async () => {
   it('can load meshes with multiple primitives/materials', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: multiple_mesh_primitives_gltf })
 
     await waitForScene(entity)
@@ -317,7 +318,7 @@ describe('GLTF Loader', async () => {
   it('can load morph targets', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: morph_gltf })
 
     await waitForScene(entity)
@@ -338,7 +339,7 @@ describe('GLTF Loader', async () => {
   it('can load a mesh with a single animation clip', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: rings_gltf })
 
     await waitForScene(entity)
@@ -359,7 +360,7 @@ describe('GLTF Loader', async () => {
   it('can load a skeleton with many animation clips', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: animation_pack })
 
     await waitForScene(entity)
@@ -380,7 +381,7 @@ describe('GLTF Loader', async () => {
   it('can load skinned meshes with bones and animations', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: skinned_gltf })
 
     await waitForScene(entity)
@@ -416,7 +417,7 @@ describe('GLTF Loader', async () => {
   it('can load cameras', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: camera_gltf })
 
     await waitForScene(entity)
@@ -460,7 +461,10 @@ describe('GLTF Loader', async () => {
    * Manually for the test, by some other reactor, or something else ?? */
   it('can load KHR lights', async () => {
     const testEntity = setupEntity()
-    setComponent(testEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: UUIDComponent.generateUUID(),
+      entityID: 'test' as EntityID
+    })
     setComponent(testEntity, GLTFComponent, { src: khr_light_gltf })
 
     await waitForScene(testEntity)
@@ -511,7 +515,10 @@ describe('GLTF Loader', async () => {
   it('can load instanced primitives with EXT_mesh_gpu_instancing', async () => {
     const testEntity = setupEntity()
 
-    setComponent(testEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: UUIDComponent.generateUUID(),
+      entityID: 'test' as EntityID
+    })
     setComponent(testEntity, GLTFComponent, { src: instanced_gltf })
 
     await waitForScene(testEntity)
@@ -564,10 +571,10 @@ describe('GLTF Loader', async () => {
     const entity = setupEntity()
     const entity2 = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
-    setComponent(entity2, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity2, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity2, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
@@ -587,7 +594,7 @@ describe('GLTF Loader', async () => {
   it('can load GLTFs without scenes or nodes', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' })
+    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_nodeless_gltf })
 
     await waitForScene(entity)

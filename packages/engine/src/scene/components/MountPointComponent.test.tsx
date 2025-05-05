@@ -26,7 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   EngineState,
   Entity,
+  EntityID,
   EntityTreeComponent,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -119,14 +121,14 @@ describe('MountPointComponent.ts', async () => {
         avatarTestEntity = createEntity()
         sceneEntity = loadEmptyScene()
         setComponent(avatarTestEntity, UUIDComponent, {
-          entitySourceID: getState(EngineState).userID,
-          entityID: 'avatar'
+          entitySourceID: getState(EngineState).userID as string as SourceID,
+          entityID: 'avatar' as EntityID
         })
 
         setComponent(sceneEntity, SceneComponent)
         setComponent(mountPointTestEntity, UUIDComponent, {
           entitySourceID: UUIDComponent.generateUUID(),
-          entityID: 'mountPoint'
+          entityID: 'mountPoint' as EntityID
         })
         setComponent(mountPointTestEntity, TransformComponent)
         setComponent(mountPointTestEntity, InteractableComponent)
@@ -212,12 +214,12 @@ describe('MountPointComponent.ts', async () => {
 
       setComponent(sceneEntity, SceneComponent)
       setComponent(avatarTestEntity, UUIDComponent, {
-        entitySourceID: getState(EngineState).userID,
-        entityID: 'avatar'
+        entitySourceID: getState(EngineState).userID as string as SourceID,
+        entityID: 'avatar' as EntityID
       })
       setComponent(mountPointTestEntity, UUIDComponent, {
         entitySourceID: UUIDComponent.generateUUID(),
-        entityID: 'mountPoint'
+        entityID: 'mountPoint' as EntityID
       })
       setComponent(mountPointTestEntity, TransformComponent)
       setComponent(mountPointTestEntity, InteractableComponent)
@@ -260,7 +262,10 @@ describe('MountPointComponent.ts', async () => {
     it('Should return if avatar not seated and point occupied by another entity', async () => {
       // Create a second avatar entity that occupies the mount location
       const avatarTestEntity2 = createEntity()
-      setComponent(avatarTestEntity2, UUIDComponent, { entitySourceID: 'some other avatar', entityID: 'avatar2' })
+      setComponent(avatarTestEntity2, UUIDComponent, {
+        entitySourceID: 'some other avatar' as SourceID,
+        entityID: 'avatar2' as EntityID
+      })
       dispatchAction(
         AvatarNetworkAction.spawn({
           parentUUID: UUIDComponent.getUUID(sceneEntity),
@@ -356,8 +361,8 @@ describe('MountPointComponent.ts', async () => {
       await Physics.load()
 
       setComponent(avatarTestEntity, UUIDComponent, {
-        entitySourceID: getState(EngineState).userID,
-        entityID: 'avatar'
+        entitySourceID: getState(EngineState).userID as string as SourceID,
+        entityID: 'avatar' as EntityID
       })
 
       mountPointTestEntity = createEntity()
@@ -369,7 +374,10 @@ describe('MountPointComponent.ts', async () => {
 
       sceneEntity = createEntity()
       setComponent(sceneEntity, EntityTreeComponent)
-      setComponent(sceneEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'scene' })
+      setComponent(sceneEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.generateUUID(),
+        entityID: 'scene' as EntityID
+      })
       setComponent(sceneEntity, SceneComponent)
       setComponent(sceneEntity, TransformComponent)
       physicsWorld = Physics.createWorld(sceneEntity)
@@ -497,7 +505,7 @@ describe('MountPointComponent.ts', async () => {
       setComponent(groundPlaneEntity, EntityTreeComponent, { parentEntity: sceneEntity })
       setComponent(groundPlaneEntity, UUIDComponent, {
         entitySourceID: UUIDComponent.generateUUID(),
-        entityID: 'groundPlane'
+        entityID: 'groundPlane' as EntityID
       })
       setComponent(groundPlaneEntity, TransformComponent, {
         position: new Vector3(0, 1, 0),
