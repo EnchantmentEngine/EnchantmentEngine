@@ -208,23 +208,23 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         }
         break
       }
-      case 'ArrowUp': {
-        event.preventDefault()
-        if (entity === rootEntity) return
+      // case 'ArrowUp': {
+      //   event.preventDefault()
+      //   if (entity === rootEntity) return
 
-        const prevNode = nodeIndex !== -1 && nodes[nodeIndex - 1]
-        if (!prevNode) return
+      //   const prevNode = nodeIndex !== -1 && nodes[nodeIndex - 1]
+      //   if (!prevNode) return
 
-        if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([getComponent(prevNode.entity, UUIDComponent)])
-        }
+      //   if (event.shiftKey) {
+      //     EditorControlFunctions.addToSelection([getComponent(prevNode.entity, UUIDComponent)])
+      //   }
 
-        const prevNodeEl = document.getElementById(getNodeElId(prevNode))
-        if (prevNodeEl) {
-          prevNodeEl.focus()
-        }
-        break
-      }
+      //   const prevNodeEl = document.getElementById(getNodeElId(prevNode))
+      //   if (prevNodeEl) {
+      //     prevNodeEl.focus()
+      //   }
+      //   break
+      // }
       case 'ArrowLeft': {
         if (entityTree && (!entityTree.children || entityTree.children.length === 0)) return
 
@@ -280,6 +280,12 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         if (!selected) {
           EditorControlFunctions.replaceSelection([getComponent(entity, UUIDComponent)])
         }
+        const node = nodes.find((node) => node.entity === entity)
+        if (node) {
+          const nodeEl = document.getElementById(getNodeElId(node))
+          nodeEl?.focus()
+        }
+
         firstSelectedEntity.set(entity)
       }
     } else if (event.detail === 2) {

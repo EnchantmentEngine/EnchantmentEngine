@@ -75,6 +75,10 @@ const getSelectedEntities = (entity?: Entity) => {
   return selectedEntities
 }
 
+export function getNodeElId(node: HierarchyTreeNodeType) {
+  return 'hierarchy-node-' + node.entity
+}
+
 export const deleteNode = (entity: Entity) => {
   EditorHistoryFunctions.removeEntity(getSelectedEntities(entity))
 }
