@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -31,47 +31,51 @@ describe('Schema Validation', () => {
   it('should validate a valid DSL', () => {
     const validDSL = {
       tree: [
+        // Define a state
         {
           type: 'hookstate',
           key: 'counter',
           scope: 'global',
           initial: 0
         },
+        // Define an effect
         {
-          type: 'component',
-          name: 'div',
-          props: {
-            className: 'container'
-          },
-          children: [
+          type: 'effect',
+          deps: ['counter'],
+          body: { '+': [{ var: 'counter' }, 1] }
+        },
+        // Define a conditional
+        {
+          type: 'conditional',
+          cond: { '>': [{ var: 'counter' }, 5] },
+          then: [
             {
-              type: 'component',
-              name: 'h1',
-              children: [
-                {
-                  type: 'component',
-                  name: 'text',
-                  props: {
-                    value: { var: 'counter' }
-                  }
-                }
-              ]
-            },
+              type: 'hookstate',
+              key: 'isAboveThreshold',
+              scope: 'local',
+              initial: true
+            }
+          ],
+          else: [
             {
-              type: 'component',
-              name: 'button',
-              props: {
-                onClick: { '+': [{ var: 'counter' }, 1] }
-              },
-              children: [
-                {
-                  type: 'component',
-                  name: 'text',
-                  props: {
-                    value: 'Increment'
-                  }
-                }
-              ]
+              type: 'hookstate',
+              key: 'isAboveThreshold',
+              scope: 'local',
+              initial: false
+            }
+          ]
+        },
+        // Define a map
+        {
+          type: 'map',
+          items: [1, 2, 3],
+          itemName: 'item',
+          body: [
+            {
+              type: 'hookstate',
+              key: { cat: ['item_', { var: 'item' }] },
+              scope: 'local',
+              initial: { var: 'item' }
             }
           ]
         }
@@ -164,5 +168,20 @@ describe('Schema Validation', () => {
     }
     const mapErrors = validateDSL(invalidMap)
     expect(mapErrors.some((e) => e.path === 'tree[0].itemName')).toBe(true)
+
+    // Invalid ComponentNode
+    const invalidComponent = {
+      tree: [
+        {
+          type: 'component',
+          // Missing name
+          props: {
+            value: 'test'
+          }
+        }
+      ]
+    }
+    const componentErrors = validateDSL(invalidComponent)
+    expect(componentErrors.some((e) => e.path === 'tree[0].name')).toBe(true)
   })
 })

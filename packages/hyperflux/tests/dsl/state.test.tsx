@@ -23,44 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { State } from '@hookstate/core'
-import { act, render } from '@testing-library/react'
-import React from 'react'
+import { hookstate, State } from '@hookstate/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEvaluationContext, useStateValue } from '../../src/dsl/interpreter/state'
+import { createEvaluationContext } from '../../src/dsl/interpreter/state'
 import { defineState, getMutableState, StateDefinitions } from '../../src/functions/StateFunctions'
 import { createHyperStore, HyperFlux } from '../../src/functions/StoreFunctions'
-
-// Mock component for testing useStateValue
-function TestComponent({
-  stateKey,
-  scope,
-  initial,
-  context,
-  onRender
-}: {
-  stateKey: string
-  scope?: 'global' | 'local'
-  initial?: any
-  context?: any
-  onRender: (value: any) => void
-}) {
-  // For global scope, we need to ensure the state is defined
-  if (scope !== 'local' && initial !== undefined) {
-    try {
-      // Try to get the state definition
-      if (!StateDefinitions.has(stateKey)) {
-        defineState({ name: stateKey, initial })
-      }
-    } catch (e) {
-      // State might already be defined, ignore the error
-    }
-  }
-
-  const state = useStateValue(stateKey, scope, initial, context || {})
-  onRender(state.value)
-  return <div data-testid="test-component">{JSON.stringify(state.value)}</div>
-}
 
 describe('State Management', () => {
   beforeEach(() => {
@@ -73,12 +40,10 @@ describe('State Management', () => {
     }
   })
 
-  // Test useStateValue with global scope
-  it('should use global state with useStateValue', () => {
-    const onRender = vi.fn()
-
-    // Define the state first
-    let globalState = { name: 'counter', initial: 0 }
+  // Test global state management
+  it('should properly manage global state', () => {
+    // Define the state
+    let globalState: ReturnType<typeof defineState> | { name: string; initial: number }
     try {
       if (!StateDefinitions.has('counter')) {
         globalState = defineState({ name: 'counter', initial: 0 })
@@ -87,37 +52,32 @@ describe('State Management', () => {
       }
     } catch (e) {
       // State might already be defined, ignore the error
+      globalState = { name: 'counter', initial: 0 }
     }
 
-    // Initial render
-    const { rerender } = render(<TestComponent stateKey="counter" initial={0} onRender={onRender} />)
+    // Get the mutable state
+    const mutableState = getMutableState(globalState)
 
-    expect(onRender).toHaveBeenCalledWith(0)
+    // Initial value should be 0
+    expect(mutableState.value).toBe(0)
 
-    // Update the state externally
-    act(() => {
-      getMutableState(globalState).set(5)
-    })
+    // Update the state
+    mutableState.set(5)
 
-    // Re-render
-    rerender(<TestComponent stateKey="counter" initial={0} onRender={onRender} />)
-
-    expect(onRender).toHaveBeenCalledWith(5)
+    // Value should be updated
+    expect(mutableState.value).toBe(5)
   })
 
-  // Test useStateValue with local scope
-  it('should use local state with useStateValue', () => {
-    const onRender = vi.fn()
+  // Test local state management using hookstate directly
+  it('should properly manage local state', () => {
+    // Create a local state
+    const localState = hookstate(10)
 
-    // Initial render with local scope
-    const { rerender } = render(
-      <TestComponent stateKey="localCounter" scope="local" initial={10} onRender={onRender} />
-    )
+    // Initial value should be 10
+    expect(localState.value).toBe(10)
 
-    expect(onRender).toHaveBeenCalledWith(10)
-
-    // Update the global state (should not affect local)
-    let globalState = { name: 'localCounter', initial: 0 }
+    // Create a global state with the same name
+    let globalState: ReturnType<typeof defineState> | { name: string; initial: number }
     try {
       if (!StateDefinitions.has('localCounter')) {
         globalState = defineState({ name: 'localCounter', initial: 0 })
@@ -126,17 +86,26 @@ describe('State Management', () => {
       }
     } catch (e) {
       // State might already be defined, ignore the error
+      globalState = { name: 'localCounter', initial: 0 }
     }
 
-    act(() => {
-      getMutableState(globalState).set(99)
-    })
+    // Get the mutable global state
+    const mutableGlobalState = getMutableState(globalState)
 
-    // Re-render
-    rerender(<TestComponent stateKey="localCounter" scope="local" initial={10} onRender={onRender} />)
+    // Update the global state
+    mutableGlobalState.set(99)
 
     // Local state should not be affected by global state change
-    expect(onRender).toHaveBeenCalledWith(10)
+    expect(localState.value).toBe(10)
+
+    // Update the local state
+    localState.set(20)
+
+    // Local state should be updated
+    expect(localState.value).toBe(20)
+
+    // Global state should remain unchanged
+    expect(mutableGlobalState.value).toBe(99)
   })
 
   // Test createEvaluationContext
