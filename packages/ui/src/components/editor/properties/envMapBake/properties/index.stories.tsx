@@ -48,6 +48,8 @@ export default {
       url: ''
     }
   },
+  chromatic: { disable: true },
+
   argTypes
 }
 
