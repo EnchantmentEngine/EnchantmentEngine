@@ -39,9 +39,9 @@ export default {
     design: {
       type: 'figma',
       url: ''
-    }
+    },
+    chromatic: { disable: true }
   },
-  chromatic: { disable: true },
 
   argTypes
 }
