@@ -213,7 +213,7 @@ describe('AvatarSpawnSystem', async () => {
     assert.ok(spawnAction.parentUUID)
     assert.equal(spawnAction.avatarURL, '/avatar.gltf')
     assert.equal(spawnAction.entityID, 'avatar')
-    assert.equal(spawnAction.entityInstanceID, userID)
+    assert.equal(spawnAction.entitySourceID, userID as string)
 
     const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
       AvatarNetworkAction.setAvatarURL.matches.test(action)
