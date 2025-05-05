@@ -47,7 +47,7 @@ export default {
       type: 'figma',
       url: ''
     },
-    chromatic: { disable: true }
+    chromatic: { disableSnapshot: true }
   },
 
   argTypes
