@@ -114,7 +114,8 @@ const execute = () => {
 
     if (!rig.hips) continue
 
-    const ownerID = UUIDComponent.getUUID(entity)
+    const ownerID = getComponent(entity, UUIDComponent).entitySourceID
+
     const leftFoot = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.leftFoot)
     const leftFootTransform = getOptionalComponent(leftFoot, TransformComponent)
     const leftFootTargetBlendWeight = AvatarIKTargetComponent.blendWeight[leftFoot]

@@ -102,6 +102,10 @@ describe('TriggerCallbackSystem', () => {
 
     // Create the entity
     testEntity = createEntity()
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'test' as EntityID
+    })
     setComponent(testEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })
     setComponent(testEntity, TransformComponent)
     setComponent(testEntity, RigidBodyComponent)
@@ -117,6 +121,10 @@ describe('TriggerCallbackSystem', () => {
     targetEntityUUID = getComponent(targetEntity, UUIDComponent).entityID
 
     triggerEntity = createEntity()
+    setComponent(triggerEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'trigger' as EntityID
+    })
     setComponent(triggerEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })
     setComponent(triggerEntity, TransformComponent)
     setComponent(triggerEntity, RigidBodyComponent)

@@ -1196,6 +1196,10 @@ describe('CSMReactor', async () => {
         })
         const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
         const renderSettingsEntity = createEntity()
+        setComponent(renderSettingsEntity, UUIDComponent, {
+          entitySourceID: 'source' as SourceID,
+          entityID: 'renderSettings' as EntityID
+        })
         setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
         const Reactor = () => {
@@ -1234,6 +1238,10 @@ describe('CSMReactor', async () => {
       const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
       const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'renderSettings' as EntityID
+      })
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
       getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(false)
 
@@ -1262,6 +1270,10 @@ describe('CSMReactor', async () => {
       const directionalLightUUID = 'some invalid uuid that points to nothing' as EntityID
 
       const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'renderSettings' as EntityID
+      })
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
@@ -1294,6 +1306,10 @@ describe('CSMReactor', async () => {
       const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
       const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'renderSettings' as EntityID
+      })
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
@@ -1327,6 +1343,10 @@ describe('CSMReactor', async () => {
       const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
       const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'renderSettings' as EntityID
+      })
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
       const Reactor = () => {
@@ -1410,6 +1430,10 @@ describe('RenderSettingsQueryReactor', async () => {
     expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'renderSettings' as EntityID
+    })
     setComponent(renderSettingsEntity, RenderSettingsComponent)
     const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
@@ -1436,6 +1460,10 @@ describe('RenderSettingsQueryReactor', async () => {
     expect(hasComponent(rendererEntity, RendererComponent)).toBeTruthy()
     expect(getComponent(rendererEntity, RendererComponent).csm).toBeTruthy()
     const renderSettingsEntity = createEntity()
+    setComponent(renderSettingsEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'renderSettings' as EntityID
+    })
     setComponent(renderSettingsEntity, RenderSettingsComponent)
     const Reactor = () => {
       return React.createElement(ShadowSystemReactors.RenderSettingsQueryReactor, {
@@ -1460,6 +1488,10 @@ describe('RenderSettingsQueryReactor', async () => {
     getMutableComponent(rendererEntity, RendererComponent).csm.set(new CSM({}))
 
     setComponent(testEntity, RenderSettingsComponent)
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'renderSettings' as EntityID
+    })
     setComponent(testEntity, EntityTreeComponent, { parentEntity: rendererEntity }) // Connect them for useRendererEntity
 
     const Reactor = () => {
