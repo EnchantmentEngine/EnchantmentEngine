@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
-import { DirectionalLightComponent, PointLightComponent } from '@ir-engine/spatial'
+import { PointLightComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import React, { useEffect } from 'react'
 import Component from './index'
@@ -55,7 +55,7 @@ const ComponentNodeEditorRenderer = () => {
     }
   }, [])
 
-  return <Component entity={entity} component={DirectionalLightComponent} />
+  return <Component entity={entity} component={PointLightComponent} />
 }
 
 export const Default = { args: {}, render: ComponentNodeEditorRenderer }
