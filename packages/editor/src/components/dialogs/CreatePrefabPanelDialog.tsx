@@ -162,7 +162,6 @@ export default function CreatePrefabPanel({ entity, isExportLookDev }: { entity?
       ],
       parentEntity
     )
-    console.log('selected', entityUUID)
     getMutableState(SelectionState).selectedEntities.set([entityUUID])
     const reactor = startReactor(() => {
       const entity = UUIDComponent.useEntityByUUID(entityUUID)

@@ -39,14 +39,12 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { NodeIDComponent } from '../../gltf/NodeIDComponent'
 
 export const createSceneEntity = (name: string, parentEntity: Entity = UndefinedEntity): Entity => {
   const sourceID = GLTFComponent.getSourceID(parentEntity)
   const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
-  const entity = sourceID
-    ? NodeIDComponent.create(parentEntity, UUIDComponent.generateUUID(), layer)
-    : createEntity(layer)
+  const entity = createEntity(layer)
+  setComponent(entity, UUIDComponent, { entitySourceID: sourceID, entityID: UUIDComponent.generate() })
   setComponent(entity, NameComponent, name)
   setComponent(entity, VisibleComponent)
   setComponent(entity, TransformComponent)
