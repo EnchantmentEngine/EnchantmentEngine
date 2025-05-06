@@ -892,7 +892,11 @@ const exportMaterial = async (
   const materialEntityUUID = getComponent(entity, UUIDComponent)
 
   //do not export fallback material
-  if (materialEntityUUID === MaterialStateComponent.fallbackMaterialUUIDPair) return null
+  if (
+    materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
+    materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
+  )
+    return null
 
   const materialDef: GLTF.IMaterial = {}
 
@@ -1192,7 +1196,7 @@ const exportEntity = async (
   const childrenIndicies = [] as number[]
   if (children && children.length > 0) {
     for (const child of children) {
-      // if (getComponent(child, SourceComponent) !== context.rootEntity) continue
+      if (getComponent(child, SourceComponent) !== context.rootEntity) continue
       const childPromise = new Promise<void>((resolve) => {
         exportEntity(child, gltf, context).then((childIndex) => {
           if (typeof childIndex === 'number') childrenIndicies.push(childIndex)
