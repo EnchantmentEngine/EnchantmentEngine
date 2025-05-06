@@ -52,6 +52,7 @@ import { copyFolderRecursiveSync } from '@ir-engine/common/src/utils/fsHelperFun
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import verifyProjectPermission from '../../hooks/verify-project-permission'
+import logger from '../../ServerLogger'
 import { getContentType } from '../../util/fileUtils'
 import { getIncrementalName, isValidFileType } from '../FileUtil'
 import { getStorageProvider } from '../storageprovider/storageprovider'
@@ -183,6 +184,7 @@ export class FileBrowserService
     ensureProjectsDirectory(directory)
 
     let result = await storageProvider.listFolderContent(directory, !!recursive)
+    logger.info(result, ' files before filtering')
     Object.entries(params.query).forEach(([key, value]) => {
       if (value['$like']) {
         result = result.filter(
@@ -191,7 +193,7 @@ export class FileBrowserService
         )
       }
     })
-
+    logger.info(result, ' files after filtering')
     let total = result.length
 
     result = result.slice(skip, skip + limit)

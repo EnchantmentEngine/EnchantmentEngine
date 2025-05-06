@@ -347,9 +347,11 @@ export class GCSStorage implements StorageProviderInterface {
     const prefix = folderName.endsWith('/') || !isDirectory ? folderName : folderName + '/'
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
-      delimiter: recursive ? undefined : '/'
+      delimiter: recursive ? undefined : '/',
+      includeFoldersAsPrefixes: true
     })
 
+    logger.info(response, ' response from GCS')
     const promises: Promise<FileBrowserContentType>[] = []
 
     const files = response[2] as {
@@ -359,22 +361,24 @@ export class GCSStorage implements StorageProviderInterface {
     if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
 
-    // Folders
-    for (let i = 0; i < files.prefixes!.length; i++) {
-      promises.push(
-        new Promise(async (resolve) => {
-          const key = files.prefixes![i].slice(0, -1)
-          const size = await this.getFolderSize(key)
-          const cont: FileBrowserContentType = {
-            key,
-            url: `${this.bucketAssetURL}/${key}`,
-            name: key.split('/').pop()!,
-            type: 'folder',
-            size
-          }
-          resolve(cont)
-        })
-      )
+    if (!recursive) {
+      // Folders
+      for (let i = 0; i < files.prefixes!.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = files.prefixes![i].slice(0, -1)
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
     }
 
     // Files
@@ -391,6 +395,19 @@ export class GCSStorage implements StorageProviderInterface {
               name: query!.groups!.name as string,
               type: query!.groups!.extension as string,
               size: parseInt(files.items![i].size)
+            }
+            resolve(cont)
+          })
+        )
+      } else if (recursive && !query && key !== folderName) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').filter(Boolean).pop()!,
+              type: 'folder',
+              size: await this.getFolderSize(key)
             }
             resolve(cont)
           })

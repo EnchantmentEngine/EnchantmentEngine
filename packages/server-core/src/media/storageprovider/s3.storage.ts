@@ -680,21 +680,23 @@ export class S3Provider implements StorageProviderInterface {
     const promises: Promise<FileBrowserContentType>[] = []
 
     // Folders
-    for (let i = 0; i < folderContent.CommonPrefixes!.length; i++) {
-      promises.push(
-        new Promise(async (resolve) => {
-          const key = folderContent.CommonPrefixes![i].Prefix.slice(0, -1)
-          const size = await this.getFolderSize(key)
-          const cont: FileBrowserContentType = {
-            key,
-            url: `${this.bucketAssetURL}/${key}`,
-            name: key.split('/').pop()!,
-            type: 'folder',
-            size
-          }
-          resolve(cont)
-        })
-      )
+    if (!recursive) {
+      for (let i = 0; i < folderContent.CommonPrefixes!.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = folderContent.CommonPrefixes![i].Prefix.slice(0, -1)
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
     }
 
     // Files
@@ -711,6 +713,19 @@ export class S3Provider implements StorageProviderInterface {
               name: query!.groups!.name,
               type: query!.groups!.extension,
               size: folderContent.Contents[i].Size
+            }
+            resolve(cont)
+          })
+        )
+      } else if (recursive && !query && key !== folderName) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').filter(Boolean).pop()!,
+              type: 'folder',
+              size: await this.getFolderSize(key)
             }
             resolve(cont)
           })
