@@ -572,10 +572,10 @@ describe('GLTF Loader', async () => {
     const entity = setupEntity()
     const entity2 = setupEntity()
 
-    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source1' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
-    setComponent(entity2, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
+    setComponent(entity2, UUIDComponent, { entitySourceID: 'source2' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity2, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)

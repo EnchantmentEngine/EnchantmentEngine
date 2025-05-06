@@ -24,8 +24,9 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { UndefinedEntity } from '@ir-engine/ecs'
+import { createEntity, EntityID, setComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { LoadingManager } from 'three'
+import { GLTFComponent } from '../../src/gltf/GLTFComponent'
 import { DependencyCache, GLTFParserOptions } from '../../src/gltf/GLTFLoaderFunctions'
 
 /**
@@ -57,10 +58,14 @@ export function mockGLTFOptions(gltf: GLTF.IGLTF, url = 'test.gltf'): GLTFParser
   // Ensure the dependency cache is set up for this URL
   if (!DependencyCache.has(url)) DependencyCache.set(url, new Map())
 
+  const entity = createEntity()
+  setComponent(entity, UUIDComponent, { entitySourceID: 'test' as SourceID, entityID: 'test' as EntityID })
+  setComponent(entity, GLTFComponent, { src: url, document: gltf })
+
   return {
     url,
     document: gltf,
-    entity: UndefinedEntity,
+    entity,
     body: null,
     manager: new LoadingManager(),
     path: '',
