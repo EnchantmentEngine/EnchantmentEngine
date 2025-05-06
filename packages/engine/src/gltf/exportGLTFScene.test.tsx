@@ -135,13 +135,15 @@ describe('exportGLTFScene', () => {
     const baseEntity = createSceneEntity('root')
     setComponent(baseEntity, SourceComponent, createEntity())
 
+    const sourceID = UUIDComponent.getAsSourceID(baseEntity)
+
     const color = new Color(Math.random(), Math.random(), Math.random())
     const originalMaterial = new MeshStandardMaterial({ color, name: 'test material' })
 
     const materialEntity = createEntity()
     setComponent(materialEntity, SourceComponent, baseEntity)
     setComponent(materialEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'test-material' as EntityID
     })
     setComponent(materialEntity, MaterialStateComponent, {
@@ -152,7 +154,7 @@ describe('exportGLTFScene', () => {
 
     const meshEntity = createEntity()
     setComponent(meshEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'mesh' as EntityID
     })
     setComponent(meshEntity, SourceComponent, baseEntity)
@@ -194,6 +196,8 @@ describe('exportGLTFScene', () => {
     const baseEntity = createSceneEntity('base')
     setComponent(baseEntity, SourceComponent, createEntity())
 
+    const sourceID = UUIDComponent.getAsSourceID(baseEntity)
+
     // Create a geometry and define two groups (one for each material).
     // Clearing the default groups lets us control exactly which indices
     // get assigned to each material.
@@ -209,7 +213,7 @@ describe('exportGLTFScene', () => {
     const material1 = new MeshStandardMaterial({ color: color1, name: 'material1' })
     const materialEntity1 = createEntity()
     setComponent(materialEntity1, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'material1' as EntityID
     })
     setComponent(materialEntity1, MaterialStateComponent, {
@@ -224,7 +228,7 @@ describe('exportGLTFScene', () => {
     const material2 = new MeshStandardMaterial({ color: color2, name: 'material2' })
     const materialEntity2 = createEntity()
     setComponent(materialEntity2, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'material2' as EntityID
     })
     setComponent(materialEntity2, MaterialStateComponent, {
@@ -236,7 +240,7 @@ describe('exportGLTFScene', () => {
 
     const meshEntity = createEntity()
     setComponent(meshEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'mesh' as EntityID
     })
     setComponent(meshEntity, SourceComponent, baseEntity)
@@ -330,7 +334,7 @@ describe('exportGLTFScene', () => {
     // Create a material entity for the material.
     const materialEntity = createEntity()
     setComponent(materialEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: UUIDComponent.getAsSourceID(baseEntity),
       entityID: 'material' as EntityID
     })
     setComponent(materialEntity, MaterialStateComponent, {
@@ -426,12 +430,13 @@ describe('exportGLTFScene', () => {
   it('should export materials without meshes', async () => {
     const baseEntity = createSceneEntity('base')
     setComponent(baseEntity, SourceComponent, createEntity())
+    const sourceID = UUIDComponent.getAsSourceID(baseEntity)
 
     const materialEntity = createEntity()
     const color = new Color(Math.random(), Math.random(), Math.random())
     const originalMaterial = new MeshStandardMaterial({ color, name: 'test material' })
     setComponent(materialEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: sourceID,
       entityID: 'test-material' as EntityID
     })
     setComponent(materialEntity, MaterialStateComponent, {
@@ -464,7 +469,7 @@ describe('exportGLTFScene', () => {
     const baseEntity = createSceneEntity('base')
     setComponent(baseEntity, SourceComponent, createEntity())
     setComponent(baseEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: UUIDComponent.getAsSourceID(baseEntity),
       entityID: 'test track' as EntityID
     })
 
@@ -663,7 +668,7 @@ describe('exportGLTFScene', () => {
     setComponent(materialEntity, SourceComponent, getComponent(baseEntity, SourceComponent))
     setComponent(materialEntity, EntityTreeComponent, { parentEntity: baseEntity })
     setComponent(materialEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: UUIDComponent.getAsSourceID(baseEntity),
       entityID: 'test-material' as EntityID
     })
     setComponent(materialEntity, MaterialStateComponent, {

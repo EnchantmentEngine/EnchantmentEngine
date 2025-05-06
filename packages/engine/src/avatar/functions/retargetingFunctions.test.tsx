@@ -30,6 +30,7 @@ import {
   getComponent,
   getOptionalComponent,
   setComponent,
+  SourceID,
   traverseEntityNode,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -66,7 +67,7 @@ describe('retargetingFunctions', () => {
       const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'animation-pack' as EntityID
       })
       setComponent(entity, GLTFComponent, { src: animation_pack })

@@ -65,7 +65,7 @@ describe('SceneSettingsComponent', () => {
     }
 
     setComponent(entity, SceneSettingsComponent)
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = getComponent(entity, UUIDComponent).entityID
     const initialData = {
       thumbnailURL: '',
       loadingScreenURL: '',

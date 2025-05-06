@@ -252,7 +252,10 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
   const renderSettingsComponent = useComponent(renderSettingsEntity, RenderSettingsComponent)
   const xrLightProbeEntity = useHookstate(getMutableState(XRLightProbeState).directionalLightEntity)
-  const activeLightEntity = UUIDComponent.getEntityByUUID(renderSettingsComponent.primaryLight.value)
+  const activeLightEntity = UUIDComponent.useEntityFromSameSourceAndID(
+    renderSettingsEntity,
+    renderSettingsComponent.primaryLight.value
+  )
 
   const activeLightEntityState = useHookstate(activeLightEntity)
   const directionalLightComponent = useHasComponent(activeLightEntityState.value, DirectionalLightComponent)
@@ -280,7 +283,9 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
     }
 
     if (renderSettingsComponent.primaryLight.value && primaryLightVisibleComponent) {
-      activeLightEntityState.set(UUIDComponent.getEntityByUUID(renderSettingsComponent.primaryLight.value))
+      activeLightEntityState.set(
+        UUIDComponent.getEntityFromSameSourceAndID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
+      )
       return
     }
 

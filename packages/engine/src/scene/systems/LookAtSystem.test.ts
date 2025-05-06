@@ -29,7 +29,6 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import {
   EntityID,
   EntityTreeComponent,
-  EntityUUID,
   SourceID,
   SystemDefinitions,
   SystemUUID,
@@ -104,7 +103,7 @@ describe('LookAtSystem', () => {
 
         setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42) })
         setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22), rotation: Initial })
-        setComponent(testEntity, LookAtComponent, { target: UUIDComponent.getUUID(facerEntity) })
+        setComponent(testEntity, LookAtComponent, { target: getComponent(facerEntity, UUIDComponent).entityID })
 
         System.execute()
         const result = getComponent(testEntity, TransformComponent).rotation.clone()
@@ -138,7 +137,7 @@ describe('LookAtSystem', () => {
 
           setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
           setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
-          setComponent(testEntity, LookAtComponent, { target: 'invalidTestNodeID' as EntityUUID })
+          setComponent(testEntity, LookAtComponent, { target: 'invalidTestNodeID' as EntityID })
 
           System.execute()
           const result = getComponent(facerEntity, TransformComponent).rotation.clone()
@@ -150,7 +149,7 @@ describe('LookAtSystem', () => {
 
           setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
           setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
-          setComponent(testEntity, LookAtComponent, { target: '' as EntityUUID })
+          setComponent(testEntity, LookAtComponent, { target: '' as EntityID })
           System.execute()
           const result = getComponent(facerEntity, TransformComponent).rotation.clone()
           assertVec.approxEq(result, Initial, 4)
@@ -162,7 +161,7 @@ describe('LookAtSystem', () => {
 
           setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
           setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
-          setComponent(testEntity, LookAtComponent, { target: '' as EntityUUID })
+          setComponent(testEntity, LookAtComponent, { target: '' as EntityID })
           System.execute()
           const result = getComponent(facerEntity, TransformComponent).rotation.clone()
           assertVec.approxEq(result, Expected, 4)
@@ -179,7 +178,7 @@ describe('LookAtSystem', () => {
           setComponent(facerEntity, EntityTreeComponent, { parentEntity: parentEntity })
           setComponent(facerEntity, TransformComponent, { matrixWorld: Initial })
           setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
-          setComponent(testEntity, LookAtComponent, { target: UUIDComponent.getUUID(facerEntity) })
+          setComponent(testEntity, LookAtComponent, { target: getComponent(facerEntity, UUIDComponent).entityID })
           CleanupSystem.execute()
 
           System.execute()

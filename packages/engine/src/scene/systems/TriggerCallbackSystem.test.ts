@@ -29,7 +29,7 @@ import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import {
   EntityID,
   EntityTreeComponent,
-  EntityUUID,
+  SourceID,
   SystemDefinitions,
   SystemUUID,
   UUIDComponent,
@@ -61,7 +61,7 @@ describe('TriggerCallbackSystem', () => {
     })
   })
 
-  const InvalidEntityNodeUUID = 'dummyID-123456' as EntityUUID
+  const InvalidEntityNodeUUID = 'dummyID-123456' as EntityID
 
   /** @todo Refactor: Simplify by using sinon.spy functions */
   const EnterStartValue = 42 // Start testOnEnter at 42
@@ -82,7 +82,7 @@ describe('TriggerCallbackSystem', () => {
   let triggerEntity = UndefinedEntity
   let targetEntity = UndefinedEntity
   let testEntity = UndefinedEntity
-  let targetEntityUUID: EntityUUID
+  let targetEntityUUID: EntityID
   let physicsWorld: PhysicsWorld
   let physicsWorldEntity = UndefinedEntity
 
@@ -91,7 +91,7 @@ describe('TriggerCallbackSystem', () => {
     await Physics.load()
     physicsWorldEntity = createEntity()
     setComponent(physicsWorldEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'physics' as EntityID
     })
     setComponent(physicsWorldEntity, SceneComponent)
@@ -109,12 +109,12 @@ describe('TriggerCallbackSystem', () => {
 
     targetEntity = createEntity()
     setComponent(targetEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'target' as EntityID
     })
     setCallback(targetEntity, TestOnEnterName, testOnEnter)
     setCallback(targetEntity, TestOnExitName, testOnExit)
-    targetEntityUUID = UUIDComponent.getUUID(targetEntity)
+    targetEntityUUID = getComponent(targetEntity, UUIDComponent).entityID
 
     triggerEntity = createEntity()
     setComponent(triggerEntity, EntityTreeComponent, { parentEntity: physicsWorldEntity })
@@ -152,11 +152,11 @@ describe('TriggerCallbackSystem', () => {
       it('... should only run if trigger.onEnter callback has a value and is part of the target.CallbackComponent.callbacks map', () => {
         const noEnterEntity = createEntity()
         setComponent(noEnterEntity, UUIDComponent, {
-          entitySourceID: UUIDComponent.generateUUID(),
+          entitySourceID: 'source' as SourceID,
           entityID: 'noEnter' as EntityID
         })
         setCallback(noEnterEntity, TestOnExitName, testOnExit)
-        const noEnterEntityUUID = UUIDComponent.getUUID(noEnterEntity)
+        const noEnterEntityUUID = getComponent(noEnterEntity, UUIDComponent).entityID
         setComponent(triggerEntity, TriggerCallbackComponent, {
           triggers: [{ onEnter: '', onExit: TestOnExitName, target: noEnterEntityUUID }]
         })
@@ -188,11 +188,11 @@ describe('TriggerCallbackSystem', () => {
       it('... should only run if trigger.onExit callback has a value and is part of the target.CallbackComponent.callbacks map', () => {
         const noExitEntity = createEntity()
         setComponent(noExitEntity, UUIDComponent, {
-          entitySourceID: UUIDComponent.generateUUID(),
+          entitySourceID: 'source' as SourceID,
           entityID: 'noExit' as EntityID
         })
         setCallback(noExitEntity, TestOnExitName, testOnExit)
-        const noExitEntityUUID = UUIDComponent.getUUID(noExitEntity)
+        const noExitEntityUUID = getComponent(noExitEntity, UUIDComponent).entityID
         setComponent(triggerEntity, TriggerCallbackComponent, {
           triggers: [{ onEnter: TestOnEnterName, onExit: '', target: noExitEntityUUID }]
         })

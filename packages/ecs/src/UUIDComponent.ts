@@ -35,7 +35,7 @@ import {
   setComponent,
   useComponent
 } from './ComponentFunctions'
-import { Entity, EntityID, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
+import { Entity, EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
 import { S } from './schemas/JSONSchemas'
 
 export const UUIDComponent = defineComponent({
@@ -115,6 +115,10 @@ export const UUIDComponent = defineComponent({
     const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
     return UUIDComponent.useEntityByUUID(UUIDComponent.concatenateUUID({ entitySourceID, entityID: id }), layer)
   },
+
+  // intentionally construct a new SourceID from the concatenated values of the source entity
+  getAsSourceID: (entity: Entity) =>
+    UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)) as any as SourceID,
 
   getUUID: (entity: Entity) => UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)),
   useUUID: (entity: Entity) => UUIDComponent.concatenateUUID(useComponent(entity, UUIDComponent).value),

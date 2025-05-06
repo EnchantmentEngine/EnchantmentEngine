@@ -30,6 +30,7 @@ import {
   EntityTreeComponent,
   getComponent,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 
@@ -47,7 +48,7 @@ export default async function exportMaterialsGLTF(
   if (materialEntities.length === 0) return
   const rootEntity = createEntity()
   setComponent(rootEntity, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
+    entitySourceID: 'detatched' as SourceID,
     entityID: 'material' as EntityID
   })
   setComponent(rootEntity, TransformComponent)

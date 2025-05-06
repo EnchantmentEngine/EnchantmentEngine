@@ -284,7 +284,9 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     Identifiable
   >
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
-  const bakeEntity = UUIDComponent.useEntityByUUID(envMapComponent.envMapSourceEntityUUID.value) ?? UndefinedEntity
+  const bakeEntity =
+    UUIDComponent.useEntityFromSameSourceAndID(props.entity, envMapComponent.envMapSourceEntityUUID.value) ??
+    UndefinedEntity
   const bakeComponent = useOptionalComponent(bakeEntity, EnvMapBakeComponent)
 
   const [envMaptexture, error] = useTexture(bakeComponent?.envMapOrigin.value ?? '', bakeEntity)

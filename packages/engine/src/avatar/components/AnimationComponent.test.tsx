@@ -32,6 +32,7 @@ import {
   hasComponent,
   iterateEntityNode,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -62,7 +63,7 @@ describe('AnimationComponent', () => {
       const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'test' as EntityID
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })

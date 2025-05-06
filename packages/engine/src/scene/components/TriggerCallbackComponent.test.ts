@@ -123,7 +123,7 @@ describe('TriggerCallbackComponent', () => {
           {
             onEnter: 'onEnter.Expected',
             onExit: 'onExit.Expected',
-            target: 'target' as EntityUUID
+            target: 'target' as EntityID
           }
         ]
       }

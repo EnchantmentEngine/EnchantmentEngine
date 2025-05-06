@@ -127,7 +127,7 @@ describe('MountPointComponent.ts', async () => {
 
         setComponent(sceneEntity, SceneComponent)
         setComponent(mountPointTestEntity, UUIDComponent, {
-          entitySourceID: UUIDComponent.generateUUID(),
+          entitySourceID: 'mountPointSource' as SourceID,
           entityID: 'mountPoint' as EntityID
         })
         setComponent(mountPointTestEntity, TransformComponent)
@@ -218,7 +218,7 @@ describe('MountPointComponent.ts', async () => {
         entityID: 'avatar' as EntityID
       })
       setComponent(mountPointTestEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'mountPointSource' as SourceID,
         entityID: 'mountPoint' as EntityID
       })
       setComponent(mountPointTestEntity, TransformComponent)
@@ -375,7 +375,7 @@ describe('MountPointComponent.ts', async () => {
       sceneEntity = createEntity()
       setComponent(sceneEntity, EntityTreeComponent)
       setComponent(sceneEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'sceneSource' as SourceID,
         entityID: 'scene' as EntityID
       })
       setComponent(sceneEntity, SceneComponent)
@@ -504,7 +504,7 @@ describe('MountPointComponent.ts', async () => {
       const groundPlaneEntity = createEntity()
       setComponent(groundPlaneEntity, EntityTreeComponent, { parentEntity: sceneEntity })
       setComponent(groundPlaneEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'groundPlaneSource' as SourceID,
         entityID: 'groundPlane' as EntityID
       })
       setComponent(groundPlaneEntity, TransformComponent, {

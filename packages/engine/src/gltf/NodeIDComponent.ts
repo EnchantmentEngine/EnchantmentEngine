@@ -28,7 +28,6 @@ import {
   defineComponent,
   Entity,
   EntityID,
-  getComponent,
   LayerID,
   Layers,
   S,
@@ -56,7 +55,7 @@ export const NodeIDComponent = defineComponent({
     setComponent(entity, NodeIDComponent, nodeID)
     setComponent(entity, SourceComponent, sourceEntity)
     setComponent(entity, UUIDComponent, {
-      entitySourceID: getComponent(sourceEntity, UUIDComponent).entitySourceID,
+      entitySourceID: UUIDComponent.getAsSourceID(sourceEntity),
       entityID: nodeID
     })
     return entity

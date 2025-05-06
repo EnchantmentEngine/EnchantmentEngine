@@ -134,8 +134,8 @@ const clickInteract = (entity: Entity) => {
   const interactable = getOptionalComponent(entity, InteractableComponent)
   if (!interactable) return
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceAndID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceAndID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue
@@ -150,8 +150,11 @@ const interactWithClosestInteractable = () => {
     const interactable = getOptionalComponent(interactableEntity, InteractableComponent)
     if (interactable) {
       for (const callback of interactable.callbacks) {
-        if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-        const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : interactableEntity
+        if (callback.target && !UUIDComponent.getEntityFromSameSourceAndID(interactableEntity, callback.target))
+          continue
+        const targetEntity = callback.target
+          ? UUIDComponent.getEntityFromSameSourceAndID(interactableEntity, callback.target)
+          : interactableEntity
         if (targetEntity && callback.callbackID) {
           const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
           if (!callbacks) continue

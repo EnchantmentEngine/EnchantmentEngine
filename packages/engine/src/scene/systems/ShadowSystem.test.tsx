@@ -38,7 +38,6 @@ import {
   EntityContext,
   EntityID,
   EntityTreeComponent,
-  EntityUUID,
   getComponent,
   getMutableComponent,
   hasComponent,
@@ -1192,10 +1191,10 @@ describe('CSMReactor', async () => {
         getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
         setComponent(directionalLightEntity, UUIDComponent, {
-          entitySourceID: UUIDComponent.generateUUID(),
+          entitySourceID: 'source' as SourceID,
           entityID: 'directionalLight' as EntityID
         })
-        const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
+        const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
         const renderSettingsEntity = createEntity()
         setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 
@@ -1210,7 +1209,8 @@ describe('CSMReactor', async () => {
 
         await flushAll()
 
-        const result = UUIDComponent.getEntityByUUID(
+        const result = UUIDComponent.getEntityFromSameSourceAndID(
+          renderSettingsEntity,
           getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
         )
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -1228,10 +1228,10 @@ describe('CSMReactor', async () => {
       setComponent(directionalLightEntity, DirectionalLightComponent)
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
       setComponent(directionalLightEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'directionalLight' as EntityID
       })
-      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
+      const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
@@ -1259,7 +1259,7 @@ describe('CSMReactor', async () => {
 
       const directionalLightEntity = createEntity()
       setComponent(directionalLightEntity, DirectionalLightComponent)
-      const directionalLightUUID = 'some invalid uuid that points to nothing' as EntityUUID
+      const directionalLightUUID = 'some invalid uuid that points to nothing' as EntityID
 
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
@@ -1288,10 +1288,10 @@ describe('CSMReactor', async () => {
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
       setComponent(directionalLightEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'directionalLight' as EntityID
       })
-      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
+      const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
@@ -1321,12 +1321,11 @@ describe('CSMReactor', async () => {
       getMutableState(XRLightProbeState).directionalLightEntity.set(directionalLightEntity)
 
       setComponent(directionalLightEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'directionalLight' as EntityID
       })
-      const directionalLightUUID = UUIDComponent.getUUID(directionalLightEntity)
+      const directionalLightUUID = getComponent(directionalLightEntity, UUIDComponent).entityID
 
-      const sourceID = 'SomeSourceID' as SourceID
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
 

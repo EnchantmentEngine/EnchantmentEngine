@@ -30,6 +30,7 @@ import {
   getComponent,
   getOptionalComponent,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -47,7 +48,7 @@ export const createTestGLTFEntity = () => {
   const parent = createEntity()
   setComponent(parent, EntityTreeComponent)
   setComponent(parent, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
+    entitySourceID: 'source' as SourceID,
     entityID: 'test-gltf-entity' as EntityID
   })
   const entity = createEntity()
@@ -65,7 +66,7 @@ export const mockAnimatedAvatar = async () => {
   const animationPackEntity = createTestGLTFEntity()
 
   setComponent(animationPackEntity, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
+    entitySourceID: 'source' as SourceID,
     entityID: 'animation-pack' as EntityID
   })
   setComponent(animationPackEntity, GLTFComponent, { src: animation_pack })
@@ -73,7 +74,7 @@ export const mockAnimatedAvatar = async () => {
 
   const vrmEntity = createTestGLTFEntity()
 
-  setComponent(vrmEntity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: 'vrm' as EntityID })
+  setComponent(vrmEntity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'vrm' as EntityID })
   setComponent(vrmEntity, GLTFComponent, { src: vrm })
   setComponent(vrmEntity, AvatarRigComponent)
   setComponent(vrmEntity, AvatarAnimationComponent)

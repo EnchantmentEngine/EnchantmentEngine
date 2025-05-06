@@ -31,6 +31,7 @@ import {
   Entity,
   EntityID,
   EntityUUIDPair,
+  SourceID,
   UUIDComponent,
   createEngine,
   createEntity,
@@ -144,7 +145,7 @@ describe('definePrefab', () => {
     expect(typeof TestPrefabComponent.spawn).toBe('function')
 
     const entityUUIDPair = {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'spawned-source' as SourceID,
       entityID: 'spawned-entity' as EntityID
     } as EntityUUIDPair
     const entityUUID = UUIDComponent.concatenateUUID(entityUUIDPair)
