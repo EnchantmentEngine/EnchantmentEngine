@@ -27,7 +27,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdOutlinePanTool } from 'react-icons/md'
 
-import { EntityTreeComponent, EntityUUID, getOptionalComponent, useQuery, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, EntityTreeComponent, getOptionalComponent, useQuery, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   hasComponent,
@@ -61,16 +61,16 @@ import StringInput from '../../input/String'
 type OptionsType = Array<{
   callbacks: Array<{
     label: string
-    value: EntityUUID | 'Self'
+    value: EntityID | 'Self'
   }>
   label: string
-  value: EntityUUID | 'Self'
+  value: EntityID | 'Self'
 }>
 
 export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
   const targets = useHookstate<OptionsType>([
-    { label: 'Self', value: UUIDComponent.getUUID(props.entity), callbacks: [] }
+    { label: 'Self', value: getComponent(props.entity, UUIDComponent).entityID, callbacks: [] }
   ])
   const callbackQuery = useQuery([CallbackComponent])
 
@@ -89,9 +89,9 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
     if (entityCallbacks) {
       options.push({
         label: 'Self',
-        value: UUIDComponent.getUUID(props.entity),
+        value: getComponent(props.entity, UUIDComponent).entityID,
         callbacks: Object.keys(entityCallbacks).map((cb) => {
-          return { label: cb, value: cb as EntityUUID }
+          return { label: cb, value: cb as EntityID }
         })
       })
     } else {
@@ -106,9 +106,9 @@ export const InteractableComponentNodeEditor: EditorComponentType = (props) => {
       const callbacks = getComponent(entity, CallbackComponent)
       options.push({
         label: getComponent(entity, NameComponent),
-        value: UUIDComponent.getUUID(props.entity),
+        value: getComponent(props.entity, UUIDComponent).entityID,
         callbacks: Object.keys(callbacks).map((cb) => {
-          return { label: cb, value: cb as EntityUUID }
+          return { label: cb, value: cb as EntityID }
         })
       })
     }

@@ -57,7 +57,7 @@ export const SplineTrackNodeEditor: EditorComponentType = (props) => {
 
   const availableSplines = useQuery([SplineComponent]).map((entity) => {
     const name = getComponent(entity, NameComponent)
-    const nodeID = UUIDComponent.getUUID(entity)
+    const nodeID = getComponent(entity, UUIDComponent).entityID
     return {
       label: name,
       value: nodeID

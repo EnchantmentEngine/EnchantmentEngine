@@ -61,7 +61,7 @@ export const EnvMapEditor: EditorComponentType = (props) => {
   const bakeEntities = useQuery([EnvMapBakeComponent]).map((entity) => {
     return {
       label: getComponent(entity, NameComponent),
-      value: UUIDComponent.getUUID(entity)
+      value: getComponent(entity, UUIDComponent).entityID
     }
   })
 

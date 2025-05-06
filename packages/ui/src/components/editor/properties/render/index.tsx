@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EntityID, EntityUUID, useQuery, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, useQuery, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -111,18 +111,23 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
   const directionalLightOptions = [
     {
       label: 'None',
-      value: '' as EntityUUID
+      value: '' as EntityID
     }
   ].concat(
     query.map((entity) => {
       return {
         label: getComponent(entity, NameComponent),
-        value: UUIDComponent.getUUID(entity)
+        value: getComponent(entity, UUIDComponent).entityID
       }
     })
   )
 
   useEffect(() => {
+    console.log(
+      entity,
+      rendererSettingsState.primaryLight.value,
+      UUIDComponent.getEntityFromSameSourceAndID(entity, rendererSettingsState.primaryLight.value)
+    )
     if (!UUIDComponent.getEntityFromSameSourceAndID(entity, rendererSettingsState.primaryLight.value)) {
       setComponent(entity, RenderSettingsComponent, {
         csm: false,

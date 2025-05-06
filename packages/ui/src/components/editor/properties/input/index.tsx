@@ -52,12 +52,12 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   const options = authoringLayerEntities.map((entity) => {
     return {
       label: getComponent(entity, NameComponent),
-      value: UUIDComponent.getUUID(entity)
+      value: getComponent(entity, UUIDComponent).entityID
     }
   })
   options.unshift({
     label: 'Self',
-    value: UUIDComponent.getUUID(props.entity)
+    value: getComponent(props.entity, UUIDComponent).entityID
   })
 
   const addSink = () => {

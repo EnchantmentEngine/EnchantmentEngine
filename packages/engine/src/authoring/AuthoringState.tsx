@@ -358,7 +358,6 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
         if (Component === EntityTreeComponent || Component === NameComponent) {
           setComponent(entity, Component, componentData)
         } else {
-          console.log('deserializing', entity, componentName, componentData)
           deserializeComponent(entity, Component, componentData)
         }
       }

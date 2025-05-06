@@ -88,7 +88,7 @@ const TriggerProperties: EditorComponentType = (props) => {
       const callbacks = getComponent(entity, CallbackComponent)
       options.push({
         label: getComponent(entity, NameComponent),
-        value: UUIDComponent.getUUID(entity),
+        value: getComponent(entity, UUIDComponent).entityID,
         callbacks: Object.keys(callbacks).map((cb) => ({ label: cb, value: cb }))
       })
     }
