@@ -44,7 +44,7 @@ import {
   Layers,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -234,7 +234,7 @@ export async function addMediaNode(
       console.log('LOADING MODEL', { entityUUID })
 
       const rootEntity = getState(EditorState).rootEntity
-      const newSource = UUIDComponent.getUUID(rootEntity)
+      const newSource = UUIDComponent.getAsSourceID(rootEntity)
       AuthoringState.snapshot(newSource)
       console.log('SNAPSHOTTED', { newSource })
       return entityUUID
@@ -252,7 +252,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = UUIDComponent.getUUID(rootEntity)
+    const newSource = UUIDComponent.getAsSourceID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('image/')) {
@@ -263,7 +263,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = UUIDComponent.getUUID(rootEntity)
+    const newSource = UUIDComponent.getAsSourceID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (contentType.startsWith('audio/')) {
@@ -274,7 +274,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = UUIDComponent.getUUID(rootEntity) as string as SourceID
+    const newSource = UUIDComponent.getAsSourceID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   } else if (url.includes('.uvol')) {
@@ -290,7 +290,7 @@ export async function addMediaNode(
       requestedName
     )
     const rootEntity = getState(EditorState).rootEntity
-    const newSource = UUIDComponent.getUUID(rootEntity) as string as SourceID
+    const newSource = UUIDComponent.getAsSourceID(rootEntity)
     AuthoringState.snapshot(newSource)
     return entityUUID
   }

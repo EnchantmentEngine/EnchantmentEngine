@@ -361,7 +361,7 @@ const execute = () => {
       const parent = getOptionalComponent(selectedParentEntity, EntityTreeComponent)?.parentEntity
       if (
         parent &&
-        UUIDComponent.getUUID(parent) !== getComponent(selectedParentEntity, UUIDComponent).entitySourceID
+        UUIDComponent.getAsSourceID(parent) !== getComponent(selectedParentEntity, UUIDComponent).entitySourceID
       ) {
         selectedParentEntity = parent
       }

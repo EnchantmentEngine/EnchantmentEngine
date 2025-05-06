@@ -45,7 +45,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { Entity, EntityID, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
@@ -81,7 +81,7 @@ describe('EditorControlFunctions', () => {
 
     setComponent(physicsWorldEntity, UUIDComponent, {
       entityID: 'physicsWorld' as EntityID,
-      entitySourceID: UUIDComponent.generateUUID()
+      entitySourceID: 'source' as SourceID
     })
     setComponent(physicsWorldEntity, SceneComponent)
     setComponent(physicsWorldEntity, TransformComponent)
@@ -267,7 +267,7 @@ describe('EditorControlFunctions', () => {
     beforeEach(() => {
       materialEntity = createEntity()
       setComponent(materialEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'material' as EntityID
       })
     })

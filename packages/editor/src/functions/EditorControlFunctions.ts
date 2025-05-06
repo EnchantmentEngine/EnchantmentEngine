@@ -341,10 +341,7 @@ const duplicateObject = (entities: Entity[]) => {
   const duplicateEntities = (entities: Entity[], parentEntity: Entity) => {
     entities.forEach((entity) => {
       const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
-      const originalSource = UUIDComponent.getEntityByUUID(
-        getComponent(entity, UUIDComponent).entitySourceID,
-        Layers.Authoring
-      )
+      const originalSource = getComponent(entity, SourceComponent)
 
       const newEntity = NodeIDComponent.create(originalSource, UUIDComponent.generateUUID(), Layers.Authoring)
       const name = getComponent(entity, NameComponent)
@@ -572,7 +569,7 @@ const reparentObject = (
 
     const source = GLTFComponent.getSourceID(parent)
     getMutableComponent(entity, UUIDComponent).entitySourceID.set(source)
-    setComponent(entity, SourceComponent, UUIDComponent.getEntityByUUID(source as EntityUUID, Layers.Authoring))
+    setComponent(entity, SourceComponent, getComponent(parent, SourceComponent))
 
     EditorState.markModifiedScene(entity)
   }

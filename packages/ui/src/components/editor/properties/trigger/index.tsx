@@ -24,8 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  EntityID,
   EntityTreeComponent,
-  EntityUUID,
   getAncestorWithComponents,
   getComponent,
   hasComponent,
@@ -165,7 +165,7 @@ const TriggerProperties: EditorComponentType = (props) => {
               info={t('editor:properties.triggerVolume.info-target')}
             >
               <NodeInput
-                value={trigger.target.value ?? ('' as EntityUUID)}
+                value={trigger.target.value ?? ('' as EntityID)}
                 onRelease={commitProperty(TriggerCallbackComponent, `triggers.${index}.target` as any)}
                 disabled={props.multiEdit}
               />

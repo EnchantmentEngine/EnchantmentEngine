@@ -29,7 +29,7 @@ import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchPara
 import {
   defineSystem,
   Entity,
-  EntityUUID,
+  EntityID,
   getOptionalComponent,
   PresentationSystemGroup,
   useHasComponent,
@@ -68,13 +68,13 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
   const searchParams = useMutableState(SearchParamState)
 
-  const spectateEntity = useHookstate(getSearchParamFromURL('spectate') as EntityUUID)
+  const spectateEntity = useHookstate(getSearchParamFromURL('spectate') as EntityID)
 
   const settingsQuery = useChildrenWithComponents(sceneEntity, [SceneSettingsComponent])
 
   useImmediateEffect(() => {
     const sceneSettingsSpectateEntity = getOptionalComponent(settingsQuery[0], SceneSettingsComponent)?.spectateEntity
-    spectateEntity.set(sceneSettingsSpectateEntity || (getSearchParamFromURL('spectate') as EntityUUID))
+    spectateEntity.set(sceneSettingsSpectateEntity || (getSearchParamFromURL('spectate') as EntityID))
   }, [settingsQuery[0], searchParams.value['spectate']])
 
   const isSpectating = typeof spectateEntity.value === 'string'

@@ -210,7 +210,7 @@ export const AuthoringState = defineState({
     const affectedSources = new Set<SourceID>(
       entities
         .filter((entity) => hasComponent(entity, UUIDComponent))
-        .map((entity) => getComponent(entity, UUIDComponent).entitySourceID as string as SourceID)
+        .map((entity) => getComponent(entity, UUIDComponent).entitySourceID)
     )
     if (affectedSources.size === 0) return
     const ops = {} as Record<SourceID, Operation[]>
@@ -245,7 +245,7 @@ const SourceReactor = (props: { entity: Entity }) => {
   useEffect(() => {
     if (!loaded) return
 
-    const sourceID = UUIDComponent.getUUID(props.entity) as string as SourceID
+    const sourceID = UUIDComponent.getAsSourceID(props.entity)
     const sourceData = getSourceSnapshot(sourceID)
 
     dispatchAction(AuthoringActions.initialize({ sourceID, partialState: sourceData }))

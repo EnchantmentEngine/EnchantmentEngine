@@ -28,7 +28,7 @@ import { useTranslation } from 'react-i18next'
 
 import {
   Entity,
-  EntityUUID,
+  EntityID,
   getComponent,
   getOptionalComponent,
   getOptionalMutableComponent,
@@ -151,8 +151,8 @@ export function updateConeAngle(
 export interface MediaInputProps {
   mediaMode: MediaMode
   entity: Entity
-  mediaNodeId: EntityUUID
-  OnMediaSourceUpdate: (value: EntityUUID) => void
+  mediaNodeId: EntityID
+  OnMediaSourceUpdate: (value: EntityID) => void
   dropTypes?: string[]
 }
 
@@ -178,7 +178,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
       }
     })
 
-  const [mediaSourceValue, setMediaSourceValue] = useState(mediaNodeId === ('' as EntityUUID) ? 'Self' : 'Other')
+  const [mediaSourceValue, setMediaSourceValue] = useState(mediaNodeId === ('' as EntityID) ? 'Self' : 'Other')
   const currentTrackMin = useHookstate(0)
   const currentTrackMax = useHookstate(1)
   const currentTrackPercent = useHookstate(0)
@@ -189,7 +189,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
   const mediaSourceChange = (val: string) => {
     setMediaSourceValue(val)
     if (val === 'Self') {
-      OnMediaSourceUpdate('' as EntityUUID)
+      OnMediaSourceUpdate('' as EntityID)
     } else {
       if (media) {
         media.paused.set(true)
@@ -325,7 +325,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
         </InputGroup>
       )}
 
-      {mediaSourceValue === 'Self' && mediaNodeId === ('' as EntityUUID) && media && (
+      {mediaSourceValue === 'Self' && mediaNodeId === ('' as EntityID) && media && (
         <>
           <InputGroup
             name="SourcePaths"

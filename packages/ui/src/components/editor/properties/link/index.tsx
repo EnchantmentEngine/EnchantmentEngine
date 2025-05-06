@@ -27,7 +27,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PiLinkBreak } from 'react-icons/pi'
 
-import { hasComponent, useComponent, UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, hasComponent, useComponent, UUIDComponent } from '@ir-engine/ecs'
 import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -60,7 +60,7 @@ export const LinkNodeEditor: EditorComponentType = (props) => {
         callbacks: [
           {
             callbackID: LinkComponent.linkCallbackName,
-            target: UUIDComponent.getUUID(props.entity)
+            target: getComponent(props.entity, UUIDComponent).entityID
           }
         ]
       })
@@ -73,7 +73,7 @@ export const LinkNodeEditor: EditorComponentType = (props) => {
         callbacks: [
           {
             callbackID: LinkComponent.linkCallbackName,
-            target: UUIDComponent.getUUID(props.entity)
+            target: getComponent(props.entity, UUIDComponent).entityID
           }
         ]
       })

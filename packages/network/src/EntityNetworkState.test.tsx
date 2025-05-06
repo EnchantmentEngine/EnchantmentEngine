@@ -63,7 +63,7 @@ describe('EntityNetworkState', () => {
       const network = NetworkState.worldNetwork as Network
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -116,7 +116,7 @@ describe('EntityNetworkState', () => {
       )
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
 
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
@@ -172,7 +172,7 @@ describe('EntityNetworkState', () => {
       )
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -226,7 +226,7 @@ describe('EntityNetworkState', () => {
       )
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -276,7 +276,7 @@ describe('EntityNetworkState', () => {
       const network = NetworkState.worldNetwork as Network
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -354,7 +354,7 @@ describe('EntityNetworkState', () => {
       const network = NetworkState.worldNetwork as Network
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -412,7 +412,7 @@ describe('EntityNetworkState', () => {
       const network = NetworkState.worldNetwork as Network
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -480,7 +480,7 @@ describe('EntityNetworkState', () => {
       )
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -537,7 +537,7 @@ describe('EntityNetworkState', () => {
       getMutableState(EngineState).userID.set(hostUserId)
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -591,7 +591,7 @@ describe('EntityNetworkState', () => {
       )
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -738,7 +738,7 @@ describe('EntityNetworkState', () => {
       await act(() => render(null))
 
       const parentEntity = createEntity()
-      const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
       setComponent(parentEntity, UUIDComponent, parentUUID)
 
       dispatchAction(
@@ -834,7 +834,7 @@ describe('EntityNetworkState', () => {
     await act(() => render(null))
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -907,7 +907,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -997,7 +997,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -1133,7 +1133,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -1211,7 +1211,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -1292,7 +1292,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -1373,7 +1373,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(
@@ -1456,7 +1456,7 @@ describe('EntityNetworkState', () => {
     const network = NetworkState.worldNetwork as Network
 
     const parentEntity = createEntity()
-    const parentUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+    const parentUUID = { entitySourceID: 'source', entityID: 'id' as EntityID } as EntityUUIDPair
     setComponent(parentEntity, UUIDComponent, parentUUID)
 
     dispatchAction(

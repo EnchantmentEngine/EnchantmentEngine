@@ -36,7 +36,7 @@ import {
   useEntityContext,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { Entity, EntityUUID, EntityUUIDPair, SourceID } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs/src/Entity'
 import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -113,9 +113,10 @@ export const MaterialStateComponent = defineComponent({
   }),
 
   fallbackMaterialUUIDPair: {
-    entitySourceID: UUIDComponent.generateUUID() as string as SourceID,
-    entityID: 'fallback-material'
+    entitySourceID: 'fallback',
+    entityID: 'material'
   } as EntityUUIDPair,
+
   fallbackMaterial: () => {
     const fallbackMaterialEntity = UUIDComponent.getEntityByUUID(
       UUIDComponent.concatenateUUID(MaterialStateComponent.fallbackMaterialUUIDPair)

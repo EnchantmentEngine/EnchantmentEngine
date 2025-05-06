@@ -29,7 +29,7 @@ CPAL-1.0 License
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { hasComponent, UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, hasComponent, UUIDComponent } from '@ir-engine/ecs'
 import { EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -49,7 +49,7 @@ export const GrabbableComponentNodeEditor: EditorComponentType = (props) => {
         callbacks: [
           {
             callbackID: GrabbableComponent.grabbableCallbackName,
-            target: UUIDComponent.getUUID(props.entity)
+            target: getComponent(props.entity, UUIDComponent).entityID
           }
         ]
       })

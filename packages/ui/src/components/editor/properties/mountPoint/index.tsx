@@ -60,7 +60,7 @@ export const MountPointNodeEditor: EditorComponentType = (props) => {
         callbacks: [
           {
             callbackID: MountPointComponent.mountCallbackName,
-            target: UUIDComponent.getUUID(props.entity)
+            target: getComponent(props.entity, UUIDComponent).entityID
           }
         ]
       })
