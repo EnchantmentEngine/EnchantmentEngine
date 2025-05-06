@@ -27,7 +27,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import { BufferAttribute, Mesh, SphereGeometry } from 'three'
 
 import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
-import { EntityID, getComponent, setComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, getComponent, Layers, setComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -36,6 +36,7 @@ import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/T
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { MATERIALS_PANEL_ID } from './helpers'
 
@@ -66,7 +67,8 @@ function MaterialPreviewCanvas() {
     )
     sphereMesh.geometry.attributes['uv1'] = sphereMesh.geometry.attributes['uv']
     setComponent(sceneEntity, MeshComponent, sphereMesh)
-    //setComponent(sceneEntity, MaterialInstanceComponent, { uuid: [selectedMaterial.value] })
+    const selectedMaterialEntity = UUIDComponent.getEntityByUUID(selectedMaterial.value, Layers.Authoring)
+    setComponent(sceneEntity, MaterialInstanceComponent, { entities: [selectedMaterialEntity] })
 
     const pivot = computeTransformPivot([sceneEntity])
     if (pivot.position) {

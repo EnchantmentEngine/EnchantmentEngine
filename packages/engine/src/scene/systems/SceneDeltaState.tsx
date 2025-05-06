@@ -23,7 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Component, Entity, EntityUUID, SerializedComponentType, UUIDComponent } from '@ir-engine/ecs'
+import {
+  Component,
+  Entity,
+  EntityUUID,
+  getAncestorWithComponents,
+  hasComponent,
+  SerializedComponentType,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { NodeID } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import {
   defineState,
@@ -35,6 +43,7 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { SceneState } from '../../gltf/GLTFState'
 
 export type SceneDeltaRegistry = Record<EntityUUID, SceneDeltaEntry<any>>
@@ -53,6 +62,8 @@ export const SceneDeltaState = defineState({
   },
   setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
     if (!component.jsonID) return
+    if (!hasComponent(entity, UUIDComponent)) return
+    if (!getAncestorWithComponents(entity, [GLTFComponent])) return
     const deltaState = getMutableState(SceneDeltaState)
     const uuid = UUIDComponent.getUUID(entity)
     if (!deltaState[uuid].value) deltaState[uuid].set({} as SceneDeltaEntry<C>)
