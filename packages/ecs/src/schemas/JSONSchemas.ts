@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 import { PeerID, UserID } from '@ir-engine/hyperflux'
-import { Entity, EntityUUID, EntityUUIDPair } from '../Entity'
+import { Entity, EntityID, EntityUUID, EntityUUIDPair } from '../Entity'
 import {
   Kind,
   Kinds,
@@ -267,9 +267,13 @@ export const S = {
   EntityUUID: (options?: TTypedSchema<EntityUUID>['options']) =>
     S.String({ serialized: true, ...options, id: 'EntityUUID' }) as unknown as TTypedSchema<EntityUUID>,
 
+  /** EntityUUID type schema helper, defaults to '' */
+  EntityID: (options?: TTypedSchema<EntityID>['options']) =>
+    S.String({ serialized: true, ...options, id: 'EntityID' }) as unknown as TTypedSchema<EntityID>,
+
   /** EntityUUIDPair type schema helper, defaults to {instanceID: '', id: ''} */
   EntityUUIDPair: (options?: TTypedSchema<EntityUUIDPair>['options']) =>
-    S.Object({ entitySourceID: S.String(), entityID: S.String() }) as unknown as TTypedSchema<EntityUUIDPair>,
+    S.Object({ entitySourceID: S.String(), entityID: S.EntityID() }) as unknown as TTypedSchema<EntityUUIDPair>,
 
   /** UserID type schema helper, defaults to '' */
   UserID: (options?: TTypedSchema<UserID>['options']) =>

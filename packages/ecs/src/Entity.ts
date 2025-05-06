@@ -27,7 +27,7 @@ import { matches, OpaqueType, Validator } from '@ir-engine/hyperflux'
 
 export type Entity = OpaqueType<'entity'> & number
 export type EntityUUID = OpaqueType<'EntityUUID'> & string
-export type SourceID = string & EntityUUID
+export type SourceID = OpaqueType<'SourceID'> & string
 export type EntityID = OpaqueType<'EntityID'> & string
 export type EntityUUIDPair = { entitySourceID: SourceID; entityID: EntityID }
 

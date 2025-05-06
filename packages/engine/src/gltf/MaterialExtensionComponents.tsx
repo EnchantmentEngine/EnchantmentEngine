@@ -1044,7 +1044,7 @@ export const EEMaterialComponent = defineComponent({
   name: 'EEMaterialComponent',
   jsonID: 'EE_material',
   schema: S.Object({
-    uuid: S.EntityUUID(),
+    uuid: S.EntityID(),
     name: S.String(),
     prototype: S.String(),
     args: S.Record(

@@ -52,7 +52,7 @@ import {
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { defineState, NO_PROXY, State, useHookstate, useState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { createPriorityQueue } from '@ir-engine/spatial/src/common/functions/PriorityQueue'
@@ -115,7 +115,7 @@ export const VideoComponent = defineComponent({
     alphaThreshold: S.Number({ default: 0.5 }),
     fit: ContentFitTypeSchema('stretch'),
     projection: ProjectionSchema,
-    mediaUUID: S.EntityUUID(),
+    mediaUUID: S.EntityID(),
 
     // internal
     videoMeshEntity: S.Entity({ serialized: false }),
@@ -144,7 +144,7 @@ function VideoReactor() {
   const visible = useHasComponent(entity, VisibleComponent)
   const mediaUUID = video.mediaUUID.value
 
-  const mediaEntity = UUIDComponent.useEntityByUUID(mediaUUID) || entity
+  const mediaEntity = UUIDComponent.useEntityFromSameSourceAndID(entity, mediaUUID) || entity
   const media = useOptionalComponent(mediaEntity, MediaComponent)
   const hasMediaElementComponent = useHasComponent(mediaEntity, MediaElementComponent)
   const localTextureRef = useHookstate<VideoTexturePriorityQueue | null>(null)
@@ -271,7 +271,7 @@ function VideoReactor() {
     setComponent(videoEntity, EntityTreeComponent, { parentEntity: entity })
     setComponent(videoEntity, NameComponent, `video-group-${entity}`)
     setComponent(videoEntity, MediaComponent)
-    video.mediaUUID.set('' as EntityUUID)
+    video.mediaUUID.set('' as EntityID)
 
     return () => {
       removeEntity(videoEntity)

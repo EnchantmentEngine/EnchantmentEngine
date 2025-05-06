@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { EntityTreeComponent, UUIDComponent, createEntity } from '@ir-engine/ecs'
 import { ComponentJSONIDMap, getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityID, EntityUUIDPair, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUIDPair, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -47,7 +47,7 @@ export const addEntityToScene = (
   setComponent(newEntity, TransformComponent)
   const uuid = {
     entitySourceID: UUIDComponent.generateUUID(),
-    entityID: UUIDComponent.generateUUID() as string as EntityID
+    entityID: UUIDComponent.generateUUID()
   } as EntityUUIDPair
   setComponent(newEntity, UUIDComponent, uuid)
   setComponent(newEntity, VisibleComponent)

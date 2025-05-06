@@ -39,7 +39,7 @@ import {
   setComponent
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
-import { EntityID, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
+import { EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
 import { UUIDComponent, UUIDComponentFunctions } from './UUIDComponent'
 
 describe('UUIDComponent', () => {
@@ -65,7 +65,7 @@ describe('UUIDComponent', () => {
 
   describe('serialize', () => {
     it('should return correctly serialized data', () => {
-      const Expected = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const Expected = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, Expected)
       const result = serializeComponent(testEntity, UUIDComponent)
@@ -77,7 +77,7 @@ describe('UUIDComponent', () => {
     it('should call UUIDComponentFunctions._getUUIDState once and set its value to `@param entity`', () => {
       // Set the data as expected
       // Sanity check before running
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       const before = UUIDComponentFunctions._getUUIDState(uuid).get()
       const resultSpy = vi.spyOn(UUIDComponentFunctions, '_getUUIDState')
@@ -98,7 +98,7 @@ describe('UUIDComponent', () => {
       // Set the data as expected
       const layer = Layers.Simulation
       const testEntity = createEntity(layer)
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       setComponent(testEntity, UUIDComponent, uuidPair)
       const resultSpy = vi.spyOn(UUIDComponentFunctions, '_getUUIDState')
@@ -118,7 +118,7 @@ describe('UUIDComponent', () => {
     })
 
     it('should remove the component from the entity', () => {
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, uuidPair)
       expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
@@ -132,7 +132,7 @@ describe('UUIDComponent', () => {
       // Set the data as expected
       const layer = Layers.Authoring
       const testEntity = createEntity(layer)
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       setComponent(testEntity, UUIDComponent, uuidPair)
       const resultSpy = vi.spyOn(UUIDComponent, 'useEntityByUUID')
@@ -164,7 +164,7 @@ describe('UUIDComponent', () => {
     it('should return the result.value of calling useHookstate with UUIDComponentFunctions._getUUIDState(uuid, Layers.Simulation) as its argument when `@param layer` is not provided', () => {
       // Set the data as expected
       const testEntity = createEntity()
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       setComponent(testEntity, UUIDComponent, uuidPair)
       const resultSpy = vi.spyOn(UUIDComponent, 'useEntityByUUID')
@@ -197,7 +197,7 @@ describe('UUIDComponent', () => {
   describe('getEntityByUUID', () => {
     it('should return the correct entity', () => {
       const testEntity = createEntity()
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       setComponent(testEntity, UUIDComponent, uuidPair)
       const Expected = testEntity
@@ -207,7 +207,7 @@ describe('UUIDComponent', () => {
 
     it('should return UndefinedEntity when the UUID has not been added to any entity', () => {
       const testEntity = createEntity()
-      const uuid = UUIDComponent.generateUUID()
+      const uuid = 'uuid' as EntityUUID
       // setComponent(testEntity, UUIDComponent, uuid)
       const Expected = UndefinedEntity
       const result = UUIDComponent.getEntityByUUID(uuid)
@@ -217,7 +217,7 @@ describe('UUIDComponent', () => {
 
     it('should return the NO_PROXY_STEALTH result of calling UUIDComponentFunctions._getUUIDState with (uuid, `@param layer`) as its arguments', () => {
       // Set the data as expected
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       const layer = Layers.Authoring
       const testEntity = createEntity(layer)
@@ -232,7 +232,7 @@ describe('UUIDComponent', () => {
 
     it('should return the NO_PROXY_STEALTH result of calling UUIDComponentFunctions._getUUIDState with (uuid, Layers.Simulation) as its arguments when `@param layer` is not provided', () => {
       // Set the data as expected
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       const testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, uuidPair)
@@ -251,7 +251,7 @@ describe('UUIDComponent', () => {
       const Initial = 0 // Number of entities expected to exist initially
       // Set the data as expected
       const allEntities = defineQuery([])
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       // Sanity check before running
       const entityCountBefore = allEntities().length
@@ -275,7 +275,7 @@ describe('UUIDComponent', () => {
       const Initial = 0 // Number of entities expected to exist initially
       // Set the data as expected
       const allEntities = defineQuery([])
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       const layer = Layers.Authoring
       // Sanity check before running
@@ -297,7 +297,7 @@ describe('UUIDComponent', () => {
     })
 
     it('should return the correct entity when it already exists', () => {
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, uuidPair)
       const Expected = testEntity
@@ -308,7 +308,7 @@ describe('UUIDComponent', () => {
     it("should create a new entity when the UUID hasn't been added to any entity", () => {
       // Set the data as expected
       const allEntities = defineQuery([])
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const testEntity = createEntity()
       // setComponent(testEntity, UUIDComponent, uuid)
       expect(allEntities().length).toBe(1)
@@ -324,7 +324,7 @@ describe('UUIDComponent', () => {
       const Initial = undefined
       // Set the data as expected
       const layer = Layers.Authoring
-      const uuid = UUIDComponent.generateUUID()
+      const uuid = 'uuid' as EntityUUID
       // @ts-expect-error Coerce undefined into the Record entry
       UUIDComponent.entitiesByUUIDState[layer] = Initial
       // Sanity check before running
@@ -339,7 +339,7 @@ describe('UUIDComponent', () => {
       const Expected = hookstate(UndefinedEntity)
       // Set the data as expected
       const layer = Layers.Authoring
-      const uuid = UUIDComponent.generateUUID()
+      const uuid = 'uuid' as EntityUUID
       // @ts-expect-error Coerce undefined into the Record entry
       UUIDComponent.entitiesByUUIDState[layer][uuid] = Initial
       // Sanity check before running
@@ -356,7 +356,7 @@ describe('UUIDComponent', () => {
       const Expected = { path: [], value: 0 }
       // Set the data as expected
       const layer = Layers.Authoring
-      const uuidPair = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
       const uuid = UUIDComponent.concatenateUUID(uuidPair)
       // @ts-expect-error Coerce undefined into the Record entry
       UUIDComponent.entitiesByUUIDState[layer][uuid] = Initial
@@ -375,17 +375,17 @@ describe('UUIDComponent', () => {
 
   describe('generateUUID', () => {
     it('should generate a non-empty UUID', () => {
-      const result = UUIDComponent.generateUUID()
+      const result = UUIDComponent.generate()
       expect(result).toBeTruthy()
-      expect(result).not.toBe('' as EntityUUID)
+      expect(result).not.toBe('' as EntityID)
     })
 
     // const iter = 8_500 /** @note 10_000 iterations takes ~4sec on an AMD Ryzen 5 2600 */
     const iter = 10
     it(`should generate unique UUIDs when run multiple times  (${iter} iterations)`, () => {
-      const list = [] as EntityUUID[]
+      const list = [] as EntityID[]
       // Generate the list of (supposedly) unique UUIDs
-      for (let id = 0; id < iter; id++) list.push(UUIDComponent.generateUUID())
+      for (let id = 0; id < iter; id++) list.push(UUIDComponent.generate())
       // Compare every UUID with all other UUIDs
       for (let id = 0; id < iter; id++) {
         const A = list[id]

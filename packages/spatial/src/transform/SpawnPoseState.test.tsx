@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   Entity,
   EntityID,
-  EntityUUID,
   EntityUUIDPair,
+  SourceID,
   UUIDComponent,
   createEngine,
   createEntity,
@@ -76,9 +76,9 @@ describe('SpawnPoseState', () => {
         const Initial = new Vector3().setScalar(21)
         // Set the data as expected
         const keys: EntityUUIDPair[] = [
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID }
+          { entitySourceID: 'source' as SourceID, entityID: 'test1' as EntityID },
+          { entitySourceID: 'source' as SourceID, entityID: 'test2' as EntityID },
+          { entitySourceID: 'source' as SourceID, entityID: 'test3' as EntityID }
         ]
         const entities: Entity[] = keys.map((uuid: EntityUUIDPair) => {
           const entity = createEntity()
@@ -109,9 +109,9 @@ describe('SpawnPoseState', () => {
         const Initial = new Quaternion(5, 6, 7, 8).normalize()
         // Set the data as expected
         const keys: EntityUUIDPair[] = [
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID },
-          { entitySourceID: UUIDComponent.generateUUID(), entityID: 'test' as EntityID }
+          { entitySourceID: 'source' as SourceID, entityID: 'test1' as EntityID },
+          { entitySourceID: 'source' as SourceID, entityID: 'test2' as EntityID },
+          { entitySourceID: 'source' as SourceID, entityID: 'test3' as EntityID }
         ]
         const entities: Entity[] = keys.map((uuid: EntityUUIDPair) => {
           const entity = createEntity()
@@ -140,12 +140,12 @@ describe('SpawnPoseState', () => {
       it('... should not do anything if entity is falsy', async () => {
         const Initial = new Vector3().setScalar(21)
         // Set the data as expected
-        const keys: EntityUUID[] = [
+        const keys: EntityID[] = [
           UUIDComponent.generateUUID(),
           UUIDComponent.generateUUID(),
           UUIDComponent.generateUUID()
         ]
-        const entities: Entity[] = keys.map((_uuid: EntityUUID) => {
+        const entities: Entity[] = keys.map((_uuid: EntityID) => {
           const entity = createEntity()
           // setComponent(entity, UUIDComponent, uuid)   // Do not set the UUID so the entity is falsy inside the reactor
           setComponent(entity, TransformComponent, { position: Initial })

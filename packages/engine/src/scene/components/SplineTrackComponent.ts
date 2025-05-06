@@ -52,7 +52,7 @@ export const SplineTrackComponent = defineComponent({
   jsonID: 'EE_spline_track',
 
   schema: S.Object({
-    splineEntityUUID: S.EntityUUID(),
+    splineEntityUUID: S.EntityID(),
     velocity: S.Number({ default: 1.0 }),
     enableRotation: S.Bool({ default: false }),
     lockToXZPlane: S.Bool({ default: true }),
@@ -72,7 +72,7 @@ export const SplineTrackComponent = defineComponent({
         const { deltaSeconds } = getState(ECSState)
         if (isEditing) return
         if (!component.splineEntityUUID.value) return
-        const splineTargetEntity = UUIDComponent.getEntityByUUID(component.splineEntityUUID.value)
+        const splineTargetEntity = UUIDComponent.getEntityFromSameSourceAndID(entity, component.splineEntityUUID.value)
         if (!splineTargetEntity) return
 
         const splineComponent = getOptionalComponent(splineTargetEntity, SplineComponent)
@@ -152,7 +152,7 @@ export const SplineTrackComponent = defineComponent({
 
     useEffect(() => {
       if (!component.splineEntityUUID.value) return
-      const splineTargetEntity = UUIDComponent.getEntityByUUID(component.splineEntityUUID.value)
+      const splineTargetEntity = UUIDComponent.getEntityFromSameSourceAndID(entity, component.splineEntityUUID.value)
       if (!splineTargetEntity) return
       const splineComponent = getOptionalComponent(splineTargetEntity, SplineComponent)
       if (!splineComponent) return

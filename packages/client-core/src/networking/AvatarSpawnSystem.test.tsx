@@ -34,9 +34,9 @@ import {
   Engine,
   EngineState,
   Entity,
+  EntityID,
   EntityTreeComponent,
   SystemDefinitions,
-  UUIDComponent,
   createEntity,
   destroyEngine,
   setComponent
@@ -249,7 +249,7 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should enter spectate mode when spectate specified user is in search state', async () => {
-    const otherUserID = UUIDComponent.generateUUID()
+    const otherUserID = 'other user id' as EntityID
 
     // ensure spectate data
     getMutableState(SearchParamState).set({ spectate: otherUserID })
@@ -275,7 +275,7 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should spectate entity specified in scene settings', async () => {
-    const spectateUUID = UUIDComponent.generateUUID()
+    const spectateUUID = 'spectate entity uuid' as EntityID
     const entity = createEntity()
     setComponent(entity, EntityTreeComponent, { parentEntity: sceneEntity })
     setComponent(entity, SceneSettingsComponent, { spectateEntity: spectateUUID })

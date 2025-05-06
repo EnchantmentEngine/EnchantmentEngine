@@ -311,12 +311,12 @@ describe('EntityTreeComponent', () => {
         parentEntity: UndefinedEntity
       })
       setComponent(rootEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'root' as EntityID
       })
 
       const entity = createEntity()
-      const testUUID = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'root' as EntityID } as EntityUUIDPair
+      const testUUID = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       setComponent(entity, UUIDComponent, testUUID)
 
@@ -340,7 +340,7 @@ describe('EntityTreeComponent', () => {
         parentEntity: UndefinedEntity
       })
       setComponent(rootEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'root' as EntityID
       })
 
@@ -376,7 +376,7 @@ describe('EntityTreeComponent', () => {
         childIndex: 2
       })
       setComponent(entity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'test-uuid' as EntityID
       })
 
@@ -398,12 +398,12 @@ describe('EntityTreeComponent', () => {
         parentEntity: UndefinedEntity
       })
       setComponent(rootEntity, UUIDComponent, {
-        entitySourceID: UUIDComponent.generateUUID(),
+        entitySourceID: 'source' as SourceID,
         entityID: 'root' as EntityID
       })
 
       const entity = createEntity()
-      const uuid = { entitySourceID: UUIDComponent.generateUUID(), entityID: 'root' as EntityID } as EntityUUIDPair
+      const uuid = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       setComponent(entity, UUIDComponent, uuid)
 
@@ -424,7 +424,7 @@ describe('EntityTreeComponent', () => {
         root = createEntity()
         setComponent(root, EntityTreeComponent, { parentEntity: UndefinedEntity })
         setComponent(root, UUIDComponent, {
-          entitySourceID: UUIDComponent.generateUUID(),
+          entitySourceID: 'source' as SourceID,
           entityID: 'root' as EntityID
         })
       })
@@ -469,7 +469,7 @@ describe('removeEntityNodeRecursively', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
   })
@@ -536,7 +536,7 @@ describe('traverseEntityNode', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
   })
@@ -584,7 +584,7 @@ describe('traverseEntityNodeChildFirst', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
   })
@@ -634,7 +634,7 @@ describe('traverseEntityNodeParent', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
   })
@@ -924,7 +924,7 @@ describe('findIndexOfEntityNode', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
   })
@@ -2132,7 +2132,7 @@ describe('iterateEntityNode', () => {
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
     setComponent(parentEntity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
+      entitySourceID: 'source' as SourceID,
       entityID: 'root' as EntityID
     })
     setComponent(parentEntity, ComponentC, 'parentEntity-' + parentEntity)

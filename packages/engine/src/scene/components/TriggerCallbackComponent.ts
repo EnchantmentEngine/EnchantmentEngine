@@ -46,7 +46,7 @@ export const TriggerCallbackComponent = defineComponent({
         /**
          * empty string represents self
          */
-        target: S.EntityUUID()
+        target: S.EntityID()
       })
     )
   }),

@@ -41,6 +41,7 @@ import {
   getMutableComponent,
   removeEntity,
   setComponent,
+  SourceID,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -333,7 +334,7 @@ describe('ClientInputHeuristics', () => {
         const sorted = [] as IntersectionData[]
         const intersections = new Set<IntersectionData>()
         const UUID = {
-          entitySourceID: getState(EngineState).userID as any as EntityUUID,
+          entitySourceID: getState(EngineState).userID as any as SourceID,
           entityID: 'avatar' as EntityID
         } as EntityUUIDPair
         const testEntity = createEntity()

@@ -28,27 +28,24 @@ import {
   defineComponent,
   Entity,
   EntityID,
+  getComponent,
   LayerID,
   Layers,
   S,
   setComponent,
-  TTypedSchema,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { OpaqueType } from '@ir-engine/hyperflux'
-import { NonEmptyString } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { SourceComponent } from '../scene/components/SourceComponent'
 
-export type NodeID = OpaqueType<'NodeID'> & string
+/** @deprecated - use EntityID */
+export type NodeID = EntityID
 
+/** @deprecated - use UUIDComponent.entityID */
 export const NodeIDComponent = defineComponent({
   name: 'NodeIDComponent',
   jsonID: 'EE_uuid',
 
-  schema: S.String({
-    validate: NonEmptyString('NodeIDComponent expects a non-empty string'),
-    id: 'NodeID'
-  }) as unknown as TTypedSchema<NodeID>,
+  schema: S.EntityID(),
 
   /**
    * Creates a new entity with the NodeIDComponent and SourceComponent.
@@ -56,10 +53,10 @@ export const NodeIDComponent = defineComponent({
    */
   create: (sourceEntity: Entity, nodeID: EntityID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
-    setComponent(entity, NodeIDComponent, nodeID as string)
+    setComponent(entity, NodeIDComponent, nodeID)
     setComponent(entity, SourceComponent, sourceEntity)
     setComponent(entity, UUIDComponent, {
-      entitySourceID: sourceEntity ? UUIDComponent.getUUID(sourceEntity) : UUIDComponent.generateUUID(),
+      entitySourceID: getComponent(sourceEntity, UUIDComponent).entitySourceID,
       entityID: nodeID
     })
     return entity

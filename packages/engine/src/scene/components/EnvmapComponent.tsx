@@ -50,7 +50,7 @@ export const EnvMapComponent = defineComponent({
     envMapSourceColor: T.Color('#8080FF'),
     envMapSourceURL: S.String(),
     envMapCubemapURL: S.String(),
-    envMapSourceEntityUUID: S.EntityUUID(),
+    envMapSourceEntityUUID: S.EntityID(),
     envMapIntensity: S.Number({ default: 1 })
   }),
 

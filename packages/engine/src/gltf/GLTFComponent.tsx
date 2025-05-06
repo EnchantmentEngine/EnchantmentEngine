@@ -138,6 +138,7 @@ export const GLTFComponent = defineComponent({
         ? UUIDComponent.getUUID(entity)
         : getComponent(entity, UUIDComponent).entitySourceID
       : ('' as SourceID),
+
   useSourceID: (entity: Entity): SourceID => {
     const uuid = useOptionalComponent(entity, UUIDComponent)?.value
     if (!uuid) return '' as SourceID

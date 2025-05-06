@@ -29,13 +29,13 @@ import {
   LayerComponent,
   LayerID,
   Layers,
+  createEntity,
   defineComponent,
   getComponent,
   setComponent,
   useComponent
 } from './ComponentFunctions'
-import { Entity, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
-import { createEntity } from './EntityFunctions'
+import { Entity, EntityID, EntityUUID, EntityUUIDPair, UndefinedEntity } from './Entity'
 import { S } from './schemas/JSONSchemas'
 
 export const UUIDComponent = defineComponent({
@@ -106,6 +106,16 @@ export const UUIDComponent = defineComponent({
     return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
+  getEntityFromSameSourceAndID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
+    const entitySourceID = getComponent(entity, UUIDComponent).entitySourceID
+    return UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID({ entitySourceID, entityID: id }), layer)
+  },
+
+  useEntityFromSameSourceAndID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
+    const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
+    return UUIDComponent.useEntityByUUID(UUIDComponent.concatenateUUID({ entitySourceID, entityID: id }), layer)
+  },
+
   getUUID: (entity: Entity) => UUIDComponent.concatenateUUID(getComponent(entity, UUIDComponent)),
   useUUID: (entity: Entity) => UUIDComponent.concatenateUUID(useComponent(entity, UUIDComponent).value),
 
@@ -120,8 +130,13 @@ export const UUIDComponent = defineComponent({
     return state.value
   },
 
+  /** @deprecated use UUIDComponent.generate() instead */
   generateUUID() {
-    return uuidv4() as EntityUUID
+    return UUIDComponent.generate()
+  },
+
+  generate() {
+    return uuidv4() as EntityID
   }
 })
 

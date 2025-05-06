@@ -33,6 +33,7 @@ import { proxySoAStore, removeEntity } from '@ir-engine/ecs'
 import { DirectionalLight, Vector3 } from 'three'
 import {
   ComponentMap,
+  createEntity,
   defineComponent,
   deserializeComponent,
   getAllComponents,
@@ -47,7 +48,6 @@ import {
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
-import { createEntity } from './EntityFunctions'
 import { UUIDComponent } from './UUIDComponent'
 import { createResizableTypeArray } from './bitecsLegacy'
 import {

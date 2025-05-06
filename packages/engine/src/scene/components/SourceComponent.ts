@@ -38,6 +38,7 @@ export const EntitiesBySourceState = defineState({
   initial: {} as Record<SourceID, Entity[]>
 })
 
+/** @deprecated - use UUIDComponent.entitySourceID */
 export const SourceComponent = defineComponent({
   name: 'SourceComponent',
 

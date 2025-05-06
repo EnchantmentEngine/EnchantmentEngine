@@ -29,7 +29,6 @@ import {
   EntityTreeComponent,
   EntityUUID,
   findRootAncestors,
-  generateEntityUUID,
   getAncestorWithComponents,
   getChildrenWithComponents,
   iterateEntityNode,
@@ -290,7 +289,7 @@ const createObjectFromSceneElement = (
   }
 
   const nodeID: EntityID =
-    componentJson.find((comp) => comp.name === NodeIDComponent.jsonID)?.props.uuid ?? generateEntityUUID()
+    componentJson.find((comp) => comp.name === NodeIDComponent.jsonID)?.props.uuid ?? UUIDComponent.generate()
 
   const gltfEntity = getAncestorWithComponents(parentEntity, [GLTFComponent])
   let name = 'New Object'
@@ -347,11 +346,7 @@ const duplicateObject = (entities: Entity[]) => {
         Layers.Authoring
       )
 
-      const newEntity = NodeIDComponent.create(
-        originalSource,
-        UUIDComponent.generateUUID() as string as EntityID,
-        Layers.Authoring
-      )
+      const newEntity = NodeIDComponent.create(originalSource, UUIDComponent.generateUUID(), Layers.Authoring)
       const name = getComponent(entity, NameComponent)
       setComponent(newEntity, VisibleComponent)
       setComponent(newEntity, NameComponent, name)
@@ -593,11 +588,7 @@ const groupObjects = (entities: Entity[]) => {
   if (hasComponent(firstEntity, SceneComponent)) return
   const parentEntity = getComponent(firstEntity, EntityTreeComponent).parentEntity
   const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent])
-  const newParent = NodeIDComponent.create(
-    gltfEntity,
-    UUIDComponent.generateUUID() as string as EntityID,
-    Layers.Authoring
-  )
+  const newParent = NodeIDComponent.create(gltfEntity, UUIDComponent.generateUUID(), Layers.Authoring)
   setComponent(newParent, NameComponent, 'New Group')
   setComponent(newParent, EntityTreeComponent, { parentEntity })
   setComponent(newParent, VisibleComponent)

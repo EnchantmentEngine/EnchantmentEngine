@@ -29,16 +29,15 @@ import {
   EntityTreeComponent,
   LayerComponent,
   Layers,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
   setComponent
 } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { Group } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { NodeIDComponent } from '../../gltf/NodeIDComponent'
 
@@ -46,7 +45,7 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
   const sourceID = GLTFComponent.getSourceID(parentEntity)
   const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
   const entity = sourceID
-    ? NodeIDComponent.create(parentEntity, UUIDComponent.generateUUID() as string as EntityID, layer)
+    ? NodeIDComponent.create(parentEntity, UUIDComponent.generateUUID(), layer)
     : createEntity(layer)
   setComponent(entity, NameComponent, name)
   setComponent(entity, VisibleComponent)
@@ -56,14 +55,8 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
   if (!sourceID) {
-    setComponent(entity, UUIDComponent, { entitySourceID: UUIDComponent.generateUUID(), entityID: name as EntityID })
+    setComponent(entity, UUIDComponent, { entitySourceID: 'detatched' as SourceID, entityID: name as EntityID })
   }
-
-  // These additional properties and relations are required for
-  // the current GLTF exporter to successfully generate a GLTF.
-  const obj3d = new Group()
-  obj3d.entity = entity
-  setComponent(entity, ObjectComponent, obj3d)
 
   return entity
 }

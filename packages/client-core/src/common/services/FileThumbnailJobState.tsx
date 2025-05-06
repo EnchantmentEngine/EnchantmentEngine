@@ -32,6 +32,7 @@ import {
 import {
   Entity,
   EntityID,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
@@ -373,8 +374,8 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
 
     setComponent(entity, NameComponent, 'thumbnail job asset ' + src)
     setComponent(entity, UUIDComponent, {
-      entitySourceID: UUIDComponent.generateUUID(),
-      entityID: 'thumbnail-job' as EntityID
+      entitySourceID: 'thumbnail-job' as SourceID,
+      entityID: src as EntityID
     })
     setComponent(entity, VisibleComponent)
     setComponent(entity, ShadowComponent, { cast: true, receive: true })

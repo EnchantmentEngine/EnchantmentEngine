@@ -44,7 +44,7 @@ import {
   Layers,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityID, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityUUID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -122,114 +122,102 @@ export async function addMediaNode(
 
       // setComponent(rayEntity, LineSegmentComponent, { geometry: lineGeometry })
 
-      AssetState.loadAsync(
-        url,
-        false,
-        UUIDComponent.generateUUID() as string as EntityID,
-        UndefinedEntity,
-        Layers.Authoring as LayerID
-      ).then((assetEntity) => {
-        const [materialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
-        let foundTarget = false
-        const affectedEntities = [] as Entity[]
-        for (const intersection of intersections) {
-          if (!hasComponent(intersection.object.entity, VisibleComponent)) continue
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (assetEntity) => {
+          const [materialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
+          let foundTarget = false
+          const affectedEntities = [] as Entity[]
+          for (const intersection of intersections) {
+            if (!hasComponent(intersection.object.entity, VisibleComponent)) continue
 
-          iterateEntityNode(intersection.object.entity, (entity: Entity) => {
-            const mesh = getOptionalComponent(entity, MeshComponent)
-            if (!mesh) return
-            let materialIndex = 0
-            for (const g of mesh.geometry.groups) {
-              if (intersection.faceIndex! * 3 >= g.start && intersection.faceIndex! * 3 < g.start + g.count) {
-                materialIndex = g.materialIndex!
-                break
+            iterateEntityNode(intersection.object.entity, (entity: Entity) => {
+              const mesh = getOptionalComponent(entity, MeshComponent)
+              if (!mesh) return
+              let materialIndex = 0
+              for (const g of mesh.geometry.groups) {
+                if (intersection.faceIndex! * 3 >= g.start && intersection.faceIndex! * 3 < g.start + g.count) {
+                  materialIndex = g.materialIndex!
+                  break
+                }
               }
-            }
-            const materialEntities = getComponent(entity, MaterialInstanceComponent).entities
+              const materialEntities = getComponent(entity, MaterialInstanceComponent).entities
 
-            /**@todo we should be setting the uuid of the material instance component to the uuid of the new material */
-            //const materialUUID = getComponent(material, UUIDComponent)
-            //uuids[materialIndex] = materialUUID,
-            //setComponent(entity, MaterialInstanceComponent, { uuid: uuids })
-            /**scene deltas do not yet support this, so a temporary hackfix is to modify existing materials to match */
-            const materialComponent = getComponent(materialEntity, MaterialStateComponent)
-            const materialToMutate = LayerFunctions.getAuthoringCounterpart(materialEntities[materialIndex])
-            // wipe out any existing deltas for this material
-            SceneDeltaState.removeDelta(materialToMutate)
-            // if (existingDelta) {
-            //   //another hack
-            //   const mat = getComponent(materialToMutate, MaterialStateComponent).material
-            //   const constructor =
-            //     getState(MaterialPrototypeDefinitions)[mat.userData?.type || mat.type].prototypeConstructor
-            //   getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
-            //   SceneDeltaState.setDelta(materialToMutate, MaterialStateComponent, none)
-            // }
-            EditorControlFunctions.updateMaterialPrototype(
-              materialToMutate,
-              materialComponent.material.userData?.type ?? materialComponent.material.type
-            )
-            EditorControlFunctions.modifyMaterial(materialEntities[materialIndex], [
-              getComponent(materialEntity, MaterialStateComponent).parameters
-            ])
-            removeEntity(assetEntity)
-            foundTarget = true
-          })
-          if (foundTarget) break
+              /**@todo we should be setting the uuid of the material instance component to the uuid of the new material */
+              //const materialUUID = getComponent(material, UUIDComponent)
+              //uuids[materialIndex] = materialUUID,
+              //setComponent(entity, MaterialInstanceComponent, { uuid: uuids })
+              /**scene deltas do not yet support this, so a temporary hackfix is to modify existing materials to match */
+              const materialComponent = getComponent(materialEntity, MaterialStateComponent)
+              const materialToMutate = LayerFunctions.getAuthoringCounterpart(materialEntities[materialIndex])
+              // wipe out any existing deltas for this material
+              SceneDeltaState.removeDelta(materialToMutate)
+              // if (existingDelta) {
+              //   //another hack
+              //   const mat = getComponent(materialToMutate, MaterialStateComponent).material
+              //   const constructor =
+              //     getState(MaterialPrototypeDefinitions)[mat.userData?.type || mat.type].prototypeConstructor
+              //   getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
+              //   SceneDeltaState.setDelta(materialToMutate, MaterialStateComponent, none)
+              // }
+              EditorControlFunctions.updateMaterialPrototype(
+                materialToMutate,
+                materialComponent.material.userData?.type ?? materialComponent.material.type
+              )
+              EditorControlFunctions.modifyMaterial(materialEntities[materialIndex], [
+                getComponent(materialEntity, MaterialStateComponent).parameters
+              ])
+              removeEntity(assetEntity)
+              foundTarget = true
+            })
+            if (foundTarget) break
+          }
+          AuthoringState.snapshotEntities(affectedEntities)
         }
-        AuthoringState.snapshotEntities(affectedEntities)
-      })
+      )
     } else if (contentType.startsWith('model/lookdev')) {
       /**
        * Load the lookdev object and override or attach it to the current scene
        */
-      AssetState.loadAsync(
-        url,
-        false,
-        UUIDComponent.generateUUID() as string as EntityID,
-        UndefinedEntity,
-        Layers.Authoring as LayerID
-      ).then((entity) => {
-        const firstChild = getComponent(entity, EntityTreeComponent).children[0]
-        const json = serializeEntity(firstChild)
-        EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
-        removeEntity(entity)
-        const rootEntity = getState(EditorState).rootEntity
-        const newSource = GLTFComponent.getSourceID(rootEntity)
-        AuthoringState.snapshot(newSource)
-      })
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (entity) => {
+          const firstChild = getComponent(entity, EntityTreeComponent).children[0]
+          const json = serializeEntity(firstChild)
+          EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
+          removeEntity(entity)
+          const rootEntity = getState(EditorState).rootEntity
+          const newSource = GLTFComponent.getSourceID(rootEntity)
+          AuthoringState.snapshot(newSource)
+        }
+      )
     } else if (contentType.startsWith('model/prefab')) {
       /**
        * Load all entities from the prefab and attach them to the current scene
        */
-      AssetState.loadAsync(
-        url,
-        false,
-        UUIDComponent.generateUUID() as string as EntityID,
-        UndefinedEntity,
-        Layers.Authoring as LayerID
-      ).then((entity) => {
-        const rootEntity = getState(EditorState).rootEntity
-        const entities = SourceComponent.getEntitiesBySource(entity)
-        const newSource = GLTFComponent.getSourceID(rootEntity)
-        for (const entity of entities) {
-          requestedName = getIncreamentedName(requestedName, parent)
-          setComponent(entity, NameComponent, requestedName)
-          setComponent(entity, SourceComponent, rootEntity)
-          getMutableComponent(entity, UUIDComponent).entitySourceID.set(newSource)
-          for (const comp of extraComponentJson) {
-            if (comp.name === TransformComponent.jsonID) {
-              setComponent(entity, TransformComponent, comp.props)
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (entity) => {
+          const rootEntity = getState(EditorState).rootEntity
+          const entities = SourceComponent.getEntitiesBySource(entity)
+          const newSource = GLTFComponent.getSourceID(rootEntity)
+          for (const entity of entities) {
+            requestedName = getIncreamentedName(requestedName, parent)
+            setComponent(entity, NameComponent, requestedName)
+            setComponent(entity, SourceComponent, rootEntity)
+            getMutableComponent(entity, UUIDComponent).entitySourceID.set(newSource)
+            for (const comp of extraComponentJson) {
+              if (comp.name === TransformComponent.jsonID) {
+                setComponent(entity, TransformComponent, comp.props)
+              }
             }
           }
+          for (const childEntity of getComponent(entity, EntityTreeComponent).children) {
+            setComponent(childEntity, EntityTreeComponent, { parentEntity: parent ?? rootEntity })
+          }
+          removeEntity(entity)
+          const gltfEntity = getAncestorWithComponents(parent ?? rootEntity, [GLTFComponent])
+          EditorState.markModifiedScene(gltfEntity)
+          AuthoringState.snapshot(newSource)
         }
-        for (const childEntity of getComponent(entity, EntityTreeComponent).children) {
-          setComponent(childEntity, EntityTreeComponent, { parentEntity: parent ?? rootEntity })
-        }
-        removeEntity(entity)
-        const gltfEntity = getAncestorWithComponents(parent ?? rootEntity, [GLTFComponent])
-        EditorState.markModifiedScene(gltfEntity)
-        AuthoringState.snapshot(newSource)
-      })
+      )
     } else {
       const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
         [

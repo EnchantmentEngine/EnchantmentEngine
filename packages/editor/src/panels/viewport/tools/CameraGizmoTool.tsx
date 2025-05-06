@@ -27,7 +27,6 @@ import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRend
 import {
   createEntity,
   EntityTreeComponent,
-  generateEntityUUID,
   getComponent,
   removeComponent,
   setComponent,

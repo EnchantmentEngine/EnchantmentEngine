@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { BoxGeometry, Mesh, MeshNormalMaterial } from 'three'
 
 import { createEntity, getComponent, removeEntity, setComponent, UUIDComponent } from '@ir-engine/ecs'
-import { EntityID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { EntityID, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
@@ -47,8 +47,8 @@ export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
   const viewerEntity = createEntity()
   setComponent(viewerEntity, NameComponent, 'viewer')
   setComponent(viewerEntity, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
-    entityID: 'ee.viewer' as EntityID
+    entitySourceID: 'engine' as SourceID,
+    entityID: 'viewer' as EntityID
   })
   setComponent(viewerEntity, CameraComponent)
   setComponent(viewerEntity, VisibleComponent, true)
@@ -99,8 +99,8 @@ export const initializeSpatialEngine = () => {
   const originEntity = createEntity()
   setComponent(originEntity, NameComponent, 'origin')
   setComponent(originEntity, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
-    entityID: 'ee.origin' as EntityID
+    entitySourceID: 'engine' as SourceID,
+    entityID: 'origin' as EntityID
   })
   setComponent(originEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(originEntity, TransformComponent)
@@ -109,8 +109,8 @@ export const initializeSpatialEngine = () => {
   const localFloorEntity = createEntity()
   setComponent(localFloorEntity, NameComponent, 'local floor')
   setComponent(localFloorEntity, UUIDComponent, {
-    entitySourceID: UUIDComponent.generateUUID(),
-    entityID: 'ee.local-floor' as EntityID
+    entitySourceID: 'engine' as SourceID,
+    entityID: 'local-floor' as EntityID
   })
   setComponent(localFloorEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(localFloorEntity, TransformComponent)

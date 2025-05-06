@@ -57,7 +57,7 @@ export const RenderSettingsComponent = defineComponent({
   jsonID: 'EE_render_settings',
 
   schema: S.Object({
-    primaryLight: S.EntityUUID(),
+    primaryLight: S.EntityID(),
     csm: S.Bool({ default: true }),
     cascades: S.Number({ default: 5 }),
     toneMapping: ToneMappingSchema,
