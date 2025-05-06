@@ -965,6 +965,7 @@ export const ParticleSystemComponent = defineComponent({
     }, [shapeMeshEntity])
 
     const [texture] = useTexture(componentState.value.systemParameters.texture!, entity, (url) => {
+      if (!entityExists(entity)) return
       metadata.textures.nested(url).set(none)
       dudMaterial.map = null
     })
