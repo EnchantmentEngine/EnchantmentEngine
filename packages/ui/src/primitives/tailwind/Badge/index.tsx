@@ -46,12 +46,12 @@ const Badge = ({ label, className, variant }: BadgeProps) => {
   return (
     <div
       className={twMerge(
-        'flex h-fit items-center justify-around gap-x-1.5	rounded-full px-2.5 py-0.5 text-white',
+        'flex h-fit items-center justify-around gap-x-1.5	rounded-full px-2.5 py-0.5',
         variantMap[variant],
         className
       )}
     >
-      <span className="font-semibold">{label}</span>
+      <span className="font-semibold text-white">{label}</span>
     </div>
   )
 }

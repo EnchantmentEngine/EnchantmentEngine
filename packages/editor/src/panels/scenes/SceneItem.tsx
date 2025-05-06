@@ -39,7 +39,6 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { default as React } from 'react'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
-import SceneCard from './SceneCard'
 
 type SceneItemProps = {
   scene: StaticResourceType
@@ -79,7 +78,10 @@ export default function SceneItem({
   const defaultThumbnail = theme?.value === 'dark' ? IRLogoModalLight : IRLogoModalDark
 
   return (
-    <SceneCard data-testid="scene-container" className="cursor-pointer items-start justify-start gap-3 bg-white p-3">
+    <div
+      data-testid="scene-container"
+      className="col-span-2 inline-flex h-64 w-64 min-w-64 max-w-64 cursor-pointer flex-col items-start justify-start gap-3 rounded-lg border border-ui-outline bg-ui-background p-3 lg:col-span-1"
+    >
       <div className="flex max-h-40 shrink grow basis-0 items-center justify-center self-stretch rounded bg-surface-4">
         <img
           className={twMerge(
@@ -118,12 +120,11 @@ export default function SceneItem({
         </div>
 
         <MoreOptionsMenu
-          position="right top"
           actionProps={[
             {
               label: t('editor:hierarchy.lbl-rename'),
               disabled: false,
-              icon: <Edit01Sm fontSize={16} />,
+              icon: <Edit01Sm />,
               onClick: () => {
                 ModalState.openModal(
                   <RenameSceneModal
@@ -138,7 +139,7 @@ export default function SceneItem({
             {
               label: t('editor:hierarchy.lbl-delete'),
               disabled: disableDeleteScene,
-              icon: <Trash04Sm fontSize={16} />,
+              icon: <Trash04Sm />,
               onClick: () => {
                 ModalState.openModal(
                   <ConfirmDialog
@@ -152,6 +153,6 @@ export default function SceneItem({
           ]}
         />
       </div>
-    </SceneCard>
+    </div>
   )
 }

@@ -46,23 +46,15 @@ export interface ThemeToggleProps {
 const ThemeToggle = ({ size, label, value, onChange, disabled }: ThemeToggleProps) => {
   return (
     <div
-      className={twMerge(
-        'flex w-full items-center justify-between gap-4',
-        disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-      )}
+      className={twMerge('flex items-center gap-4', disabled ? 'cursor-not-allowed' : 'cursor-pointer')}
       data-testid="toggle-input-container"
     >
-      {label && (
-        <Label data-testid="toggle-input-label" className="text-base font-normal">
-          {label}
-        </Label>
-      )}
       <input
         data-testid="toggle-input"
         disabled={disabled}
         type="checkbox"
         className="peer sr-only"
-        checked={!value}
+        checked={value}
         onChange={() => onChange(!value)}
       />
       <div
@@ -73,26 +65,27 @@ const ThemeToggle = ({ size, label, value, onChange, disabled }: ThemeToggleProp
           sizeMap[size ?? 'md'],
           disabled
             ? 'bg-ui-inactive-background after:bg-text-inactive peer-checked:bg-ui-inactive-primary'
-            : 'bg-ui-background after:bg-white peer-checked:bg-ui-primary'
+            : 'bg-ui-background after:bg-text-primary peer-checked:bg-ui-primary'
         )}
         onClick={() => onChange(!value)}
       >
         {value ? (
           <Moon01Lg
             className={twMerge(
-              'absolute top-1/2 z-50 h-4 w-4 -translate-y-1/2 text-white',
+              'absolute top-1/2 z-50 h-4 w-4 -translate-y-1/2 text-black',
               value ? 'right-[0.1875rem]' : 'left-[0.1875rem]'
             )}
           />
         ) : (
           <SunLg
             className={twMerge(
-              'absolute top-1/2 z-50 h-4 w-4 -translate-y-1/2 text-white',
+              'absolute top-1/2 z-50 h-4 w-4 -translate-y-1/2 text-ui-warning',
               value ? 'right-[0.1875rem]' : 'left-[0.1875rem]'
             )}
           />
         )}
       </div>
+      {label && <Label data-testid="toggle-input-label">{label}</Label>}
     </div>
   )
 }
