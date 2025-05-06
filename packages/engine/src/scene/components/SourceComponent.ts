@@ -74,8 +74,8 @@ export const SourceComponent = defineComponent({
   },
 
   useEntitiesBySource: (source: Entity) => {
-    const state = useHookstate(EntitiesBySourceState).value
-    return state?.[source] || []
+    const state = useHookstate(getMutableState(EntitiesBySourceState)).value
+    return state[source] || []
   },
 
   getEntitiesBySource: (source: Entity): Entity[] => {
