@@ -108,31 +108,38 @@ export const UUIDComponent = defineComponent({
 
   entitiesByUUIDState: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>,
 
+  /** Reactively gets an entity by UUID */
   useEntityByUUID(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
     return useHookstate(UUIDComponentFunctions._getUUIDState(uuid, layer)).value
   },
 
+  /** Gets an entity by UUID */
   getEntityByUUID(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
     return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
+  /** Gets an entity from the same source by ID */
   getEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = getComponent(entity, UUIDComponent).entitySourceID
     return UUIDComponent.getEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
 
+  /** Reactively gets an entity from the same source by ID */
   useEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
     return UUIDComponent.useEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
 
-  // intentionally construct a new SourceID from the concatenated values of the source entity
+  /** Construct a new SourceID from the concatenated values of the source entity */
   getAsSourceID: (entity: Entity) => UUIDComponent.join(getComponent(entity, UUIDComponent)) as any as SourceID,
 
+  /** Gets a UUID as a string */
   get: (entity: Entity) => UUIDComponent.join(getComponent(entity, UUIDComponent)),
 
+  /** Reactively gets a UUID as a string */
   use: (entity: Entity) => UUIDComponent.join(useComponent(entity, UUIDComponent).value),
 
+  /** Joins an EntityUUIDPair into a string */
   join: (idPair: EntityUUIDPair) => `${idPair.entitySourceID}${idPair.entityID}` as EntityUUID,
 
   /** @deprecated use UUIDComponent.generate() instead */
@@ -140,6 +147,7 @@ export const UUIDComponent = defineComponent({
     return UUIDComponent.generate()
   },
 
+  /** Generates a new UUID */
   generate() {
     return uuidv4() as EntityID
   }
