@@ -47,9 +47,11 @@ import {
   BufferAttribute,
   BufferGeometry,
   DoubleSide,
+  LinearMipmapLinearFilter,
   Mesh,
   MeshStandardMaterial,
   PlaneGeometry,
+  RepeatWrapping,
   Texture,
   Vector2
 } from 'three'
@@ -170,7 +172,23 @@ export const TerrainMeshComponent = defineComponent({
           removeComponent(entity, ColliderComponent)
         }
       }
-    }, [textureState.heightmap.value])
+    }, [
+      component.width.value,
+      component.height.value,
+      component.depth.value,
+      component.widthSegments.value,
+      component.depthSegments.value,
+      component.enablePhysics.value,
+      component.blendSharpness.value,
+      component.normalScale.value,
+      textureState.heightmap.value,
+      textureState.diffuse1.value,
+      textureState.diffuse2.value,
+      textureState.diffuse3.value,
+      textureState.normal1.value,
+      textureState.normal2.value,
+      textureState.normal3.value
+    ])
 
     return null
   }
@@ -228,6 +246,21 @@ function createTerrainMesh(
 
   // Set the material state component
   setComponent(materialEntity, MaterialStateComponent, { material })
+
+  // Configure texture wrapping and filtering for all textures
+  if (textures.diffuse1) {
+    textures.diffuse1.wrapS = textures.diffuse1.wrapT = RepeatWrapping
+    textures.diffuse1.minFilter = LinearMipmapLinearFilter
+  }
+  if (textures.diffuse2) {
+    textures.diffuse2.wrapS = textures.diffuse2.wrapT = RepeatWrapping
+    textures.diffuse2.minFilter = LinearMipmapLinearFilter
+  }
+  if (textures.diffuse3) {
+    textures.diffuse3.wrapS = textures.diffuse3.wrapT = RepeatWrapping
+    textures.diffuse3.minFilter = LinearMipmapLinearFilter
+  }
+  // Do the same for normal maps if needed
 
   // Apply the triplanar mapping plugin
   setComponent(materialEntity, TriplanarMappingMaterialPlugin, {
