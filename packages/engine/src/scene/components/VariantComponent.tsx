@@ -27,6 +27,7 @@ import { useEffect } from 'react'
 
 import {
   Entity,
+  EntityID,
   EntityTreeComponent,
   EntityUUIDPair,
   Static,
@@ -130,7 +131,10 @@ export const VariantComponent = defineComponent({
     useEffect(() => {
       if (instancingComponent) return
       const _childEntity = createEntity()
-      setComponent(_childEntity, UUIDComponent)
+      setComponent(_childEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.getAsSourceID(entity),
+        entityID: 'variant-child' as EntityID
+      })
       setComponent(_childEntity, NameComponent, 'Variant Child w/ GLTFComponent')
       setComponent(_childEntity, TransformComponent)
       setComponent(_childEntity, EntityTreeComponent, { parentEntity: entity })
