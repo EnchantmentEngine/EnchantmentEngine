@@ -451,7 +451,6 @@ describe('exportGLTFScene', () => {
 
   it('should export animations', async () => {
     const baseEntity = createSceneEntity('base')
-    setComponent(baseEntity, UUIDComponent, { entityID: 'id' as EntityID, entitySourceID: 'base' as SourceID })
     setComponent(baseEntity, UUIDComponent, {
       entitySourceID: GLTFComponent.getSourceID(baseEntity),
       entityID: 'test track' as EntityID
