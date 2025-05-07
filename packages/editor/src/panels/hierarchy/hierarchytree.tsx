@@ -23,21 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent, UUIDComponent } from '@ir-engine/ecs'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { Button } from '@ir-engine/ui'
 import { Popup } from '@ir-engine/ui/src/components/tailwind/Popup'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
 import { PlusCircleSm } from '@ir-engine/ui/src/icons'
 import React, { useCallback, useEffect, useRef } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
 import { useTranslation } from 'react-i18next'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
-import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import ElementList from '../properties/elementlist'
-import { getNodeElId } from './helpers'
 import HierarchyTreeNode from './hierarchynode'
 import { useHierarchyNodes, useHierarchyTreeDrop, useHierarchyTreeHotkeys } from './hooks'
 
@@ -102,30 +98,6 @@ export function Contents() {
   }, [])
 
   useHierarchyTreeHotkeys()
-  useHotkeys('ArrowUp', () => {
-    const selectedEntity = getMutableState(HierarchyTreeState).firstSelectedEntity.value
-    const index = nodes.findIndex((node) => node.entity === selectedEntity)
-    if (index === -1) return
-    const upperNode = nodes.at(index - 1)
-    if (!upperNode) return
-    const upperNodeEl = document.getElementById(getNodeElId(upperNode))
-    upperNodeEl?.focus()
-    EditorControlFunctions.replaceSelection([getComponent(upperNode.entity, UUIDComponent)])
-    getMutableState(HierarchyTreeState).firstSelectedEntity.set(upperNode.entity)
-  })
-  useHotkeys('ArrowDown', () => {
-    const selectedEntity = getMutableState(HierarchyTreeState).firstSelectedEntity.value
-    const index = nodes.findIndex((node) => node.entity === selectedEntity)
-    if (index === -1) return
-    let lowerNode = nodes.at(index + 1)
-    if (!lowerNode) {
-      lowerNode = nodes.at(0)
-    }
-    const lowerNodeEl = document.getElementById(getNodeElId(lowerNode!))
-    lowerNodeEl?.focus()
-    EditorControlFunctions.replaceSelection([getComponent(lowerNode!.entity, UUIDComponent)])
-    getMutableState(HierarchyTreeState).firstSelectedEntity.set(lowerNode!.entity)
-  })
 
   return (
     <div

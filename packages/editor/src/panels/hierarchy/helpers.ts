@@ -67,7 +67,7 @@ export const uploadOptions = {
 
 /* NODE FUNCTIONALITIES */
 
-const getSelectedEntities = (entity?: Entity) => {
+export const getSelectedEntities = (entity?: Entity) => {
   const selected = entity
     ? getState(SelectionState).selectedEntities.includes(getComponent(entity, UUIDComponent))
     : true
