@@ -336,7 +336,6 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         ref={drag}
         id={getNodeElId(node)}
         tabIndex={0}
-        onKeyDown={onKeyDown}
         onClick={onClickNode}
         onContextMenu={(event) => {
           event.preventDefault()
