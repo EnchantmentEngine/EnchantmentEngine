@@ -76,6 +76,10 @@ export const AvatarComponent = defineComponent({
     return avatarNetworkObjectQuery().find((eid) => getComponent(eid, NetworkObjectComponent).ownerId === userId)!
   },
 
+  getAvatarAsSourceID(userId = getState(EngineState).userID as UserID): SourceID {
+    return UUIDComponent.getAsSourceID(AvatarComponent.getUserAvatarEntity(userId))
+  },
+
   getSelfAvatarEntity() {
     return UUIDComponent.getEntityByUUID(AvatarComponent.getSelfAvatarUUID())
   },
