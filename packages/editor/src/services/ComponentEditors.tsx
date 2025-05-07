@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -51,6 +51,7 @@ import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxCo
 import { SpawnPointComponent } from '@ir-engine/engine/src/scene/components/SpawnPointComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { SplineTrackComponent } from '@ir-engine/engine/src/scene/components/SplineTrackComponent'
+import { TerrainMeshComponent } from '@ir-engine/engine/src/scene/components/TerrainMeshComponent'
 import { TextComponent } from '@ir-engine/engine/src/scene/components/TextComponent'
 import { VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
@@ -124,6 +125,7 @@ import { CameraComponent } from '@ir-engine/spatial/src/camera/components/Camera
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
 import SplineTrackNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline/track'
+import TerrainMeshNodeEditor from '@ir-engine/ui/src/components/editor/properties/terrainMesh'
 import TextNodeEditor from '@ir-engine/ui/src/components/editor/properties/text'
 import TriggerComponentEditor from '@ir-engine/ui/src/components/editor/properties/trigger'
 import VariantNodeEditor from '@ir-engine/ui/src/components/editor/properties/variant'
@@ -178,6 +180,7 @@ export const ComponentEditorsState = defineState({
       [VariantComponent.name]: VariantNodeEditor,
       [SplineComponent.name]: SplineNodeEditor,
       [SplineTrackComponent.name]: SplineTrackNodeEditor,
+      [TerrainMeshComponent.name]: TerrainMeshNodeEditor,
       [VisualScriptComponent.name]: VisualScriptNodeEditor,
       [LinkComponent.name]: LinkNodeEditor,
       [OverlayComponent.name]: OverlayNodeEditor,
