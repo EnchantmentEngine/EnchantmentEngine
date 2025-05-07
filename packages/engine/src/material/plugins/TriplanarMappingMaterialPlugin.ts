@@ -31,21 +31,21 @@ import { defineMaterialPlugin } from '../defineMaterialPlugin'
 // Triplanar shader chunks
 const triplanarVertexPars = `
 varying vec3 vPosition;
-varying vec3 vWorldPosition;
+varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
 // We'll use the existing vNormal from Three.js
 `
 
 const triplanarVertex = `
 vPosition = position;
-vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+vLocalPosition = position; // Use local position for texture mapping
 vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
 // vNormal is already set by Three.js
 `
 
 const triplanarFragmentPars = `
 varying vec3 vPosition;
-varying vec3 vWorldPosition;
+varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
 // vNormal is already defined by Three.js
 
@@ -68,13 +68,13 @@ vec4 triplanarMapping(vec3 pos, vec3 normal, sampler2D tex, vec2 texScale) {
   // Absolute value of normal components for blending weights
   vec3 blending = pow(abs(normal), vec3(blendSharpness));
   blending = blending / (blending.x + blending.y + blending.z);
-  
-  // Calculate consistent texture coordinates regardless of world position
-  // This approach maintains consistent scale across the entire terrain
+
+  // Calculate consistent texture coordinates using local position
+  // This approach maintains consistent scale regardless of world position
   vec2 uvX = pos.yz * texScale;
   vec2 uvY = pos.xz * texScale;
   vec2 uvZ = pos.xy * texScale;
-  
+
   // Sample texture from three directions
   vec4 xaxis = texture2D(tex, uvX);
   vec4 yaxis = texture2D(tex, uvY);
@@ -89,18 +89,18 @@ const triplanarFragment = `
 // Use the world normal we computed in vertex shader
 vec3 worldNormal = normalize(vWorldNormal);
 
-// Calculate height factor (Y component of world position)
-float height = vWorldPosition.y;
+// Calculate height factor (Y component of local position)
+float height = vLocalPosition.y;
 float heightFactor = smoothstep(-10.0, 10.0, height); // Adjust range based on your terrain scale
 
 // Calculate slope factor (0 = flat, 1 = vertical)
 float slope = 1.0 - worldNormal.y;
 float slopeFactor = smoothstep(0.0, 0.8, slope);
 
-// Sample textures using triplanar mapping with world position
-vec4 diffuse1 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap1, texScale1); // Valleys
-vec4 diffuse2 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap2, texScale2); // Slopes
-vec4 diffuse3 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap3, texScale3); // Peaks
+// Sample textures using triplanar mapping with local position
+vec4 diffuse1 = triplanarMapping(vLocalPosition, worldNormal, diffuseMap1, texScale1); // Valleys
+vec4 diffuse2 = triplanarMapping(vLocalPosition, worldNormal, diffuseMap2, texScale2); // Slopes
+vec4 diffuse3 = triplanarMapping(vLocalPosition, worldNormal, diffuseMap3, texScale3); // Peaks
 
 // First blend between valley (diffuse1) and slope (diffuse2) based on slope
 vec4 valleyAndSlope = mix(diffuse1, diffuse2, slopeFactor);
