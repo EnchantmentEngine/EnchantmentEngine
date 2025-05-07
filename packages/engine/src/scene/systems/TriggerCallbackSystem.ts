@@ -39,9 +39,9 @@ export const triggerEnterOrExit = (triggerEntity: Entity, otherEntity: Entity, h
   const triggerComponent = getOptionalComponent(contextEntity, TriggerCallbackComponent)
   if (!triggerComponent) return
   for (const trigger of triggerComponent.triggers) {
-    if (trigger.target && !UUIDComponent.getEntityFromSameSourceAndID(triggerEntity, trigger.target)) continue
+    if (trigger.target && !UUIDComponent.getEntityFromSameSourceByID(triggerEntity, trigger.target)) continue
     const targetEntity = trigger.target
-      ? UUIDComponent.getEntityFromSameSourceAndID(triggerEntity, trigger.target)
+      ? UUIDComponent.getEntityFromSameSourceByID(triggerEntity, trigger.target)
       : triggerEntity
     if (targetEntity && (trigger.onEnter || trigger.onExit)) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)

@@ -126,9 +126,9 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
     console.log(
       entity,
       rendererSettingsState.primaryLight.value,
-      UUIDComponent.getEntityFromSameSourceAndID(entity, rendererSettingsState.primaryLight.value)
+      UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight.value)
     )
-    if (!UUIDComponent.getEntityFromSameSourceAndID(entity, rendererSettingsState.primaryLight.value)) {
+    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight.value)) {
       setComponent(entity, RenderSettingsComponent, {
         csm: false,
         primaryLight: '' as EntityID

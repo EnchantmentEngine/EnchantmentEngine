@@ -144,7 +144,7 @@ function VideoReactor() {
   const visible = useHasComponent(entity, VisibleComponent)
   const mediaUUID = video.mediaUUID.value
 
-  const mediaEntity = UUIDComponent.useEntityFromSameSourceAndID(entity, mediaUUID) || entity
+  const mediaEntity = UUIDComponent.useEntityFromSameSourceByID(entity, mediaUUID) || entity
   const media = useOptionalComponent(mediaEntity, MediaComponent)
   const hasMediaElementComponent = useHasComponent(mediaEntity, MediaElementComponent)
   const localTextureRef = useHookstate<VideoTexturePriorityQueue | null>(null)

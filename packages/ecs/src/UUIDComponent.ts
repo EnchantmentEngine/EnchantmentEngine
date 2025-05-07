@@ -116,12 +116,12 @@ export const UUIDComponent = defineComponent({
     return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
   },
 
-  getEntityFromSameSourceAndID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
+  getEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = getComponent(entity, UUIDComponent).entitySourceID
     return UUIDComponent.getEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
 
-  useEntityFromSameSourceAndID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
+  useEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
     return UUIDComponent.useEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },

@@ -111,7 +111,7 @@ export const addSplineTrack = makeAsyncNodeDefinition({
         // can we hook into the spline track reactor somehow? this feels wasteful, but probably the right way to do it
         const splineTrack = getComponent(entity, SplineTrackComponent)
         if (splineTrack.loop) return
-        const splineEntity = UUIDComponent.getEntityFromSameSourceAndID(entity, splineTrack.splineEntityUUID!)
+        const splineEntity = UUIDComponent.getEntityFromSameSourceByID(entity, splineTrack.splineEntityUUID!)
         if (!splineEntity) return
         const spline = getOptionalComponent(splineEntity, SplineComponent)
         if (!spline) return

@@ -325,8 +325,8 @@ export const InteractableComponent = defineComponent({
 const callInteractCallbacks = (entity: Entity) => {
   const interactable = getComponent(entity, InteractableComponent)
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityFromSameSourceAndID(entity, callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceAndID(entity, callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue

@@ -50,9 +50,7 @@ export const LookAtSystem = defineSystem({
 
     for (const entity of facerQuery()) {
       const facer = getComponent(entity, LookAtComponent)
-      const targetEntity = facer.target
-        ? UUIDComponent.getEntityFromSameSourceAndID(entity, facer.target)
-        : viewerEntity
+      const targetEntity = facer.target ? UUIDComponent.getEntityFromSameSourceByID(entity, facer.target) : viewerEntity
       if (!targetEntity) continue
       TransformComponent.getWorldPosition(entity, _srcPosition)
       TransformComponent.getWorldPosition(targetEntity, _dstPosition)

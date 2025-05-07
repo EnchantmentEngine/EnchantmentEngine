@@ -46,7 +46,7 @@ export const reactor = () => {
     const currentLocation = locationState.locationName.value.split('/')[1]
     if (
       currentLocation === activePortal.location
-      //  || UUIDComponent.getEntityFromSameSourceAndID(activePortalEntity, activePortal.linkedPortalId)
+      //  || UUIDComponent.getEntityFromSameSourceByID(activePortalEntity, activePortal.linkedPortalId)
     ) {
       teleportAvatar(
         AvatarComponent.getSelfAvatarEntity(),

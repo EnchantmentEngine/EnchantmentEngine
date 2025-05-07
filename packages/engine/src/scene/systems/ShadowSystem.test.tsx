@@ -1213,7 +1213,7 @@ describe('CSMReactor', async () => {
 
         await flushAll()
 
-        const result = UUIDComponent.getEntityFromSameSourceAndID(
+        const result = UUIDComponent.getEntityFromSameSourceByID(
           renderSettingsEntity,
           getComponent(renderSettingsEntity, RenderSettingsComponent).primaryLight
         )
