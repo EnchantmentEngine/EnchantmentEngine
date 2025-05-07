@@ -51,8 +51,7 @@ import {
   useHasComponents,
   useOptionalComponent,
   useQuery,
-  UUIDComponent,
-  UUIDComponentFunctions
+  UUIDComponent
 } from '@ir-engine/ecs'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import { getMutableState, getState, NO_PROXY_STEALTH, none, State, useHookstate } from '@ir-engine/hyperflux'
@@ -126,10 +125,10 @@ export const GLTFComponent = defineComponent({
   },
 
   getEntityBySourceAndID(source: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
-    return UUIDComponentFunctions._getUUIDState(
-      ((GLTFComponent.getSourceID(source) || UUIDComponent.getUUID(source)) + id) as EntityUUID,
+    return UUIDComponent.getEntityByUUID(
+      ((GLTFComponent.getSourceID(source) || UUIDComponent.get(source)) + id) as EntityUUID,
       layer
-    ).get(NO_PROXY_STEALTH)
+    )
   },
 
   getSourceID: (entity: Entity): SourceID =>
@@ -179,7 +178,7 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
     if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
       const nodeID = node.extensions[NodeIDComponent.jsonID] as EntityID
       const sourceID = GLTFComponent.getSourceID(entity)
-      const uuid = UUIDComponent.concatenateUUID({ entitySourceID: sourceID, entityID: nodeID })
+      const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
       const extensions = Object.keys(node.extensions)
       if (typeof node.extensions[SceneDynamicLoadComponent.jsonID] !== 'undefined') continue
       for (const extension of extensions) {
@@ -338,7 +337,7 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
 
   const removeGLTFDependency = () => {
     const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    const uuid = UUIDComponent.getUUID(entity)
+    const uuid = UUIDComponent.get(entity)
     ;(gltfComponent.dependencies as State<ComponentDependencies>).componentDependencies.set((prev) => {
       const dependencyArr = prev![uuid] as Component[]
       if (!dependencyArr) return prev

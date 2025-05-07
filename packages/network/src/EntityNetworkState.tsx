@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useLayoutEffect } from 'react'
 
 import {
+  createEntity,
   Engine,
   EntityID,
   EntityTreeComponent,
@@ -76,7 +77,7 @@ export const EntityNetworkState = defineState({
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
         const uuid = { entityID: action.entityID, entitySourceID: action.entitySourceID } as EntityUUIDPair
-        getMutableState(EntityNetworkState)[UUIDComponent.concatenateUUID(uuid)].merge({
+        getMutableState(EntityNetworkState)[UUIDComponent.join(uuid)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
@@ -144,10 +145,21 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     if (!userConnected) return
-    const entity = UUIDComponent.getOrCreateEntityByUUID({
+
+    const idPair = {
       entityID: state.entityID.value,
       entitySourceID: state.entitySourceID.value
-    })
+    }
+
+    const uuid = UUIDComponent.join(idPair)
+
+    let entity = UUIDComponent.getEntityByUUID(uuid)
+
+    if (!entity) {
+      entity = createEntity()
+      setComponent(entity, UUIDComponent, idPair)
+    }
+
     return () => {
       removeEntity(entity)
     }

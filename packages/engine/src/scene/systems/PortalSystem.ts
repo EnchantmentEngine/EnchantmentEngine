@@ -52,9 +52,7 @@ const reactor = () => {
 
     return () => {
       const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
-      getState(SpawnPoseState)[UUIDComponent.getUUID(selfAvatarEntity)].spawnPosition.copy(
-        activePortal.remoteSpawnPosition
-      )
+      getState(SpawnPoseState)[UUIDComponent.get(selfAvatarEntity)].spawnPosition.copy(activePortal.remoteSpawnPosition)
       AvatarControllerComponent.releaseMovement(selfAvatarEntity, activePortalEntity)
       getMutableState(PortalState).lastPortalTimeout.set(Date.now())
     }

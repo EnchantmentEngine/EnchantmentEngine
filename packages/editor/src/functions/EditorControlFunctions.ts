@@ -332,7 +332,7 @@ const createObjectFromSceneElement = (
 
   EditorState.markModifiedScene(gltfEntity)
 
-  return { entityUUID: UUIDComponent.getUUID(entity), sourceID: GLTFComponent.getSourceID(gltfEntity) }
+  return { entityUUID: UUIDComponent.get(entity), sourceID: GLTFComponent.getSourceID(gltfEntity) }
 }
 
 const duplicateObject = (entities: Entity[]) => {
@@ -354,7 +354,7 @@ const duplicateObject = (entities: Entity[]) => {
       }
 
       // Store the UUID of new entity for selection
-      newEntities.push(UUIDComponent.getUUID(newEntity))
+      newEntities.push(UUIDComponent.get(newEntity))
 
       if (hasComponent(entity, GLTFComponent)) return
       const children = getComponent(entity, EntityTreeComponent).children as Entity[]

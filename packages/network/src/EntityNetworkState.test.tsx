@@ -68,7 +68,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
           $peer: hostPeerID,
@@ -122,7 +122,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
           $peer: hostPeerID,
@@ -177,7 +177,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: userId,
           $peer: peerID2,
           $user: userId,
@@ -231,7 +231,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: userId,
           $peer: peerID2,
           $user: userId,
@@ -310,7 +310,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: userId2, // from other user
           $peer: peerID3,
           $user: userId2,
@@ -378,7 +378,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: userId, // from other user
           $peer: peerID2,
           $user: userId2,
@@ -417,7 +417,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
           $peer: hostPeerID,
@@ -485,7 +485,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
           $peer: hostPeerID,
@@ -542,7 +542,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: SceneUser,
           $topic: NetworkTopics.world,
           $peer: ScenePeer,
@@ -596,7 +596,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: SceneUser,
           $topic: NetworkTopics.world,
           $peer: ScenePeer,
@@ -743,7 +743,7 @@ describe('EntityNetworkState', () => {
 
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: userID,
           $topic: NetworkTopics.world,
           $peer: peerID,
@@ -839,7 +839,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: userID,
         $topic: NetworkTopics.world,
         $peer: peerID,
@@ -933,7 +933,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID, // from  host
         $topic: NetworkTopics.world,
         $peer: Engine.instance.store.peerID,
@@ -1016,7 +1016,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID,
         $topic: NetworkTopics.world,
         $peer: hostPeerID,
@@ -1046,7 +1046,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID,
         $topic: NetworkTopics.world,
         $peer: hostPeerID,
@@ -1072,7 +1072,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: userId,
         $topic: NetworkTopics.world,
         $peer: peerID,
@@ -1086,7 +1086,7 @@ describe('EntityNetworkState', () => {
 
     await act(() => render(null))
 
-    const otherEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(otherEntityUUID))
+    const otherEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(otherEntityUUID))
 
     assert.ok(otherEntity)
     assert.equal(getComponent(otherEntity, NetworkObjectComponent).networkId, 0)
@@ -1100,7 +1100,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: userId,
         $topic: NetworkTopics.world,
         $peer: peerID,
@@ -1114,7 +1114,7 @@ describe('EntityNetworkState', () => {
 
     await act(() => render(null))
 
-    const otherEntity2 = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(otherEntityUUID2))
+    const otherEntity2 = UUIDComponent.getEntityByUUID(UUIDComponent.join(otherEntityUUID2))
 
     assert.ok(otherEntity2)
     assert.equal(getComponent(otherEntity2, NetworkObjectComponent).networkId, 1)
@@ -1151,7 +1151,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: SceneUser,
         $topic: NetworkTopics.world,
         $peer: ScenePeer,
@@ -1237,7 +1237,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: userId,
         $topic: NetworkTopics.world,
         $peer: peerID,
@@ -1318,7 +1318,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: userId2,
         $topic: NetworkTopics.world,
         $peer: peerID2,
@@ -1400,7 +1400,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: SceneUser,
         authorityPeerId: peerID2,
         $topic: NetworkTopics.world,
@@ -1486,7 +1486,7 @@ describe('EntityNetworkState', () => {
     for (let i = 0; i < count; i++) {
       dispatchAction(
         WorldNetworkAction.spawnEntity({
-          parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+          parentUUID: UUIDComponent.join(parentUUID),
           ownerID: hostUserID, // from  host
           $topic: NetworkTopics.world,
           $peer: Engine.instance.store.peerID,
@@ -1514,7 +1514,7 @@ describe('EntityNetworkState', () => {
 
     dispatchAction(
       WorldNetworkAction.spawnEntity({
-        parentUUID: UUIDComponent.concatenateUUID(parentUUID),
+        parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID, // from  host
         $topic: NetworkTopics.world,
         $peer: Engine.instance.store.peerID,

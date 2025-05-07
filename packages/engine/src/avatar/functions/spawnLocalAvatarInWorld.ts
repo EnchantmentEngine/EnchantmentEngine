@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 // spawnPose is temporary - just so portals work for now - will be removed in favor of instanceserver-instanceserver communication
 import { Quaternion, Vector3 } from 'three'
 
-import { EntityID, EntityUUID } from '@ir-engine/ecs'
-import { Action, PeerID, dispatchAction } from '@ir-engine/hyperflux'
+import { EngineState, EntityID, EntityUUID, SourceID } from '@ir-engine/ecs'
+import { Action, PeerID, dispatchAction, getState } from '@ir-engine/hyperflux'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
@@ -62,25 +62,23 @@ export type SpawnInWorldProps = {
 
 export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
   const { avatarSpawnPose, avatarURL, parentUUID } = props
-  const uuid = AvatarComponent.getSelfAvatarUUIDPair()
+  const entitySourceID = getState(EngineState).userID as any as SourceID
   dispatchAction(
     AvatarNetworkAction.spawn({
       ...avatarSpawnPose,
       parentUUID,
       avatarURL,
-      entityID: uuid.entityID,
-      entitySourceID: uuid.entitySourceID,
+      entityID: AvatarComponent.entityID,
+      entitySourceID,
       name: props.name
     })
   )
-  dispatchAction(
-    CameraActions.spawnCamera({ parentUUID, entityID: 'camera' as EntityID, entitySourceID: uuid.entitySourceID })
-  )
+  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera' as EntityID, entitySourceID }))
   dispatchAction(
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'head' as EntityID,
-      entitySourceID: uuid.entitySourceID,
+      entitySourceID,
       name: 'head',
       blendWeight: 0
     })
@@ -89,7 +87,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'leftHand' as EntityID,
-      entitySourceID: uuid.entitySourceID,
+      entitySourceID,
       name: 'leftHand',
       blendWeight: 0
     })
@@ -98,7 +96,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'rightHand' as EntityID,
-      entitySourceID: uuid.entitySourceID,
+      entitySourceID,
       name: 'rightHand',
       blendWeight: 0
     })
@@ -107,7 +105,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'leftFoot' as EntityID,
-      entitySourceID: uuid.entitySourceID,
+      entitySourceID,
       name: 'leftFoot',
       blendWeight: 0
     })
@@ -116,7 +114,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     AvatarNetworkAction.spawnIKTarget({
       parentUUID,
       entityID: 'rightFoot' as EntityID,
-      entitySourceID: uuid.entitySourceID,
+      entitySourceID,
       name: 'rightFoot',
       blendWeight: 0
     })

@@ -257,7 +257,7 @@ describe('EditorControlFunctions', () => {
       await flushAll()
 
       const deltaState = getState(SceneDeltaState)
-      assert.equal(deltaState[UUIDComponent.getUUID(authoringNode2Entity)][testComponent.jsonID].value, testValue)
+      assert.equal(deltaState[UUIDComponent.get(authoringNode2Entity)][testComponent.jsonID].value, testValue)
     })
   })
 
@@ -1175,8 +1175,8 @@ describe('EditorControlFunctions', () => {
         getComponent(authoringNode3Entity, SourceComponent)
       )
       assert.equal(getComponent(reparentedAuthoringNode2Entity, EntityTreeComponent).parentEntity, authoringNode3Entity)
-      const expectedUUID = UUIDComponent.getUUID(simulationNode1Entity) + node2ID
-      assert.equal(UUIDComponent.getUUID(reparentedAuthoringNode2Entity), expectedUUID)
+      const expectedUUID = UUIDComponent.get(simulationNode1Entity) + node2ID
+      assert.equal(UUIDComponent.get(reparentedAuthoringNode2Entity), expectedUUID)
     })
   })
 

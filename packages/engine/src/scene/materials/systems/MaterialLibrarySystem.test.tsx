@@ -76,7 +76,7 @@ describe('MaterialLibrarySystem', { retry: 2 }, () => {
     it('should convert a physical material to a basic material and update the instance', () => {
       convertMaterials(material, true)
       const basicUuid = { entitySourceID: 'basic-' + materialInstanceID, entityID: materialID } as EntityUUIDPair
-      const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(basicUuid))
+      const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(basicUuid))
       assert(getComponent(basicMaterialEntity, UUIDComponent).entitySourceID === basicUuid.entitySourceID)
       const basicMaterialComponent = getComponent(basicMaterialEntity, MaterialStateComponent)
       const basicMaterial = basicMaterialComponent.material as MeshLambertMaterial
@@ -93,7 +93,7 @@ describe('MaterialLibrarySystem', { retry: 2 }, () => {
       convertMaterials(material, true)
 
       const basicMaterialEntity = UUIDComponent.getEntityByUUID(
-        UUIDComponent.concatenateUUID({
+        UUIDComponent.join({
           entitySourceID: ('basic-' + materialInstanceID) as SourceID,
           entityID: materialID
         })

@@ -46,7 +46,7 @@ export default function MaterialLayerNode(props: ListChildComponentProps<{ nodes
   const name = getComponent(entity, NameComponent)
   const onClickNode = () => {
     if (!source) {
-      materialSelection.set(UUIDComponent.getUUID(entity))
+      materialSelection.set(UUIDComponent.get(entity))
     }
   }
 

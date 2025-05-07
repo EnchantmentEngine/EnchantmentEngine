@@ -88,7 +88,7 @@ describe('SpawnPoseState', () => {
         })
         getMutableState(SpawnPoseState).set(
           keys.reduce((list, uuid) => {
-            list[UUIDComponent.concatenateUUID(uuid)] = {
+            list[UUIDComponent.join(uuid)] = {
               spawnPosition: Expected,
               spawnRotation: new Quaternion(1, 2, 3, 4).normalize()
             }
@@ -121,7 +121,7 @@ describe('SpawnPoseState', () => {
         })
         getMutableState(SpawnPoseState).set(
           keys.reduce((list, uuid) => {
-            list[UUIDComponent.concatenateUUID(uuid)] = {
+            list[UUIDComponent.join(uuid)] = {
               spawnPosition: Vector3_One.clone(),
               spawnRotation: Expected
             }

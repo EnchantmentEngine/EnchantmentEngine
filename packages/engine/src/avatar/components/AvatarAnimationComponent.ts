@@ -151,8 +151,8 @@ export function createVRM(rootEntity: Entity) {
   })
 
   for (const bone of humanBonesArray) {
-    const uuid = UUIDComponent.concatenateUUID({
-      entitySourceID: UUIDComponent.concatenateUUID(getComponent(rootEntity, UUIDComponent)) as string as SourceID,
+    const uuid = UUIDComponent.join({
+      entitySourceID: UUIDComponent.join(getComponent(rootEntity, UUIDComponent)) as string as SourceID,
       entityID: bone.node!.toString() as EntityID
     })
     const entity = UUIDComponent.getEntityByUUID(uuid)

@@ -119,7 +119,7 @@ export const MaterialStateComponent = defineComponent({
 
   fallbackMaterial: () => {
     const fallbackMaterialEntity = UUIDComponent.getEntityByUUID(
-      UUIDComponent.concatenateUUID(MaterialStateComponent.fallbackMaterialUUIDPair)
+      UUIDComponent.join(MaterialStateComponent.fallbackMaterialUUIDPair)
     )
     return fallbackMaterialEntity
   },

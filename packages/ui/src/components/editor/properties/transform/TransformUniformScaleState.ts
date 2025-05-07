@@ -33,7 +33,7 @@ export const TransformUniformScaleState = defineState({
   }),
 
   getEntityState: (entity: Entity): boolean => {
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = UUIDComponent.get(entity)
     if (entityUUID) {
       const componentStates = getMutableState(TransformUniformScaleState).uniformScaleState
       return componentStates.value[entityUUID] ?? false
@@ -43,7 +43,7 @@ export const TransformUniformScaleState = defineState({
   },
 
   addOrUpdateEntity: (entity: Entity) => {
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = UUIDComponent.get(entity)
     if (!entityUUID) return
 
     const componentStates = getMutableState(TransformUniformScaleState).uniformScaleState
@@ -54,7 +54,7 @@ export const TransformUniformScaleState = defineState({
   },
 
   removeEntry: (entity: Entity) => {
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = UUIDComponent.get(entity)
     if (!entityUUID) return
 
     const componentStates = getMutableState(TransformUniformScaleState).uniformScaleState

@@ -106,7 +106,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const node = nodes[props.index]
   const entity = node.entity
   const fixedSizeListStyles = props.style
-  const uuid = UUIDComponent.getUUID(entity)
+  const uuid = UUIDComponent.get(entity)
   const selected = useHookstate(getMutableState(SelectionState).selectedEntities).value.includes(uuid)
   const visible = useHasComponent(entity, VisibleComponent)
   const locked = useHookstate(getMutableState(EntityHierarchyLockState).lockedEntities).value[entity] ?? false
@@ -213,7 +213,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         if (!nextNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([UUIDComponent.getUUID(nextNode.entity)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(nextNode.entity)])
         }
 
         const nextNodeEl = document.getElementById(getNodeElId(nextNode))
@@ -230,7 +230,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         if (!prevNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([UUIDComponent.getUUID(prevNode.entity)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(prevNode.entity)])
         }
 
         const prevNodeEl = document.getElementById(getNodeElId(prevNode))
@@ -256,9 +256,9 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       case 'Enter': {
         if (entity === rootEntity) return
         if (event.shiftKey) {
-          EditorControlFunctions.toggleSelection([UUIDComponent.getUUID(entity)])
+          EditorControlFunctions.toggleSelection([UUIDComponent.get(entity)])
         } else {
-          EditorControlFunctions.replaceSelection([UUIDComponent.getUUID(entity)])
+          EditorControlFunctions.replaceSelection([UUIDComponent.get(entity)])
         }
         break
       }
@@ -280,7 +280,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       getMutableState(EditorHelperState).placementMode.set(PlacementMode.DRAG)
       // Deselect material entity since we've just clicked on a hierarchy node
       getMutableState(MaterialSelectionState).selectedMaterial.set(null)
-      const uuid = UUIDComponent.getUUID(entity)
+      const uuid = UUIDComponent.get(entity)
       if (usesCtrlKey() ? event.ctrlKey : event.metaKey) {
         if (entity === rootEntity) return
         EditorControlFunctions.toggleSelection([uuid])
@@ -288,10 +288,10 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         const startIndex = nodes.findIndex((n) => n.entity === firstSelectedEntity.value)
         const endIndex = nodes.findIndex((n) => n.entity === entity)
         const range = nodes.slice(Math.min(startIndex, endIndex), Math.max(startIndex, endIndex) + 1)
-        const entityUuids = range.filter((n) => n.entity).map((n) => UUIDComponent.getUUID(n.entity))
+        const entityUuids = range.filter((n) => n.entity).map((n) => UUIDComponent.get(n.entity))
         EditorControlFunctions.replaceSelection(entityUuids)
       } else {
-        const selected = getState(SelectionState).selectedEntities.includes(UUIDComponent.getUUID(entity))
+        const selected = getState(SelectionState).selectedEntities.includes(UUIDComponent.get(entity))
         if (!selected) {
           EditorControlFunctions.replaceSelection([uuid])
         }

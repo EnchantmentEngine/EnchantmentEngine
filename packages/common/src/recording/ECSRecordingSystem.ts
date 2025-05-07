@@ -645,11 +645,11 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
                 .then((userAvatars) => {
                   dispatchAction(
                     AvatarNetworkAction.spawn({
-                      parentUUID: UUIDComponent.getUUID(getState(ReferenceSpaceState).originEntity),
+                      parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
                       ownerID: entityID,
                       avatarURL: userAvatars.data[0].avatar.modelResource!.url!,
                       name: user.name + "'s Clone",
-                      entityID: AvatarComponent.getSelfAvatarUUIDPair().entityID,
+                      entityID: AvatarComponent.entityID,
                       entitySourceID: entityID
                     })
                   )

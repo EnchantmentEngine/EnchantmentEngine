@@ -429,12 +429,12 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
   if (control) {
     if (selectedEntities.includes(clickedEntity)) {
       SelectionState.updateSelection(
-        selectedEntities.filter((entity) => entity !== clickedEntity).map((entity) => UUIDComponent.getUUID(entity))
+        selectedEntities.filter((entity) => entity !== clickedEntity).map((entity) => UUIDComponent.get(entity))
       )
     } else {
       SelectionState.updateSelection([
-        ...selectedEntities.map((entity) => UUIDComponent.getUUID(entity)),
-        UUIDComponent.getUUID(clickedEntity)
+        ...selectedEntities.map((entity) => UUIDComponent.get(entity)),
+        UUIDComponent.get(clickedEntity)
       ])
     }
   }
@@ -459,7 +459,7 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
   //   }
   // }
   else {
-    SelectionState.updateSelection([UUIDComponent.getUUID(clickedEntity)])
+    SelectionState.updateSelection([UUIDComponent.get(clickedEntity)])
   }
 }
 

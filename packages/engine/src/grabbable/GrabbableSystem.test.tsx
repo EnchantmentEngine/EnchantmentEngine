@@ -98,11 +98,11 @@ describe('GrabbableSystem', () => {
     )
 
     const avatarEntityUUIDPair = { entitySourceID: 'user-id', entityID: 'avatar' } as EntityUUIDPair
-    const avatarEntityUUID = UUIDComponent.concatenateUUID(avatarEntityUUIDPair)
+    const avatarEntityUUID = UUIDComponent.join(avatarEntityUUIDPair)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        parentUUID: UUIDComponent.get(sceneEntity),
         entityID: avatarEntityUUIDPair.entityID,
         entitySourceID: avatarEntityUUIDPair.entitySourceID,
         avatarURL: '',
@@ -111,11 +111,11 @@ describe('GrabbableSystem', () => {
     )
 
     const grabbableEntityUUIDPair = { entitySourceID: 'grabbable-id', entityID: 'grabbable' } as EntityUUIDPair
-    const grabbableEntityUUID = UUIDComponent.concatenateUUID(grabbableEntityUUIDPair)
+    const grabbableEntityUUID = UUIDComponent.join(grabbableEntityUUIDPair)
 
     dispatchAction(
       SpawnObjectActions.spawnObject({
-        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        parentUUID: UUIDComponent.get(sceneEntity),
         entityID: grabbableEntityUUIDPair.entityID,
         entitySourceID: grabbableEntityUUIDPair.entitySourceID,
         ownerID: network.hostUserID!,
@@ -127,10 +127,10 @@ describe('GrabbableSystem', () => {
 
     applyIncomingActions()
 
-    const grabbableEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(grabbableEntityUUIDPair))
+    const grabbableEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(grabbableEntityUUIDPair))
     setComponent(grabbableEntity, GrabbableComponent)
 
-    const playerEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(avatarEntityUUIDPair))
+    const playerEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(avatarEntityUUIDPair))
     assert.ok(hasComponent(playerEntity, GrabberComponent))
 
     assert.equal(Object.keys(getState(GrabbableState)).length, 0)
@@ -220,11 +220,11 @@ describe('GrabbableSystem', () => {
     )
 
     const avatarEntityUUIDPair = { entitySourceID: 'user-id', entityID: 'avatar' } as EntityUUIDPair
-    const avatarEntityUUID = UUIDComponent.concatenateUUID(avatarEntityUUIDPair)
+    const avatarEntityUUID = UUIDComponent.join(avatarEntityUUIDPair)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        parentUUID: UUIDComponent.get(sceneEntity),
         entityID: avatarEntityUUIDPair.entityID,
         entitySourceID: avatarEntityUUIDPair.entitySourceID,
         avatarURL: '',
@@ -233,11 +233,11 @@ describe('GrabbableSystem', () => {
     )
 
     const grabbableEntityUUIDPair = { entitySourceID: 'grabbable-id', entityID: 'grabbable' } as EntityUUIDPair
-    const grabbableEntityUUID = UUIDComponent.concatenateUUID(grabbableEntityUUIDPair)
+    const grabbableEntityUUID = UUIDComponent.join(grabbableEntityUUIDPair)
 
     dispatchAction(
       SpawnObjectActions.spawnObject({
-        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        parentUUID: UUIDComponent.get(sceneEntity),
         entityID: grabbableEntityUUIDPair.entityID,
         entitySourceID: grabbableEntityUUIDPair.entitySourceID,
         ownerID: SceneUser,

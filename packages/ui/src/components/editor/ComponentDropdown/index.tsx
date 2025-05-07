@@ -52,7 +52,7 @@ export default function ComponentDropdown({
   onClose,
   entity
 }: ComponentDropdownProps) {
-  const entityUUID = UUIDComponent.getUUID(entity)
+  const entityUUID = UUIDComponent.get(entity)
   const dropdownStateRecord = useMutableState(ComponentDropdownState).componentStates
 
   // State to track if minimized

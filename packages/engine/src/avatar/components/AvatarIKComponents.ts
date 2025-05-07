@@ -66,7 +66,7 @@ export const AvatarIKTargetComponent = defineComponent({
 
   getTargetEntity: (ownerID: SourceID, targetName: (typeof ikTargets)[keyof typeof ikTargets]) => {
     return UUIDComponent.getEntityByUUID(
-      UUIDComponent.concatenateUUID({ entitySourceID: ownerID, entityID: targetName as EntityID })
+      UUIDComponent.join({ entitySourceID: ownerID, entityID: targetName as EntityID })
     )
   }
 })

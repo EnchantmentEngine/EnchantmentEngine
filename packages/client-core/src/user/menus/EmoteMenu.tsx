@@ -237,7 +237,7 @@ const EmoteMenu = (): JSX.Element => {
         clipName: stateName,
         loop: false,
         layer: 0,
-        entityUUID: UUIDComponent.getUUID(selfAvatarEntity)
+        entityUUID: UUIDComponent.get(selfAvatarEntity)
       })
     )
     ModalState.closeModal()

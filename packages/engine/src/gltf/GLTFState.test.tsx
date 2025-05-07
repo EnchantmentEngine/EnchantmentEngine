@@ -61,7 +61,7 @@ describe.skip('GLTFState', () => {
   // })
   // it('should load a GLTF file with a single node', async () => {
   //   const nodeUUIDPair = { entitySourceID: 'root', entityID: 'node' } as EntityUUIDPair
-  //   const nodeUUID = UUIDComponent.concatenateUUID(nodeUUIDPair)
+  //   const nodeUUID = UUIDComponent.join(nodeUUIDPair)
   //   const gltf: GLTF.IGLTF = {
   //     asset: {
   //       version: '2.0'

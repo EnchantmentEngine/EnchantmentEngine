@@ -104,7 +104,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   useEffect(() => {
     if (isSpectating || !userAvatar) return
 
-    const rootUUID = UUIDComponent.getUUID(sceneEntity)
+    const rootUUID = UUIDComponent.get(sceneEntity)
     const avatarSpawnPose = getRandomSpawnPoint(userID)
     const user = getState(AuthState).user
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */

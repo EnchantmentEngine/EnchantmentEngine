@@ -71,12 +71,12 @@ const mountCallbackName = 'mountEntity'
 const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
   if (avatarEntity === UndefinedEntity || mountEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
   const mountedEntities = getState(MountPointState)
-  if (UUIDComponent.getUUID(mountEntity) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
+  if (UUIDComponent.get(mountEntity) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
 
-  const avatarUUID = UUIDComponent.getUUID(avatarEntity)
+  const avatarUUID = UUIDComponent.get(avatarEntity)
   const mountPoint = getOptionalComponent(mountEntity, MountPointComponent)
   if (!mountPoint || mountPoint.type !== MountPoint.seat) return
-  const mountPointUUID = UUIDComponent.getUUID(mountEntity)
+  const mountPointUUID = UUIDComponent.get(mountEntity)
 
   //check if we're already sitting or if the seat is occupied
   if (
@@ -102,8 +102,8 @@ const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
   dispatchAction(
     MountPointActions.mountInteraction({
       mounted: true,
-      mountedEntity: UUIDComponent.getUUID(avatarEntity),
-      targetMount: UUIDComponent.getUUID(mountEntity)
+      mountedEntity: UUIDComponent.get(avatarEntity),
+      targetMount: UUIDComponent.get(mountEntity)
     })
   )
 }
@@ -116,7 +116,7 @@ const unmountEntity = (entity: Entity) => {
       animationAsset: preloadedAnimations.emotes,
       clipName: emoteAnimations.seated,
       needsSkip: true,
-      entityUUID: UUIDComponent.getUUID(entity)
+      entityUUID: UUIDComponent.get(entity)
     })
   )
 
@@ -126,8 +126,8 @@ const unmountEntity = (entity: Entity) => {
   dispatchAction(
     MountPointActions.mountInteraction({
       mounted: false,
-      mountedEntity: UUIDComponent.getUUID(entity),
-      targetMount: UUIDComponent.getUUID(sittingComponent.mountPointEntity)
+      mountedEntity: UUIDComponent.get(entity),
+      targetMount: UUIDComponent.get(sittingComponent.mountPointEntity)
     })
   )
   const mountTransform = getComponent(sittingComponent.mountPointEntity, TransformComponent)
@@ -167,7 +167,7 @@ export const MountPointComponent = defineComponent({
       const interactableComponent = getComponent(entity, InteractableComponent)
       if (interactableComponent) {
         interactableComponent.uiVisibilityOverride =
-          UUIDComponent.getUUID(entity) in mountedEntities.mountsToMountedEntities.value
+          UUIDComponent.get(entity) in mountedEntities.mountsToMountedEntities.value
             ? XRUIVisibilityOverride.off
             : XRUIVisibilityOverride.none
       }

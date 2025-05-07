@@ -58,9 +58,7 @@ export const normalizeAnimationClips = (gltfEntity: Entity) => {
       const track = clip.tracks[i]
       const trackSplitted = track.name.lastIndexOf('.')
       const rigNodeName = track.name.slice(0, trackSplitted)
-      const rigNodeEntity = UUIDComponent.getEntityByUUID(
-        (UUIDComponent.getUUID(gltfEntity) + rigNodeName) as EntityUUID
-      )
+      const rigNodeEntity = UUIDComponent.getEntityByUUID((UUIDComponent.get(gltfEntity) + rigNodeName) as EntityUUID)
       if (!rigNodeEntity) continue
 
       // Store rotations of rest-pose
@@ -108,8 +106,7 @@ export const retargetAnimationClips = (sourceAnimationEntity) => {
     const newClip = new AnimationClip(clip.name, clip.duration, [], clip.blendMode)
     for (const track of clip.tracks) {
       const sourceEntity = UUIDComponent.getEntityByUUID(
-        (UUIDComponent.getUUID(sourceAnimationEntity) +
-          track.name.substring(0, track.name.lastIndexOf('.'))) as EntityUUID
+        (UUIDComponent.get(sourceAnimationEntity) + track.name.substring(0, track.name.lastIndexOf('.'))) as EntityUUID
       )
       if (!sourceEntity) continue
       const vrmBone = sourceRigMap[sourceEntity] as VRMHumanBoneName

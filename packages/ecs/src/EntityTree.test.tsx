@@ -326,7 +326,7 @@ describe('EntityTreeComponent', () => {
       assert.equal(node.parentEntity, rootEntity)
 
       assert.equal(getComponent(entity, UUIDComponent), testUUID)
-      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(testUUID)), entity)
+      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.join(testUUID)), entity)
 
       const parentNode = getComponent(node.parentEntity!, EntityTreeComponent)
       assert.equal(parentNode.children.length, 1)
@@ -410,8 +410,8 @@ describe('EntityTreeComponent', () => {
       removeComponent(entity, EntityTreeComponent)
 
       // UUIDComponent should remain
-      assert.equal(UUIDComponent.getUUID(entity), UUIDComponent.concatenateUUID(uuid))
-      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(uuid)), entity)
+      assert.equal(UUIDComponent.get(entity), UUIDComponent.join(uuid))
+      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.join(uuid)), entity)
 
       const parentNode = getComponent(rootEntity, EntityTreeComponent)
       assert.equal(parentNode.children.length, 0)

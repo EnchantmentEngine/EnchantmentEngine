@@ -75,7 +75,7 @@ describe('AvatarIKSystem', () => {
 
   it('should solve IK such that every tip joint world position is at the ik target', async () => {
     const avatarUuidPair = { entitySourceID: 'user-id', entityID: 'avatar' } as EntityUUIDPair
-    const avatarUuid = UUIDComponent.concatenateUUID(avatarUuidPair)
+    const avatarUuid = UUIDComponent.join(avatarUuidPair)
     let avatarEntity = UndefinedEntity as Entity
     avatarEntity = await mockAnimatedAvatar()
     setComponent(avatarEntity, UUIDComponent, avatarUuidPair)
@@ -159,23 +159,23 @@ describe('AvatarIKSystem', () => {
     applyIncomingActions()
 
     // Create the concatenated UUIDs
-    const rightHandUuid = UUIDComponent.concatenateUUID({
+    const rightHandUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
       entityID: rightHandId
     })
-    const leftHandUuid = UUIDComponent.concatenateUUID({
+    const leftHandUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
       entityID: leftHandId
     })
-    const leftFootUuid = UUIDComponent.concatenateUUID({
+    const leftFootUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
       entityID: leftFootId
     })
-    const rightFootUuid = UUIDComponent.concatenateUUID({
+    const rightFootUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
       entityID: rightFootId
     })
-    const headUuid = UUIDComponent.concatenateUUID({ entitySourceID: avatarUuidPair.entitySourceID, entityID: headId })
+    const headUuid = UUIDComponent.join({ entitySourceID: avatarUuidPair.entitySourceID, entityID: headId })
 
     await vi.waitUntil(() => {
       return (

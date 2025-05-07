@@ -33,7 +33,7 @@ export const ComponentDropdownState = defineState({
   }),
 
   addOrUpdateEntity: (entity: Entity, componentName: string, value: boolean, updateIfExists: boolean = true) => {
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = UUIDComponent.get(entity)
     if (!entityUUID) return
 
     const componentStates = getMutableState(ComponentDropdownState).componentStates
@@ -72,7 +72,7 @@ export const ComponentDropdownState = defineState({
 
   removeComponentEntry: (entities: Entity[], componentName: string) => {
     for (const entity of entities) {
-      const entityUUID = UUIDComponent.getUUID(entity)
+      const entityUUID = UUIDComponent.get(entity)
       if (!entityUUID) continue
 
       const componentStates = getMutableState(ComponentDropdownState).componentStates

@@ -137,7 +137,7 @@ describe('MountPointComponent.ts', async () => {
 
         dispatchAction(
           AvatarNetworkAction.spawn({
-            parentUUID: UUIDComponent.getUUID(sceneEntity),
+            parentUUID: UUIDComponent.get(sceneEntity),
             position: new Vector3(),
             rotation: new Quaternion(),
             entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
@@ -228,7 +228,7 @@ describe('MountPointComponent.ts', async () => {
 
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.getUUID(sceneEntity),
+          parentUUID: UUIDComponent.get(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
           entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
@@ -268,7 +268,7 @@ describe('MountPointComponent.ts', async () => {
       })
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.getUUID(sceneEntity),
+          parentUUID: UUIDComponent.get(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
           entityID: getComponent(avatarTestEntity2, UUIDComponent).entityID,
@@ -328,8 +328,8 @@ describe('MountPointComponent.ts', async () => {
 
     it('Should dispatch the mount interaction action with the mounted entity and the target mount', () => {
       MountPointComponent.mountEntity(avatarTestEntity, mountPointTestEntity)
-      const avatarTestEntityUUID = UUIDComponent.getUUID(avatarTestEntity)
-      const mountPointTestEntityUUID = UUIDComponent.getUUID(mountPointTestEntity)
+      const avatarTestEntityUUID = UUIDComponent.get(avatarTestEntity)
+      const mountPointTestEntityUUID = UUIDComponent.get(mountPointTestEntity)
       const setMountInteraction = HyperFlux.store.actions.incoming[1].type === MountPointActions.mountInteraction.type
       // Check if action is dispatched
       assert.equal(setMountInteraction, true)
@@ -387,7 +387,7 @@ describe('MountPointComponent.ts', async () => {
 
       dispatchAction(
         AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.getUUID(sceneEntity),
+          parentUUID: UUIDComponent.get(sceneEntity),
           position: new Vector3(),
           rotation: new Quaternion(),
           entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,

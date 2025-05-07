@@ -74,7 +74,7 @@ describe('CameraSystem', () => {
 
       dispatchAction(
         CameraActions.spawnCamera({
-          parentUUID: UUIDComponent.getUUID(getState(ReferenceSpaceState).viewerEntity),
+          parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).viewerEntity),
           entityID: cameraUUID.entityID,
           entitySourceID: cameraUUID.entitySourceID,
           ownerID: network.hostUserID!,
@@ -84,7 +84,7 @@ describe('CameraSystem', () => {
       )
       applyIncomingActions()
       await vi.waitFor(() => {
-        const cameraEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(cameraUUID))
+        const cameraEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(cameraUUID))
         assert.ok(cameraEntity, "The spawnCamera Action didn't create an entity.")
         assert.ok(
           hasComponent(cameraEntity, CameraComponent),

@@ -38,7 +38,7 @@ export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () =>
     iterateEntityNode(rootEntity, (entity) => {
       if (entity === rootEntity) return
       if (!hasComponent(entity, UUIDComponent)) return
-      const uuid = UUIDComponent.getUUID(entity)
+      const uuid = UUIDComponent.get(entity)
       if (!deltaState[uuid]) return
       const nodeDelta = SceneDeltaState.getDelta(entity)
       if (!nodeDelta) return

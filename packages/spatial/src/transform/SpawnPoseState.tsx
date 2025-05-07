@@ -47,7 +47,7 @@ export const SpawnPoseState = defineState({
   receptors: {
     onSpawnObject: SpawnObjectActions.spawnObject.receive((action) => {
       getMutableState(SpawnPoseState)[
-        UUIDComponent.concatenateUUID({
+        UUIDComponent.join({
           entitySourceID: action.entitySourceID ?? action.parentUUID,
           entityID: action.entityID
         })

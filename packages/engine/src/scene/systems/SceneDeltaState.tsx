@@ -57,7 +57,7 @@ export const SceneDeltaState = defineState({
   name: 'SceneDeltaState',
   initial: {} as SceneDeltaRegistry,
   getDelta: (entity: Entity) => {
-    const uuid = UUIDComponent.getUUID(entity)
+    const uuid = UUIDComponent.get(entity)
     return getState(SceneDeltaState)[uuid] as SceneDeltaEntry<any>
   },
   setDelta<C extends Component>(entity: Entity, component: C, delta: Partial<SerializedComponentType<C>>) {
@@ -65,14 +65,14 @@ export const SceneDeltaState = defineState({
     if (!hasComponent(entity, UUIDComponent)) return
     if (!getAncestorWithComponents(entity, [GLTFComponent])) return
     const deltaState = getMutableState(SceneDeltaState)
-    const uuid = UUIDComponent.getUUID(entity)
+    const uuid = UUIDComponent.get(entity)
     if (!deltaState[uuid].value) deltaState[uuid].set({} as SceneDeltaEntry<C>)
     const componentDelta = deltaState[uuid].get(NO_PROXY_STEALTH) as SceneDeltaEntry<C>
     componentDelta[component.jsonID] = { ...componentDelta[component.jsonID], ...delta }
   },
   removeDelta: (entity: Entity) => {
     const deltaState = getMutableState(SceneDeltaState)
-    const uuid = UUIDComponent.getUUID(entity)
+    const uuid = UUIDComponent.get(entity)
     if (!deltaState[uuid].value) return
     deltaState[uuid].set(none)
   },

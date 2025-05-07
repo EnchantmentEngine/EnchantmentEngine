@@ -148,8 +148,8 @@ describe('definePrefab', () => {
       entitySourceID: 'spawned-source' as SourceID,
       entityID: 'spawned-entity' as EntityID
     } as EntityUUIDPair
-    const entityUUID = UUIDComponent.concatenateUUID(entityUUIDPair)
-    const parentUUID = UUIDComponent.getUUID(sceneEntity)
+    const entityUUID = UUIDComponent.join(entityUUIDPair)
+    const parentUUID = UUIDComponent.get(sceneEntity)
 
     expect(() => {
       TestPrefabComponent.spawn({

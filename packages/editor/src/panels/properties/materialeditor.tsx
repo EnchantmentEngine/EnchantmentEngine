@@ -260,7 +260,7 @@ export function MaterialEditor(props: { entity: Entity }) {
 
       {prototype && (
         <ParameterInput
-          entity={UUIDComponent.getUUID(entity)}
+          entity={UUIDComponent.get(entity)}
           values={materialParameters.get(NO_PROXY)}
           onChange={(key) => async (value) => {
             const property = await shouldLoadTexture(value, key, prototype.arguments)
@@ -298,7 +298,7 @@ export function MaterialEditor(props: { entity: Entity }) {
       {hasComponent(entity, MaterialPlugins[selectedPlugin.value]) && (
         <div className={styles.contentContainer}>
           <ParameterInput
-            entity={UUIDComponent.getUUID(entity)}
+            entity={UUIDComponent.get(entity)}
             values={pluginValues.value}
             onChange={(key) => async (value) => {
               const property = await shouldLoadTexture(value, key, pluginParameters)

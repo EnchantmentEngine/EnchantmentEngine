@@ -44,7 +44,7 @@ export const getSpline = makeFunctionNodeDefinition({
     spline: (_) => {
       const choices = splineQuery().map((entity) => ({
         text: getComponent(entity, NameComponent),
-        value: UUIDComponent.getUUID(entity)
+        value: UUIDComponent.get(entity)
       }))
       choices.unshift({ text: 'none', value: '' as EntityUUID })
       return {

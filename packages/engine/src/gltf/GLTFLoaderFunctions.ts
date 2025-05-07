@@ -1533,7 +1533,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   //apply deltas if they exist in state
   if (!hasComponent(options.entity, UUIDComponent)) return nodeEntity
-  const uuid = UUIDComponent.getUUID(options.entity)
+  const uuid = UUIDComponent.get(options.entity)
 
   const deltas = getState(SceneDeltaState)?.[uuid]
   if (deltas) {

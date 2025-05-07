@@ -50,10 +50,10 @@ import { SourceComponent } from '../components/SourceComponent'
 const SourcedEntityReactor = () => {
   const entity = useEntityContext()
   const parentEntity = useComponent(entity, EntityTreeComponent).parentEntity.value
-  const parentUUID = UUIDComponent.useUUID(parentEntity)
+  const parentUUID = UUIDComponent.use(parentEntity)
 
   useEffect(() => {
-    const entityUUID = UUIDComponent.getUUID(entity)
+    const entityUUID = UUIDComponent.get(entity)
     return () => {
       dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))
     }

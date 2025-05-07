@@ -69,11 +69,11 @@ describe('moveAvatar function tests', () => {
     dispatchAction(
       AvatarNetworkAction.spawn({
         $peer: Engine.instance.store.peerID,
-        parentUUID: UUIDComponent.getUUID(sceneEntity),
+        parentUUID: UUIDComponent.get(sceneEntity),
         position: new Vector3(),
         rotation: new Quaternion(),
-        entityID: AvatarComponent.getSelfAvatarUUIDPair().entityID,
-        entitySourceID: AvatarComponent.getSelfAvatarUUIDPair().entitySourceID,
+        entityID: AvatarComponent.entityID,
+        entitySourceID: AvatarComponent.getSelfSourceID(),
         avatarURL: avatarUrl,
         name: 'TestAvatar'
       })

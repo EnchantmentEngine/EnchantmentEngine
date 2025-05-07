@@ -128,7 +128,7 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     entitySourceID: ('basic-' + uuid.entitySourceID) as SourceID,
     entityID: uuid.entityID
   }
-  const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(basicUuid))
+  const existingMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(basicUuid))
   if (shouldMakeBasic) {
     if (existingMaterialEntity) {
       removeEntity(existingMaterialEntity)
@@ -155,9 +155,9 @@ export const convertMaterials = (material: Entity, forceBasicMaterials: boolean)
     setComponent(newMaterialEntity, NameComponent, 'basic-' + getComponent(material, NameComponent))
     setMaterial(newMaterialEntity)
   } else if (!forceBasicMaterials) {
-    const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.concatenateUUID(uuid))
+    const basicMaterialEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(uuid))
     if (!basicMaterialEntity) return
-    const nonBasicUUID = UUIDComponent.concatenateUUID({
+    const nonBasicUUID = UUIDComponent.join({
       entitySourceID: uuid.entitySourceID.slice(6) as SourceID,
       entityID: uuid.entityID
     })

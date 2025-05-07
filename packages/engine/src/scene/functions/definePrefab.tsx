@@ -125,7 +125,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     receptors: {
       onSpawn: $Actions.spawn.receive((action) => {
         getMutableState($State)[
-          UUIDComponent.concatenateUUID({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+          UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
         ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]])))
       }),
       onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
@@ -235,7 +235,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
           })
         )
         return () => {
-          const entityUUID = UUIDComponent.concatenateUUID(entityUUIDPair)
+          const entityUUID = UUIDComponent.join(entityUUIDPair)
           dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))
         }
       }, [])

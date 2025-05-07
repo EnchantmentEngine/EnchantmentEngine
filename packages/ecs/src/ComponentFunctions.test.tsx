@@ -1183,7 +1183,7 @@ describe('ComponentFunctions Hooks', async () => {
         // Call the hook to set the data
         const data = useComponent(props.entity, component)
         useEffect(() => {
-          result = UUIDComponent.concatenateUUID(data.value)
+          result = UUIDComponent.join(data.value)
           ++counter
         }, [data])
         return null
@@ -1196,9 +1196,9 @@ describe('ComponentFunctions Hooks', async () => {
       await act(() => rerender(tag))
       assert.equal(counter, 1, `The reactor has run an incorrect number of times: ${counter}`)
       assert.notEqual(result, undefined, "The result data didn't get initialized")
-      assert.equal(result, UUIDComponent.concatenateUUID(TestUUID1))
+      assert.equal(result, UUIDComponent.join(TestUUID1))
       await act(() => rerender(<Reactor entity={twoEntity} />))
-      assert.equal(result, UUIDComponent.concatenateUUID(TestUUID2))
+      assert.equal(result, UUIDComponent.join(TestUUID2))
 
       // Terminate the Reactor and Isolated Test
       unmount()
