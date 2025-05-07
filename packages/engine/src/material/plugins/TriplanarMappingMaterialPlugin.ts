@@ -31,16 +31,22 @@ import { defineMaterialPlugin } from '../defineMaterialPlugin'
 // Triplanar shader chunks
 const triplanarVertexPars = `
 varying vec3 vPosition;
+varying vec3 vWorldPosition;
+varying vec3 vWorldNormal;
 // We'll use the existing vNormal from Three.js
 `
 
 const triplanarVertex = `
 vPosition = position;
+vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
 // vNormal is already set by Three.js
 `
 
 const triplanarFragmentPars = `
 varying vec3 vPosition;
+varying vec3 vWorldPosition;
+varying vec3 vWorldNormal;
 // vNormal is already defined by Three.js
 
 uniform sampler2D diffuseMap1;
@@ -57,16 +63,22 @@ uniform vec2 texScale3;
 uniform float blendSharpness;
 uniform float normalScale;
 
-// Triplanar texture mapping function
+// Triplanar texture mapping function with distance compensation
 vec4 triplanarMapping(vec3 pos, vec3 normal, sampler2D tex, vec2 texScale) {
   // Absolute value of normal components for blending weights
   vec3 blending = pow(abs(normal), vec3(blendSharpness));
   blending = blending / (blending.x + blending.y + blending.z);
-
+  
+  // Calculate consistent texture coordinates regardless of world position
+  // This approach maintains consistent scale across the entire terrain
+  vec2 uvX = pos.yz * texScale;
+  vec2 uvY = pos.xz * texScale;
+  vec2 uvZ = pos.xy * texScale;
+  
   // Sample texture from three directions
-  vec4 xaxis = texture2D(tex, pos.yz * texScale);
-  vec4 yaxis = texture2D(tex, pos.xz * texScale);
-  vec4 zaxis = texture2D(tex, pos.xy * texScale);
+  vec4 xaxis = texture2D(tex, uvX);
+  vec4 yaxis = texture2D(tex, uvY);
+  vec4 zaxis = texture2D(tex, uvZ);
 
   // Blend samples based on normal
   return xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
@@ -74,18 +86,27 @@ vec4 triplanarMapping(vec3 pos, vec3 normal, sampler2D tex, vec2 texScale) {
 `
 
 const triplanarFragment = `
-// Calculate blend weights based on slope
-float slope = 1.0 - vNormal.y; // 0 = flat, 1 = vertical
+// Use the world normal we computed in vertex shader
+vec3 worldNormal = normalize(vWorldNormal);
+
+// Calculate height factor (Y component of world position)
+float height = vWorldPosition.y;
+float heightFactor = smoothstep(-10.0, 10.0, height); // Adjust range based on your terrain scale
+
+// Calculate slope factor (0 = flat, 1 = vertical)
+float slope = 1.0 - worldNormal.y;
 float slopeFactor = smoothstep(0.0, 0.8, slope);
 
-// Sample textures using triplanar mapping
-vec4 diffuse1 = triplanarMapping(vPosition, vNormal, diffuseMap1, texScale1);
-vec4 diffuse2 = triplanarMapping(vPosition, vNormal, diffuseMap2, texScale2);
-vec4 diffuse3 = triplanarMapping(vPosition, vNormal, diffuseMap3, texScale3);
+// Sample textures using triplanar mapping with world position
+vec4 diffuse1 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap1, texScale1); // Valleys
+vec4 diffuse2 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap2, texScale2); // Slopes
+vec4 diffuse3 = triplanarMapping(vWorldPosition, worldNormal, diffuseMap3, texScale3); // Peaks
 
-// Blend textures based on slope
-vec4 finalDiffuse = mix(diffuse1, diffuse2, slopeFactor);
-finalDiffuse = mix(finalDiffuse, diffuse3, step(0.95, slopeFactor));
+// First blend between valley (diffuse1) and slope (diffuse2) based on slope
+vec4 valleyAndSlope = mix(diffuse1, diffuse2, slopeFactor);
+
+// Then blend with peaks (diffuse3) based on height
+vec4 finalDiffuse = mix(valleyAndSlope, diffuse3, heightFactor);
 
 // Apply to material
 diffuseColor *= finalDiffuse;
