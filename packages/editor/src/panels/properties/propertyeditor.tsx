@@ -152,7 +152,7 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
       {hasMaterial && (
         <ErrorBoundary fallback={<div>Error occured displaying material properties</div>}>
           <Suspense>
-            <MaterialEditor materialUUID={entityUUID} />
+            <MaterialEditor entity={entity} />
           </Suspense>
         </ErrorBoundary>
       )}

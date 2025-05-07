@@ -28,7 +28,7 @@ import {
   createEntity,
   createInitialComponentValue,
   destroyEngine,
-  EntityUUID,
+  Entity,
   getComponent,
   hasComponent,
   removeEntity,
@@ -47,10 +47,10 @@ import {
 } from './TransparencyDitheringComponent'
 
 type TransparencyDitheringRootComponentData = {
-  materials: EntityUUID[]
+  materials: Entity[]
 }
 const TransparencyDitheringRootComponentDefaults: TransparencyDitheringRootComponentData = {
-  materials: [] as EntityUUID[]
+  materials: [] as Entity[]
 }
 
 function assertTransparencyDitheringRootComponentEq(

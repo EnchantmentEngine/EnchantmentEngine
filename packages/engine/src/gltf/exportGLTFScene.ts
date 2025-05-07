@@ -40,7 +40,7 @@ import {
   Layers,
   serializeComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity, SourceID } from '@ir-engine/ecs/src/Entity'
 import { destroy, hookstate, startReactor, State, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -86,7 +86,6 @@ import {
 import { baseName, pathJoin, relativePathTo } from '../assets/functions/miscUtils'
 import { STATIC_ASSET_REGEX } from '../assets/functions/pathResolver'
 import { AnimationComponent, getEntityUUIDFromTrack } from '../avatar/components/AnimationComponent'
-import { SourceComponent } from '../scene/components/SourceComponent'
 import { handleScenePaths } from '../scene/functions/GLTFConversion'
 import { GLTFComponent } from './GLTFComponent'
 import {
@@ -207,7 +206,7 @@ export interface GLTFSceneExportExtension {
 
 type GLTFSceneExportContext = {
   rootEntity: Entity
-  sourceID: string
+  sourceID: SourceID
   buffers: ArrayBuffer[]
   extensionsUsed: Set<string>
   exportExtensions: GLTFSceneExportExtension[]
@@ -393,9 +392,7 @@ export async function exportGLTFScene(
 
   const context: GLTFSceneExportContext = {
     rootEntity: entity,
-    sourceID: hasComponent(entity, GLTFComponent)
-      ? GLTFComponent.getInstanceID(entity)
-      : getComponent(entity, SourceComponent),
+    sourceID: GLTFComponent.getSourceID(entity),
     buffers: [] as ArrayBuffer[],
     extensionsUsed: new Set<string>(),
     exportExtensions,
@@ -476,8 +473,7 @@ export async function exportGLTFScene(
 }
 
 const awaitMaterial = (materialEntity: Entity, context: GLTFSceneExportContext) => {
-  const source = getOptionalComponent(materialEntity, SourceComponent)
-  if (source !== context.sourceID) return Promise.resolve(-1)
+  if (getComponent(materialEntity, UUIDComponent).entitySourceID !== context.sourceID) return Promise.resolve(-1)
   return new Promise<number>((resolve) => {
     if (typeof context.materialPromises.value[materialEntity] === 'number')
       return resolve(context.materialPromises.value[materialEntity])
@@ -580,9 +576,8 @@ const exportMesh = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneEx
 
   const materialInstances = getOptionalComponent(entity, MaterialInstanceComponent)
   if (materialInstances) {
-    for (let i = 0; i < materialInstances.uuid.length; i++) {
-      const materialInstance = materialInstances.uuid[i]
-      const materialEntity = UUIDComponent.getEntityByUUID(materialInstance, layer)
+    for (let i = 0; i < materialInstances.entities.length; i++) {
+      const materialEntity = materialInstances.entities[i]
       materialPromises.push(
         new Promise<void>((resolve) => {
           awaitMaterial(materialEntity, context).then((materialIndex) => {
@@ -893,10 +888,14 @@ const exportMaterial = async (
   const cache = context.cache.materials
   if (cache.has(material)) return cache.get(material)!
 
-  const materialEntityUUID = material.uuid as EntityUUID
+  const materialEntityUUID = getComponent(entity, UUIDComponent)
 
   //do not export fallback material
-  if (materialEntityUUID === MaterialStateComponent.fallbackMaterialUUID) return null
+  if (
+    materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
+    materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
+  )
+    return null
 
   const materialDef: GLTF.IMaterial = {}
 
@@ -1167,7 +1166,7 @@ const exportEntity = async (
   for (const extension of context.exportExtensions) extension.beforeNode?.(entity)
 
   //ignore entities with no source
-  if (!hasComponent(entity, SourceComponent)) return
+  if (!hasComponent(entity, UUIDComponent)) return
   //ignore material entities as they get exported in exportMesh
   const materialComponent = hasComponent(entity, MaterialStateComponent)
   if (materialComponent) {
@@ -1190,7 +1189,7 @@ const exportEntity = async (
   const childrenIndicies = [] as number[]
   if (children && children.length > 0) {
     for (const child of children) {
-      if (getComponent(child, SourceComponent) !== context.sourceID) continue
+      if (getComponent(child, UUIDComponent).entitySourceID !== context.sourceID) continue
       const childPromise = new Promise<void>((resolve) => {
         exportEntity(child, gltf, context).then((childIndex) => {
           if (typeof childIndex === 'number') childrenIndicies.push(childIndex)
@@ -1276,7 +1275,10 @@ const _trsRotation = new Quaternion()
 const _trsScale = new Vector3()
 
 const exportAnimations = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneExportContext) => {
-  if (!hasComponent(entity, AnimationComponent) || getOptionalComponent(entity, SourceComponent) !== context.sourceID)
+  if (
+    !hasComponent(entity, AnimationComponent) ||
+    getComponent(entity, UUIDComponent).entitySourceID !== context.sourceID
+  )
     return
 
   const animationsDef = [] as GLTF.IAnimation[]

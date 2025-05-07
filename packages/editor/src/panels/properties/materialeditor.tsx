@@ -24,11 +24,10 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  EntityUUID,
+  Entity,
   getComponent,
   getOptionalComponent,
   hasComponent,
-  Layers,
   removeComponent,
   setComponent,
   useComponent,
@@ -71,9 +70,9 @@ const toBlobs = (thumbnails: Record<string, ThumbnailData>): Record<string, stri
   return blobs
 }
 
-export function MaterialEditor(props: { materialUUID: EntityUUID }) {
+export function MaterialEditor(props: { entity: Entity }) {
   const { t } = useTranslation()
-  const entity = UUIDComponent.useEntityByUUID(props.materialUUID, Layers.Authoring)
+  const entity = props.entity
   const materialComponent = useComponent(entity, MaterialStateComponent)
   const material = materialComponent.material.get(NO_PROXY) as Material
 
@@ -228,7 +227,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
       {selectedPlugin.value && currentPlugin && (
         <>
           <ParameterInput
-            entity={props.materialUUID}
+            entity={UUIDComponent.get(entity)}
             values={currentPlugin}
             onChange={(key) => commitProperty(MaterialPluginComponents[selectedPlugin.value], key)}
             defaults={generateDefaults(currentPlugin)}

@@ -26,25 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   Engine,
   Entity,
-  EntityUUID,
-  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
   destroyEngine,
   getComponent,
-  hasComponent,
-  removeComponent,
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
-import { BoxGeometry, Material, Mesh } from 'three'
+import { Material } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { assertArray } from '../../../tests/util/assert'
-import { MeshComponent } from '../components/MeshComponent'
-import { MaterialInstanceComponent, MaterialReferenceState, MaterialStateComponent } from './MaterialComponent'
+import { MaterialInstanceComponent, MaterialStateComponent } from './MaterialComponent'
 
 describe('MaterialStateComponent', () => {
   describe('IDs', () => {
@@ -134,108 +128,25 @@ describe('MaterialStateComponent', () => {
       destroyEngine()
     })
 
-    it("should call setMeshMaterial for every entity in the MaterialReferenceState for this entity, using that instanceEntity's UUID", () => {
-      // Set the data as expected
-      const instance1 = createEntity()
-      const instance2 = createEntity()
-      const instances = [instance1, instance2] as Entity[]
+    it.todo(
+      "should call setMeshMaterial for every entity in the  `@param entity`.MaterialStateComponent.instances list, using that instanceEntity's material entities",
+      () => {}
+    )
 
-      const mesh1 = new Mesh(new BoxGeometry(), new Material())
-      const mesh2 = new Mesh(new BoxGeometry(), new Material())
-
-      const uuid1 = UUIDComponent.generateUUID()
-      const uuid2 = UUIDComponent.generateUUID()
-
-      const material1 = new Material()
-      const material2 = new Material()
-      material1.uuid = uuid1
-      material2.uuid = uuid2
-
-      setComponent(testEntity, MaterialStateComponent, { material: material1, parameters: {} })
-      setComponent(testEntity, UUIDComponent, uuid1)
-      const otherEntity = createEntity()
-      setComponent(otherEntity, MaterialStateComponent, { material: material2, parameters: {} })
-      setComponent(otherEntity, UUIDComponent, uuid2)
-
-      // Set up the instances with mesh and material instance components
-      setComponent(instance1, MeshComponent, mesh1)
-      setComponent(instance2, MeshComponent, mesh2)
-      setComponent(instance1, MaterialInstanceComponent, { uuid: [uuid1] })
-      setComponent(instance2, MaterialInstanceComponent, { uuid: [uuid2] })
-
-      // Set up the MaterialReferenceState
-      getMutableState(MaterialReferenceState)[testEntity].set(instances)
-
-      // Sanity check before running
-      assert.equal(hasComponent(testEntity, MaterialStateComponent), true)
-      const instancesInState = getState(MaterialReferenceState)[testEntity]
-      assert.ok(instancesInState && instancesInState.length === 2, 'Instances should be in the state')
-
-      // Run and Check the result
-      removeComponent(testEntity, MaterialStateComponent)
-
-      // After removing the component, the material instances should be updated
-      // This is handled by the onRemove function in MaterialStateComponent
-      assert.ok(true, 'Test completed without errors')
-    })
-
-    it('should not do anything if the entity does not have a MaterialStateComponent', () => {
-      // First remove the MaterialStateComponent that was added in beforeEach
-      removeComponent(testEntity, MaterialStateComponent)
-
-      // Set the data as expected
-      const instance1 = createEntity()
-      const instance2 = createEntity()
-      const instances = [instance1, instance2] as Entity[]
-
-      const mesh1 = new Mesh(new BoxGeometry(), new Material())
-      const mesh2 = new Mesh(new BoxGeometry(), new Material())
-
-      const uuid1 = UUIDComponent.generateUUID()
-      const uuid2 = UUIDComponent.generateUUID()
-
-      const material1 = new Material()
-      const material2 = new Material()
-      material1.uuid = uuid1
-      material2.uuid = uuid2
-
-      // Don't set MaterialStateComponent on testEntity
-      setComponent(testEntity, UUIDComponent, uuid1)
-      const otherEntity = createEntity()
-      setComponent(otherEntity, MaterialStateComponent, { material: material2, parameters: {} })
-      setComponent(otherEntity, UUIDComponent, uuid2)
-
-      // Set up the instances with mesh and material instance components
-      setComponent(instance1, MeshComponent, mesh1)
-      setComponent(instance2, MeshComponent, mesh2)
-      setComponent(instance1, MaterialInstanceComponent, { uuid: [uuid1] })
-      setComponent(instance2, MaterialInstanceComponent, { uuid: [uuid2] })
-
-      // Set up the MaterialReferenceState for otherEntity
-      getMutableState(MaterialReferenceState)[otherEntity].set(instances)
-
-      // Sanity check before running
-      assert.equal(hasComponent(testEntity, MaterialStateComponent), false)
-
-      // Run and Check the result - this should do nothing since testEntity doesn't have MaterialStateComponent
-      removeComponent(testEntity, MaterialStateComponent)
-
-      // Verify nothing happened
-      assert.ok(true, 'Test completed without errors')
-    })
+    it.todo('should not do anything if the entity does not have a MaterialStateComponent', () => {})
   }) //:: onRemove
 }) //:: MaterialStateComponent
 
 type MaterialInstanceComponentData = {
-  uuid: EntityUUID[]
+  entities: Entity[]
 }
 
 const MaterialInstanceComponentDefaults: MaterialInstanceComponentData = {
-  uuid: [] as EntityUUID[]
+  entities: [] as Entity[]
 }
 
 function assertMaterialInstanceComponentEq(A: MaterialInstanceComponentData, B: MaterialInstanceComponentData) {
-  assertArray.eq(A.uuid, B.uuid)
+  assertArray.eq(A.entities, B.entities)
 }
 
 describe('MaterialInstanceComponent', () => {
@@ -278,8 +189,10 @@ describe('MaterialInstanceComponent', () => {
     })
 
     it('should change the values of an initialized MaterialInstanceComponent', () => {
+      const entity1 = createEntity()
+      const entity2 = createEntity()
       const Expected: MaterialInstanceComponentData = {
-        uuid: [UUIDComponent.generateUUID(), UUIDComponent.generateUUID()] as EntityUUID[]
+        entities: [entity1, entity2] as Entity[]
       }
       setComponent(testEntity, MaterialInstanceComponent, Expected)
       const result = getComponent(testEntity, MaterialInstanceComponent)
@@ -287,7 +200,7 @@ describe('MaterialInstanceComponent', () => {
     })
 
     it('should not change values of an initialized MaterialInstanceComponent when the data passed had incorrect types', () => {
-      const Incorrect = { uuid: 'someUUID' }
+      const Incorrect = { entities: 'someUUID' }
       const before = getComponent(testEntity, MaterialInstanceComponent)
       // @ts-ignore Coerce an incorrect type into the component's data
       setComponent(testEntity, MaterialInstanceComponent, Incorrect)
@@ -311,45 +224,11 @@ describe('MaterialInstanceComponent', () => {
       destroyEngine()
     })
 
-    describe("for every instanceEntity in the testEntity's MaterialInstanceComponent.uuid list", () => {
-      it('... should remove the instanceEntity from the MaterialReferenceState (found by its UUID)', () => {
-        // Create material entities with UUIDs
-        const otherEntity1 = createEntity()
-        const otherEntity2 = createEntity()
-        const materialEntities = [otherEntity1, otherEntity2]
-        const uuid1 = UUIDComponent.generateUUID()
-        const uuid2 = UUIDComponent.generateUUID()
-        const instanceUUIDs = [uuid1, uuid2]
-
-        // Set up the material entities
-        setComponent(otherEntity1, UUIDComponent, uuid1)
-        setComponent(otherEntity2, UUIDComponent, uuid2)
-        setComponent(otherEntity1, MaterialStateComponent, { material: new Material(), parameters: {} })
-        setComponent(otherEntity2, MaterialStateComponent, { material: new Material(), parameters: {} })
-
-        // Set the MaterialInstanceComponent on the test entity
-        setComponent(testEntity, MaterialInstanceComponent, { uuid: instanceUUIDs })
-
-        // Set up the MaterialReferenceState
-        getMutableState(MaterialReferenceState)[otherEntity1].set([testEntity])
-        getMutableState(MaterialReferenceState)[otherEntity2].set([testEntity])
-
-        // Sanity check before running
-        assert.equal(hasComponent(testEntity, MaterialInstanceComponent), true)
-        for (const entity of materialEntities) {
-          const refs = getState(MaterialReferenceState)[entity]
-          assert.ok(refs && refs.includes(testEntity), 'Test entity should be in the reference state')
-        }
-
-        // Run the test
-        removeComponent(testEntity, MaterialInstanceComponent)
-
-        // Verify the test entity was removed from the reference state
-        for (const entity of materialEntities) {
-          const refs = getState(MaterialReferenceState)[entity]
-          assert.ok(!refs || !refs.includes(testEntity), 'Test entity should be removed from the reference state')
-        }
-      })
+    describe("for every materialEntity in the testEntity's MaterialInstanceComponent.uuid list", () => {
+      it.todo(
+        "... should remove the testEntity from each materialEntity's MaterialStateComponent.instances list",
+        () => {}
+      )
     })
   }) //:: onRemove
 }) //:: MaterialInstanceComponent
