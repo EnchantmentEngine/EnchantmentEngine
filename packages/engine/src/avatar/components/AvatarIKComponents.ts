@@ -27,7 +27,7 @@ import { AxesHelper, Quaternion, Vector3 } from 'three'
 
 import { NetworkObjectComponent, S, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
@@ -63,8 +63,10 @@ export const AvatarIKTargetComponent = defineComponent({
     return null
   },
 
-  getTargetEntity: (ownerID: EntityUUID, targetName: (typeof ikTargets)[keyof typeof ikTargets]) => {
-    return UUIDComponent.getEntityByUUID((ownerID + targetName) as EntityUUID)
+  getTargetEntity: (ownerID: SourceID, targetName: (typeof ikTargets)[keyof typeof ikTargets]) => {
+    return UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entitySourceID: ownerID, entityID: targetName as EntityID })
+    )
   }
 })
 

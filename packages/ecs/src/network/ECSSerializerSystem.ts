@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent } from '../ComponentFunctions'
 import { Entity, EntityUUID } from '../Entity'
 import { UUIDComponent } from '../UUIDComponent'
 import { checkBitflag } from './DataReader'
@@ -100,7 +99,7 @@ const createSerializer = ({ entities, schema, chunkLength, onCommitChunk }: Seri
 
     let count = 0
     for (const entity of entities()) {
-      const uuid = getComponent(entity, UUIDComponent)
+      const uuid = UUIDComponent.get(entity)
       if (!data.entities.includes(uuid)) {
         data.entities.push(uuid)
       }
@@ -115,7 +114,7 @@ const createSerializer = ({ entities, schema, chunkLength, onCommitChunk }: Seri
 
     const buffer = sliceViewCursor(view)
 
-    data.changes.push(buffer)
+    data.changes.push(buffer as ArrayBuffer)
 
     frame++
 

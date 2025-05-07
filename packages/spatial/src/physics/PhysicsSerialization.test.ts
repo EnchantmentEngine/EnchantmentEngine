@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,14 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
   Entity,
   EntityTreeComponent,
-  UUIDComponent,
   UndefinedEntity,
   ViewCursor,
   createEngine,
@@ -43,11 +42,11 @@ import {
   writeComponent
 } from '@ir-engine/ecs'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
-import { act, render } from '@testing-library/react'
+
 import assert from 'assert'
 import sinon from 'sinon'
 import { Quaternion, Vector3 } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertVec } from '../../tests/util/assert'
 import { SceneComponent } from '../renderer/components/SceneComponents'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -243,7 +242,9 @@ describe('PhysicsSerialization', () => {
       it('should readBodyPosition into the `@param v` ViewCursor when position is marked as changed (1<<1)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.position.x[testEntity] = Expected.x
         RigidBodyComponent.position.y[testEntity] = Expected.y
         RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -266,7 +267,9 @@ describe('PhysicsSerialization', () => {
       it('should readBodyRotation into the `@param v` ViewCursor when rotation is marked as changed (1<<2)', async () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -290,7 +293,9 @@ describe('PhysicsSerialization', () => {
       it('should readBodyLinearVelocity into the `@param v` ViewCursor when linearVelocity is marked as changed (1<<3)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -313,7 +318,9 @@ describe('PhysicsSerialization', () => {
       it('should readBodyAngularVelocity into the `@param v` ViewCursor when angularVelocity is marked as changed (1<<4)', async () => {
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z
@@ -340,13 +347,14 @@ describe('PhysicsSerialization', () => {
         beforeEach(async () => {
           await Physics.load()
           physicsWorldEntity = createEntity()
-          setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
           setComponent(physicsWorldEntity, SceneComponent)
           setComponent(physicsWorldEntity, TransformComponent)
           setComponent(physicsWorldEntity, EntityTreeComponent)
           physicsWorld = Physics.createWorld(physicsWorldEntity)
           physicsWorld.timestep = 1 / 60
-          await act(() => render(null))
+          await vi.waitFor(() => {
+            expect(physicsWorld).toBeDefined()
+          })
         })
 
         it('should call setRigidbodyPose when the entity has dynamic a RigidBody (aka [RigidBodyComponent, RigidBodyDynamicTagComponent]) and one of the elements changed', async () => {
@@ -357,7 +365,11 @@ describe('PhysicsSerialization', () => {
           setComponent(testEntity, TransformComponent)
           setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
           setComponent(testEntity, ColliderComponent, { shape: Shapes.Sphere })
-          await act(() => render(null))
+          await vi.waitFor(() => {
+            expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+            expect(getComponent(testEntity, ColliderComponent)).toBeDefined()
+            expect(physicsWorld.Rigidbodies.get(testEntity)).toBeDefined()
+          })
           RigidBodyComponent.position.x[testEntity] = Expected.x
           RigidBodyComponent.position.y[testEntity] = Expected.y
           RigidBodyComponent.position.z[testEntity] = Expected.z
@@ -381,7 +393,9 @@ describe('PhysicsSerialization', () => {
         const Expected = new Vector3(41, 42, 43)
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         getMutableComponent(testEntity, RigidBodyComponent).position.x.set(Expected.x)
         getMutableComponent(testEntity, RigidBodyComponent).position.y.set(Expected.y)
         getMutableComponent(testEntity, RigidBodyComponent).position.z.set(Expected.z)
@@ -404,7 +418,9 @@ describe('PhysicsSerialization', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent)
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         getMutableComponent(testEntity, RigidBodyComponent).rotation.x.set(Expected.x)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.y.set(Expected.y)
         getMutableComponent(testEntity, RigidBodyComponent).rotation.z.set(Expected.z)
@@ -475,7 +491,9 @@ describe('PhysicsSerialization', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
         // Set the data as expected
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.rotation.x[testEntity] = Expected.x
         RigidBodyComponent.rotation.y[testEntity] = Expected.y
         RigidBodyComponent.rotation.z[testEntity] = Expected.z
@@ -508,7 +526,9 @@ describe('PhysicsSerialization', () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.linearVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.linearVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.linearVelocity.z[testEntity] = Expected.z
@@ -540,7 +560,9 @@ describe('PhysicsSerialization', () => {
         // Set the data as expected
         const Expected = new Vector3(40, 41, 42)
         setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
-        await act(() => render(null))
+        await vi.waitFor(() => {
+          expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
+        })
         RigidBodyComponent.angularVelocity.x[testEntity] = Expected.x
         RigidBodyComponent.angularVelocity.y[testEntity] = Expected.y
         RigidBodyComponent.angularVelocity.z[testEntity] = Expected.z

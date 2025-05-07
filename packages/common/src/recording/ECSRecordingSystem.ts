@@ -41,7 +41,6 @@ import {
   ECSState,
   Engine,
   EntityUUID,
-  getComponent,
   NetworkSchemaState,
   PresentationSystemGroup,
   SerializationSchema,
@@ -83,6 +82,7 @@ import { PhysicsSerialization } from '@ir-engine/spatial/src/physics/PhysicsSeri
 
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 export class ECSRecordingActions {
   static startRecording = defineAction({
@@ -651,11 +651,12 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
                 .then((userAvatars) => {
                   dispatchAction(
                     AvatarNetworkAction.spawn({
-                      parentUUID: getComponent(Engine.instance.originEntity, UUIDComponent),
+                      parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
                       ownerID: entityID,
-                      entityUUID: (entityID + '_avatar') as EntityUUID,
                       avatarURL: userAvatars.data[0].avatar.modelResource!.url!,
-                      name: user.name + "'s Clone"
+                      name: user.name + "'s Clone",
+                      entityID: AvatarComponent.entityID,
+                      entitySourceID: entityID
                     })
                   )
                   entitiesSpawned.push(entityID)

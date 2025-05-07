@@ -26,16 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import {
-  Engine,
-  EntityUUID,
-  UUIDComponent,
-  UndefinedEntity,
-  createEntity,
-  destroyEngine,
-  removeEntity,
-  setComponent
-} from '@ir-engine/ecs'
+import { Engine, EntityID, UndefinedEntity, createEntity, destroyEngine, removeEntity } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import {
   NetworkActions,
@@ -57,7 +48,6 @@ describe('SpectateSystem', async () => {
       createEngine()
       Engine.instance.store.defaultDispatchDelay = () => 0
       viewerEntity = createEntity()
-      setComponent(viewerEntity, UUIDComponent, UUIDComponent.generateUUID())
     })
 
     afterEach(() => {
@@ -85,7 +75,7 @@ describe('SpectateSystem', async () => {
       dispatchAction(
         SpectateActions.spectateEntity({
           spectatorUserID: userID,
-          spectatingEntity: 'entity' as EntityUUID,
+          spectatingEntity: 'entity' as EntityID,
           $topic: NetworkTopics.world,
           $peer: Engine.instance.store.peerID
         })
@@ -116,7 +106,7 @@ describe('SpectateSystem', async () => {
       dispatchAction(
         SpectateActions.spectateEntity({
           spectatorUserID: userID,
-          spectatingEntity: 'entity' as EntityUUID,
+          spectatingEntity: 'entity' as EntityID,
           $topic: NetworkTopics.world,
           $peer: Engine.instance.store.peerID
         })

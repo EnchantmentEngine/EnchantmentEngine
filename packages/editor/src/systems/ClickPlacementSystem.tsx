@@ -109,7 +109,7 @@ const ClickPlacementReactor = (props: { parentEntity: Entity }) => {
     } else {
       if (!clickState.placementEntity.value) return
       const selectedEntities = getState(SelectionState).selectedEntities.filter(
-        (uuid) => uuid !== getComponent(clickState.placementEntity.value, UUIDComponent)
+        (uuid) => uuid !== UUIDComponent.get(clickState.placementEntity.value)
       )
       EditorControlFunctions.removeObject([clickState.placementEntity.value])
       clickState.placementEntity.set(UndefinedEntity)
@@ -271,8 +271,8 @@ export const ClickPlacementSystem = defineSystem({
     const mouseEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
     if (!mouseEntity) return
 
-    const buttons = InputComponent.getMergedButtons(viewerEntity)
-    const axes = InputComponent.getMergedAxes(viewerEntity)
+    const buttons = InputComponent.getButtons(viewerEntity)
+    const axes = InputComponent.getAxes(viewerEntity)
 
     const zoom = axes[MouseScroll.VerticalScroll]
 

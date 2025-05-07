@@ -29,11 +29,12 @@ import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import { useFind } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { clientSettingPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
-import { cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
+import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { useComponent, useQuery } from '@ir-engine/ecs'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ResourcePendingComponent } from '@ir-engine/engine/src/gltf/ResourcePendingComponent'
-import { ErrorBoundary, useMutableState } from '@ir-engine/hyperflux'
+import { ErrorBoundary, getState, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
@@ -48,7 +49,6 @@ import { DnDFileType, FileDataType, ItemTypes, SceneElementType, SupportedFileTy
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
 import { addMediaNode } from '../../functions/addMediaNode'
 import { getCursorSpawnPosition } from '../../functions/screenSpaceFunctions'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
 import { EditorState } from '../../services/EditorServices'
 import CameraGizmoTool from './tools/CameraGizmoTool'
 import GridTool from './tools/GridTool'
@@ -77,7 +77,7 @@ const ViewportDnD = ({ children }: { children: React.ReactNode }) => {
           { name: item.componentJsonID },
           { name: TransformComponent.jsonID, props: { position: vec3 } }
         ])
-        EditorHistoryFunctions.snapshot()
+        AuthoringState.snapshotEntities([getState(EditorState).rootEntity])
       } else if ('url' in item) {
         addMediaNode(item.url, undefined, undefined, [{ name: TransformComponent.jsonID, props: { position: vec3 } }])
       } else if ('files' in item) {
@@ -86,12 +86,12 @@ const ViewportDnD = ({ children }: { children: React.ReactNode }) => {
         Promise.all(
           Array.from(dropDataTransfer.files).map(async (file) => {
             try {
-              const name = cleanFileNameString(file.name)
+              file = cleanFileNameFile(file)
               return uploadToFeathersService(fileBrowserUploadPath, [file], {
                 args: [
                   {
                     project: projectName.value,
-                    path: `assets/` + name,
+                    path: `assets/` + file.name,
                     contentType: file.type
                   }
                 ]
@@ -154,7 +154,7 @@ function ViewportContainer() {
   return (
     <ViewportDnD>
       <div className="relative z-30 flex h-full w-full flex-col">
-        <div ref={toolbarRef} className="z-10 flex gap-1 bg-surface-4 px-1 py-0.5">
+        <div ref={toolbarRef} className="z-10 flex gap-1 bg-surface-4 px-1 py-1">
           <TransformSpaceTool />
           {transformPivotFeatureFlag && <TransformPivotTool />}
           <GridTool />

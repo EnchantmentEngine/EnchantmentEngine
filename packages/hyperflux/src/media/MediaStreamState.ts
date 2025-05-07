@@ -106,7 +106,7 @@ export const MediaStreamState = defineState({
     useEffect(() => {
       const microphoneEnabled = state.microphoneEnabled.value
       peerMediaChannelState[webcamAudioMediaChannelType].stream.set(
-        microphoneEnabled ? state.microphoneMediaStream.value : null
+        microphoneEnabled ? state.microphoneDestinationNode.value?.stream ?? null : null
       )
     }, [state.microphoneMediaStream.value, state.microphoneEnabled.value])
 

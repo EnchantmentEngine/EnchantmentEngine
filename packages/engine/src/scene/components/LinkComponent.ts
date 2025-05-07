@@ -35,6 +35,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { EngineState } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { isMobile, isSafari } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
 
@@ -48,13 +49,19 @@ const linkLogic = (linkEntity: Entity, xrState) => {
   //   getMutableState(LinkState).location.set(linkComponent.location)
   // }
   xrState && xrState.session?.end()
-  typeof window === 'object' && window && linkComponent.newTab
-    ? window.open(linkComponent.url, '_blank')
-    : (window.location.href = linkComponent.url)
+  if (typeof window === 'object' && window && linkComponent.newTab) {
+    const windoOpen = window.open(linkComponent.url, '_blank')
+    //this error added when safari blocks new window
+    if (!windoOpen && isMobile && isSafari) {
+      addError(linkEntity, LinkComponent, 'WINDOW_BLOCKED', 'Unable to open link in new tab.')
+    }
+  } else {
+    window.location.href = linkComponent.url
+  }
 }
 const linkCallback = (linkEntity: Entity) => {
   console.log('linkCallback')
-  const buttons = InputComponent.getMergedButtons(linkEntity)
+  const buttons = InputComponent.getButtons(linkEntity)
   if (buttons.XRStandardGamepadTrigger?.down) {
     const xrState = getState(XRState)
     linkLogic(linkEntity, xrState)
@@ -79,17 +86,17 @@ export const LinkComponent = defineComponent({
   jsonID: 'EE_link',
 
   schema: S.Object({
-    url: S.String(''),
-    sceneNav: S.Bool(false),
-    location: S.String(''),
-    newTab: S.Bool(true)
+    url: S.String(),
+    sceneNav: S.Bool(),
+    location: S.String(),
+    newTab: S.Bool({ default: true })
   }),
 
   linkCallbackName,
   linkCallback,
   interactMessage,
 
-  errors: ['INVALID_URL'],
+  errors: ['INVALID_URL', 'WINDOW_BLOCKED'],
 
   reactor: function () {
     if (!isClient) return null

@@ -29,11 +29,13 @@ import { useTranslation } from 'react-i18next'
 import commonStyles from '@ir-engine/client-core/src/common/components/common.module.scss'
 import {
   createEntity,
+  EntityID,
   EntityTreeComponent,
   getOptionalComponent,
   removeComponent,
   removeEntity,
   setComponent,
+  SourceID,
   UndefinedEntity,
   useOptionalComponent,
   UUIDComponent
@@ -81,7 +83,10 @@ const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props
     if (!avatarUrl) return
 
     avatar.set(createEntity())
-    setComponent(avatar.value, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(avatar.value, UUIDComponent, {
+      entitySourceID: UUIDComponent.generateUUID() as string as SourceID,
+      entityID: 'avatar-preview' as EntityID
+    })
     setComponent(avatar.value, TransformComponent)
     setComponent(avatar.value, VisibleComponent)
     setComponent(avatar.value, EntityTreeComponent, { parentEntity: sceneEntity })
@@ -175,7 +180,7 @@ const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props
         </Tooltip>
       </div>
       <div id="stage" className={`${styles.stage} ${fill ? styles.fill : ''}`}>
-        <canvas ref={panelRef} style={{ pointerEvents: 'all' }} />
+        <canvas id="avatar-preview-canvas" ref={panelRef} style={{ pointerEvents: 'all' }} />
       </div>
 
       {!avatarUrl && <div className={commonStyles.previewText}>{t('admin:components.avatar.avatarPreview')}</div>}

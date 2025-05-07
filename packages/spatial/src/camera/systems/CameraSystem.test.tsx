@@ -24,9 +24,18 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import assert from 'assert'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
-import { Engine, EngineState, UUIDComponent, destroyEngine, getComponent, hasComponent } from '@ir-engine/ecs'
+import {
+  Engine,
+  EngineState,
+  EntityID,
+  EntityUUIDPair,
+  SourceID,
+  UUIDComponent,
+  destroyEngine,
+  hasComponent
+} from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import {
   Network,
@@ -39,7 +48,6 @@ import {
   getState
 } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
-import { act, render } from '@testing-library/react'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialViewer } from '../../initializeEngine'
 import { CameraActions } from '../CameraState'
@@ -65,28 +73,32 @@ describe('CameraSystem', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
       getMutableState(EngineState).userID.set(hostUserID)
-      const cameraUUID = UUIDComponent.generateUUID()
+      const cameraUUID = {
+        entityID: 'camera' as EntityID,
+        entitySourceID: hostUserID as string as SourceID
+      } as EntityUUIDPair
 
       const network: Network = NetworkState.worldNetwork
 
       dispatchAction(
         CameraActions.spawnCamera({
-          parentUUID: getComponent(getState(ReferenceSpaceState).viewerEntity, UUIDComponent),
-          entityUUID: cameraUUID,
+          parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).viewerEntity),
+          entityID: cameraUUID.entityID,
+          entitySourceID: cameraUUID.entitySourceID,
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
           $peer: Engine.instance.store.peerID
         })
       )
       applyIncomingActions()
-      await act(() => render(null))
-
-      const cameraEntity = UUIDComponent.getEntityByUUID(cameraUUID)
-      assert.ok(cameraEntity, "The spawnCamera Action didn't create an entity.")
-      assert.ok(
-        hasComponent(cameraEntity, CameraComponent),
-        "The spawnCamera Action didn't apply the CameraComponent to the entity"
-      )
+      await vi.waitFor(() => {
+        const cameraEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(cameraUUID))
+        assert.ok(cameraEntity, "The spawnCamera Action didn't create an entity.")
+        assert.ok(
+          hasComponent(cameraEntity, CameraComponent),
+          "The spawnCamera Action didn't apply the CameraComponent to the entity"
+        )
+      })
     })
   })
 })

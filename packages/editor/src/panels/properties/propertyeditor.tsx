@@ -25,9 +25,14 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { calculateAndApplyYOffset } from '@ir-engine/common/src/utils/offsets'
 import { Entity, EntityUUID, PresentationSystemGroup, UUIDComponent, useExecute } from '@ir-engine/ecs'
-import { Component, Layers, getAllComponents, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  Component,
+  ComponentJSONIDMap,
+  Layers,
+  getAllComponents,
+  useHasComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentEditors'
-import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { ErrorBoundary, NO_PROXY, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
@@ -67,13 +72,20 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
 
   const entity = UUIDComponent.getEntityByUUID(entityUUID, Layers.Authoring)
   const componentEditors = useHookstate(getMutableState(ComponentEditorsState)).get(NO_PROXY)
-  const components = useHookstate([] as Component[])
+  const components = useHookstate([] as string[])
 
   useExecute(
     () => {
-      const entityComponents = getAllComponents(entity).filter(
-        (component) => component.name && componentEditors[component.name] && component.name !== TransformComponent.name
-      )
+      const entityComponents = getAllComponents(entity)
+        .filter(
+          (component) =>
+            component.name &&
+            componentEditors[component.name] &&
+            component.name !== TransformComponent.name &&
+            component.jsonID !== undefined
+        )
+        .map((component) => component.jsonID!)
+
       if (JSON.stringify(entityComponents) !== JSON.stringify(components.get(NO_PROXY))) {
         components.set(entityComponents)
       }
@@ -136,16 +148,19 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
           </Suspense>
         </ErrorBoundary>
       )}
-      {components.get(NO_PROXY).map((c) => (
-        <ErrorBoundary
-          key={`${entityUUID + entity}-${c.name}`}
-          fallback={<div>Error occured displaying properties for {c.name}</div>}
-        >
-          <Suspense>
-            <EntityComponentEditor multiEdit={multiEdit} entity={entity} component={c as Component} />
-          </Suspense>
-        </ErrorBoundary>
-      ))}
+      {components.get(NO_PROXY).map((c) => {
+        const component = ComponentJSONIDMap.get(c)
+        return component ? (
+          <ErrorBoundary
+            key={`${entityUUID + entity}-${component.name}`}
+            fallback={<div>Error occured displaying properties for {component.name}</div>}
+          >
+            <Suspense>
+              <EntityComponentEditor multiEdit={multiEdit} entity={entity} component={component as Component} />
+            </Suspense>
+          </ErrorBoundary>
+        ) : null
+      })}
     </>
   )
 }
@@ -153,18 +168,17 @@ const EntityEditor = ({ entityUUID, multiEdit }: { entityUUID: EntityUUID; multi
 const PropertiesEditor = () => {
   const { t } = useTranslation()
   const selectedEntities = useHookstate(getMutableState(SelectionState).selectedEntities).value
-  const lockedNode = useHookstate(getMutableState(EditorState).lockPropertiesPanel)
   const materialUUID = useHookstate(getMutableState(MaterialSelectionState).selectedMaterial).value
   const materialEntity = UUIDComponent.useEntityByUUID(materialUUID!, Layers.Authoring)
   const multiEdit = selectedEntities.length > 1
-  const uuid = lockedNode.value ? lockedNode.value : selectedEntities[selectedEntities.length - 1]
+  const uuid = selectedEntities[selectedEntities.length - 1]
 
   return (
     <div className="flex h-full flex-col gap-0.5 overflow-y-auto bg-surface-1">
       {materialUUID && materialEntity ? (
         <ErrorBoundary fallback={<div>Error occured displaying material properties</div>}>
           <Suspense>
-            <MaterialEditor materialUUID={materialUUID} />
+            <MaterialEditor entity={materialEntity} />
           </Suspense>
         </ErrorBoundary>
       ) : uuid ? (

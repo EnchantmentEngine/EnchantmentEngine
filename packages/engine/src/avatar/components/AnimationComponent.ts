@@ -23,14 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { AnimationClip, AnimationMixer, Object3D, PropertyBinding } from 'three'
+import { AnimationClip, AnimationMixer, KeyframeTrack, Object3D, PropertyBinding } from 'three'
 
-import { Entity, iterateEntityNode, removeEntity, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
+import { Entity, EntityUUID, iterateEntityNode, removeEntity, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
   getOptionalComponent,
-  LayerComponent,
   removeComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -58,6 +57,9 @@ export const AnimationComponent = defineComponent({
     animations: S.Array(S.Type<AnimationClip>())
   })
 })
+
+export const getEntityUUIDFromTrack = (track: KeyframeTrack) =>
+  track.name.slice(0, track.name.lastIndexOf('.')) as EntityUUID
 
 export const useLoadAnimationFromBatchGLTF = (urls: string[], keepEntities = false) => {
   const animations = urls.map((url) => useLoadAnimationFromGLTF(url, keepEntities))
@@ -128,12 +130,8 @@ PropertyBinding.parseTrackName = function (trackName) {
   return results
 }
 
-export const getTrackId = (entity: Entity) =>
-  getComponent(entity, UUIDComponent).replace(getComponent(entity, SourceComponent) + '-', '')
-
 PropertyBinding.findNode = (root: Object3D, nodeName: string) => {
-  const sceneInstanceID = GLTFComponent.getInstanceID(root.entity)
-  const childEntities = SourceComponent.getEntitiesBySource(sceneInstanceID, LayerComponent.get(root.entity))
+  const childEntities = SourceComponent.getEntitiesBySource(root.entity)
 
   let entity = UndefinedEntity
   /**if AvatarRigComponent is present, use VRM schema */
@@ -141,12 +139,7 @@ PropertyBinding.findNode = (root: Object3D, nodeName: string) => {
   if (avatarRigComponent) {
     entity = avatarRigComponent.bonesToEntities[nodeName]
   }
-
-  /**Find the entity that corresponds to the nodeName.
-   * Using getTrackId to allow reuse of the same track for identical hierarchies across different entity roots.
-   */
-  if (!entity)
-    entity = childEntities.find((entity) => getTrackId(entity) === nodeName.substring(nodeName.lastIndexOf('-') + 1))!
+  if (!entity) entity = childEntities.find((entity) => nodeName === getComponent(entity, UUIDComponent).entityID)!
 
   if (!entity) {
     return null

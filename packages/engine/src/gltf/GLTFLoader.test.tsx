@@ -30,13 +30,14 @@ import { GLTF } from '@gltf-transform/core/dist/types/gltf'
 import {
   createEntity,
   Entity,
+  EntityID,
   EntityTreeComponent,
-  generateEntityUUID,
   getChildrenWithComponents,
   getComponent,
   getOptionalComponent,
   hasComponent,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
@@ -60,6 +61,7 @@ import { EXTMeshGPUInstancingComponent, KHRLightsPunctualComponent, KHRPunctualL
 
 const base_url = 'packages/engine/tests/assets'
 const duck_gltf = base_url + '/duck/Duck.gltf'
+const duck_nodeless_gltf = base_url + '/duck/DuckNodeless.gltf'
 const draco_gltf = base_url + '/draco-duck/Duck.gltf'
 const unlit_gltf = base_url + '/unlit/UnlitTest.gltf'
 const textured_gltf = base_url + '/textured-box/BoxTextured.gltf'
@@ -79,8 +81,8 @@ const setupEntity = () => {
   const parent = createEntity()
   setComponent(parent, SceneComponent)
   setComponent(parent, EntityTreeComponent)
-  const uuid = UUIDComponent.generateUUID()
-  setComponent(parent, UUIDComponent, uuid)
+  const uuid = 'source' as SourceID
+  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'test' as EntityID })
 
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })
@@ -104,7 +106,7 @@ describe('GLTF Loader', async () => {
   it('can load a mesh', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
@@ -131,7 +133,7 @@ describe('GLTF Loader', async () => {
   it('can load a material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
@@ -162,7 +164,7 @@ describe('GLTF Loader', async () => {
   it('can load a draco geometry', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: draco_gltf })
 
     await waitForScene(entity)
@@ -188,7 +190,7 @@ describe('GLTF Loader', async () => {
   it('can load an unlit material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: unlit_gltf })
 
     await waitForScene(entity)
@@ -224,7 +226,7 @@ describe('GLTF Loader', async () => {
   it('can load a texture for a material', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: textured_gltf })
 
     await waitForScene(entity)
@@ -260,7 +262,7 @@ describe('GLTF Loader', async () => {
   it('can load meshes with multiple primitives/materials', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: multiple_mesh_primitives_gltf })
 
     await waitForScene(entity)
@@ -303,11 +305,11 @@ describe('GLTF Loader', async () => {
     assert(meshEntities.length === meshes.length)
 
     const matEntities = getChildrenWithComponents(entity, [MaterialInstanceComponent])
-    const uniqueMatUUIDs = matEntities.reduce((uuids, matEntity) => {
+    const uniqueMatUUIDs = matEntities.reduce((entities, matEntity) => {
       const matInstance = getComponent(matEntity, MaterialInstanceComponent)
-      for (const uuid of matInstance.uuid) uuids.add(uuid)
-      return uuids
-    }, new Set<string>())
+      for (const entity of matInstance.entities) entities.add(entity)
+      return entities
+    }, new Set<Entity>())
     const matUUIDs = [...uniqueMatUUIDs].filter(Boolean)
 
     assert(materials.length === matUUIDs.length)
@@ -317,7 +319,7 @@ describe('GLTF Loader', async () => {
   it('can load morph targets', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: morph_gltf })
 
     await waitForScene(entity)
@@ -338,7 +340,7 @@ describe('GLTF Loader', async () => {
   it('can load a mesh with a single animation clip', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: rings_gltf })
 
     await waitForScene(entity)
@@ -359,7 +361,7 @@ describe('GLTF Loader', async () => {
   it('can load a skeleton with many animation clips', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: animation_pack })
 
     await waitForScene(entity)
@@ -380,7 +382,7 @@ describe('GLTF Loader', async () => {
   it('can load skinned meshes with bones and animations', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: skinned_gltf })
 
     await waitForScene(entity)
@@ -416,7 +418,7 @@ describe('GLTF Loader', async () => {
   it('can load cameras', async () => {
     const entity = setupEntity()
 
-    setComponent(entity, UUIDComponent, generateEntityUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: camera_gltf })
 
     await waitForScene(entity)
@@ -460,7 +462,10 @@ describe('GLTF Loader', async () => {
    * Manually for the test, by some other reactor, or something else ?? */
   it('can load KHR lights', async () => {
     const testEntity = setupEntity()
-    setComponent(testEntity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'test' as EntityID
+    })
     setComponent(testEntity, GLTFComponent, { src: khr_light_gltf })
 
     await waitForScene(testEntity)
@@ -511,7 +516,10 @@ describe('GLTF Loader', async () => {
   it('can load instanced primitives with EXT_mesh_gpu_instancing', async () => {
     const testEntity = setupEntity()
 
-    setComponent(testEntity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(testEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'test' as EntityID
+    })
     setComponent(testEntity, GLTFComponent, { src: instanced_gltf })
 
     await waitForScene(testEntity)
@@ -564,16 +572,17 @@ describe('GLTF Loader', async () => {
     const entity = setupEntity()
     const entity2 = setupEntity()
 
-    setComponent(entity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source1' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity, GLTFComponent, { src: duck_gltf })
 
-    setComponent(entity2, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(entity2, UUIDComponent, { entitySourceID: 'source2' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity2, GLTFComponent, { src: duck_gltf })
 
     await waitForScene(entity)
+    await waitForScene(entity2)
 
-    const instanceID = GLTFComponent.getInstanceID(entity)
-    const instanceID2 = GLTFComponent.getInstanceID(entity2)
+    const instanceID = GLTFComponent.getSourceID(entity)
+    const instanceID2 = GLTFComponent.getSourceID(entity2)
 
     expect(instanceID).not.toBe(instanceID2)
 
@@ -581,5 +590,20 @@ describe('GLTF Loader', async () => {
     const meshEntities2 = getChildrenWithComponents(entity2, [MeshComponent])
 
     expect(meshEntities.length).toBe(meshEntities2.length)
+  })
+
+  it('can load GLTFs without scenes or nodes', async () => {
+    const entity = setupEntity()
+
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
+    setComponent(entity, GLTFComponent, { src: duck_nodeless_gltf })
+
+    await waitForScene(entity)
+
+    // Loads the material and texture in the GLTF without having an associated node
+    const materials = getChildrenWithComponents(entity, [MaterialStateComponent])
+    assert(materials.length === 1)
+    const materialState = getComponent(materials[0], MaterialStateComponent)
+    assert((materialState.material as MeshStandardMaterial).map?.isTexture)
   })
 })

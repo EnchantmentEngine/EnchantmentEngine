@@ -75,6 +75,13 @@ export const computeTransformMatrix = (entity: Entity) => {
   }
 }
 
+export const computeTransformMatrixWithChildren = (entity: Entity) => {
+  hasComponent(entity, TransformComponent) && computeTransformMatrix(entity)
+  for (const child of getOptionalComponent(entity, EntityTreeComponent)?.children ?? []) {
+    computeTransformMatrixWithChildren(child)
+  }
+}
+
 const _tempDistSqrVec3 = new Vector3()
 
 export const getDistanceSquaredFromTarget = (entity: Entity, targetPosition: Vector3) => {
@@ -107,7 +114,7 @@ const compareReferenceDepth = (a: Entity, b: Entity) => {
   return aDepth - bDepth
 }
 
-const dirtyAuthoringTransformQuery = defineQuery([TransformComponent], Layers.Authoring)
+const authoringTransformQuery = defineQuery([TransformComponent], Layers.Authoring)
 
 export const isDirty = (entity: Entity) => TransformComponent.dirty[entity] === 1
 
@@ -147,7 +154,7 @@ const sortAndMakeDirtyEntities = () => {
   }
 
   /** Mark the corresponding simulation entity of any authoring layer entities as dirty */
-  const dirtyAuthoringEntities = dirtyAuthoringTransformQuery().filter(isDirty)
+  const dirtyAuthoringEntities = authoringTransformQuery().filter(isDirty)
   for (const entity of dirtyAuthoringEntities) {
     const authoringComponent = getComponent(entity, LayerComponents[Layers.Authoring])
     const linkedEntity = authoringComponent.relations[Layers.Simulation]

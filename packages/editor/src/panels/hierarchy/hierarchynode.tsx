@@ -31,9 +31,11 @@ import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunction
 import { EngineState, EntityTreeComponent, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
+  getSimulationCounterpart,
   hasComponent,
+  removeComponent,
+  setComponent,
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -43,14 +45,16 @@ import { EntityHierarchyLockState } from '@ir-engine/editor/src/services/EntityH
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
 import { ResourceLoaderManager } from '@ir-engine/engine/src/assets/functions/resourceLoaderFunctions'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFLoaderFunctions } from '@ir-engine/engine/src/gltf/GLTFLoaderFunctions'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, getState, none, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { TransformPivot, TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { Button, Input } from '@ir-engine/ui'
@@ -66,8 +70,8 @@ import { ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
 import { IconComponent } from '../../components/panels/IconComponent'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
+import { isEntityGlb } from '../../functions/utils'
 import { EditorHelperState, PlacementMode } from '../../services/EditorHelperState'
-import { EditorHistoryFunctions } from '../../services/EditorHistoryState'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { deleteNode, HierarchyTreeNodeType } from './helpers'
@@ -95,12 +99,14 @@ function toValidHierarchyNodeName(entity: Entity, name: string): string {
 }
 
 export default React.memo(function HierarchyTreeNode(props: ListChildComponentProps<undefined>) {
+  const showGlbChildrenFeatureFlag = useMutableState(EditorHelperState).showGlbChildren.value
+
   const { t } = useTranslation()
   const nodes = useHierarchyNodes()
   const node = nodes[props.index]
   const entity = node.entity
   const fixedSizeListStyles = props.style
-  const uuid = getComponent(entity, UUIDComponent)
+  const uuid = UUIDComponent.get(entity)
   const selected = useHookstate(getMutableState(SelectionState).selectedEntities).value.includes(uuid)
   const visible = useHasComponent(entity, VisibleComponent)
   const locked = useHookstate(getMutableState(EntityHierarchyLockState).lockedEntities).value[entity] ?? false
@@ -108,16 +114,13 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const { collapseChildren, expandChildren, collapseNode, expandNode } = useNodeCollapseExpand()
   const renamingNode = useRenamingNode()
   const { expandedNodes, firstSelectedEntity } = useMutableState(HierarchyTreeState)
-  const sourceID = GLTFComponent.useInstanceID(rootEntity)
+  const sourceID = GLTFComponent.useSourceID(rootEntity)
   const currentRenameNode = useHookstate(getComponent(entity, NameComponent))
   const { setMenu } = useHierarchyTreeContextMenu()
   const renameRef = useRef<HTMLInputElement>(null)
   const isRenameOpen = useState(false)
   const canSaveNodeChanges = useState(false)
   const permissionToChangeNodeVerified = useState(false)
-
-  //@todo when this feature flag is added, remove the hardcoded value
-  const hideGlbChildrenFeatureFlag = [true] //useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.HideGlbChildren])
 
   const handleRenameOpen = () => {
     if (!isRenameOpen.value) {
@@ -132,7 +135,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       document.removeEventListener('mousedown', handleClickOutside)
       if (saveRename) {
         EditorControlFunctions.modifyName([entity], toValidHierarchyNodeName(entity, currentRenameNode.value))
-        EditorHistoryFunctions.snapshot(getComponent(entity, SourceComponent))
+        AuthoringState.snapshot(getComponent(entity, UUIDComponent).entitySourceID)
         currentRenameNode.set(getComponent(entity, NameComponent))
       }
       renamingNode.clear()
@@ -183,7 +186,16 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     isOver: isOverAfter,
     dropTarget: afterDropTarget
   } = useHierarchyTreeDrop(node, 'After')
-  const { canDrop: canDropOn, isOver: isOverOn, dropTarget: onDropTarget } = useHierarchyTreeDrop(node, 'On')
+  const {
+    canDrop: canDropOn,
+    isOver: isOverOn,
+    dropTarget: onDropTarget,
+    rigidbodyParentingWarning
+  } = useHierarchyTreeDrop(node, 'On')
+  const isOverAndCanDrop = isOverOn && canDropOn
+  const showGlbRedState = isOverAndCanDrop && !showGlbChildrenFeatureFlag && isEntityGlb(entity)
+  const showRigidbodyRedState = isOverAndCanDrop && rigidbodyParentingWarning
+  const showRedState = showGlbRedState || showRigidbodyRedState
 
   useEffect(() => {
     preview(getEmptyImage(), { captureDraggingState: true })
@@ -201,7 +213,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         if (!nextNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([getComponent(nextNode.entity, UUIDComponent)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(nextNode.entity)])
         }
 
         const nextNodeEl = document.getElementById(getNodeElId(nextNode))
@@ -218,7 +230,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
         if (!prevNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([getComponent(prevNode.entity, UUIDComponent)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(prevNode.entity)])
         }
 
         const prevNodeEl = document.getElementById(getNodeElId(prevNode))
@@ -244,9 +256,9 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       case 'Enter': {
         if (entity === rootEntity) return
         if (event.shiftKey) {
-          EditorControlFunctions.toggleSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.toggleSelection([UUIDComponent.get(entity)])
         } else {
-          EditorControlFunctions.replaceSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.replaceSelection([UUIDComponent.get(entity)])
         }
         break
       }
@@ -268,28 +280,30 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       getMutableState(EditorHelperState).placementMode.set(PlacementMode.DRAG)
       // Deselect material entity since we've just clicked on a hierarchy node
       getMutableState(MaterialSelectionState).selectedMaterial.set(null)
+      const uuid = UUIDComponent.get(entity)
       if (usesCtrlKey() ? event.ctrlKey : event.metaKey) {
         if (entity === rootEntity) return
-        EditorControlFunctions.toggleSelection([getComponent(entity, UUIDComponent)])
+        EditorControlFunctions.toggleSelection([uuid])
       } else if (event.shiftKey && firstSelectedEntity.value) {
         const startIndex = nodes.findIndex((n) => n.entity === firstSelectedEntity.value)
         const endIndex = nodes.findIndex((n) => n.entity === entity)
         const range = nodes.slice(Math.min(startIndex, endIndex), Math.max(startIndex, endIndex) + 1)
-        const entityUuids = range.filter((n) => n.entity).map((n) => getComponent(n.entity!, UUIDComponent))
+        const entityUuids = range.filter((n) => n.entity).map((n) => UUIDComponent.get(n.entity))
         EditorControlFunctions.replaceSelection(entityUuids)
       } else {
-        const selected = getState(SelectionState).selectedEntities.includes(getComponent(entity, UUIDComponent))
+        const selected = getState(SelectionState).selectedEntities.includes(UUIDComponent.get(entity))
         if (!selected) {
-          EditorControlFunctions.replaceSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.replaceSelection([uuid])
         }
         firstSelectedEntity.set(entity)
       }
     } else if (event.detail === 2) {
       const cameraEntity = getState(ReferenceSpaceState).viewerEntity
       if (entity && getOptionalComponent(cameraEntity, CameraOrbitComponent)) {
-        const editorCameraState = getMutableComponent(cameraEntity, CameraOrbitComponent)
-        editorCameraState.focusedEntities.set([entity])
-        editorCameraState.refocus.set(true)
+        const simulationEntity = getSimulationCounterpart(entity)
+        const pivot = computeTransformPivot([simulationEntity], TransformPivot.Center, TransformSpace.world)
+        if (!pivot?.position) return
+        CameraOrbitComponent.setFocus(cameraEntity, pivot.position, pivot.bounds)
       }
     }
   }
@@ -303,9 +317,11 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   const onHideUnhideNode = (event: React.MouseEvent) => {
     event.stopPropagation()
     if (visible) {
-      EditorHistoryFunctions.removeComponent([entity], VisibleComponent)
+      removeComponent(entity, VisibleComponent)
+      AuthoringState.snapshotEntities([entity])
     } else {
-      EditorHistoryFunctions.setComponent([entity], VisibleComponent)
+      setComponent(entity, VisibleComponent)
+      AuthoringState.snapshotEntities([entity])
     }
   }
 
@@ -319,7 +335,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
   }
 
   const isModelRoot = hasComponent(entity, GLTFComponent)
-  const isModified = isModelRoot && !!getState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)]
+  const isModified = isModelRoot && !!getState(AssetModifiedState)[GLTFComponent.getSourceID(entity)]
 
   const onSaveChanges = () => {
     const gltfComponent = getComponent(node.entity, GLTFComponent)
@@ -328,7 +344,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     const parsedName = fileName.split('?')[0]
     exportRelativeGLTF(node.entity, fullProjectName, parsedName, false).then((newSRC) => {
       EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: newSRC })
-      getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
+      getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
     })
   }
 
@@ -337,7 +353,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     GLTFLoaderFunctions.unloadScene(gltfComponent.src, node.entity)
     EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: gltfComponent.src })
     ResourceLoaderManager.reloadResource(gltfComponent.src)
-    getMutableState(AssetModifiedState)[GLTFComponent.getInstanceID(entity)].set(none)
+    getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
   }
 
   useEffect(() => {
@@ -386,12 +402,13 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
       key={node.depth + ' ' + props.index + ' ' + entity}
       style={fixedSizeListStyles}
       className={twMerge(
+        'inline-flex w-auto min-w-full items-center',
         'cursor-pointer text-text-secondary hover:bg-ui-hover-background hover:text-text-primary',
         'bg-ui-background',
         !visible ? 'text-text-inactive' : '',
         selected ? 'rounded-sm border border-ui-select-outline bg-ui-select-background text-text-primary' : '',
         isOverOn && canDropOn ? 'border border-dotted' : '',
-        hideGlbChildrenFeatureFlag[0] && isOverOn && !canDropOn ? 'border border-dotted bg-ui-hover-error' : ''
+        showRedState ? 'border border-dotted text-text-error' : ''
       )}
       data-testid="hierarchy-panel-scene-item"
     >
@@ -405,7 +422,10 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
           event.preventDefault()
           setMenu(event, entity)
         }}
-        className={twMerge('flex w-full justify-between bg-inherit', rootEntity === entity ? 'p-2' : 'py-1 pl-10 pr-2')}
+        className={twMerge(
+          'inline-flex h-full min-w-full justify-between bg-inherit',
+          rootEntity === entity ? 'px-2' : 'pl-10 pr-2'
+        )}
       >
         <div
           className={twMerge('h-1', isOverBefore && canDropBefore && 'bg-white')}
@@ -430,7 +450,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
             </button>
           )}
 
-          <div className="flex w-full items-center gap-2 bg-inherit">
+          <div className="grid h-full w-full grid-cols-[max-content_auto_max-content_max-content] items-center gap-2 bg-inherit">
             <IconComponent entity={entity} />
             {renamingNode.entity === entity ? (
               <Input
@@ -452,13 +472,17 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
                 maxLength={64}
               />
             ) : (
-              <div className="min-w-0 flex-1 text-nowrap rounded bg-transparent px-0.5 py-0 ">
-                <span className="text-nowrap text-sm" data-testid="hierarchy-panel-scene-item-name">
+              <div className="grid min-w-0 text-nowrap rounded bg-transparent px-0.5 py-0 ">
+                <span
+                  className="overflow-x-auto text-nowrap text-sm"
+                  style={{ scrollbarWidth: `none` }}
+                  data-testid="hierarchy-panel-scene-item-name"
+                >
                   {currentRenameNode.value}
                 </span>
               </div>
             )}
-            {isModified && canSaveNodeChanges.value && (
+            {isModified && canSaveNodeChanges.value && node.entity !== rootEntity && (
               <div className="flex items-center gap-1">
                 <Button
                   variant="tertiary"
@@ -515,7 +539,11 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
               data-testid={`hierarchy-panel-scene-item-${visible ? 'hide' : 'unhide'}-button`}
               onClick={onHideUnhideNode}
             >
-              {visible ? <PiEyeBold className="text-base" /> : <PiEyeClosedBold className="text-base" />}
+              {visible ? (
+                <PiEyeBold className={`${showRedState ? 'text-text-inactive' : 'text-base'}`} />
+              ) : (
+                <PiEyeClosedBold className={`${showRedState ? 'text-text-inactive' : 'text-base'}`} />
+              )}
             </button>
           </div>
         </div>

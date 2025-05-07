@@ -47,6 +47,7 @@ import { LocationState } from '@ir-engine/client-core/src/social/services/Locati
 import { API } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { EngineState, EntityUUID, getComponent } from '@ir-engine/ecs'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
@@ -57,13 +58,13 @@ import { useTranslation } from 'react-i18next'
 import { IoHelpCircleOutline } from 'react-icons/io5'
 import { onSaveScene, setCurrentEditorScene } from '../functions/sceneFunctions'
 import { AssetsPanelTab } from '../panels/assets'
+import { AssetsQueryProvider } from '../panels/assets/hooks'
 import { HierarchyPanelTab } from '../panels/hierarchy'
 import { MaterialsPanelTab } from '../panels/materials'
 import { PropertiesPanelTab } from '../panels/properties'
 import { ScenePanelTab } from '../panels/scenes'
 import { ViewportPanelTab } from '../panels/viewport'
 import { VisualScriptPanelTab } from '../panels/visualscript'
-import { EditorHistoryState } from '../services/EditorHistoryState'
 import { EditorWarningState } from '../services/EditorWarningServices'
 import { UIAddonsState } from '../services/UIAddonsState'
 import './EditorContainer.css'
@@ -105,7 +106,7 @@ const onEditorError = (error) => {
 }
 
 const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData => {
-  const tabs = [ScenePanelTab, AssetsPanelTab]
+  const tabs = [AssetsPanelTab]
   flags.visualScriptPanelEnabled && tabs.push(VisualScriptPanelTab)
 
   return {
@@ -129,7 +130,7 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
           size: 3,
           children: [
             {
-              tabs: [HierarchyPanelTab, MaterialsPanelTab]
+              tabs: [HierarchyPanelTab, ScenePanelTab, MaterialsPanelTab]
             },
             {
               tabs: [PropertiesPanelTab]
@@ -191,7 +192,7 @@ const EditorContainer = () => {
   useSpatialEngine()
 
   /** Call get state since it needs to be created */
-  getState(EditorHistoryState)
+  getState(AuthoringState)
 
   const engineState = useHookstate(getMutableState(EngineState))
 
@@ -257,36 +258,42 @@ const EditorContainer = () => {
 
   return (
     <main className="pointer-events-auto">
-      <div id="editor-container" className="flex flex-col" style={scenePath.value ? { background: 'transparent' } : {}}>
-        {uiEnabled.value && (
-          <DndWrapper id="editor-container">
-            <DragLayer />
-            <Toolbar />
-            <div className="mt-1 flex overflow-hidden">
-              <DockContainer>
-                <DockLayout
-                  ref={dockPanelRef}
-                  defaultLayout={defaultLayout({ visualScriptPanelEnabled })}
-                  style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
-                />
-              </DockContainer>
-            </div>
-          </DndWrapper>
-        )}
-        {Object.entries(editorUIAddon.container.get(NO_PROXY)).map(([key, value]) => {
-          return value
-        })}
-      </div>
-      <PopupMenu />
-      {!isWidgetVisible && initialized && (
-        <div className="absolute bottom-3 right-4">
-          <Tooltip position="left" key={t('editor:help')} content={t('editor:help')}>
-            <Button size="sm" className="h-8 w-8 p-0" onClick={openChat}>
-              <IoHelpCircleOutline fontSize={24} />
-            </Button>
-          </Tooltip>
+      <AssetsQueryProvider>
+        <div
+          id="editor-container"
+          className="flex flex-col"
+          style={scenePath.value ? { background: 'transparent' } : {}}
+        >
+          {uiEnabled.value && typeof visualScriptPanelEnabled !== 'undefined' && (
+            <DndWrapper id="editor-container">
+              <DragLayer />
+              <Toolbar />
+              <div className="mt-1 flex overflow-hidden">
+                <DockContainer>
+                  <DockLayout
+                    ref={dockPanelRef}
+                    defaultLayout={defaultLayout({ visualScriptPanelEnabled })}
+                    style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
+                  />
+                </DockContainer>
+              </div>
+            </DndWrapper>
+          )}
+          {Object.entries(editorUIAddon.container.get(NO_PROXY)).map(([key, value]) => {
+            return value
+          })}
         </div>
-      )}
+        <PopupMenu />
+        {!isWidgetVisible && initialized && (
+          <div className="absolute bottom-3 right-4">
+            <Tooltip position="left" key={t('editor:help')} content={t('editor:help')}>
+              <Button size="sm" className="h-8 w-8 p-0" onClick={openChat}>
+                <IoHelpCircleOutline fontSize={24} />
+              </Button>
+            </Tooltip>
+          </div>
+        )}
+      </AssetsQueryProvider>
     </main>
   )
 }

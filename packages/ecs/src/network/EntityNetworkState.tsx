@@ -26,6 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useLayoutEffect } from 'react'
 
 import {
+  createEntity,
+  Engine,
+  EntityID,
+  EntityTreeComponent,
+  EntityUUID,
+  EntityUUIDPair,
+  getOptionalComponent,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
+import {
   defineState,
   dispatchAction,
   getMutableState,
@@ -39,12 +52,7 @@ import {
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
-import { getOptionalComponent, removeEntity, setComponent } from '../ComponentFunctions'
-import { Engine } from '../Engine'
 import { EngineState } from '../EngineState'
-import { EntityUUID } from '../Entity'
-import { EntityTreeComponent } from '../EntityTree'
-import { UUIDComponent } from '../UUIDComponent'
 import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
 import { WorldNetworkAction } from './WorldNetworkAction'
 
@@ -54,6 +62,8 @@ export const EntityNetworkState = defineState({
   initial: {} as Record<
     EntityUUID,
     {
+      entityID: EntityID
+      entitySourceID: SourceID
       parentUUID: EntityUUID
       ownerId: UserID | typeof SceneUser
       ownerPeer: PeerID
@@ -65,11 +75,14 @@ export const EntityNetworkState = defineState({
   receptors: {
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
-        getMutableState(EntityNetworkState)[action.entityUUID].merge({
+        const uuid = { entityID: action.entityID, entitySourceID: action.entitySourceID } as EntityUUIDPair
+        getMutableState(EntityNetworkState)[UUIDComponent.join(uuid)].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,
-          ownerPeer: action.$peer
+          ownerPeer: action.$peer,
+          entityID: action.entityID,
+          entitySourceID: action.entitySourceID
         })
       })
       .validate((action) => {
@@ -131,7 +144,21 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     if (!userConnected) return
-    const entity = UUIDComponent.getOrCreateEntityByUUID(props.uuid)
+
+    const idPair = {
+      entityID: state.entityID.value,
+      entitySourceID: state.entitySourceID.value
+    }
+
+    const uuid = UUIDComponent.join(idPair)
+
+    let entity = UUIDComponent.getEntityByUUID(uuid)
+
+    if (!entity) {
+      entity = createEntity()
+      setComponent(entity, UUIDComponent, idPair)
+    }
+
     return () => {
       removeEntity(entity)
     }

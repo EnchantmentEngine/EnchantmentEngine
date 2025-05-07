@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -41,7 +41,7 @@ import {
   VideoTexture
 } from 'three'
 
-import { createEntity, EntityTreeComponent, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { createEntity, EntityTreeComponent, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -52,7 +52,7 @@ import {
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { defineState, NO_PROXY, State, useHookstate, useState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { createPriorityQueue } from '@ir-engine/spatial/src/common/functions/PriorityQueue'
@@ -63,12 +63,12 @@ import { ContentFitTypeSchema } from '@ir-engine/spatial/src/transform/functions
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { TransformComponent } from '@ir-engine/spatial'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { HighlightComponent } from '@ir-engine/spatial/src/renderer/components/HighlightComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
-import { NodeID, NodeIDSchema } from '../../gltf/NodeIDComponent'
 import { clearErrors } from '../functions/ErrorFunctions'
-import { getTextureSize, PLANE_GEO, resizeVideoMesh, SideSchema, SPHERE_GEO } from './ImageComponent'
+import { getTextureSize, PLANE_GEO, SideSchema, SPHERE_GEO } from './ImageComponent'
 import { MediaComponent, MediaElementComponent } from './MediaComponent'
 
 export const VideoTexturePriorityQueueState = defineState({
@@ -93,12 +93,11 @@ class VideoTexturePriorityQueue extends VideoTexture {
   update() {}
 }
 
-const WrappingSchema = S.LiteralUnion(
-  [RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping],
-  ClampToEdgeWrapping
-)
+const WrappingSchema = S.LiteralUnion([RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping], {
+  default: ClampToEdgeWrapping
+})
 
-const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], 'Flat')
+const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], { default: 'Flat' })
 
 export const VideoComponent = defineComponent({
   name: 'EE_video',
@@ -106,23 +105,22 @@ export const VideoComponent = defineComponent({
 
   schema: S.Object({
     side: SideSchema(DoubleSide),
-    size: T.Vec2(Vector2_One),
     uvOffset: T.Vec2(),
     uvScale: T.Vec2(Vector2_One),
     alphaUVOffset: T.Vec2(),
     wrapS: WrappingSchema,
     wrapT: WrappingSchema,
-    useAlpha: S.Bool(false),
-    useAlphaInvert: S.Bool(false),
-    alphaThreshold: S.Number(0.5),
-    fit: ContentFitTypeSchema('contain'),
+    useAlpha: S.Bool({ default: false }),
+    useAlphaInvert: S.Bool({ default: false }),
+    alphaThreshold: S.Number({ default: 0.5 }),
+    fit: ContentFitTypeSchema('stretch'),
     projection: ProjectionSchema,
-    mediaUUID: NodeIDSchema(),
+    mediaUUID: S.EntityID(),
 
     // internal
-    videoMeshEntity: S.NonSerialized(S.Entity()),
-    currentVideoSize: S.NonSerialized(T.Vec2(Vector2_One)),
-    texture: S.NonSerialized(S.Nullable(S.Type<VideoTexturePriorityQueue>()))
+    videoMeshEntity: S.Entity({ serialized: false }),
+    currentVideoSize: T.Vec2(Vector2_One, { serialized: false }),
+    texture: S.Type<VideoTexturePriorityQueue | null>()
   }),
 
   onRemove: (entity, component) => {
@@ -146,11 +144,14 @@ function VideoReactor() {
   const visible = useHasComponent(entity, VisibleComponent)
   const mediaUUID = video.mediaUUID.value
 
-  const mediaEntity = NodeFunctions.useEntityFromNodeID(entity, mediaUUID) || entity
+  const mediaEntity = UUIDComponent.useEntityFromSameSourceByID(entity, mediaUUID) || entity
   const media = useOptionalComponent(mediaEntity, MediaComponent)
   const hasMediaElementComponent = useHasComponent(mediaEntity, MediaElementComponent)
   const localTextureRef = useHookstate<VideoTexturePriorityQueue | null>(null)
   const sourceVideoComponent = useOptionalComponent(mediaEntity, VideoComponent)
+  const transformComponent = useComponent(entity, TransformComponent)
+
+  const highlightComponent = useOptionalComponent(entity, HighlightComponent)
 
   const videoMeshEntity = useHookstate(() => {
     const videoMeshEntity = createEntity()
@@ -207,7 +208,7 @@ function VideoReactor() {
           } else {
             wrappedUv.x = clamp(wrappedUv.x, 0.0, 1.0);
           }
-          
+
           if (wrapT == 1000) {
             wrappedUv.y = fract(wrappedUv.y);
           } else if (wrapT == 1002) {
@@ -235,10 +236,10 @@ function VideoReactor() {
               intensity = 1.0 - intensity;
             }
             if (intensity < alphaThreshold) discard;
-          }          
+          }
           if( adjustedUv.y < 0.0 || adjustedUv.y > 1.0 || adjustedUv.x < 0.0 || adjustedUv.x > 1.0) {
-              discard;    
-          }          
+              discard;
+          }
           gl_FragColor = color;
         #else
           gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -268,9 +269,9 @@ function VideoReactor() {
     const videoEntity = videoMeshEntity
     video.videoMeshEntity.set(videoEntity)
     setComponent(videoEntity, EntityTreeComponent, { parentEntity: entity })
-    setComponent(videoEntity, NameComponent, mesh?.name?.value)
+    setComponent(videoEntity, NameComponent, `video-group-${entity}`)
     setComponent(videoEntity, MediaComponent)
-    video.mediaUUID.set('' as NodeID)
+    video.mediaUUID.set('' as EntityID)
 
     return () => {
       removeEntity(videoEntity)
@@ -278,8 +279,12 @@ function VideoReactor() {
   }, [])
 
   useEffect(() => {
-    mesh.name.set(`video-group-${entity}`)
-  }, [!!mesh])
+    if (!mesh || !highlightComponent) return
+    setComponent(videoMeshEntity, HighlightComponent)
+    return () => {
+      removeComponent(videoMeshEntity, HighlightComponent)
+    }
+  }, [!!mesh, highlightComponent])
 
   useEffect(() => {
     setVisibleComponent(videoMeshEntity, !!visible)
@@ -292,61 +297,59 @@ function VideoReactor() {
 
   // update mesh
   useEffect(() => {
-    if (!media || !media.isCurrentTrackLoaded.value) return
-
     const videoMesh = mesh.value as Mesh<PlaneGeometry | SphereGeometry, ShaderMaterial>
-    resizeVideoMesh(videoMesh)
 
     const uvOffset = new Vector2(0, 0)
     const uvScale = new Vector2(1, 1)
+    let imageSize = new Vector2(1, 1)
 
-    const imageSize = getTextureSize(videoMesh.material.uniforms.map.value as Texture | CompressedTexture)
-    video.currentVideoSize.set(imageSize)
-    const imageRatio = imageSize.x / imageSize.y || 1
-
-    const size = video.size.value
-    const [containerWidth, containerHeight] = [size.x, size.y]
+    const [containerWidth, containerHeight] = [transformComponent.value.scale.x, transformComponent.value.scale.y]
     const containerRatio = containerWidth / containerHeight
 
-    let isPlacementHorz = true
-    if (video.fit.value == 'horizontal') {
-      isPlacementHorz = true
-    }
-    if (video.fit.value == 'vertical') {
-      isPlacementHorz = false
-    }
-    if (video.fit.value == 'contain') {
-      if (imageRatio > containerRatio) {
-        isPlacementHorz = true
-      } else {
-        isPlacementHorz = false
+    if (media && media.isCurrentTrackLoaded.value) {
+      imageSize = getTextureSize(videoMesh.material.uniforms.map.value as Texture | CompressedTexture)
+      if (video.fit.value !== 'stretch') {
+        const imageRatio = imageSize.x / imageSize.y || 1
+
+        let isPlacementHorz = true
+        if (video.fit.value == 'horizontal') {
+          isPlacementHorz = true
+        }
+        if (video.fit.value == 'vertical') {
+          isPlacementHorz = false
+        }
+
+        if (video.fit.value == 'contain') {
+          if (imageRatio > containerRatio) {
+            isPlacementHorz = true
+          } else {
+            isPlacementHorz = false
+          }
+        }
+        if (video.fit.value == 'cover') {
+          if (imageRatio > containerRatio) {
+            isPlacementHorz = false
+          } else {
+            isPlacementHorz = true
+          }
+        }
+
+        if (isPlacementHorz) {
+          uvScale.y = imageRatio / containerRatio
+          uvScale.x = 1
+          uvOffset.y = (1 - uvScale.y) / 2
+        } else {
+          uvScale.x = 1 / imageRatio / (1 / containerRatio)
+          uvScale.y = 1
+          uvOffset.x = (1 - uvScale.x) / 2
+        }
       }
     }
-    if (video.fit.value == 'cover') {
-      if (imageRatio > containerRatio) {
-        isPlacementHorz = false
-      } else {
-        isPlacementHorz = true
-      }
-    }
 
-    if (isPlacementHorz) {
-      uvScale.y = imageRatio / containerRatio
-      uvScale.x = 1
-      uvOffset.y = (1 - uvScale.y) / 2
-    } else {
-      uvScale.x = 1 / imageRatio / (1 / containerRatio)
-      uvScale.y = 1
-      uvOffset.x = (1 - uvScale.x) / 2
-    }
-
-    videoMesh.scale.x = containerWidth
-    videoMesh.scale.y = containerHeight
-
+    video.currentVideoSize.set(imageSize)
     fitPlacementUvOffset.set(uvOffset)
     fitPlacementUvScale.set(uvScale)
-    //}, [!!mesh, video.size, video.fit, video.texture, mesh?.material])
-  }, [!!mesh, video.size, video.fit, video.texture, mesh?.material, media?.isCurrentTrackLoaded])
+  }, [!!mesh, transformComponent.scale, video.fit, video.texture, mesh?.material, media?.isCurrentTrackLoaded])
 
   useEffect(() => {
     mesh.geometry.set(video.projection.value === 'Flat' ? PLANE_GEO() : SPHERE_GEO())
@@ -454,8 +457,30 @@ function VideoReactor() {
     const sourceTexture = sourceVideoComponent?.texture
 
     if (video.texture.value) {
+      const videoEl = mediaElement.element as HTMLVideoElement
+
+      const resetMuted = () => {
+        videoEl.muted = false
+        document.removeEventListener('pointerdown', resetMuted)
+      }
+
+      if (videoEl.paused) {
+        videoEl.pause()
+      } else {
+        videoEl.play().catch((error) => {
+          if (error.name === 'NotAllowedError') {
+            videoEl.muted = true
+            videoEl.play()
+
+            document.addEventListener('pointerdown', resetMuted)
+          } else {
+            console.error(error)
+          }
+        })
+      }
+
       //needed to set up the self-referencing source video texture
-      ;(video.texture.value.image as HTMLVideoElement) = mediaElement.element as HTMLVideoElement
+      ;(video.texture.value.image as HTMLVideoElement) = videoEl
       clearErrors(entity, VideoComponent)
     } else {
       if (sourceTexture && sourceMeshComponent) {

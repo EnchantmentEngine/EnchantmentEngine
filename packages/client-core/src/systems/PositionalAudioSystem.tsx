@@ -138,9 +138,7 @@ const execute = () => {
       continue
     }
 
-    // get existing stream - need to wait for UserWindowMedia to populate
-    /** @todo we need to properly handle this */
-    const existingAudioObject = document.getElementById(`${ownerID}_audio`)! as HTMLAudioElement
+    const existingAudioObject = peerMediaState[peer.peerID][webcamVideoMediaChannelType].element
     if (!existingAudioObject) continue
 
     // mute existing stream

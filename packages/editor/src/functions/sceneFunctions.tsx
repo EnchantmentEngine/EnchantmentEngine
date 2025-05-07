@@ -93,8 +93,8 @@ export const saveSceneGLTF = async (
     logger.error('Failed to save scene, no gltf data found')
   }
 
-  const blob = [new Blob([JSON.stringify(gltfData, null, 2)], { type: 'application/gltf+json' })]
-  const gltfFile = new File(blob, sceneFile)
+  const blob = [new Blob([JSON.stringify(gltfData, null, 2)], { type: 'model/gltf+json' })]
+  const gltfFile = new File(blob, sceneFile, { type: 'model/gltf+json' })
 
   const currentScene = await API.instance.service(staticResourcePath).get(sceneAssetID)
 
@@ -215,7 +215,7 @@ export const onSaveScene = async () => {
   try {
     await saveSceneGLTF(sceneAssetID!, projectName!, sceneName!, abortController.signal)
     NotificationService.dispatchNotify(`${i18n.t('editor:dialog.saveScene.info-save-success')}`, { variant: 'success' })
-    const sourceID = GLTFComponent.getInstanceID(rootEntity)
+    const sourceID = GLTFComponent.getSourceID(rootEntity)
     getMutableState(AssetModifiedState)[sourceID].set(none)
 
     ModalState.closeModal()

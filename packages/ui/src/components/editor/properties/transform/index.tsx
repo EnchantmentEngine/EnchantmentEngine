@@ -27,34 +27,38 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Quaternion, Vector3 } from 'three'
 
-import { useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  getComponent,
+  hasComponent,
+  removeComponent,
+  setComponent,
+  useComponent,
+  useOptionalComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { SceneDynamicLoadComponent } from '@ir-engine/engine/src/scene/components/SceneDynamicLoadComponent'
-import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 
 import { LuMove3D } from 'react-icons/lu'
 
-import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
+import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { ObjectGridSnapState } from '@ir-engine/editor/src/systems/ObjectGridSnapSystem'
 
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import { EditorHelperState } from '@ir-engine/editor/src/services/EditorHelperState'
 import { EntityHierarchyLockState } from '@ir-engine/editor/src/services/EntityHierarchyLockState'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
-import { TransformSpace } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { TransformComponent } from '@ir-engine/spatial'
+import { TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 
-import { EditorHistoryFunctions } from '@ir-engine/editor/src/services/EditorHistoryState'
+import { entityExists, PresentationSystemGroup, useExecute } from '@ir-engine/ecs'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { Checkbox } from '@ir-engine/ui'
 import ComponentDropdown from '../../ComponentDropdown'
 import EulerInput from '../../input/Euler'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import Vector3Input from '../../input/Vector3'
-import { TransformUniformScaleState } from './TransformUniformScaleState.ts'
-
-const position = new Vector3()
-const rotation = new Quaternion()
-const scale = new Vector3()
+import { TransformUniformScaleState } from './TransformUniformScaleState'
 
 /**
  * TransformPropertyGroup component is used to render editor view to customize properties.
@@ -67,27 +71,51 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
   const transformComponent = useComponent(props.entity, TransformComponent)
   const transformSpace = useHookstate(getMutableState(EditorHelperState).transformSpace)
 
-  position.copy(transformComponent.position.value)
-  rotation.copy(transformComponent.rotation.value)
-  scale.copy(transformComponent.scale.value)
+  const position = useHookstate(transformComponent.position.get(NO_PROXY))
+  const rotation = useHookstate(transformComponent.rotation.get(NO_PROXY))
+  const scale = useHookstate(transformComponent.scale.get(NO_PROXY))
+
+  useExecute(
+    () => {
+      if (!entityExists(props.entity) || !hasComponent(props.entity, TransformComponent)) return
+
+      const transformComponent = getComponent(props.entity, TransformComponent)
+      const updatedPostion = transformComponent.position
+      const updatedRotation = transformComponent.rotation
+      const updatedScale = transformComponent.scale
+
+      if (!position.value.equals(updatedPostion)) {
+        position.set(updatedPostion)
+      }
+      if (!rotation.value.equals(updatedRotation)) {
+        rotation.set(updatedRotation)
+      }
+      if (!scale.value.equals(updatedScale)) {
+        scale.set(updatedScale)
+      }
+    },
+    { after: PresentationSystemGroup }
+  )
 
   if (transformSpace.value === TransformSpace.world)
-    transformComponent.matrixWorld.value.decompose(position, rotation, scale)
+    transformComponent.matrixWorld.value.decompose(position.value, rotation.value, scale.value)
 
   const onRelease = () => {
     const bboxSnapState = getState(ObjectGridSnapState)
     if (bboxSnapState.enabled) {
       ObjectGridSnapState.apply()
     }
-    const selectedEntities = SelectionState.getSelectedEntities()
-    EditorHistoryFunctions.setComponent(selectedEntities, TransformComponent)
+    const entities = SelectionState.getSelectedEntities()
+    AuthoringState.snapshotEntities(entities)
   }
 
   const onChangeDynamicLoad = (value) => {
-    const selectedEntities = SelectionState.getSelectedEntities()
-
-    if (value === true) EditorHistoryFunctions.setComponent(selectedEntities, SceneDynamicLoadComponent)
-    else EditorHistoryFunctions.removeComponent(selectedEntities, SceneDynamicLoadComponent)
+    const entities = SelectionState.getSelectedEntities()
+    for (const entity of entities) {
+      if (value === true) setComponent(entity, SceneDynamicLoadComponent)
+      else removeComponent(entity, SceneDynamicLoadComponent)
+    }
+    AuthoringState.snapshotEntities(entities)
   }
 
   const onChangePosition = (value: Vector3) => {
@@ -146,7 +174,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
           smallStep={0.01}
           mediumStep={0.1}
           largeStep={1}
-          value={position}
+          value={position.value}
           onChange={onChangePosition}
           onRelease={onRelease}
         />
@@ -154,7 +182,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
       <InputGroup name="Rotation" label={t('editor:properties.transform.lbl-rotation')} className="w-auto">
         <EulerInput
           disabled={locked}
-          quaternion={rotation}
+          quaternion={rotation.value}
           onChange={onChangeRotation}
           unit="°"
           onRelease={onRelease}
@@ -167,7 +195,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
           smallStep={0.01}
           mediumStep={0.1}
           largeStep={1}
-          value={scale}
+          value={scale.value}
           onToggleUniformScale={onToggleUniformScale}
           onChange={onChangeScale}
           onRelease={onRelease}
