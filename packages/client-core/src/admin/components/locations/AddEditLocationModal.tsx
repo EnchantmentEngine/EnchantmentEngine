@@ -316,6 +316,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           lod.params.dst = fileName + lod.suffix
           lod.params.modelFormat = srcURL.endsWith('.gltf') ? 'gltf' : srcURL.endsWith('.vrm') ? 'vrm' : 'glb'
           lod.params.resourceUri = ''
+          lod.params.adaptiveSimplification = true
           return lod
         })
         lods.set(defaults)
