@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { GLTF } from '@gltf-transform/core'
 import { Component, Entity, EntityID, EntityUUID, SerializedComponentType } from '@ir-engine/ecs'
 import { Patch } from 'rfc6902'
-import { OVERRIDE_EXTENSION_NAME } from './SceneDeltaExporterExtension'
+import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
 
 const SCENE_DELTA_EXTENSION_NAME = 'IR_scene_delta'
 const MATERIAL_JSON_ID = 'materialParameters' as const

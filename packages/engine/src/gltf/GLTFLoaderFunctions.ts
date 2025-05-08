@@ -130,8 +130,8 @@ import {
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
-import { OVERRIDE_EXTENSION_NAME } from './SceneDeltaExporterExtension'
 import { migrateSceneDeltas } from './migrateSceneDeltas'
+import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
 
 type ComponentExt = Component & {
   loadNode?: (options: GLTFParserOptions, nodeIndex: number) => Promise<void>

@@ -31,7 +31,7 @@ import { GLTFSceneExportExtension } from './exportGLTFScene'
 
 export const OVERRIDE_EXTENSION_NAME = 'IR_override'
 
-export const SceneDeltaExporterExtension: () => GLTFSceneExportExtension = () => ({
+export const overrideExporterExtension: () => GLTFSceneExportExtension = () => ({
   after: (rootEntity, gltf) => {
     const overrideState = getState(AuthoringState)
     let usedSceneDelta = false

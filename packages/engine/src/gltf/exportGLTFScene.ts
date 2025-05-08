@@ -107,7 +107,7 @@ import {
   MaterialTextureValue,
   MaterialValue
 } from './MaterialExtensionComponents'
-import { SceneDeltaExporterExtension } from './SceneDeltaExporterExtension'
+import { overrideExporterExtension } from './overrideExporterExtension'
 
 const WEBGL_CONSTANTS = {
   POINTS: 0x0000,
@@ -229,7 +229,7 @@ type GLTFSceneExportContext = {
 
 export type ExportExtension = GLTFSceneExportExtension
 
-export const defaultExportExtensionList = [SceneDeltaExporterExtension] as (() => ExportExtension)[]
+export const defaultExportExtensionList = [overrideExporterExtension] as (() => ExportExtension)[]
 
 type TypedArrayConstructor =
   | Int8ArrayConstructor
