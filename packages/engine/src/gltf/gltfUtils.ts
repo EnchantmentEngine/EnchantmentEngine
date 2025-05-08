@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { EntityUUID } from '@ir-engine/ecs'
+import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
 
 export function nodeIsChild(index: number, nodes: GLTF.INode[]) {
   for (const node of nodes) {

@@ -50,7 +50,7 @@ import { S } from './schemas/JSONSchemas'
 
 export const EntitiesBySourceState = defineState({
   name: 'ir.world.EntitiesBySourceState',
-  initial: {} as Record<SourceID, Entity[]>
+  initial: {} as Record<LayerID, Record<SourceID, Entity[]>>
 })
 
 /**
@@ -122,7 +122,10 @@ export const UUIDComponent = defineComponent({
 
     component.set(idPair)
 
-    const state = getMutableState(EntitiesBySourceState)
+    if (!getState(EntitiesBySourceState)[layer]) {
+      getMutableState(EntitiesBySourceState)[layer].set({})
+    }
+    const state = getMutableState(EntitiesBySourceState)[layer]
     const entitiesBySourceState = state[idPair.entitySourceID]
     if (!entitiesBySourceState.value) {
       entitiesBySourceState.set([entity])
@@ -138,8 +141,8 @@ export const UUIDComponent = defineComponent({
     delete UUIDComponent.entitiesByUUIDState[layer][uuid]
 
     const source = component.value.entitySourceID.toString()
-    const entities = getState(EntitiesBySourceState)[source].filter((currentEntity) => currentEntity !== entity)
-    const layerState = getMutableState(EntitiesBySourceState)
+    const entities = getState(EntitiesBySourceState)[layer][source].filter((currentEntity) => currentEntity !== entity)
+    const layerState = getMutableState(EntitiesBySourceState)[layer]
     if (entities.length === 0) {
       layerState[source].set(none)
     } else {
@@ -198,13 +201,15 @@ export const UUIDComponent = defineComponent({
     return UUIDComponent.useEntityByUUID(entitySourceID, layer)
   },
 
-  useEntitiesBySource: (source: Entity) => {
-    const state = useHookstate(getMutableState(EntitiesBySourceState)).value
-    return state[source] || []
+  useEntitiesBySource: (sourceEntity: Entity, layer = Layers.Simulation as LayerID) => {
+    const source = UUIDComponent.getAsSourceID(sourceEntity)
+    const state = useHookstate(getMutableState(EntitiesBySourceState)[layer]).value
+    return state?.[source] || []
   },
 
-  getEntitiesBySource: (source: Entity): Entity[] => {
-    return getState(EntitiesBySourceState)[source] || []
+  getEntitiesBySource: (sourceEntity: Entity, layer = Layers.Simulation as LayerID): Entity[] => {
+    const source = UUIDComponent.getAsSourceID(sourceEntity)
+    return getState(EntitiesBySourceState)[layer]?.[source] || []
   },
 
   /** Construct a new SourceID from the concatenated values of the source entity */

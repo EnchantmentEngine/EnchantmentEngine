@@ -189,8 +189,8 @@ describe('definePrefab', () => {
 
   it('should not dispatch a spawn action if loaded as part of a scene', async () => {
     const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabSpawn',
-      jsonID: 'test-prefab-spawn',
+      name: 'TestPrefabSpawn2',
+      jsonID: 'test-prefab-spawn-2',
       schema: S.Object({
         health: S.Number({ default: 100 }),
         name: S.String({ default: 'Default' })
