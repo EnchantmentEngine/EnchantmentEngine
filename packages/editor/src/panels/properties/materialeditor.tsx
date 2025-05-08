@@ -200,7 +200,7 @@ export function MaterialEditor(props: { entity: Entity }) {
       </InputGroup>
       <br />
       <ParameterInput
-        entity={props.materialUUID}
+        path={UUIDComponent.get(entity)}
         values={materialComponent.parameters.get(NO_PROXY)}
         onChange={(key) => commitProperty(MaterialStateComponent, ('parameters.' + key) as any)}
         defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
@@ -227,7 +227,7 @@ export function MaterialEditor(props: { entity: Entity }) {
       {selectedPlugin.value && currentPlugin && (
         <>
           <ParameterInput
-            entity={UUIDComponent.get(entity)}
+            path={UUIDComponent.get(entity)}
             values={currentPlugin}
             onChange={(key) => commitProperty(MaterialPluginComponents[selectedPlugin.value], key)}
             defaults={generateDefaults(currentPlugin)}
