@@ -41,7 +41,6 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { getMutableState, getState, UserID } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -209,7 +208,7 @@ describe('AuthoringState', () => {
 
     describe('removeEntity', () => {
       it('should remove entity from ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {} }
         const finalState: SourceData = {}
 
@@ -219,8 +218,8 @@ describe('AuthoringState', () => {
       })
 
       it('should remove multiple entities from ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {}, [nodeID2]: {} }
         const finalState: SourceData = {}
 
@@ -231,7 +230,7 @@ describe('AuthoringState', () => {
       })
 
       it('should remove entity with components from ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
         const finalState: SourceData = {}
 
@@ -241,8 +240,8 @@ describe('AuthoringState', () => {
       })
 
       it('should remove multiple entities with components from ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity2, Component2)
         const currentState: SourceData = {
@@ -260,7 +259,7 @@ describe('AuthoringState', () => {
 
     describe('setComponent', () => {
       it('should set component on entity in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {} }
         const finalState: SourceData = { [nodeID1]: { [Component1.name]: {} } }
 
@@ -270,8 +269,8 @@ describe('AuthoringState', () => {
       })
 
       it('should set component on multiple entities in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {}, [nodeID2]: {} }
         const finalState: SourceData = { [nodeID1]: { [Component1.name]: {} }, [nodeID2]: { [Component2.name]: {} } }
 
@@ -282,7 +281,7 @@ describe('AuthoringState', () => {
       })
 
       it('should set multiple components on entity in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {} }
         const finalState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
 
@@ -293,8 +292,8 @@ describe('AuthoringState', () => {
       })
 
       it('should set multiple components on multiple entities in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         const currentState: SourceData = { [nodeID1]: {}, [nodeID2]: {} }
         const finalState: SourceData = {
           [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} },
@@ -310,7 +309,7 @@ describe('AuthoringState', () => {
       })
 
       it('should set component on entity with existing components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         setComponent(entity1, Component1)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {} } }
         const finalState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
@@ -322,8 +321,8 @@ describe('AuthoringState', () => {
       })
 
       it('should set component on multiple entities with existing components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity2, Component2)
         const currentState: SourceData = {
@@ -344,7 +343,7 @@ describe('AuthoringState', () => {
       })
 
       it('should set multiple components on entity with existing components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         setComponent(entity1, Component1)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {} } }
         const finalState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
@@ -356,8 +355,8 @@ describe('AuthoringState', () => {
       })
 
       it('should set multiple components on multiple entities with existing components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity2, Component2)
         const currentState: SourceData = {
@@ -380,7 +379,7 @@ describe('AuthoringState', () => {
 
     describe('removeComponent', () => {
       it('should remove component from entity in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         setComponent(entity1, Component1)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {} } }
         const finalState: SourceData = { [nodeID1]: {} }
@@ -391,8 +390,8 @@ describe('AuthoringState', () => {
       })
 
       it('should remove component from multiple entities in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity2, Component2)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {} }, [nodeID2]: { [Component2.name]: {} } }
@@ -405,7 +404,7 @@ describe('AuthoringState', () => {
       })
 
       it('should remove multiple components from entity in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity1, Component2)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
@@ -418,8 +417,8 @@ describe('AuthoringState', () => {
       })
 
       it('should remove multiple components from multiple entities in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity1, Component2)
         setComponent(entity2, Component1)
@@ -439,7 +438,7 @@ describe('AuthoringState', () => {
       })
 
       it('should remove component from entity with other components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity1, Component2)
         const currentState: SourceData = { [nodeID1]: { [Component1.name]: {}, [Component2.name]: {} } }
@@ -452,8 +451,8 @@ describe('AuthoringState', () => {
       })
 
       it('should remove component from multiple entities with other components in ECS', () => {
-        const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-        const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+        const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+        const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
         setComponent(entity1, Component1)
         setComponent(entity1, Component2)
         setComponent(entity2, Component1)
@@ -492,8 +491,8 @@ describe('AuthoringState', () => {
     it('should return snapshot of source with correct component data', () => {
       const Component1 = defineComponent({ name: 'Component1', jsonID: 'Component1', toJSON: () => ({}) })
       const Component2 = defineComponent({ name: 'Component2', jsonID: 'Component2', toJSON: () => ({}) })
-      const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
-      const entity2 = NodeIDComponent.create(source1, nodeID2, Layers.Authoring)
+      const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity2 = UUIDComponent.create(source1, nodeID2, Layers.Authoring)
       setComponent(entity1, Component1)
       setComponent(entity2, Component2)
 
@@ -506,7 +505,7 @@ describe('AuthoringState', () => {
     })
 
     it('should include TransformComponent in the snapshot with correct data', () => {
-      const entity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
 
       const position = new Vector3(1, 2, 3)
       const rotation = new Quaternion(0.1, 0.2, 0.3, 0.4)
@@ -528,8 +527,8 @@ describe('AuthoringState', () => {
     })
 
     it('should include EntityTreeComponent in the snapshot with correct data', () => {
-      const parentEntity = NodeIDComponent.create(source1, 'parent' as EntityID, Layers.Authoring)
-      const childEntity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const parentEntity = UUIDComponent.create(source1, 'parent' as EntityID, Layers.Authoring)
+      const childEntity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
 
       setComponent(childEntity, EntityTreeComponent, {
         parentEntity: parentEntity,
@@ -546,7 +545,7 @@ describe('AuthoringState', () => {
     })
 
     it('should include NameComponent in the snapshot with correct data', () => {
-      const entity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
 
       setComponent(entity, NameComponent, 'TestEntityName')
 
@@ -558,8 +557,8 @@ describe('AuthoringState', () => {
     })
 
     it('should include all special case components in the snapshot correctly', () => {
-      const parentEntity = NodeIDComponent.create(source1, 'parent' as EntityID, Layers.Authoring)
-      const entity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const parentEntity = UUIDComponent.create(source1, 'parent' as EntityID, Layers.Authoring)
+      const entity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
 
       const position = new Vector3(1, 2, 3)
       const rotation = new Quaternion(0.1, 0.2, 0.3, 0.4)
@@ -705,7 +704,7 @@ describe('AuthoringState', () => {
 
     it('should dispatch an action for the sourceID with', () => {
       const Component1 = defineComponent({ name: 'Component1', jsonID: 'Component1', toJSON: () => ({}) })
-      const entity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
       setComponent(entity, Component1)
 
       const initialSnapshot = getSourceSnapshot(sourceID1)
@@ -759,7 +758,7 @@ describe('AuthoringState', () => {
       })
 
       const Component1 = defineComponent({ name: 'Component1', jsonID: 'Component1', toJSON: () => ({}) })
-      const entity = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
       setComponent(entity, Component1)
 
       AuthoringState.snapshotEntities([entity])
@@ -787,11 +786,11 @@ describe('AuthoringState', () => {
       })
 
       const Component1 = defineComponent({ name: 'Component1', jsonID: 'Component1', toJSON: () => ({}) })
-      const entity1 = NodeIDComponent.create(source1, nodeID1, Layers.Authoring)
+      const entity1 = UUIDComponent.create(source1, nodeID1, Layers.Authoring)
       setComponent(entity1, Component1)
 
       const Component2 = defineComponent({ name: 'Component2', jsonID: 'Component2', toJSON: () => ({}) })
-      const entity2 = NodeIDComponent.create(source2, nodeID2, Layers.Authoring)
+      const entity2 = UUIDComponent.create(source2, nodeID2, Layers.Authoring)
       setComponent(entity2, Component2)
 
       AuthoringState.snapshotEntities([entity1, entity2])

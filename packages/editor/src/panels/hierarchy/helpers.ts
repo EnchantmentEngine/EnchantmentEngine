@@ -26,7 +26,6 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { Entity, EntityTreeComponent, getOptionalComponent, Layers, removeEntity, UUIDComponent } from '@ir-engine/ecs'
 import { AllFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 import { getState } from '@ir-engine/hyperflux'
@@ -95,7 +94,7 @@ export const pasteNodes = (parentEntity?: Entity) => {
   const ProcessEntityData = (parentEntity: Entity | undefined, nodeEntitiesData: EntityCopyDataType[]) => {
     nodeEntitiesData.forEach((nodeEntityData) => {
       const components = nodeEntityData.components.map((c) => ({ name: c.name, props: c.json }) as ComponentJsonType)
-      delete components[NodeIDComponent.jsonID]
+      delete components[UUIDComponent.jsonID]
 
       const entityData = EditorControlFunctions.createObjectFromSceneElement(
         components,

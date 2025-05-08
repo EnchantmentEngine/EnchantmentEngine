@@ -39,6 +39,7 @@ import {
   LayerComponent,
   LayerID,
   Layers,
+  createEntity,
   defineComponent,
   getComponent,
   setComponent,
@@ -75,6 +76,8 @@ export const EntitiesBySourceState = defineState({
  */
 export const UUIDComponent = defineComponent({
   name: 'UUIDComponent',
+
+  jsonID: 'EE_uuid',
 
   schema: S.EntityUUIDPair({
     validate: (idPair, prev, entity) => {
@@ -145,6 +148,15 @@ export const UUIDComponent = defineComponent({
   },
 
   entitiesByUUIDState: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>,
+
+  create: (sourceEntity: Entity, nodeID = UUIDComponent.generate(), layer = Layers.Simulation as LayerID) => {
+    const entity = createEntity(layer)
+    setComponent(entity, UUIDComponent, {
+      entitySourceID: UUIDComponent.getAsSourceID(sourceEntity),
+      entityID: nodeID
+    })
+    return entity
+  },
 
   /** Reactively gets an entity by UUID */
   useEntityByUUID(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {

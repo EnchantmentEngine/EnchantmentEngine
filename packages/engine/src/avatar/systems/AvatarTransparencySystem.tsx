@@ -28,6 +28,7 @@ import {
   EntityArrayBoundary,
   PresentationSystemGroup,
   QueryReactor,
+  UUIDComponent,
   defineQuery,
   defineSystem,
   getComponent,

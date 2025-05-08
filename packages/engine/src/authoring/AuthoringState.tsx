@@ -45,7 +45,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 
 import {
   defineAction,
@@ -66,7 +65,7 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 
-export type SourceData = Record<NodeID, object>
+export type SourceData = Record<EntityID, object>
 
 export type UndoCommand = {
   type: 'undo'
@@ -354,7 +353,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
       if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)) {
         // entity does not exist, add entity
-        NodeIDComponent.create(
+        UUIDComponent.create(
           UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, Layers.Authoring),
           nodeID as any as EntityID,
           Layers.Authoring
@@ -385,7 +384,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
   for (const nodeID of Object.keys(currentState) as EntityID[]) {
     if (!finalState[nodeID]) {
       // entity does not exist, remove entity
-      const uuid = (sourceID + nodeID) as EntityUUID
+      const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
       const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
       // ensure the entity has actually been removed, and not moved to another source
       if (getOptionalComponent(entity, UUIDComponent)?.entitySourceID === sourceID) {
@@ -403,34 +402,34 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
   const sourceData = {} as SourceData
 
   for (const entity of sourceEntities) {
-    const nodeID = getComponent(entity, NodeIDComponent)
-    sourceData[nodeID] = {}
+    const entityID = getComponent(entity, UUIDComponent).entityID
+    sourceData[entityID] = {}
 
     const components = getAllComponents(entity)
 
     for (const component of components) {
-      if (component === NodeIDComponent) continue
+      if (component === UUIDComponent) continue
       const sceneComponentID = component.jsonID
       if (!sceneComponentID) continue
       const data = serializeComponent(entity, component)
       if (data) {
-        sourceData[nodeID][component.name] = data
+        sourceData[entityID][component.name] = data
       }
     }
 
     // special case components that do not have a jsonID but are required if available
     if (hasComponent(entity, NameComponent)) {
-      sourceData[nodeID][NameComponent.name] = getComponent(entity, NameComponent)
+      sourceData[entityID][NameComponent.name] = getComponent(entity, NameComponent)
     }
     if (hasComponent(entity, EntityTreeComponent)) {
-      sourceData[nodeID][EntityTreeComponent.name] = {
+      sourceData[entityID][EntityTreeComponent.name] = {
         parentEntity: getComponent(entity, EntityTreeComponent).parentEntity,
         childIndex: getComponent(entity, EntityTreeComponent).childIndex
       }
     }
     if (hasComponent(entity, TransformComponent)) {
       const component = getComponent(entity, TransformComponent)
-      sourceData[nodeID][TransformComponent.name] = {
+      sourceData[entityID][TransformComponent.name] = {
         position: {
           x: component.position.x,
           y: component.position.y,

@@ -74,7 +74,6 @@ import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
-import { NodeIDComponent } from './NodeIDComponent'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
@@ -174,8 +173,8 @@ const buildComponentDependencies = (entity: Entity, json: GLTF.IGLTF) => {
 
   if (!json.nodes) return dependencies
   for (const node of json.nodes) {
-    if (node.extensions && node.extensions[NodeIDComponent.jsonID]) {
-      const nodeID = node.extensions[NodeIDComponent.jsonID] as EntityID
+    if (node.extensions && node.extensions[UUIDComponent.jsonID]) {
+      const nodeID = node.extensions[UUIDComponent.jsonID] as EntityID
       const sourceID = GLTFComponent.getSourceID(entity)
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
       const extensions = Object.keys(node.extensions)
