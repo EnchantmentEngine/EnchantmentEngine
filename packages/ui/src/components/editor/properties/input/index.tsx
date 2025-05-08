@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useQuery, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, Layers, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, hasComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
   commitProperties,
   commitProperty,
@@ -33,7 +33,7 @@ import {
 } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { useNodeOptions } from '@ir-engine/engine/src/authoring/functions/useNodeOptions'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -47,18 +47,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const inputComponent = useComponent(props.entity, InputComponent)
-  const authoringLayerEntities = useQuery([UUIDComponent, NameComponent], Layers.Authoring)
-
-  const options = authoringLayerEntities.map((entity) => {
-    return {
-      label: getComponent(entity, NameComponent),
-      value: getComponent(entity, UUIDComponent).entityID
-    }
-  })
-  options.unshift({
-    label: 'Self',
-    value: getComponent(props.entity, UUIDComponent).entityID
-  })
+  const options = useNodeOptions(props.entity)
 
   const addSink = () => {
     const sinks = [...(inputComponent.inputSinks.value ?? []), getComponent(props.entity, UUIDComponent)]
