@@ -87,7 +87,6 @@ import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/Transf
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
 import { ShadowComponent } from '../components/ShadowComponent'
@@ -246,7 +245,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
   const renderSettingsComponent = useComponent(renderSettingsEntity, RenderSettingsComponent)
   const xrLightProbeEntity = useHookstate(getMutableState(XRLightProbeState).directionalLightEntity)
-  const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+  const activeLightEntity = UUIDComponent.useEntityFromSameSourceByID(
     renderSettingsEntity,
     renderSettingsComponent.primaryLight.value
   )
@@ -278,7 +277,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
     if (renderSettingsComponent.primaryLight.value && primaryLightVisibleComponent) {
       activeLightEntityState.set(
-        NodeFunctions.getEntityFromNodeID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
+        UUIDComponent.getEntityFromSameSourceByID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
       )
       return
     }
@@ -454,11 +453,13 @@ const reactor = () => {
     <>
       {useShadows ? (
         <QueryReactor
+          key={'renderSettingsQueryReactor'}
           Components={[RenderSettingsComponent]}
           ChildEntityReactor={ShadowSystemReactors.RenderSettingsQueryReactor}
         />
       ) : shadowTexture ? (
         <QueryReactor
+          key={'dropShadowReactor'}
           Components={[VisibleComponent, ShadowComponent]}
           ChildEntityReactor={ShadowSystemReactors.DropShadowReactor}
         />
