@@ -26,6 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   Engine,
   Entity,
+  EntityID,
+  SourceID,
+  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
@@ -53,6 +56,10 @@ describe('MaterialStateComponent', () => {
     beforeEach(async () => {
       if (!Engine.instance) createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, MaterialStateComponent)
     })
 
@@ -78,6 +85,10 @@ describe('MaterialStateComponent', () => {
     beforeEach(async () => {
       if (!Engine.instance) createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, MaterialStateComponent, { material: new Material() })
     })
 
@@ -181,6 +192,10 @@ describe('MaterialInstanceComponent', () => {
     beforeEach(async () => {
       if (!Engine.instance) createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, MaterialInstanceComponent)
     })
 
@@ -191,6 +206,14 @@ describe('MaterialInstanceComponent', () => {
     it('should change the values of an initialized MaterialInstanceComponent', () => {
       const entity1 = createEntity()
       const entity2 = createEntity()
+      setComponent(entity1, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
+      setComponent(entity2, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       const Expected: MaterialInstanceComponentData = {
         entities: [entity1, entity2] as Entity[]
       }
