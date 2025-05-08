@@ -25,8 +25,11 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   ECSState,
+  EntityID,
   SerializedComponentType,
+  SourceID,
   SystemDefinitions,
+  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
@@ -101,6 +104,10 @@ describe('NoiseOffsetPluginComponent', () => {
     beforeEach(async () => {
       createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
@@ -138,6 +145,10 @@ describe('NoiseOffsetSystem', () => {
     beforeEach(async () => {
       createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
@@ -156,6 +167,10 @@ describe('NoiseOffsetSystem', () => {
       const noiseOffsetSystemExecute1 = System1.execute
 
       const otherEntity = createEntity()
+      setComponent(otherEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       setComponent(otherEntity, NoiseOffsetPluginComponent)
       setComponent(otherEntity, MaterialStateComponent, { material: new Material() })
       const System2 = await vi.waitUntil(

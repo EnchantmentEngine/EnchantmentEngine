@@ -118,7 +118,7 @@ export const MaterialStateComponent = defineComponent({
       component.material.set(json.material)
       Object.assign(json.material, {
         get uuid() {
-          return getComponent(entity, UUIDComponent)
+          return UUIDComponent.get(entity)
         },
         set uuid(value) {
           if (value != undefined) throw new Error('Cannot set uuid of proxified object')

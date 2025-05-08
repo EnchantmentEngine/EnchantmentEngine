@@ -25,6 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityID,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -70,6 +72,10 @@ describe('materialFunctions', () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
@@ -80,9 +86,17 @@ describe('materialFunctions', () => {
     it('should add the first item of `@param newMaterialEntities` to MeshComponent.material when MeshComponent.material is not an array', () => {
       const materialEntity = createEntity()
       const otherMaterialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
+      setComponent(otherMaterialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       const newMaterialEntities = [materialEntity, otherMaterialEntity]
       const material = new Material()
-      const expectedUUID = material.uuid
+      const expectedUUID = UUIDComponent.get(materialEntity)
 
       // Set the data as expected
       setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
@@ -95,9 +109,9 @@ describe('materialFunctions', () => {
 
       // Run and Check the result
       setMeshMaterial(testEntity, newMaterialEntities)
-      const result = getComponent(testEntity, MeshComponent).material
+      const result = getComponent(testEntity, MeshComponent).material as Material
       assert.equal(Array.isArray(result), false)
-      assert.equal((result as Material).uuid, expectedUUID)
+      assert.equal(result.uuid, expectedUUID)
     })
 
     it('should add all items of `@param newMaterialEntities` to MeshComponent.material when MeshComponent.material is an array', () => {

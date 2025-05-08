@@ -287,9 +287,9 @@ describe('UUIDComponent', () => {
       expect(getState(EntitiesByUUIDState)[layer][uuid]).not.toBe(Initial)
       expect(getState(EntitiesByUUIDState)[layer][uuid]).toEqual(Expected)
       const testEntity = createEntity(layer)
-      expect(getState(EntitiesByUUIDState)[layer][uuid]).toEqual(testEntity)
+      expect(getState(EntitiesByUUIDState)[layer][uuid].value).toEqual(UndefinedEntity)
       setComponent(testEntity, UUIDComponent, uuidPair)
-      expect(getState(EntitiesByUUIDState)[layer][uuid]).toEqual(testEntity)
+      expect(getState(EntitiesByUUIDState)[layer][uuid].value).toEqual(testEntity)
     })
   }) //:: _getUUIDState
 

@@ -29,11 +29,14 @@ import {
   createInitialComponentValue,
   destroyEngine,
   Entity,
+  EntityID,
   getComponent,
   hasComponent,
   removeEntity,
   setComponent,
-  UndefinedEntity
+  SourceID,
+  UndefinedEntity,
+  UUIDComponent
 } from '@ir-engine/ecs'
 import assert from 'assert'
 import { Material, Vector3 } from 'three'
@@ -155,6 +158,10 @@ describe('TransparencyDitheringPluginComponent', () => {
     beforeEach(async () => {
       createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
