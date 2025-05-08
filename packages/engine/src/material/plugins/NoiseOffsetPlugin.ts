@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { generateNoiseTexture } from '@ir-engine/spatial/src/renderer/functions/generateNoiseTexture'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
-import { T } from '../../../schema/schemaFunctions'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
 export const NoiseOffsetPluginComponent = defineMaterialPlugin({

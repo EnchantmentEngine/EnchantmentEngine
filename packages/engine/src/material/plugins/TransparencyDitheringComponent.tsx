@@ -29,7 +29,8 @@ import { defineComponent, getComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useEffect } from 'react'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
-import { MaterialStateComponent } from '../MaterialComponent'
+
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   ditheringAlphatestChunk,
   ditheringFragUniform,

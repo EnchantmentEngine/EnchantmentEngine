@@ -23,12 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { GLTF } from '@gltf-transform/core'
 import {
   defineComponent,
   ECSState,
   Entity,
   getComponent,
   PresentationSystemGroup,
+  S,
   Schema,
   Static,
   useComponent
@@ -42,6 +44,11 @@ import {
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import React, { useEffect } from 'react'
 import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
+
+export const TextureSchema = () => S.Class(() => null as GLTF.ITextureInfo | null)
+
+const isTextureUniform = (uniform: any) => typeof uniform === 'object' && 'index' in uniform
+
 /**
  *
  * @usage
@@ -105,15 +112,28 @@ export const defineMaterialPlugin = <T extends Schema>({
       /** Suspend context until material exists */
       const material = useComponent(entity, MaterialStateComponent).material.value as Material
 
+      const textureUniforms = Object.fromEntries(
+        Object.entries(uniformSchema)
+          .filter(([key, value]) => isTextureUniform(value))
+          .map(([key, value]) => [key, new Uniform(null)])
+      ) as Record<keyof T, Uniform>
+
       const uniforms = useHookstate(
         () =>
           Object.fromEntries(
             Object.entries(getComponent(entity, PluginComponent) as UniformRecord).map(([key, value]) => [
               key,
-              new Uniform(value)
+              new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)
             ])
           ) as Record<keyof Static<T>, Uniform>
       ).get(NO_PROXY) as Record<keyof Static<T>, Uniform>
+
+      const textures = Object.keys(textureUniforms).reduce((acc, key) => {
+        acc[key] = textureUniforms[key]
+        return acc
+      }, {})
+
+      console.log({ textureUniforms, textures })
 
       useEffect(() => {
         const callback = (shader: Shader, renderer: WebGLRenderer) => {

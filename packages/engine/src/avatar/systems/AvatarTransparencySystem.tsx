@@ -42,12 +42,12 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import React, { useEffect } from 'react'
 import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
-} from '@ir-engine/spatial/src/renderer/materials/plugins/TransparencyDitheringComponent'
-import React, { useEffect } from 'react'
+} from '../../material/plugins/TransparencyDitheringComponent'
 import { SourceComponent } from '../../scene/components/SourceComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 
