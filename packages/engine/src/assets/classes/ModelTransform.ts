@@ -133,6 +133,7 @@ export type ModelTransformParameters = ExtractedImageTransformParameters & {
 
   simplifyRatio: number
   simplifyErrorThreshold: number
+  adaptiveSimplification: boolean
 
   modelFormat: ModelFormat
 
@@ -195,8 +196,9 @@ export const DefaultModelTransformParameters: ModelTransformParameters = {
   mipmap: true,
   textureCompressionQuality: 128,
   maxTextureSize: 1024,
-  simplifyRatio: 1.0,
-  simplifyErrorThreshold: 0.001,
+  simplifyRatio: 1,
+  simplifyErrorThreshold: 0.01,
+  adaptiveSimplification: false,
   resources: {
     geometries: [],
     images: []
