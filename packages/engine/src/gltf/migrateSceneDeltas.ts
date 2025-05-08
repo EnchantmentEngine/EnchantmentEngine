@@ -24,16 +24,15 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { Component, Entity, EntityUUID, SerializedComponentType } from '@ir-engine/ecs'
+import { Component, Entity, EntityID, EntityUUID, SerializedComponentType } from '@ir-engine/ecs'
 import { Patch } from 'rfc6902'
-import { NodeID } from './NodeIDComponent'
 import { OVERRIDE_EXTENSION_NAME } from './SceneDeltaExporterExtension'
 
 const SCENE_DELTA_EXTENSION_NAME = 'IR_scene_delta'
 const MATERIAL_JSON_ID = 'materialParameters' as const
 
 export type SceneDeltaRegistry = Record<EntityUUID, SceneDeltaEntry<any>>
-export type SceneDeltaEntry<C extends Component> = Record<NodeID, Record<string, Partial<SerializedComponentType<C>>>>
+export type SceneDeltaEntry<C extends Component> = Record<EntityID, Record<string, Partial<SerializedComponentType<C>>>>
 export type MaterialDeltaEntry = Record<typeof MATERIAL_JSON_ID, any>
 
 export const migrateSceneDeltas = (entity: Entity, gltf: GLTF.IGLTF) => {

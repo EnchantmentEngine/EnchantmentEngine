@@ -130,7 +130,6 @@ import {
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
-import { NodeIDComponent } from './NodeIDComponent'
 import { OVERRIDE_EXTENSION_NAME } from './SceneDeltaExporterExtension'
 import { migrateSceneDeltas } from './migrateSceneDeltas'
 
@@ -643,7 +642,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialDef = json.materials![materialIndex]
 
   const nodeID = ('material-' + materialIndex) as EntityID
-  const materialEntity = NodeIDComponent.create(entity, nodeID, layer)
+  const materialEntity = UUIDComponent.create(entity, nodeID, layer)
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
@@ -1381,7 +1380,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   const nodeID = getNodeID(nodeDef, nodeIndex)
 
-  const nodeEntity = NodeIDComponent.create(options.entity, nodeID, layerID)
+  const nodeEntity = UUIDComponent.create(options.entity, nodeID, layerID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
 
@@ -1402,7 +1401,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   }
 
   /** Always set visible extension if this is not an ECS node */
-  if (!nodeDef.extensions?.[NodeIDComponent.jsonID]) setComponent(nodeEntity, VisibleComponent)
+  if (!nodeDef.extensions?.[UUIDComponent.jsonID]) setComponent(nodeEntity, VisibleComponent)
 
   //handle legacy ECS embedding
   const extras = nodeDef.extras
@@ -1418,6 +1417,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
               console.warn('no component found for extension', parts[1])
               continue
             }
+            if (Component === UUIDComponent) continue
             let deserializedValue = typeof parts[2] === 'string' ? { [parts[2]]: value } : value
             if (typeof value === 'string') {
               try {
@@ -1479,7 +1479,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   if (nodeDef.extensions) {
     for (const extension in nodeDef.extensions) {
       const Component = ComponentJSONIDMap.get(extension) as ComponentExt | undefined
-      if (!Component) continue
+      if (!Component || Component === UUIDComponent) continue
       deserializeComponent(nodeEntity, Component, nodeDef.extensions[extension])
       if (typeof Component.loadNode === 'function') {
         extensionPending.push(Component.loadNode(options, nodeIndex))
@@ -1667,7 +1667,7 @@ export const getDependency = <
 }
 
 export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
-  (node.extensions?.[NodeIDComponent.jsonID] as EntityID) ?? (`${nodeIndex}` as EntityID)
+  (node.extensions?.[UUIDComponent.jsonID] as EntityID) ?? (`${nodeIndex}` as EntityID)
 
 export type GLTFParserOptions = {
   url: string

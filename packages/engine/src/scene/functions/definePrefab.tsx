@@ -41,7 +41,7 @@ import {
   useComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import {
   defineAction,
   defineState,
@@ -59,6 +59,7 @@ import { NetworkState, NetworkTopics, WorldNetworkAction } from '@ir-engine/netw
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
 import { Quaternion, Vector3 } from 'three'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 /**
  * Creates a prefab definition that can be used both statically in scenes and dynamically at runtime.
@@ -219,7 +220,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
     reactor: ({ entity }) => {
       /** Suspend the context if this component is not spawned as part of a scene */
-      useComponent(entity, SourceComponent)
+      const sourceEntity = UUIDComponent.useSourceEntity(entity)
+      useComponent(sourceEntity, GLTFComponent)
 
       /** If from a scene, implicitly utilizes the SceneNetworkSystem to create the entity on the network */
       useEffect(() => {

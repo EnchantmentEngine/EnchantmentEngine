@@ -37,7 +37,6 @@ import {
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import { getMutableState, UserID } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -110,7 +109,7 @@ describe('HierarchyPanel component', () => {
         {
           name: 'node',
           extensions: {
-            [NodeIDComponent.jsonID]: nodeID
+            [UUIDComponent.jsonID]: nodeID
           }
         }
       ]

@@ -43,7 +43,7 @@ import {
 } from '@ir-engine/ecs'
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -135,7 +135,7 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const hierarchyTreeState = useMutableState(HierarchyTreeState)
   const renamingEntity = useHookstate<Entity | null>(null)
   const contextMenu = useHookstate({ entity: UndefinedEntity, anchorEvent: undefined as React.MouseEvent | undefined })
-  const entities = useQuery([SourceComponent], Layers.Authoring)
+  const entities = useQuery([UUIDComponent], Layers.Authoring)
   const showGlbChildren = useMutableState(EditorHelperState).showGlbChildren
 
   const childEntities = useQuery([EntityTreeComponent], Layers.Authoring)

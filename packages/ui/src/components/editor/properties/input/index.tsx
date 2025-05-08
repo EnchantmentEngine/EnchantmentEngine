@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useQuery, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, Layers, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
   commitProperties,
   commitProperty,
@@ -32,7 +32,7 @@ import {
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import React from 'react'
@@ -47,7 +47,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const inputComponent = useComponent(props.entity, InputComponent)
-  const authoringLayerEntities = useQuery([SourceComponent])
+  const authoringLayerEntities = useQuery([UUIDComponent, NameComponent], Layers.Authoring)
 
   const options = authoringLayerEntities.map((entity) => {
     return {
