@@ -474,10 +474,15 @@ const toTransformedDocument = async (srcDocument: Document, args: ModelTransform
 
   if (args.simplifyRatio < 1) {
     const simplifyTransforms = [] as Transform[]
-    //gltfTransform documentation recommends doing a weld before simply
     if (!args.weld.enabled) simplifyTransforms.push(weld())
+
     simplifyTransforms.push(
-      simplify({ simplifier: MeshoptSimplifier, ratio: args.simplifyRatio, error: args.simplifyErrorThreshold })
+      args.adaptiveSimplification
+        ? (doc) => {
+            adaptiveSimplify(document, args)
+            return doc
+          }
+        : simplify({ simplifier: MeshoptSimplifier, ratio: args.simplifyRatio, error: args.simplifyErrorThreshold })
     )
     await document.transform(...simplifyTransforms)
   }
@@ -619,71 +624,121 @@ const validTextureFileName = (input: string) => {
 const transformTexture = async (resultCache: Map<string, Texture>, operation: TextureOperation, index: number) => {
   const { shouldResize, shouldConvertToKTX, texture, params } = operation
 
-  const hash = hashTextureOperation(operation)
-  const prevResult = resultCache.get(hash)
-  if (prevResult != null && prevResult !== texture) {
-    const originalName = texture.getName()
-    texture.copy(prevResult)
-    texture.setName(originalName)
+  try {
+    // Cache check
+    const hash = hashTextureOperation(operation)
+    const prevResult = resultCache.get(hash)
+    if (prevResult != null && prevResult !== texture) {
+      const originalName = texture.getName()
+      texture.copy(prevResult)
+      texture.setName(originalName)
+      return
+    }
+
+    // Resize step
+    if (shouldResize) {
+      const oldImage = texture.getImage()
+      if (!oldImage) {
+        return
+      }
+
+      // Create new document and texture for transformation
+      const imgDoc = new Document()
+      const nuTexture = imgDoc.createTexture(texture.getName())
+      nuTexture.setExtras(texture.getExtras())
+      nuTexture.setImage(oldImage)
+      nuTexture.setMimeType(texture.getMimeType())
+
+      try {
+        await imgDoc.transform(
+          textureCompress({
+            resize: [params.maxTextureSize, params.maxTextureSize]
+          })
+        )
+      } catch (resizeError) {
+        throw resizeError
+      }
+
+      // Copy the resized texture back
+      const originalName = texture.getName()
+      texture.copy(nuTexture)
+      texture.setName(originalName)
+
+      // Update URI
+      const originalURI = texture.getURI()
+      const matches = /(.*)\.([^.]+)$/.exec(originalURI)
+      if (matches) {
+        const [_, fileName, extension] = matches
+        const quality = params.textureCompressionType === 'uastc' ? params.uastcLevel : params.compLevel
+        const nuURI = `${fileName}-${params.maxTextureSize}x${quality}.${extension}`
+        texture.setURI(validTextureFileName(nuURI))
+      }
+    }
+
+    // KTX2 conversion step
+    if (shouldConvertToKTX) {
+      // Get pixel data
+      let texturePixels
+      try {
+        texturePixels = await getPixels(texture.getImage()!, texture.getMimeType())
+      } catch (pixelsError) {
+        throw pixelsError
+      }
+
+      // Prepare image data for encoding
+      const clampedData = new Uint8ClampedArray(texturePixels.data as Uint8Array)
+      const imgSize = texture.getSize() ?? texturePixels.shape.slice(0, 2)
+      const imgData = new ImageData(clampedData, imgSize[0], imgSize[1])
+
+      // Encode to KTX2
+      let compressedData
+      try {
+        if (!ktx2Encoder) {
+          throw new Error('KTX2Encoder is not initialized')
+        }
+
+        compressedData = await ktx2Encoder.encode(imgData, {
+          uastc: params.textureCompressionType === 'uastc',
+          qualityLevel: params.textureCompressionQuality,
+          srgb: !params.linear,
+          mipmaps: params.mipmap,
+          yFlip: params.flipY
+        })
+      } catch (encodeError) {
+        throw encodeError
+      }
+
+      // Update texture with encoded data
+      texture.setImage(new Uint8Array(compressedData))
+      texture.setMimeType('image/ktx2')
+      texture.setURI(validTextureFileName(texture.getURI().replace(/\.[^.]+$/, '.ktx2')))
+    }
+
+    // Final URI updates
+    if ((shouldResize || shouldConvertToKTX) && texture.getURI() !== '') {
+      const uri = texture.getURI()
+      let newURI = uri.split('/').at(-1)!
+      const matches = /(.*)\.([^.]+)$/.exec(newURI)
+      if (matches) {
+        const [_, fileName, extension] = matches
+        newURI = `${fileName}-${index}.${extension}`
+        texture.setURI(validTextureFileName(newURI))
+      }
+    }
+
+    // Final URI prefix update
+    let textureURI = texture.getURI()
+    if (textureURI.startsWith('buffer')) {
+      textureURI = 'image-' + textureURI.slice(6)
+      texture.setURI(textureURI)
+    }
+
+    // Cache the result
+    resultCache.set(hash, texture)
     return
+  } catch (error) {
+    throw error
   }
-  if (shouldResize) {
-    const oldImage = texture.getImage()!
-    const originalName = texture.getName()
-    const originalURI = texture.getURI()
-    const [_, fileName, extension] = /(.*)\.([^.]+)$/.exec(originalURI) ?? []
-    const quality = params.textureCompressionType === 'uastc' ? params.uastcLevel : params.compLevel
-    const nuURI = `${fileName}-${params.maxTextureSize}x${quality}.${extension}`
-
-    const imgDoc = new Document()
-    const nuTexture = imgDoc.createTexture(texture.getName())
-    nuTexture.setExtras(texture.getExtras())
-    nuTexture.setImage(oldImage)
-    nuTexture.setMimeType(texture.getMimeType())
-    await imgDoc.transform(
-      textureCompress({
-        resize: [params.maxTextureSize, params.maxTextureSize]
-      })
-    )
-    texture.copy(nuTexture)
-    texture.setName(originalName)
-    //reset URI to the valid file name
-    texture.setURI(validTextureFileName(nuURI))
-  }
-
-  if (shouldConvertToKTX) {
-    const texturePixels = await getPixels(texture.getImage()!, texture.getMimeType())
-    const clampedData = new Uint8ClampedArray(texturePixels.data as Uint8Array)
-    const imgSize = texture.getSize() ?? texturePixels.shape.slice(0, 2)
-    const imgData = new ImageData(clampedData, imgSize[0], imgSize[1])
-
-    const compressedData = await ktx2Encoder!.encode(imgData, {
-      uastc: params.textureCompressionType === 'uastc',
-      qualityLevel: params.textureCompressionQuality,
-      srgb: !params.linear,
-      mipmaps: params.mipmap,
-      yFlip: params.flipY
-    })
-
-    texture.setImage(new Uint8Array(compressedData))
-    texture.setMimeType('image/ktx2')
-    //reset URI to the valid file name
-    texture.setURI(validTextureFileName(texture.getURI().replace(/\.[^.]+$/, '.ktx2')))
-  }
-
-  if ((shouldResize || shouldConvertToKTX) && texture.getURI() !== '') {
-    //wipe relative path from URI
-    const uri = texture.getURI()
-    let newURI = uri.split('/').at(-1)!
-    const [_, fileName, extension] = /(.*)\.([^.]+)$/.exec(newURI)!
-    newURI = `${fileName}-${index}.${extension}`
-    //reset URI to the valid file name
-    texture.setURI(validTextureFileName(newURI))
-  }
-  let textureURI = texture.getURI()
-  textureURI = 'image-' + textureURI.slice(6)
-  texture.setURI(textureURI)
-  resultCache.set(hash, texture)
 }
 
 const writeFiles = async (
@@ -884,8 +939,18 @@ export const transformModel = async (
     if (params.simplifyRatio < 1) {
       const simplifyTransforms = [] as Transform[]
       if (!params.weld.enabled) simplifyTransforms.push(weld())
+
       simplifyTransforms.push(
-        simplify({ simplifier: MeshoptSimplifier, ratio: params.simplifyRatio, error: params.simplifyErrorThreshold })
+        params.adaptiveSimplification
+          ? (doc) => {
+              adaptiveSimplify(document, params)
+              return doc
+            }
+          : simplify({
+              simplifier: MeshoptSimplifier,
+              ratio: params.simplifyRatio,
+              error: params.simplifyErrorThreshold
+            })
       )
       await document.transform(...simplifyTransforms)
     }
@@ -938,7 +1003,7 @@ export const transformModel = async (
         const matArgs = eeMaterial.args!
 
         const newTextures = document.getRoot().listTextures()
-        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string)!
+        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string) || []
         materialArgsInfo.map((field) => {
           let argEntry: EEArgEntry
           try {
@@ -985,6 +1050,124 @@ export const transformModel = async (
   }
 
   onProgress?.(1, Status.Complete)
-
   return results
+}
+// Main function to calculate mesh importance
+const calculateMeshImportance = (
+  mesh: Mesh,
+  weights = { size: 0.45, material: 0.35, position: 0.2 },
+  sceneScale = 10.0
+): number => {
+  const size = getMeshSize(mesh)
+  const normalizedSize = Math.min(1.0, size / sceneScale)
+
+  const materialImportance = getMaterialImportance(mesh)
+  const positionImportance = getPositionImportance(mesh, sceneScale)
+
+  return normalizedSize * weights.size + materialImportance * weights.material + positionImportance * weights.position
+}
+
+// Helper: Calculate bounding box volume
+const getMeshSize = (mesh: Mesh): number => {
+  let totalVolume = 0
+  for (const prim of mesh.listPrimitives()) {
+    const positionAccessor = prim.getAttribute('POSITION')
+    if (positionAccessor) {
+      const min = [Infinity, Infinity, Infinity]
+      const max = [-Infinity, -Infinity, -Infinity]
+
+      for (let i = 0; i < positionAccessor.getCount(); i++) {
+        const position = positionAccessor.getElement(i, [])
+        for (let j = 0; j < 3; j++) {
+          min[j] = Math.min(min[j], position[j])
+          max[j] = Math.max(max[j], position[j])
+        }
+      }
+
+      const volume = Math.max(0, (max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]))
+      totalVolume += volume
+    }
+  }
+  return totalVolume
+}
+
+// Helper: Material importance based on texture or emissive use
+const getMaterialImportance = (mesh: Mesh): number => {
+  let importance = 0.5
+
+  for (const prim of mesh.listPrimitives()) {
+    const material = prim.getMaterial()
+    if (material) {
+      if (material.getBaseColorTexture() || material.getNormalTexture() || material.getEmissiveTexture()) {
+        importance = Math.max(importance, 0.8)
+      }
+
+      if (material.getEmissiveFactor().some((v) => v > 0)) {
+        importance = Math.max(importance, 0.9)
+      }
+    }
+  }
+
+  return importance
+}
+
+// Helper: Importance based on average position (closer to origin = more important)
+const getPositionImportance = (mesh: Mesh, sceneScale = 10.0): number => {
+  let totalX = 0,
+    totalY = 0,
+    totalZ = 0,
+    pointCount = 0
+
+  for (const prim of mesh.listPrimitives()) {
+    const positionAccessor = prim.getAttribute('POSITION')
+    if (positionAccessor) {
+      for (let i = 0; i < positionAccessor.getCount(); i++) {
+        const position = positionAccessor.getElement(i, [])
+        totalX += position[0]
+        totalY += position[1]
+        totalZ += position[2]
+        pointCount++
+      }
+    }
+  }
+
+  if (pointCount === 0) return 0.5
+
+  const avgX = totalX / pointCount
+  const avgY = totalY / pointCount
+  const avgZ = totalZ / pointCount
+  const distanceFromOrigin = Math.sqrt(avgX ** 2 + avgY ** 2 + avgZ ** 2)
+
+  return Math.max(0, 1 - distanceFromOrigin / sceneScale)
+}
+
+// adaptiveSimplify function to use these calculations
+const adaptiveSimplify = (document: Document, args: ModelTransformParameters) => {
+  const meshes = document.getRoot().listMeshes()
+  for (const mesh of meshes) {
+    const importance = calculateMeshImportance(mesh)
+
+    const adaptiveRatio = args.simplifyRatio + (1 - args.simplifyRatio) * importance
+
+    const tempDoc = new Document()
+    const tempMesh = tempDoc.createMesh(mesh.getName())
+
+    for (const prim of mesh.listPrimitives()) {
+      const tempPrim = tempDoc.createPrimitive()
+      tempPrim.setMaterial(prim.getMaterial())
+
+      for (const semantic of prim.listSemantics()) {
+        const attr = prim.getAttribute(semantic)
+        if (attr) tempPrim.setAttribute(semantic, attr)
+      }
+
+      tempMesh.addPrimitive(tempPrim)
+    }
+
+    simplify({
+      simplifier: MeshoptSimplifier,
+      ratio: adaptiveRatio,
+      error: args.simplifyErrorThreshold
+    })(tempDoc)
+  }
 }

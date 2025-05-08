@@ -344,25 +344,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             compressionProgress.set({ progress, caption })
           }
         )
-        // const result = createSceneEntity('container')
-        // const variant = createSceneEntity('LOD Variant', result)
-        // const heuristic = Heuristic.DISTANCE
-        // setComponent(variant, VariantComponent, {
-        //   levels: lods.map((lod, lodIndex) => ({
-        //     src: `${LoaderUtils.extractUrlBase(srcURL)}${lod.params.dst}.${lod.params.modelFormat}`,
-        //     metadata: {
-        //       ...lod.variantMetadata,
-        //       ...transformMetadata[lodIndex]
-        //     }
-        //   })),
-        //   heuristic
-        // })
-        // const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
-        // const gltfEntity = getAncestorWithComponents(result, [GLTFComponent])
-        // const uuid = getComponent(gltfEntity, UUIDComponent)
-        // const sourceID = SourceComponent.getSourceID(uuid, destinationPath)
-        // iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, sourceID))
-        // await exportGLTF(result, destinationPath, false)
         const compressedFilePath = srcURL.replace(/\.[^.]*$/, `-LOD2.gltf`)
         //update src from combined mesh to compressed mesh
         compressionLoading.set(false)
@@ -385,6 +366,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         PopoverState.hidePopupover()
       }
     } catch (error) {
+      console.log(error)
       PopoverState.showPopupover(
         <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
       )
