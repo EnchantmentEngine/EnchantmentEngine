@@ -115,6 +115,7 @@ export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, 
 
   const newSourceID = GLTFComponent.getSourceID(sourceEntity)
   setComponent(newMaterialEntity, SourceComponent, sourceEntity)
+  setComponent(newMaterialEntity, EntityTreeComponent, { parentEntity: sourceEntity })
 
   /** Generate a new ID for this entity such that it doesn't collider with others */
   const nodeID = UUIDComponent.generate()
