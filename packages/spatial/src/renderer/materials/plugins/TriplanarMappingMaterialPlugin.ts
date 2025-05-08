@@ -62,6 +62,7 @@ uniform vec2 texScale3;
 
 uniform float blendSharpness;
 uniform float normalScale;
+uniform float peakHeight;
 
 // Triplanar texture mapping function with distance compensation
 vec4 triplanarMapping(vec3 pos, vec3 normal, sampler2D tex, vec2 texScale) {
@@ -91,7 +92,12 @@ vec3 worldNormal = normalize(vWorldNormal);
 
 // Calculate height factor (Y component of local position)
 float height = vLocalPosition.y;
-float heightFactor = smoothstep(-10.0, 10.0, height); // Adjust range based on your terrain scale
+// Use blendSharpness to control transition sharpness at peak height
+// When blendSharpness is high (close to 1), creates a sharp transition
+// When blendSharpness is low (close to 0), creates a smooth transition
+float transitionRange = (1.0 - blendSharpness) * peakHeight;
+float minHeight = max(0.0, peakHeight - transitionRange);
+float heightFactor = smoothstep(minHeight, peakHeight, height);
 
 // Calculate slope factor (0 = flat, 1 = vertical)
 float slope = 1.0 - worldNormal.y;
@@ -128,7 +134,8 @@ export const TriplanarMappingMaterialPlugin = defineMaterialPlugin({
     texScale2: T.Vec2(new Vector2(0.1, 0.1)),
     texScale3: T.Vec2(new Vector2(0.1, 0.1)),
     blendSharpness: S.Number({ default: 2.0 }),
-    normalScale: S.Number({ default: 1.0 })
+    normalScale: S.Number({ default: 1.0 }),
+    peakHeight: S.Number({ default: 10.0 })
   }),
 
   onApply(shader) {

@@ -93,6 +93,7 @@ export const TerrainMeshComponent = defineComponent({
     // Material properties
     blendSharpness: S.Number({ default: 2.0 }),
     normalScale: S.Number({ default: 1.0 }),
+    peakHeight: S.Number({ default: 10.0 }),
 
     // Visibility
     visible: S.Bool({ default: true })
@@ -181,6 +182,7 @@ export const TerrainMeshComponent = defineComponent({
       component.enablePhysics.value,
       component.blendSharpness.value,
       component.normalScale.value,
+      component.peakHeight.value,
       textureState.heightmap.value,
       textureState.diffuse1.value,
       textureState.diffuse2.value,
@@ -274,7 +276,8 @@ function createTerrainMesh(
     texScale2: terrainConfig.texScale2,
     texScale3: terrainConfig.texScale3,
     blendSharpness: terrainConfig.blendSharpness,
-    normalScale: terrainConfig.normalScale
+    normalScale: terrainConfig.normalScale,
+    peakHeight: terrainConfig.peakHeight
   })
 
   return mesh

@@ -290,6 +290,23 @@ const TerrainMeshNodeEditor: EditorComponentType = (props) => {
               onRelease={commitProperty(TerrainMeshComponent, 'normalScale')}
             />
           </InputGroup>
+
+          <InputGroup
+            name="PeakHeight"
+            label={t('editor:properties.terrainMesh.lbl-peakHeight', 'Peak Height')}
+            info={t('editor:properties.terrainMesh.info-peakHeight', 'Height at which peak texture is fully applied')}
+          >
+            <NumericInput
+              min={0.1}
+              max={50}
+              smallStep={0.5}
+              mediumStep={1}
+              largeStep={5}
+              value={terrainMeshComponent.peakHeight.value}
+              onChange={updateProperty(TerrainMeshComponent, 'peakHeight')}
+              onRelease={commitProperty(TerrainMeshComponent, 'peakHeight')}
+            />
+          </InputGroup>
         </>
       )}
     </NodeEditor>
