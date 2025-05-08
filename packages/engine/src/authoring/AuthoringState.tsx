@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  ComponentMap,
+  ComponentJSONIDMap,
   deserializeComponent,
   EngineState,
   Entity,
@@ -60,8 +60,6 @@ import {
   UserID,
   Validator
 } from '@ir-engine/hyperflux'
-import { TransformComponent } from '@ir-engine/spatial'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 
@@ -224,6 +222,7 @@ export const AuthoringState = defineState({
     const ops = {} as Record<SourceID, Operation[]>
     for (const sourceID of affectedSources) {
       if (!sourceID) continue
+      if (!getState(AuthoringState).sources[sourceID]) continue
       const newData = getSourceSnapshot(sourceID)
       const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
       ops[sourceID] = patch
@@ -348,32 +347,43 @@ export const computeCommands = (commands: HistoryCommand[], sourceID?: SourceID)
  * @param finalState
  */
 export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData, finalState: SourceData) => {
+  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, Layers.Authoring)
   for (const nodeID of Object.keys(finalState) as EntityID[]) {
     if (finalState[nodeID]) {
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
       if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)) {
         // entity does not exist, add entity
-        UUIDComponent.create(
-          UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, Layers.Authoring),
-          nodeID as any as EntityID,
-          Layers.Authoring
-        )
+        UUIDComponent.create(sourceEntity, nodeID as any as EntityID, Layers.Authoring)
       }
       const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
-      for (const [componentName, componentData] of Object.entries(finalState[nodeID])) {
-        const Component = ComponentMap.get(componentName)
+      for (const [componentJsonID, componentData] of Object.entries(finalState[nodeID])) {
+        const Component = ComponentJSONIDMap.get(componentJsonID)
         if (!Component) continue
-        if (Component === EntityTreeComponent || Component === NameComponent) {
-          setComponent(entity, Component, componentData)
-        } else {
-          deserializeComponent(entity, Component, componentData)
+        // special case for entity tree since we need to serialize an EntityID
+        if (Component === EntityTreeComponent) {
+          // use an empty string to denote the root of the source
+          const parentEntity =
+            'parentEntity' in componentData
+              ? componentData.parentEntity === ''
+                ? sourceEntity
+                : UUIDComponent.getEntityByUUID(
+                    UUIDComponent.join({ entitySourceID: sourceID, entityID: componentData.parentEntity }),
+                    Layers.Authoring
+                  )
+              : undefined
+          setComponent(entity, EntityTreeComponent, {
+            parentEntity: parentEntity!,
+            childIndex: componentData.childIndex
+          })
+          continue
         }
+        deserializeComponent(entity, Component, componentData)
       }
       if (currentState[nodeID]) {
-        for (const componentName of Object.keys(currentState[nodeID])) {
-          if (!finalState[nodeID][componentName]) {
+        for (const componentJsonID of Object.keys(currentState[nodeID])) {
+          if (!finalState[nodeID][componentJsonID]) {
             // component does not exist, remove component
-            const Component = ComponentMap.get(componentName)
+            const Component = ComponentJSONIDMap.get(componentJsonID)
             if (!Component) continue
             removeComponent(entity, Component)
           }
@@ -395,10 +405,8 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
 }
 
 export const getSourceSnapshot = (sourceID: SourceID) => {
-  const sourceEntities = UUIDComponent.getEntitiesBySource(
-    UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring),
-    Layers.Authoring
-  )
+  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
+  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceEntity)
 
   const sourceData = {} as SourceData
 
@@ -412,41 +420,21 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
       if (component === UUIDComponent) continue
       const sceneComponentID = component.jsonID
       if (!sceneComponentID) continue
+      // special case for entity tree since we need to serialize an EntityID
+      if (component === EntityTreeComponent) {
+        // use an empty string to denote the root of the source
+        sourceData[entityID][sceneComponentID] = {
+          parentEntity:
+            getComponent(entity, EntityTreeComponent).parentEntity === sourceEntity
+              ? ''
+              : getComponent(getComponent(entity, EntityTreeComponent).parentEntity, UUIDComponent).entityID,
+          childIndex: getComponent(entity, EntityTreeComponent).childIndex
+        }
+        continue
+      }
       const data = serializeComponent(entity, component)
       if (data) {
-        sourceData[entityID][component.name] = data
-      }
-    }
-
-    // special case components that do not have a jsonID but are required if available
-    if (hasComponent(entity, NameComponent)) {
-      sourceData[entityID][NameComponent.name] = getComponent(entity, NameComponent)
-    }
-    if (hasComponent(entity, EntityTreeComponent)) {
-      sourceData[entityID][EntityTreeComponent.name] = {
-        parentEntity: getComponent(entity, EntityTreeComponent).parentEntity,
-        childIndex: getComponent(entity, EntityTreeComponent).childIndex
-      }
-    }
-    if (hasComponent(entity, TransformComponent)) {
-      const component = getComponent(entity, TransformComponent)
-      sourceData[entityID][TransformComponent.name] = {
-        position: {
-          x: component.position.x,
-          y: component.position.y,
-          z: component.position.z
-        },
-        rotation: {
-          x: component.rotation.x,
-          y: component.rotation.y,
-          z: component.rotation.z,
-          w: component.rotation.w
-        },
-        scale: {
-          x: component.scale.x,
-          y: component.scale.y,
-          z: component.scale.z
-        }
+        sourceData[entityID][sceneComponentID] = data
       }
     }
   }

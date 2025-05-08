@@ -1241,6 +1241,9 @@ const exportEntity = async (
     //skip components that don't have a jsonID
     if (!component.jsonID) continue
 
+    // skip serializable components we already handle
+    if (component === NameComponent || component === EntityTreeComponent) continue
+
     if (entity === context.rootEntity && component === GLTFComponent) continue
 
     if (component === TransformComponent) {
