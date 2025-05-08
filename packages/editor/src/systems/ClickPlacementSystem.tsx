@@ -40,7 +40,7 @@ import {
 import { AssetExt, FileToAssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { NO_PROXY, defineState, getMutableState, getState, useHookstate, useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -204,8 +204,8 @@ const createPlacementEntitySnapshot = (placementEntity: Entity) => {
 const createPlacementEntity = (parentEntity: Entity) => {
   const placementEntity = createSceneEntity('Placement-' + placedCount, parentEntity)
 
-  const sceneID = getComponent(parentEntity, SourceComponent)
-  setComponent(placementEntity, SourceComponent, sceneID)
+  // const sceneID = getComponent(parentEntity, SourceComponent)
+  // setComponent(placementEntity, SourceComponent, sceneID)
   setComponent(placementEntity, EntityTreeComponent, { parentEntity })
   createPlacementEntitySnapshot(placementEntity)
 

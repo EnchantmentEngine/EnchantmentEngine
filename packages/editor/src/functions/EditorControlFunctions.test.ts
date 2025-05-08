@@ -47,7 +47,7 @@ import { Entity, EntityID, EntityUUID, SourceID, UndefinedEntity } from '@ir-eng
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import { getMutableState } from '@ir-engine/hyperflux'
@@ -1101,8 +1101,8 @@ describe('EditorControlFunctions', () => {
       assert.equal(reparentedAuthoringNode2Entity, authoringNode2Entity)
       assert.equal(getComponent(reparentedAuthoringNode2Entity, NodeIDComponent), node2ID)
       assert.equal(
-        getComponent(reparentedAuthoringNode2Entity, SourceComponent),
-        getComponent(authoringNode3Entity, SourceComponent)
+        getComponent(reparentedAuthoringNode2Entity, UUIDComponent).entitySourceID,
+        getComponent(authoringNode3Entity, UUIDComponent).entitySourceID
       )
       assert.equal(getComponent(reparentedAuthoringNode2Entity, EntityTreeComponent).parentEntity, authoringNode3Entity)
       const expectedUUID = UUIDComponent.get(simulationNode1Entity) + node2ID

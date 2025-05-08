@@ -34,7 +34,6 @@ import {
   setComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { SourceComponent } from '../scene/components/SourceComponent'
 
 /** @deprecated - use EntityID */
 export type NodeID = EntityID
@@ -47,13 +46,12 @@ export const NodeIDComponent = defineComponent({
   schema: S.EntityID(),
 
   /**
-   * Creates a new entity with the NodeIDComponent and SourceComponent.
+   * Creates a new entity with the NodeIDComponent.
    * - Also sets the UUIDComponent to the NodeIDComponent's UUID.
    */
   create: (sourceEntity: Entity, nodeID: EntityID, layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
     setComponent(entity, NodeIDComponent, nodeID)
-    setComponent(entity, SourceComponent, sourceEntity)
     setComponent(entity, UUIDComponent, {
       entitySourceID: UUIDComponent.getAsSourceID(sourceEntity),
       entityID: nodeID

@@ -53,8 +53,8 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { KHRUnlitExtensionComponent } from '../../gltf/MaterialExtensionComponents'
 import { UpdatableCallback, UpdatableComponent } from '../components/UpdatableComponent'
 
+import { UUIDComponent } from '@ir-engine/ecs'
 import { ShadowComponent } from '../components/ShadowComponent'
-import { SourceComponent } from '../components/SourceComponent'
 
 const disposeMaterial = (material: Material) => {
   for (const [key, val] of Object.entries(material) as [string, Texture][]) {
@@ -119,7 +119,7 @@ const execute = () => {
 
 const ModelEntityReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const childEntities = SourceComponent.useEntitiesBySource(entity)
+  const childEntities = UUIDComponent.useEntitiesBySource(entity)
 
   return (
     <EntityArrayBoundary entities={childEntities} ChildEntityReactor={ChildReactor} props={{ parentEntity: entity }} />

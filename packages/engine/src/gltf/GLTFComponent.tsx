@@ -70,7 +70,6 @@ import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadComponent'
-import { SourceComponent } from '../scene/components/SourceComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
@@ -203,7 +202,7 @@ export const GLTFComponentReactor = () => {
     if (!sceneLoaded) return
 
     const occlusion = gltfComponent.cameraOcclusion.value
-    const entities = SourceComponent.getEntitiesBySource(entity)
+    const entities = UUIDComponent.getEntitiesBySource(entity)
 
     if (!occlusion) {
       ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
@@ -242,7 +241,7 @@ export const GLTFComponentReactor = () => {
 
     const layer = LayerComponent.get(entity)
     const unloadEntities = () => {
-      const loadedEntities = SourceComponent.getEntitiesBySource(entity)
+      const loadedEntities = UUIDComponent.getEntitiesBySource(entity)
       for (const entity of loadedEntities) removeEntity(entity)
     }
 
@@ -290,7 +289,7 @@ export const GLTFComponentReactor = () => {
 
 const ResourceReactor = (props: { documentID: SourceID; entity: Entity; documentLoaded: boolean }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
-  const resourceQuery = useQuery([SourceComponent, ResourcePendingComponent])
+  const resourceQuery = useQuery([ResourcePendingComponent])
 
   const simulationEntity = getSimulationCounterpart(props.entity)
   useApplyCollidersToChildMeshesEffect(simulationEntity)
@@ -298,7 +297,7 @@ const ResourceReactor = (props: { documentID: SourceID; entity: Entity; document
   useEffect(() => {
     if (!hasComponent(props.entity, GLTFComponent) || !props.documentLoaded) return
     if (getComponent(props.entity, GLTFComponent).progress === 100) return
-    const entities = resourceQuery.filter((e) => getComponent(e, SourceComponent) === props.entity)
+    const entities = resourceQuery.filter((e) => UUIDComponent.getSourceEntity(e) === props.entity)
     if (!entities.length) {
       if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)
       return

@@ -54,7 +54,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 import { getMutableState, getState, setNestedObject } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
@@ -325,7 +325,7 @@ const duplicateObject = (entities: Entity[]) => {
   const duplicateEntities = (entities: Entity[], parentEntity: Entity) => {
     entities.forEach((entity) => {
       const entityData = serializeEntity(entity).filter((c) => c.name !== NodeIDComponent.jsonID)
-      const originalSource = getComponent(entity, SourceComponent)
+      const originalSource = UUIDComponent.getSourceEntity(entity)
 
       const newEntity = NodeIDComponent.create(originalSource, UUIDComponent.generateUUID(), Layers.Authoring)
       const name = getComponent(entity, NameComponent)
@@ -539,9 +539,7 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    const source = GLTFComponent.getSourceID(parent)
-    getMutableComponent(entity, UUIDComponent).entitySourceID.set(source)
-    setComponent(entity, SourceComponent, getComponent(parent, SourceComponent))
+    UUIDComponent.setSourceEntity(entity, parent)
 
     EditorState.markModifiedScene(entity)
   }
@@ -578,7 +576,7 @@ const removeObject = (entities: Entity[]) => {
 
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
-    const sourceID = getComponent(entity, SourceComponent)
+    const sourceEntity = UUIDComponent.getSourceEntity(entity)
     EditorState.markModifiedScene(entity)
     const entitiesToRemove = [] as Entity[]
     iterateEntityNode(
@@ -587,7 +585,7 @@ const removeObject = (entities: Entity[]) => {
         affectedNodes.push(getComponent(node, UUIDComponent).entityID)
         entitiesToRemove.push(node)
       },
-      (child) => getComponent(child, SourceComponent) === sourceID
+      (child) => UUIDComponent.getSourceEntity(child) === sourceEntity
     )
     for (const node of entitiesToRemove) removeEntity(node)
   }

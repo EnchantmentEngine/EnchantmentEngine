@@ -46,7 +46,7 @@ import {
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import {
   defineAction,
   defineState,
@@ -396,7 +396,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
 }
 
 export const getSourceSnapshot = (sourceID: SourceID) => {
-  const sourceEntities = SourceComponent.getEntitiesBySource(
+  const sourceEntities = UUIDComponent.getEntitiesBySource(
     UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
   )
 
