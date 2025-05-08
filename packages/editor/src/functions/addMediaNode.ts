@@ -56,7 +56,7 @@ import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceCo
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
-import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
+
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
@@ -150,14 +150,12 @@ export async function addMediaNode(
               const materialComponent = getComponent(materialEntity, MaterialStateComponent)
               const materialToMutate = LayerFunctions.getAuthoringCounterpart(materialEntities[materialIndex])
               // wipe out any existing deltas for this material
-              SceneDeltaState.removeDelta(materialToMutate)
               // if (existingDelta) {
               //   //another hack
               //   const mat = getComponent(materialToMutate, MaterialStateComponent).material
               //   const constructor =
               //     getState(MaterialPrototypeDefinitions)[mat.userData?.type || mat.type].prototypeConstructor
               //   getMutableComponent(materialToMutate, MaterialStateComponent).material.set(new constructor())
-              //   SceneDeltaState.setDelta(materialToMutate, MaterialStateComponent, none)
               // }
               EditorControlFunctions.updateMaterialPrototype(
                 materialToMutate,

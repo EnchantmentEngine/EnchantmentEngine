@@ -186,6 +186,15 @@ export const AuthoringState = defineState({
     )
   },
 
+  getAllCommands: (sourceID: SourceID) => {
+    const commands = getState(AuthoringState).commands
+    const authoredCommands = Object.values(commands).flat()
+    const { doneStack } = computeCommands(authoredCommands, sourceID)
+    if (!doneStack.length) return []
+    const flatStack = doneStack.reduce((acc, command) => acc.concat(command[sourceID]), [] as Operation[])
+    return flatStack
+  },
+
   canRedo: () => {
     const commands = getState(AuthoringState).commands
     const authoredCommands = commands[getState(EngineState).userID]

@@ -32,7 +32,6 @@ import { UserID } from '@ir-engine/common/src/schema.type.module'
 
 import {
   createEntity,
-  defineComponent,
   EngineState,
   EntityTreeComponent,
   getComponent,
@@ -40,7 +39,6 @@ import {
   LayerFunctions,
   Layers,
   removeEntity,
-  S,
   setComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -51,9 +49,8 @@ import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
-import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { getMutableState } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { HemisphereLightComponent, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -191,73 +188,6 @@ describe('EditorControlFunctions', () => {
       await flushAll()
 
       assert(!hasComponent(authoringChildEntity, VisibleComponent))
-    })
-
-    it('registers a delta for adding a component', async () => {
-      const node1ID = 'node1ID' as EntityID
-      const node2ID = 'node2ID' as EntityID
-
-      const gltf: GLTF.IGLTF = {
-        asset: {
-          version: '2.0'
-        },
-        scenes: [{ nodes: [0] }],
-        scene: 0,
-        nodes: [
-          {
-            name: 'node1',
-            extensions: {
-              [NodeIDComponent.jsonID]: node1ID,
-              [GLTFComponent.jsonID]: {
-                src: '/sub-asset.gltf'
-              }
-            }
-          }
-        ]
-      }
-
-      const subAssetGLTF: GLTF.IGLTF = {
-        asset: {
-          version: '2.0'
-        },
-        scenes: [{ nodes: [0] }],
-        scene: 0,
-        nodes: [
-          {
-            name: 'node2',
-            extensions: {
-              [NodeIDComponent.jsonID]: node2ID
-            }
-          }
-        ]
-      }
-
-      Cache.add('/test.gltf', gltf)
-      Cache.add('/sub-asset.gltf', subAssetGLTF)
-      const rootEntity = AssetState.load('/test.gltf', undefined, physicsWorldEntity, Layers.Authoring)
-      getMutableState(EditorState).rootEntity.set(rootEntity)
-      await waitForScene(rootEntity)
-
-      const simulationNode1Entity = GLTFComponent.getEntityBySourceAndID(rootEntity, node1ID)!
-      const subAssetSourceID = GLTFComponent.getSourceID(simulationNode1Entity)
-      const simulationNode3Entity = UUIDComponent.getEntityByUUID((subAssetSourceID + node2ID) as EntityUUID)
-      const authoringNode2Entity = LayerFunctions.getAuthoringCounterpart(simulationNode3Entity)
-
-      const testComponent = defineComponent({
-        name: 'TestComponent',
-        jsonID: 'EE_test',
-        schema: S.Object({
-          value: S.Number()
-        })
-      })
-
-      const testValue = Math.random()
-      EditorControlFunctions.addOrRemoveComponent([authoringNode2Entity], testComponent, true, { value: testValue })
-
-      await flushAll()
-
-      const deltaState = getState(SceneDeltaState)
-      assert.equal(deltaState[UUIDComponent.get(authoringNode2Entity)][testComponent.jsonID].value, testValue)
     })
   })
 

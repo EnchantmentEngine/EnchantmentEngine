@@ -39,11 +39,11 @@ import {
   componentJsonDefaults,
   ComponentJSONIDMap,
   deserializeComponent,
+  getAuthoringCounterpart,
   getComponent,
   getMutableComponent,
   getOptionalMutableComponent,
   hasComponent,
-  LayerFunctions,
   Layers,
   removeComponent,
   removeEntity,
@@ -66,7 +66,6 @@ import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resource
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
-import { SceneDeltaState } from '@ir-engine/engine/src/scene/systems/SceneDeltaState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
@@ -136,9 +135,6 @@ const modifyProperty = <C extends Component<any, any>>(
 
   for (const entity of entities) {
     if (hasComponent(entity, SceneComponent)) continue
-    if (!EditorState.isInActiveScene(entity)) {
-      SceneDeltaState.setDelta(entity, component, properties)
-    }
     const currentComponent = hasComponent(entity, component) ? serializeComponent(entity, component) : {}
     for (const [key, val] of Object.entries(properties)) {
       if (key.includes('.')) {
@@ -192,11 +188,6 @@ const updateMaterialPrototype = (materialEntity: Entity, newPrototype: string) =
   materialComponent.parameters.set({})
 
   EditorState.markModifiedScene(materialEntity)
-  if (!EditorState.isInActiveScene(materialEntity)) {
-    SceneDeltaState.setDelta<typeof MaterialStateComponent>(materialEntity, MaterialStateComponent, {
-      prototype: newPrototype
-    })
-  }
 
   return newMaterial
 }
@@ -238,17 +229,10 @@ const modifyMaterial = (materialEntity: Entity, properties: { [_: string]: any }
     Promise.all(texturePromises).then(() => {
       setupMaterialParameters(materialEntity, getComponent(materialEntity, MaterialStateComponent).material)
       EditorState.markModifiedScene(materialEntity)
-      if (!EditorState.isInActiveScene(materialEntity)) {
-        SceneDeltaState.setDelta<typeof MaterialStateComponent>(materialEntity, MaterialStateComponent, {
-          parameters: props,
-          prototype: materialComponent.prototype.value
-        })
-      }
     })
-    getMutableComponent(
-      LayerFunctions.getLayerRelationsEntities(materialEntity)![0][1],
-      MaterialStateComponent
-    ).material.plugins.set(material.plugins)
+    getMutableComponent(getAuthoringCounterpart(materialEntity), MaterialStateComponent).material.plugins.set(
+      material.plugins
+    )
   }
 }
 
@@ -411,9 +395,6 @@ const positionObject = (
     }
 
     setComponent(entity, TransformComponent, { position: transform.position })
-    if (!EditorState.isInActiveScene(entity)) {
-      SceneDeltaState.setDelta(entity, TransformComponent, { position: transform.position })
-    }
     getMutableComponent(entity, TransformComponent).position.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -450,9 +431,6 @@ const rotateObject = (nodes: Entity[], rotations: Quaternion[], space = getState
     }
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
-    if (!EditorState.isInActiveScene(entity)) {
-      SceneDeltaState.setDelta(entity, TransformComponent, { rotation: transform.rotation })
-    }
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -481,9 +459,6 @@ const rotateAround = (entities: Entity[], axis: Vector3, angle: number, pivot: V
       .decompose(transform.position, transform.rotation, transform.scale)
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
-    if (!EditorState.isInActiveScene(entity)) {
-      SceneDeltaState.setDelta(entity, TransformComponent, { rotation: transform.rotation })
-    }
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
@@ -530,9 +505,6 @@ const scaleObject = (entities: Entity[], scales: Vector3[], overrideScale = fals
     )
 
     setComponent(entity, TransformComponent, { scale: transformComponent.scale })
-    if (!EditorState.isInActiveScene(entity)) {
-      SceneDeltaState.setDelta(entity, TransformComponent, { scale: transformComponent.scale })
-    }
     getMutableComponent(entity, TransformComponent).scale.set((v) => v)
     iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
