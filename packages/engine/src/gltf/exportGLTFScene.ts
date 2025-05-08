@@ -1287,7 +1287,8 @@ const _trsScale = new Vector3()
 const exportAnimations = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneExportContext) => {
   if (
     !hasComponent(entity, AnimationComponent) ||
-    getComponent(entity, UUIDComponent).entitySourceID !== context.sourceID
+    getComponent(entity, UUIDComponent).entitySourceID !== context.sourceID ||
+    (hasComponent(entity, AnimationComponent) && hasComponent(entity, GLTFComponent) && entity !== context.rootEntity)
   )
     return
 
