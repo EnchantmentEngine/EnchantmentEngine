@@ -624,121 +624,103 @@ const validTextureFileName = (input: string) => {
 const transformTexture = async (resultCache: Map<string, Texture>, operation: TextureOperation, index: number) => {
   const { shouldResize, shouldConvertToKTX, texture, params } = operation
 
-  try {
-    // Cache check
-    const hash = hashTextureOperation(operation)
-    const prevResult = resultCache.get(hash)
-    if (prevResult != null && prevResult !== texture) {
-      const originalName = texture.getName()
-      texture.copy(prevResult)
-      texture.setName(originalName)
+  // Cache check
+  const hash = hashTextureOperation(operation)
+  const prevResult = resultCache.get(hash)
+  if (prevResult != null && prevResult !== texture) {
+    const originalName = texture.getName()
+    texture.copy(prevResult)
+    texture.setName(originalName)
+    return
+  }
+
+  // Resize step
+  if (shouldResize) {
+    const oldImage = texture.getImage()
+    if (!oldImage) {
       return
     }
 
-    // Resize step
-    if (shouldResize) {
-      const oldImage = texture.getImage()
-      if (!oldImage) {
-        return
-      }
+    // Create new document and texture for transformation
+    const imgDoc = new Document()
+    const nuTexture = imgDoc.createTexture(texture.getName())
+    nuTexture.setExtras(texture.getExtras())
+    nuTexture.setImage(oldImage)
+    nuTexture.setMimeType(texture.getMimeType())
 
-      // Create new document and texture for transformation
-      const imgDoc = new Document()
-      const nuTexture = imgDoc.createTexture(texture.getName())
-      nuTexture.setExtras(texture.getExtras())
-      nuTexture.setImage(oldImage)
-      nuTexture.setMimeType(texture.getMimeType())
+    // Remove unnecessary try/catch
+    await imgDoc.transform(
+      textureCompress({
+        resize: [params.maxTextureSize, params.maxTextureSize]
+      })
+    )
 
-      try {
-        await imgDoc.transform(
-          textureCompress({
-            resize: [params.maxTextureSize, params.maxTextureSize]
-          })
-        )
-      } catch (resizeError) {
-        throw resizeError
-      }
+    // Copy the resized texture back
+    const originalName = texture.getName()
+    texture.copy(nuTexture)
+    texture.setName(originalName)
 
-      // Copy the resized texture back
-      const originalName = texture.getName()
-      texture.copy(nuTexture)
-      texture.setName(originalName)
-
-      // Update URI
-      const originalURI = texture.getURI()
-      const matches = /(.*)\.([^.]+)$/.exec(originalURI)
-      if (matches) {
-        const [_, fileName, extension] = matches
-        const quality = params.textureCompressionType === 'uastc' ? params.uastcLevel : params.compLevel
-        const nuURI = `${fileName}-${params.maxTextureSize}x${quality}.${extension}`
-        texture.setURI(validTextureFileName(nuURI))
-      }
+    // Update URI
+    const originalURI = texture.getURI()
+    const matches = /(.*)\.([^.]+)$/.exec(originalURI)
+    if (matches) {
+      const [_, fileName, extension] = matches
+      const quality = params.textureCompressionType === 'uastc' ? params.uastcLevel : params.compLevel
+      const nuURI = `${fileName}-${params.maxTextureSize}x${quality}.${extension}`
+      texture.setURI(validTextureFileName(nuURI))
     }
-
-    // KTX2 conversion step
-    if (shouldConvertToKTX) {
-      // Get pixel data
-      let texturePixels
-      try {
-        texturePixels = await getPixels(texture.getImage()!, texture.getMimeType())
-      } catch (pixelsError) {
-        throw pixelsError
-      }
-
-      // Prepare image data for encoding
-      const clampedData = new Uint8ClampedArray(texturePixels.data as Uint8Array)
-      const imgSize = texture.getSize() ?? texturePixels.shape.slice(0, 2)
-      const imgData = new ImageData(clampedData, imgSize[0], imgSize[1])
-
-      // Encode to KTX2
-      let compressedData
-      try {
-        if (!ktx2Encoder) {
-          throw new Error('KTX2Encoder is not initialized')
-        }
-
-        compressedData = await ktx2Encoder.encode(imgData, {
-          uastc: params.textureCompressionType === 'uastc',
-          qualityLevel: params.textureCompressionQuality,
-          srgb: !params.linear,
-          mipmaps: params.mipmap,
-          yFlip: params.flipY
-        })
-      } catch (encodeError) {
-        throw encodeError
-      }
-
-      // Update texture with encoded data
-      texture.setImage(new Uint8Array(compressedData))
-      texture.setMimeType('image/ktx2')
-      texture.setURI(validTextureFileName(texture.getURI().replace(/\.[^.]+$/, '.ktx2')))
-    }
-
-    // Final URI updates
-    if ((shouldResize || shouldConvertToKTX) && texture.getURI() !== '') {
-      const uri = texture.getURI()
-      let newURI = uri.split('/').at(-1)!
-      const matches = /(.*)\.([^.]+)$/.exec(newURI)
-      if (matches) {
-        const [_, fileName, extension] = matches
-        newURI = `${fileName}-${index}.${extension}`
-        texture.setURI(validTextureFileName(newURI))
-      }
-    }
-
-    // Final URI prefix update
-    let textureURI = texture.getURI()
-    if (textureURI.startsWith('buffer')) {
-      textureURI = 'image-' + textureURI.slice(6)
-      texture.setURI(textureURI)
-    }
-
-    // Cache the result
-    resultCache.set(hash, texture)
-    return
-  } catch (error) {
-    throw error
   }
+
+  // KTX2 conversion step
+  if (shouldConvertToKTX) {
+    // Get pixel data
+    const texturePixels = await getPixels(texture.getImage()!, texture.getMimeType())
+
+    // Prepare image data for encoding
+    const clampedData = new Uint8ClampedArray(texturePixels.data as Uint8Array)
+    const imgSize = texture.getSize() ?? texturePixels.shape.slice(0, 2)
+    const imgData = new ImageData(clampedData, imgSize[0], imgSize[1])
+
+    // Encode to KTX2
+    if (!ktx2Encoder) {
+      throw new Error('KTX2Encoder is not initialized')
+    }
+
+    const compressedData = await ktx2Encoder.encode(imgData, {
+      uastc: params.textureCompressionType === 'uastc',
+      qualityLevel: params.textureCompressionQuality,
+      srgb: !params.linear,
+      mipmaps: params.mipmap,
+      yFlip: params.flipY
+    })
+
+    // Update texture with encoded data
+    texture.setImage(new Uint8Array(compressedData))
+    texture.setMimeType('image/ktx2')
+    texture.setURI(validTextureFileName(texture.getURI().replace(/\.[^.]+$/, '.ktx2')))
+  }
+
+  // Final URI updates
+  if ((shouldResize || shouldConvertToKTX) && texture.getURI() !== '') {
+    const uri = texture.getURI()
+    let newURI = uri.split('/').at(-1)!
+    const matches = /(.*)\.([^.]+)$/.exec(newURI)
+    if (matches) {
+      const [_, fileName, extension] = matches
+      newURI = `${fileName}-${index}.${extension}`
+      texture.setURI(validTextureFileName(newURI))
+    }
+  }
+
+  // Final URI prefix update
+  let textureURI = texture.getURI()
+  if (textureURI.startsWith('buffer')) {
+    textureURI = 'image-' + textureURI.slice(6)
+    texture.setURI(textureURI)
+  }
+
+  // Cache the result
+  resultCache.set(hash, texture)
 }
 
 const writeFiles = async (
