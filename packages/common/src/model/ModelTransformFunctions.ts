@@ -939,7 +939,7 @@ export const transformModel = async (
     if (params.simplifyRatio < 1) {
       const simplifyTransforms = [] as Transform[]
       if (!params.weld.enabled) simplifyTransforms.push(weld())
-
+      console.log(params.simplifyRatio, 'simplifyRatio')
       simplifyTransforms.push(
         params.adaptiveSimplification
           ? (doc) => {
@@ -1055,16 +1055,22 @@ export const transformModel = async (
 // Main function to calculate mesh importance
 const calculateMeshImportance = (
   mesh: Mesh,
-  weights = { size: 0.45, material: 0.35, position: 0.2 },
+  weights = { size: 0.35, material: 0.25, visibility: 0.2, vertexDensity: 0.2 },
   sceneScale = 10.0
 ): number => {
   const size = getMeshSize(mesh)
   const normalizedSize = Math.min(1.0, size / sceneScale)
 
   const materialImportance = getMaterialImportance(mesh)
-  const positionImportance = getPositionImportance(mesh, sceneScale)
+  const visibilityImportance = getVisibilityImportance(mesh)
+  const vertexDensityImportance = getVertexDensityImportance(mesh)
 
-  return normalizedSize * weights.size + materialImportance * weights.material + positionImportance * weights.position
+  return (
+    normalizedSize * weights.size +
+    materialImportance * weights.material +
+    visibilityImportance * weights.visibility +
+    vertexDensityImportance * weights.vertexDensity
+  )
 }
 
 // Helper: Calculate bounding box volume
@@ -1111,63 +1117,87 @@ const getMaterialImportance = (mesh: Mesh): number => {
   return importance
 }
 
-// Helper: Importance based on average position (closer to origin = more important)
-const getPositionImportance = (mesh: Mesh, sceneScale = 10.0): number => {
-  let totalX = 0,
-    totalY = 0,
-    totalZ = 0,
-    pointCount = 0
+// uses visibility/occlusion as importance factor
+const getVisibilityImportance = (mesh: Mesh): number => {
+  // Check if mesh has any primitives with transparent materials
+  let isTransparent = false
+  let isVisible = true
 
   for (const prim of mesh.listPrimitives()) {
-    const positionAccessor = prim.getAttribute('POSITION')
-    if (positionAccessor) {
-      for (let i = 0; i < positionAccessor.getCount(); i++) {
-        const position = positionAccessor.getElement(i, [])
-        totalX += position[0]
-        totalY += position[1]
-        totalZ += position[2]
-        pointCount++
+    const material = prim.getMaterial()
+    if (material) {
+      if (
+        material.getAlphaMode() === 'BLEND' ||
+        (material.getBaseColorFactor() && material.getBaseColorFactor()[3] < 1.0)
+      ) {
+        isTransparent = true
+      }
+
+      const extras = material.getExtras()
+      if (extras && extras.visible === false) {
+        isVisible = false
       }
     }
   }
 
-  if (pointCount === 0) return 0.5
+  if (isTransparent) return 0.8
 
-  const avgX = totalX / pointCount
-  const avgY = totalY / pointCount
-  const avgZ = totalZ / pointCount
-  const distanceFromOrigin = Math.sqrt(avgX ** 2 + avgY ** 2 + avgZ ** 2)
+  if (!isVisible) return 0.2
 
-  return Math.max(0, 1 - distanceFromOrigin / sceneScale)
+  return 0.5
 }
 
-// adaptiveSimplify function to use these calculations
-const adaptiveSimplify = (document: Document, args: ModelTransformParameters) => {
-  const meshes = document.getRoot().listMeshes()
-  for (const mesh of meshes) {
-    const importance = calculateMeshImportance(mesh)
+// Helper: Importance  based on vertex density (more dense = more important details)
+const getVertexDensityImportance = (mesh: Mesh): number => {
+  let totalVolume = 0
+  let totalVertices = 0
 
-    const adaptiveRatio = args.simplifyRatio + (1 - args.simplifyRatio) * importance
+  for (const prim of mesh.listPrimitives()) {
+    const positionAccessor = prim.getAttribute('POSITION')
+    if (positionAccessor) {
+      totalVertices += positionAccessor.getCount()
 
-    const tempDoc = new Document()
-    const tempMesh = tempDoc.createMesh(mesh.getName())
+      const min = [Infinity, Infinity, Infinity]
+      const max = [-Infinity, -Infinity, -Infinity]
 
-    for (const prim of mesh.listPrimitives()) {
-      const tempPrim = tempDoc.createPrimitive()
-      tempPrim.setMaterial(prim.getMaterial())
-
-      for (const semantic of prim.listSemantics()) {
-        const attr = prim.getAttribute(semantic)
-        if (attr) tempPrim.setAttribute(semantic, attr)
+      for (let i = 0; i < positionAccessor.getCount(); i++) {
+        const position = positionAccessor.getElement(i, [])
+        for (let j = 0; j < 3; j++) {
+          min[j] = Math.min(min[j], position[j])
+          max[j] = Math.max(max[j], position[j])
+        }
       }
 
-      tempMesh.addPrimitive(tempPrim)
+      const volume = Math.max(0.0001, (max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]))
+      totalVolume += volume
     }
+  }
 
-    simplify({
-      simplifier: MeshoptSimplifier,
-      ratio: adaptiveRatio,
-      error: args.simplifyErrorThreshold
-    })(tempDoc)
+  if (totalVolume === 0 || totalVertices === 0) return 0.5
+
+  const density = totalVertices / totalVolume
+
+  return Math.min(1.0, density / 1000)
+}
+
+// adaptiveSimplify function with inverted logic to increase simplification
+const adaptiveSimplify = (document: Document, args: ModelTransformParameters) => {
+  const meshes = document.getRoot().listMeshes()
+
+  for (const mesh of meshes) {
+    const importance = calculateMeshImportance(mesh)
+    const adaptiveRatio = args.simplifyRatio * importance
+
+    for (const prim of mesh.listPrimitives()) {
+      try {
+        simplify({
+          simplifier: MeshoptSimplifier,
+          ratio: adaptiveRatio,
+          error: args.simplifyErrorThreshold
+        })(document)
+      } catch (error) {
+        console.error(`Error simplifying mesh ${mesh.getName()}:`, error)
+      }
+    }
   }
 }
