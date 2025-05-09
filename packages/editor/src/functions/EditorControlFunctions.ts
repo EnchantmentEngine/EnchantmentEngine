@@ -309,7 +309,7 @@ const createObjectFromSceneElement = (
   setComponent(entity, EntityTreeComponent, { parentEntity })
 
   for (const [key, value] of Object.entries(extensions)) {
-    if (key === TransformComponent.jsonID) continue
+    if (key === TransformComponent.jsonID || key === UUIDComponent.jsonID || key === NameComponent.jsonID) continue
     deserializeComponent(entity, ComponentJSONIDMap.get(key)!, value)
   }
 
