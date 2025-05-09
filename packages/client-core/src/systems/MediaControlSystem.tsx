@@ -34,7 +34,7 @@ import {
   InputSystemGroup,
   UndefinedEntity
 } from '@ir-engine/ecs'
-import { getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
@@ -145,19 +145,19 @@ const execute = () => {
 }
 
 const MediaXRUIReactor = ({ entity }: { entity: Entity }) => {
+  const mediaComponent = useComponent(entity, MediaComponent)
   useEffect(() => {
-    const mediaComponent = getComponent(entity, MediaComponent)
-    if (!mediaComponent.controls) return
+    if (!mediaComponent.controls.value) return
 
     const transition = createTransitionState(0.25, 'IN')
     MediaFadeTransitions.set(entity, transition)
-    mediaComponent.xruiEntity = createMediaControlsUI(entity).entity
-    setComponent(mediaComponent.xruiEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    mediaComponent.xruiEntity.set(createMediaControlsUI(entity).entity)
+    setComponent(mediaComponent.xruiEntity.value, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
 
     return () => {
       if (MediaFadeTransitions.has(entity)) MediaFadeTransitions.delete(entity)
     }
-  }, [])
+  }, [mediaComponent.controls])
   return null
 }
 
