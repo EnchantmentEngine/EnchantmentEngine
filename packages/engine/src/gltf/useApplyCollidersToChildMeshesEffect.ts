@@ -102,7 +102,8 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
     component.shape,
     !!rigidbodyComponent?.initialized?.value,
     component.applyColliders.value,
-    childMeshEntities,
+    // Work around, remove JSON.stringify after useChildrenWithComponents has been updated to return a reactive array again
+    JSON.stringify(childMeshEntities),
     loaded
   ])
 }
