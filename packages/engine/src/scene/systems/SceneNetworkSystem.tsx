@@ -82,8 +82,7 @@ const filterSpatialEntities = (entity: Entity) => hasComponent(entity, EntityTre
 
 const SourcedSceneReactor = () => {
   const entity = useEntityContext()
-  const sourceEntity = UUIDComponent.useSourceEntity(entity)
-  const sourceID = UUIDComponent.getAsSourceID(sourceEntity)
+  const sourceID = UUIDComponent.getAsSourceID(entity)
   const sourcedEntities = UUIDComponent.useEntitiesBySource(sourceID)
 
   return (
