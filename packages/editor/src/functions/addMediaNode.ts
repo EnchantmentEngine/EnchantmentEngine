@@ -37,7 +37,6 @@ import {
 } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerID,
@@ -205,7 +204,10 @@ export async function addMediaNode(
             requestedName = getIncreamentedName(requestedName, parent)
             setComponent(entity, NameComponent, requestedName)
             setComponent(entity, SourceComponent, rootEntity)
-            getMutableComponent(entity, UUIDComponent).entitySourceID.set(newSource)
+            setComponent(entity, UUIDComponent, {
+              entitySourceID: newSource,
+              entityID: getComponent(entity, UUIDComponent).entityID
+            })
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
                 setComponent(entity, TransformComponent, comp.props)

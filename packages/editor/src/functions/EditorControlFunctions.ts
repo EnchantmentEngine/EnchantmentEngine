@@ -462,12 +462,13 @@ const reparentObject = (
     EditorControlFunctions.rotateObject([entity], [worldRotation], TransformSpace.world)
     worldScaleObject([entity], [worldScale])
 
-    const source = GLTFComponent.getSourceID(parent)
+    const sourceEntity = getAncestorWithComponents(parent, [GLTFComponent])
+    const source = GLTFComponent.getSourceID(sourceEntity)
     setComponent(entity, UUIDComponent, {
       entitySourceID: source,
       entityID: getComponent(entity, UUIDComponent).entityID
     })
-    setComponent(entity, SourceComponent, getComponent(parent, SourceComponent))
+    setComponent(entity, SourceComponent, sourceEntity)
 
     EditorState.markModifiedScene(entity)
   }
