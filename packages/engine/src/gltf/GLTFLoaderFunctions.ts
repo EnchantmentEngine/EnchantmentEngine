@@ -45,6 +45,7 @@ import {
   traverseEntityNode
 } from '@ir-engine/ecs'
 import { dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
+import { SceneUser } from '@ir-engine/network'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -1539,7 +1540,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
     for (const [id, ops] of Object.entries(overrides)) {
       const rootUUID = UUIDComponent.get(rootEntity)
       const overrideUUID = rootUUID + id
-      dispatchAction(AuthoringActions.ops({ ops: { [overrideUUID]: ops } }))
+      dispatchAction(AuthoringActions.ops({ ops: { [overrideUUID]: ops }, $user: SceneUser }))
     }
   }
 

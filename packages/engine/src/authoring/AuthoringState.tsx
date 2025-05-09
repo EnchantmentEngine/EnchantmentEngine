@@ -195,6 +195,7 @@ export const AuthoringState = defineState({
   canRedo: () => {
     const commands = getState(AuthoringState).commands
     const authoredCommands = commands[getState(EngineState).userID]
+    if (!authoredCommands) return false
     const { redoStack } = computeCommands(authoredCommands)
     return redoStack.length > 0
   },
@@ -202,6 +203,7 @@ export const AuthoringState = defineState({
   canUndo: () => {
     const commands = getState(AuthoringState).commands
     const authoredCommands = commands[getState(EngineState).userID]
+    if (!authoredCommands) return false
     const { doneStack } = computeCommands(authoredCommands)
     return doneStack.length > 0
   },
@@ -271,11 +273,11 @@ const SourceReactor = (props: { entity: Entity }) => {
  */
 const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
   const commands = useMutableState(AuthoringState).commands.get(NO_PROXY)
-  const sourceCommands = commands[getState(EngineState).userID]
-    ? (Object.values(commands[getState(EngineState).userID])
-        .filter((command) => 'type' in command || command[props.sourceID])
-        .flat() as HistoryCommand[])
-    : []
+  const sourceCommands = Object.values(commands)
+    .map((userCommands) => Object.values(userCommands))
+    .flat()
+    .filter((command) => 'type' in command || command[props.sourceID])
+    .flat() as HistoryCommand[]
 
   const commandLength = sourceCommands.length
 
