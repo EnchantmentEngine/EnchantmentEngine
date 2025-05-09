@@ -83,7 +83,8 @@ const filterSpatialEntities = (entity: Entity) => hasComponent(entity, EntityTre
 const SourcedSceneReactor = () => {
   const entity = useEntityContext()
   const sourceEntity = UUIDComponent.useSourceEntity(entity)
-  const sourcedEntities = UUIDComponent.useEntitiesBySource(sourceEntity)
+  const sourceID = UUIDComponent.getAsSourceID(sourceEntity)
+  const sourcedEntities = UUIDComponent.useEntitiesBySource(sourceID)
 
   return (
     <>
@@ -96,7 +97,8 @@ const SourcedSceneReactor = () => {
 
 const SceneReactor = () => {
   const entity = useEntityContext()
-  const sourcedEntities = UUIDComponent.useEntitiesBySource(entity)
+  const sourceID = UUIDComponent.getAsSourceID(entity)
+  const sourcedEntities = UUIDComponent.useEntitiesBySource(sourceID)
 
   return (
     <>

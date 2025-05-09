@@ -100,7 +100,8 @@ export const AvatarTransparencySystem = defineSystem({
 
 const AvatarReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const childEntities = UUIDComponent.useEntitiesBySource(entity)
+  const sourceID = UUIDComponent.getAsSourceID(entity)
+  const childEntities = UUIDComponent.useEntitiesBySource(sourceID)
 
   return (
     <EntityArrayBoundary
