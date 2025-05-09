@@ -105,8 +105,7 @@ import {
   MaterialTextureValue,
   MaterialValue
 } from './MaterialExtensionComponents'
-import { NodeIDComponent } from './NodeIDComponent'
-import { SceneDeltaExporterExtension } from './SceneDeltaExporterExtension'
+import { overrideExporterExtension } from './overrideExporterExtension'
 
 const WEBGL_CONSTANTS = {
   POINTS: 0x0000,
@@ -228,7 +227,7 @@ type GLTFSceneExportContext = {
 
 export type ExportExtension = GLTFSceneExportExtension
 
-export const defaultExportExtensionList = [SceneDeltaExporterExtension] as (() => ExportExtension)[]
+export const defaultExportExtensionList = [overrideExporterExtension] as (() => ExportExtension)[]
 
 type TypedArrayConstructor =
   | Int8ArrayConstructor
@@ -959,7 +958,7 @@ const exportMaterial = async (
   const components = getAllComponents(entity)
   for (const component of components) {
     if (!component.jsonID) continue
-    if (component.jsonID === NodeIDComponent.jsonID) continue
+    if (component === UUIDComponent || component === NameComponent || component === EntityTreeComponent) continue
     if (materialDef.extensions[component.jsonID]) continue
     materialDef.extensions[component.jsonID] = serializeComponent(entity, component)
   }
@@ -1233,6 +1232,9 @@ const exportEntity = async (
 
     //skip components that don't have a jsonID
     if (!component.jsonID) continue
+
+    // skip serializable components we already handle
+    if (component === NameComponent || component === EntityTreeComponent) continue
 
     if (entity === context.rootEntity && component === GLTFComponent) continue
 
