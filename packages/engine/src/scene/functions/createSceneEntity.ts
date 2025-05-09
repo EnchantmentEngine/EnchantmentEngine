@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
-  EntityID,
   EntityTreeComponent,
   LayerComponent,
   Layers,
@@ -52,9 +51,5 @@ export const createSceneEntity = (name: string, parentEntity: Entity = Undefined
   if (parentEntity !== UndefinedEntity) {
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
-  if (!sourceID) {
-    setComponent(entity, UUIDComponent, { entitySourceID: 'detatched' as SourceID, entityID: name as EntityID })
-  }
-
   return entity
 }
