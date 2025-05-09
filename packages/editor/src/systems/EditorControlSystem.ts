@@ -455,6 +455,7 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
   //   }
   // }
   else {
+    if (!clickedEntity || !hasComponent(clickedEntity, UUIDComponent)) return
     SelectionState.updateSelection([UUIDComponent.get(clickedEntity)])
   }
 }
