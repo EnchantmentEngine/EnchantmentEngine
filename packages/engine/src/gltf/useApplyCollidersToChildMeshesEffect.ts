@@ -64,9 +64,15 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
   const rigidbodyEntity = useAncestorWithComponents(entity, [RigidBodyComponent])
   const rigidbodyComponent = useOptionalComponent(rigidbodyEntity, RigidBodyComponent)
   const component = useComponent(entity, GLTFComponent)
+  const loaded = GLTFComponent.useSceneLoaded(entity)
 
   useLayoutEffect(() => {
-    if (!rigidbodyComponent?.initialized?.value || !physicsWorld || !physicsWorld.Rigidbodies.has(rigidbodyEntity))
+    if (
+      !loaded ||
+      !rigidbodyComponent?.initialized?.value ||
+      !physicsWorld ||
+      !physicsWorld.Rigidbodies.has(rigidbodyEntity)
+    )
       return
     forceUpdateMatrices(entity)
 
@@ -96,6 +102,7 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
     component.shape,
     !!rigidbodyComponent?.initialized?.value,
     component.applyColliders.value,
-    childMeshEntities
+    childMeshEntities,
+    loaded
   ])
 }

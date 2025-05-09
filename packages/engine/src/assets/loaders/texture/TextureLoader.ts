@@ -26,8 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { isClient } from '@ir-engine/hyperflux'
 import { PromiseQueue } from '@ir-engine/spatial/src/common/classes/PromiseQueue'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { ImageBitmapLoader, LoadingManager, Texture } from 'three'
+import { ImageLoader, LoadingManager, Texture } from 'three'
 import { Loader } from '../base/Loader'
+import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
 const noop = () => {}
 
@@ -77,31 +78,37 @@ class TextureLoader extends Loader<Texture> {
 
   loadRetry(
     url: string,
-    onLoad: (loadedTexture: ImageBitmap) => void,
+    onLoad: (loadedTexture: ImageBitmap | HTMLImageElement) => void,
     onProgress: ((event: ProgressEvent) => void) | undefined,
     onError: ((err: unknown) => void) | undefined,
     signal: AbortSignal | undefined,
-    retryCount = 0
+    retryCount = 0,
+    fallback = false
   ) {
     loadQueue.enqueuePromise(() => {
       return new Promise((resolve, reject) => {
         const retryOnError = (err: Error) => {
           if (retryCount < this.numRetries) {
             console.warn('TextureLoader: Retrying texture load', url, 'due to error', err)
-            this.loadRetry(url, onLoad, onProgress, onError, signal, retryCount + 1)
+            this.loadRetry(url, onLoad, onProgress, onError, signal, retryCount + 1, retryCount > 1)
           } else {
             onError?.(err)
           }
           reject(err)
         }
 
-        const loadCallback = (img: ImageBitmap) => {
+        const loadCallback = (img: ImageBitmap | HTMLImageElement) => {
           resolve(img)
           onLoad(img)
         }
 
-        const loader = new ImageBitmapLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
-        if (this.flipped) loader.setOptions({ imageOrientation: 'flipY' })
+        let loader
+        if (fallback) {
+          loader = new ImageLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
+        } else {
+          loader = new ImageBitmapLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
+          if (this.flipped) loader.setOptions({ imageOrientation: 'flipY' })
+        }
         loader.load(url, loadCallback, onProgress, retryOnError)
       })
     })
@@ -114,10 +121,10 @@ class TextureLoader extends Loader<Texture> {
     onError?: (err: unknown) => void,
     signal?: AbortSignal
   ) {
-    const onImage = (i: ImageBitmap) => {
+    const onImage = (i: ImageBitmap | HTMLImageElement) => {
       if (signal?.aborted) return
 
-      const image = this.maxResolution ? getScaledBitmap(i, this.maxResolution) : i
+      const image = this.maxResolution && i instanceof ImageBitmap ? getScaledBitmap(i, this.maxResolution) : i
       const texture = new Texture(image)
       texture.userData.url = url
       texture.needsUpdate = true
