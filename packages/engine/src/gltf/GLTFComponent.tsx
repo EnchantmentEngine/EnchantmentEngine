@@ -201,7 +201,8 @@ export const GLTFComponentReactor = () => {
     if (!sceneLoaded) return
 
     const occlusion = gltfComponent.cameraOcclusion.value
-    const entities = UUIDComponent.getEntitiesBySource(entity)
+    const source = UUIDComponent.getAsSourceID(entity)
+    const entities = UUIDComponent.getEntitiesBySource(source)
 
     if (!occlusion) {
       ObjectLayerMaskComponent.disableLayer(entity, ObjectLayers.Camera)
@@ -240,7 +241,7 @@ export const GLTFComponentReactor = () => {
 
     const layer = LayerComponent.get(entity)
     const unloadEntities = () => {
-      const loadedEntities = UUIDComponent.getEntitiesBySource(entity)
+      const loadedEntities = UUIDComponent.getEntitiesBySource(sourceID, layer)
       for (const entity of loadedEntities) removeEntity(entity)
     }
 

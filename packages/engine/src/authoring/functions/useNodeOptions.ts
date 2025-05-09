@@ -57,7 +57,8 @@ export type NodeOptionsType = {
  */
 export const useCallbackQueryOptions = (entity: Entity) => {
   const sourceEntity = UUIDComponent.getSourceEntity(entity)
-  const query = UUIDComponent.getEntitiesBySource(sourceEntity).filter(
+  const source = UUIDComponent.getAsSourceID(sourceEntity)
+  const query = UUIDComponent.getEntitiesBySource(source).filter(
     (e) => !!getAuthoringCounterpart(e) && hasComponent(e, CallbackComponent)
   )
   return query
@@ -92,7 +93,8 @@ export const useCallbackQueryOptions = (entity: Entity) => {
  */
 export const useNodeOptions = (entity: Entity) => {
   const sourceEntity = UUIDComponent.getSourceEntity(entity)
-  const query = UUIDComponent.getEntitiesBySource(sourceEntity)
+  const source = UUIDComponent.getAsSourceID(sourceEntity)
+  const query = UUIDComponent.getEntitiesBySource(source)
   return query.map((entity) => {
     return {
       label: entity === entity ? 'Self' : getComponent(entity, NameComponent),

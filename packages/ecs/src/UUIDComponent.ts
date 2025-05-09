@@ -201,15 +201,13 @@ export const UUIDComponent = defineComponent({
     return UUIDComponent.useEntityByUUID(entitySourceID, layer)
   },
 
-  useEntitiesBySource: (sourceEntity: Entity, layer = Layers.Simulation as LayerID) => {
-    const source = UUIDComponent.getAsSourceID(sourceEntity)
+  useEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID) => {
     const state = useHookstate(getMutableState(EntitiesBySourceState)[layer]).value
-    return state?.[source] || []
+    return state?.[sourceID] || []
   },
 
-  getEntitiesBySource: (sourceEntity: Entity, layer = Layers.Simulation as LayerID): Entity[] => {
-    const source = UUIDComponent.getAsSourceID(sourceEntity)
-    return getState(EntitiesBySourceState)[layer]?.[source] || []
+  getEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID): Entity[] => {
+    return getState(EntitiesBySourceState)[layer]?.[sourceID] || []
   },
 
   /** Construct a new SourceID from the concatenated values of the source entity */

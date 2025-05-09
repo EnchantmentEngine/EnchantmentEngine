@@ -130,7 +130,8 @@ PropertyBinding.parseTrackName = function (trackName) {
 }
 
 PropertyBinding.findNode = (root: Object3D, nodeName: string) => {
-  const childEntities = UUIDComponent.getEntitiesBySource(root.entity)
+  const source = UUIDComponent.getAsSourceID(root.entity)
+  const childEntities = UUIDComponent.getEntitiesBySource(source)
 
   let entity = UndefinedEntity
   /**if AvatarRigComponent is present, use VRM schema */

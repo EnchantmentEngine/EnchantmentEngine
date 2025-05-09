@@ -39,6 +39,7 @@ import {
   TObjectSchema,
   TProperties,
   useComponent,
+  useHasComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 
@@ -219,12 +220,13 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     action: $Actions.spawn,
 
     reactor: ({ entity }) => {
-      /** Suspend the context if this component is not spawned as part of a scene */
       const sourceEntity = UUIDComponent.useSourceEntity(entity)
-      useComponent(sourceEntity, GLTFComponent)
+      const isFromScene = useHasComponent(sourceEntity, GLTFComponent)
 
-      /** If from a scene, implicitly utilizes the SceneNetworkSystem to create the entity on the network */
+      /** If from a scene, we don't need an action as SceneNetworkSystem handles this for us */
       useEffect(() => {
+        if (isFromScene) return
+
         const entityUUIDPair = getComponent(entity, UUIDComponent)
 
         dispatchAction(
@@ -240,7 +242,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
           const entityUUID = UUIDComponent.join(entityUUIDPair)
           dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))
         }
-      }, [])
+      }, [isFromScene])
 
       return null
     }

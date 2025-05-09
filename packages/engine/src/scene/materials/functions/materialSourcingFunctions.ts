@@ -28,7 +28,8 @@ import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/mater
 
 /**Gets all materials used by child and self entity */
 export const getMaterialsFromScene = (source: Entity) => {
-  const childEntities = UUIDComponent.getEntitiesBySource(source)
+  const sourceID = UUIDComponent.getAsSourceID(source)
+  const childEntities = UUIDComponent.getEntitiesBySource(sourceID)
   childEntities.push(source)
   const materials = {} as Record<EntityUUID, Entity>
   for (const entity of childEntities) {

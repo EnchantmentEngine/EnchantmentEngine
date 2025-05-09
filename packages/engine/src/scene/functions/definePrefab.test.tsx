@@ -53,6 +53,7 @@ import { applyIncomingActions } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { Cache } from 'three'
+import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AssetState } from '../../gltf/GLTFState'
 import { definePrefab } from './definePrefab'
@@ -188,6 +189,8 @@ describe('definePrefab', () => {
   })
 
   it('should not dispatch a spawn action if loaded as part of a scene', async () => {
+    startEngineReactor()
+
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn2',
       jsonID: 'test-prefab-spawn-2',

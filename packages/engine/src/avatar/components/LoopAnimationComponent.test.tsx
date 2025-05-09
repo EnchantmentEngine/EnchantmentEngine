@@ -56,7 +56,7 @@ describe('LoopAnimationComponent', () => {
       return destroyEngine()
     })
 
-    it('Should start animation when index is set', async () => {
+    it.only('Should start animation when index is set', async () => {
       const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, {

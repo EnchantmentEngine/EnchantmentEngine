@@ -408,7 +408,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
 
 export const getSourceSnapshot = (sourceID: SourceID) => {
   const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
-  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceEntity, Layers.Authoring)
+  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceID, Layers.Authoring)
 
   const sourceData = {} as SourceData
 
