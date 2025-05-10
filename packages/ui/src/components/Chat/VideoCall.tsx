@@ -66,9 +66,28 @@ export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (
   const peerMediaChannelState = useHookstate(
     getMutableState(PeerMediaChannelState)[peerID][type] as State<PeerMediaStreamInterface>
   )
-  const { videoMediaStream, videoStreamPaused, audioStreamPaused } = peerMediaChannelState.get({
+  const mediaStreamState = useHookstate(getMutableState(MediaStreamState))
+
+  // Get the media state values
+  const peerMediaState = peerMediaChannelState.get({
     noproxy: true
   }) as PeerMediaStreamInterface
+
+  // For self, use MediaStreamState directly to determine if audio/video is paused
+  const videoMediaStream = peerMediaState.videoMediaStream
+  const videoStreamPaused =
+    isSelf && !isScreen
+      ? !mediaStreamState.webcamEnabled.value
+      : isSelf && isScreen
+      ? !mediaStreamState.screenshareEnabled.value
+      : peerMediaState.videoStreamPaused
+
+  const audioStreamPaused =
+    isSelf && !isScreen
+      ? !mediaStreamState.microphoneEnabled.value
+      : isSelf && isScreen
+      ? mediaStreamState.screenShareAudioPaused.value
+      : peerMediaState.audioStreamPaused
 
   const username = getUsername() as UserName
 
