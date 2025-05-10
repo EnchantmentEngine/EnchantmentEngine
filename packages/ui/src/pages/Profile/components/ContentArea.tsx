@@ -32,7 +32,7 @@ const ContentArea: React.FC = () => {
   return (
     <div className="flex h-full w-full max-w-6xl justify-between gap-4 py-4">
       {/* Friends Location Panel (left) */}
-      <div className="w-1/4 rotate-[-10deg] transform">
+      <div className="w-1/4">
         <FriendsPanel />
       </div>
 
@@ -42,7 +42,7 @@ const ContentArea: React.FC = () => {
       </div>
 
       {/* Portal / Experience Selection Panel (right) */}
-      <div className="w-1/4 rotate-[10deg] transform">
+      <div className="w-1/4">
         <PortalPanel />
       </div>
     </div>

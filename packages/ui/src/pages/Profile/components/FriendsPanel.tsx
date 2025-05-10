@@ -68,7 +68,7 @@ const FriendCard: React.FC<FriendCardProps> = ({ name, location, avatar, online 
 
 const FriendsPanel: React.FC = () => {
   return (
-    <div className="flex h-full flex-col gap-3 rounded-lg bg-surface-2 p-4 shadow-md">
+    <div className="flex h-fit flex-col gap-3 rounded-lg bg-surface-2 p-4 shadow-md">
       <div className="mb-2">
         <Text component="h2" fontSize="lg" fontWeight="bold" className="text-text-primary">
           Where your friends are
