@@ -25,13 +25,14 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { useFind } from '@ir-engine/common'
-import { ChannelID, channelPath, messagePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { ChannelID, channelPath } from '@ir-engine/common/src/schema.type.module'
+import { EngineState } from '@ir-engine/ecs/src/EngineState'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import React, { useEffect, useState } from 'react'
 import { HiPlus, HiSearch } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
+import { formatMessageTimestamp } from '../utils/dateUtils'
 
 interface ConversationListProps {
   onNewMessage?: () => void
@@ -41,7 +42,17 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
   const chatState = useMutableState(NewChatState)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: channels } = useFind(channelPath, { query: { instanceId: null } })
+  const { data: channels } = useFind(channelPath, {
+    query: {
+      instanceId: null
+    }
+  })
+
+  const sortedChannels = [...channels].sort((a, b) => {
+    const aLatestMessageTime = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0
+    const bLatestMessageTime = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0
+    return bLatestMessageTime - aLatestMessageTime
+  })
   const isLoading = channels.length === 0
 
   useEffect(() => {
@@ -54,7 +65,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
     chatState.selectedChannelID.set(channelId)
   }
 
-  const filteredChannels = channels.filter((channel) =>
+  const filteredChannels = sortedChannels.filter((channel) =>
     getChannelName(channel).toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -104,8 +115,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
           ))
         )}
       </div>
-
-      {/* We've removed the New Conversation button since we now have a floating action button */}
     </div>
   )
 }
@@ -117,15 +126,11 @@ interface ChannelItemProps {
 }
 
 const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isSelected, onSelect }) => {
-  const { data: messages } = useFind(messagePath, {
-    query: {
-      channelId: channel.id
-    }
-  })
+  const messageText = channel.lastMessage?.text || '...'
+  const messageTimestamp = channel.lastMessage?.createdAt ? formatMessageTimestamp(channel.lastMessage.createdAt) : ''
 
-  const latestMessage = messages.length ? messages[messages.length - 1]?.text : '...'
   const userThumbnail = useUserAvatarThumbnail(
-    channel.channelUsers.find((user) => user.userId !== Engine.instance.userID)?.userId || ''
+    channel.channelUsers.find((user: any) => user.userId !== getState(EngineState).userID)?.userId || ''
   )
 
   return (
@@ -135,8 +140,11 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isSelected, onSelect
     >
       <img src={userThumbnail} alt="Channel avatar" className="h-10 w-10 rounded-full object-cover" />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-[#3F3960]">{getChannelName(channel)}</p>
-        <p className="truncate text-xs text-[#787589]">{latestMessage}</p>
+        <div className="flex items-center justify-between">
+          <p className="truncate font-medium text-[#3F3960]">{getChannelName(channel)}</p>
+          {messageTimestamp && <p className="ml-2 flex-shrink-0 text-xs text-[#787589]">{messageTimestamp}</p>}
+        </div>
+        <p className="truncate text-xs text-[#787589]">{messageText}</p>
       </div>
     </div>
   )
