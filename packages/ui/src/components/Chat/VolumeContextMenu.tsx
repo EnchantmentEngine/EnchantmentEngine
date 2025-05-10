@@ -65,7 +65,7 @@ export const VolumeContextMenu: React.FC<VolumeContextMenuProps> = ({ peerID, ty
       getMutableState(AudioState).microphoneGain.set(newVolume)
     } else {
       // Update volume for peer's audio element
-      const audioElement = peerMediaChannelState.audioElement.value
+      const audioElement = peerMediaChannelState.audioElement.value as HTMLAudioElement | null
       if (audioElement) {
         audioElement.volume = newVolume
       }

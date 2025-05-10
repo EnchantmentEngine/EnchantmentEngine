@@ -171,7 +171,7 @@ export const PopoutVideoCall: React.FC = () => {
         onResize={(_e, _direction, _ref, d) => {
           // If resizing from left or bottom-left, update position in real-time
           if (_direction === 'left' || _direction === 'bottomLeft') {
-            const newX = position.x + d.x
+            const newX = position.x + d.width
             if (popoutRef.current) {
               popoutRef.current.style.left = `${newX}px`
             }
@@ -201,7 +201,7 @@ export const PopoutVideoCall: React.FC = () => {
 
           // If resizing from left or bottom-left, we need to update position too
           if (_direction === 'left' || _direction === 'bottomLeft') {
-            const newX = position.x + d.x
+            const newX = position.x + d.width
             mediaSessionState.popoutPosition.set({
               x: newX,
               y: position.y
