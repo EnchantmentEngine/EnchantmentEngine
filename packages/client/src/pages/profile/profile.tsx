@@ -23,40 +23,27 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { ProjectConfigInterface } from '@ir-engine/projects/ProjectConfigInterface'
+import { t } from 'i18next'
+import React, { Suspense } from 'react'
+import { Route, Routes } from 'react-router-dom'
 
-const config: ProjectConfigInterface = {
-  onEvent: './projectEventHooks.ts',
-  thumbnail: '/static/IR_thumbnail.jpg',
-  routes: {
-    '/': {
-      component: () => import('@ir-engine/client/src/pages/index'),
-      props: {
-        exact: true
-      }
-    },
-    '/admin': {
-      component: () => import('@ir-engine/client/src/pages/admin')
-    },
-    '/location': {
-      component: () => import('@ir-engine/client/src/pages/location/location')
-    },
-    '/banned': {
-      component: () => import('@ir-engine/client/src/pages/_banned')
-    },
-    '/studio': {
-      component: () => import('@ir-engine/client/src/pages/editor')
-    },
-    '/capture': {
-      component: () => import('@ir-engine/client/src/pages/capture')
-    },
-    '/chat': {
-      component: () => import('@ir-engine/client/src/pages/chat/chat')
-    },
-    '/profile': {
-      component: () => import('@ir-engine/client/src/pages/profile/profile')
-    }
-  }
+import '../../engine'
+
+import Debug from '@ir-engine/client-core/src/components/Debug'
+import Profile from '@ir-engine/ui/src/pages/Profile'
+import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
+
+export default function ProfilePage() {
+  return (
+    <>
+      <Suspense
+        fallback={<LoadingView fullScreen className="block h-12 w-12" title={t('common:loader.loadingLocation')} />}
+      >
+        <Routes>
+          <Route path="*" element={<Profile />} />
+        </Routes>
+      </Suspense>
+      <Debug />
+    </>
+  )
 }
-
-export default config

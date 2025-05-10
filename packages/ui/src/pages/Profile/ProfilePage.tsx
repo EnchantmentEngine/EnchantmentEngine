@@ -23,40 +23,32 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { ProjectConfigInterface } from '@ir-engine/projects/ProjectConfigInterface'
+import { defineState, useMutableState } from '@ir-engine/hyperflux'
+import React from 'react'
+import ContentArea from './components/ContentArea'
+import FooterBar from './components/FooterBar'
+import HeaderBar from './components/HeaderBar'
 
-const config: ProjectConfigInterface = {
-  onEvent: './projectEventHooks.ts',
-  thumbnail: '/static/IR_thumbnail.jpg',
-  routes: {
-    '/': {
-      component: () => import('@ir-engine/client/src/pages/index'),
-      props: {
-        exact: true
-      }
-    },
-    '/admin': {
-      component: () => import('@ir-engine/client/src/pages/admin')
-    },
-    '/location': {
-      component: () => import('@ir-engine/client/src/pages/location/location')
-    },
-    '/banned': {
-      component: () => import('@ir-engine/client/src/pages/_banned')
-    },
-    '/studio': {
-      component: () => import('@ir-engine/client/src/pages/editor')
-    },
-    '/capture': {
-      component: () => import('@ir-engine/client/src/pages/capture')
-    },
-    '/chat': {
-      component: () => import('@ir-engine/client/src/pages/chat/chat')
-    },
-    '/profile': {
-      component: () => import('@ir-engine/client/src/pages/profile/profile')
-    }
+// Define the state for the Home page
+export const HomePageState = defineState({
+  name: 'HomePageState',
+  initial: {
+    currentView: 'home' as 'home' | 'profile' | 'settings'
   }
+})
+
+const HomePage = () => {
+  const homeState = useMutableState(HomePageState)
+
+  return (
+    <div className="pointer-events-auto flex h-screen w-full flex-col items-center justify-between bg-surface-1 p-4">
+      <HeaderBar title={homeState.currentView.value === 'home' ? 'Home' : 'Profile'} />
+
+      <ContentArea />
+
+      <FooterBar />
+    </div>
+  )
 }
 
-export default config
+export default HomePage

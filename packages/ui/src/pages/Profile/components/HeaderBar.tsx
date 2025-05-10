@@ -23,40 +23,21 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { ProjectConfigInterface } from '@ir-engine/projects/ProjectConfigInterface'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import React from 'react'
 
-const config: ProjectConfigInterface = {
-  onEvent: './projectEventHooks.ts',
-  thumbnail: '/static/IR_thumbnail.jpg',
-  routes: {
-    '/': {
-      component: () => import('@ir-engine/client/src/pages/index'),
-      props: {
-        exact: true
-      }
-    },
-    '/admin': {
-      component: () => import('@ir-engine/client/src/pages/admin')
-    },
-    '/location': {
-      component: () => import('@ir-engine/client/src/pages/location/location')
-    },
-    '/banned': {
-      component: () => import('@ir-engine/client/src/pages/_banned')
-    },
-    '/studio': {
-      component: () => import('@ir-engine/client/src/pages/editor')
-    },
-    '/capture': {
-      component: () => import('@ir-engine/client/src/pages/capture')
-    },
-    '/chat': {
-      component: () => import('@ir-engine/client/src/pages/chat/chat')
-    },
-    '/profile': {
-      component: () => import('@ir-engine/client/src/pages/profile/profile')
-    }
-  }
+interface HeaderBarProps {
+  title: string
 }
 
-export default config
+const HeaderBar: React.FC<HeaderBarProps> = ({ title }) => {
+  return (
+    <div className="flex h-12 w-full max-w-6xl items-center justify-center rounded-lg bg-surface-2 shadow-md">
+      <Text component="h1" fontSize="2xl" fontWeight="bold" className="text-text-primary">
+        {title}
+      </Text>
+    </div>
+  )
+}
+
+export default HeaderBar

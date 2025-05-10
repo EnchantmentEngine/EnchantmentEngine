@@ -23,40 +23,30 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import type { ProjectConfigInterface } from '@ir-engine/projects/ProjectConfigInterface'
+import React from 'react'
+import AvatarPanel from './AvatarPanel'
+import FriendsPanel from './FriendsPanel'
+import PortalPanel from './PortalPanel'
 
-const config: ProjectConfigInterface = {
-  onEvent: './projectEventHooks.ts',
-  thumbnail: '/static/IR_thumbnail.jpg',
-  routes: {
-    '/': {
-      component: () => import('@ir-engine/client/src/pages/index'),
-      props: {
-        exact: true
-      }
-    },
-    '/admin': {
-      component: () => import('@ir-engine/client/src/pages/admin')
-    },
-    '/location': {
-      component: () => import('@ir-engine/client/src/pages/location/location')
-    },
-    '/banned': {
-      component: () => import('@ir-engine/client/src/pages/_banned')
-    },
-    '/studio': {
-      component: () => import('@ir-engine/client/src/pages/editor')
-    },
-    '/capture': {
-      component: () => import('@ir-engine/client/src/pages/capture')
-    },
-    '/chat': {
-      component: () => import('@ir-engine/client/src/pages/chat/chat')
-    },
-    '/profile': {
-      component: () => import('@ir-engine/client/src/pages/profile/profile')
-    }
-  }
+const ContentArea: React.FC = () => {
+  return (
+    <div className="flex h-full w-full max-w-6xl justify-between gap-4 py-4">
+      {/* Friends Location Panel (left) */}
+      <div className="w-1/4 rotate-[-10deg] transform">
+        <FriendsPanel />
+      </div>
+
+      {/* Avatar Display Panel (center) */}
+      <div className="flex w-2/4 items-center justify-center">
+        <AvatarPanel />
+      </div>
+
+      {/* Portal / Experience Selection Panel (right) */}
+      <div className="w-1/4 rotate-[10deg] transform">
+        <PortalPanel />
+      </div>
+    </div>
+  )
 }
 
-export default config
+export default ContentArea
