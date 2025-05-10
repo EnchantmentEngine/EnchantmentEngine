@@ -39,6 +39,7 @@ import { Resizable } from 're-resizable'
 import React, { useEffect, useRef, useState } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
+import { MdOpenInNew } from 'react-icons/md'
 import { NewChatState } from '../ChatState'
 import { MediaSessionState } from '../MediaSessionState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
@@ -184,6 +185,15 @@ export const ConversationWindow: React.FC = () => {
                 <Screenshare className="h-5 w-5 text-[#3F3960]" />
               </button>
 
+              {/* Popout view button */}
+              <button
+                className="rounded-full p-2 hover:bg-gray-100"
+                onClick={() => mediaSessionState.isPopout.set(!mediaSessionState.isPopout.value)}
+                title={mediaSessionState.isPopout.value ? 'Close Popout' : 'Popout View'}
+              >
+                <MdOpenInNew className="h-5 w-5 text-[#3F3960]" />
+              </button>
+
               {/* Expanded view button */}
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
@@ -219,59 +229,61 @@ export const ConversationWindow: React.FC = () => {
         </div>
       </div>
 
-      {/* Call area */}
-      {isCallActive && !mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value ? (
-        <div id="media-session-container">
-          <Resizable
-            className="overflow-hidden bg-gray-100"
-            size={{ width: '100%', height: videoHeight }}
-            enable={{
-              top: false,
-              right: false,
-              bottom: true,
-              left: false,
-              topRight: false,
-              bottomRight: false,
-              bottomLeft: false,
-              topLeft: false
-            }}
-            minHeight={200}
-            maxHeight={600}
-            onResizeStop={(_e, _direction, _ref, d) => {
-              const newHeight = videoHeight + d.height
-              setVideoHeight(newHeight)
-              // Save to localStorage for persistence
-              localStorage.setItem('videoContainerHeight', newHeight.toString())
-            }}
-            handleComponent={{
-              bottom: (
-                <div className="flex h-6 w-full cursor-ns-resize items-center justify-center border-b border-t border-gray-300 bg-gray-200 hover:bg-gray-300">
-                  <div className="flex flex-col items-center justify-center space-y-1">
-                    <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
-                    <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
-                  </div>
+      {/* Call area - only show if not in popout mode */}
+      {isCallActive && !mediaSessionState.isPopout.value && (
+        <>
+          {!mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value ? (
+            <div id="media-session-container">
+              <Resizable
+                className="overflow-hidden bg-gray-100"
+                size={{ width: '100%', height: videoHeight }}
+                enable={{
+                  top: false,
+                  right: false,
+                  bottom: true,
+                  left: false,
+                  topRight: false,
+                  bottomRight: false,
+                  bottomLeft: false,
+                  topLeft: false
+                }}
+                minHeight={200}
+                maxHeight={600}
+                onResizeStop={(_e, _direction, _ref, d) => {
+                  const newHeight = videoHeight + d.height
+                  setVideoHeight(newHeight)
+                  // Save to localStorage for persistence
+                  localStorage.setItem('videoContainerHeight', newHeight.toString())
+                }}
+                handleComponent={{
+                  bottom: (
+                    <div className="flex h-6 w-full cursor-ns-resize items-center justify-center border-b border-t border-gray-300 bg-gray-200 hover:bg-gray-300">
+                      <div className="flex flex-col items-center justify-center space-y-1">
+                        <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
+                        <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
+                      </div>
+                    </div>
+                  )
+                }}
+              >
+                <div className="h-full w-full p-2">
+                  <MediaCall isExpanded={false} />
                 </div>
-              )
-            }}
-          >
-            <div className="h-full w-full p-2">
-              <MediaCall isExpanded={false} />
+              </Resizable>
             </div>
-          </Resizable>
-        </div>
-      ) : (
-        isCallActive && (
-          <div
-            id="media-session-container"
-            className={`bg-gray-100 p-2 ${
-              mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value
-                ? 'fixed inset-0 z-40 overflow-hidden shadow-lg'
-                : ''
-            } ${mediaSessionState.isFullscreen.value ? 'fixed inset-0 z-50 overflow-hidden' : ''}`}
-          >
-            <MediaCall isExpanded={mediaSessionState.isExpanded.value} />
-          </div>
-        )
+          ) : (
+            <div
+              id="media-session-container"
+              className={`bg-gray-100 p-2 ${
+                mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value
+                  ? 'fixed inset-0 z-40 overflow-hidden shadow-lg'
+                  : ''
+              } ${mediaSessionState.isFullscreen.value ? 'fixed inset-0 z-50 overflow-hidden' : ''}`}
+            >
+              <MediaCall isExpanded={mediaSessionState.isExpanded.value} />
+            </div>
+          )}
+        </>
       )}
 
       {/* Messages */}
