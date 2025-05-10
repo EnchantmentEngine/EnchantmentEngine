@@ -47,7 +47,9 @@ export const ConversationWindow: React.FC = () => {
   const { data: channel } = useGet(channelPath, selectedChannelID!)
   const { data: messages } = useFind(messagePath, {
     query: {
-      channelId: selectedChannelID
+      channelId: selectedChannelID,
+      $limit: 100,
+      $sort: { createdAt: 1 }
     }
   })
 

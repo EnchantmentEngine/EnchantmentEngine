@@ -68,9 +68,9 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
   const peerMediaChannelState = useHookstate(
     getMutableState(PeerMediaChannelState)[peerID][type] as State<PeerMediaStreamInterface>
   )
-  const { videoMediaStream, audioMediaStream, videoStreamPaused, audioStreamPaused } = peerMediaChannelState.get({
+  const { videoMediaStream, videoElement, videoStreamPaused, audioStreamPaused } = peerMediaChannelState.get({
     noproxy: true
-  })
+  }) as PeerMediaStreamInterface
 
   const username = getUsername() as UserName
 
@@ -87,6 +87,7 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
     const newVideoTrack = videoMediaStream.getVideoTracks()[0]!.clone()
     ref.current.srcObject = new MediaStream([newVideoTrack])
     ref.current.play()
+    ref.current!.style.transform = isSelf ? 'scaleX(-1)' : 'scaleX(1)'
   }, [ref.current, videoMediaStream])
 
   const toggleVideo = async (e) => {
