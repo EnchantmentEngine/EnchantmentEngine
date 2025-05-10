@@ -28,6 +28,7 @@ import { Resizable } from 're-resizable'
 import React, { useEffect, useRef } from 'react'
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa'
 
+import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { useMediaWindows } from '@ir-engine/client-core/src/user/VideoWindows'
 import { useGet } from '@ir-engine/common'
@@ -51,7 +52,7 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
     peerID === 'self'
   const isScreen = type === 'screen'
 
-  const userID = mediaNetwork.peers[peerID]?.userId
+  const userID = mediaNetwork.peers[peerID].userId
 
   const user = useGet(userPath, userID)
   const userThumbnail = useUserAvatarThumbnail(userID)
@@ -173,11 +174,17 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
 
 export const MediaCall = () => {
   const windows = useMediaWindows()
+  const mediaNetwork = useMediaNetwork()
+  const readyPeers = mediaNetwork?.peers?.keys?.length
+    ? Array.from(mediaNetwork.peers.keys as PeerID[]).filter((peerID) => mediaNetwork.value.peers?.[peerID]?.userId)
+    : []
   return (
     <div className="mx-1 mt-1 flex flex-wrap gap-1">
-      {windows.map(({ peerID, type }) => (
-        <UserMedia peerID={peerID} type={type} key={peerID} />
-      ))}
+      {windows
+        .filter(({ peerID }) => readyPeers.includes(peerID))
+        .map(({ peerID, type }) => (
+          <UserMedia peerID={peerID} type={type} key={peerID} />
+        ))}
     </div>
   )
 }

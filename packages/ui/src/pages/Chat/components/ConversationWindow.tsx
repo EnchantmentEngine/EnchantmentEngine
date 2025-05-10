@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
-import { ChannelService, ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
+import { ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { useFind, useGet, useMutation } from '@ir-engine/common'
 import { ChannelID, channelPath, messagePath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
@@ -42,7 +42,6 @@ import { NewChatState } from '../ChatState'
 export const ConversationWindow: React.FC = () => {
   const chatState = useMutableState(NewChatState)
   const selectedChannelID = chatState.selectedChannelID.value
-  const [isCallActive, setIsCallActive] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { data: channel } = useGet(channelPath, selectedChannelID!)
@@ -63,15 +62,15 @@ export const ConversationWindow: React.FC = () => {
     }
   }, [messages])
 
-  useEffect(() => {
-    setIsCallActive(targetChannelId === selectedChannelID && !!mediaConnected)
-  }, [targetChannelId, selectedChannelID, mediaConnected])
+  const isCallActive = targetChannelId === selectedChannelID && !!mediaConnected
 
-  const startMediaCall = () => {
+  const startMediaCall = (video: boolean) => {
     if (!selectedChannelID) return
+    if (video) {
+      MediaStreamState.toggleWebcamPaused()
+    }
     const inChannelCall = targetChannelId === selectedChannelID
-    ChannelService.joinChannelInstance(inChannelCall ? ('' as ChannelID) : selectedChannelID)
-    setIsCallActive(!inChannelCall)
+    getMutableState(ChannelState).targetChannelId.set(inChannelCall ? ('' as ChannelID) : selectedChannelID)
   }
 
   if (!selectedChannelID) {
@@ -93,10 +92,10 @@ export const ConversationWindow: React.FC = () => {
           <h2 className="text-lg font-semibold text-[#3F3960]">{channel ? getChannelName(channel) : 'Loading...'}</h2>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => MediaStreamState.toggleWebcamPaused()}>
+          <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(true)}>
             <HiVideoCamera className="h-5 w-5 text-[#3F3960]" />
           </button>
-          <button className="rounded-full p-2 hover:bg-gray-100" onClick={startMediaCall}>
+          <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(false)}>
             <HiPhone className="h-5 w-5 text-[#3F3960]" />
           </button>
         </div>

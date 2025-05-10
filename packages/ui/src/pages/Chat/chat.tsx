@@ -49,6 +49,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import '@ir-engine/engine/src/EngineModule'
 
+import '@ir-engine/client-core/src/user/UserUISystem'
+import '@ir-engine/client-core/src/world/ClientNetworkModule'
+
 import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LocationService } from '@ir-engine/client-core/src/social/services/LocationService'
 import { AuthService } from '@ir-engine/client-core/src/user/services/AuthService'
