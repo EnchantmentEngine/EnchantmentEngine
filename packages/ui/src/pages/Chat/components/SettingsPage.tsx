@@ -31,14 +31,14 @@ import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { AvatarService } from '@ir-engine/client-core/src/user/services/AvatarService'
 import { UserID, UserName } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import React, { useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiBell, HiCamera, HiCheck, HiColorSwatch, HiLockClosed, HiPencil, HiUser, HiVolumeUp } from 'react-icons/hi'
 
 type SettingsCategory = 'account' | 'appearance' | 'notifications' | 'privacy' | 'audio'
 
 export const SettingsPage: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('account')
+  const activeCategory = useHookstate<SettingsCategory>('account')
 
   return (
     <div className="flex h-full w-full bg-white">
@@ -48,12 +48,15 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <SettingsMenu activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <SettingsMenu
+            activeCategory={activeCategory.value}
+            onCategoryChange={(category) => activeCategory.set(category)}
+          />
         </div>
       </div>
 
       <div className="h-full flex-1 overflow-y-auto">
-        <SettingsContent category={activeCategory} />
+        <SettingsContent category={activeCategory.value} />
       </div>
     </div>
   )
@@ -105,31 +108,31 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
   const userName = useHookstate(selfUser.name).value
   const userThumbnail = useUserAvatarThumbnail(userId)
 
-  const [editedUsername, setEditedUsername] = useState<string>(userName)
-  const [isEditingUsername, setIsEditingUsername] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const editedUsername = useHookstate<string>(userName)
+  const isEditingUsername = useHookstate(false)
+  const isSaving = useHookstate(false)
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedUsername(e.target.value)
+    editedUsername.set(e.target.value)
   }
 
   const handleSaveUsername = async () => {
-    if (!editedUsername.trim() || editedUsername === userName) {
-      setIsEditingUsername(false)
-      setEditedUsername(userName)
+    if (!editedUsername.value.trim() || editedUsername.value === userName) {
+      isEditingUsername.set(false)
+      editedUsername.set(userName)
       return
     }
 
-    setIsSaving(true)
+    isSaving.set(true)
     try {
-      await AvatarService.updateUsername(userId, editedUsername.trim() as UserName)
+      await AvatarService.updateUsername(userId, editedUsername.value.trim() as UserName)
       NotificationService.dispatchNotify(t('user:usermenu.profile.usernameUpdated'), { variant: 'success' })
-      setIsEditingUsername(false)
+      isEditingUsername.set(false)
     } catch (error) {
       console.error('Error updating username:', error)
       NotificationService.dispatchNotify(t('user:usermenu.profile.errorUpdatingUsername'), { variant: 'error' })
     } finally {
-      setIsSaving(false)
+      isSaving.set(false)
     }
   }
 
@@ -178,15 +181,15 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
               <div className="relative">
                 <input
                   type="text"
-                  value={isEditingUsername ? editedUsername : userName}
+                  value={isEditingUsername.value ? editedUsername.value : userName}
                   onChange={handleUsernameChange}
-                  disabled={!isEditingUsername || isSaving}
+                  disabled={!isEditingUsername.value || isSaving.value}
                   className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[#3F3960]"
                 />
-                {!isEditingUsername ? (
+                {!isEditingUsername.value ? (
                   <button
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#3F3960]"
-                    onClick={() => setIsEditingUsername(true)}
+                    onClick={() => isEditingUsername.set(true)}
                   >
                     <HiPencil className="h-5 w-5" />
                   </button>
@@ -194,9 +197,9 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
                   <button
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#3F3960]"
                     onClick={handleSaveUsername}
-                    disabled={isSaving}
+                    disabled={isSaving.value}
                   >
-                    {isSaving ? '...' : <HiCheck className="h-5 w-5" />}
+                    {isSaving.value ? '...' : <HiCheck className="h-5 w-5" />}
                   </button>
                 )}
               </div>

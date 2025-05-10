@@ -27,9 +27,9 @@ import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUser
 import { useFind } from '@ir-engine/common'
 import { ChannelID, channelPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState } from '@ir-engine/ecs/src/EngineState'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { HiPlus, HiSearch } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
@@ -40,7 +40,7 @@ interface ConversationListProps {
 
 export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage }) => {
   const chatState = useMutableState(NewChatState)
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchQuery = useHookstate('')
 
   const { data: channels } = useFind(channelPath, {
     query: {
@@ -66,7 +66,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
   }
 
   const filteredChannels = sortedChannels.filter((channel) =>
-    getChannelName(channel).toLowerCase().includes(searchQuery.toLowerCase())
+    getChannelName(channel).toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 
   return (
@@ -88,8 +88,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
             type="text"
             placeholder="Search conversations..."
             className="w-full rounded-md bg-[#E3E5E8] py-2 pl-8 pr-4 text-sm focus:outline-none"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchQuery.value}
+            onChange={(e) => searchQuery.set(e.target.value)}
           />
           <HiSearch className="absolute left-2.5 top-2.5 text-gray-500" />
         </div>

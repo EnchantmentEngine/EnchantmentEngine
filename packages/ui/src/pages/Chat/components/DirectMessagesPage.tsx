@@ -29,7 +29,7 @@ import { FriendService, FriendState } from '@ir-engine/client-core/src/social/se
 import { UserID } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { HiSearch, HiX } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 import { ConversationList } from './ConversationList'
@@ -38,11 +38,11 @@ import { UserStatusPanel } from './UserStatusPanel'
 
 export const DirectMessagesPage: React.FC = () => {
   const chatState = useMutableState(NewChatState)
-  const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false)
+  const isNewMessageModalOpen = useHookstate(false)
 
   // Add a floating action button for creating a new message
   const handleNewMessageClick = () => {
-    setIsNewMessageModalOpen(true)
+    isNewMessageModalOpen.set(true)
   }
 
   return (
@@ -52,7 +52,7 @@ export const DirectMessagesPage: React.FC = () => {
       {chatState.showUserStatusPanel.value && <UserStatusPanel />}
 
       {/* New Message Modal */}
-      {isNewMessageModalOpen && <NewMessageModal onClose={() => setIsNewMessageModalOpen(false)} />}
+      {isNewMessageModalOpen.value && <NewMessageModal onClose={() => isNewMessageModalOpen.set(false)} />}
     </div>
   )
 }
@@ -64,7 +64,7 @@ interface NewMessageModalProps {
 const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
   const friendState = useMutableState(FriendState)
   const chatState = useMutableState(NewChatState)
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchQuery = useHookstate('')
   const selectedFriends = useHookstate<UserID[]>([])
 
   useEffect(() => {
@@ -80,7 +80,7 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
         name: friend.relatedUser.name
       }
     })
-    .filter((friend) => friend.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((friend) => friend.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
 
   const handleCreateConversation = () => {
     if (selectedFriends.length === 0) return
@@ -143,8 +143,8 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
               type="text"
               placeholder="Type a name or select from below"
               className="w-full rounded-md bg-[#E3E5E8] py-2 pl-8 pr-4 text-sm focus:outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchQuery.value}
+              onChange={(e) => searchQuery.set(e.target.value)}
             />
             <HiSearch className="absolute left-2.5 top-2.5 text-gray-500" />
           </div>

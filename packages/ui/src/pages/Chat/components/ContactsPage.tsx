@@ -30,8 +30,8 @@ import { FriendService, FriendState } from '@ir-engine/client-core/src/social/se
 import { API } from '@ir-engine/common'
 import { UserID, UserName, userPath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useMutableState } from '@ir-engine/hyperflux'
-import React, { useEffect, useRef, useState } from 'react'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiChat, HiCheck, HiDotsVertical, HiPhone, HiSearch, HiUserAdd, HiUserRemove, HiX } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
@@ -40,17 +40,12 @@ export const ContactsPage: React.FC = () => {
   const { t } = useTranslation()
   const friendState = useMutableState(FriendState)
   const chatState = useMutableState(NewChatState)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [addFriendUsername, setAddFriendUsername] = useState('')
-  const [isAddingFriend, setIsAddingFriend] = useState(false)
+  const searchQuery = useHookstate('')
+  const addFriendUsername = useHookstate('')
+  const isAddingFriend = useHookstate(false)
   const userId = Engine.instance.userID as UserID
   const contextMenuRef = useRef<HTMLDivElement>(null)
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean
-    x: number
-    y: number
-    contactId: string
-  }>({
+  const contextMenu = useHookstate({
     visible: false,
     x: 0,
     y: 0,
@@ -65,7 +60,7 @@ export const ContactsPage: React.FC = () => {
     // Close context menu when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
-        setContextMenu({ ...contextMenu, visible: false })
+        contextMenu.visible.set(false)
       }
     }
 
@@ -73,7 +68,7 @@ export const ContactsPage: React.FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [contextMenu])
+  }, [])
 
   const friends = friendState.relationships.value
     .filter((friend) => friend.userRelationshipType === 'friend')
@@ -81,7 +76,7 @@ export const ContactsPage: React.FC = () => {
       id: friend.relatedUserId,
       name: friend.relatedUser.name
     }))
-    .filter((friend) => friend.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((friend) => friend.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
 
   const pendingRequests = friendState.relationships.value
     .filter((friend) => friend.userRelationshipType === 'requested')
@@ -91,14 +86,14 @@ export const ContactsPage: React.FC = () => {
     }))
 
   const handleAddFriend = async () => {
-    if (!addFriendUsername.trim()) return
+    if (!addFriendUsername.value.trim()) return
 
-    setIsAddingFriend(true)
+    isAddingFriend.set(true)
     try {
       // Find user by username
       const users = await API.instance.service(userPath).find({
         query: {
-          name: addFriendUsername.trim() as UserName,
+          name: addFriendUsername.value.trim() as UserName,
           $limit: 1
         }
       })
@@ -116,7 +111,7 @@ export const ContactsPage: React.FC = () => {
         } else {
           await FriendService.requestFriend(userId, targetUserId)
           NotificationService.dispatchNotify(t('user:friends.requestSent'), { variant: 'success' })
-          setAddFriendUsername('')
+          addFriendUsername.set('')
         }
       } else {
         NotificationService.dispatchNotify(t('user:friends.userNotFound'), { variant: 'error' })
@@ -125,7 +120,7 @@ export const ContactsPage: React.FC = () => {
       console.error('Error adding friend:', error)
       NotificationService.dispatchNotify(t('user:friends.errorAddingFriend'), { variant: 'error' })
     } finally {
-      setIsAddingFriend(false)
+      isAddingFriend.set(false)
     }
   }
 
@@ -152,12 +147,12 @@ export const ContactsPage: React.FC = () => {
 
   const handleRemoveFriend = (contactId: UserID) => {
     FriendService.unfriend(userId, contactId)
-    setContextMenu({ ...contextMenu, visible: false })
+    contextMenu.visible.set(false)
   }
 
   const handleContextMenu = (e: React.MouseEvent, contactId: string) => {
     e.preventDefault()
-    setContextMenu({
+    contextMenu.merge({
       visible: true,
       x: e.clientX,
       y: e.clientY,
@@ -201,14 +196,14 @@ export const ContactsPage: React.FC = () => {
               type="text"
               placeholder="Add friend by username..."
               className="w-full rounded-md bg-[#E3E5E8] py-2 pl-4 pr-10 text-sm focus:outline-none"
-              value={addFriendUsername}
-              onChange={(e) => setAddFriendUsername(e.target.value)}
+              value={addFriendUsername.value}
+              onChange={(e) => addFriendUsername.set(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddFriend()}
             />
             <button
               className="absolute right-2 top-1/2 -translate-y-1/2 transform text-[#3F3960]"
               onClick={handleAddFriend}
-              disabled={isAddingFriend || !addFriendUsername.trim()}
+              disabled={isAddingFriend.value || !addFriendUsername.value.trim()}
             >
               <HiUserAdd className="h-5 w-5" />
             </button>
@@ -224,8 +219,8 @@ export const ContactsPage: React.FC = () => {
               type="text"
               placeholder="Search contacts..."
               className="w-full rounded-md bg-[#E3E5E8] py-2 pl-9 pr-4 text-sm focus:outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchQuery.value}
+              onChange={(e) => searchQuery.set(e.target.value)}
             />
             <HiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-[#787589]" />
           </div>
@@ -280,17 +275,17 @@ export const ContactsPage: React.FC = () => {
       </div>
 
       {/* Context Menu */}
-      {contextMenu.visible && (
+      {contextMenu.visible.value && (
         <div
           ref={contextMenuRef}
           className="absolute z-50 w-48 rounded-md bg-white py-1 shadow-lg"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
+          style={{ top: contextMenu.y.value, left: contextMenu.x.value }}
         >
           <button
             className="flex w-full items-center px-4 py-2 text-left hover:bg-[#F2F3F5]"
             onClick={() => {
-              handleOpenChat(contextMenu.contactId as UserID)
-              setContextMenu({ ...contextMenu, visible: false })
+              handleOpenChat(contextMenu.contactId.value as UserID)
+              contextMenu.visible.set(false)
             }}
           >
             <HiChat className="mr-2" /> Message
@@ -298,15 +293,15 @@ export const ContactsPage: React.FC = () => {
           <button
             className="flex w-full items-center px-4 py-2 text-left hover:bg-[#F2F3F5]"
             onClick={() => {
-              handleStartCall(contextMenu.contactId as UserID)
-              setContextMenu({ ...contextMenu, visible: false })
+              handleStartCall(contextMenu.contactId.value as UserID)
+              contextMenu.visible.set(false)
             }}
           >
             <HiPhone className="mr-2" /> Call
           </button>
           <button
             className="flex w-full items-center px-4 py-2 text-left text-red-500 hover:bg-[#F2F3F5]"
-            onClick={() => handleRemoveFriend(contextMenu.contactId as UserID)}
+            onClick={() => handleRemoveFriend(contextMenu.contactId.value as UserID)}
           >
             <HiUserRemove className="mr-2" /> Remove Friend
           </button>

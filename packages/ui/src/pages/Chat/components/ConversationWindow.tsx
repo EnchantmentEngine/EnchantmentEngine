@@ -34,7 +34,7 @@ import { NetworkState } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import { MediaCall } from '@ir-engine/ui/src/components/Chat/VideoCall'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
 import { NewChatState } from '../ChatState'
@@ -46,16 +46,16 @@ export const ConversationWindow: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // State for pagination
-  const [messageLimit, setMessageLimit] = useState(20)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMoreMessages, setHasMoreMessages] = useState(true)
-  const [scrollPosition, setScrollPosition] = useState(0)
+  const messageLimit = useHookstate(20)
+  const isLoadingMore = useHookstate(false)
+  const hasMoreMessages = useHookstate(true)
+  const scrollPosition = useHookstate(0)
 
   const { data: channel } = useGet(channelPath, selectedChannelID!)
   const { data: messages } = useFind(messagePath, {
     query: {
       channelId: selectedChannelID,
-      $limit: messageLimit,
+      $limit: messageLimit.value,
       $sort: { createdAt: 1 }
     }
   })
@@ -66,7 +66,7 @@ export const ConversationWindow: React.FC = () => {
   const mediaConnected = mediaNetworkID && mediaNetworkState?.ready.value
 
   // State to track if user has scrolled up (to prevent auto-scrolling when reading history)
-  const [isUserScrolled, setIsUserScrolled] = useState(false)
+  const isUserScrolled = useHookstate(false)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // Handle scroll events to detect when user scrolls up
@@ -77,50 +77,50 @@ export const ConversationWindow: React.FC = () => {
     const isScrolledToBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 10
 
     // Update state based on scroll position
-    setIsUserScrolled(!isScrolledToBottom)
+    isUserScrolled.set(!isScrolledToBottom)
 
     // Save current scroll position
-    setScrollPosition(scrollTop)
+    scrollPosition.set(scrollTop)
 
     // Check if user scrolled to the top and we need to load more messages
-    if (scrollTop < 50 && !isLoadingMore && hasMoreMessages && messages.length >= messageLimit) {
+    if (scrollTop < 50 && !isLoadingMore.value && hasMoreMessages.value && messages.length >= messageLimit.value) {
       loadMoreMessages()
     }
   }
 
   // Load more messages when scrolling to the top
   const loadMoreMessages = () => {
-    if (!hasMoreMessages || isLoadingMore) return
+    if (!hasMoreMessages.value || isLoadingMore.value) return
 
-    setIsLoadingMore(true)
+    isLoadingMore.set(true)
 
     // Increase the message limit to load more messages
-    setMessageLimit((prevLimit) => prevLimit + 20)
+    messageLimit.set(messageLimit.value + 20)
   }
 
   // Effect to restore scroll position after loading more messages
   useEffect(() => {
-    if (isLoadingMore && messagesContainerRef.current) {
+    if (isLoadingMore.value && messagesContainerRef.current) {
       // Check if we actually got more messages
-      if (messages.length >= messageLimit) {
+      if (messages.length >= messageLimit.value) {
         // Restore scroll position after messages are loaded
         messagesContainerRef.current.scrollTop =
-          messagesContainerRef.current.scrollHeight - messagesContainerRef.current.clientHeight - scrollPosition
+          messagesContainerRef.current.scrollHeight - messagesContainerRef.current.clientHeight - scrollPosition.value
       } else {
         // No more messages to load
-        setHasMoreMessages(false)
+        hasMoreMessages.set(false)
       }
 
-      setIsLoadingMore(false)
+      isLoadingMore.set(false)
     }
-  }, [messages, isLoadingMore])
+  }, [messages, isLoadingMore.value])
 
   // Scroll to bottom when new messages arrive, but only if user hasn't scrolled up
   useEffect(() => {
-    if (messagesEndRef.current && (!isUserScrolled || messages.length <= 1)) {
+    if (messagesEndRef.current && (!isUserScrolled.value || messages.length <= 1)) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages, isUserScrolled])
+  }, [messages, isUserScrolled.value])
 
   const isCallActive = targetChannelId === selectedChannelID && !!mediaConnected
 
@@ -235,18 +235,18 @@ interface MessageInputProps {
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ channelId }) => {
-  const [message, setMessage] = useState('')
+  const message = useHookstate('')
   const mutateMessage = useMutation(messagePath)
 
   const handleSendMessage = () => {
-    if (!message.trim()) return
+    if (!message.value.trim()) return
 
     mutateMessage.create({
-      text: message,
+      text: message.value,
       channelId: channelId
     })
 
-    setMessage('')
+    message.set('')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -266,14 +266,14 @@ const MessageInput: React.FC<MessageInputProps> = ({ channelId }) => {
           type="text"
           placeholder="Type a message..."
           className="flex-1 border-none bg-transparent px-3 py-2 focus:outline-none"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={message.value}
+          onChange={(e) => message.set(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <button
           className="rounded-md bg-[#3F3960] p-2 text-white hover:bg-[#2D2A45] disabled:cursor-not-allowed disabled:opacity-50"
           onClick={handleSendMessage}
-          disabled={!message.trim()}
+          disabled={!message.value.trim()}
         >
           <HiPaperAirplane className="h-5 w-5" />
         </button>

@@ -27,16 +27,16 @@ import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUser
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import React, { useState } from 'react'
+import React from 'react'
 
 export const FooterBar: React.FC = () => {
   const userName = useHookstate(getMutableState(AuthState).user.name).value
   const userThumbnail = useUserAvatarThumbnail(Engine.instance.userID)
 
-  const [isOnline, setIsOnline] = useState(true)
+  const isOnline = useHookstate(true)
 
   const toggleStatus = () => {
-    setIsOnline(!isOnline)
+    isOnline.set(!isOnline.value)
   }
 
   return (
@@ -46,15 +46,15 @@ export const FooterBar: React.FC = () => {
         <div>
           <p className="font-bold text-[#3F3960]">{userName}</p>
           <div className="flex items-center space-x-1">
-            <div className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-[#57C290]' : 'bg-[#b3b5b9]'}`}></div>
-            <p className="text-xs text-[#787589]">{isOnline ? 'Active now' : 'Inactive'}</p>
+            <div className={`h-2.5 w-2.5 rounded-full ${isOnline.value ? 'bg-[#57C290]' : 'bg-[#b3b5b9]'}`}></div>
+            <p className="text-xs text-[#787589]">{isOnline.value ? 'Active now' : 'Inactive'}</p>
           </div>
         </div>
       </div>
 
       <div className="ml-auto flex items-center space-x-4">
         <label className="relative inline-flex cursor-pointer items-center">
-          <input type="checkbox" className="peer sr-only" checked={isOnline} onChange={toggleStatus} />
+          <input type="checkbox" className="peer sr-only" checked={isOnline.value} onChange={toggleStatus} />
           <div className="peer h-5 w-10 rounded-full bg-gray-400 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#3F3960] peer-checked:after:translate-x-5"></div>
         </label>
 
