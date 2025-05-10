@@ -30,16 +30,19 @@ import { Engine } from '@ir-engine/ecs/src/Engine'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import React, { useEffect, useState } from 'react'
-import { HiSearch } from 'react-icons/hi'
+import { HiPlus, HiSearch } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 
-export const ConversationList: React.FC = () => {
+interface ConversationListProps {
+  onNewMessage?: () => void
+}
+
+export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage }) => {
   const chatState = useMutableState(NewChatState)
-  // We don't need this state anymore as we're using the floating action button
-  // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: channels, isLoading } = useFind(channelPath)
+  const { data: channels } = useFind(channelPath)
+  const isLoading = channels.length === 0
 
   useEffect(() => {
     return () => {
@@ -57,8 +60,15 @@ export const ConversationList: React.FC = () => {
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-gray-300 bg-[#F2F3F5]">
-      <div className="border-b border-gray-300 p-4">
+      <div className="flex items-center justify-between border-b border-gray-300 p-4">
         <h2 className="text-xl font-bold text-[#3F3960]">Direct Messages</h2>
+        <button
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3F3960] text-white hover:bg-[#2D2A45]"
+          onClick={onNewMessage}
+          title="New Message"
+        >
+          <HiPlus className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="p-3">

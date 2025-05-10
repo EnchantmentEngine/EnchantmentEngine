@@ -30,7 +30,7 @@ import { UserID } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect, useState } from 'react'
-import { HiPlus, HiSearch, HiX } from 'react-icons/hi'
+import { HiSearch, HiX } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 import { ConversationList } from './ConversationList'
 import { ConversationWindow } from './ConversationWindow'
@@ -47,18 +47,9 @@ export const DirectMessagesPage: React.FC = () => {
 
   return (
     <div className="relative flex h-full w-full">
-      <ConversationList />
+      <ConversationList onNewMessage={handleNewMessageClick} />
       <ConversationWindow />
       {chatState.showUserStatusPanel.value && <UserStatusPanel />}
-
-      {/* Floating action button for new message */}
-      <button
-        className="absolute bottom-6 right-6 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-[#3F3960] text-white shadow-lg hover:bg-[#2D2A45]"
-        onClick={handleNewMessageClick}
-        title="New Message"
-      >
-        <HiPlus className="h-6 w-6" />
-      </button>
 
       {/* New Message Modal */}
       {isNewMessageModalOpen && <NewMessageModal onClose={() => setIsNewMessageModalOpen(false)} />}

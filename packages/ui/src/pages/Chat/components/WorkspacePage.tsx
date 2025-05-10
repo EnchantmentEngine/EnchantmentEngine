@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,12 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
 import React from 'react'
+import { HiPhone, HiPlus } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 import { ConversationWindow } from './ConversationWindow'
 
@@ -39,25 +40,39 @@ export const WorkspacePage: React.FC = () => {
         </div>
 
         <div className="border-b border-gray-300 p-4">
-          <h3 className="mb-2 text-sm font-semibold text-[#787589]">TEXT CHANNELS</h3>
-          <div className="space-y-1">
-            <div className="flex cursor-pointer items-center rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># general</span>
-            </div>
-            <div className="flex cursor-pointer items-center rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># announcements</span>
-            </div>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#787589]">CHANNELS</h3>
+            <button
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-[#3F3960] text-white hover:bg-[#2D2A45]"
+              title="Add Channel"
+            >
+              <HiPlus className="h-3 w-3" />
+            </button>
           </div>
-        </div>
-
-        <div className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-[#787589]">VOICE CHANNELS</h3>
           <div className="space-y-1">
-            <div className="flex cursor-pointer items-center rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]">🔊 General</span>
+            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
+              <span className="text-[#3F3960]"># general</span>
+              <button className="rounded-full p-1 hover:bg-gray-200">
+                <HiPhone className="h-4 w-4 text-[#3F3960]" />
+              </button>
             </div>
-            <div className="flex cursor-pointer items-center rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]">🔊 Meeting Room</span>
+            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
+              <span className="text-[#3F3960]"># announcements</span>
+              <button className="rounded-full p-1 hover:bg-gray-200">
+                <HiPhone className="h-4 w-4 text-[#3F3960]" />
+              </button>
+            </div>
+            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
+              <span className="text-[#3F3960]"># meeting-room</span>
+              <button className="rounded-full p-1 hover:bg-gray-200">
+                <HiPhone className="h-4 w-4 text-[#3F3960]" />
+              </button>
+            </div>
+            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
+              <span className="text-[#3F3960]"># project-updates</span>
+              <button className="rounded-full p-1 hover:bg-gray-200">
+                <HiPhone className="h-4 w-4 text-[#3F3960]" />
+              </button>
             </div>
           </div>
         </div>
