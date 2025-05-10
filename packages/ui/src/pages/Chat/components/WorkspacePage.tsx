@@ -24,110 +24,57 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
-import React from 'react'
-import { HiPhone, HiPlus } from 'react-icons/hi'
+import React, { useEffect } from 'react'
+import { HiEye, HiEyeOff } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
+import { ChannelSidebar } from './ChannelSidebar'
 import { ConversationWindow } from './ConversationWindow'
+import { MemberSidebar } from './MemberSidebar'
+import { WorkspaceHeader } from './WorkspaceHeader'
 
 export const WorkspacePage: React.FC = () => {
   const chatState = useMutableState(NewChatState)
+  const workspaceId = chatState.selectedWorkspaceID.value || 'workspace1'
+
+  // Get the workspace data from state
+  const workspaceState = chatState.workspaces[workspaceId]
+
+  // Set a default workspace channel if none is selected
+  useEffect(() => {
+    if (!chatState.selectedWorkspaceChannelID.value && workspaceState.channels.value.length > 0) {
+      // Get the first channel ID
+      const firstChannelId = workspaceState.channels.value[0].id
+      chatState.selectedWorkspaceChannelID.set(firstChannelId)
+    }
+  }, [workspaceState.channels])
+
+  const toggleMemberSidebar = () => {
+    chatState.showMemberSidebar.set(!chatState.showMemberSidebar.value)
+  }
 
   return (
     <div className="flex h-full w-full">
       <div className="flex h-full w-64 flex-col border-r border-gray-300 bg-[#F2F3F5]">
-        <div className="border-b border-gray-300 p-4">
-          <h2 className="text-lg font-bold text-[#3F3960]">Workspace Name</h2>
-        </div>
-
-        <div className="border-b border-gray-300 p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#787589]">CHANNELS</h3>
-            <button
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-[#3F3960] text-white hover:bg-[#2D2A45]"
-              title="Add Channel"
-            >
-              <HiPlus className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="space-y-1">
-            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># general</span>
-              <button className="rounded-full p-1 hover:bg-gray-200">
-                <HiPhone className="h-4 w-4 text-[#3F3960]" />
-              </button>
-            </div>
-            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># announcements</span>
-              <button className="rounded-full p-1 hover:bg-gray-200">
-                <HiPhone className="h-4 w-4 text-[#3F3960]" />
-              </button>
-            </div>
-            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># meeting-room</span>
-              <button className="rounded-full p-1 hover:bg-gray-200">
-                <HiPhone className="h-4 w-4 text-[#3F3960]" />
-              </button>
-            </div>
-            <div className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-[#E3E5E8]">
-              <span className="text-[#3F3960]"># project-updates</span>
-              <button className="rounded-full p-1 hover:bg-gray-200">
-                <HiPhone className="h-4 w-4 text-[#3F3960]" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <WorkspaceHeader workspace={workspaceState.value} />
+        <ChannelSidebar workspace={workspaceState.value} />
       </div>
 
-      <ConversationWindow />
+      <div className="relative flex-1">
+        <ConversationWindow />
+        <button
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#E3E5E8] hover:bg-[#D4D7DC]"
+          onClick={toggleMemberSidebar}
+          title={chatState.showMemberSidebar.value ? 'Hide member list' : 'Show member list'}
+        >
+          {chatState.showMemberSidebar.value ? (
+            <HiEyeOff className="h-5 w-5 text-[#3F3960]" />
+          ) : (
+            <HiEye className="h-5 w-5 text-[#3F3960]" />
+          )}
+        </button>
+      </div>
 
-      {chatState.showMemberSidebar.value && (
-        <div className="flex h-full w-64 flex-col border-l border-gray-300 bg-[#F2F3F5]">
-          <div className="border-b border-gray-300 p-4">
-            <h2 className="text-lg font-bold text-[#3F3960]">Members</h2>
-          </div>
-
-          <div className="p-4">
-            <h3 className="mb-2 text-sm font-semibold text-[#787589]">ONLINE — 3</h3>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                  <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#F2F3F5] bg-[#57C290]"></div>
-                </div>
-                <span className="ml-2 text-[#3F3960]">User 1</span>
-              </div>
-              <div className="flex items-center">
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                  <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#F2F3F5] bg-[#57C290]"></div>
-                </div>
-                <span className="ml-2 text-[#3F3960]">User 2</span>
-              </div>
-              <div className="flex items-center">
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                  <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#F2F3F5] bg-[#57C290]"></div>
-                </div>
-                <span className="ml-2 text-[#3F3960]">User 3</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-300 p-4">
-            <h3 className="mb-2 text-sm font-semibold text-[#787589]">OFFLINE — 2</h3>
-            <div className="space-y-3">
-              <div className="flex items-center opacity-60">
-                <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                <span className="ml-2 text-[#3F3960]">User 4</span>
-              </div>
-              <div className="flex items-center opacity-60">
-                <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                <span className="ml-2 text-[#3F3960]">User 5</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {chatState.showMemberSidebar.value && <MemberSidebar workspace={workspaceState.value} />}
     </div>
   )
 }
