@@ -45,9 +45,9 @@ This document outlines the development phases for completing the new chat UI imp
 
 - [x] Add timestamp for last message in ConversationList
 - [x] Implement proper sorting (recent conversations first)
-- [ ] Add message timestamps in ConversationWindow
-- [ ] Implement proper scrolling behavior (auto-scroll to bottom for new messages)
-- [ ] Add loading of previous messages when scrolling up
+- [x] Add message timestamps in ConversationWindow
+- [x] Implement proper scrolling behavior (auto-scroll to bottom for new messages)
+- [x] Add loading of previous messages when scrolling up
 
 **Navigation System**
 

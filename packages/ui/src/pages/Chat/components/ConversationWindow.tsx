@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -28,8 +28,8 @@ import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUser
 import { ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { useFind, useGet, useMutation } from '@ir-engine/common'
 import { ChannelID, channelPath, messagePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs/src/EngineState'
+import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
@@ -38,17 +38,24 @@ import React, { useEffect, useRef, useState } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
 import { NewChatState } from '../ChatState'
+import { formatMessageTimestamp } from '../utils/dateUtils'
 
 export const ConversationWindow: React.FC = () => {
   const chatState = useMutableState(NewChatState)
   const selectedChannelID = chatState.selectedChannelID.value
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // State for pagination
+  const [messageLimit, setMessageLimit] = useState(20)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMoreMessages, setHasMoreMessages] = useState(true)
+  const [scrollPosition, setScrollPosition] = useState(0)
+
   const { data: channel } = useGet(channelPath, selectedChannelID!)
   const { data: messages } = useFind(messagePath, {
     query: {
       channelId: selectedChannelID,
-      $limit: 100,
+      $limit: messageLimit,
       $sort: { createdAt: 1 }
     }
   })
@@ -58,11 +65,62 @@ export const ConversationWindow: React.FC = () => {
   const mediaNetworkID = NetworkState.mediaNetwork?.id
   const mediaConnected = mediaNetworkID && mediaNetworkState?.ready.value
 
+  // State to track if user has scrolled up (to prevent auto-scrolling when reading history)
+  const [isUserScrolled, setIsUserScrolled] = useState(false)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Handle scroll events to detect when user scrolls up
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return
+
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+    const isScrolledToBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 10
+
+    // Update state based on scroll position
+    setIsUserScrolled(!isScrolledToBottom)
+
+    // Save current scroll position
+    setScrollPosition(scrollTop)
+
+    // Check if user scrolled to the top and we need to load more messages
+    if (scrollTop < 50 && !isLoadingMore && hasMoreMessages && messages.length >= messageLimit) {
+      loadMoreMessages()
+    }
+  }
+
+  // Load more messages when scrolling to the top
+  const loadMoreMessages = () => {
+    if (!hasMoreMessages || isLoadingMore) return
+
+    setIsLoadingMore(true)
+
+    // Increase the message limit to load more messages
+    setMessageLimit((prevLimit) => prevLimit + 20)
+  }
+
+  // Effect to restore scroll position after loading more messages
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (isLoadingMore && messagesContainerRef.current) {
+      // Check if we actually got more messages
+      if (messages.length >= messageLimit) {
+        // Restore scroll position after messages are loaded
+        messagesContainerRef.current.scrollTop =
+          messagesContainerRef.current.scrollHeight - messagesContainerRef.current.clientHeight - scrollPosition
+      } else {
+        // No more messages to load
+        setHasMoreMessages(false)
+      }
+
+      setIsLoadingMore(false)
+    }
+  }, [messages, isLoadingMore])
+
+  // Scroll to bottom when new messages arrive, but only if user hasn't scrolled up
+  useEffect(() => {
+    if (messagesEndRef.current && (!isUserScrolled || messages.length <= 1)) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages])
+  }, [messages, isUserScrolled])
 
   const isCallActive = targetChannelId === selectedChannelID && !!mediaConnected
 
@@ -111,18 +169,31 @@ export const ConversationWindow: React.FC = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4" ref={messagesContainerRef} onScroll={handleScroll}>
+        {/* Loading indicator for more messages */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-2">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-[#3F3960]"></div>
+          </div>
+        )}
+
+        {/* No messages state */}
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-gray-500">
             <p>No messages yet</p>
             <p className="text-sm">Start the conversation by sending a message</p>
           </div>
         ) : (
-          messages.map((message, index) => (
-            <MessageItem key={index} message={message} isSelf={message.sender?.id === Engine.instance.userID} />
-          ))
+          <>
+            {/* Message list */}
+            {messages.map((message, index) => (
+              <MessageItem key={index} message={message} isSelf={message.sender?.id === getState(EngineState).userID} />
+            ))}
+
+            {/* End of messages marker for auto-scrolling */}
+            <div ref={messagesEndRef} />
+          </>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Message input */}
@@ -138,6 +209,7 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, isSelf }) => {
   const userThumbnail = useUserAvatarThumbnail(message.sender?.id)
+  const timestamp = message.createdAt ? formatMessageTimestamp(message.createdAt) : ''
 
   return (
     <div className={`mb-4 flex items-start ${isSelf ? 'justify-end' : ''}`}>
@@ -147,8 +219,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, isSelf }) => {
           isSelf ? 'rounded-tr-none bg-[#E1E1E1] text-black' : 'rounded-tl-none bg-[#F8F8F8] text-black'
         }`}
       >
-        {!isSelf && <p className="mb-1 text-xs font-medium text-[#3F3960]">{message.sender?.name}</p>}
-        <p className="text-sm">{message.text}</p>
+        <div className="flex items-center justify-between gap-2">
+          {!isSelf && <p className="text-xs font-medium text-[#3F3960]">{message.sender?.name}</p>}
+          <span className="flex-shrink-0 text-xs text-gray-500">{timestamp}</span>
+        </div>
+        <p className="mt-1 text-sm">{message.text}</p>
       </div>
       {isSelf && <img src={userThumbnail} alt="User avatar" className="ml-3 mt-1 h-8 w-8 rounded-full" />}
     </div>
