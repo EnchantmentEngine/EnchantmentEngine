@@ -27,7 +27,16 @@ import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/Medi
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { useFind, useGet, useMutation } from '@ir-engine/common'
-import { ChannelID, channelPath, messagePath } from '@ir-engine/common/src/schema.type.module'
+import {
+  ChannelID,
+  UserID,
+  channelPath,
+  instanceAttendancePath,
+  instancePath,
+  messagePath,
+  userPath
+} from '@ir-engine/common/src/schema.type.module'
+import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { EngineState } from '@ir-engine/ecs/src/EngineState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
@@ -36,13 +45,120 @@ import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import { MediaCall } from '@ir-engine/ui/src/components/Chat/VideoCall'
 import { Expand06Lg, Maximize02Lg, Screenshare } from '@ir-engine/ui/src/icons'
 import { Resizable } from 're-resizable'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
 import { MdOpenInNew } from 'react-icons/md'
 import { NewChatState } from '../ChatState'
 import { MediaSessionState } from '../MediaSessionState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
+
+// Custom hook to get users in a call for a specific channel
+const useCallParticipants = (channelId?: ChannelID) => {
+  const participants = useHookstate<{ userId: UserID; peerId: string }[]>([])
+  // Use the same polling strategy as in PeerToPeerNetworkState.tsx
+  const lastPoll = useHookstate(new Date(new Date().getTime() - 10000))
+
+  // First get the instance associated with this channel
+  // const { data: channel } = useGet(channelPath, channelId)
+  const instanceData = useFind(instancePath, {
+    query: {
+      channelId: channelId,
+      ended: false,
+      $limit: 1,
+      $sort: { createdAt: -1 }
+    }
+  })
+
+  // Then get instance attendance for that instance - similar to PeerToPeerNetworkState.tsx
+  const instanceAttendanceQuery = useFind(instanceAttendancePath, {
+    query: {
+      instanceId: instanceData.data[0]?.id,
+      ended: false,
+      updatedAt: {
+        // Only consider instances that have been updated in the last 10 seconds
+        $gt: toDateTimeSql(lastPoll.value)
+      }
+    }
+  })
+
+  // Set up polling interval - exactly like in PeerToPeerNetworkState.tsx
+  useEffect(() => {
+    const interval = setInterval(() => {
+      lastPoll.set(new Date(new Date().getTime() - 10000))
+    }, 5000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Process the data in a separate effect - similar to PeerToPeerNetworkState.tsx
+  useEffect(() => {
+    console.log('1')
+    if (!channelId || !instanceAttendanceQuery.data) {
+      participants.set([])
+      return
+    }
+
+    if (instanceAttendanceQuery.data.length > 0) {
+      // Extract unique users
+      const uniqueUsers = instanceAttendanceQuery.data.reduce(
+        (acc: { userId: UserID; peerId: string }[], attendance: any) => {
+          if (!acc.some((user) => user.userId === attendance.userId)) {
+            acc.push({ userId: attendance.userId, peerId: attendance.peerId })
+          }
+          return acc
+        },
+        []
+      )
+
+      participants.set(uniqueUsers)
+    } else {
+      participants.set([])
+    }
+  }, [channelId, instanceAttendanceQuery.status])
+
+  return participants.value
+}
+
+// Component to display call participants
+const CallParticipants: React.FC<{ channelId: ChannelID }> = ({ channelId }) => {
+  const participants = useCallParticipants(channelId)
+
+  if (participants.length === 0) return null
+
+  return (
+    <div className="flex items-center space-x-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
+      <span className="text-sm font-medium text-gray-700">In call:</span>
+      <div className="flex -space-x-2 overflow-hidden">
+        {participants.map((participant) => (
+          <CallParticipantAvatar key={participant.userId} userId={participant.userId} />
+        ))}
+      </div>
+      <span className="text-xs text-gray-500">
+        {participants.length} {participants.length === 1 ? 'user' : 'users'}
+      </span>
+    </div>
+  )
+}
+
+// Component to display a participant's avatar
+const CallParticipantAvatar: React.FC<{ userId: UserID }> = ({ userId }) => {
+  const avatarThumbnail = useUserAvatarThumbnail(userId)
+  const { data: user } = useGet(userPath, userId)
+
+  return (
+    <div className="relative inline-block">
+      <img
+        src={avatarThumbnail}
+        alt={user?.name || 'User'}
+        title={user?.name || 'User'}
+        className="h-8 w-8 rounded-full border-2 border-white object-cover"
+      />
+    </div>
+  )
+}
 
 export const ConversationWindow: React.FC = () => {
   const chatState = useMutableState(NewChatState)
@@ -51,7 +167,7 @@ export const ConversationWindow: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // State for video container height with localStorage persistence
-  const [videoHeight, setVideoHeight] = useState(() => {
+  const videoHeight = useHookstate(() => {
     // Try to get saved height from localStorage, default to 300px
     const savedHeight = localStorage.getItem('videoContainerHeight')
     return savedHeight ? parseInt(savedHeight, 10) : 300
@@ -229,6 +345,9 @@ export const ConversationWindow: React.FC = () => {
         </div>
       </div>
 
+      {/* Call Participants - Show even if user is not in the call */}
+      {selectedChannelID && <CallParticipants channelId={selectedChannelID} />}
+
       {/* Call area - only show if not in popout mode */}
       {isCallActive && !mediaSessionState.isPopout.value && (
         <>
@@ -236,7 +355,7 @@ export const ConversationWindow: React.FC = () => {
             <div id="media-session-container">
               <Resizable
                 className="overflow-hidden bg-gray-100"
-                size={{ width: '100%', height: videoHeight }}
+                size={{ width: '100%', height: videoHeight.value }}
                 enable={{
                   top: false,
                   right: false,
@@ -250,8 +369,8 @@ export const ConversationWindow: React.FC = () => {
                 minHeight={200}
                 maxHeight={600}
                 onResizeStop={(_e, _direction, _ref, d) => {
-                  const newHeight = videoHeight + d.height
-                  setVideoHeight(newHeight)
+                  const newHeight = videoHeight.value + d.height
+                  videoHeight.set(newHeight)
                   // Save to localStorage for persistence
                   localStorage.setItem('videoContainerHeight', newHeight.toString())
                 }}

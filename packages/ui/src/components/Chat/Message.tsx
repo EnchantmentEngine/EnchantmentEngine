@@ -196,7 +196,6 @@ const MessageHeader = (props: { selectedChannelID: ChannelID }) => {
   const { data: channel } = useGet(channelPath, selectedChannelID!)
 
   const channelName = channel ? getChannelName(channel) : ''
-  console.log(selectedChannelID, channel, channelName)
 
   const mediaStreamState = useMutableState(MediaStreamState)
   const isCamVideoEnabled = !!mediaStreamState.webcamMediaStream.value && mediaStreamState.webcamEnabled.value
