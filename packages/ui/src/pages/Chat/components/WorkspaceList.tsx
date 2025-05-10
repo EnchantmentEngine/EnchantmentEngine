@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,13 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
 import React from 'react'
 import { HiHome } from 'react-icons/hi'
+import { twMerge } from 'tailwind-merge'
 import { ChatPageType, NewChatState } from '../ChatState'
 
 interface WorkspaceListProps {
@@ -57,12 +58,13 @@ export const WorkspaceList: React.FC<WorkspaceListProps> = ({ currentPage, onPag
       {workspaces.map((workspace) => (
         <button
           key={workspace.id}
-          className={`flex h-12 w-12 items-center justify-center rounded-full transition-all ${
+          className={twMerge(
+            'flex h-12 w-12 items-center justify-center rounded-full transition-all',
             (currentPage === 'directMessages' && workspace.id === 'home') ||
-            (currentPage === 'workspace' && chatState.selectedWorkspaceID.value === workspace.id)
+              (currentPage === 'workspace' && chatState.selectedWorkspaceID.value === workspace.id)
               ? 'bg-[#5865F2] text-white'
               : 'bg-[#36393F] text-gray-300 hover:bg-[#5865F2] hover:text-white'
-          }`}
+          )}
           onClick={() => handleWorkspaceClick(workspace.id)}
           title={workspace.name}
         >
@@ -71,7 +73,9 @@ export const WorkspaceList: React.FC<WorkspaceListProps> = ({ currentPage, onPag
       ))}
 
       <button
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#36393F] text-[#3BA55C] transition-colors hover:bg-[#3BA55C] hover:text-white"
+        className={twMerge(
+          'flex h-12 w-12 items-center justify-center rounded-full bg-[#36393F] text-[#3BA55C] transition-colors hover:bg-[#3BA55C] hover:text-white'
+        )}
         title="Add a Server"
       >
         <span className="text-2xl">+</span>
