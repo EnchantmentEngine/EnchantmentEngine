@@ -1,4 +1,8 @@
-## Testing Guidelines
+# Standards & Best Practices
+
+ - Always choose to use Hookstatejs `useHookstate` instead of Reactjs `useState`
+
+# Testing Guidelines
 
 - Write unit tests for core functionality
 - Test edge cases and error conditions

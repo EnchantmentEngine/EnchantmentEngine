@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,16 +19,21 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
+import AvatarSelectMenu from '@ir-engine/client-core/src/user/menus/avatar/AvatarSelectMenu'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { AvatarService } from '@ir-engine/client-core/src/user/services/AvatarService'
+import { UserID, UserName } from '@ir-engine/common/src/schema.type.module'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useState } from 'react'
-import { HiBell, HiColorSwatch, HiLockClosed, HiUser, HiVolumeUp } from 'react-icons/hi'
+import { useTranslation } from 'react-i18next'
+import { HiBell, HiCamera, HiCheck, HiColorSwatch, HiLockClosed, HiPencil, HiUser, HiVolumeUp } from 'react-icons/hi'
 
 type SettingsCategory = 'account' | 'appearance' | 'notifications' | 'privacy' | 'audio'
 
@@ -93,8 +98,45 @@ interface SettingsContentProps {
 }
 
 const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
-  const userName = useHookstate(getMutableState(AuthState).user.name).value
-  const userThumbnail = useUserAvatarThumbnail(Engine.instance.userID)
+  const { t } = useTranslation()
+  const authState = useMutableState(AuthState)
+  const selfUser = authState.user
+  const userId = selfUser.id.value as UserID
+  const userName = useHookstate(selfUser.name).value
+  const userThumbnail = useUserAvatarThumbnail(userId)
+
+  const [editedUsername, setEditedUsername] = useState<string>(userName)
+  const [isEditingUsername, setIsEditingUsername] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedUsername(e.target.value)
+  }
+
+  const handleSaveUsername = async () => {
+    if (!editedUsername.trim() || editedUsername === userName) {
+      setIsEditingUsername(false)
+      setEditedUsername(userName)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await AvatarService.updateUsername(userId, editedUsername.trim() as UserName)
+      NotificationService.dispatchNotify(t('user:usermenu.profile.usernameUpdated'), { variant: 'success' })
+      setIsEditingUsername(false)
+    } catch (error) {
+      console.error('Error updating username:', error)
+      NotificationService.dispatchNotify(t('user:usermenu.profile.errorUpdatingUsername'), { variant: 'error' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleAvatarClick = () => {
+    // Open avatar selection modal
+    ModalState.openModal(<AvatarSelectMenu showBackButton={true} previewEnabled={true} />)
+  }
 
   return (
     <div className="p-6">
@@ -104,10 +146,26 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
 
           <div className="mb-6 rounded-lg bg-[#F2F3F5] p-4">
             <div className="flex items-start">
-              <img src={userThumbnail} alt="User avatar" className="h-20 w-20 rounded-full object-cover" />
+              <div className="relative">
+                <img
+                  src={userThumbnail}
+                  alt="User avatar"
+                  className="h-20 w-20 cursor-pointer rounded-full object-cover"
+                  onClick={handleAvatarClick}
+                />
+                <button
+                  className="absolute bottom-0 right-0 rounded-full bg-[#3F3960] p-1.5 text-white hover:bg-[#2D2A45]"
+                  onClick={handleAvatarClick}
+                >
+                  <HiCamera className="h-4 w-4" />
+                </button>
+              </div>
               <div className="ml-4">
                 <h3 className="text-lg font-bold text-[#3F3960]">{userName}</h3>
-                <button className="mt-2 rounded bg-[#3F3960] px-3 py-1 text-sm text-white hover:bg-[#2D2A45]">
+                <button
+                  className="mt-2 rounded bg-[#3F3960] px-3 py-1 text-sm text-white hover:bg-[#2D2A45]"
+                  onClick={handleAvatarClick}
+                >
                   Change Avatar
                 </button>
               </div>
@@ -117,32 +175,47 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-[#3F3960]">Username</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={isEditingUsername ? editedUsername : userName}
+                  onChange={handleUsernameChange}
+                  disabled={!isEditingUsername || isSaving}
+                  className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[#3F3960]"
+                />
+                {!isEditingUsername ? (
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#3F3960]"
+                    onClick={() => setIsEditingUsername(true)}
+                  >
+                    <HiPencil className="h-5 w-5" />
+                  </button>
+                ) : (
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#3F3960]"
+                    onClick={handleSaveUsername}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? '...' : <HiCheck className="h-5 w-5" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[#3F3960]">Account Type</label>
               <input
                 type="text"
-                value={userName}
-                className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[#3F3960]"
+                value={selfUser.isGuest.value ? 'Guest Account' : 'Registered Account'}
+                disabled
+                className="w-full rounded-md border border-gray-300 bg-gray-100 p-2 focus:outline-none"
               />
+              {selfUser.isGuest.value && (
+                <p className="mt-1 text-sm text-gray-500">
+                  To upgrade your account, connect an email or social login in the profile menu.
+                </p>
+              )}
             </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#3F3960]">Email</label>
-              <input
-                type="email"
-                value="user@example.com"
-                className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[#3F3960]"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#3F3960]">Password</label>
-              <input
-                type="password"
-                value="********"
-                className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[#3F3960]"
-              />
-            </div>
-
-            <button className="rounded-md bg-[#3F3960] px-4 py-2 text-white hover:bg-[#2D2A45]">Save Changes</button>
           </div>
         </div>
       )}

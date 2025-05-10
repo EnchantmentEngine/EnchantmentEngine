@@ -51,50 +51,27 @@ This document outlines the development phases for completing the new chat UI imp
 
 **Navigation System**
 
-- [ ] Save and restore last active page in URL params & local storage (for deep linking)
+- [x] Save and restore last active page in URL params & local storage (for deep linking)
 
-**FooterBar Component**
-
-- [ ] Connect user status toggle to actual user status
-
-## Phase 2: Enhanced Messaging Experience
-
-**ConversationWindow Improvements**
-
-- [ ] Implement message grouping by time and sender
-- [ ] Add read receipts
-- [ ] Add unread message indicators in ConversationList
-
-**Message Input Enhancements**
-
-- [ ] Add emoji picker
-- [ ] Implement file upload functionality
-- [ ] Add basic keyboard shortcuts
-
-**User Status Enhancements**
-
-- [ ] Add online status indicators for users in ConversationList
-- [ ] Connect status toggles to actual user status in UserStatusPanel
-
-## Phase 3: Contacts & Friend Management
+## Phase 2: Contacts & Friend Management
 
 **RequestPanel Component**
 
-- [ ] Implement friend request acceptance/rejection functionality
-- [ ] Add "Add Friend" functionality
+- [x] Implement friend request acceptance/rejection functionality
+- [x] Add "Add Friend" functionality
 
 **ContactList Component**
 
-- [ ] Add contact grouping by status
-- [ ] Implement contact search
-- [ ] Add contact context menu (message, call, remove)
+- [x] Add contact grouping by status
+- [x] Implement contact search
+- [x] Add contact context menu (message, call, remove)
 
 **User Profile**
 
-- [ ] Add user profile editing functionality
-- [ ] Implement profile picture upload
+- [x] Add user profile editing functionality
+- [x] Implement profile picture upload
 
-## Phase 4: Workspace & Channels
+## Phase 3: Workspace & Channels
 
 **WorkspaceHeader Component**
 
@@ -114,6 +91,25 @@ This document outlines the development phases for completing the new chat UI imp
 - [ ] Add online status indicators
 - [ ] Implement member search
 - [ ] Add user context menu (message, call, etc.)
+
+## Phase 4: Enhanced Messaging Experience
+
+**ConversationWindow Improvements**
+
+- [ ] Implement message grouping by time and sender
+- [ ] Add read receipts
+- [ ] Add unread message indicators in ConversationList
+
+**Message Input Enhancements**
+
+- [ ] Add emoji picker
+- [ ] Implement file upload functionality
+- [ ] Add basic keyboard shortcuts
+
+**User Status Enhancements**
+
+- [ ] Add online status indicators for users in ConversationList
+- [ ] Connect status toggles to actual user status in UserStatusPanel
 
 ## Phase 5: Advanced Communication Features
 
@@ -204,45 +200,6 @@ This document outlines the development phases for completing the new chat UI imp
 - [ ] Implement user activity status (playing game, streaming, etc.)
 - [ ] Implement channel categories
 
-## Phase 9: Testing & Documentation
+**FooterBar Component**
 
-**Testing**
-
-- [ ] Write unit tests for all components
-- [ ] Implement integration tests for key user flows
-- [ ] Add end-to-end tests for critical paths
-
-**Code Documentation**
-
-- [ ] Add JSDoc comments to all components and functions
-- [ ] Create component API documentation
-- [ ] Document state management approach
-
-**User Documentation**
-
-- [ ] Create user guide for the chat interface
-- [ ] Add keyboard shortcut reference
-- [ ] Document feature set and limitations
-
-## Phase 10: Deployment & Migration
-
-**Feature Flags**
-
-- [ ] Implement feature flags for gradual rollout
-- [ ] Add A/B testing capability for new features
-
-**Analytics**
-
-- [ ] Add usage tracking for key features
-- [ ] Implement error tracking
-- [ ] Create performance monitoring
-
-**Data Migration**
-
-- [ ] Ensure backward compatibility with existing chat data
-- [ ] Create migration path for user preferences
-
-**Legacy Support**
-
-- [ ] Add fallback to old UI for unsupported browsers
-- [ ] Implement graceful degradation for features
+- [ ] Connect user status toggle to actual user status
