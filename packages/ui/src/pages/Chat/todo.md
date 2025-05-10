@@ -96,6 +96,14 @@ This document outlines the development phases for completing the new chat UI imp
 
 ## Phase 4: Enhanced Messaging Experience
 
+**Media Session Improvements**
+
+- [x] Mute self & mute others
+- [x] Change volume of microphone
+- [x] Change volume of others
+- [x] Screensharing
+- [x] Expanded media view (fullscreen)
+
 **ConversationWindow Improvements**
 
 - [ ] Implement message grouping by time and sender

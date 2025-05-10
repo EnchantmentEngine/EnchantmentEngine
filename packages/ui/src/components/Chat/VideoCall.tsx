@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,14 +19,15 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { t } from 'i18next'
 import { Resizable } from 're-resizable'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa'
+import { VolumeContextMenu } from './VolumeContextMenu'
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
@@ -44,15 +45,17 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
 
   const mediaNetwork = NetworkState.mediaNetwork
 
-  const isSelf =
-    !mediaNetwork ||
-    peerID === Engine.instance.store.peerID ||
-    (mediaNetwork?.peers &&
-      Object.values(mediaNetwork.peers).find((peer) => peer.userId === Engine.instance.userID)?.peerID === peerID) ||
-    peerID === 'self'
+  // Context menu state
+  const [showVolumeMenu, setShowVolumeMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
+
+  const isSelf = !mediaNetwork || peerID === Engine.instance.store.peerID || peerID === 'self'
   const isScreen = type === 'screen'
 
-  const userID = mediaNetwork.peers[peerID].userId
+  // Get user ID safely
+  const userID = mediaNetwork?.users
+    ? Object.keys(mediaNetwork.users).find((id) => mediaNetwork.users[id]?.includes(peerID))
+    : undefined
 
   const user = useGet(userPath, userID)
   const userThumbnail = useUserAvatarThumbnail(userID)
@@ -68,13 +71,20 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
   const peerMediaChannelState = useHookstate(
     getMutableState(PeerMediaChannelState)[peerID][type] as State<PeerMediaStreamInterface>
   )
-  const { videoMediaStream, videoElement, videoStreamPaused, audioStreamPaused } = peerMediaChannelState.get({
+  const { videoMediaStream, videoStreamPaused, audioStreamPaused } = peerMediaChannelState.get({
     noproxy: true
   }) as PeerMediaStreamInterface
 
   const username = getUsername() as UserName
 
   const ref = useRef<HTMLVideoElement>(null)
+
+  // Handle right click to show volume menu
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setMenuPosition({ x: e.clientX, y: e.clientY })
+    setShowVolumeMenu(true)
+  }
 
   useEffect(() => {
     if (!ref.current || ref.current.srcObject || !videoMediaStream) return
@@ -135,6 +145,7 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
       <div
         className={`relative flex h-full items-center justify-center rounded-[5px]`}
         style={{ backgroundColor: 'gray' }} // TODO derive color from user thumbnail
+        onContextMenu={handleContextMenu}
       >
         {!videoMediaStream || videoStreamPaused ? (
           <img
@@ -158,16 +169,60 @@ export const UserMedia = (props: { peerID: PeerID; type: 'cam' | 'screen' }) => 
             {username}
           </p>
         </div>
-        <button
-          className="absolute bottom-1 right-1 m-0 flex h-[20px] w-[20px] items-center justify-center  rounded-full bg-[#EDEEF0] px-1"
-          onClick={toggleAudio}
-        >
-          {audioStreamPaused ? (
-            <FaMicrophoneSlash className="h-5 w-5 overflow-hidden  fill-[#3F3960]" />
-          ) : (
-            <FaMicrophone className="h-3 w-3 overflow-hidden fill-[#008000]" />
-          )}
-        </button>
+
+        {/* Media control buttons */}
+        <div className="absolute bottom-1 right-1 flex space-x-1">
+          {/* Audio toggle button */}
+          <button
+            className="m-0 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#EDEEF0] hover:bg-gray-200"
+            onClick={toggleAudio}
+            title={audioStreamPaused ? 'Unmute' : 'Mute'}
+          >
+            {audioStreamPaused ? (
+              <FaMicrophoneSlash className="h-4 w-4 overflow-hidden fill-[#3F3960]" />
+            ) : (
+              <FaMicrophone className="h-3 w-3 overflow-hidden fill-[#008000]" />
+            )}
+          </button>
+
+          {/* Video toggle button */}
+          <button
+            className="m-0 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#EDEEF0] hover:bg-gray-200"
+            onClick={toggleVideo}
+            title={videoStreamPaused ? 'Enable Video' : 'Disable Video'}
+          >
+            {videoStreamPaused ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 fill-[#3F3960]"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                <path d="M1 15L19 5" strokeWidth="2" stroke="#3F3960" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 fill-[#008000]"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Volume context menu */}
+        {showVolumeMenu && (
+          <VolumeContextMenu
+            peerID={peerID}
+            type={type}
+            position={menuPosition}
+            onClose={() => setShowVolumeMenu(false)}
+          />
+        )}
       </div>
     </Resizable>
   )

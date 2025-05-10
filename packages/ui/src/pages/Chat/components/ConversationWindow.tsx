@@ -34,14 +34,17 @@ import { NetworkState } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import { MediaCall } from '@ir-engine/ui/src/components/Chat/VideoCall'
+import { Expand06Lg, Maximize02Lg, Screenshare } from '@ir-engine/ui/src/icons'
 import React, { useEffect, useRef } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
 import { NewChatState } from '../ChatState'
+import { MediaSessionState } from '../MediaSessionState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
 
 export const ConversationWindow: React.FC = () => {
   const chatState = useMutableState(NewChatState)
+  const mediaSessionState = useMutableState(MediaSessionState)
   const selectedChannelID = chatState.selectedChannelID.value
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -152,18 +155,72 @@ export const ConversationWindow: React.FC = () => {
           <h2 className="text-lg font-semibold text-[#3F3960]">{channel ? getChannelName(channel) : 'Loading...'}</h2>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Video call button */}
           <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(true)}>
             <HiVideoCamera className="h-5 w-5 text-[#3F3960]" />
           </button>
+
+          {/* Audio call button */}
           <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(false)}>
             <HiPhone className="h-5 w-5 text-[#3F3960]" />
           </button>
+
+          {isCallActive && (
+            <>
+              {/* Screenshare button */}
+              <button
+                className="rounded-full p-2 hover:bg-gray-100"
+                onClick={() => MediaStreamState.toggleScreenshare()}
+                title="Share Screen"
+              >
+                <Screenshare className="h-5 w-5 text-[#3F3960]" />
+              </button>
+
+              {/* Expanded view button */}
+              <button
+                className="rounded-full p-2 hover:bg-gray-100"
+                onClick={() => mediaSessionState.isExpanded.set(!mediaSessionState.isExpanded.value)}
+                title={mediaSessionState.isExpanded.value ? 'Collapse View' : 'Expand View'}
+              >
+                <Maximize02Lg className="h-5 w-5 text-[#3F3960]" />
+              </button>
+
+              {/* Fullscreen button */}
+              <button
+                className="rounded-full p-2 hover:bg-gray-100"
+                onClick={() => {
+                  if (mediaSessionState.isFullscreen.value) {
+                    if (document.exitFullscreen) {
+                      document.exitFullscreen()
+                    }
+                    mediaSessionState.isFullscreen.set(false)
+                  } else {
+                    const mediaContainer = document.getElementById('media-session-container')
+                    if (mediaContainer?.requestFullscreen) {
+                      mediaContainer.requestFullscreen()
+                      mediaSessionState.isFullscreen.set(true)
+                    }
+                  }
+                }}
+                title={mediaSessionState.isFullscreen.value ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                <Expand06Lg className="h-5 w-5 text-[#3F3960]" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Call area */}
       {isCallActive && (
-        <div className="bg-gray-100 p-4">
+        <div
+          id="media-session-container"
+          className={`bg-gray-100 p-4 ${
+            mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value
+              ? 'fixed bottom-0 right-0 z-40 w-96 rounded-tl-lg shadow-lg'
+              : ''
+          } ${mediaSessionState.isFullscreen.value ? 'fixed inset-0 z-50' : ''}`}
+        >
           <MediaCall />
         </div>
       )}
