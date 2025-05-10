@@ -41,7 +41,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({ onNewMessage
   const chatState = useMutableState(NewChatState)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: channels } = useFind(channelPath)
+  const { data: channels } = useFind(channelPath, { query: { instanceId: null } })
   const isLoading = channels.length === 0
 
   useEffect(() => {

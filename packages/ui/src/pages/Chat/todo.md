@@ -5,12 +5,9 @@ This document outlines the remaining tasks needed to complete the new chat UI im
 ## Core Functionality
 
 - [ ] **Navigation System**
-  - [ ] Implement proper navigation between different pages (DirectMessages, Workspace, Contacts, Settings)
-  - [ ] Add active state indicators for navigation items
   - [ ] Save and restore last active page in local storage
 
 - [ ] **State Management**
-  - [ ] Refactor to use a single source of truth between old and new chat components
   - [ ] Add proper error handling for all async operations
   - [ ] Implement loading states for all async operations
 
