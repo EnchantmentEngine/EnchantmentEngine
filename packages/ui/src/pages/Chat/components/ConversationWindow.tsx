@@ -35,7 +35,8 @@ import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
 import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
 import { MediaCall } from '@ir-engine/ui/src/components/Chat/VideoCall'
 import { Expand06Lg, Maximize02Lg, Screenshare } from '@ir-engine/ui/src/icons'
-import React, { useEffect, useRef } from 'react'
+import { Resizable } from 're-resizable'
+import React, { useEffect, useRef, useState } from 'react'
 import { HiPaperClip, HiPhone, HiVideoCamera } from 'react-icons/hi'
 import { HiPaperAirplane } from 'react-icons/hi2'
 import { NewChatState } from '../ChatState'
@@ -47,6 +48,13 @@ export const ConversationWindow: React.FC = () => {
   const mediaSessionState = useMutableState(MediaSessionState)
   const selectedChannelID = chatState.selectedChannelID.value
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // State for video container height with localStorage persistence
+  const [videoHeight, setVideoHeight] = useState(() => {
+    // Try to get saved height from localStorage, default to 300px
+    const savedHeight = localStorage.getItem('videoContainerHeight')
+    return savedHeight ? parseInt(savedHeight, 10) : 300
+  })
 
   // State for pagination
   const messageLimit = useHookstate(20)
@@ -212,17 +220,58 @@ export const ConversationWindow: React.FC = () => {
       </div>
 
       {/* Call area */}
-      {isCallActive && (
-        <div
-          id="media-session-container"
-          className={`bg-gray-100 p-4 ${
-            mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value
-              ? 'fixed bottom-0 right-0 z-40 w-96 rounded-tl-lg shadow-lg'
-              : ''
-          } ${mediaSessionState.isFullscreen.value ? 'fixed inset-0 z-50' : ''}`}
-        >
-          <MediaCall />
+      {isCallActive && !mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value ? (
+        <div id="media-session-container">
+          <Resizable
+            className="overflow-hidden bg-gray-100"
+            size={{ width: '100%', height: videoHeight }}
+            enable={{
+              top: false,
+              right: false,
+              bottom: true,
+              left: false,
+              topRight: false,
+              bottomRight: false,
+              bottomLeft: false,
+              topLeft: false
+            }}
+            minHeight={200}
+            maxHeight={600}
+            onResizeStop={(_e, _direction, _ref, d) => {
+              const newHeight = videoHeight + d.height
+              setVideoHeight(newHeight)
+              // Save to localStorage for persistence
+              localStorage.setItem('videoContainerHeight', newHeight.toString())
+            }}
+            handleComponent={{
+              bottom: (
+                <div className="flex h-6 w-full cursor-ns-resize items-center justify-center border-b border-t border-gray-300 bg-gray-200 hover:bg-gray-300">
+                  <div className="flex flex-col items-center justify-center space-y-1">
+                    <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
+                    <div className="h-[2px] w-10 rounded-full bg-gray-500"></div>
+                  </div>
+                </div>
+              )
+            }}
+          >
+            <div className="h-full w-full p-2">
+              <MediaCall isExpanded={false} />
+            </div>
+          </Resizable>
         </div>
+      ) : (
+        isCallActive && (
+          <div
+            id="media-session-container"
+            className={`bg-gray-100 p-2 ${
+              mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value
+                ? 'fixed inset-0 z-40 overflow-hidden shadow-lg'
+                : ''
+            } ${mediaSessionState.isFullscreen.value ? 'fixed inset-0 z-50 overflow-hidden' : ''}`}
+          >
+            <MediaCall isExpanded={mediaSessionState.isExpanded.value} />
+          </div>
+        )
       )}
 
       {/* Messages */}
