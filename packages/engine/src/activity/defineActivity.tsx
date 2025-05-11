@@ -25,28 +25,43 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { JSONSchema } from '@ir-engine/ecs'
 import { defineAction, defineState, getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
-import { DSLInterpreter } from '@ir-engine/hyperflux/src/dsl'
+import { createEvaluationContext, createStateValue, evaluateExpression } from '@ir-engine/hyperflux/src/dsl'
 import { TreeRoot } from '@ir-engine/hyperflux/src/dsl/types'
 import jsonLogic, { RulesLogic } from 'json-logic-js'
-import React from 'react'
 import { validateRuleAgainstSchema } from './jsonLogicUtils'
 
+/**
+ * Description of an activity action
+ */
 type ActivityActionDescription = {
+  /** The name of the action */
   name: string
+  /** The JSON ID of the action */
   jsonID: string
+  /** The JSON schema for the action payload */
   schema: JSONSchema
 }
 
+/**
+ * Description of an activity
+ */
 type ActivityDescription = {
+  /** The name of the activity */
   name: string
+  /** The JSON ID of the activity */
   jsonID: string
+  /** The state definition for the activity */
   state: {
+    /** The JSON schema for the state */
     schema: JSONSchema
+    /** The receptors for the state, mapping action types to JSON Logic rules */
     receptors: {
       [action: string]: RulesLogic
     }
   }
+  /** The actions for the activity */
   actions: ActivityActionDescription[]
+  /** Optional reactive DSL tree for side effects */
   reactor?: TreeRoot
 }
 
@@ -79,18 +94,111 @@ export const validateRule = (rule: RulesLogic, schema: JSONSchema): boolean => {
 }
 
 /**
- * Creates a React component from a DSL tree
+ * Creates a reactor function from a DSL tree
  * @param dsl The DSL tree
  * @param stateName The name of the state to provide context to the DSL
- * @returns A React component that renders the DSL
+ * @returns A function that processes the DSL logic
  */
 const createReactorFromDSL = (dsl: TreeRoot, stateName: string) => {
+  // Create a map to store state objects
+  const states: Record<string, any> = {}
+
+  // Process each node in the tree
+  dsl.tree.forEach((node) => {
+    if (node.type === 'hookstate') {
+      // Get the current state from the HyperFlux store
+      const currentState = HyperFlux.store.stateMap[stateName]?.get({ noproxy: true }) || {}
+
+      // Create the evaluation context with the current state
+      const context = createEvaluationContext(states, { state: currentState })
+
+      // Create the state value
+      const key = typeof node.key === 'string' ? node.key : evaluateExpression(node.key, context)
+      states[key] = createStateValue(key, node.scope || 'local', node.initial, context)
+    }
+  })
+
+  // Return a function that will be called when the state changes
   return () => {
     // Get the current state from the HyperFlux store
     const currentState = HyperFlux.store.stateMap[stateName]?.get({ noproxy: true }) || {}
 
-    // Create the DSL interpreter with the current state as context
-    return <DSLInterpreter dsl={dsl} initialContext={{ state: currentState }} />
+    // Create the evaluation context with the current state
+    const context = createEvaluationContext(states, { state: currentState })
+
+    // Process each node in the tree
+    dsl.tree.forEach((node) => {
+      if (node.type === 'effect') {
+        // Check if any dependencies have changed
+        const shouldRun = node.deps.some((dep) => {
+          if (dep.startsWith('state.')) {
+            const path = dep.substring(6)
+            return currentState[path] !== undefined
+          }
+          return states[dep] !== undefined
+        })
+
+        if (shouldRun) {
+          // Evaluate the effect body
+          evaluateExpression(node.body, context)
+
+          // Evaluate cleanup if provided
+          if (node.cleanup) {
+            return () => evaluateExpression(node.cleanup!, context)
+          }
+        }
+      } else if (node.type === 'conditional') {
+        // Evaluate the condition
+        const condResult = evaluateExpression(node.cond, context)
+
+        // Process the appropriate branch
+        const nodesToProcess = condResult ? node.then : node.else || []
+
+        // Process each node in the branch
+        nodesToProcess.forEach((childNode) => {
+          if (childNode.type === 'hookstate') {
+            const key = typeof childNode.key === 'string' ? childNode.key : evaluateExpression(childNode.key, context)
+            if (!states[key]) {
+              states[key] = createStateValue(key, childNode.scope || 'local', childNode.initial, context)
+            } else {
+              // Update existing state
+              if (childNode.initial !== undefined) {
+                const value = evaluateExpression(childNode.initial, context)
+                states[key].set(value)
+              }
+            }
+          }
+        })
+      } else if (node.type === 'map') {
+        // Evaluate the items
+        const items = evaluateExpression(node.items, context)
+
+        // Process each item
+        if (Array.isArray(items)) {
+          items.forEach((item) => {
+            // Create a context with the item
+            const itemContext = { ...context, [node.itemName]: item }
+
+            // Process each node in the body
+            node.body.forEach((childNode) => {
+              if (childNode.type === 'hookstate') {
+                const key =
+                  typeof childNode.key === 'string' ? childNode.key : evaluateExpression(childNode.key, itemContext)
+                if (!states[key]) {
+                  states[key] = createStateValue(key, childNode.scope || 'local', childNode.initial, itemContext)
+                } else {
+                  // Update existing state
+                  if (childNode.initial !== undefined) {
+                    const value = evaluateExpression(childNode.initial, itemContext)
+                    states[key].set(value)
+                  }
+                }
+              }
+            })
+          })
+        }
+      }
+    })
   }
 }
 
@@ -114,6 +222,7 @@ export const defineActivity = (description: ActivityDescription) => {
   // Create state definition options
   const stateOptions: any = {
     name: description.jsonID,
+    // Initialize with default values based on schema
     initial: { count: 0 },
     receptors: Object.entries(description.state.receptors).reduce((acc, [actionName, rule]) => {
       const actionKey = Object.keys(actions).find((key) => actions[key].type === actionName || key === actionName)
@@ -127,7 +236,16 @@ export const defineActivity = (description: ActivityDescription) => {
         (action: Record<string, any>) => {
           const currentState = getState(state)
           const newState = applyStateTransformation(currentState, rule, action)
-          getMutableState(state).set({ count: newState })
+
+          // If the result is an object, merge it with the current state
+          if (typeof newState === 'object' && newState !== null) {
+            getMutableState(state).merge(newState)
+          } else {
+            // For primitive values, assume it's for a property that matches the action name
+            // This is a common pattern for simple counters, etc.
+            const propName = actionKey.toLowerCase()
+            getMutableState(state).set({ [propName]: newState })
+          }
         }
       )
 
