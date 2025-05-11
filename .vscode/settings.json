@@ -8,7 +8,8 @@
     "/packages/server/upload": true,
     "/packages/**/coverage": true,
     "/packages/server/upload_test": true,
-    "/packages/**/dist": true
+    "/packages/**/dist": true,
+    "/package-lock.json": true
   },
   "editor.tabSize": 2,
   "scm.alwaysShowRepositories": true,
