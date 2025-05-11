@@ -1,13 +1,27 @@
-# React Hookstate DSL
+# Reactive Logic DSL
 
-A JSON-first DSL and React + Hookstate interpreter API that allows you to define React components, state, and effects using JSON.
+A JSON-first DSL for defining reactive logic expressions in a detached React environment. This DSL is designed for expressing reversible operations in response to data changes, without rendering to the DOM.
+
+## Purpose
+
+The Reactive Logic DSL provides a way to:
+- Define state and state transformations using Hookstate
+- Create reactive effects that respond to state changes
+- Express conditional logic based on state values
+- Process collections of data with map operations
+
+This DSL is specifically designed for use in detached React contexts where DOM rendering is not the goal. Instead, it focuses on the reactive data flow aspects of React, making it ideal for:
+- Event sourcing systems
+- State management in headless applications
+- Defining reversible operations
+- Creating pure state manipulations with no side effects
 
 ## Usage
 
 ```jsx
-import { DSLInterpreter } from '@ir-engine/hyperflux';
+import { evaluateExpression, validateDSL } from '@ir-engine/hyperflux';
 
-// Define your UI as JSON
+// Define your reactive logic as JSON
 const dsl = {
   tree: [
     // Define state
@@ -16,53 +30,43 @@ const dsl = {
       key: 'counter',
       initial: 0
     },
-    // Render components
+    // Define an effect that reacts to counter changes
     {
-      type: 'component',
-      name: 'div',
-      props: {
-        className: 'container'
-      },
-      children: [
+      type: 'effect',
+      deps: ['counter'],
+      body: {
+        set: [{ var: 'processedValue' }, { '+': [{ var: 'counter' }, 10] }]
+      }
+    },
+    // Define conditional logic
+    {
+      type: 'conditional',
+      cond: { '>': [{ var: 'counter' }, 5] },
+      then: [
         {
-          type: 'component',
-          name: 'h1',
-          children: [
-            {
-              type: 'component',
-              name: 'text',
-              props: {
-                children: { var: 'counter' }
-              }
-            }
-          ]
-        },
+          type: 'hookstate',
+          key: 'thresholdReached',
+          scope: 'global',
+          initial: true
+        }
+      ],
+      else: [
         {
-          type: 'component',
-          name: 'button',
-          props: {
-            onClick: { 
-              set: [{ var: 'counter' }, { '+': [{ var: 'counter' }, 1] }]
-            }
-          },
-          children: [
-            {
-              type: 'component',
-              name: 'text',
-              props: {
-                children: 'Increment'
-              }
-            }
-          ]
+          type: 'hookstate',
+          key: 'thresholdReached',
+          scope: 'global',
+          initial: false
         }
       ]
     }
   ]
 };
 
-// Render the DSL
-function App() {
-  return <DSLInterpreter dsl={dsl} />;
+// Validate the DSL
+const errors = validateDSL(dsl);
+if (errors.length === 0) {
+  // Use the DSL in your reactive system
+  // ...
 }
 ```
 
@@ -83,7 +87,7 @@ Defines a state variable using Hookstate.
 
 ### EffectNode
 
-Defines a side effect using React's useEffect.
+Defines a side effect that reacts to state changes.
 
 ```json
 {
@@ -94,24 +98,9 @@ Defines a side effect using React's useEffect.
 }
 ```
 
-### ComponentNode
-
-Renders a React component or HTML element.
-
-```json
-{
-  "type": "component",
-  "name": "div",
-  "props": {
-    "className": "container"
-  },
-  "children": [...]
-}
-```
-
 ### ConditionalNode
 
-Conditionally renders content based on an expression.
+Conditionally executes logic based on an expression.
 
 ```json
 {
@@ -124,7 +113,7 @@ Conditionally renders content based on an expression.
 
 ### MapNode
 
-Renders a list of items.
+Processes a list of items.
 
 ```json
 {
@@ -144,17 +133,6 @@ This library uses [json-logic-js](https://github.com/jwadhams/json-logic-js) for
 - `chain`: Chains multiple operations together
 
 ## API Reference
-
-### DSLInterpreter
-
-The main component that interprets a DSL tree.
-
-```jsx
-<DSLInterpreter 
-  dsl={dslObject} 
-  initialContext={optionalContext} 
-/>
-```
 
 ### validateDSL
 
@@ -182,3 +160,15 @@ const result = evaluateExpression(
 );
 // result = 15
 ```
+
+## Event Sourcing Integration
+
+The Reactive Logic DSL is particularly well-suited for event sourcing systems:
+
+- Use `HookStateNode` to define the state that will be manipulated
+- Create pure state transformations with no side effects in state receptors
+- Use `EffectNode` to define reactors that handle side effects separately
+- Express complex conditional logic with `ConditionalNode`
+- Process collections with `MapNode`
+
+This separation ensures that state manipulation remains pure and reversible, while side effects are properly isolated in reactors.

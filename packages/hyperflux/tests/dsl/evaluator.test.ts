@@ -70,7 +70,18 @@ describe('Expression Evaluator', () => {
     const mergeResult = evaluateExpression({ merge: [{ var: 'obj1' }, { var: 'obj2' }] }, context)
     expect(mergeResult).toEqual({ a: 1, b: 2 })
 
-    // Skip the set operation test since it's returning a function in the test environment
+    // Test set operation for objects
+    const setResult = evaluateExpression({ set: [{ var: 'obj1' }, 'c', 3] }, context)
+    expect(setResult).toEqual({ a: 1, c: 3 })
+
+    // Test chain operation
+    const chainResult = evaluateExpression(
+      {
+        chain: [{ '+': [1, 2] }, { '*': [{ var: 'result' }, 2] }]
+      },
+      { result: 3 }
+    )
+    expect(chainResult).toBe(6)
 
     // Test simple operations
     const addResult = evaluateExpression({ '+': [1, 2] }, context)
@@ -79,5 +90,60 @@ describe('Expression Evaluator', () => {
     // Test if operation
     const ifResult = evaluateExpression({ if: [true, 'yes', 'no'] }, context)
     expect(ifResult).toEqual('yes')
+  })
+
+  // Test complex expressions
+  it('should evaluate complex nested expressions', () => {
+    const context: EvaluationContext = {
+      user: { name: 'John', age: 30 },
+      settings: { theme: 'dark', notifications: true }
+    }
+
+    // Test nested variable access
+    const nameResult = evaluateExpression({ var: 'user.name' }, context)
+    expect(nameResult).toBe('John')
+
+    // Test complex conditional
+    const complexCondition = {
+      if: [
+        { and: [{ '>': [{ var: 'user.age' }, 18] }, { var: 'settings.notifications' }] },
+        'adult with notifications',
+        {
+          if: [{ '>': [{ var: 'user.age' }, 18] }, 'adult without notifications', 'minor']
+        }
+      ]
+    } as any
+    const condResult = evaluateExpression(complexCondition, context)
+    expect(condResult).toBe('adult with notifications')
+
+    // Test nested operations
+    const nestedOps = {
+      '+': [
+        { '*': [{ var: 'user.age' }, 2] },
+        {
+          if: [{ var: 'settings.notifications' }, 10, 0]
+        }
+      ]
+    } as any
+    const nestedResult = evaluateExpression(nestedOps, context)
+    expect(nestedResult).toBe(70) // (30 * 2) + 10
+  })
+
+  // Test error handling
+  it('should handle errors gracefully', () => {
+    // Test with invalid operation
+    const invalidOp = { invalidOp: [1, 2] }
+    const invalidResult = evaluateExpression(invalidOp, {})
+    expect(invalidResult).toBe(null)
+
+    // Test with missing variable
+    const missingVar = { var: 'nonexistent' }
+    const missingResult = evaluateExpression(missingVar, {})
+    expect(missingResult).toBe(null)
+
+    // Test with type error
+    const typeError = { '+': [5, 5] }
+    const typeErrorResult = evaluateExpression(typeError, {})
+    expect(typeErrorResult).toBe(10) // Simple addition that should work
   })
 })

@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { evaluateExpression } from '../../src/dsl/interpreter/evaluator'
 import { TreeRoot } from '../../src/dsl/types'
-import { defineState, StateDefinitions } from '../../src/functions/StateFunctions'
 import { createHyperStore, HyperFlux } from '../../src/functions/StoreFunctions'
 
 describe('DSL Interpreter Logic', () => {
@@ -39,68 +38,8 @@ describe('DSL Interpreter Logic', () => {
     }
   })
 
-  // Test component structure evaluation
-  it('should correctly structure component trees', () => {
-    const dsl: TreeRoot = {
-      tree: [
-        {
-          type: 'component',
-          name: 'container',
-          props: {
-            id: 'root'
-          },
-          children: [
-            {
-              type: 'component',
-              name: 'header',
-              children: [
-                {
-                  type: 'component',
-                  name: 'label',
-                  props: {
-                    id: 'title',
-                    children: 'Hello, World!'
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-
-    // Instead of rendering, we'll evaluate the structure
-    const rootComponent = dsl.tree[0] as any
-    expect(rootComponent.type).toBe('component')
-    expect(rootComponent.name).toBe('container')
-    expect(rootComponent.props?.id).toBe('root')
-
-    const headerComponent = rootComponent.children?.[0] as any
-    expect(headerComponent?.type).toBe('component')
-    expect(headerComponent?.name).toBe('header')
-
-    const labelComponent = headerComponent?.children?.[0] as any
-    expect(labelComponent?.type).toBe('component')
-    expect(labelComponent?.name).toBe('label')
-    expect(labelComponent?.props?.id).toBe('title')
-    expect(labelComponent?.props?.children).toBe('Hello, World!')
-  })
-
   // Test state value evaluation
   it('should evaluate state values correctly', () => {
-    // Define the state
-    let counterState: ReturnType<typeof defineState> | { name: string; initial: number }
-    try {
-      if (!StateDefinitions.has('counter')) {
-        counterState = defineState({ name: 'counter', initial: 42 })
-      } else {
-        counterState = StateDefinitions.get('counter')!
-      }
-    } catch (e) {
-      // State might already be defined, ignore the error
-      counterState = { name: 'counter', initial: 42 }
-    }
-
     // Create a context with the state
     const context = { counter: 42 }
 
@@ -135,36 +74,18 @@ describe('DSL Interpreter Logic', () => {
           cond: { var: 'showMessage' },
           then: [
             {
-              type: 'component',
-              name: 'section',
-              props: {
-                id: 'message'
-              },
-              children: [
-                {
-                  type: 'text',
-                  props: {
-                    children: 'This is visible'
-                  }
-                }
-              ]
+              type: 'hookstate',
+              key: 'messageVisible',
+              scope: 'global',
+              initial: true
             }
           ],
           else: [
             {
-              type: 'component',
-              name: 'section',
-              props: {
-                id: 'no-message'
-              },
-              children: [
-                {
-                  type: 'text',
-                  props: {
-                    children: 'Nothing to see'
-                  }
-                }
-              ]
+              type: 'hookstate',
+              key: 'messageVisible',
+              scope: 'global',
+              initial: false
             }
           ]
         }
@@ -179,16 +100,16 @@ describe('DSL Interpreter Logic', () => {
     expect(conditionalNode.else).toBeDefined()
 
     // Verify the structure of the 'then' branch
-    const thenComponent = conditionalNode.then[0] as any
-    expect(thenComponent.type).toBe('component')
-    expect(thenComponent.name).toBe('section')
-    expect(thenComponent.props.id).toBe('message')
+    const thenNode = conditionalNode.then[0] as any
+    expect(thenNode.type).toBe('hookstate')
+    expect(thenNode.key).toBe('messageVisible')
+    expect(thenNode.initial).toBe(true)
 
     // Verify the structure of the 'else' branch
-    const elseComponent = conditionalNode.else[0] as any
-    expect(elseComponent.type).toBe('component')
-    expect(elseComponent.name).toBe('section')
-    expect(elseComponent.props.id).toBe('no-message')
+    const elseNode = conditionalNode.else[0] as any
+    expect(elseNode.type).toBe('hookstate')
+    expect(elseNode.key).toBe('messageVisible')
+    expect(elseNode.initial).toBe(false)
   })
 
   it('should evaluate map expressions correctly', () => {
@@ -220,19 +141,10 @@ describe('DSL Interpreter Logic', () => {
           itemName: 'item',
           body: [
             {
-              type: 'component',
-              name: 'entry',
-              props: {
-                id: { cat: ['item-', { var: 'item.id' }] }
-              },
-              children: [
-                {
-                  type: 'text',
-                  props: {
-                    children: { var: 'item.text' }
-                  }
-                }
-              ]
+              type: 'hookstate',
+              key: 'dynamicItem',
+              scope: 'local',
+              initial: { var: 'item.text' }
             }
           ]
         }
@@ -246,11 +158,12 @@ describe('DSL Interpreter Logic', () => {
     expect(mapNode.itemName).toBe('item')
     expect(mapNode.body).toHaveLength(1)
 
-    // Verify the structure of the body component
-    const bodyComponent = mapNode.body[0] as any
-    expect(bodyComponent.type).toBe('component')
-    expect(bodyComponent.name).toBe('entry')
-    expect(bodyComponent.props.id).toEqual({ cat: ['item-', { var: 'item.id' }] })
+    // Verify the structure of the body node
+    const bodyNode = mapNode.body[0] as any
+    expect(bodyNode.type).toBe('hookstate')
+    expect(bodyNode.key).toBe('dynamicItem')
+    expect(bodyNode.scope).toBe('local')
+    expect(bodyNode.initial).toEqual({ var: 'item.text' })
 
     // Test concatenation expression evaluation
     const idExpression = { cat: ['item-', 1] }

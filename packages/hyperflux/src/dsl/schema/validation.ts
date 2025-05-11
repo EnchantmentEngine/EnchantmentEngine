@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -101,8 +101,6 @@ function validateNode(node: any, path: string): ValidationError[] {
       return validateHookStateNode(node, path)
     case 'effect':
       return validateEffectNode(node, path)
-    case 'component':
-      return validateComponentNode(node, path)
     case 'conditional':
       return validateConditionalNode(node, path)
     case 'map':
@@ -160,48 +158,6 @@ function validateEffectNode(node: any, path: string): ValidationError[] {
     errors.push({
       path: `${path}.body`,
       message: 'EffectNode must have a body'
-    })
-  }
-
-  return errors
-}
-
-/**
- * Validates a ComponentNode
- */
-function validateComponentNode(node: any, path: string): ValidationError[] {
-  const errors: ValidationError[] = []
-
-  // Check if name exists
-  if (!node.name) {
-    errors.push({
-      path: `${path}.name`,
-      message: 'ComponentNode must have a name'
-    })
-  }
-
-  // Check if props is an object
-  if (node.props && typeof node.props !== 'object') {
-    errors.push({
-      path: `${path}.props`,
-      message: 'props must be an object'
-    })
-  }
-
-  // Check if children is an array
-  if (node.children && !Array.isArray(node.children)) {
-    errors.push({
-      path: `${path}.children`,
-      message: 'children must be an array'
-    })
-    return errors
-  }
-
-  // Validate children
-  if (node.children) {
-    node.children.forEach((child: any, index: number) => {
-      const childErrors = validateNode(child, `${path}.children[${index}]`)
-      errors.push(...childErrors)
     })
   }
 

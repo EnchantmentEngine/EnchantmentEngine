@@ -51,123 +51,45 @@ export function evaluateExpression(expression: Expression, context: EvaluationCo
 
   // Otherwise, it's a JSON Logic object, evaluate it
   try {
-    // Special handling for event handlers
+    // Handle special operations for state manipulation
     if (expression && typeof expression === 'object') {
-      // If this is a chain operation for event handlers
-      if (expression.chain && Array.isArray(expression.chain)) {
-        // Return a function that will be called when the event occurs
-        return (event: any) => {
-          // Add the event to the context
-          const newContext = { ...context, event }
-
-          // Process each operation in the chain
-          const operations = expression.chain as Expression[]
-          if (Array.isArray(operations)) {
-            for (const op of operations) {
-              if (op && typeof op === 'object' && 'set' in op && Array.isArray(op.set) && op.set.length >= 2) {
-                const setOp = op.set as Expression[]
-                const target = setOp[0]
-                const value = setOp[1]
-
-                // Evaluate the target and value
-                const targetEval = evaluateExpression(target, newContext)
-                const valueEval = evaluateExpression(value, newContext)
-
-                // If the target is a state object, set its value
-                if (
-                  targetEval &&
-                  typeof targetEval === 'object' &&
-                  'set' in targetEval &&
-                  typeof targetEval.set === 'function'
-                ) {
-                  targetEval.set(valueEval)
-                } else if (
-                  target &&
-                  typeof target === 'object' &&
-                  'var' in target &&
-                  typeof target.var === 'string' &&
-                  newContext[target.var]
-                ) {
-                  // If the target is a variable in the context
-                  const stateKey = target.var
-                  if (
-                    newContext[stateKey] &&
-                    typeof newContext[stateKey] === 'object' &&
-                    'set' in newContext[stateKey] &&
-                    typeof newContext[stateKey].set === 'function'
-                  ) {
-                    newContext[stateKey].set(valueEval)
-                  }
-                }
-              } else {
-                // For other operations, use jsonLogic
-                try {
-                  jsonLogic.apply(op as any, newContext)
-                } catch (error) {
-                  console.error('Error applying operation:', op, error)
-                }
-              }
-            }
-          }
-
-          return undefined
-        }
-      }
-
-      // If this is a set operation for onClick or other event handlers
+      // If this is a set operation for state manipulation
       if (expression.set && Array.isArray(expression.set) && expression.set.length >= 2) {
-        // Return a function that will be called when the event occurs
-        return (event: any) => {
-          // Add the event to the context
-          const newContext = { ...context, event }
+        const setOp = expression.set as Expression[]
+        const target = setOp[0]
+        const value = setOp[1]
 
-          const setOp = expression.set as Expression[]
-          const target = setOp[0]
-          const value = setOp[1]
+        // Evaluate the target and value
+        const targetEval = evaluateExpression(target, context)
+        const valueEval = evaluateExpression(value, context)
 
-          // Evaluate the target and value
-          const targetEval = evaluateExpression(target, newContext)
-          const valueEval = evaluateExpression(value, newContext)
-
-          // If the target is a state object, set its value
+        // If the target is a state object, set its value
+        if (
+          targetEval &&
+          typeof targetEval === 'object' &&
+          'set' in targetEval &&
+          typeof targetEval.set === 'function'
+        ) {
+          targetEval.set(valueEval)
+          return valueEval
+        } else if (
+          target &&
+          typeof target === 'object' &&
+          'var' in target &&
+          typeof target.var === 'string' &&
+          context[target.var]
+        ) {
+          // If the target is a variable in the context
+          const stateKey = target.var
           if (
-            targetEval &&
-            typeof targetEval === 'object' &&
-            'set' in targetEval &&
-            typeof targetEval.set === 'function'
+            context[stateKey] &&
+            typeof context[stateKey] === 'object' &&
+            'set' in context[stateKey] &&
+            typeof context[stateKey].set === 'function'
           ) {
-            targetEval.set(valueEval)
-          } else if (
-            target &&
-            typeof target === 'object' &&
-            'var' in target &&
-            typeof target.var === 'string' &&
-            newContext[target.var]
-          ) {
-            // If the target is a variable in the context
-            const stateKey = target.var
-            if (
-              newContext[stateKey] &&
-              typeof newContext[stateKey] === 'object' &&
-              'set' in newContext[stateKey] &&
-              typeof newContext[stateKey].set === 'function'
-            ) {
-              newContext[stateKey].set(valueEval)
-            }
+            context[stateKey].set(valueEval)
+            return valueEval
           }
-
-          return undefined
-        }
-      }
-
-      // If this is a method operation for event handlers
-      if (expression.method && Array.isArray(expression.method)) {
-        // Return a function that will be called when the event occurs
-        return (event: any) => {
-          // Add the event to the context
-          const newContext = { ...context, event }
-          // Evaluate the expression with the new context
-          return jsonLogic.apply(expression, newContext)
         }
       }
     }

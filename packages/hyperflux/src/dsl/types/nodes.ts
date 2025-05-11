@@ -53,17 +53,7 @@ export interface EffectNode extends BaseNode {
 }
 
 /**
- * Component node for rendering React components
- */
-export interface ComponentNode extends BaseNode {
-  type: 'component'
-  name: string
-  props?: Record<string, Expression>
-  children?: Node[]
-}
-
-/**
- * Conditional node for conditional rendering
+ * Conditional node for conditional logic
  */
 export interface ConditionalNode extends BaseNode {
   type: 'conditional'
@@ -73,7 +63,7 @@ export interface ConditionalNode extends BaseNode {
 }
 
 /**
- * Map node for list rendering
+ * Map node for processing collections
  */
 export interface MapNode extends BaseNode {
   type: 'map'
@@ -83,20 +73,9 @@ export interface MapNode extends BaseNode {
 }
 
 /**
- * Text node for rendering text
- */
-export interface TextNode extends BaseNode {
-  type: 'text'
-  props?: {
-    children?: Expression
-    value?: Expression
-  }
-}
-
-/**
  * Union type of all node types
  */
-export type Node = HookStateNode | EffectNode | ComponentNode | ConditionalNode | MapNode | TextNode
+export type Node = HookStateNode | EffectNode | ConditionalNode | MapNode
 
 /**
  * Root tree structure

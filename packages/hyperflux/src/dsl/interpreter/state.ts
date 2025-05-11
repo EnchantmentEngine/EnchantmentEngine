@@ -23,14 +23,13 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { hookstate, State, useHookstate } from '@hookstate/core'
-import { useRef, useState } from 'react'
+import { hookstate, State } from '@hookstate/core'
 import { getMutableState, StateDefinitions } from '../../functions/StateFunctions'
 import { EvaluationContext, Expression } from '../types'
 import { evaluateExpression } from './evaluator'
 
 /**
- * Hook to use a state (global or local)
+ * Creates a state value (global or local)
  *
  * @param key - The key for the state
  * @param scope - The scope of the state ('global' or 'local')
@@ -38,30 +37,26 @@ import { evaluateExpression } from './evaluator'
  * @param context - The context for evaluating the initial expression
  * @returns The state object
  */
-export function useStateValue<T>(
+export function createStateValue<T>(
   key: string,
   scope: 'global' | 'local' = 'global',
   initial: Expression | undefined,
   context: EvaluationContext
 ): State<T> {
-  // For local state, use useState and hookstate
-  const [localInitialized, setLocalInitialized] = useState(false)
-  const localStateRef = useRef<State<T> | null>(null)
-
   // Evaluate the initial value
   const initialValue = initial !== undefined ? evaluateExpression(initial, context) : undefined
 
   if (scope === 'local') {
-    if (!localInitialized) {
-      localStateRef.current = hookstate<T>(initialValue as T)
-      setLocalInitialized(true)
-    }
-    return localStateRef.current as State<T>
+    return hookstate<T>(initialValue as T)
   }
 
   // For global state, use the state definitions
+  if (!StateDefinitions.has(key)) {
+    StateDefinitions.set(key, { name: key, initial: initialValue })
+  }
+
   const globalState = getMutableState(StateDefinitions.get(key)!)
-  return useHookstate<T>(globalState)
+  return globalState
 }
 
 /**
