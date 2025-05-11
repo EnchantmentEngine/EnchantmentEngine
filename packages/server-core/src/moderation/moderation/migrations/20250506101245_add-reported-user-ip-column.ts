@@ -23,40 +23,25 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { clientSettingMethods, clientSettingPath } from '@ir-engine/common/src/schemas/setting/client-setting.schema'
+import { moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
+import type { Knex } from 'knex'
 
-import { Application } from '../../../declarations'
-import { updateAppConfig } from '../../updateAppConfig'
-import { ClientSettingService } from './client-setting.class'
-import clientSettingDocs from './client-setting.docs'
-import hooks from './client-setting.hooks'
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-declare module '@ir-engine/common/declarations' {
-  interface ServiceTypes {
-    [clientSettingPath]: ClientSettingService
-  }
+  await knex.schema.alterTable(moderationPath, (table) => {
+    table.string('reportedUserIpAddress', 255).nullable()
+  })
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }
 
-export default (app: Application): void => {
-  const options = {
-    name: clientSettingPath,
-    paginate: app.get('paginate'),
-    Model: app.get('knexClient'),
-    multi: true
-  }
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-  app.use(clientSettingPath, new ClientSettingService(options), {
-    // A list of all methods this service exposes externally
-    methods: clientSettingMethods,
-    // You can add additional custom events to be sent to clients here
-    events: [],
-    docs: clientSettingDocs
+  await knex.schema.alterTable(moderationPath, (table) => {
+    table.dropColumn('reportedUserIpAddress')
   })
 
-  const service = app.service(clientSettingPath)
-  service.hooks(hooks)
-
-  service.on('patched', () => {
-    updateAppConfig()
-  })
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }

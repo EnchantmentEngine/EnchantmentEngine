@@ -23,23 +23,24 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Params } from '@feathersjs/feathers'
-import { KnexAdapterParams, KnexService } from '@feathersjs/knex'
+import React, { ReactNode } from 'react'
+import { twMerge } from 'tailwind-merge'
 
-import {
-  ClientSettingData,
-  ClientSettingPatch,
-  ClientSettingQuery,
-  ClientSettingType
-} from '@ir-engine/common/src/schemas/setting/client-setting.schema'
-
-export interface ClientSettingParams extends KnexAdapterParams<ClientSettingQuery> {}
-
-/**
- * A class for ClientSetting service
- */
-
-export class ClientSettingService<
-  T = ClientSettingType,
-  ServiceParams extends Params = ClientSettingParams
-> extends KnexService<ClientSettingType, ClientSettingData, ClientSettingParams, ClientSettingPatch> {}
+type Props = Readonly<{
+  children: ReactNode
+  className: string
+}>
+export default function SceneCard({ children, className }: Props) {
+  return (
+    <div
+      className={twMerge(
+        'col-span-2 inline-flex h-64 w-64 min-w-64 max-w-64 flex-col',
+        'rounded-lg border border-ui-tertiary shadow-lg',
+        'dark:border-ui-outline dark:bg-ui-background lg:col-span-1',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}
