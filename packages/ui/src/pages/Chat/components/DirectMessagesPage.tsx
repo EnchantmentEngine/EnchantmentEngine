@@ -40,7 +40,6 @@ export const DirectMessagesPage: React.FC = () => {
   const chatState = useMutableState(NewChatState)
   const isNewMessageModalOpen = useHookstate(false)
 
-  // Add a floating action button for creating a new message
   const handleNewMessageClick = () => {
     isNewMessageModalOpen.set(true)
   }
@@ -51,7 +50,6 @@ export const DirectMessagesPage: React.FC = () => {
       <ConversationWindow />
       {chatState.showUserStatusPanel.value && <UserStatusPanel />}
 
-      {/* New Message Modal */}
       {isNewMessageModalOpen.value && <NewMessageModal onClose={() => isNewMessageModalOpen.set(false)} />}
     </div>
   )
@@ -68,7 +66,6 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
   const selectedFriends = useHookstate<UserID[]>([])
 
   useEffect(() => {
-    // Load user relationships when the modal opens
     FriendService.getUserRelationship(Engine.instance.userID as UserID)
   }, [])
 
@@ -85,10 +82,8 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
   const handleCreateConversation = () => {
     if (selectedFriends.length === 0) return
 
-    // Create a new channel with selected friends
     ChannelService.createChannel(selectedFriends.get(NO_PROXY) as UserID[]).then((channelId) => {
       if (channelId) {
-        // Cast the channelId to ChannelID type
         chatState.selectedChannelID.set(channelId as any)
         onClose()
       }
@@ -106,15 +101,12 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="flex max-h-[600px] w-[500px] flex-col rounded-lg bg-white shadow-xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 p-4">
           <h2 className="text-lg font-bold text-[#3F3960]">New Message</h2>
           <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>
             <HiX className="h-5 w-5" />
           </button>
         </div>
-
-        {/* Search and selected users */}
         <div className="border-b border-gray-200 p-4">
           <div className="mb-3 flex items-center">
             <span className="mr-2 text-sm font-medium text-[#3F3960]">To:</span>
@@ -137,7 +129,6 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
               })}
             </div>
           </div>
-
           <div className="relative">
             <input
               type="text"
@@ -149,8 +140,6 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
             <HiSearch className="absolute left-2.5 top-2.5 text-gray-500" />
           </div>
         </div>
-
-        {/* Friend list */}
         <div className="flex-1 overflow-y-auto p-2">
           {friends.length === 0 ? (
             <div className="flex h-40 flex-col items-center justify-center text-gray-500">
@@ -170,8 +159,6 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
             </div>
           )}
         </div>
-
-        {/* Footer */}
         <div className="flex justify-end border-t border-gray-200 p-4">
           <button
             className="rounded-md bg-[#3F3960] px-4 py-2 text-white hover:bg-[#2D2A45] disabled:cursor-not-allowed disabled:opacity-50"

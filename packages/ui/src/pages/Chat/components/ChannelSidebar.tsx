@@ -45,7 +45,6 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ workspace }) => 
 
   const handleCreateChannel = () => {
     if (newChannelName.trim()) {
-      // In a real implementation, this would call an API to create the channel
       const newChannel: WorkspaceChannel = {
         id: `${newChannelName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
         name: newChannelName.trim(),
@@ -54,14 +53,11 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ workspace }) => 
         isJoined: true
       }
 
-      // Update the workspace channels in state
       const workspaceId = chatState.selectedWorkspaceID.value
       if (workspaceId) {
         const updatedChannels = [...workspace.channels, newChannel]
         chatState.workspaces[workspaceId].channels.set(updatedChannels)
       }
-
-      // Reset form and close modal
       setNewChannelName('')
       setNewChannelDescription('')
       setShowCreateChannel(false)
@@ -69,13 +65,11 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ workspace }) => 
   }
 
   const handleChannelSettings = (channelId: string) => {
-    // Set the selected channel and show settings
     chatState.selectedWorkspaceChannelID.set(channelId)
     chatState.showChannelSettings.set(true)
   }
 
   const handleJoinLeaveChannel = (channel: WorkspaceChannel) => {
-    // In a real implementation, this would call an API to join/leave the channel
     const workspaceId = chatState.selectedWorkspaceID.value
     if (workspaceId) {
       const updatedChannels = workspace.channels.map((c) => {
@@ -113,7 +107,6 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ workspace }) => 
         ))}
       </div>
 
-      {/* Create Channel Modal */}
       {showCreateChannel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-96 rounded-lg bg-white p-6 shadow-xl">
@@ -161,7 +154,6 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ workspace }) => 
         </div>
       )}
 
-      {/* Channel Settings Modal */}
       {chatState.showChannelSettings.value && (
         <ChannelSettingsModal
           workspace={workspace as Workspace}
@@ -263,7 +255,6 @@ const ChannelSettingsModal: React.FC<ChannelSettingsModalProps> = ({ workspace, 
 
   const handleSaveSettings = () => {
     if (channelName.trim()) {
-      // In a real implementation, this would call an API to update the channel
       const workspaceId = chatState.selectedWorkspaceID.value
       if (workspaceId) {
         const updatedChannels = workspace.channels.map((c) => {

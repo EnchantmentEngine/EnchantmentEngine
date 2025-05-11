@@ -137,7 +137,6 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ category }) => {
   }
 
   const handleAvatarClick = () => {
-    // Open avatar selection modal
     ModalState.openModal(<AvatarSelectMenu showBackButton={true} previewEnabled={true} />)
   }
 

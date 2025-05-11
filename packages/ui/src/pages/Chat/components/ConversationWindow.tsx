@@ -4,7 +4,7 @@ CPAL-1.0 License
 The contents of this file are subject to the Common Public Attribution License
 Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+https:
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
 and 15 have been added to cover use of software over a computer network and
 provide for limited attribution for the Original Developer. In addition,
@@ -53,14 +53,11 @@ import { NewChatState } from '../ChatState'
 import { MediaSessionState } from '../MediaSessionState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
 
-// Custom hook to get users in a call for a specific channel
 const useCallParticipants = (channelId?: ChannelID) => {
   const participants = useHookstate<{ userId: UserID; peerId: string }[]>([])
-  // Use the same polling strategy as in PeerToPeerNetworkState.tsx
+
   const lastPoll = useHookstate(new Date(new Date().getTime() - 10000))
 
-  // First get the instance associated with this channel
-  // const { data: channel } = useGet(channelPath, channelId)
   const instanceData = useFind(instancePath, {
     query: {
       channelId: channelId,
@@ -70,19 +67,16 @@ const useCallParticipants = (channelId?: ChannelID) => {
     }
   })
 
-  // Then get instance attendance for that instance - similar to PeerToPeerNetworkState.tsx
   const instanceAttendanceQuery = useFind(instanceAttendancePath, {
     query: {
       instanceId: instanceData.data[0]?.id,
       ended: false,
       updatedAt: {
-        // Only consider instances that have been updated in the last 10 seconds
         $gt: toDateTimeSql(lastPoll.value)
       }
     }
   })
 
-  // Set up polling interval - exactly like in PeerToPeerNetworkState.tsx
   useEffect(() => {
     const interval = setInterval(() => {
       lastPoll.set(new Date(new Date().getTime() - 10000))
@@ -93,16 +87,13 @@ const useCallParticipants = (channelId?: ChannelID) => {
     }
   }, [])
 
-  // Process the data in a separate effect - similar to PeerToPeerNetworkState.tsx
   useEffect(() => {
-    console.log('1')
     if (!channelId || !instanceAttendanceQuery.data) {
       participants.set([])
       return
     }
 
     if (instanceAttendanceQuery.data.length > 0) {
-      // Extract unique users
       const uniqueUsers = instanceAttendanceQuery.data.reduce(
         (acc: { userId: UserID; peerId: string }[], attendance: any) => {
           if (!acc.some((user) => user.userId === attendance.userId)) {
@@ -122,7 +113,6 @@ const useCallParticipants = (channelId?: ChannelID) => {
   return participants.value
 }
 
-// Component to display call participants
 const CallParticipants: React.FC<{ channelId: ChannelID }> = ({ channelId }) => {
   const participants = useCallParticipants(channelId)
 
@@ -143,7 +133,6 @@ const CallParticipants: React.FC<{ channelId: ChannelID }> = ({ channelId }) => 
   )
 }
 
-// Component to display a participant's avatar
 const CallParticipantAvatar: React.FC<{ userId: UserID }> = ({ userId }) => {
   const avatarThumbnail = useUserAvatarThumbnail(userId)
   const { data: user } = useGet(userPath, userId)
@@ -166,14 +155,11 @@ export const ConversationWindow: React.FC = () => {
   const selectedChannelID = chatState.selectedChannelID.value
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // State for video container height with localStorage persistence
   const videoHeight = useHookstate(() => {
-    // Try to get saved height from localStorage, default to 300px
     const savedHeight = localStorage.getItem('videoContainerHeight')
     return savedHeight ? parseInt(savedHeight, 10) : 300
   })
 
-  // State for pagination
   const messageLimit = useHookstate(20)
   const isLoadingMore = useHookstate(false)
   const hasMoreMessages = useHookstate(true)
@@ -193,49 +179,38 @@ export const ConversationWindow: React.FC = () => {
   const mediaNetworkID = NetworkState.mediaNetwork?.id
   const mediaConnected = mediaNetworkID && mediaNetworkState?.ready.value
 
-  // State to track if user has scrolled up (to prevent auto-scrolling when reading history)
   const isUserScrolled = useHookstate(false)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
-  // Handle scroll events to detect when user scrolls up
   const handleScroll = () => {
     if (!messagesContainerRef.current) return
 
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
     const isScrolledToBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 10
 
-    // Update state based on scroll position
     isUserScrolled.set(!isScrolledToBottom)
 
-    // Save current scroll position
     scrollPosition.set(scrollTop)
 
-    // Check if user scrolled to the top and we need to load more messages
     if (scrollTop < 50 && !isLoadingMore.value && hasMoreMessages.value && messages.length >= messageLimit.value) {
       loadMoreMessages()
     }
   }
 
-  // Load more messages when scrolling to the top
   const loadMoreMessages = () => {
     if (!hasMoreMessages.value || isLoadingMore.value) return
 
     isLoadingMore.set(true)
 
-    // Increase the message limit to load more messages
     messageLimit.set(messageLimit.value + 20)
   }
 
-  // Effect to restore scroll position after loading more messages
   useEffect(() => {
     if (isLoadingMore.value && messagesContainerRef.current) {
-      // Check if we actually got more messages
       if (messages.length >= messageLimit.value) {
-        // Restore scroll position after messages are loaded
         messagesContainerRef.current.scrollTop =
           messagesContainerRef.current.scrollHeight - messagesContainerRef.current.clientHeight - scrollPosition.value
       } else {
-        // No more messages to load
         hasMoreMessages.set(false)
       }
 
@@ -243,7 +218,6 @@ export const ConversationWindow: React.FC = () => {
     }
   }, [messages, isLoadingMore.value])
 
-  // Scroll to bottom when new messages arrive, but only if user hasn't scrolled up
   useEffect(() => {
     if (messagesEndRef.current && (!isUserScrolled.value || messages.length <= 1)) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -274,25 +248,21 @@ export const ConversationWindow: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col bg-white">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 p-4">
         <div className="flex items-center">
           <h2 className="text-lg font-semibold text-[#3F3960]">{channel ? getChannelName(channel) : 'Loading...'}</h2>
         </div>
         <div className="flex items-center space-x-2">
-          {/* Video call button */}
           <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(true)}>
             <HiVideoCamera className="h-5 w-5 text-[#3F3960]" />
           </button>
 
-          {/* Audio call button */}
           <button className="rounded-full p-2 hover:bg-gray-100" onClick={() => startMediaCall(false)}>
             <HiPhone className="h-5 w-5 text-[#3F3960]" />
           </button>
 
           {isCallActive && (
             <>
-              {/* Screenshare button */}
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
                 onClick={() => MediaStreamState.toggleScreenshare()}
@@ -301,7 +271,6 @@ export const ConversationWindow: React.FC = () => {
                 <Screenshare className="h-5 w-5 text-[#3F3960]" />
               </button>
 
-              {/* Popout view button */}
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
                 onClick={() => mediaSessionState.isPopout.set(!mediaSessionState.isPopout.value)}
@@ -310,7 +279,6 @@ export const ConversationWindow: React.FC = () => {
                 <MdOpenInNew className="h-5 w-5 text-[#3F3960]" />
               </button>
 
-              {/* Expanded view button */}
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
                 onClick={() => mediaSessionState.isExpanded.set(!mediaSessionState.isExpanded.value)}
@@ -319,7 +287,6 @@ export const ConversationWindow: React.FC = () => {
                 <Maximize02Lg className="h-5 w-5 text-[#3F3960]" />
               </button>
 
-              {/* Fullscreen button */}
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
                 onClick={() => {
@@ -345,10 +312,8 @@ export const ConversationWindow: React.FC = () => {
         </div>
       </div>
 
-      {/* Call Participants - Show even if user is not in the call */}
       {selectedChannelID && <CallParticipants channelId={selectedChannelID} />}
 
-      {/* Call area - only show if not in popout mode */}
       {isCallActive && !mediaSessionState.isPopout.value && (
         <>
           {!mediaSessionState.isExpanded.value && !mediaSessionState.isFullscreen.value ? (
@@ -371,7 +336,7 @@ export const ConversationWindow: React.FC = () => {
                 onResizeStop={(_e, _direction, _ref, d) => {
                   const newHeight = videoHeight.value + d.height
                   videoHeight.set(newHeight)
-                  // Save to localStorage for persistence
+
                   localStorage.setItem('videoContainerHeight', newHeight.toString())
                 }}
                 handleComponent={{
@@ -405,16 +370,13 @@ export const ConversationWindow: React.FC = () => {
         </>
       )}
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4" ref={messagesContainerRef} onScroll={handleScroll}>
-        {/* Loading indicator for more messages */}
         {isLoadingMore && (
           <div className="flex justify-center py-2">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-[#3F3960]"></div>
           </div>
         )}
 
-        {/* No messages state */}
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-gray-500">
             <p>No messages yet</p>
@@ -422,18 +384,15 @@ export const ConversationWindow: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Message list */}
             {messages.map((message, index) => (
               <MessageItem key={index} message={message} isSelf={message.sender?.id === getState(EngineState).userID} />
             ))}
 
-            {/* End of messages marker for auto-scrolling */}
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
-      {/* Message input */}
       <MessageInput channelId={selectedChannelID} />
     </div>
   )

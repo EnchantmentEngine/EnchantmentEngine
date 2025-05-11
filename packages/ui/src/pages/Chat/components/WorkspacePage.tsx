@@ -36,13 +36,10 @@ export const WorkspacePage: React.FC = () => {
   const chatState = useMutableState(NewChatState)
   const workspaceId = chatState.selectedWorkspaceID.value || 'workspace1'
 
-  // Get the workspace data from state
   const workspaceState = chatState.workspaces[workspaceId]
 
-  // Set a default workspace channel if none is selected
   useEffect(() => {
     if (!chatState.selectedWorkspaceChannelID.value && workspaceState.channels.value.length > 0) {
-      // Get the first channel ID
       const firstChannelId = workspaceState.channels.value[0].id
       chatState.selectedWorkspaceChannelID.set(firstChannelId)
     }

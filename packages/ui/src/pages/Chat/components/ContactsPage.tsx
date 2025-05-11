@@ -57,7 +57,6 @@ export const ContactsPage: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // Close context menu when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
         contextMenu.visible.set(false)
@@ -125,7 +124,6 @@ export const ContactsPage: React.FC = () => {
   }
 
   const handleOpenChat = (contactId: UserID) => {
-    // Create or find existing channel with this user
     ChannelService.createChannel([contactId]).then((channel) => {
       if (channel) {
         chatState.selectedChannelID.set(channel.id)
@@ -160,7 +158,6 @@ export const ContactsPage: React.FC = () => {
     })
   }
 
-  // Group friends by status (currently all shown as online)
   const onlineFriends = friends
   const offlineFriends: typeof friends = []
 
@@ -274,7 +271,6 @@ export const ContactsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Context Menu */}
       {contextMenu.visible.value && (
         <div
           ref={contextMenuRef}

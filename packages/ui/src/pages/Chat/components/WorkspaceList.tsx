@@ -36,7 +36,6 @@ interface WorkspaceListProps {
 export const WorkspaceList: React.FC<WorkspaceListProps> = ({ currentPage, onPageChange }) => {
   const chatState = useMutableState(NewChatState)
 
-  // Mock workspaces - in a real implementation, these would come from an API
   const workspaces = [
     { id: 'workspace1', name: 'Workspace 1', letter: 'W1' },
     { id: 'workspace2', name: 'Workspace 2', letter: 'W2' }

@@ -59,7 +59,6 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
   const mediaSessionState = useHookstate(getMutableState(MediaSessionState))
   const audioState = useHookstate(getMutableState(AudioState))
 
-  // Simplified self check to avoid using deprecated properties
   const isSelf = peerID === Engine.instance.store.peerID || peerID === 'self'
 
   const isScreen = type === 'screen'
@@ -70,7 +69,6 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
   const videoStreamPaused = peerMediaChannelState.videoStreamPaused.value
   const videoMediaStream = peerMediaChannelState.videoMediaStream.value
 
-  // Get volume from state or use default
   const volume = isSelf ? audioState.microphoneGain.value : mediaSessionState.peerVolumes[peerID]?.value || 1
 
   const toggleAudio = () => {
@@ -97,12 +95,9 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
     if (isSelf) {
       getMutableState(AudioState).microphoneGain.set(value)
     } else {
-      // Update peer volume in state
-      mediaSessionState.peerVolumes[peerID].set(value)
-
-      // Update volume in state only
       // Note: We can't directly set audioElement.volume as it's read-only
       // This should be handled by a proper volume control system
+      mediaSessionState.peerVolumes[peerID].set(value)
     }
   }
 
@@ -179,7 +174,6 @@ export const MediaSessionControls: React.FC = () => {
   const isFullscreen = mediaSessionState.isFullscreen.value
   const isExpanded = mediaSessionState.isExpanded.value
 
-  // For now, we'll use an empty array since the peer API is being updated
   // This should be updated when a new API is available
   const peers: PeerID[] = []
 
@@ -253,13 +247,10 @@ export const MediaSessionControls: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        {/* Self controls */}
         <div className="rounded bg-gray-50 p-2">
           <h4 className="mb-2 text-sm font-medium">{t('mediaSession:mediaSession.yourControls')}</h4>
           <MediaControl peerID={Engine.instance.store.peerID} type="cam" />
         </div>
-
-        {/* Other peers */}
         {peers.length > 0 && (
           <div className="rounded bg-gray-50 p-2">
             <h4 className="mb-2 text-sm font-medium">{t('mediaSession:mediaSession.otherParticipants')}</h4>

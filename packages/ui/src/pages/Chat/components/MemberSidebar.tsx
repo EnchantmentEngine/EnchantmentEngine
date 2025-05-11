@@ -45,12 +45,10 @@ export const MemberSidebar: React.FC<MemberSidebarProps> = ({ workspace }) => {
   })
   const contextMenuRef = useRef<HTMLDivElement>(null)
 
-  // Filter members based on search query
   const filteredMembers = workspace.members.filter((member) =>
     member.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 
-  // Group members by status
   const onlineMembers = filteredMembers.filter((member) => member.status === 'online')
   const offlineMembers = filteredMembers.filter((member) => member.status === 'offline')
 
@@ -78,7 +76,6 @@ export const MemberSidebar: React.FC<MemberSidebarProps> = ({ workspace }) => {
   }, [])
 
   const handleStartChat = (memberId: string) => {
-    // In a real implementation, this would create a DM channel with the user
     ChannelService.createChannel([memberId as any]).then((channel) => {
       if (channel) {
         chatState.selectedChannelID.set(channel.id)
@@ -89,7 +86,6 @@ export const MemberSidebar: React.FC<MemberSidebarProps> = ({ workspace }) => {
   }
 
   const handleStartCall = (memberId: string) => {
-    // In a real implementation, this would start a call with the user
     ChannelService.createChannel([memberId as any]).then((channel) => {
       if (channel) {
         ChannelService.joinChannelInstance(channel.id)
@@ -149,7 +145,6 @@ export const MemberSidebar: React.FC<MemberSidebarProps> = ({ workspace }) => {
         )}
       </div>
 
-      {/* Context Menu */}
       {contextMenu.visible.value && (
         <div
           ref={contextMenuRef}
