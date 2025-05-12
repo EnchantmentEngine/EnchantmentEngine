@@ -52,14 +52,14 @@ import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapCo
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
+
 import { ComponentJsonType } from '@ir-engine/engine/src/scene/types/SceneTypes'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -114,14 +114,13 @@ export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, 
   const sourceEntity = getAncestorWithComponents(targetEntity, [GLTFComponent])
 
   const newSourceID = GLTFComponent.getSourceID(sourceEntity)
-  setComponent(newMaterialEntity, SourceComponent, sourceEntity)
+  setComponent(newMaterialEntity, EntityTreeComponent, { parentEntity: sourceEntity })
 
   /** Generate a new ID for this entity such that it doesn't collider with others */
-  const nodeID = UUIDComponent.generate()
-  setComponent(newMaterialEntity, NodeIDComponent, nodeID)
+  const entityID = UUIDComponent.generate()
 
   /** Sync UUID */
-  setComponent(newMaterialEntity, UUIDComponent, { entitySourceID: newSourceID, entityID: nodeID })
+  setComponent(newMaterialEntity, UUIDComponent, { entitySourceID: newSourceID, entityID: entityID })
 
   /** Update the material instance component to point to the new material */
   getMutableComponent(targetEntity, MaterialInstanceComponent).entities[materialIndex].set(newMaterialEntity)
@@ -198,13 +197,13 @@ export async function addMediaNode(
       AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
         (entity) => {
           const rootEntity = getState(EditorState).rootEntity
-          const entities = SourceComponent.getEntitiesBySource(entity)
+          const source = UUIDComponent.getAsSourceID(entity)
+          const entities = UUIDComponent.getEntitiesBySource(source)
           const newSource = GLTFComponent.getSourceID(rootEntity)
           for (const entity of entities) {
             requestedName = getIncreamentedName(requestedName, parent)
             setComponent(entity, NameComponent, requestedName)
-            setComponent(entity, SourceComponent, rootEntity)
-            getMutableComponent(entity, UUIDComponent).entitySourceID.set(newSource)
+            UUIDComponent.setSourceEntity(entity, rootEntity)
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
                 setComponent(entity, TransformComponent, comp.props)

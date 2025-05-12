@@ -35,9 +35,6 @@ import { DirectionalLightComponent } from './components/lights/DirectionalLightC
 import { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
 import { PointLightComponent } from './components/lights/PointLightComponent'
 import { SpotLightComponent } from './components/lights/SpotLightComponent'
-import { HolographicPluginComponent } from './materials/plugins/HolographicPlugin'
-import { NoiseOffsetPluginComponent } from './materials/plugins/NoiseOffsetPlugin'
-import { TransparencyDitheringPluginComponent } from './materials/plugins/TransparencyDitheringComponent'
 
 /** Components */
 export {
@@ -46,14 +43,11 @@ export {
   DebugRendererSystem,
   DirectionalLightComponent,
   HemisphereLightComponent,
-  HolographicPluginComponent,
   LightTransformSystem,
-  NoiseOffsetPluginComponent,
   PointLightComponent,
   RenderInfoSystem,
   SpotLightComponent,
   TransformComponent,
-  TransparencyDitheringPluginComponent,
   ViewportLightingSystem,
   WebGLRendererSystem,
   XRAnchorComponent

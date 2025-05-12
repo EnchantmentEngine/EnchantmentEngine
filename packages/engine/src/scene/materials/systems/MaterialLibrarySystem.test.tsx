@@ -92,7 +92,7 @@ describe('MaterialLibrarySystem', () => {
       assert.equal(basicMaterial.uuid, UUIDComponent.join(basicUuid))
       assert.equal(basicMaterial.alphaTest, originalMaterial.alphaTest)
       assert.equal(basicMaterial.side, originalMaterial.side)
-      assert.equal(getComponent(instanceEntity, MaterialInstanceComponent).entities[1], basicMaterialEntity)
+      assert.equal(getComponent(instanceEntity, MaterialInstanceComponent).entities[0], basicMaterialEntity)
     })
 
     it('should switch the instance back to physical when disabling basic materials', async () => {

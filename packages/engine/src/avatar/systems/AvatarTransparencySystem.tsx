@@ -28,6 +28,7 @@ import {
   Entity,
   EntityArrayBoundary,
   QueryReactor,
+  UUIDComponent,
   defineQuery,
   defineSystem,
   getComponent,
@@ -42,13 +43,12 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import React, { useEffect } from 'react'
 import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
-} from '@ir-engine/spatial/src/renderer/materials/plugins/TransparencyDitheringComponent'
-import React, { useEffect } from 'react'
-import { SourceComponent } from '../../scene/components/SourceComponent'
+} from '../../material/plugins/TransparencyDitheringComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
@@ -100,7 +100,8 @@ export const AvatarTransparencySystem = defineSystem({
 
 const AvatarReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const childEntities = SourceComponent.useEntitiesBySource(entity)
+  const sourceID = UUIDComponent.getAsSourceID(entity)
+  const childEntities = UUIDComponent.useEntitiesBySource(sourceID)
 
   return (
     <EntityArrayBoundary

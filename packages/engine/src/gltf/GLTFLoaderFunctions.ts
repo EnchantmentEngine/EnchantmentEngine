@@ -44,7 +44,8 @@ import {
   setComponent,
   traverseEntityNode
 } from '@ir-engine/ecs'
-import { getMutableState, getState, isClient } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
+import { SceneUser } from '@ir-engine/network'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -109,8 +110,8 @@ import { Loader } from '../assets/loaders/base/Loader'
 import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
 import { AssetCacheState } from '../assets/state/AssetCacheState'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
+import { AuthoringActions } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
-import { SceneDeltaEntry, SceneDeltaRegistry, SceneDeltaState } from '../scene/systems/SceneDeltaState'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -130,8 +131,8 @@ import {
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
-import { NodeIDComponent } from './NodeIDComponent'
-import { SCENE_DELTA_EXTENSION_NAME } from './SceneDeltaExporterExtension'
+import { migrateSceneDeltas } from './migrateSceneDeltas'
+import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
 
 type ComponentExt = Component & {
   loadNode?: (options: GLTFParserOptions, nodeIndex: number) => Promise<void>
@@ -642,7 +643,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialDef = json.materials![materialIndex]
 
   const nodeID = ('material-' + materialIndex) as EntityID
-  const materialEntity = NodeIDComponent.create(entity, nodeID, layer)
+  const materialEntity = UUIDComponent.create(entity, nodeID, layer)
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
@@ -802,28 +803,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   }
 
   await Promise.all(extensionPromises)
-
-  const deltaPromises = [] as Promise<void>[]
-
-  const sourceDelta = SceneDeltaState.getDelta(materialEntity)
-  if (sourceDelta) {
-    const nodeID = getComponent(materialEntity, NodeIDComponent)
-    const nodeDelta = sourceDelta[nodeID]
-    if (nodeDelta) {
-      for (const [extensionName, extension] of Object.entries(nodeDelta)) {
-        if (!ComponentJSONIDMap.has(extensionName)) continue
-        const Component = ComponentJSONIDMap.get(extensionName) as ComponentExt
-        if (typeof Component.extendMaterialParams === 'function') {
-          deltaPromises.push(
-            Component.extendMaterialParams(options, materialConstructorParameters, materialDef, materialIndex)
-          )
-        }
-        setComponent(materialEntity, Component, extension)
-      }
-    }
-  }
-
-  await Promise.all(deltaPromises)
 
   const material = new materialConstructor(materialConstructorParameters)
   material.name = materialDef.name ?? 'Material-' + materialIndex
@@ -1280,7 +1259,8 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   //   primitive.mode === undefined
   // ) {
   const materials = materialEntities.map((entity) => getComponent(entity, MaterialStateComponent).material)
-  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, materials) : new Mesh(geometry, materials)
+  const material = geometry.groups.length === 0 && materials.length === 1 ? materials[0] : materials
+  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, material) : new Mesh(geometry, material)
 
   //   if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
   //     mesh.geometry = toTrianglesDrawMode(mesh.geometry, TriangleStripDrawMode)
@@ -1398,7 +1378,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
 
   const nodeID = getNodeID(nodeDef, nodeIndex)
 
-  const nodeEntity = NodeIDComponent.create(options.entity, nodeID, layerID)
+  const nodeEntity = UUIDComponent.create(options.entity, nodeID, layerID)
 
   setComponent(nodeEntity, NameComponent, nodeDef.name ?? 'Node-' + nodeIndex)
 
@@ -1419,7 +1399,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   }
 
   /** Always set visible extension if this is not an ECS node */
-  if (!nodeDef.extensions?.[NodeIDComponent.jsonID]) setComponent(nodeEntity, VisibleComponent)
+  if (!nodeDef.extensions?.[UUIDComponent.jsonID]) setComponent(nodeEntity, VisibleComponent)
 
   //handle legacy ECS embedding
   const extras = nodeDef.extras
@@ -1435,6 +1415,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
               console.warn('no component found for extension', parts[1])
               continue
             }
+            if (Component === UUIDComponent) continue
             let deserializedValue = typeof parts[2] === 'string' ? { [parts[2]]: value } : value
             if (typeof value === 'string') {
               try {
@@ -1496,7 +1477,7 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   if (nodeDef.extensions) {
     for (const extension in nodeDef.extensions) {
       const Component = ComponentJSONIDMap.get(extension) as ComponentExt | undefined
-      if (!Component) continue
+      if (!Component || Component === UUIDComponent) continue
       deserializeComponent(nodeEntity, Component, nodeDef.extensions[extension])
       if (typeof Component.loadNode === 'function') {
         extensionPending.push(Component.loadNode(options, nodeIndex))
@@ -1505,19 +1486,6 @@ const loadNode = async (options: GLTFParserOptions, nodeIndex: number) => {
   }
 
   await Promise.all(extensionPending)
-
-  //apply deltas if they exist in state
-  if (!hasComponent(options.entity, UUIDComponent)) return nodeEntity
-  const uuid = UUIDComponent.get(options.entity)
-
-  const deltas = getState(SceneDeltaState)?.[uuid]
-  if (deltas) {
-    for (const [componentName, delta] of Object.entries(deltas)) {
-      const Component = ComponentJSONIDMap.get(componentName)
-      if (!Component) continue
-      deserializeComponent(nodeEntity, Component, delta as SceneDeltaEntry<typeof Component>)
-    }
-  }
 
   return nodeEntity
 }
@@ -1562,9 +1530,15 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
 
   DependencyCache.set(options.url, new Map())
 
-  const deltas = json.extensions?.[SCENE_DELTA_EXTENSION_NAME] as SceneDeltaRegistry
-  if (deltas) {
-    getMutableState(SceneDeltaState).merge(deltas)
+  migrateSceneDeltas(options.entity, options.document)
+
+  const overrides = json.extensions?.[OVERRIDE_EXTENSION_NAME]
+  if (overrides) {
+    for (const [id, ops] of Object.entries(overrides)) {
+      const rootUUID = UUIDComponent.getAsSourceID(rootEntity)
+      const overrideUUID = UUIDComponent.join({ entitySourceID: rootUUID, entityID: id as EntityID })
+      dispatchAction(AuthoringActions.ops({ ops: { [overrideUUID]: ops }, $user: SceneUser }))
+    }
   }
 
   const sceneDef = json.scenes?.[sceneIndex] ?? ({} as GLTF.IScene)
@@ -1690,8 +1664,16 @@ export const getDependency = <
   return dependency
 }
 
-export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
-  (node.extensions?.[NodeIDComponent.jsonID] as EntityID) ?? (`${nodeIndex}` as EntityID)
+export const getNodeID = (node: GLTF.INode, nodeIndex: number) => {
+  if (node.extensions && UUIDComponent.jsonID in node.extensions) {
+    // backwards compat
+    if (typeof node.extensions[UUIDComponent.jsonID] === 'string')
+      return node.extensions[UUIDComponent.jsonID] as EntityID
+    const ext = node.extensions[UUIDComponent.jsonID] as { entityID: EntityID }
+    return ext.entityID as EntityID
+  }
+  return `${nodeIndex}` as EntityID
+}
 
 export type GLTFParserOptions = {
   url: string

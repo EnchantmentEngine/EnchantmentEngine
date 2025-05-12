@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { T } from '../../../schema/schemaFunctions'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
 export const HolographicPluginComponent = defineMaterialPlugin({

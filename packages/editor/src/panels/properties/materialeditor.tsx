@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import {
   Entity,
   getComponent,
-  getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -35,8 +34,8 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import { generateDefaults } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
@@ -195,12 +194,12 @@ export function MaterialEditor(props: { entity: Entity }) {
           <div className="justify-cneter flex items-center align-middle">
             <label>{t('editor:properties.mesh.material.path')}</label>
           </div>
-          <div className="break-all">{getOptionalComponent(entity, SourceComponent) ?? 'None'}</div>
+          <div className="break-all">{UUIDComponent.getSourceEntity(entity) ?? 'None'}</div>
         </div>
       </InputGroup>
       <br />
       <ParameterInput
-        entity={props.materialUUID}
+        path={UUIDComponent.get(entity)}
         values={materialComponent.parameters.get(NO_PROXY)}
         onChange={(key) => commitProperty(MaterialStateComponent, ('parameters.' + key) as any)}
         defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
@@ -227,7 +226,7 @@ export function MaterialEditor(props: { entity: Entity }) {
       {selectedPlugin.value && currentPlugin && (
         <>
           <ParameterInput
-            entity={UUIDComponent.get(entity)}
+            path={UUIDComponent.get(entity)}
             values={currentPlugin}
             onChange={(key) => commitProperty(MaterialPluginComponents[selectedPlugin.value], key)}
             defaults={generateDefaults(currentPlugin)}

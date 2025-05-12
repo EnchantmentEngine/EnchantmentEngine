@@ -29,18 +29,19 @@ import {
   destroyEngine,
   EngineState,
   Entity,
+  EntityID,
   EntityTreeComponent,
-  EntityUUID,
   getChildrenWithComponents,
   getComponent,
   LayerFunctions,
   Layers,
   setComponent,
+  SourceID,
   SystemDefinitions,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { NodeID, NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
+import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { MeshBVHSystem, ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
@@ -55,7 +56,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { UserID } from '@ir-engine/common/src/schema.type.module'
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { AssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { NodeFunctions } from '@ir-engine/engine/src/gltf/NodeFunctions'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import { applyIncomingActions, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
@@ -203,7 +203,10 @@ describe('addMediaNode', () => {
 
     await Physics.load()
     physicsWorldEntity = createEntity()
-    setComponent(physicsWorldEntity, UUIDComponent, 'physics-world-uuid' as EntityUUID)
+    setComponent(physicsWorldEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'physics-world-uuid' as EntityID
+    })
     setComponent(physicsWorldEntity, SceneComponent)
     setComponent(physicsWorldEntity, TransformComponent)
     setComponent(physicsWorldEntity, EntityTreeComponent)
@@ -241,7 +244,7 @@ describe('addMediaNode', () => {
     await waitForScene(rootEntity)
     await flushAll()
     applyIncomingActions()
-    await vi.waitUntil(() => getState(AssetState)[GLTFComponent.getInstanceID(rootEntity)])
+    await vi.waitUntil(() => getState(AssetState)[GLTFComponent.getSourceID(rootEntity)])
 
     const modelURL = 'https://test.com/test-model.gltf'
     const modelGLTF = createModelGLTF()
@@ -249,7 +252,7 @@ describe('addMediaNode', () => {
 
     const entityUUID = await addMediaNode(modelURL)
 
-    const newModelEntity = UUIDComponent.getEntityByUUID(entityUUID, Layers.Authoring)
+    const newModelEntity = UUIDComponent.getEntityByUUID(entityUUID!, Layers.Authoring)
     expect(newModelEntity).toBeDefined()
 
     await flushAll()
@@ -307,11 +310,10 @@ describe('addMediaNode', () => {
     const meshBVHReactor = SystemDefinitions.get(MeshBVHSystem)!.reactor!
     startReactor(meshBVHReactor)
 
-    const modelEntitySimulation = NodeFunctions.getEntityFromNodeID(rootEntity, 'model-node-id' as NodeID)
+    const modelEntitySimulation = GLTFComponent.getEntityBySourceAndID(rootEntity, 'model-node-id' as EntityID)
     const modelEntity = LayerFunctions.getAuthoringCounterpart(modelEntitySimulation)
     const [meshEntity] = getChildrenWithComponents(modelEntity, [MeshComponent])
 
-    // @ts-ignore
     await vi.waitUntil(() => getComponent(meshEntity, MeshComponent).geometry.boundsTree, { timeout: 10000 })
 
     const materialURL = 'https://test.com/test-material.material.gltf'
@@ -325,19 +327,17 @@ describe('addMediaNode', () => {
     // pose viewer entity
     setComponent(viewerEntity, TransformComponent, { position: new Vector3(0.5, 0.5, 1), rotation: new Quaternion() })
 
-    const meshUUID = getComponent(meshEntity, UUIDComponent)
+    const meshUUID = UUIDComponent.get(meshEntity)
     const [materialEntity] = getChildrenWithComponents(modelEntity, [MaterialStateComponent])
-    const materialUUID = getComponent(materialEntity, UUIDComponent)
 
     const entityUUID = await addMediaNode(materialURL, rootEntity) // entityUUID will be the mesh entity receiving the material
     expect(entityUUID).toBe(meshUUID)
 
     await vi.waitFor(() => {
-      expect(getComponent(meshEntity, MaterialInstanceComponent).uuid[0]).not.toBe(materialUUID)
+      expect(getComponent(meshEntity, MaterialInstanceComponent).entities[0]).not.toBe(materialEntity)
     })
 
-    const newMaterialEntityUUID = getComponent(meshEntity, MaterialInstanceComponent).uuid[0]
-    const newMaterialEntity = UUIDComponent.getEntityByUUID(newMaterialEntityUUID, Layers.Authoring)
+    const newMaterialEntity = getComponent(meshEntity, MaterialInstanceComponent).entities[0]
     const material = getComponent(newMaterialEntity, MaterialStateComponent).material as MeshStandardMaterial
 
     // assert material properties have updated

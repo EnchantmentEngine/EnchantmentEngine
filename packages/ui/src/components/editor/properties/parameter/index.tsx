@@ -38,14 +38,14 @@ import TexturePreviewInput from '../../input/Texture'
 
 /**@TODO this should be looking up values from material prototype definitions to avoid incorrectly typed fields */
 export default function ParameterInput({
-  entity,
+  path,
   values,
   onChange,
   defaults,
   thumbnails,
   ...rest
 }: {
-  entity: string
+  path: string
   values: object
   defaults?: object
   thumbnails?: Record<string, string>
@@ -103,7 +103,7 @@ export default function ParameterInput({
   return (
     <>
       {Object.entries(_defaults).map(([k, parms]: [string, any]) => {
-        const compKey = `${entity}-${k}`
+        const compKey = `${path}-${k}`
         return (
           <InputGroup key={compKey} name={k} label={camelCaseToSpacedString(capitalizeFirstLetter(k))}>
             {(() => {
@@ -152,7 +152,7 @@ export default function ParameterInput({
                 case 'object':
                   return (
                     <ParameterInput
-                      entity={compKey}
+                      path={compKey}
                       values={values[k]}
                       onChange={setArgsObjectProp(k)}
                       defaults={parms.default}

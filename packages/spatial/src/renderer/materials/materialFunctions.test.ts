@@ -25,6 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityID,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEngine,
@@ -70,6 +72,10 @@ describe('materialFunctions', () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
@@ -80,9 +86,17 @@ describe('materialFunctions', () => {
     it('should add the first item of `@param newMaterialEntities` to MeshComponent.material when MeshComponent.material is not an array', () => {
       const materialEntity = createEntity()
       const otherMaterialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
+      setComponent(otherMaterialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       const newMaterialEntities = [materialEntity, otherMaterialEntity]
       const material = new Material()
-      const expectedUUID = material.uuid
+      const expectedUUID = UUIDComponent.get(materialEntity)
 
       // Set the data as expected
       setComponent(testEntity, MeshComponent, new Mesh(new BoxGeometry()))
@@ -95,9 +109,9 @@ describe('materialFunctions', () => {
 
       // Run and Check the result
       setMeshMaterial(testEntity, newMaterialEntities)
-      const result = getComponent(testEntity, MeshComponent).material
+      const result = getComponent(testEntity, MeshComponent).material as Material
       assert.equal(Array.isArray(result), false)
-      assert.equal((result as Material).uuid, expectedUUID)
+      assert.equal(result.uuid, expectedUUID)
     })
 
     it('should add all items of `@param newMaterialEntities` to MeshComponent.material when MeshComponent.material is an array', () => {
@@ -111,10 +125,22 @@ describe('materialFunctions', () => {
       // Generate the Materials and Entities
       const material1 = new Material()
       const material2 = new Material()
-      const dummyMaterial = new Material()
+
       const materialEntity1 = createEntity()
       const materialEntity2 = createEntity()
       const dummyEntity = createEntity()
+      setComponent(materialEntity1, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
+      setComponent(materialEntity2, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
+      setComponent(dummyEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id3' as EntityID
+      })
       const newMaterialEntities = [materialEntity1, materialEntity2, dummyEntity]
       const expectedMaterialEntities = [materialEntity1, materialEntity2]
 
@@ -152,7 +178,15 @@ describe('materialFunctions', () => {
 
     it('should not do anything when `@param groupEntity` is falsy', () => {
       const materialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
       const otherMaterialEntity = createEntity()
+      setComponent(otherMaterialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       const newMaterialEntities = [materialEntity, otherMaterialEntity]
       const material = new Material()
       const expectedUUID = material.uuid
@@ -175,7 +209,15 @@ describe('materialFunctions', () => {
 
     it('should not do anything when `@param groupEntity` does not have a MeshComponent', () => {
       const materialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
       const otherMaterialEntity = createEntity()
+      setComponent(otherMaterialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id2' as EntityID
+      })
       const newMaterialEntities = [materialEntity, otherMaterialEntity]
       const material = new Material()
 
@@ -198,6 +240,10 @@ describe('materialFunctions', () => {
     it('should not do anything when `@param newMaterialEntities` is empty', () => {
       const newMaterialEntities = [] as Entity[]
       const materialEntity = createEntity()
+      setComponent(materialEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id1' as EntityID
+      })
       const material = new Material()
       const expectedUUID = material.uuid
 
@@ -225,6 +271,10 @@ describe('materialFunctions', () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
     })
 
     afterEach(() => {
