@@ -648,7 +648,6 @@ const transformTexture = async (resultCache: Map<string, Texture>, operation: Te
     nuTexture.setImage(oldImage)
     nuTexture.setMimeType(texture.getMimeType())
 
-    // Remove unnecessary try/catch
     await imgDoc.transform(
       textureCompress({
         resize: [params.maxTextureSize, params.maxTextureSize]
