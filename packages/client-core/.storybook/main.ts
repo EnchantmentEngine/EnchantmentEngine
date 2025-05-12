@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import type { StorybookConfig } from '@storybook/react-vite'
 import { dirname, join } from 'path'
 import { mergeConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 const config: StorybookConfig = {
   env: (config) => ({
@@ -65,8 +66,7 @@ const config: StorybookConfig = {
       ...userConfig,
       define: {
         ...userConfig?.define,
-        'process.env': process.env,
-        'process.browser': true
+        'process.env': process.env
       },
       resolve: {
         ...userConfig?.resolve,
@@ -75,7 +75,6 @@ const config: StorybookConfig = {
           path: require.resolve('path-browserify'),
           crypto: require.resolve('crypto-browserify'),
           stream: require.resolve('stream-browserify'),
-          process: require.resolve('process/browser'),
 
           // alias public folder to root
           '@': require('path').resolve(__dirname, '../../client/public')
@@ -84,7 +83,7 @@ const config: StorybookConfig = {
       build: {
         cssMinify: false
       },
-      plugins: []
+      plugins: [nodePolyfills()]
     })
   },
   docs: {
