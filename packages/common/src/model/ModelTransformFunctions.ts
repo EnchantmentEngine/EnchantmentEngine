@@ -921,7 +921,6 @@ export const transformModel = async (
     if (params.simplifyRatio < 1) {
       const simplifyTransforms = [] as Transform[]
       if (!params.weld.enabled) simplifyTransforms.push(weld())
-      console.log(params.simplifyRatio, 'simplifyRatio')
       simplifyTransforms.push(
         params.adaptiveSimplification
           ? (doc) => {
