@@ -24,12 +24,10 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
-import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiOutlineDocumentDuplicate } from 'react-icons/hi2'
+import { EmbedCodeField } from '../EmbedCodeField'
 
 type Props = Readonly<{
   url: string
@@ -37,21 +35,6 @@ type Props = Readonly<{
 
 export const CopyEmbedCodePopover = ({ url }: Props) => {
   const { t } = useTranslation()
-
-  const embedCode = `<iframe style="border: 1px solid rgba (0, 0, 0, 0.1);" width="375" height="687" src="${url}" allowfullscreen></iframe>`
-
-  const handleCopyEmbed = () => {
-    navigator.clipboard
-      .writeText(embedCode)
-      .then(() => {
-        NotificationService.dispatchNotify(t('common:components.embedCodeCopied'), {
-          variant: 'success'
-        })
-      })
-      .catch((err) => {
-        NotificationService.dispatchNotify(`Failed to copy URL: ${err.message}`, { variant: 'error' })
-      })
-  }
 
   return (
     <Modal
@@ -63,19 +46,7 @@ export const CopyEmbedCodePopover = ({ url }: Props) => {
       onSubmit={ModalState.closeModal}
       showCloseButton={false}
     >
-      <TextArea
-        containerClassName="text-text-secondary"
-        className="h-20 border-ui-tertiary bg-[#F6F8FA] dark:border-ui-outline dark:bg-surface-2"
-        labelClassname="text-xs text-text-secondary"
-        label={t('common:components.embed')}
-        value={embedCode}
-        readOnly
-        endComponent={
-          <div className="mr-6 hover:cursor-pointer" onClick={handleCopyEmbed}>
-            <HiOutlineDocumentDuplicate className="text-xl text-text-tertiary" />
-          </div>
-        }
-      />
+      <EmbedCodeField url={url} />
     </Modal>
   )
 }
