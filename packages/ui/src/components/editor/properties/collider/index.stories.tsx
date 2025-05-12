@@ -23,7 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, LayerComponents, Layers, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EntityID,
+  EntityUUIDPair,
+  LayerComponents,
+  Layers,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import React, { useEffect } from 'react'
 import Component from './index'
@@ -48,6 +58,11 @@ const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
   setComponent(entity, ColliderComponent)
   setComponent(entity, LayerComponents[Layers.Authoring])
+  setComponent(entity, UUIDComponent, {
+    entitySourceID: 'storybook' as SourceID,
+    entityID: 'root' as EntityID
+  } as EntityUUIDPair)
+
   useEffect(() => {
     return () => {
       removeEntity(entity)

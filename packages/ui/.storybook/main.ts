@@ -79,7 +79,6 @@ const config: StorybookConfig = {
           crypto: require.resolve('crypto-browserify'),
           stream: require.resolve('stream-browserify'),
           process: require.resolve('process/browser'),
-
           // alias public folder to root
           '@': require('path').resolve(__dirname, '../../client/public')
         }

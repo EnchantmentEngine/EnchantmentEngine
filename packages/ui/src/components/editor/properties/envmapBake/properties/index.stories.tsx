@@ -23,7 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, getComponent, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EntityID,
+  EntityUUIDPair,
+  getComponent,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
 import { ArgTypes } from '@storybook/react'
 import React, { useEffect } from 'react'
@@ -58,6 +67,10 @@ const ComponentNodeEditorRenderer = (args) => {
   const entity = createEntity()
   setComponent(entity, EnvMapBakeComponent)
   const bakeComponent = getComponent(entity, EnvMapBakeComponent)
+  setComponent(entity, UUIDComponent, {
+    entitySourceID: 'storybook' as SourceID,
+    entityID: 'root' as EntityID
+  } as EntityUUIDPair)
 
   useEffect(() => {
     return () => {

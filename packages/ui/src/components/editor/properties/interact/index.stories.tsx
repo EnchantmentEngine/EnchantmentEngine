@@ -23,7 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EntityID,
+  EntityUUIDPair,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
 import React, { useEffect } from 'react'
 import Component from './index'
@@ -45,8 +53,14 @@ export default {
 }
 
 const ComponentNodeEditorRenderer = () => {
-  const entity = createEntity()
+  const sourceEntity = createEntity()
+  setComponent(sourceEntity, UUIDComponent, {
+    entitySourceID: 'root' as SourceID,
+    entityID: '0' as EntityID
+  } as EntityUUIDPair)
+  const entity = UUIDComponent.create(sourceEntity)
   setComponent(entity, InteractableComponent)
+
   useEffect(() => {
     return () => {
       removeEntity(entity)

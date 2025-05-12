@@ -23,7 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EntityID,
+  EntityUUIDPair,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { AnimationComponent } from '@ir-engine/engine/src/avatar/components/AnimationComponent'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
@@ -54,6 +62,10 @@ const ComponentNodeEditorRenderer = () => {
   setComponent(entity, GLTFComponent)
   setComponent(entity, AvatarRigComponent)
   setComponent(entity, AnimationComponent)
+  setComponent(entity, UUIDComponent, {
+    entitySourceID: 'storybook' as SourceID,
+    entityID: 'root' as EntityID
+  } as EntityUUIDPair)
 
   useEffect(() => {
     return () => {

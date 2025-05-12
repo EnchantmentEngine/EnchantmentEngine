@@ -23,7 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  EntityID,
+  EntityUUIDPair,
+  removeEntity,
+  setComponent,
+  SourceID,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { SceneDynamicLoadComponent } from '@ir-engine/engine/src/scene/components/SceneDynamicLoadComponent'
 import { TransformComponent } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
@@ -49,6 +57,10 @@ const ComponentNodeEditorRenderer = () => {
   const entity = createEntity()
   setComponent(entity, TransformComponent)
   setComponent(entity, SceneDynamicLoadComponent)
+  setComponent(entity, UUIDComponent, {
+    entitySourceID: 'storybook' as SourceID,
+    entityID: 'root' as EntityID
+  } as EntityUUIDPair)
 
   useEffect(() => {
     return () => {
