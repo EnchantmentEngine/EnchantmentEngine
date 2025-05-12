@@ -195,7 +195,7 @@ const createObjectFromSceneElement = (
     }
   }
   if (!extensions[UUIDComponent.jsonID]) {
-    extensions[UUIDComponent.jsonID] = nodeID
+    extensions[UUIDComponent.jsonID] = { entityID: nodeID }
   }
   if (!extensions[VisibleComponent.jsonID]) {
     extensions[VisibleComponent.jsonID] = true
