@@ -18,8 +18,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Cache, Loader } from 'three'
+import { Cache } from 'three'
 import { FileLoader } from '../base/FileLoader'
+import { Loader } from '../base/Loader'
 
 class ImageBitmapLoader extends Loader<ImageBitmap> {
   isImageBitmapLoader = true
