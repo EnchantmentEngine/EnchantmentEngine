@@ -26,6 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import type { StorybookConfig } from '@storybook/react-vite'
 import { dirname, join } from 'path'
 import { mergeConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 const config: StorybookConfig = {
   env: (config) => ({
@@ -38,11 +39,9 @@ const config: StorybookConfig = {
     reactDocgen: false
   },
   stories: [
-    '../src/components/editor/properties/**/!(animation|envmap|envMapBake|loader|image|mesh|overlay|particle|portal|postProcessing|properties|reflectionProbe|sourceProperties|settings|previewCamera|skybox|variant)/*.stories.@(js|jsx|ts|tsx)',
+    '../src/components/editor/properties/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/primitives/tailwind/!(TruncatedText)/*.stories.@(js|jsx|ts|tsx)',
-    '../src/components/editor/input/**/!(Audio|FileBrowser|Model|Texture|Prefab|Folder)/*.stories.@(js|jsx|ts|tsx)',
-
-    '../src/components/editor/!(properties|input)/**/*.stories.@(js|jsx|ts|tsx)',
+    '../src/components/editor/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/components/tailwind/**/*.stories.@(js|jsx|ts|tsx)',
     '../src/icons/**/*.stories.@(js|jsx|ts|tsx)'
   ],
@@ -68,8 +67,7 @@ const config: StorybookConfig = {
       ...userConfig,
       define: {
         ...userConfig?.define,
-        'process.env': process.env,
-        'process.browser': true
+        'process.env': process.env
       },
       resolve: {
         ...userConfig?.resolve,
@@ -78,15 +76,14 @@ const config: StorybookConfig = {
           path: require.resolve('path-browserify'),
           crypto: require.resolve('crypto-browserify'),
           stream: require.resolve('stream-browserify'),
-          process: require.resolve('process/browser'),
-          // alias public folder to root
+
           '@': require('path').resolve(__dirname, '../../client/public')
         }
       },
       build: {
         cssMinify: false
       },
-      plugins: []
+      plugins: [nodePolyfills()]
     })
   },
   docs: {
