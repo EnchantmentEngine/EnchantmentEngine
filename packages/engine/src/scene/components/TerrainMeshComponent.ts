@@ -40,7 +40,6 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { TriplanarMappingMaterialPlugin } from '@ir-engine/spatial/src/renderer/materials/plugins/TriplanarMappingMaterialPlugin'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
 import {
@@ -56,6 +55,7 @@ import {
   Vector2
 } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
+import { TriplanarMappingMaterialPlugin } from '../../material/plugins/TriplanarMappingMaterialPlugin'
 
 export const TerrainMeshComponent = defineComponent({
   name: 'TerrainMeshComponent',
