@@ -74,7 +74,7 @@ import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
-import CompressedPublishConfirmation from './CompressedPublishConfirmation'
+import { CompressedPublishConfirmation, ProgressState } from './CompressedPublishConfirmation'
 
 function formatPublishedDate(isoString) {
   const date = new Date(isoString)
@@ -158,6 +158,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
     progress: 0,
     caption: ''
   })
+  const progressState = useHookstate(getMutableState(ProgressState).progress)
   const lods = useHookstate<LODVariantDescriptor[]>([])
   useEffect(() => {
     if (location) {
@@ -345,6 +346,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               denominator
             })
             compressionProgress.set({ progress, caption })
+            progressState.set(progress * 100)
           }
         )
         const compressedFilePath = srcURL.replace(/\.[^.]*$/, `-LOD2.gltf`)
@@ -366,9 +368,11 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`
         window.open(studioUrl, '_blank')?.focus()
         PopoverState.hidePopupover()
+        progressState.set(0)
       }
     } catch (error) {
       PopoverState.hidePopupover()
+      progressState.set(0)
       PopoverState.showPopupover(
         <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
       )
