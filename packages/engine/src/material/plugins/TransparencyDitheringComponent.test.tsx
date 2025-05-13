@@ -38,11 +38,11 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { assertArray } from '@ir-engine/spatial/tests/util/assert'
 import assert from 'assert'
 import { Material, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
-import { assertArray } from '../../../../tests/util/assert'
-import { MaterialStateComponent } from '../MaterialComponent'
 import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
