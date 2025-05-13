@@ -52,7 +52,16 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, getState, NO_PROXY, none, State, useMutableState } from '@ir-engine/hyperflux'
+import {
+  defineState,
+  getMutableState,
+  getState,
+  isDev,
+  NO_PROXY,
+  none,
+  State,
+  useMutableState
+} from '@ir-engine/hyperflux'
 
 import { getNestedChildren } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -250,7 +259,7 @@ export const RendererComponent = defineComponent({
       rendererComponent.renderPass.set(renderPass)
 
       // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
-      renderer.debug.checkShaderErrors = false
+      renderer.debug.checkShaderErrors = isDev
 
       const xrManager = createWebXRManager(renderer)
       renderer.xr = xrManager as any
