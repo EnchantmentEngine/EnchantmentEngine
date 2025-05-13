@@ -62,6 +62,7 @@ import {
 } from '@ir-engine/hyperflux'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
+import { AddOperation } from 'rfc6902/diff'
 
 export type SourceData = Record<EntityID, object>
 
@@ -294,7 +295,37 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
 
     // get the final state of the history
     const finalState = structuredClone(readonlyState.initial)
-    applyPatch(finalState, operations)
+    const operationsCount = operations.length
+    const filteredOperations = [] as Operation[]
+    for (let i = 0; i < operationsCount; i++) {
+      const operation = operations[i]
+      if (operation.op === 'add') {
+        const { path, value } = operation as AddOperation
+        if (value !== 'MIGRATE_SYMBOL') {
+          filteredOperations.push(operation)
+          continue /** @todo this metadata operation should be removed from the state somehow */
+        }
+        const resolveObjFromPath = (obj: any, path: string[]) => {
+          for (const key of path) {
+            if (!(key in obj)) return obj
+            obj = obj[key]
+          }
+          return obj
+        }
+        const paths = path.split('/')
+        const obj = resolveObjFromPath(finalState, paths.slice(0, -1).filter(Boolean))
+        const finalPath = paths.at(-1)!
+        if (!(finalPath in obj)) obj[finalPath] = {}
+      }
+    }
+    const validation = applyPatch(finalState, filteredOperations)
+    if (validation.length) {
+      for (const error of validation) {
+        if (error === null) continue
+        console.error(error)
+      }
+    }
+    console.log(finalState, filteredOperations)
 
     // update the state to the ECS
     applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
