@@ -23,10 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, Entity, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { createEntity, Entity, setComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { useEffect } from 'react'
-import { getComponent, removeEntity } from '../../../../ecs/src/ComponentFunctions'
+import { removeEntity } from '../../../../ecs/src/ComponentFunctions'
 import MaterialLayerNode from './layernode'
 
 export default {
@@ -45,7 +45,7 @@ const MaterialLayerNodeRenderer = (args) => {
   const entities: Entity[] = []
   for (let i = 0; i < 10; i++) {
     const entity = createEntity()
-    setComponent(entity, UUIDComponent, UUIDComponent.generateUUID())
+    setComponent(entity, UUIDComponent, { entitySourceID: 'storybook' as SourceID, entityID: UUIDComponent.generate() })
     setComponent(entity, NameComponent, 'test object ' + i)
     entities.push(entity)
   }
@@ -62,7 +62,7 @@ const MaterialLayerNodeRenderer = (args) => {
       index={Math.abs(args.index) % 10}
       style={{}}
       data={{
-        nodes: entities.flatMap((entity) => getComponent(entity, UUIDComponent))
+        nodes: entities
       }}
     />
   )
