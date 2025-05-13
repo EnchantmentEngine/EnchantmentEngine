@@ -177,3 +177,4 @@ certs/tailscale
 
 **/credentials
 .aider*
+bun.lock

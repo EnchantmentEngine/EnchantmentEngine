@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@hookstate/core'
+import { useHookstate } from '@speigg/hookstate'
 import { DependencyList, EffectCallback, useEffect, useLayoutEffect } from 'react'
 import { NO_PROXY_STEALTH } from '../functions/StateFunctions'
 
