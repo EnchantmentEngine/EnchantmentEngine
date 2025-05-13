@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { GLTF } from '@gltf-transform/core'
 import {
   defineComponent,
   ECSState,
@@ -36,6 +35,7 @@ import {
   useComponent
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
+import { TextureInfoSchema } from '@ir-engine/engine/src/gltf/MaterialExtensionComponents'
 import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
@@ -44,9 +44,16 @@ import {
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import React, { useEffect } from 'react'
 import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
+import { useTexture } from '../assets/functions/resourceLoaderHooks'
 
+/**
+ * A JSON Schema for a texture uniform.
+ * - `TextureInfoSchema` for glTF textures - @todo
+ * - `string` for remote textures
+ * - `null` for no texture
+ */
 export const TextureSchema = () =>
-  S.Union([S.Class(() => null as GLTF.ITextureInfo | null), S.String(), S.Null()], { default: null, $isTexture: true })
+  S.Union([TextureInfoSchema, S.String(), S.Null()], { default: null, $isTexture: true })
 
 const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.$isTexture
 
@@ -113,28 +120,29 @@ export const defineMaterialPlugin = <T extends Schema>({
       /** Suspend context until material exists */
       const material = useComponent(entity, MaterialStateComponent).material.value as Material
 
+      const pluginState = useComponent(entity, PluginComponent).get(NO_PROXY) as UniformRecord
+
       const textureUniforms = Object.fromEntries(
-        (Object.entries(uniformSchema) as Array<[keyof T, Schema]>)
+        Object.entries(uniformSchema.properties!)
           .filter(([key, value]) => isTextureUniform(value))
           .map(([key, value]) => [key, new Uniform(null)])
-      ) as Record<keyof T, Uniform>
+      ) as Record<keyof UniformRecord, Uniform<Texture | null>>
 
       const uniforms = useHookstate(
         () =>
           Object.fromEntries(
-            Object.entries(getComponent(entity, PluginComponent) as UniformRecord).map(([key, value]) => [
-              key,
-              new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)
-            ])
-          ) as Record<keyof Static<T>, Uniform>
-      ).get(NO_PROXY) as Record<keyof Static<T>, Uniform>
+            Object.entries(pluginState).map(([key, value]) => {
+              if (isTextureUniform(uniformSchema.properties![key])) return [key, new Uniform(null)]
+              return [key, new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)]
+            })
+          ) as Record<keyof UniformRecord, Uniform>
+      ).get(NO_PROXY) as Record<keyof UniformRecord, Uniform>
 
-      const textures = Object.keys(textureUniforms).reduce((acc, key) => {
-        acc[key] = textureUniforms[key]
-        return acc
-      }, {})
-
-      console.log({ textureUniforms, textures })
+      for (const key in textureUniforms) {
+        const src = pluginState[key]
+        const [texture] = useTexture(typeof src === 'string' ? src : '', entity)
+        textureUniforms[key].value = texture
+      }
 
       useEffect(() => {
         const callback = (shader: Shader, renderer: WebGLRenderer) => {
@@ -155,7 +163,7 @@ export const defineMaterialPlugin = <T extends Schema>({
           const uniformValues = getComponent(entity, PluginComponent)
           if (update) update(uniformValues, getState(ECSState).deltaSeconds)
           for (const key in uniforms) {
-            uniforms[key].value = uniformValues[key]
+            uniforms[key].value = key in textureUniforms ? textureUniforms[key].value : uniformValues[key]
           }
         },
         { before: PresentationSystemGroup, uuid: makeMaterialPluginUpdateSystemID(name, entity) }
