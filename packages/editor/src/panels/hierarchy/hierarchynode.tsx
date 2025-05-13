@@ -2,7 +2,7 @@
 CPAL-1.0 License
 
 The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
+Version 1.0. (the"License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
@@ -10,7 +10,7 @@ and 15 have been added to cover use of software over a computer network and
 provide for limited attribution for the Original Developer. In addition, 
 Exhibit A has been modified to be consistent with Exhibit B.
 
-Software distributed under the License is distributed on an "AS IS" basis,
+Software distributed under the License is distributed on an"AS IS" basis,
 WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
 specific language governing rights and limitations under the License.
 
@@ -23,49 +23,54 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { userHasProjectPermission } from '@ir-engine/client-core/src/hooks/useUserProjectPermission'
+import { API } from '@ir-engine/common'
+import { projectPermissionPath } from '@ir-engine/common/src/schema.type.module'
 import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions'
-import { entityExists, UUIDComponent } from '@ir-engine/ecs'
+import { EngineState, EntityTreeComponent, UUIDComponent } from '@ir-engine/ecs'
 import {
-  getAllComponents,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
+  getSimulationCounterpart,
   hasComponent,
-  useComponent,
-  useOptionalComponent
+  removeComponent,
+  setComponent,
+  useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
+import { EntityHierarchyLockState } from '@ir-engine/editor/src/services/EntityHierarchyLockState'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { STATIC_ASSET_REGEX } from '@ir-engine/engine/src/assets/functions/pathResolver'
 import { ResourceLoaderManager } from '@ir-engine/engine/src/assets/functions/resourceLoaderFunctions'
-import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
-import { ModelComponent } from '@ir-engine/engine/src/scene/components/ModelComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { getModelSceneID } from '@ir-engine/engine/src/scene/functions/loaders/ModelFunctions'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { GLTFLoaderFunctions } from '@ir-engine/engine/src/gltf/GLTFLoaderFunctions'
+import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
-import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, none, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { TransformPivot, TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
-import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { Button, Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import React, { KeyboardEvent, useEffect } from 'react'
+import React, { KeyboardEvent, useEffect, useRef } from 'react'
 import { useDrag } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import { useTranslation } from 'react-i18next'
 import { IoArrowUndo, IoSaveOutline } from 'react-icons/io5'
 import { MdKeyboardArrowDown, MdKeyboardArrowRight } from 'react-icons/md'
-import { PiEyeBold, PiEyeClosedBold } from 'react-icons/pi'
+import { PiEyeBold, PiEyeClosedBold, PiLockBold, PiLockOpenBold } from 'react-icons/pi'
 import { ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
+import { IconComponent } from '../../components/panels/IconComponent'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
-import { ComponentEditorsState } from '../../services/ComponentEditors'
+import { isEntityGlb } from '../../functions/utils'
 import { EditorHelperState, PlacementMode } from '../../services/EditorHelperState'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
@@ -90,43 +95,58 @@ function getNodeElId(node: HierarchyTreeNodeType) {
 
 function toValidHierarchyNodeName(entity: Entity, name: string): string {
   name = name.trim()
-  if (getComponent(entity, NameComponent) === name) return ''
   return name
 }
 
-function IconComponent({ entity }: { entity: Entity }) {
-  const icons = entityExists(entity)
-    ? getAllComponents(entity)
-        .map((c) => getState(ComponentEditorsState)[c.name]?.iconComponent)
-        .filter((icon) => !!icon)
-    : []
-  const _IconComponent = icons.length > 0 ? icons[0] : TransformPropertyGroup.iconComponent
-  if (!_IconComponent) return null
-  return (
-    <_IconComponent
-      entity={entity}
-      className="h-5 w-5 flex-shrink-0 text-inherit"
-      data-testid="hierarchy-panel-scene-item-icon"
-    />
-  )
-}
+export default React.memo(function HierarchyTreeNode(props: ListChildComponentProps<undefined>) {
+  const showGlbChildrenFeatureFlag = useMutableState(EditorHelperState).showGlbChildren.value
 
-export default function HierarchyTreeNode(props: ListChildComponentProps<undefined>) {
   const { t } = useTranslation()
   const nodes = useHierarchyNodes()
   const node = nodes[props.index]
   const entity = node.entity
   const fixedSizeListStyles = props.style
-  const uuid = useComponent(entity, UUIDComponent)
-  const selected = useHookstate(getMutableState(SelectionState).selectedEntities).value.includes(uuid.value)
-  const visible = useOptionalComponent(entity, VisibleComponent)
+  const uuid = UUIDComponent.get(entity)
+  const selected = useHookstate(getMutableState(SelectionState).selectedEntities).value.includes(uuid)
+  const visible = useHasComponent(entity, VisibleComponent)
+  const locked = useHookstate(getMutableState(EntityHierarchyLockState).lockedEntities).value[entity] ?? false
   const { rootEntity } = useMutableState(EditorState).value
   const { collapseChildren, expandChildren, collapseNode, expandNode } = useNodeCollapseExpand()
   const renamingNode = useRenamingNode()
   const { expandedNodes, firstSelectedEntity } = useMutableState(HierarchyTreeState)
-  const sourceId = useOptionalComponent(rootEntity, SourceComponent)!.value
+  const sourceID = GLTFComponent.useSourceID(rootEntity)
   const currentRenameNode = useHookstate(getComponent(entity, NameComponent))
   const { setMenu } = useHierarchyTreeContextMenu()
+  const renameRef = useRef<HTMLInputElement>(null)
+  const isRenameOpen = useState(false)
+  const canSaveNodeChanges = useState(false)
+  const permissionToChangeNodeVerified = useState(false)
+
+  const handleRenameOpen = () => {
+    if (!isRenameOpen.value) {
+      isRenameOpen.set(true)
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+  }
+
+  const handleRenameClose = (saveRename: boolean) => {
+    if (isRenameOpen.value) {
+      isRenameOpen.set(false)
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (saveRename) {
+        EditorControlFunctions.modifyName([entity], toValidHierarchyNodeName(entity, currentRenameNode.value))
+        AuthoringState.snapshot(getComponent(entity, UUIDComponent).entitySourceID)
+        currentRenameNode.set(getComponent(entity, NameComponent))
+      }
+      renamingNode.clear()
+    }
+  }
+
+  const handleClickOutside = (event) => {
+    if (renameRef.current && !renameRef.current.contains(event.target)) {
+      handleRenameClose(true)
+    }
+  }
 
   const [, drag, preview] = useDrag({
     type: ItemTypes.Node,
@@ -166,7 +186,16 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
     isOver: isOverAfter,
     dropTarget: afterDropTarget
   } = useHierarchyTreeDrop(node, 'After')
-  const { canDrop: canDropOn, isOver: isOverOn, dropTarget: onDropTarget } = useHierarchyTreeDrop(node, 'On')
+  const {
+    canDrop: canDropOn,
+    isOver: isOverOn,
+    dropTarget: onDropTarget,
+    rigidbodyParentingWarning
+  } = useHierarchyTreeDrop(node, 'On')
+  const isOverAndCanDrop = isOverOn && canDropOn
+  const showGlbRedState = isOverAndCanDrop && !showGlbChildrenFeatureFlag && isEntityGlb(entity)
+  const showRigidbodyRedState = isOverAndCanDrop && rigidbodyParentingWarning
+  const showRedState = showGlbRedState || showRigidbodyRedState
 
   useEffect(() => {
     preview(getEmptyImage(), { captureDraggingState: true })
@@ -184,7 +213,7 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
         if (!nextNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([getComponent(nextNode.entity, UUIDComponent)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(nextNode.entity)])
         }
 
         const nextNodeEl = document.getElementById(getNodeElId(nextNode))
@@ -201,7 +230,7 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
         if (!prevNode) return
 
         if (event.shiftKey) {
-          EditorControlFunctions.addToSelection([getComponent(prevNode.entity, UUIDComponent)])
+          EditorControlFunctions.addToSelection([UUIDComponent.get(prevNode.entity)])
         }
 
         const prevNodeEl = document.getElementById(getNodeElId(prevNode))
@@ -227,9 +256,9 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
       case 'Enter': {
         if (entity === rootEntity) return
         if (event.shiftKey) {
-          EditorControlFunctions.toggleSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.toggleSelection([UUIDComponent.get(entity)])
         } else {
-          EditorControlFunctions.replaceSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.replaceSelection([UUIDComponent.get(entity)])
         }
         break
       }
@@ -243,70 +272,129 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
   }
 
   const onClickNode = (event: React.MouseEvent) => {
+    if (renamingNode.entity !== entity) {
+      renamingNode.clear()
+    }
     if (event.detail === 1) {
       // Exit click placement mode when anything in the hierarchy is selected
       getMutableState(EditorHelperState).placementMode.set(PlacementMode.DRAG)
       // Deselect material entity since we've just clicked on a hierarchy node
       getMutableState(MaterialSelectionState).selectedMaterial.set(null)
+      const uuid = UUIDComponent.get(entity)
       if (usesCtrlKey() ? event.ctrlKey : event.metaKey) {
         if (entity === rootEntity) return
-        EditorControlFunctions.toggleSelection([getComponent(entity, UUIDComponent)])
+        EditorControlFunctions.toggleSelection([uuid])
       } else if (event.shiftKey && firstSelectedEntity.value) {
         const startIndex = nodes.findIndex((n) => n.entity === firstSelectedEntity.value)
         const endIndex = nodes.findIndex((n) => n.entity === entity)
         const range = nodes.slice(Math.min(startIndex, endIndex), Math.max(startIndex, endIndex) + 1)
-        const entityUuids = range.filter((n) => n.entity).map((n) => getComponent(n.entity!, UUIDComponent))
+        const entityUuids = range.filter((n) => n.entity).map((n) => UUIDComponent.get(n.entity))
         EditorControlFunctions.replaceSelection(entityUuids)
       } else {
-        const selected = getState(SelectionState).selectedEntities.includes(getComponent(entity, UUIDComponent))
+        const selected = getState(SelectionState).selectedEntities.includes(UUIDComponent.get(entity))
         if (!selected) {
-          EditorControlFunctions.replaceSelection([getComponent(entity, UUIDComponent)])
+          EditorControlFunctions.replaceSelection([uuid])
         }
         firstSelectedEntity.set(entity)
       }
     } else if (event.detail === 2) {
-      const cameraEntity = getState(EngineState).viewerEntity
+      const cameraEntity = getState(ReferenceSpaceState).viewerEntity
       if (entity && getOptionalComponent(cameraEntity, CameraOrbitComponent)) {
-        const editorCameraState = getMutableComponent(cameraEntity, CameraOrbitComponent)
-        editorCameraState.focusedEntities.set([entity])
-        editorCameraState.refocus.set(true)
+        const simulationEntity = getSimulationCounterpart(entity)
+        const pivot = computeTransformPivot([simulationEntity], TransformPivot.Center, TransformSpace.world)
+        if (!pivot?.position) return
+        CameraOrbitComponent.setFocus(cameraEntity, pivot.position, pivot.bounds)
       }
     }
   }
 
   const onCollapseExpandNode = (event: React.MouseEvent) => {
     event.stopPropagation()
-    if (expandedNodes.value[sourceId][entity]) collapseNode(entity)
+    if (expandedNodes.value[sourceID][entity]) collapseNode(entity)
     else expandNode(entity)
   }
 
   const onHideUnhideNode = (event: React.MouseEvent) => {
     event.stopPropagation()
     if (visible) {
-      EditorControlFunctions.addOrRemoveComponent([entity], VisibleComponent, false)
+      removeComponent(entity, VisibleComponent)
+      AuthoringState.snapshotEntities([entity])
     } else {
-      EditorControlFunctions.addOrRemoveComponent([entity], VisibleComponent, true)
+      setComponent(entity, VisibleComponent)
+      AuthoringState.snapshotEntities([entity])
     }
-    setVisibleComponent(entity, !hasComponent(entity, VisibleComponent))
   }
-  const isModelRoot = hasComponent(entity, ModelComponent)
-  const isModified = isModelRoot && !!getState(GLTFModifiedState)[getModelSceneID(entity)]
+
+  const onLockUnlockNode = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    if (locked) {
+      EntityHierarchyLockState.updateLocked(entity, false)
+    } else {
+      EntityHierarchyLockState.updateLocked(entity, true)
+    }
+  }
+
+  const isModelRoot = hasComponent(entity, GLTFComponent)
+  const isModified = isModelRoot && !!getState(AssetModifiedState)[GLTFComponent.getSourceID(entity)]
 
   const onSaveChanges = () => {
-    const modelComponent = getComponent(node.entity, ModelComponent)
-    const [_, orgName, projectName, fileName] = STATIC_ASSET_REGEX.exec(modelComponent.src)!
+    const gltfComponent = getComponent(node.entity, GLTFComponent)
+    const [_, orgName, projectName, fileName] = STATIC_ASSET_REGEX.exec(gltfComponent.src)!
     const fullProjectName = `${orgName}/${projectName}`
     const parsedName = fileName.split('?')[0]
-    exportRelativeGLTF(node.entity, fullProjectName, parsedName).then(() => {
-      ResourceLoaderManager.updateResource(modelComponent.src)
-      getMutableState(GLTFModifiedState)[getModelSceneID(entity)].set(none)
+    exportRelativeGLTF(node.entity, fullProjectName, parsedName, false).then((newSRC) => {
+      EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: newSRC })
+      getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
     })
   }
 
   const onRevert = () => {
-    const modelComponent = getComponent(node.entity, ModelComponent)
-    ResourceLoaderManager.updateResource(modelComponent.src)
-    getMutableState(GLTFModifiedState)[getModelSceneID(entity)].set(none)
+    const gltfComponent = getComponent(node.entity, GLTFComponent)
+    GLTFLoaderFunctions.unloadScene(gltfComponent.src, node.entity)
+    EditorControlFunctions.modifyProperty([node.entity], GLTFComponent, { src: gltfComponent.src })
+    ResourceLoaderManager.reloadResource(gltfComponent.src)
+    getMutableState(AssetModifiedState)[GLTFComponent.getSourceID(entity)].set(none)
+  }
+
+  useEffect(() => {
+    if (isModified) {
+      checkIfUserCanSaveNodeChanges()
+    }
+  }, [isModified])
+
+  const checkIfUserCanSaveNodeChanges = async () => {
+    if (permissionToChangeNodeVerified.value) return
+    permissionToChangeNodeVerified.set(true)
+
+    const gltfComponent = getComponent(node.entity, GLTFComponent)
+    const [, orgName, projectName, fileName] = STATIC_ASSET_REGEX.exec(gltfComponent.src)!
+    const fullProjectName = `${orgName}/${projectName}`
+
+    const { projectName: stateProjectName } = getState(EditorState)
+
+    const trimmedFilename = fileName.split('?')[0]
+    if (trimmedFilename && trimmedFilename.endsWith('.glb')) {
+      canSaveNodeChanges.set(false)
+      return
+    }
+    if (stateProjectName === fullProjectName) {
+      canSaveNodeChanges.set(true)
+      return
+    }
+
+    const userID = getState(EngineState).userID
+    const { data } = await API.instance.service(projectPermissionPath).find({
+      query: {
+        project: fullProjectName,
+        userId: userID
+      }
+    })
+    const [permission] = data
+    if (!permission) {
+      canSaveNodeChanges.set(false)
+      return
+    }
+    canSaveNodeChanges.set(userHasProjectPermission(permission, ['owner', 'editor']))
   }
 
   return (
@@ -314,14 +402,13 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
       key={node.depth + ' ' + props.index + ' ' + entity}
       style={fixedSizeListStyles}
       className={twMerge(
-        'cursor-pointer',
-        selected ? 'border text-white' : 'text-[#b2b5bd]',
-        selected && (props.index % 2 ? 'bg-[#1d1f23]' : 'bg-zinc-900'),
-        !selected && (props.index % 2 ? 'bg-[#080808] hover:bg-[#1d1f23]' : 'bg-[#0E0F11] hover:bg-zinc-900'),
-        !visible && (props.index % 2 ? 'bg-[#212226]' : 'bg-[#212226]'),
-        !visible && 'text-[#42454d]',
-        isOverOn && canDropOn && 'border border-dotted',
-        'hover:text-white'
+        'inline-flex w-auto min-w-full items-center',
+        'cursor-pointer text-text-secondary hover:bg-ui-hover-background hover:text-text-primary',
+        'bg-ui-background',
+        !visible ? 'text-text-inactive' : '',
+        selected ? 'rounded-sm border border-ui-select-outline bg-ui-select-background text-text-primary' : '',
+        isOverOn && canDropOn ? 'border border-dotted' : '',
+        showRedState ? 'border border-dotted text-text-error' : ''
       )}
       data-testid="hierarchy-panel-scene-item"
     >
@@ -335,80 +422,75 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
           event.preventDefault()
           setMenu(event, entity)
         }}
-        className="py-.5 ml-3.5 h-9 justify-between bg-inherit pr-2"
+        className={twMerge(
+          'inline-flex h-full min-w-full justify-between bg-inherit',
+          rootEntity === entity ? 'px-2' : 'pl-10 pr-2'
+        )}
       >
         <div
           className={twMerge('h-1', isOverBefore && canDropBefore && 'bg-white')}
-          style={{ marginLeft: `${node.depth * 1.25}em` }}
+          style={{ marginLeft: `${node.depth * 0.75}rem` }}
           ref={beforeDropTarget}
         />
 
-        <div
-          className="flex items-center bg-inherit pr-2"
-          style={{ paddingLeft: `${node.depth * 1.25}em` }}
-          ref={onDropTarget}
-        >
+        <div className="flex w-full items-center justify-between gap-x-2 bg-inherit pr-2" ref={onDropTarget}>
           {node.isLeaf ? (
             <div className="w-5 shrink-0" />
           ) : (
             <button
               type="button"
-              className="m-0 h-5 w-5 border-[none] bg-inherit p-0 hover:opacity-80"
               data-testid={`hierarchy-panel-scene-item-${node.isCollapsed ? 'expand' : 'collapse'}-button`}
               onClick={onCollapseExpandNode}
             >
               {node.isCollapsed ? (
-                <MdKeyboardArrowRight className="font-small text-white" />
+                <MdKeyboardArrowRight className="text-base" />
               ) : (
-                <MdKeyboardArrowDown className="font-small text-white" />
+                <MdKeyboardArrowDown className="text-base" />
               )}
             </button>
           )}
 
-          <div className="flex flex-1 items-center gap-2 bg-inherit py-0.5 pl-0 pr-1 text-inherit ">
+          <div className="grid h-full w-full grid-cols-[max-content_auto_max-content_max-content] items-center gap-2 bg-inherit">
             <IconComponent entity={entity} />
-            <div className="flex flex-1 items-center">
-              {renamingNode.entity === entity ? (
-                <div className="relative h-[15px] w-full bg-inherit px-1 text-inherit">
-                  <input
-                    type="text"
-                    className="absolute top-[-3px] m-0 w-full rounded-none bg-inherit py-0.5 pl-0.5 text-sm"
-                    data-testid="hierarchy-panel-scene-item-rename-input"
-                    onChange={(event) => currentRenameNode.set(event.target.value)}
-                    onKeyDown={(event: KeyboardEvent) => {
-                      if (event.key === 'Escape') renamingNode.clear()
-                      else if (event.key === 'Enter') {
-                        EditorControlFunctions.modifyName(
-                          [entity],
-                          toValidHierarchyNodeName(entity, currentRenameNode.value)
-                        )
-                        currentRenameNode.set(getComponent(entity, NameComponent))
-                        renamingNode.clear()
-                      }
-                    }}
-                    value={currentRenameNode.value}
-                    autoFocus
-                    maxLength={64}
-                  />
-                </div>
-              ) : (
-                <div className="ml-2 min-w-0 flex-1 text-nowrap rounded bg-transparent px-0.5 py-0 text-inherit ">
-                  <span className="text-nowrap text-sm leading-4" data-testid="hierarchy-panel-scene-item-name">
-                    {currentRenameNode.value}
-                  </span>
-                </div>
-              )}
-            </div>
-            {isModified && (
+            {renamingNode.entity === entity ? (
+              <Input
+                ref={renameRef}
+                type="text"
+                fullWidth
+                data-testid="hierarchy-panel-scene-item-rename-input"
+                onFocus={() => handleRenameOpen()}
+                onChange={(event) => currentRenameNode.set(event.target.value)}
+                onKeyDown={(event: KeyboardEvent) => {
+                  if (event.key === 'Escape') {
+                    handleRenameClose(false)
+                  } else if (event.key === 'Enter') {
+                    handleRenameClose(true)
+                  }
+                }}
+                value={currentRenameNode.value}
+                autoFocus
+                maxLength={64}
+              />
+            ) : (
+              <div className="grid min-w-0 text-nowrap rounded bg-transparent px-0.5 py-0 ">
+                <span
+                  className="overflow-x-auto text-nowrap text-sm"
+                  style={{ scrollbarWidth: `none` }}
+                  data-testid="hierarchy-panel-scene-item-name"
+                >
+                  {currentRenameNode.value}
+                </span>
+              </div>
+            )}
+            {isModified && canSaveNodeChanges.value && node.entity !== rootEntity && (
               <div className="flex items-center gap-1">
                 <Button
-                  variant="transparent"
-                  size="small"
+                  variant="tertiary"
+                  size="sm"
                   className="p-0"
-                  startIcon={<IoSaveOutline />}
                   title={t('common:components.save')}
                   onClick={() =>
-                    PopoverState.showPopupover(
+                    ModalState.openModal(
                       <ConfirmDialog
                         onSubmit={onSaveChanges}
                         title={t('editor:dialog.saveModel.title')}
@@ -416,15 +498,16 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
                       />
                     )
                   }
-                />
+                >
+                  <IoSaveOutline />
+                </Button>
                 <Button
-                  variant="transparent"
-                  size="small"
+                  variant="tertiary"
+                  size="sm"
                   className="p-0"
-                  startIcon={<IoArrowUndo />}
                   title={t('editor:dialog.revertModel.lbl-name')}
                   onClick={() =>
-                    PopoverState.showPopupover(
+                    ModalState.openModal(
                       <ConfirmDialog
                         onSubmit={onRevert}
                         title={t('editor:dialog.revertModel.title')}
@@ -432,9 +515,24 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
                       />
                     )
                   }
-                />
+                >
+                  <IoArrowUndo />
+                </Button>
               </div>
             )}
+
+            <button
+              type="button"
+              className="m-0 h-5 w-5 flex-shrink-0 border-none p-0 hover:opacity-80"
+              data-testid={`hierarchy-panel-scene-item-${locked ? 'unlock' : 'lock'}-button`}
+              onClick={onLockUnlockNode}
+            >
+              {locked ? (
+                <PiLockBold className="font-small text-[#6B7280]" />
+              ) : (
+                <PiLockOpenBold className="font-small text-[#42454d]" />
+              )}
+            </button>
             <button
               type="button"
               className="m-0 h-5 w-5 flex-shrink-0 border-none p-0 hover:opacity-80"
@@ -442,20 +540,14 @@ export default function HierarchyTreeNode(props: ListChildComponentProps<undefin
               onClick={onHideUnhideNode}
             >
               {visible ? (
-                <PiEyeBold className="font-small text-[#6B7280]" />
+                <PiEyeBold className={`${showRedState ? 'text-text-inactive' : 'text-base'}`} />
               ) : (
-                <PiEyeClosedBold className="font-small text-[#42454d]" />
+                <PiEyeClosedBold className={`${showRedState ? 'text-text-inactive' : 'text-base'}`} />
               )}
             </button>
           </div>
         </div>
-
-        <div
-          className={twMerge('h-1', isOverAfter && canDropAfter && 'bg-white')}
-          style={{ marginLeft: `${node.depth * 1.25}em` }}
-          ref={afterDropTarget}
-        />
       </div>
     </li>
   )
-}
+})

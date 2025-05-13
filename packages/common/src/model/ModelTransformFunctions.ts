@@ -58,9 +58,6 @@ import { $attributes } from 'property-graph'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
 
-import { API } from '@ir-engine/common'
-import config from '@ir-engine/common/src/config'
-import { fileBrowserPath } from '@ir-engine/common/src/schema.type.module'
 import {
   ExtractedImageTransformParameters,
   extractParameters,
@@ -82,7 +79,14 @@ import {
   EEResourceIDExtension
 } from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
 import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadRequestState'
+import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '../regex'
 import ModelTransformLoader from './ModelTransformLoader'
+/**
+ * https://ir.world/projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
+ * Match 1: projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
+ * Group 1: ir-engine/default-project
+ * Group 2: collisioncube-LOD0.glb
+ */
 
 /**
  *
@@ -347,9 +351,9 @@ const meshoptCompression: Transform = (document: Document) => {
 }
 
 const hashBuffer = (buffer: Uint8Array): string => {
-  const hash = createHash('sha256')
-  hash.update(buffer)
-  return hash.digest('hex')
+  let hash = createHash('sha256').update(buffer).digest('hex')
+  hash = hash.slice(0, 50) // Ensuring max length constraint with VALID_FILENAME_REGEX
+  return `buffer_${hash}`
 }
 
 enum Status {
@@ -391,7 +395,7 @@ const fileTypeToMime = (fileType) => {
 const loaderIO = ModelTransformLoader().then(({ io }) => io)
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer) => {
+const doUpload = async (projectName, fileName, buffer, path?: string) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
@@ -399,14 +403,18 @@ const doUpload = async (projectName, fileName, buffer) => {
   const promise = new Promise((resolve) => {
     resolver = resolve
   })
-  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver }])
+  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver, path: path }])
+  if (fileName.includes('combined-mesh')) {
+    uploadRequestState.isOnPublishing.set(true)
+  }
   await promise
 }
 
 const toProjectAndFileName = (fUploadPath: string, srcBaseURL: string): [string, string] => {
-  const pathCheck = /projects\/([^/]+\/[^/]+)\/assets\/([\w\d\s\-|_./]*)$/
   // TODO: remove srcBaseURL if it's unnecessary
-  const [_, projectName, fileName] = pathCheck.exec(fUploadPath) ?? pathCheck.exec(pathJoin(srcBaseURL, fUploadPath))!
+  const [_, projectName, fileName] =
+    MATCH_ASSET_PROJECT_FILENAME_REGEX.exec(fUploadPath) ??
+    MATCH_ASSET_PROJECT_FILENAME_REGEX.exec(pathJoin(srcBaseURL, fUploadPath))!
   return [projectName, fileName]
 }
 
@@ -596,12 +604,22 @@ const createTextureOperations = (
 
   return operations
 }
+const validTextureFileName = (input: string) => {
+  let result = ''
+  if (VALID_FILENAME_REGEX.test(input)) {
+    return input
+  }
+  result = input.replace(/[^a-zA-Z0-9-_.]/g, '') // Remove invalid characters
+  if (result.length > 64) {
+    result = result.slice(-64)
+  }
+  return result
+}
 
-const transformTexture = async (resultCache: Map<string, Texture>, operation: TextureOperation) => {
+const transformTexture = async (resultCache: Map<string, Texture>, operation: TextureOperation, index: number) => {
   const { shouldResize, shouldConvertToKTX, texture, params } = operation
 
   const hash = hashTextureOperation(operation)
-
   const prevResult = resultCache.get(hash)
   if (prevResult != null && prevResult !== texture) {
     const originalName = texture.getName()
@@ -629,7 +647,8 @@ const transformTexture = async (resultCache: Map<string, Texture>, operation: Te
     )
     texture.copy(nuTexture)
     texture.setName(originalName)
-    texture.setURI(nuURI)
+    //reset URI to the valid file name
+    texture.setURI(validTextureFileName(nuURI))
   }
 
   if (shouldConvertToKTX) {
@@ -648,8 +667,22 @@ const transformTexture = async (resultCache: Map<string, Texture>, operation: Te
 
     texture.setImage(new Uint8Array(compressedData))
     texture.setMimeType('image/ktx2')
-    texture.setURI(texture.getURI().replace(/\.[^.]+$/, '.ktx2'))
+    //reset URI to the valid file name
+    texture.setURI(validTextureFileName(texture.getURI().replace(/\.[^.]+$/, '.ktx2')))
   }
+
+  if ((shouldResize || shouldConvertToKTX) && texture.getURI() !== '') {
+    //wipe relative path from URI
+    const uri = texture.getURI()
+    let newURI = uri.split('/').at(-1)!
+    const [_, fileName, extension] = /(.*)\.([^.]+)$/.exec(newURI)!
+    newURI = `${fileName}-${index}.${extension}`
+    //reset URI to the valid file name
+    texture.setURI(validTextureFileName(newURI))
+  }
+  let textureURI = texture.getURI()
+  textureURI = 'image-' + textureURI.slice(6)
+  texture.setURI(textureURI)
   resultCache.set(hash, texture)
 }
 
@@ -678,9 +711,14 @@ const writeFiles = async (
     finalPath += `.${modelFormat}`
   }
 
+  const regex = /projects\/[^/]+\/[^/]+(\/(?:public|assets)\/)/
+  const match = regex.exec(srcBaseURL)
+  const path = match ? match[1] : undefined
+
   if (['glb', 'vrm'].includes(modelFormat)) {
+    // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -713,13 +751,6 @@ const writeFiles = async (
       })
     )
     const { json, resources } = await io.writeJSON(document, { format: Format.GLTF, basename: resourceName })
-    const folderURL = resourcePath.replace(config.client.fileServer, '')
-
-    const fileBrowserService = API.instance.service(fileBrowserPath)
-    const folderExists = await fileBrowserService.get(folderURL)
-    if (!folderExists) {
-      await fileBrowserService.create(folderURL)
-    }
 
     const removeExtension = (uri: string) => {
       const pathSegments = uri.split('/')
@@ -759,12 +790,13 @@ const writeFiles = async (
     await Promise.all(
       Object.entries(resources).map(async ([uri, data]) => {
         const blob = new Blob([data as BlobPart], { type: fileTypeToMime(uri.split('.').pop()!)! })
-        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob)
+        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path)
       })
     )
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
-      new Blob([JSON.stringify(json)], { type: 'application/json' })
+      new Blob([JSON.stringify(json)], { type: 'application/json' }),
+      path
     )
   }
 
@@ -835,15 +867,47 @@ export const transformModel = async (
   }
 
   for (let i = 0; i < numDocOperations; i++) {
-    const docOperation = modelOperations[i]
+    const params = modelOperations[i]
+    const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
 
-    const document = await toTransformedDocument(srcDocument, docOperation)
+    const document = await cloneDocument(srcDocument)
+
+    // Apply basic optimizations
+    await document.transform(unInstanceSingletons)
+    params.split && (await document.transform(split))
+    params.combineMaterials && (await document.transform(combineMaterials))
+    params.instance && (await document.transform(doInstancing))
+    params.dedup && (await document.transform(dedup()))
+    params.flatten && (await document.transform(flatten()))
+    params.join.enabled && (await document.transform(join(params.join.options)))
+
+    if (params.simplifyRatio < 1) {
+      const simplifyTransforms = [] as Transform[]
+      if (!params.weld.enabled) simplifyTransforms.push(weld())
+      simplifyTransforms.push(
+        simplify({ simplifier: MeshoptSimplifier, ratio: params.simplifyRatio, error: params.simplifyErrorThreshold })
+      )
+      await document.transform(...simplifyTransforms)
+    }
+
+    // For GLB/VRM formats, skip texture conversion to KTX2
+    if (!isGLBFormat && params.textureFormat !== 'default') {
+      const textureUsages = new Map<string, Set<string>>()
+      const operations = createTextureOperations(document, params, params.resources, textureUsages)
+      textureOperations.push(...operations)
+    }
+
+    // Apply final optimizations
+    if (params.reorder) {
+      await MeshoptEncoder.ready
+      await document.transform(reorder({ encoder: MeshoptEncoder, target: 'performance' }))
+    }
+
+    if (params.dracoCompression.enabled) {
+      await document.transform(draco(params.dracoCompression.options))
+    }
+
     documents.push(document)
-
-    const operations = createTextureOperations(document, docOperation, docOperation.resources, textureUsages)
-    const maxTextureSize = Math.max(...operations.map(({ texture }) => texture.getSize()?.[0] ?? 0))
-    onMetadata(i, 'maxTextureSize', maxTextureSize)
-    textureOperations.push(...operations)
   }
 
   const numTextureOperations = textureOperations.length
@@ -852,9 +916,10 @@ export const transformModel = async (
   const resultCache = new Map<string, Texture>()
   for (let i = 0; i < numTextureOperations; i++) {
     onProgress?.((i + 1) / totalProgressSteps, Status.ProcessingTexture, i, numTextureOperations)
-    await transformTexture(resultCache, textureOperations[i])
+    await transformTexture(resultCache, textureOperations[i], i)
   }
 
+  // Write files
   const results: string[] = []
 
   for (const document of documents) {
@@ -902,7 +967,13 @@ export const transformModel = async (
     onProgress?.((i + 1 + numTextureOperations) / totalProgressSteps, Status.WritingFiles)
 
     const document = documents[i]
-    results.push(...(await writeFiles(srcURL, document, modelOperations[i])))
+    results.push(
+      await writeFiles(srcURL, document, {
+        modelFormat: modelOperations[i].modelFormat,
+        resourceUri: modelOperations[i].resourceUri,
+        dst: modelOperations[i].dst
+      })
+    )
 
     const totalVertexCount = document
       .getRoot()

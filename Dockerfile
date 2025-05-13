@@ -1,12 +1,12 @@
 # not slim because we need github depedencies
-FROM node:18-buster-slim
+FROM node:22-slim
 
 RUN apt-get update
 RUN apt-get install -y build-essential meson python3-testresources python3-venv python3-pip git procps git-lfs
 # Create app directory
 WORKDIR /app
 
-RUN npm install -g npm lerna cross-env rimraf --loglevel notice
+RUN --mount=type=cache,target=/root/.npm npm install -g npm lerna cross-env rimraf --loglevel notice
 
 # to make use of caching, copy only package files and install dependencies
 COPY package.json .
@@ -68,6 +68,12 @@ ARG VITE_AVATURN_API
 ARG VITE_ZENDESK_ENABLED
 ARG VITE_ZENDESK_KEY
 ARG VITE_ZENDESK_AUTHENTICATION_ENABLED
+ARG VITE_DNS_PROVIDER
+ARG VITE_MIDDLEWARE_API_URL
+ARG APP_HOST
+ARG GCP_PROJECT
+ARG GCP_EDGE_CACHE_SERVICE
+ARG GCP_URL_MAP
 
 ENV MYSQL_HOST=$MYSQL_HOST
 ENV MYSQL_PORT=$MYSQL_PORT
@@ -97,6 +103,12 @@ ENV VITE_AVATURN_API=$VITE_AVATURN_API
 ENV VITE_ZENDESK_ENABLED=$VITE_ZENDESK_ENABLED
 ENV VITE_ZENDESK_KEY=$VITE_ZENDESK_KEY
 ENV VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED
+ENV VITE_DNS_PROVIDER=$VITE_DNS_PROVIDER
+ENV VITE_MIDDLEWARE_API_URL=$VITE_MIDDLEWARE_API_URL
+ENV APP_HOST=$APP_HOST
+ENV GCP_PROJECT=$GCP_PROJECT
+ENV GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE
+ENV GCP_URL_MAP=$GCP_URL_MAP
 
 ARG CACHE_DATE
 RUN npx ts-node --swc scripts/check-db-exists.ts
@@ -104,6 +116,7 @@ RUN npm run build-client
 
 RUN rm -r packages/client/public
 
+RUN bash ./scripts/setup_docker.sh
 RUN bash ./scripts/setup_helm.sh
 
 ENV APP_ENV=production

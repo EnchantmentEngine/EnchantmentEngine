@@ -28,14 +28,14 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BuildStatusType } from '@ir-engine/common/src/schema.type.module'
+import { Input } from '@ir-engine/ui'
 import Badge from '@ir-engine/ui/src/primitives/tailwind/Badge'
 import CopyText from '@ir-engine/ui/src/primitives/tailwind/CopyText'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import Label from '@ir-engine/ui/src/primitives/tailwind/Label'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { PopoverState } from '../../../../common/services/PopoverState'
+import { ModalState } from '../../../../common/services/ModalState'
 
 const BuildStatusBadgeVariant = {
   success: 'success',
@@ -59,22 +59,35 @@ export default function BuildStatusLogsModal({ buildStatus }: { buildStatus: Bui
     <Modal
       className="w-[50vw]"
       title={t('admin:components.buildStatus.viewLogs')}
-      onClose={() => PopoverState.hidePopupover()}
+      onClose={() => ModalState.closeModal()}
     >
       <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-        <Input disabled label={t('admin:components.buildStatus.columns.id')} value={buildStatus.id} />
+        <Input
+          disabled
+          value={buildStatus.id}
+          labelProps={{
+            text: t('admin:components.buildStatus.columns.id'),
+            position: 'top'
+          }}
+        />
         <div>
           <Label className="mb-2">{t('admin:components.buildStatus.columns.status')}</Label>
           <BuildStatusBadge status={buildStatus.status} />
         </div>
         <Input
           disabled
-          label={t('admin:components.buildStatus.columns.dateStarted')}
+          labelProps={{
+            text: t('admin:components.buildStatus.columns.dateStarted'),
+            position: 'top'
+          }}
           value={getStartOrEndDate(buildStatus.dateStarted)}
         />
         <Input
           disabled
-          label={t('admin:components.buildStatus.columns.dateEnded')}
+          labelProps={{
+            text: t('admin:components.buildStatus.columns.dateEnded'),
+            position: 'top'
+          }}
           value={getStartOrEndDate(buildStatus.dateEnded)}
         />
         <div className="col-span-2 max-h-[50vh] overflow-auto">

@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { SystemUUID, defineSystem, destroySystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -44,9 +44,9 @@ export const getSpline = makeFunctionNodeDefinition({
     spline: (_) => {
       const choices = splineQuery().map((entity) => ({
         text: getComponent(entity, NameComponent),
-        value: getComponent(entity, UUIDComponent) as string
+        value: UUIDComponent.get(entity)
       }))
-      choices.unshift({ text: 'none', value: '' as string })
+      choices.unshift({ text: 'none', value: '' as EntityUUID })
       return {
         valueType: 'string',
         choices: choices
@@ -87,7 +87,7 @@ export const addSplineTrack = makeAsyncNodeDefinition({
   initialState: initialState(),
   triggered: ({ read, write, commit, finished }) => {
     const entity = Number(read('entity')) as Entity
-    const splineUuid = read<EntityUUID>('splineUUID')
+    const splineUuid = read<EntityID>('splineUUID')
     const velocity = read<number>('velocity')
     const isLoop = read<boolean>('isLoop')
     const lockToXZPlane = read<boolean>('lockToXZPlane')
@@ -111,7 +111,7 @@ export const addSplineTrack = makeAsyncNodeDefinition({
         // can we hook into the spline track reactor somehow? this feels wasteful, but probably the right way to do it
         const splineTrack = getComponent(entity, SplineTrackComponent)
         if (splineTrack.loop) return
-        const splineEntity = UUIDComponent.getEntityByUUID(splineTrack.splineEntityUUID!)
+        const splineEntity = UUIDComponent.getEntityFromSameSourceByID(entity, splineTrack.splineEntityUUID!)
         if (!splineEntity) return
         const spline = getOptionalComponent(splineEntity, SplineComponent)
         if (!spline) return

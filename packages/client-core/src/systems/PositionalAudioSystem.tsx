@@ -23,14 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { VRMHumanBoneName } from '@pixiv/three-vrm'
-import { Not } from 'bitecs'
 import React, { useEffect } from 'react'
 import { Vector3 } from 'three'
 
+import { ECSState, Not, useEntityContext } from '@ir-engine/ecs'
 import { ComponentType, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -39,6 +36,7 @@ import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent, NetworkObjectOwnedTag, NetworkState } from '@ir-engine/network'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { hasComponent } from '@ir-engine/ecs'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import {
   addPannerNode,
@@ -46,15 +44,15 @@ import {
   updateAudioPanner
 } from '@ir-engine/engine/src/audio/PositionalAudioFunctions'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
+import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
-import { getAvatarBoneWorldPosition } from '@ir-engine/engine/src/avatar/functions/avatarFunctions'
 import {
   AudioNodeGroups,
   MediaElementComponent,
   createAudioNodeGroup
 } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { PeerMediaChannelState } from '../media/PeerMediaChannelState'
+import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 const _vec3 = new Vector3()
 const _rot = new Vector3()
@@ -98,7 +96,7 @@ const execute = () => {
    */
   const networkedAvatarAudioEntities = networkedAvatarAudioQuery()
   for (const entity of networkedAvatarAudioEntities) {
-    if (!network) continue
+    if (!network?.peers) continue
 
     const networkObject = getComponent(entity, NetworkObjectComponent)
     const ownerID = networkObject.ownerId
@@ -110,12 +108,8 @@ const execute = () => {
       continue
     }
 
-    const videoMediaStream = peerMediaState[peer.peerID].cam.videoMediaStream
-    if (!videoMediaStream) {
-      if (avatarAudioStreams.has(networkObject)) avatarAudioStreams.delete(networkObject)
-      continue
-    }
-    const track = videoMediaStream.getVideoTracks()[0]
+    const audioMediaStream = peerMediaState[peer.peerID].cam.audioMediaStream
+    const track = audioMediaStream?.getAudioTracks()[0]
 
     // avatar still exists but audio stream does not
     if (!track) {
@@ -135,9 +129,7 @@ const execute = () => {
       continue
     }
 
-    // get existing stream - need to wait for UserWindowMedia to populate
-    /** @todo we need to properly handle this */
-    const existingAudioObject = document.getElementById(`${ownerID}_audio`)! as HTMLAudioElement
+    const existingAudioObject = peerMediaState[peer.peerID].cam.audioElement
     if (!existingAudioObject) continue
 
     // mute existing stream
@@ -186,14 +178,17 @@ const execute = () => {
     const panner = AudioNodeGroups.get(audioObj)?.panner
     if (!panner) continue
 
-    getAvatarBoneWorldPosition(entity, VRMHumanBoneName.Head, _vec3)
+    TransformComponent.getWorldPosition(getComponent(entity, AvatarRigComponent).bonesToEntities.head, _vec3)
+
     const { rotation } = getComponent(entity, TransformComponent)
 
     updateAudioPanner(panner, _vec3, rotation, endTime, mediaSettings)
   }
 
-  const viewerEntity = getState(EngineState).viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
+
+  if (!hasComponent(viewerEntity, TransformComponent)) return
 
   /**
    * Update camera listener position

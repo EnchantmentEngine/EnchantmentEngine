@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,17 +19,15 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import RAPIER, { ActiveCollisionTypes, RigidBodyType, ShapeType, Vector } from '@dimforge/rapier3d-compat'
-import { BoxGeometry, CapsuleGeometry, CylinderGeometry, SphereGeometry, Vector3 } from 'three'
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { CollisionGroups } from '../enums/CollisionGroups'
 
 export interface Vec3 {
   x: number
@@ -131,40 +129,4 @@ export const RapierShapeToString = {
 }
 
 export type Shape = (typeof Shapes)[keyof typeof Shapes]
-export const ShapeSchema = (init?: Shape) => S.LiteralUnion(Object.values(Shapes) as Shape[], init)
-
-export type ColliderOptions = {
-  shape: Shape
-  mass: number
-  massCenter: Vector3
-  friction: number
-  restitution: number
-  collisionLayer: CollisionGroups
-  collisionMask: CollisionGroups
-}
-
-export const OldShapeTypes = {
-  Cuboid: 'box',
-  Ball: 'sphere',
-  Cylinder: 'cylinder',
-  Capsule: 'capsule',
-  TriMesh: 'mesh',
-  box: 'box',
-  ball: 'sphere',
-  cylinder: 'cylinder',
-  capsule: 'capsule',
-  trimesh: 'mesh',
-  [1]: 'box',
-  [0]: 'sphere',
-  [10]: 'cylinder',
-  [2]: 'capsule',
-  [6]: 'mesh'
-}
-
-/** Maps Three.js geometry types to physics shapes */
-export const ThreeToPhysics = {
-  [SphereGeometry.prototype.type]: 'sphere',
-  [CapsuleGeometry.prototype.type]: 'capsule',
-  [CylinderGeometry.prototype.type]: 'cylinder',
-  [BoxGeometry.prototype.type]: 'box'
-} as Record<string, Shape>
+export const ShapeSchema = (init?: Shape) => S.LiteralUnion(Object.values(Shapes) as Shape[], { default: init })

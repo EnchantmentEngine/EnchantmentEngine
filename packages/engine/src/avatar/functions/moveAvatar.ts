@@ -165,7 +165,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
           clipName: 'Fall',
           loop: true,
           layer: 1,
-          entityUUID: getComponent(entity, UUIDComponent)
+          entityUUID: UUIDComponent.get(entity)
         })
       )
       beganFalling = true
@@ -179,7 +179,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
             loop: true,
             layer: 1,
             needsSkip: true,
-            entityUUID: getComponent(entity, UUIDComponent)
+            entityUUID: UUIDComponent.get(entity)
           })
         )
       }
@@ -376,6 +376,8 @@ export const translateAndRotateAvatar = (entity: Entity, translation: Vector3, r
 export const updateLocalAvatarPosition = (entity: Entity) => {
   const world = Physics.getWorld(entity)
   if (!world) return
+  const body = world.Rigidbodies.get(entity) // check for body, else we could update the entity transform position to rigid body's default value (0, 0, 0), because physics world hasn't created and updated the body, yet
+  if (!body) return
 
   const rigidbody = getComponent(entity, RigidBodyComponent)
   const transform = getComponent(entity, TransformComponent)
@@ -387,7 +389,7 @@ export const updateLocalAvatarPosition = (entity: Entity) => {
   rigidbody.position.copy(rigidbody.targetKinematicPosition)
   transform.position.copy(rigidbody.targetKinematicPosition)
   Physics.setKinematicRigidbodyPose(world, entity, rigidbody.targetKinematicPosition, rigidbody.rotation)
-  delete TransformComponent.dirtyTransforms[entity]
+  TransformComponent.dirty[entity] = 0
 }
 
 const viewerQuat = new Quaternion()
@@ -496,9 +498,7 @@ const _slerpBodyTowardsVelocity = (entity: Entity, alpha: number) => {
 
   let prevVector = prevVectors.get(entity)!
   if (!prevVector) {
-    prevVector = new Vector3(0, 0, 1).applyQuaternion(
-      getState(SpawnPoseState)[getComponent(entity, UUIDComponent)].spawnRotation
-    )
+    prevVector = new Vector3(0, 0, 1).applyQuaternion(getState(SpawnPoseState)[UUIDComponent.get(entity)].spawnRotation)
     prevVectors.set(entity, prevVector)
   }
 

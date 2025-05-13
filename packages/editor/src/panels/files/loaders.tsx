@@ -25,16 +25,17 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
+import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThumbnails'
 import { useUploadingFiles } from '@ir-engine/client-core/src/util/upload'
 import { API } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
 import { archiverPath } from '@ir-engine/common/src/schema.type.module'
 import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { downloadBlobAsZip } from '@ir-engine/editor/src/functions/assetFunctions'
-import { defineState, getMutableState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Progress from '@ir-engine/ui/src/primitives/tailwind/Progress'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCurrentFiles } from './helpers'
 
@@ -118,11 +119,16 @@ export function ProjectDownloadProgress() {
   return (
     <>
       {isDownloading && (
-        <div className="flex h-auto w-full justify-center pb-2 pt-2">
-          <div className="flex w-1/2">
-            <span className="inline-block pr-2 text-xs font-normal leading-none text-theme-primary">
-              {t('editor:layout.filebrowser.downloadingProject', { completed, total })}
-            </span>
+        <div className="flex h-auto w-full justify-center pb-2 pt-1">
+          <div className="flex w-1/2 items-center gap-x-3">
+            <div className="flex gap-x-1 whitespace-nowrap text-center text-xs font-normal leading-none dark:text-[#A3A3A3]">
+              <div>{t('editor:layout.filebrowser.downloadingProject')}</div>
+              <div className="flex gap-x-1">
+                <span className="min-w-[6em] text-right">{completed}</span>
+                {`/`}
+                <span>{total}</span>
+              </div>
+            </div>
             <div className="basis-1/2">
               <Progress value={progress} />
             </div>
@@ -148,7 +154,7 @@ export function FileUploadProgress() {
   return total ? (
     <div className="flex h-auto w-full justify-center pb-2 pt-2">
       <div className="flex w-1/2">
-        <span className="inline-block pr-2 text-xs font-normal leading-none text-theme-primary">
+        <span className="inline-block pr-2 text-xs font-normal leading-none ">
           {t('editor:layout.filebrowser.uploadingFiles', { completed, total })}
         </span>
         <div className="basis-1/2">
@@ -161,26 +167,67 @@ export function FileUploadProgress() {
 
 function GeneratingThumbnailsProgress() {
   const { t } = useTranslation()
-  const thumbnailJobState = useMutableState(FileThumbnailJobState)
+  const thumbnailJobs = useMutableState(FileThumbnailJobState).jobs
 
-  if (!thumbnailJobState.length) return null
-
-  return (
-    <LoadingView
-      titleClassname="mt-0"
-      containerClassName="flex-row mt-1"
-      className="mx-2 my-auto h-6 w-6"
-      title={t('editor:layout.filebrowser.generatingThumbnails', { count: thumbnailJobState.length })}
-    />
-  )
+  const isLoading = useHookstate(false)
+  useLoadingThumbnails(isLoading)
+  let thumbnailjobCount = 0
+  let dimensionJobCount = 0
+  for (const job of thumbnailJobs.value) {
+    if (job.jobType === 'thumbnail') {
+      thumbnailjobCount++
+    } else if (job.jobType === 'dimension') {
+      dimensionJobCount++
+    }
+  }
+  return isLoading.value ? (
+    <>
+      <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingThumbnails', { count: thumbnailjobCount })}
+      />
+      <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingDimension', { count: dimensionJobCount })}
+      />
+    </>
+  ) : null
 }
 
 function FilesLoading() {
   const { t } = useTranslation()
   const { filesQuery } = useCurrentFiles()
-  const isLoading = filesQuery?.status === 'pending'
 
-  return isLoading ? (
+  const isLoading = useHookstate(false)
+  const debouncedStatusRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    clearTimeout(debouncedStatusRef.current)
+  }, [])
+
+  useEffect(() => {
+    if (debouncedStatusRef) {
+      clearTimeout(debouncedStatusRef.current)
+    }
+
+    const isFilesLoading = filesQuery?.status === 'pending'
+    if (isFilesLoading) {
+      isLoading.set(true)
+    } else {
+      debouncedStatusRef.current = setTimeout(() => {
+        isLoading.set(false)
+      }, 1000)
+    }
+    return () => {
+      clearTimeout(debouncedStatusRef.current)
+    }
+  }, [filesQuery?.status])
+
+  return isLoading.value ? (
     <LoadingView title={t('editor:layout.filebrowser.loadingFiles')} fullSpace className="block h-12 w-12" />
   ) : null
 }
@@ -188,10 +235,10 @@ function FilesLoading() {
 export default function Loaders() {
   return (
     <>
+      <GeneratingThumbnailsProgress />
       <FileUploadProgress />
       <ProjectDownloadProgress />
       <FilesLoading />
-      <GeneratingThumbnailsProgress />
     </>
   )
 }

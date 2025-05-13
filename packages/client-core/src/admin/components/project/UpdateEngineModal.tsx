@@ -27,18 +27,19 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuInfo } from 'react-icons/lu'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { ProjectService, ProjectState } from '@ir-engine/client-core/src/common/services/ProjectService'
 import { useFind } from '@ir-engine/common'
 import { DefaultUpdateSchedule } from '@ir-engine/common/src/interfaces/ProjectPackageJsonType'
-import { ProjectType, helmSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { ProjectType, ScopeType, engineSettingPath, scopePath } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import Checkbox from '@ir-engine/ui/src/primitives/tailwind/Checkbox'
+import { Checkbox, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
-import Select from '@ir-engine/ui/src/primitives/tailwind/Select'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
+import { Engine } from '@ir-engine/ecs'
 import { AuthState } from '../../../user/services/AuthService'
 import { ProjectUpdateService, ProjectUpdateState } from '../../services/ProjectUpdateService'
 import AddEditProjectModal from './AddEditProjectModal'
@@ -49,7 +50,15 @@ const getDefaultErrors = () => ({
 
 export default function UpdateEngineModal() {
   const { t } = useTranslation()
-  const helmSetting = useFind(helmSettingPath).data.at(0)
+  const helmSettings = useFind(engineSettingPath, {
+    query: {
+      category: 'helm',
+      paginate: false
+    }
+  }).data
+
+  const helmBuilder = helmSettings.find((setting) => setting.key == EngineSettings.Helm.Main)?.value
+  const helmMain = helmSettings.find((setting) => setting.key === EngineSettings.Helm.Builder)?.value
   const projectState = useMutableState(ProjectState)
   const projectUpdateStatus = useMutableState(ProjectUpdateState)
   const engineCommit = projectState.builderInfo.engineCommit.value
@@ -62,20 +71,38 @@ export default function UpdateEngineModal() {
   const authState = useMutableState(AuthState)
   const user = authState.user
 
+  const scopeQuery = useFind(scopePath, {
+    query: {
+      userId: Engine.instance.userID,
+      type: 'projects:read' as ScopeType
+    }
+  })
+
   useEffect(() => {
-    if (user?.scopes?.value?.find((scope) => scope.type === 'projects:read')) {
+    if (scopeQuery.data.length > 0) {
       ProjectService.fetchBuilderTags()
       ProjectService.getBuilderInfo()
     }
-  }, [user])
+  }, [scopeQuery.data.length > 0])
 
   const selectCommitTagOptions = projectState.builderTags.value.map((builderTag) => {
     const pushedDate = toDisplayDateTime(builderTag.pushedAt)
+    const label = `Commit ${builderTag.commitSHA?.slice(0, 8)}`
+
+    let secondaryText = ''
+
+    if (builderTag.tag === engineCommit) {
+      secondaryText += `Current`
+    }
+
+    if (secondaryText.length > 0) secondaryText += ' • '
+
+    secondaryText += `Version ${builderTag.engineVersion} • Pushed ${pushedDate}`
+
     return {
       value: builderTag.tag,
-      label: `Commit ${builderTag.commitSHA?.slice(0, 8)} -- ${
-        builderTag.tag === engineCommit ? '(Current) ' : ''
-      }Version ${builderTag.engineVersion} -- Pushed ${pushedDate}`
+      label,
+      secondaryText
     }
   })
 
@@ -88,7 +115,7 @@ export default function UpdateEngineModal() {
         project.updateType,
         project.updateSchedule
       )
-      PopoverState.showPopupover(
+      ModalState.openModal(
         <AddEditProjectModal
           inputProject={project}
           update={true}
@@ -97,7 +124,7 @@ export default function UpdateEngineModal() {
               set.add(project.name)
               return set
             })
-            PopoverState.hidePopupover()
+            ModalState.closeModal()
           }}
         />
       )
@@ -130,12 +157,12 @@ export default function UpdateEngineModal() {
           }
         })
       )
-      PopoverState.hidePopupover()
+      ModalState.closeModal()
     } catch (err) {
       errors.set(err.message)
     }
     modalProcessing.set(false)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   useEffect(() => {
@@ -147,30 +174,38 @@ export default function UpdateEngineModal() {
       title={t('admin:components.project.updateEngine')}
       onSubmit={handleSubmit}
       className="w-[50vw]"
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
       submitLoading={modalProcessing.value}
     >
       <div className="grid gap-6">
         {errors.serverError.value && <p className="mb-3 text-red-700">{errors.serverError.value}</p>}
         <Text>
           {t('admin:components.setting.helm.mainHelmToDeploy')}:{' '}
-          <a href="/admin/settings#helm">{helmSetting?.main || 'Current Version'}</a>
+          <a href="/admin/settings#helm">{helmMain || 'Current Version'}</a>
         </Text>
         <Text>
           {t('admin:components.setting.helm.builderHelmToDeploy')}:{' '}
-          <a href="/admin/settings#helm">{helmSetting?.builder || 'Current Version'}</a>
+          <a href="/admin/settings#helm">{helmBuilder || 'Current Version'}</a>
         </Text>
         <Select
-          label={t('admin:components.project.commitData')}
+          labelProps={{
+            text: t('admin:components.project.commitData'),
+            position: 'top'
+          }}
+          positioning={{
+            maxHeight: '200px'
+          }}
           options={selectCommitTagOptions}
-          currentValue={selectedCommitTag.value}
-          onChange={(value) => {
+          value={selectedCommitTag.value}
+          onChange={(value: string) => {
             selectedCommitTag.set(value)
           }}
           disabled={modalProcessing.value}
+          showClearButton={true}
+          width="full"
         />
         <Checkbox
-          value={updateProjects.value}
+          checked={updateProjects.value}
           onChange={updateProjects.set}
           label={t('admin:components.project.updateSelector')}
           disabled={modalProcessing.value}
@@ -178,7 +213,7 @@ export default function UpdateEngineModal() {
 
         {updateProjects.value && (
           <>
-            <div className="flex items-center justify-center gap-3 rounded-lg bg-theme-bannerInformative p-4">
+            <div className="flex items-center justify-center gap-3 rounded-lg  p-4">
               <div>
                 <LuInfo className="h-5 w-5 bg-transparent" />
               </div>
@@ -188,10 +223,10 @@ export default function UpdateEngineModal() {
               {projectState.projects.value
                 .filter((project) => project.name !== 'ir-engine/default-project' && project.repositoryPath)
                 .map((project) => (
-                  <div key={project.id} className="border border-theme-primary bg-theme-surfaceInput px-3.5 py-5">
+                  <div key={project.id} className="border   px-3.5 py-5">
                     <Checkbox
                       label={project.name}
-                      value={projectsToUpdate.value.has(project.name)}
+                      checked={projectsToUpdate.value.has(project.name)}
                       disabled={modalProcessing.value}
                       onChange={(value) => addOrRemoveProjectsToUpdate(project as ProjectType, value)}
                     />

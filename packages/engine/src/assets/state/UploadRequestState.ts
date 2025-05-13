@@ -29,12 +29,14 @@ export type UploadRequest = {
   file: File
   projectName: string
   callback?: () => void
+  path?: string
 }
 
 export const UploadRequestState = defineState({
   name: 'UploadRequestState',
   initial: {
-    queue: [] as UploadRequest[]
+    queue: [] as UploadRequest[],
+    isOnPublishing: false
   }
 })
 

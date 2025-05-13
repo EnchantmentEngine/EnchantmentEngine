@@ -27,9 +27,9 @@ import { Tween } from '@tweenjs/tween.js'
 import { useEffect } from 'react'
 import { Vector3 } from 'three'
 
+import { entityExists, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { entityExists, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -37,7 +37,7 @@ import { TweenComponent } from '../../transform/components/TweenComponent'
 
 export const AnimateScaleComponent = defineComponent({
   name: 'AnimateScaleComponent',
-  schema: S.Object({ multiplier: S.Number(1.05) }),
+  schema: S.Object({ multiplier: S.Number({ default: 1.05 }) }),
 
   reactor: function () {
     const entity = useEntityContext()

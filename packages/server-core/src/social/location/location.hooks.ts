@@ -25,8 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { BadRequest } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, discard, discardQuery, iff, iffElse, isProvider, keepQuery } from 'feathers-hooks-common'
-
 import { locationAdminPath } from '@ir-engine/common/src/schemas/social/location-admin.schema'
 import { locationAuthorizedUserPath } from '@ir-engine/common/src/schemas/social/location-authorized-user.schema'
 import { locationSettingPath } from '@ir-engine/common/src/schemas/social/location-setting.schema'
@@ -40,7 +38,9 @@ import {
   LocationType
 } from '@ir-engine/common/src/schemas/social/location.schema'
 import { UserID } from '@ir-engine/common/src/schemas/user/user.schema'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
+import { disallow, discard, discardQuery, iff, iffElse, isProvider, keepQuery } from 'feathers-hooks-common'
 
 import { projectHistoryPath, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { HookContext } from '../../../declarations'
@@ -173,7 +173,8 @@ const removeLocationSetting = async (context: HookContext<LocationService>) => {
   if (context.id) {
     const location = await context.app.service(locationPath).get(context.id)
 
-    if (location.locationSetting) await context.app.service(locationSettingPath).remove(location.locationSetting.id)
+    if (location.locationSetting && isValidId(location.locationSetting.id))
+      await context.app.service(locationSettingPath).remove(location.locationSetting.id)
   }
 }
 
@@ -246,6 +247,7 @@ const restrictProtectedQuery = async (context: HookContext<LocationService>) => 
     'id',
     'name',
     'slugifiedName',
+    '$or',
     '$like',
     '$limit',
     '$sort',
@@ -259,16 +261,16 @@ const restrictProtectedQuery = async (context: HookContext<LocationService>) => 
  * @function restrictPublicQuery
  * @param context
  * @description This hook function restricts allowed query params for public calls
- * from the viewer section by only allowing the slugifiedName parameter, any other
+ * from the viewer section by only allowing slugifiedName and projectId parameters, any other
  * parameter will be discarded from the query protecting from any malicious query injection.
  *
- * This function is discarding all params but slugifiedName instead of throwing a BadRequest if other
+ * This function is discarding all params but slugifiedName and projectId instead of throwing a BadRequest if other
  * parameters are present, having as goal to avoid providing any feedback to malicious users
  * that could allow them to figure out unforeseen and unsafe patterns or combinations in order to
  * successfully perform an injection attack.
  */
 const restrictPublicQuery = async (context: HookContext<LocationService>) => {
-  keepQuery('slugifiedName')(context)
+  keepQuery('slugifiedName', 'projectId')(context)
 }
 
 export default {

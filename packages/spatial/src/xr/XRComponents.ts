@@ -22,23 +22,20 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
-
-import type { VRMHumanBoneName } from '@pixiv/three-vrm'
 import { useEffect } from 'react'
 
-import { Engine, UndefinedEntity } from '@ir-engine/ecs'
+import { UndefinedEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   setComponent,
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
+import { EntityTreeComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { Types } from 'bitecs'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
 
@@ -99,50 +96,51 @@ export const XRJointAvatarBoneMap = {
   // 'pinky-finger-tip': ''
 } as Record<XRHandJoint, string> // BoneName without the handedness
 
-export const VRMHandsToXRJointMap = {
-  leftWrist: 'wrist',
-  leftThumbMetacarpal: 'thumb-metacarpal',
-  leftThumbProximal: 'thumb-phalanx-proximal',
-  leftThumbIntermediate: 'thumb-phalanx-distal',
-  leftThumbDistal: 'thumb-tip',
-  leftIndexProximal: 'index-finger-phalanx-proximal',
-  leftIndexIntermediate: 'index-finger-phalanx-intermediate',
-  leftIndexDistal: 'index-finger-phalanx-distal',
-  leftIndexTip: 'index-finger-tip',
-  leftMiddleProximal: 'middle-finger-phalanx-proximal',
-  leftMiddleIntermediate: 'middle-finger-phalanx-intermediate',
-  leftMiddleDistal: 'middle-finger-phalanx-distal',
-  leftMiddleTip: 'middle-finger-tip',
-  leftRingProximal: 'ring-finger-phalanx-proximal',
-  leftRingIntermediate: 'ring-finger-phalanx-intermediate',
-  leftRingDistal: 'ring-finger-phalanx-distal',
-  leftRingTip: 'ring-finger-tip',
-  leftLittleProximal: 'pinky-finger-phalanx-proximal',
-  leftLittleIntermediate: 'pinky-finger-phalanx-intermediate',
-  leftLittleDistal: 'pinky-finger-phalanx-distal',
-  leftLittleTip: 'pinky-finger-tip',
-  rightWrist: 'wrist',
-  rightThumbMetacarpal: 'thumb-metacarpal',
-  rightThumbProximal: 'thumb-phalanx-proximal',
-  rightThumbIntermediate: 'thumb-phalanx-distal',
-  rightThumbDistal: 'thumb-tip',
-  rightIndexProximal: 'index-finger-phalanx-proximal',
-  rightIndexIntermediate: 'index-finger-phalanx-intermediate',
-  rightIndexDistal: 'index-finger-phalanx-distal',
-  rightIndexTip: 'index-finger-tip',
-  rightMiddleProximal: 'middle-finger-phalanx-proximal',
-  rightMiddleIntermediate: 'middle-finger-phalanx-intermediate',
-  rightMiddleDistal: 'middle-finger-phalanx-distal',
-  rightMiddleTip: 'middle-finger-tip',
-  rightRingProximal: 'ring-finger-phalanx-proximal',
-  rightRingIntermediate: 'ring-finger-phalanx-intermediate',
-  rightRingDistal: 'ring-finger-phalanx-distal',
-  rightRingTip: 'ring-finger-tip',
-  rightLittleProximal: 'pinky-finger-phalanx-proximal',
-  rightLittleIntermediate: 'pinky-finger-phalanx-intermediate',
-  rightLittleDistal: 'pinky-finger-phalanx-distal',
-  rightLittleTip: 'pinky-finger-tip'
-} as Partial<Record<VRMHumanBoneName, XRHandJoint>>
+/**@todo these are not currently used anywhere, should also be moved to the engine package */
+// export const VRMHandsToXRJointMap = {
+//   leftWrist: 'wrist',
+//   leftThumbMetacarpal: 'thumb-metacarpal',
+//   leftThumbProximal: 'thumb-phalanx-proximal',
+//   leftThumbIntermediate: 'thumb-phalanx-distal',
+//   leftThumbDistal: 'thumb-tip',
+//   leftIndexProximal: 'index-finger-phalanx-proximal',
+//   leftIndexIntermediate: 'index-finger-phalanx-intermediate',
+//   leftIndexDistal: 'index-finger-phalanx-distal',
+//   leftIndexTip: 'index-finger-tip',
+//   leftMiddleProximal: 'middle-finger-phalanx-proximal',
+//   leftMiddleIntermediate: 'middle-finger-phalanx-intermediate',
+//   leftMiddleDistal: 'middle-finger-phalanx-distal',
+//   leftMiddleTip: 'middle-finger-tip',
+//   leftRingProximal: 'ring-finger-phalanx-proximal',
+//   leftRingIntermediate: 'ring-finger-phalanx-intermediate',
+//   leftRingDistal: 'ring-finger-phalanx-distal',
+//   leftRingTip: 'ring-finger-tip',
+//   leftLittleProximal: 'pinky-finger-phalanx-proximal',
+//   leftLittleIntermediate: 'pinky-finger-phalanx-intermediate',
+//   leftLittleDistal: 'pinky-finger-phalanx-distal',
+//   leftLittleTip: 'pinky-finger-tip',
+//   rightWrist: 'wrist',
+//   rightThumbMetacarpal: 'thumb-metacarpal',
+//   rightThumbProximal: 'thumb-phalanx-proximal',
+//   rightThumbIntermediate: 'thumb-phalanx-distal',
+//   rightThumbDistal: 'thumb-tip',
+//   rightIndexProximal: 'index-finger-phalanx-proximal',
+//   rightIndexIntermediate: 'index-finger-phalanx-intermediate',
+//   rightIndexDistal: 'index-finger-phalanx-distal',
+//   rightIndexTip: 'index-finger-tip',
+//   rightMiddleProximal: 'middle-finger-phalanx-proximal',
+//   rightMiddleIntermediate: 'middle-finger-phalanx-intermediate',
+//   rightMiddleDistal: 'middle-finger-phalanx-distal',
+//   rightMiddleTip: 'middle-finger-tip',
+//   rightRingProximal: 'ring-finger-phalanx-proximal',
+//   rightRingIntermediate: 'ring-finger-phalanx-intermediate',
+//   rightRingDistal: 'ring-finger-phalanx-distal',
+//   rightRingTip: 'ring-finger-tip',
+//   rightLittleProximal: 'pinky-finger-phalanx-proximal',
+//   rightLittleIntermediate: 'pinky-finger-phalanx-intermediate',
+//   rightLittleDistal: 'pinky-finger-phalanx-distal',
+//   rightLittleTip: 'pinky-finger-tip'
+// } as Partial<Record<VRMHumanBoneName, XRHandJoint>>
 
 export const XRJointBones = [
   'wrist',
@@ -184,11 +182,12 @@ export const XRHandComponent = defineComponent({
   name: 'XRHandComponent'
 })
 
-const rotationsSchema = { rotations: [Types.f32, 4 * 19] as const }
-
 export const XRLeftHandComponent = defineComponent({
   name: 'XRLeftHandComponent',
-  schema: rotationsSchema,
+
+  schema: S.Object({
+    rotations: S.Class(() => new Float32Array(4 * 19))
+  }),
 
   onInit: (initial) => {
     return {
@@ -200,7 +199,10 @@ export const XRLeftHandComponent = defineComponent({
 
 export const XRRightHandComponent = defineComponent({
   name: 'XRRightHandComponent',
-  schema: rotationsSchema,
+
+  schema: S.Object({
+    rotations: S.Class(() => new Float32Array(4 * 19))
+  }),
 
   onInit: (initial) => {
     return {
@@ -211,7 +213,7 @@ export const XRRightHandComponent = defineComponent({
 })
 
 export const XRHitTestComponent = defineComponent({
-  name: 'XRHitTest',
+  name: 'XRHitTestComponent',
   schema: S.Object({
     options: S.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
     source: S.Type<XRHitTestSource>(),
@@ -264,7 +266,7 @@ export const XRHitTestComponent = defineComponent({
 })
 
 export const XRAnchorComponent = defineComponent({
-  name: 'XRAnchor',
+  name: 'XRAnchorComponent',
   schema: S.Object({
     anchor: S.Type<XRAnchor>()
   }),
@@ -285,7 +287,7 @@ export const XRAnchorComponent = defineComponent({
 })
 
 export const XRSpaceComponent = defineComponent({
-  name: 'XRSpace',
+  name: 'XRSpaceComponent',
 
   schema: S.Object({
     space: S.Type<XRSpace>(),
@@ -301,10 +303,10 @@ export const XRSpaceComponent = defineComponent({
       let parentEntity = UndefinedEntity
       switch (baseSpace) {
         case ReferenceSpace.localFloor:
-          parentEntity = Engine.instance.localFloorEntity
+          parentEntity = getState(ReferenceSpaceState).localFloorEntity
           break
         case ReferenceSpace.viewer:
-          parentEntity = Engine.instance.cameraEntity
+          parentEntity = getState(ReferenceSpaceState).viewerEntity
           break
       }
 

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,17 +19,19 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { MathUtils, Vector2, Vector3 } from 'three'
+import { MathUtils, Vector3 } from 'three'
 
 import {
   ECSState,
   Entity,
+  EntityTreeComponent,
   getComponent,
   getMutableComponent,
+  getSimulationCounterpart,
   removeComponent,
   removeEntity,
   setComponent,
@@ -40,6 +42,7 @@ import {
 import {
   defineComponent,
   getOptionalComponent,
+  getOptionalMutableComponent,
   hasComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -47,28 +50,26 @@ import { getState, isClient, useImmediateEffect, useMutableState } from '@ir-eng
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import {
   BoundingBoxComponent,
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
+import { EngineState } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { smootheLerpAlpha } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import {
   DistanceFromCameraComponent,
   DistanceFromLocalClientComponent
 } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { useXRUIState } from '@ir-engine/spatial/src/xrui/functions/useXRUIState'
 import { useEffect } from 'react'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { createUI } from '../functions/createUI'
@@ -91,25 +92,24 @@ export enum XRUIActivationType {
 }
 
 const xrDistVec3 = new Vector3()
-const inputPointerPosition = new Vector2()
-let inputPointerEntity = UndefinedEntity
 
-const updateXrDistVec3 = (selfAvatarEntity: Entity) => {
-  //TODO change from using rigidbody to use the transform position (+ height of avatar)
-  const selfAvatarRigidBodyComponent = getComponent(selfAvatarEntity, RigidBodyComponent)
-  const avatar = getComponent(selfAvatarEntity, AvatarComponent)
-  xrDistVec3.copy(selfAvatarRigidBodyComponent.position)
-  xrDistVec3.y += avatar.avatarHeight
+const updateXrDistVec3 = (targetEntity: Entity) => {
+  const transformComponent = getComponent(targetEntity, TransformComponent)
+  xrDistVec3.copy(transformComponent.position)
+  if (hasComponent(targetEntity, AvatarComponent)) {
+    const avatar = getComponent(targetEntity, AvatarComponent)
+    xrDistVec3.y += avatar.avatarHeight
+  }
 }
 
 const _center = new Vector3()
 const _size = new Vector3()
 
 export const updateInteractableUI = (entity: Entity) => {
-  const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
+  const targetEntity = AvatarComponent.getSelfAvatarEntity() ?? getState(ReferenceSpaceState).viewerEntity
   const interactable = getOptionalComponent(entity, InteractableComponent)
 
-  if (!selfAvatarEntity || !interactable || interactable.uiEntity == UndefinedEntity) return
+  if (!targetEntity || !interactable || interactable.uiEntity == UndefinedEntity) return
 
   const xrui = getOptionalComponent(interactable.uiEntity, XRUIComponent)
   const xruiTransform = getOptionalComponent(interactable.uiEntity, TransformComponent)
@@ -117,22 +117,32 @@ export const updateInteractableUI = (entity: Entity) => {
 
   const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
 
-  updateXrDistVec3(selfAvatarEntity)
+  updateXrDistVec3(targetEntity)
 
   const hasVisibleComponent = hasComponent(interactable.uiEntity, VisibleComponent)
-  if (hasVisibleComponent && boundingBox) {
-    updateBoundingBox(entity)
+  if (hasVisibleComponent) {
+    if (boundingBox) updateBoundingBox(entity)
+    if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
+      const center = boundingBox.box.getCenter(_center)
+      const size = boundingBox.box.getSize(_size)
+      if (!size.y) size.y = 1
+      const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
+      xruiTransform.position.x = center.x
+      xruiTransform.position.z = center.z
+      xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, center.y + 0.7 * size.y, alpha)
 
-    const center = boundingBox.box.getCenter(_center)
-    const size = boundingBox.box.getSize(_size)
-    if (!size.y) size.y = 1
-    const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
-    xruiTransform.position.x = center.x
-    xruiTransform.position.z = center.z
-    xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, center.y + 0.7 * size.y, alpha)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+      xruiTransform.rotation.copy(cameraTransform.rotation)
+    } else {
+      TransformComponent.getWorldPosition(entity, _center)
+      const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
+      xruiTransform.position.x = _center.x
+      xruiTransform.position.z = _center.z
+      xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, _center.y + 0.5, alpha)
 
-    const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
-    xruiTransform.rotation.copy(cameraTransform.rotation)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+      xruiTransform.rotation.copy(cameraTransform.rotation)
+    }
   }
 
   const distance = xrDistVec3.distanceToSquared(xruiTransform.position)
@@ -208,28 +218,24 @@ const addInteractableUI = (entity: Entity) => {
 
   const uiTransform = getComponent(uiEntity, TransformComponent)
   const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
-  if (boundingBox) {
+  if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
     updateBoundingBox(entity)
     boundingBox.box.getCenter(uiTransform.position)
+  } else {
+    TransformComponent.getWorldPosition(entity, _center)
+    uiTransform.position.copy(_center)
   }
   getMutableComponent(entity, InteractableComponent).uiEntity.set(uiEntity)
-  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(EngineState).originEntity })
+  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {
-    referenceEntities: [entity, getState(EngineState).viewerEntity],
+    referenceEntities: [entity, getState(ReferenceSpaceState).viewerEntity],
     computeFunction: () => updateInteractableUI(entity)
   })
 
   const transition = createTransitionState(0.25)
   transition.setState('OUT')
   InteractableTransitions.set(entity, transition)
-}
-
-const removeInteractableUI = (entity: Entity) => {
-  const interactable = getComponent(entity, InteractableComponent)
-  if (interactable.uiEntity == UndefinedEntity) return //null or empty label = no ui
-
-  removeEntity(interactable.uiEntity)
-  getMutableComponent(entity, InteractableComponent).uiEntity.set(UndefinedEntity)
+  return uiEntity
 }
 
 export const InteractableComponent = defineComponent({
@@ -237,33 +243,25 @@ export const InteractableComponent = defineComponent({
   jsonID: 'EE_interactable',
 
   schema: S.Object({
-    //TODO reimpliment the frustum culling for interactables
-
-    //TODO check if highlight works properly on init and with non clickInteract
-    //TODO simplify button logic in inputUpdate
-
-    //TODO after that is done, get rid of custom updates and add a state bool for "interactable" or "showUI"...think about best name
-
-    //TODO canInteract for grabbed state on grabbable?
-    canInteract: S.Bool(false),
-    uiInteractable: S.Bool(true),
-    uiEntity: S.Entity(),
-    label: S.String('E'),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, XRUIVisibilityOverride.none),
-    uiActivationType: S.Enum(XRUIActivationType, XRUIActivationType.proximity),
-    activationDistance: S.Number(2),
-    clickInteract: S.Bool(false),
-    highlighted: S.Bool(false),
+    canInteract: S.Bool({ default: false, serialized: false }),
+    uiInteractable: S.Bool({ default: true, serialized: false }),
+    uiEntity: S.Entity({ serialized: false }),
+    label: S.String({ default: 'E' }),
+    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, { default: XRUIVisibilityOverride.none, serialized: false }),
+    uiActivationType: S.Enum(XRUIActivationType, { default: XRUIActivationType.proximity }),
+    activationDistance: S.Number({ default: 2 }),
+    clickInteract: S.Bool({ default: false }),
+    highlighted: S.Bool({ default: false, serialized: false }),
     callbacks: S.Array(
       S.Object({
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is entered.
          */
-        callbackID: S.Nullable(S.String()),
+        callbackID: S.String(),
         /**
          * empty string represents self
          */
-        target: S.Nullable(S.EntityUUID())
+        target: S.EntityID()
       })
     )
   }),
@@ -279,45 +277,44 @@ export const InteractableComponent = defineComponent({
       setComponent(entity, DistanceFromCameraComponent)
       setComponent(entity, DistanceFromLocalClientComponent)
       setComponent(entity, BoundingBoxComponent)
+      setComponent(entity, InputComponent)
       return () => {
         removeComponent(entity, DistanceFromCameraComponent)
         removeComponent(entity, DistanceFromLocalClientComponent)
         removeComponent(entity, BoundingBoxComponent)
-        removeInteractableUI(entity)
+        removeComponent(entity, InputComponent)
       }
     }, [])
 
     InputComponent.useExecuteWithInput(
       () => {
-        const buttons = InputComponent.getMergedButtons(entity)
-        if (!interactableComponent.clickInteract.value && buttons.PrimaryClick?.pressed) return
-        if (
-          buttons.Interact?.pressed &&
-          !buttons.Interact?.dragging &&
-          getState(InputState).capturingEntity === UndefinedEntity
-        ) {
-          InputState.setCapturingEntity(entity)
-
-          if (buttons.Interact?.up) {
-            callInteractCallbacks(entity)
-          }
+        const buttons = InputComponent.getButtons(entity)
+        if (!interactableComponent.clickInteract.value) return
+        if (buttons.Interact?.up && !buttons.Interact.dragging) {
+          callInteractCallbacks(entity)
         }
       },
-      true,
-      InputExecutionOrder.After
+      InputExecutionOrder.After,
+      true
     )
 
     useEffect(() => {
+      const simulationEntity = getSimulationCounterpart(entity)
       if (!isEditing.value) {
-        addInteractableUI(entity)
-      }
-      return () => {
-        removeInteractableUI(entity)
+        addInteractableUI(simulationEntity)
+        return () => {
+          const interactableComponent = getOptionalMutableComponent(entity, InteractableComponent)
+          if (!interactableComponent) return
+          const uiEntity = interactableComponent.uiEntity.value
+          if (uiEntity) {
+            interactableComponent.uiEntity.set(UndefinedEntity)
+            removeEntity(uiEntity)
+          }
+        }
       }
     }, [isEditing.value])
 
     useEffect(() => {
-      //const xrUI = getMutableComponent(interactableComponent.uiEntity, XRUIComponent)
       const msg = interactableComponent.label?.value ?? ''
       modalState.interactMessage?.set(msg)
     }, [interactableComponent.label]) //TODO just nuke the whole XRUI and recreate....
@@ -328,8 +325,8 @@ export const InteractableComponent = defineComponent({
 const callInteractCallbacks = (entity: Entity) => {
   const interactable = getComponent(entity, InteractableComponent)
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue

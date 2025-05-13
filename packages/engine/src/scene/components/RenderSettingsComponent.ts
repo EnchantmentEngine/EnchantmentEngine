@@ -37,29 +37,31 @@ import {
   VSMShadowMap
 } from 'three'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 
 const ToneMappingSchema = S.LiteralUnion(
   [NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping],
-  LinearToneMapping
+  { default: LinearToneMapping }
 )
 
-const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], PCFSoftShadowMap)
+const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], {
+  default: PCFSoftShadowMap
+})
 
 export const RenderSettingsComponent = defineComponent({
   name: 'RenderSettingsComponent',
   jsonID: 'EE_render_settings',
 
   schema: S.Object({
-    primaryLight: S.EntityUUID(),
-    csm: S.Bool(true),
-    cascades: S.Number(5),
+    primaryLight: S.EntityID(),
+    csm: S.Bool({ default: true }),
+    cascades: S.Number({ default: 5 }),
     toneMapping: ToneMappingSchema,
-    toneMappingExposure: S.Number(0.8),
+    toneMappingExposure: S.Number({ default: 0.8 }),
     shadowMapType: ShadowMapSchema
   }),
 

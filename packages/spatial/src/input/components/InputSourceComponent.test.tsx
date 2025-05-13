@@ -40,19 +40,19 @@ import { getMutableState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { Raycaster } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
-import { assertArrayEqual } from '../../physics/components/RigidBodyComponent.test'
+import { assertArray } from '../../../tests/util/assert'
 import { XRHandComponent, XRSpaceComponent } from '../../xr/XRComponents'
 import { XRState } from '../../xr/XRState'
 import { ButtonStateMap } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
-import { DefaultButtonAlias } from './InputComponent'
+import { DefaultButtonBindings } from './InputComponent'
 import { InputSourceComponent } from './InputSourceComponent'
 
 /** @note Intersection types used, but not exported or declared, by InputSourceComponent */
 type Intersection = { entity: Entity; distance: number }
 type IntersectionList = Array<Intersection>
 /** @note ButtonStateMap, aliased to its required type for ergonomics */
-type ButtonStateMapAlias = Readonly<ButtonStateMap<typeof DefaultButtonAlias>>
+type ButtonStateMapAlias = Readonly<ButtonStateMap<typeof DefaultButtonBindings>>
 
 describe.skip('InputSourceComponent', () => {
   // beforeEach(() => {
@@ -487,7 +487,7 @@ describe('InputSourceComponent', () => {
         getMutableState(InputState).capturingEntity.set(capturingEntity)
         const result = InputSourceComponent.nonCapturedInputSources([testEntity, capturingEntity])
         const Expected = [testEntity] as Entity[]
-        assertArrayEqual(result, Expected)
+        assertArray.eq(result, Expected)
       })
     })
 
@@ -498,7 +498,7 @@ describe('InputSourceComponent', () => {
         getMutableState(InputState).capturingEntity.set(capturingEntity) // Set it as the capturing entity of InputState
         const Expected = [testEntity] as Entity[] // capturingEntity should NOT be returned back from the `inputSourceQuery()`
         const result = InputSourceComponent.nonCapturedInputSources()
-        assertArrayEqual(result, Expected)
+        assertArray.eq(result, Expected)
       })
     })
   }) // << nonCapturedInputSources

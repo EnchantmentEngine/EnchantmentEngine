@@ -32,19 +32,11 @@ import {
   RecordingID,
   recordingPath,
   RecordingSchemaType,
-  UserID,
+  userAvatarPath,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { checkScope } from '@ir-engine/common/src/utils/checkScope'
-import {
-  defineSystem,
-  ECSState,
-  Engine,
-  EntityUUID,
-  getComponent,
-  PresentationSystemGroup,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { defineSystem, ECSState, Engine, EntityUUID, PresentationSystemGroup, UUIDComponent } from '@ir-engine/ecs'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import {
   defineAction,
@@ -56,7 +48,8 @@ import {
   HyperFlux,
   isClient,
   PeerID,
-  Topic
+  Topic,
+  UserID
 } from '@ir-engine/hyperflux'
 import {
   addDataChannelHandler,
@@ -64,12 +57,11 @@ import {
   DataChannelType,
   matchesUserID,
   Network,
-  NetworkPeerFunctions,
+  NetworkActions,
   NetworkState,
   NetworkTopics,
   removeDataChannelHandler,
   SerializationSchema,
-  updatePeers,
   webcamAudioDataChannelType,
   webcamVideoDataChannelType,
   WorldNetworkAction
@@ -84,6 +76,7 @@ import { PhysicsSerialization } from '@ir-engine/spatial/src/physics/PhysicsSeri
 
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 export class ECSRecordingActions {
   static startRecording = defineAction({
@@ -627,31 +620,41 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
               const peerIDs = Object.keys(schema.peers) as PeerID[]
 
               // todo, this is a hack
-              for (const peerID of peerIDs) {
-                if (network.peers[peerID]) continue
-                activePlayback.peerIDs!.push(peerID)
-                NetworkPeerFunctions.createPeer(
-                  network,
-                  peerID,
-                  network.peerIndexCount++,
-                  entityID as any as UserID,
-                  network.userIndexCount++
-                )
-                updatePeers(network)
-              }
+              /** @todo rewrite */
+              // for (const peerID of peerIDs) {
+              //   if (network.peers[peerID]) continue
+              //   activePlayback.peerIDs!.push(peerID)
+              //   NetworkPeerFunctions.createPeer(
+              //     network,
+              //     peerID,
+              //     network.peerIndexCount++,
+              //     entityID as any as UserID
+              //   )
+              //   updatePeers(network)
+              // }
             }
 
             if (!UUIDComponent.getEntityByUUID(entityID) && isClone) {
-              dispatchAction(
-                AvatarNetworkAction.spawn({
-                  parentUUID: getComponent(Engine.instance.originEntity, UUIDComponent),
-                  ownerID: entityID,
-                  entityUUID: (entityID + '_avatar') as EntityUUID,
-                  avatarURL: user.avatar.modelResource!.url!,
-                  name: user.name + "'s Clone"
+              api
+                .service(userAvatarPath)
+                .find({
+                  query: {
+                    userId: user.id
+                  }
                 })
-              )
-              entitiesSpawned.push(entityID)
+                .then((userAvatars) => {
+                  dispatchAction(
+                    AvatarNetworkAction.spawn({
+                      parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
+                      ownerID: entityID,
+                      avatarURL: userAvatars.data[0].avatar.modelResource!.url!,
+                      name: user.name + "'s Clone",
+                      entityID: AvatarComponent.entityID,
+                      entitySourceID: entityID
+                    })
+                  )
+                  entitiesSpawned.push(entityID)
+                })
             }
           })
           .catch((e) => {
@@ -727,11 +730,17 @@ const playbackStopped = (userId: UserID, recordingID: RecordingID, network?: Net
   if (network) {
     if (activePlayback.peerIDs) {
       for (const peerID of activePlayback.peerIDs) {
-        NetworkPeerFunctions.destroyPeer(network, peerID)
+        dispatchAction(
+          NetworkActions.peerLeft({
+            $cache: true,
+            $topic: network.topic,
+            $network: network.id,
+            peerID,
+            userID: userId
+          })
+        )
       }
     }
-
-    updatePeers(network)
 
     /** If syncing multipile instance servers, only need to dispatch once, so do it on the world server */
     if (network.topic === NetworkTopics.world) {
@@ -836,6 +845,6 @@ const execute = () => {
 
 export const ECSRecordingSystem = defineSystem({
   uuid: 'ee.engine.ECSRecordingSystem',
-  insert: { after: PresentationSystemGroup },
-  execute
+  insert: { after: PresentationSystemGroup }
+  // execute
 })

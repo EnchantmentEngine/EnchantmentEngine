@@ -28,18 +28,16 @@ import { AudioLoader } from 'three'
 import { getState } from '@ir-engine/hyperflux'
 
 import { AssetExt, AssetType, FileToAssetExt, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
-import loadVideoTexture from '../../scene/materials/functions/LoadVideoTexture'
 import { FileLoader } from '../loaders/base/FileLoader'
-import { DDSLoader } from '../loaders/dds/DDSLoader'
-import { FBXLoader } from '../loaders/fbx/FBXLoader'
+import { Loader } from '../loaders/base/Loader'
 import { TextureLoader } from '../loaders/texture/TextureLoader'
 import { TGALoader } from '../loaders/tga/TGALoader'
-import { USDZLoader } from '../loaders/usdz/USDZLoader'
 import { AssetLoaderState } from '../state/AssetLoaderState'
 import { DomainConfigState } from '../state/DomainConfigState'
 
 /**
  * Get asset type from the asset file extension.
+ * @deprecated use FileToAssetExt instead
  * @param assetFileName Name of the Asset file.
  * @returns Asset type of the file.
  */
@@ -49,6 +47,7 @@ const getAssetType = (assetFileName: string): AssetExt => {
 
 /**
  * Get asset class from the asset file extension.
+ * @deprecated use FileToAssetType instead
  * @param assetFileName Name of the Asset file.
  * @returns Asset class of the file.
  */
@@ -56,34 +55,21 @@ const getAssetClass = (assetFileName: string): AssetType => {
   return FileToAssetType(assetFileName)
 }
 
-export const getLoader = (assetType: AssetExt) => {
+export const getLoader = (assetType: AssetExt): Loader => {
   switch (assetType) {
     case AssetExt.KTX2:
-      return getState(AssetLoaderState).gltfLoader.ktx2Loader!
-    case AssetExt.DDS:
-      return new DDSLoader()
-    case AssetExt.GLTF:
-    case AssetExt.GLB:
-    case AssetExt.VRM:
-      return getState(AssetLoaderState).gltfLoader
-    case AssetExt.USDZ:
-      return new USDZLoader()
-    case AssetExt.FBX:
-      return new FBXLoader()
+      return getState(AssetLoaderState).ktx2Loader! as any as Loader
     case AssetExt.TGA:
       return new TGALoader()
     case AssetExt.PNG:
     case AssetExt.JPEG:
+    case AssetExt.WEBP:
       return new TextureLoader()
     case AssetExt.AAC:
     case AssetExt.MP3:
     case AssetExt.OGG:
     case AssetExt.M4A:
-      return new AudioLoader()
-    case AssetExt.MP4:
-    case AssetExt.MKV:
-    case AssetExt.M3U8:
-      return { load: loadVideoTexture }
+      return new AudioLoader() as any as Loader
     default:
       return new FileLoader()
   }
@@ -107,7 +93,7 @@ const loadAsset = async <T>(
   onProgress: (request: ProgressEvent) => void = () => {},
   onError: (event: ErrorEvent | Error) => void = () => {},
   signal?: AbortSignal,
-  loader?: ReturnType<typeof getLoader>
+  loader?: Loader
 ) => {
   if (!url) {
     onError(new Error('URL is empty'))
@@ -117,7 +103,7 @@ const loadAsset = async <T>(
 
   if (!loader) {
     const assetExt = getAssetType(url)
-    loader = getLoader(assetExt)
+    loader = getLoader(assetExt) as Loader
   }
 
   try {

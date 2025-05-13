@@ -23,13 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { UUIDComponent } from '@ir-engine/ecs'
-import { Component, SerializedComponentType, updateComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getMutableState } from '@ir-engine/hyperflux'
+import {
+  Component,
+  deserializeComponent,
+  hasComponent,
+  serializeComponent,
+  SerializedComponentType
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, SourceID } from '@ir-engine/ecs/src/Entity'
+import { setNestedObject } from '@ir-engine/hyperflux'
 
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
-import { EditorState } from '../../services/EditorServices'
 import { SelectionState } from '../../services/SelectionServices'
 
 export type EditorPropType = {
@@ -45,7 +51,7 @@ export type EditorComponentType = React.FC<EditorPropType> & {
 export const updateProperty = <C extends Component, K extends keyof SerializedComponentType<C>>(
   component: C,
   propName: K,
-  nodes?: Entity[]
+  nodes = SelectionState.getSelectedEntities()
 ) => {
   return (value: SerializedComponentType<C>[K]) => {
     updateProperties(component, { [propName]: value } as any, nodes)
@@ -55,25 +61,29 @@ export const updateProperty = <C extends Component, K extends keyof SerializedCo
 export const updateProperties = <C extends Component>(
   component: C,
   properties: Partial<SerializedComponentType<C>>,
-  nodes?: Entity[]
+  nodes = SelectionState.getSelectedEntities()
 ) => {
-  const editorState = getMutableState(EditorState)
-
-  const affectedNodes = nodes
-    ? nodes
-    : editorState.lockPropertiesPanel.value
-    ? [UUIDComponent.getEntityByUUID(editorState.lockPropertiesPanel.value)]
-    : SelectionState.getSelectedEntities()
-  for (let i = 0; i < affectedNodes.length; i++) {
-    const node = affectedNodes[i]
-    updateComponent(node, component, properties)
+  for (let i = 0; i < nodes.length; i++) {
+    const entity = nodes[i]
+    const currentComponent = hasComponent(entity, component) ? serializeComponent(entity, component) : {}
+    for (const [key, val] of Object.entries(properties)) {
+      if (key.includes('.')) {
+        setNestedObject(currentComponent, key, val)
+      } else {
+        currentComponent[key] = val
+      }
+    }
+    deserializeComponent(entity, component, currentComponent)
   }
 }
 
+/**
+ * @todo add types for period separated string property support & later JSON pointers
+ */
 export const commitProperty = <C extends Component, K extends keyof SerializedComponentType<C>>(
   component: C,
   propName: K,
-  nodes?: Entity[]
+  nodes = SelectionState.getSelectedEntities()
 ) => {
   return (value: SerializedComponentType<C>[K]) => {
     commitProperties(component, { [propName]: value } as any, nodes)
@@ -83,15 +93,13 @@ export const commitProperty = <C extends Component, K extends keyof SerializedCo
 export const commitProperties = <C extends Component>(
   component: C,
   properties: Partial<SerializedComponentType<C>>,
-  nodes?: Entity[]
+  nodes = SelectionState.getSelectedEntities()
 ) => {
-  const editorState = getMutableState(EditorState)
+  EditorControlFunctions.modifyProperty(nodes, component, properties)
 
-  const affectedNodes = nodes
-    ? nodes
-    : editorState.lockPropertiesPanel.value
-    ? [UUIDComponent.getEntityByUUID(editorState.lockPropertiesPanel.value)]
-    : SelectionState.getSelectedEntities()
+  const affectedAssets = new Set<SourceID>(nodes.map((entity) => GLTFComponent.getSourceID(entity)))
 
-  EditorControlFunctions.modifyProperty(affectedNodes, component, properties)
+  for (const assetID of affectedAssets) {
+    AuthoringState.snapshot(assetID)
+  }
 }

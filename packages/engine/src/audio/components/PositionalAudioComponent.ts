@@ -27,19 +27,25 @@ import { useEffect } from 'react'
 
 import {
   defineComponent,
+  getAuthoringCounterpart,
   getOptionalComponent,
   removeComponent,
   setComponent,
   useComponent,
+  useEntityContext,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { AudioNodeGroups, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import {
+  AudioNodeGroups,
+  MediaComponent,
+  MediaElementComponent
+} from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { ActiveHelperComponent } from '../../../../spatial/src/common/ActiveHelperComponent'
 import { PositionalAudioHelperComponent } from './PositionalAudioHelperComponent'
 
 export interface PositionalAudioInterface {
@@ -52,7 +58,7 @@ export interface PositionalAudioInterface {
   coneOuterGain: number
 }
 
-const distanceModel = S.LiteralUnion(['exponential', 'inverse', 'linear'], 'inverse')
+const distanceModel = S.LiteralUnion(['exponential', 'inverse', 'linear'], { default: 'inverse' })
 
 export const PositionalAudioComponent = defineComponent({
   name: 'EE_positionalAudio',
@@ -61,22 +67,31 @@ export const PositionalAudioComponent = defineComponent({
 
   schema: S.Object({
     distanceModel,
-    rolloffFactor: S.Number(3),
-    refDistance: S.Number(1),
-    maxDistance: S.Number(40),
-    coneInnerAngle: S.Number(360),
-    coneOuterAngle: S.Number(360),
-    coneOuterGain: S.Number(0)
+    rolloffFactor: S.Number({ default: 1 }),
+    refDistance: S.Number({ default: 1 }),
+    maxDistance: S.Number({ default: 40 }),
+    coneInnerAngle: S.Number({ default: 360 }),
+    coneOuterAngle: S.Number({ default: 360 }),
+    coneOuterGain: S.Number()
   }),
 
   reactor: function () {
     const entity = useEntityContext()
-    const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
+    const renderState = useMutableState(RendererState)
+    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
+    const debugEnabled = renderState.nodeHelperVisibility.value || activeHelperComponent !== undefined
     const audio = useComponent(entity, PositionalAudioComponent)
     const mediaElement = useOptionalComponent(entity, MediaElementComponent)
 
     useEffect(() => {
-      if (debugEnabled.value) {
+      const authEntity = getAuthoringCounterpart(entity)
+      if (authEntity) {
+        setComponent(authEntity, MediaComponent)
+      }
+    }, [])
+
+    useEffect(() => {
+      if (debugEnabled) {
         const name = getOptionalComponent(entity, NameComponent)
         setComponent(entity, PositionalAudioHelperComponent, {
           name: name ? `${name}-positional-audio-helper` : undefined

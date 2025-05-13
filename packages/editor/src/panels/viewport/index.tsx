@@ -24,23 +24,24 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { useEngineCanvas } from '@ir-engine/client-core/src/hooks/useEngineCanvas'
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import { useFind } from '@ir-engine/common'
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import { clientSettingPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
-import { cleanFileNameString } from '@ir-engine/common/src/utils/cleanFileName'
+import { engineSettingPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
+import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { useComponent, useQuery } from '@ir-engine/ecs'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ResourcePendingComponent } from '@ir-engine/engine/src/gltf/ResourcePendingComponent'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { ErrorBoundary, getState, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { TabData } from 'rc-dock'
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useDrop } from 'react-dnd'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
@@ -55,6 +56,7 @@ import GridTool from './tools/GridTool'
 import PlayModeTool from './tools/PlayModeTool'
 import RenderModeTool from './tools/RenderTool'
 import SceneHelpersTool from './tools/SceneHelpersTool'
+import SelectionBox from './tools/SelectionBoxTool'
 import TransformGizmoTool from './tools/TransformGizmoTool'
 import TransformPivotTool from './tools/TransformPivotTool'
 import TransformSnapTool from './tools/TransformSnapTool'
@@ -76,6 +78,7 @@ const ViewportDnD = ({ children }: { children: React.ReactNode }) => {
           { name: item.componentJsonID },
           { name: TransformComponent.jsonID, props: { position: vec3 } }
         ])
+        AuthoringState.snapshotEntities([getState(EditorState).rootEntity])
       } else if ('url' in item) {
         addMediaNode(item.url, undefined, undefined, [{ name: TransformComponent.jsonID, props: { position: vec3 } }])
       } else if ('files' in item) {
@@ -84,12 +87,12 @@ const ViewportDnD = ({ children }: { children: React.ReactNode }) => {
         Promise.all(
           Array.from(dropDataTransfer.files).map(async (file) => {
             try {
-              const name = cleanFileNameString(file.name)
+              file = cleanFileNameFile(file)
               return uploadToFeathersService(fileBrowserUploadPath, [file], {
                 args: [
                   {
                     project: projectName.value,
-                    path: `assets/` + name,
+                    path: `assets/` + file.name,
                     contentType: file.type
                   }
                 ]
@@ -138,23 +141,28 @@ const SceneLoadingProgress = ({ rootEntity }) => {
 }
 
 function ViewportContainer() {
-  const { sceneName, rootEntity } = useMutableState(EditorState)
+  const { sceneName, rootEntity, canvasRef } = useMutableState(EditorState)
 
   const { t } = useTranslation()
-  const clientSettingQuery = useFind(clientSettingPath)
+  const clientSettingQuery = useFind(engineSettingPath, {
+    query: {
+      category: 'client',
+      key: EngineSettings.Client.AppTitle,
+      paginate: false
+    }
+  })
+
   const clientSettings = clientSettingQuery.data[0]
 
   const ref = React.useRef<HTMLDivElement>(null)
   const toolbarRef = React.useRef<HTMLDivElement>(null)
-
-  useEngineCanvas(ref)
 
   const [transformPivotFeatureFlag] = useFeatureFlags([FeatureFlags.Studio.UI.TransformPivot])
 
   return (
     <ViewportDnD>
       <div className="relative z-30 flex h-full w-full flex-col">
-        <div ref={toolbarRef} className="z-10 flex h-9 gap-1 bg-[#212226] p-1">
+        <div ref={toolbarRef} className="z-30 flex gap-1 bg-surface-4 px-1 py-1">
           <TransformSpaceTool />
           {transformPivotFeatureFlag && <TransformPivotTool />}
           <GridTool />
@@ -164,17 +172,22 @@ function ViewportContainer() {
           <RenderModeTool />
           <PlayModeTool />
         </div>
-        {sceneName.value ? <TransformGizmoTool viewportRef={ref} toolbarRef={toolbarRef} /> : null}
+        {sceneName.value ? <SelectionBox viewportRef={ref} toolbarRef={toolbarRef} /> : null}
+        {sceneName.value ? <TransformGizmoTool /> : null}
         {sceneName.value ? <CameraGizmoTool viewportRef={ref} toolbarRef={toolbarRef} /> : null}
+        <div
+          id="engine-renderer-canvas-container"
+          ref={(ref) => canvasRef.set({ current: ref })}
+          className="absolute z-10 h-full w-full"
+        />
         {sceneName.value ? (
-          <>
-            <div id="engine-renderer-canvas-container" ref={ref} className="absolute h-full w-full" />
-            {rootEntity.value && <SceneLoadingProgress key={rootEntity.value} rootEntity={rootEntity.value} />}
-          </>
+          <>{rootEntity.value && <SceneLoadingProgress key={rootEntity.value} rootEntity={rootEntity.value} />}</>
         ) : (
-          <div className="flex h-full w-full flex-col justify-center gap-2">
-            <img src={clientSettings?.appTitle} className="block scale-[.8]" />
-            <Text className="text-center">{t('editor:selectSceneMsg')}</Text>
+          <div className="relative z-20 flex h-full w-full justify-center">
+            <div className="flex max-w-[40rem] flex-col justify-center gap-5 px-6">
+              <img src={clientSettings?.value} className="block" />
+              <Text className="text-center dark:text-[#A3A3A3]">{t('editor:selectSceneMsg')}</Text>
+            </div>
           </div>
         )}
       </div>
@@ -196,5 +209,11 @@ export const ViewportPanelTab: TabData = {
   id: 'viewPanel',
   closable: true,
   title: <ViewportPanelTitle />,
-  content: <ViewportContainer />
+  content: (
+    <ErrorBoundary fallback={<div>Error occured with the Viewport tab</div>}>
+      <Suspense>
+        <ViewportContainer />
+      </Suspense>
+    </ErrorBoundary>
+  )
 }

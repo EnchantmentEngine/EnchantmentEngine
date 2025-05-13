@@ -6,7 +6,12 @@
     "saving": "Saving",
     "upload": "Upload",
     "discardChanges": "Discard Changes",
-    "confirmDiscardChange": "Changes you made may not be saved."
+    "confirmDiscardChange": "Changes you made may not be saved.",
+    "changesLostAlert": "If you proceed all your changes will be lost.",
+    "discard": "Discard",
+    "userBannedMessage": "You have been banned from joining this space.",
+    "userBannedMessageDescription": "If you feel like this is an error, please contact customer support.",
+    "windowBlocked": "Your browser may have blocked the new tab. Check settings."
   },
   "auth": {
     "confirmEmail": {
@@ -19,7 +24,7 @@
       "username": "UserName + Password",
       "social": "Social"
     },
-    "magiklink": {
+    "magiclink": {
       "header": "Login Link",
       "descriptionEmail": "Please enter your email address and we'll send you a login link via Email.",
       "descriptionSMS": "Please enter your phone number and we'll send you a login link via SMS.",
@@ -124,6 +129,7 @@
     },
     "share": {
       "lbl-share": "Share",
+      "description-share": "Share this location",
       "ph-phoneEmail": "Invite by email or phone number",
       "ph-email": "Invite by email",
       "ph-phone": "Invite by phone number",
@@ -138,10 +144,8 @@
       "linkCopied": "Link copied to clipboard.",
       "friends": "Friends",
       "party": "Party",
-      "shareQuest": "Share to Quest",
       "shareDirect": "Share Direct Link",
       "shareEmbed": "Embed This Space",
-      "shareInvite": "Share by Invite",
       "shareTitle": "AR/VR World | Infinite Reality Engine",
       "shareDescription": "Check out AR/VR world on Infinite Reality Engine",
       "shareFailed": "Error during sharing"
@@ -160,8 +164,10 @@
     "setting": {
       "chromeAEC": "If you experience echo, please enable echo cancellation by going to ",
       "audio": "Audio",
-      "lbl-volume": "Total Volume",
+      "lbl-master-volume": "Total Volume",
+      "info-master-volume": "Volume setting for all audio (everything but microphone)",
       "lbl-microphone": "Microphone",
+      "info-microphone": "Volume setting for your microphone, adjusts your voice volume for others",
       "general": "General",
       "graphics": "Graphics",
       "controls": "Controls",
@@ -180,16 +186,22 @@
       "user-avatar": "Avatar",
       "invert-rotation": "Invert Gamepads",
       "show-avatar": "Show Avatar",
-      "lbl-media-instance": "User Volume",
+      "lbl-user-volume": "User Volume",
+      "info-user-volume" : "Volume setting for other user's voice",
       "lbl-notification": "Notification Volume",
+      "info-notification": "Volume setting for notifications (menu sounds, etc.)",
       "lbl-sound-effect": "Scene Volume",
+      "info-sound-effect": "Volume setting for scene sounds that are not marked as music",
       "lbl-background-music-volume": "Music Volume",
+      "info-background-music-volume": "Volume setting for music, (this is all audio in the scene marked as music)",
       "themes": "Themes",
       "theme": "Theme",
       "client": "Client",
       "studio": "Studio",
       "admin": "Admin",
-      "windowsPerformanceHelp": "Windows OS Performance"
+      "windowsPerformanceHelp": "Windows OS Performance",
+      "lbl-isVisible": "Show User NamePlate",
+      "lbl-triggerDistance": "NamePlate Trigger Distance"
     },
     "profile": {
       "lbl-profile": "Profile",
@@ -209,7 +221,11 @@
       "showApiKey": "Show API key",
       "hideApiKey": "Hide API key",
       "apiKey": "API key",
-      "logout": "Log out",
+      "logout": {
+        "title": "Are you sure you want to log out?",
+        "submit": "Log out",
+        "cancel": "Cancel"
+      },
       "connectPhone": "Connect your Phone Number",
       "connectEmail": "Connect your Email",
       "connectPhoneEmail": "Connect your Email or Phone Number",
@@ -232,7 +248,7 @@
       "agreeTOS": "I agree to the ",
       "termsOfService": "Infinite Reality Terms of Service",
       "agreeToMarketing": "I agree to opt-in to marketing communications",
-      "confirmAge13": "I am 13 years of age or older",
+      "confirmAge16": "I am 16 years of age or older",
       "confirmAge18": "I am 18 years of age or older",
       "removeSocial": "Remove Social Logins",
       "connections": {
@@ -276,23 +292,42 @@
       "userIdCopied": "User ID copied",
       "apiKeyCopied": "API Key copied",
       "refreshApiKey": "Refresh API Key",
-      "privacyPolicy": "Privacy Policy",
+      "privacyPolicy": "iR Studio Privacy Policy",
+      "creatorPrivacyPolicy": "Creator Privacy Policy",
       "helpChat": "Help Chat",
-      "reportWorld": "Report World"
+      "reportWorld": "Report Space",
+      "report": "Report a {{type}}",
+      "typeAbuse": "Type of abuse",
+      "selectAbuseTypeRequired": "Please select the type of abuse",
+      "selectOne": "Select One",
+      "reportDetails": "Report details",
+      "reportDetailsRequired": "Please enter report details",
+      "reportDetailsPlaceholder": "Use this section to include the necessary details for your report. Note that the upload attachment field below is required, so please be sure to attach any evidence you think is helpful to your report.",
+      "reportFileLabel": "Attachments",
+      "reportFileRequired": "Please attach at least one file",
+      "reportSuccessMessage": "Your report has been submitted."
     },
     "oauth": {
       "authenticating": "Authenticating..."
     },
-    "magikLink": {
+    "magicLink": {
       "wait": "Please wait a moment while processing..."
     }
   },
   "oauth": {
     "error": "Unfortunately, {{name}} authentication failed.",
-    "redirectToRoot": "Return to Home"
+    "redirectToRoot": "Return to Home",
+    "promptForConnection": "Connect to existing account?",
+    "askConnection": "{{email}} is already associated with an account. Would you like to link this {{service}} Single Sign-On to that account?",
+    "acceptConnection": "Yes",
+    "declineConnection": "No (create new account)"
   },
-  "magikLink": {
-    "wait": "Please wait a moment while processing..."
+  "magicLink": {
+    "wait": "Please wait a moment while processing...",
+    "promptForConnection": "Connect to existing account?",
+    "askConnection": "{{email}} is already associated with an account. Would you like to link this magiclink login to that account?",
+    "acceptConnection": "Yes",
+    "declineConnection": "No (create new account)"
   },
   "dashboard": {
     "header": "Dashboard",
@@ -318,16 +353,18 @@
     "server": "Server",
     "recordings": "Recordings",
     "channels": "Channels",
-    "crashReport": "Crash Report"
+    "crashReport": "Crash Report",
+    "moderation": "Moderation"
   },
   "resource": {
     "createResource": "Create Resource"
   },
   "avatar": {
     "titleEditAvatar": "Edit Avatar",
-    "titleSelectAvatar": "Select Avatar",
+    "titleSelectAvatar": "Change Your Avatar",
     "titleUploadAvatar": "Upload Avatar",
     "titleSelectThumbnail": "Select Thumbnail",
+    "titleCustomizeAvatar": "Customize Your Avatar",
     "lbl-browse": "Browse",
     "lbl-thumbnail": "Thumbnail",
     "lbl-upload": "Upload",
@@ -349,6 +386,7 @@
     "useUrlInstead": "Use url instead",
     "cancel": "Cancel",
     "createAvatar": "Create Avatar",
+    "uploadAvatar": "Upload Avatar",
     "delete": "Delete",
     "view": "View",
     "uploadAvatarInfo": "Update avatar Information",
@@ -376,7 +414,14 @@
     "thumbnail": "Thumbnail",
     "enterAvatarUrl": "Enter Avatar URL",
     "enterThumbnailUrl": "Enter Thumbnail URL",
-    "avatarName": "Avatar Name"
+    "avatarName": "Avatar Name",
+    "done": "Done",
+    "discardAvatarChanges": "Discard Your Avatar?",
+    "InputAvatarName": "Name Your Avatar",
+    "saveAvatar": "Save Avatar",
+    "savingAvatar": "Saving {{avatar}}",
+    "packagingAvatar": "Packaging & adding avatar to your Account...",
+    "avatarPreviewDisabledMessage": "Preview Image not Available"
   },
   "menu": {
     "settings": "Profile",
@@ -439,7 +484,8 @@
     "requestAccepted": "has accepted your request to be friends"
   },
   "messages": {
-    "enterMessage": "Enter Message"
+    "enterMessage": "Enter Message",
+    "rotateLandscape": "Please rotate to landscape"
   },
   "roomMenu": {
     "createRoom": "Create a room",
@@ -452,5 +498,28 @@
     "locationRequired": "Please provide a location name.",
     "roomCodeLength": "Room code must be of 6 digits. No zeros allowed",
     "invalidRoomCode": "Unable to find a room with this code. Please enter a valid room code."
+  },
+  "instanceChat": {
+    "wantToChat": "Want to chat with others?",
+    "register": "Create an account",
+    "verifyAge": "Verify your age"
+  },
+  "videoWindows": {
+    "more": "More",
+    "reportUser": "Report User",
+    "blockUser": "Block User"
+  },
+  "moderation": {
+    "abuseReason": {
+      "nudity": "Nudity",
+      "fakeNewsScams": "Fake News & Scams",
+      "disturbingInappropriate": "Disturbing/Inappropriate",
+      "cheatingHacking": "Cheating/Hacking",
+      "bullyingHarassment": "Bullying/Harassment",
+      "illegalActivity": "Illegal Activity",
+      "copyrightInfringements": "Copyright & Other Infringements",
+      "childExploitation": "Child Exploitation",
+      "somethingElse": "Something Else"
+    }
   }
 }

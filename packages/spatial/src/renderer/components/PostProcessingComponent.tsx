@@ -38,7 +38,7 @@ export const PostProcessingComponent = defineComponent({
   jsonID: 'EE_postprocessing',
 
   schema: S.Object({
-    enabled: S.Bool(false),
+    enabled: S.Bool(),
     effects: S.Record(S.String(), EffectSchema)
   }),
 
@@ -59,6 +59,7 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
   const EffectRegistry = useMutableState(PostProcessingEffectState).keys
   const renderer = useComponent(rendererEntity, RendererComponent)
   const effects = renderer.effects
+  const passes = renderer.passes
   const composer = renderer.effectComposer.value as EffectComposer
   const scene = renderer.scene.value as Scene
 
@@ -80,6 +81,7 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
                 effects={effects}
                 composer={composer}
                 scene={scene}
+                passes={passes}
               />
             </ErrorBoundary>
           </Suspense>

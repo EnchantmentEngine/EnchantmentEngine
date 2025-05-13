@@ -34,7 +34,6 @@ import {
   LocationAuthorizedUserType,
   locationAuthorizedUserPath
 } from '@ir-engine/common/src/schemas/social/location-authorized-user.schema'
-import { LocationBanType, locationBanPath } from '@ir-engine/common/src/schemas/social/location-ban.schema'
 import { locationSettingPath } from '@ir-engine/common/src/schemas/social/location-setting.schema'
 import { LocationID, LocationQuery, LocationType } from '@ir-engine/common/src/schemas/social/location.schema'
 import { UserID } from '@ir-engine/common/src/schemas/user/user.schema'
@@ -64,16 +63,8 @@ export const locationResolver = resolve<LocationType, HookContext>({
       paginate: false
     })) as LocationAuthorizedUserType[]
   }),
-  locationBans: virtual(async (location, context) => {
-    return (await context.app.service(locationBanPath).find({
-      query: {
-        locationId: location.id as LocationID
-      },
-      paginate: false
-    })) as LocationBanType[]
-  }),
-  sceneAsset: virtual(async (location, context) => {
-    return context.app.service(staticResourcePath).get(location.sceneId)
+  sceneURL: virtual(async (location, context) => {
+    return (await context.app.service(staticResourcePath).get(location.sceneId)).url
   }),
   url: virtual(async (location, _context) => {
     return `${config.client.url}/location/${location.slugifiedName}`
@@ -134,6 +125,19 @@ export const locationDataResolver = resolve<LocationType, HookContext>({
 })
 
 export const locationPatchResolver = resolve<LocationType, HookContext>({
+  projectId: async (value, location, context: HookContext<LocationService>) => {
+    if (location.sceneId) {
+      try {
+        const asset = await context.app.service(staticResourcePath).get(location.sceneId)
+        if (!asset.project) throw new BadRequest('Error populating projectId into location')
+        const project = await context.app.service(projectPath).find({ query: { name: asset.project } })
+        if (!project || project.total === 0) throw new BadRequest('Error populating projectId into location')
+        return project.data[0].id
+      } catch (error) {
+        throw new BadRequest('Error populating projectId into location')
+      }
+    }
+  },
   slugifiedName: async (value, location) => {
     if (location.name) return slugify(location.name, { lower: true })
   },

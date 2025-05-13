@@ -31,6 +31,7 @@ import { defineState, getMutableState, none, useMutableState } from '@ir-engine/
 import '@ir-engine/common/src/utils/jsonUtils'
 
 import { ServiceTypes } from '@ir-engine/common/declarations'
+import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { AuthState } from '../user/services/AuthService'
 import { RethrownError } from './errors'
 
@@ -143,7 +144,7 @@ export const uploadToFeathersService = (
           } else {
             if (aborted) return
             console.error('Oh no! There has been an error with the request!', request, e)
-            if (status === 403) {
+            if (status === 403 || status === 400) {
               const errorResponse = JSON.parse(request.responseText)
               reject(new Error(errorResponse.message))
             } else {
@@ -160,10 +161,12 @@ export const uploadToFeathersService = (
 
       if (Array.isArray(files)) {
         files.forEach((file) => {
+          file = cleanFileNameFile(file)
           formData.append('media[]', file)
         })
       } else {
-        formData.set('media', files)
+        const file = cleanFileNameFile(files)
+        formData.set('media', file)
       }
 
       request.open('post', `${config.client.serverUrl}/${service}`, true)

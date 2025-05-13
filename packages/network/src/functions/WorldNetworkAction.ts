@@ -23,20 +23,20 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { matchesEntityUUID } from '@ir-engine/ecs'
-import { defineAction, HyperFlux, matchesPeerID, matchesWithDefault } from '@ir-engine/hyperflux'
+import { matchesEntityID, matchesEntitySourceID, matchesEntityUUID } from '@ir-engine/ecs'
+import { defineAction, getState, matchesPeerID, matchesWithDefault } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { NetworkTopics } from '../Network'
-import { matchesNetworkId, NetworkObjectComponent } from '../NetworkObjectComponent'
 import { matchesUserID } from './matchesUserID'
 
 export class WorldNetworkAction {
   static spawnEntity = defineAction({
     type: 'ee.network.SPAWN_ENTITY',
-    entityUUID: matchesEntityUUID,
+    entityID: matchesEntityID,
+    entitySourceID: matchesEntitySourceID,
     parentUUID: matchesEntityUUID,
-    networkId: matchesWithDefault(matchesNetworkId, () => NetworkObjectComponent.createNetworkId()),
-    ownerID: matchesWithDefault(matchesUserID, () => HyperFlux.store.userID),
+    ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     authorityPeerId: matchesPeerID.optional(),
     $cache: true,
     $topic: NetworkTopics.world

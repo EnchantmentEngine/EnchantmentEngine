@@ -23,20 +23,24 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useRender3DPanelSystem } from '@ir-engine/client-core/src/user/components/Panel3D/useRender3DPanelSystem'
+import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
 import {
   createEntity,
-  generateEntityUUID,
+  EntityID,
+  EntityTreeComponent,
+  getComponent,
   removeComponent,
   setComponent,
+  SourceID,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { AmbientLightComponent, TransformComponent } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import React, { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { CameraGizmoComponent } from '../../../classes/gizmo/camera/CameraGizmoComponent'
@@ -54,8 +58,10 @@ export default function CameraGizmoTool({
   useEffect(() => {
     const { sceneEntity, cameraEntity } = cameraGizmoRenderPanel
 
-    const uuid = generateEntityUUID()
-
+    const uuid = {
+      entitySourceID: 'detatched' as SourceID,
+      entityID: 'camera-gizmo' as EntityID
+    }
     setComponent(sceneEntity, UUIDComponent, uuid)
     setComponent(sceneEntity, NameComponent, 'Camera Gizmo Scene')
     setComponent(sceneEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
@@ -63,6 +69,9 @@ export default function CameraGizmoTool({
     setComponent(sceneEntity, CameraGizmoComponent, { sceneEntity: sceneEntity, cameraEntity: cameraEntity })
     removeComponent(cameraEntity, CameraOrbitComponent)
     setComponent(cameraEntity, TransformComponent, { position: new Vector3(0, 0, 2) })
+
+    const camera = getComponent(cameraEntity, CameraComponent)
+    camera.layers.set(ObjectLayers.Gizmos)
 
     const lightEntity = createEntity()
     setComponent(lightEntity, AmbientLightComponent)
@@ -74,7 +83,7 @@ export default function CameraGizmoTool({
 
   return (
     <div className="z-[4] ml-auto h-20 w-20 ">
-      <canvas ref={panelRef} style={{ pointerEvents: 'all' }} />
+      <canvas id="camera-gizmo-tool" ref={panelRef} style={{ pointerEvents: 'all' }} />
     </div>
   )
 }

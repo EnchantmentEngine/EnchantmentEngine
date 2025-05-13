@@ -27,13 +27,12 @@ import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiMagnifyingGlass, HiPlus, HiTrash } from 'react-icons/hi2'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useMutation } from '@ir-engine/common'
 import { channelPath, ChannelType } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate } from '@ir-engine/hyperflux'
+import { Button, Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 import AddEditChannelModal from './AddEditChannelModal'
@@ -70,20 +69,17 @@ export default function Channels() {
                 search.query.set(event.target.value)
               }, 100)
             }}
-            className="bg-theme-surface-main"
-            containerClassName="w-1/5 block"
             startComponent={<HiMagnifyingGlass />}
           />
           <div className="flex gap-4">
             {selectedChannels.length > 0 && (
               <div>
                 <Button
-                  startIcon={<HiTrash />}
-                  variant="danger"
-                  size="small"
+                  variant="red"
+                  size="sm"
                   fullWidth
                   onClick={() => {
-                    PopoverState.showPopupover(
+                    ModalState.openModal(
                       <ConfirmDialog
                         text={t('admin:components.channel.confirmMultiChannelDelete')}
                         onSubmit={async () => {
@@ -97,19 +93,20 @@ export default function Channels() {
                     )
                   }}
                 >
+                  <HiTrash />
                   {t('admin:components.channel.removeChannels')}
                 </Button>
               </div>
             )}
             <div className="ml-auto">
               <Button
-                startIcon={<HiPlus />}
-                size="small"
+                size="sm"
                 fullWidth
                 onClick={() => {
-                  PopoverState.showPopupover(<AddEditChannelModal />)
+                  ModalState.openModal(<AddEditChannelModal />)
                 }}
               >
+                <HiPlus />
                 {t('admin:components.channel.createChannel')}
               </Button>
             </div>

@@ -24,12 +24,11 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { BadRequest } from '@feathersjs/errors/lib'
-import * as k8s from '@kubernetes/client-node'
+import { V1ContainerStatus, V1Pod } from '@kubernetes/client-node'
 
 import { PodsType, ServerContainerInfoType, ServerPodInfoType } from '@ir-engine/common/src/schemas/cluster/pods.schema'
 import { instancePath, InstanceType } from '@ir-engine/common/src/schemas/networking/instance.schema'
 import { channelPath, ChannelType } from '@ir-engine/common/src/schemas/social/channel.schema'
-import { locationPath, LocationType } from '@ir-engine/common/src/schemas/social/location.schema'
 import { getState } from '@ir-engine/hyperflux'
 
 import { Application } from '../../../declarations'
@@ -124,8 +123,11 @@ export const removePod = async (app: Application, podName: string) => {
 
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (k8DefaultClient) {
-      const podsResponse = await k8DefaultClient.deleteNamespacedPod(podName, 'default')
-      return getServerPodInfo(podsResponse.body)
+      const podsResponse = await k8DefaultClient.deleteNamespacedPod({
+        name: podName,
+        namespace: config.server.namespace
+      })
+      return getServerPodInfo(podsResponse)
     }
   } catch (e) {
     logger.error(e)
@@ -144,22 +146,19 @@ export const getPodsData = async (
 
   try {
     const k8DefaultClient = getState(ServerState).k8DefaultClient
-    const podsResponse = await k8DefaultClient.listNamespacedPod(
-      'default',
-      undefined,
-      false,
-      undefined,
-      undefined,
+    const podsResponse = await k8DefaultClient.listNamespacedPod({
+      namespace: config.server.namespace,
       labelSelector
-    )
+    })
 
-    let items = podsResponse.body.items
+    let items = podsResponse.items
     if (nameFilter) {
       items = items.filter((item) => item.metadata?.name?.startsWith(nameFilter))
     }
 
     pods = getServerPodsInfo(items)
   } catch (err) {
+    console.log('error getting namespaced pod', err)
     logger.error('Failed to get pods info.', err)
   }
 
@@ -175,18 +174,14 @@ const getGameserversData = async (labelSelector: string, id: string, label: stri
 
   try {
     const k8AgonesClient = getState(ServerState).k8AgonesClient
-    const gameserversResponse = await k8AgonesClient.listNamespacedCustomObject(
-      'agones.dev',
-      'v1',
-      'default',
-      'gameservers',
-      undefined,
-      false,
-      undefined,
-      undefined,
+    const gameserversResponse = await k8AgonesClient.listNamespacedCustomObject({
+      group: 'agones.dev',
+      version: 'v1',
+      namespace: config.server.namespace,
+      plural: 'gameservers',
       labelSelector
-    )
-    gameservers = getServerPodsInfo((gameserversResponse.body as any).items)
+    })
+    gameservers = getServerPodsInfo(gameserversResponse.items)
   } catch (err) {
     logger.error('Failed to get pods info.', err)
   }
@@ -198,23 +193,23 @@ const getGameserversData = async (labelSelector: string, id: string, label: stri
   }
 }
 
-const getServerPodsInfo = (items: k8s.V1Pod[]) => {
+const getServerPodsInfo = (items: V1Pod[]) => {
   return items.map((item) => {
     return getServerPodInfo(item)
   })
 }
 
-const getServerPodInfo = (item: k8s.V1Pod) => {
+const getServerPodInfo = (item: V1Pod) => {
   return {
     name: item.metadata?.name,
     status: item.status?.phase,
     age: item.status?.startTime?.toString(),
-    containers: getServerContainerInfo(item.status?.containerStatuses!)
+    containers: getServerContainerInfo((item.status?.containerStatuses as V1ContainerStatus[]) || [])
   } as ServerPodInfoType
 }
 
-const getServerContainerInfo = (items: k8s.V1ContainerStatus[]) => {
-  return items.map((item) => {
+const getServerContainerInfo = (items: V1ContainerStatus[]) => {
+  return items?.map((item) => {
     return {
       name: item.name,
       status: item.state?.running
@@ -248,20 +243,6 @@ const populateInstanceServerType = async (app: Application, items: ServerPodInfo
     return
   }
 
-  // TODO: Move following to instance.resolvers once instance service is migrated to feathers 5.
-  const locations = (await app.service(locationPath).find({
-    query: {
-      id: {
-        $in: instances.map((instance) => instance.locationId!)
-      }
-    },
-    paginate: false
-  })) as any as LocationType[]
-
-  for (const instance of instances) {
-    instance.location = locations.find((location) => location.id === instance.locationId)!
-  }
-
   const channelInstances = instances.filter((item) => item.channelId)
   let channels: ChannelType[] = []
 
@@ -279,7 +260,6 @@ const populateInstanceServerType = async (app: Application, items: ServerPodInfo
   for (const item of items) {
     const instanceExists = instances.find((instance) => instance.podName === item.name)
     item.instanceId = instanceExists ? instanceExists.id : undefined
-    item.currentUsers = instanceExists ? instanceExists.currentUsers : 0
     if (!instanceExists) {
       item.type = 'Unassigned'
       continue
@@ -319,22 +299,12 @@ export const getServerLogs = async (podName: string, containerName: string, app:
 
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (k8DefaultClient) {
-      const podLogs = await k8DefaultClient.readNamespacedPodLog(
-        podName,
-        'default',
-        containerName,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )
-
-      serverLogs = podLogs.body
+      serverLogs = await k8DefaultClient.readNamespacedPodLog({
+        name: podName,
+        namespace: config.server.namespace,
+        container: containerName,
+        insecureSkipTLSVerifyBackend: false
+      })
     }
   } catch (e) {
     logger.error(e)

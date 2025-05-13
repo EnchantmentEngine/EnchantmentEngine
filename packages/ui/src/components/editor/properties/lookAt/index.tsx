@@ -30,11 +30,11 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { FaRegFaceFlushed } from 'react-icons/fa6'
 
-import { EntityUUID } from '@ir-engine/ecs'
+import { EntityID } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { LookAtComponent } from '@ir-engine/spatial/src/transform/components/LookAtComponent'
-import BooleanInput from '../../input/Boolean'
+import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
+import { Checkbox } from '@ir-engine/ui'
 import InputGroup from '../../input/Group'
 import NodeInput from '../../input/Node'
 
@@ -56,16 +56,16 @@ export const LookAtNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Target" label={t('editor:properties.lookAt.target')}>
         <NodeInput
-          value={lookAtComponent.target.value ?? ('' as EntityUUID)}
+          value={lookAtComponent.target.value ?? ('' as EntityID)}
           onRelease={commitProperty(LookAtComponent, 'target')}
           onChange={commitProperty(LookAtComponent, 'target')}
         />
       </InputGroup>
       <InputGroup name="X Axis" label={t('editor:properties.lookAt.xAxis')}>
-        <BooleanInput value={lookAtComponent.xAxis.value} onChange={commitProperty(LookAtComponent, 'xAxis')} />
+        <Checkbox checked={lookAtComponent.xAxis.value} onChange={commitProperty(LookAtComponent, 'xAxis')} />
       </InputGroup>
       <InputGroup name="Y Axis" label={t('editor:properties.lookAt.yAxis')}>
-        <BooleanInput value={lookAtComponent.yAxis.value} onChange={commitProperty(LookAtComponent, 'yAxis')} />
+        <Checkbox checked={lookAtComponent.yAxis.value} onChange={commitProperty(LookAtComponent, 'yAxis')} />
       </InputGroup>
     </NodeEditor>
   )

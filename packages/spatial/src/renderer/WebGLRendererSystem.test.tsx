@@ -26,26 +26,24 @@
 import {
   ECSState,
   Entity,
-  EntityUUID,
+  EntityTreeComponent,
   SystemDefinitions,
   Timer,
-  UUIDComponent,
+  UndefinedEntity,
   createEntity,
   destroyEngine,
   getComponent,
   setComponent
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, startReactor } from '@ir-engine/hyperflux'
 import { act, render } from '@testing-library/react'
 import assert from 'assert'
-import React from 'react'
-import { Color, Group, MathUtils, Texture } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { Color, Group, Texture } from 'three'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { mockEngineRenderer } from '../../tests/util/MockEngineRenderer'
-import { EngineState } from '../EngineState'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { CameraComponent } from '../camera/components/CameraComponent'
-import { EntityTreeComponent } from '../transform/components/EntityTree'
 import { RendererState } from './RendererState'
 import {
   RendererComponent,
@@ -54,8 +52,7 @@ import {
   getSceneParameters
 } from './WebGLRendererSystem'
 import { FogSettingsComponent, FogType } from './components/FogSettingsComponent'
-import { GroupComponent, addObjectToGroup } from './components/GroupComponent'
-import { Object3DComponent } from './components/Object3DComponent'
+import { ObjectComponent } from './components/ObjectComponent'
 import { BackgroundComponent, EnvironmentMapComponent, SceneComponent } from './components/SceneComponents'
 import { VisibleComponent } from './components/VisibleComponent'
 import { ObjectLayers } from './constants/ObjectLayers'
@@ -68,57 +65,45 @@ describe('WebGl Renderer System', () => {
   let nestedVisibleEntity: Entity
   let nestedInvisibleEntity: Entity
 
-  beforeEach(() => {
+  beforeEach(async () => {
     createEngine()
     const timer = Timer((time, xrFrame) => {})
     getMutableState(ECSState).timer.set(timer)
 
     rootEntity = createEntity()
-    getMutableState(EngineState).viewerEntity.set(rootEntity)
-    setComponent(rootEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
+    getMutableState(ReferenceSpaceState).viewerEntity.set(rootEntity)
+
     setComponent(rootEntity, EntityTreeComponent)
     setComponent(rootEntity, CameraComponent)
     setComponent(rootEntity, VisibleComponent)
     mockEngineRenderer(rootEntity)
     setComponent(rootEntity, BackgroundComponent, new Color(0xffffff))
-
     setComponent(rootEntity, EnvironmentMapComponent, new Texture())
     setComponent(rootEntity, FogSettingsComponent, { type: FogType.Height })
 
     invisibleEntity = createEntity()
-    setComponent(invisibleEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
-    setComponent(invisibleEntity, GroupComponent)
-    const invisibleObject3d = setComponent(invisibleEntity, Object3DComponent, new Group())
-    addObjectToGroup(invisibleEntity, invisibleObject3d)
+    setComponent(invisibleEntity, ObjectComponent, new Group())
     setComponent(invisibleEntity, EntityTreeComponent)
 
     visibleEntity = createEntity()
-    setComponent(visibleEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
     setComponent(visibleEntity, VisibleComponent)
-    const visibleObject3d = setComponent(visibleEntity, Object3DComponent, new Group())
-    addObjectToGroup(visibleEntity, visibleObject3d)
-    setComponent(visibleEntity, GroupComponent)
+    setComponent(visibleEntity, ObjectComponent, new Group())
     setComponent(visibleEntity, EntityTreeComponent)
     setComponent(rootEntity, SceneComponent)
 
     nestedInvisibleEntity = createEntity()
-    setComponent(nestedInvisibleEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
-    setComponent(nestedInvisibleEntity, GroupComponent)
-    const nestedInvisibleObject3d = setComponent(nestedInvisibleEntity, Object3DComponent, new Group())
-    addObjectToGroup(nestedInvisibleEntity, nestedInvisibleObject3d)
+    setComponent(nestedInvisibleEntity, ObjectComponent, new Group())
     setComponent(nestedInvisibleEntity, EntityTreeComponent)
     setComponent(visibleEntity, SceneComponent)
 
     nestedVisibleEntity = createEntity()
-    setComponent(nestedVisibleEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
     setComponent(nestedVisibleEntity, VisibleComponent)
-    const nestedVisibleObject3d = setComponent(nestedVisibleEntity, Object3DComponent, new Group())
-    addObjectToGroup(nestedVisibleEntity, nestedVisibleObject3d)
-    setComponent(nestedVisibleEntity, GroupComponent)
+    setComponent(nestedVisibleEntity, ObjectComponent, new Group())
     setComponent(nestedVisibleEntity, EntityTreeComponent)
     setComponent(invisibleEntity, SceneComponent)
 
     setComponent(rootEntity, RendererComponent, { scenes: [visibleEntity, invisibleEntity] })
+    await act(() => render(null))
   })
 
   afterEach(() => {
@@ -126,7 +111,7 @@ describe('WebGl Renderer System', () => {
   })
 
   it('Test Background, Environment, Fog Components', async () => {
-    const { background, environment, fog, children } = getSceneParameters([rootEntity])
+    const { background, environment, fog, children } = getSceneParameters([rootEntity], UndefinedEntity)
     SystemDefinitions.get(WebGLRendererSystem)?.execute()
     assert(background, 'background component exists')
     const backgroundColor = background as Color
@@ -141,9 +126,7 @@ describe('WebGl Renderer System', () => {
 
   it('Test WebGL Reactors', async () => {
     const webGLRendererSystem = SystemDefinitions.get(WebGLRendererSystem)!
-    const RenderSystem = webGLRendererSystem.reactor!
-    const tag = <RenderSystem />
-    const { rerender, unmount } = render(tag)
+    startReactor(webGLRendererSystem.reactor!)
 
     SystemDefinitions.get(WebGLRendererSystem)?.execute()
 
@@ -157,29 +140,30 @@ describe('WebGl Renderer System', () => {
     engineRendererSettings.gridVisibility.set(true)
     engineRendererSettings.nodeHelperVisibility.set(true)
 
-    await act(() => rerender(tag))
+    await vi.waitFor(() => {
+      const camera = getComponent(rootEntity, CameraComponent)
+      const rendererComp = getComponent(rootEntity, RendererComponent)
+      /** @todo we never add a PostProcessing component, so why are these tests expecting an effect composer? */
+      // const effectComposer = rendererComp.effectComposer
+      // const passes = effectComposer?.passes.filter((p) => p.name === 'RenderPass') as any
+      // const renderPass: RenderPass = passes ? passes[0] : undefined
 
-    const camera = getComponent(rootEntity, CameraComponent)
-    const rendererComp = getComponent(rootEntity, RendererComponent)
-    /** @todo we never add a PostProcessing component, so why are these tests expecting an effect composer? */
-    // const effectComposer = rendererComp.effectComposer
-    // const passes = effectComposer?.passes.filter((p) => p.name === 'RenderPass') as any
-    // const renderPass: RenderPass = passes ? passes[0] : undefined
-
-    // assert(renderPass.overrideMaterial, 'change render mode')
-    assert(rendererComp.needsResize, 'change render scale')
-    assert(camera.layers.isEnabled(ObjectLayers.PhysicsHelper), 'enable physicsDebug')
-    assert(camera.layers.isEnabled(ObjectLayers.AvatarHelper), 'enable avatarDebug')
-    assert(camera.layers.isEnabled(ObjectLayers.Gizmos), 'enable gridVisibility')
-    assert(camera.layers.isEnabled(ObjectLayers.NodeHelper), 'enable nodeHelperVisibility')
+      // assert(renderPass.overrideMaterial, 'change render mode')
+      assert(rendererComp.needsResize, 'change render scale')
+      assert(camera.layers.isEnabled(ObjectLayers.PhysicsHelper), 'enable physicsDebug')
+      assert(camera.layers.isEnabled(ObjectLayers.AvatarHelper), 'enable avatarDebug')
+      assert(camera.layers.isEnabled(ObjectLayers.Gizmos), 'enable gridVisibility')
+      assert(camera.layers.isEnabled(ObjectLayers.NodeHelper), 'enable nodeHelperVisibility')
+    })
 
     webGLRendererSystem?.execute()
 
-    assert(!rendererComp.needsResize, 'resize updated')
-    const scenes = getComponent(rootEntity, RendererComponent).scenes
-    const entitiesToRender = scenes.map(getNestedVisibleChildren).flat()
-    assert(entitiesToRender.length == 1 && entitiesToRender[0] == visibleEntity, 'visible children')
-
-    unmount()
+    await vi.waitFor(() => {
+      const rendererComp = getComponent(rootEntity, RendererComponent)
+      assert(!rendererComp.needsResize, 'resize updated')
+      const scenes = getComponent(rootEntity, RendererComponent).scenes
+      const entitiesToRender = scenes.map(getNestedVisibleChildren).flat()
+      assert(entitiesToRender.length == 1 && entitiesToRender[0] == visibleEntity, 'visible children')
+    })
   })
 })

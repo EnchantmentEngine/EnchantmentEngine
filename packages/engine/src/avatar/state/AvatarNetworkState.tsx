@@ -25,15 +25,23 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect, useLayoutEffect } from 'react'
 
-import { EntityUUID, getOptionalComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
-import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
+import {
+  entityExists,
+  EntityUUID,
+  getOptionalComponent,
+  removeComponent,
+  setComponent,
+  useOptionalComponent,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { AvatarColliderComponent } from '@ir-engine/engine/src/avatar/components/AvatarControllerComponent'
-import { loadAvatarModelAsset, unloadAvatarForUser } from '@ir-engine/engine/src/avatar/functions/avatarFunctions'
 import { spawnAvatarReceptor } from '@ir-engine/engine/src/avatar/functions/spawnAvatarReceptor'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import { defineState, getMutableState, isClient, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { WorldNetworkAction } from '@ir-engine/network'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 export const AvatarState = defineState({
   name: 'ee.engine.avatar.AvatarState',
@@ -48,7 +56,12 @@ export const AvatarState = defineState({
 
   receptors: {
     onSpawn: AvatarNetworkAction.spawn.receive((action) => {
-      getMutableState(AvatarState)[action.entityUUID].set({ avatarURL: action.avatarURL, name: action.name })
+      getMutableState(AvatarState)[
+        UUIDComponent.join({ entitySourceID: action.entitySourceID!, entityID: action.entityID })
+      ].set({
+        avatarURL: action.avatarURL,
+        name: action.name
+      })
     }),
     onSetAvatarID: AvatarNetworkAction.setAvatarURL.receive((action) => {
       getMutableState(AvatarState)[action.entityUUID].merge({ avatarURL: action.avatarURL })
@@ -76,21 +89,21 @@ export const AvatarState = defineState({
 const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
   const { avatarURL, name } = useHookstate(getMutableState(AvatarState)[entityUUID])
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
+  const hasTransformComponent = useOptionalComponent(entity, TransformComponent)
 
   useLayoutEffect(() => {
-    if (!entity) return
+    if (!entity || !hasTransformComponent) return
     spawnAvatarReceptor(entityUUID)
-  }, [entity])
+  }, [entity, hasTransformComponent])
 
   useEffect(() => {
-    if (!isClient) return
     if (!entity || !avatarURL.value) return
 
-    loadAvatarModelAsset(entity, avatarURL.value)
+    setComponent(entity, GLTFComponent, { src: avatarURL.value })
 
     return () => {
       if (!entityExists(entity)) return
-      unloadAvatarForUser(entity)
+      removeComponent(entity, GLTFComponent)
     }
   }, [avatarURL.value, entity])
 

@@ -28,7 +28,7 @@ import type { Static } from '@feathersjs/typebox'
 import { getValidator, querySyntax, Type } from '@feathersjs/typebox'
 
 import { TypedString } from '../../types/TypeboxUtils'
-import { UserID } from '../user/user.schema'
+import { UserID, userSchema } from '../user/user.schema'
 import { dataValidator, queryValidator } from '../validators'
 
 export const staticResourcePath = 'static-resource'
@@ -46,6 +46,7 @@ export const staticResourceSchema = Type.Object(
     userId: TypedString<UserID>({
       format: 'uuid'
     }),
+    user: Type.Optional(Type.Ref(userSchema)),
     hash: Type.String(),
     type: Type.String(), // 'scene' | 'asset' | 'file' | 'thumbnail' | 'avatar' | 'recording'
     project: Type.Optional(Type.String()),
@@ -57,14 +58,17 @@ export const staticResourceSchema = Type.Object(
     name: Type.Optional(Type.String()),
     url: Type.String(),
     stats: Type.Optional(Type.Record(Type.String(), Type.Any())),
-    thumbnailKey: Type.Optional(Type.String()),
+    thumbnailKey: Type.Optional(Type.Union([Type.String(), Type.Null()])),
     thumbnailURL: Type.Optional(Type.String()),
-    thumbnailMode: Type.Optional(Type.String()), // 'automatic' | 'manual'
+    thumbnailMode: Type.Optional(Type.Union([Type.String(), Type.Null()])), // 'automatic' | 'manual'
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),
     createdAt: Type.String({ format: 'date-time' }),
-    updatedAt: Type.String({ format: 'date-time' })
+    updatedAt: Type.String({ format: 'date-time' }),
+    width: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    height: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    depth: Type.Optional(Type.Union([Type.Number(), Type.Null()]))
   },
   { $id: 'StaticResource', additionalProperties: false }
 )
@@ -95,7 +99,10 @@ export const staticResourceDataSchema = Type.Partial(
     'stats',
     'thumbnailKey',
     'thumbnailMode',
-    'name'
+    'name',
+    'width',
+    'height',
+    'depth'
   ]),
   { $id: 'StaticResourceData' }
 )
@@ -119,7 +126,10 @@ export const staticResourcePatchSchema = Type.Partial(
     'stats',
     'thumbnailKey',
     'thumbnailMode',
-    'name'
+    'name',
+    'width',
+    'height',
+    'depth'
   ]),
   {
     $id: 'StaticResourcePatch'
@@ -146,7 +156,10 @@ export const staticResourceQueryProperties = Type.Pick(staticResourceSchema, [
   'thumbnailMode',
   'createdAt',
   'updatedAt',
-  'name'
+  'name',
+  'width',
+  'height',
+  'depth'
 ])
 export const staticResourceQuerySchema = Type.Intersect(
   [

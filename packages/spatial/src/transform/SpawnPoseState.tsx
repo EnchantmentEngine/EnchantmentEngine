@@ -27,7 +27,8 @@ import React, { useLayoutEffect } from 'react'
 import { Quaternion, Vector3 } from 'three'
 
 import { EntityUUID, setComponent, UUIDComponent } from '@ir-engine/ecs'
-import { defineState, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { WorldNetworkAction } from '@ir-engine/network'
 
 import { TransformComponent } from './components/TransformComponent'
 import { SpawnObjectActions } from './SpawnObjectActions'
@@ -45,10 +46,19 @@ export const SpawnPoseState = defineState({
 
   receptors: {
     onSpawnObject: SpawnObjectActions.spawnObject.receive((action) => {
-      getMutableState(SpawnPoseState)[action.entityUUID].merge({
+      getMutableState(SpawnPoseState)[
+        UUIDComponent.join({
+          entitySourceID: action.entitySourceID ?? action.parentUUID,
+          entityID: action.entityID
+        })
+      ].merge({
         spawnPosition: action.position ? new Vector3().copy(action.position) : new Vector3(),
         spawnRotation: action.rotation ? new Quaternion().copy(action.rotation) : new Quaternion()
       })
+    }),
+
+    onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
+      getMutableState(SpawnPoseState)[action.entityUUID].set(none)
     })
   },
 

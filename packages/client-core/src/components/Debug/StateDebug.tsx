@@ -22,7 +22,6 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
-import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   defineState,
@@ -34,8 +33,9 @@ import {
   useHookstate
 } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
-import Input from '@ir-engine/ui/src/primitives/tailwind/Input'
+import { Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { useFrameUpdate } from './useFrameUpdate'
 
 const labelRenderer = (data: Record<string | number, any>) => {
   return (keyPath: (string | number)[], ...args) => {
@@ -44,10 +44,28 @@ const labelRenderer = (data: Record<string | number, any>) => {
       return <Text fontWeight="medium">{Array.isArray(data[key].type) ? data[key].type[0] : data[key].type}</Text>
     }
     if (keyPath.length === 4 && typeof key === 'number') {
-      const actions = data[keyPath[2]].actions
+      const actions = data
       return (
         <Text fontWeight="medium">{Array.isArray(actions[key].type) ? actions[key].type[0] : actions[key].type}</Text>
       )
+    }
+    return <Text fontWeight="medium">{key}</Text>
+  }
+}
+
+const actionLabelRenderer = (data: Record<string | number, any>) => {
+  return (keyPath: (string | number)[], ...args) => {
+    const key = keyPath[0]
+    // action
+    if (keyPath.length === 2 && typeof key === 'number') {
+      const actions = data
+      return (
+        <Text fontWeight="medium">{Array.isArray(actions[key].type) ? actions[key].type[0] : actions[key].type}</Text>
+      )
+    }
+    //$stack
+    if (keyPath.length === 4) {
+      return ''
     }
     return <Text fontWeight="medium">{key}</Text>
   }
@@ -62,8 +80,9 @@ const StateSearchState = defineState({
 })
 
 export function StateDebug() {
-  useHookstate(getMutableState(ECSState).frameTime).value
   const { t } = useTranslation()
+
+  useFrameUpdate()
 
   const stateSearch = useHookstate(getMutableState(StateSearchState).search)
 
@@ -89,9 +108,8 @@ export function StateDebug() {
   return (
     <div className="m-1 bg-neutral-600 p-1">
       <div className="my-0.5">
-        <Text>{t('common:debug.state')}</Text>
+        <Text className="text-text-primary-button">{t('common:debug.state')}</Text>
         <Input
-          containerClassName="my-0.5"
           type="text"
           placeholder="Search..."
           value={stateSearch.value}
@@ -115,7 +133,7 @@ export function StateDebug() {
         <h1>{t('common:debug.actionsHistory')}</h1>
         <JSONTree
           data={actionHistory}
-          labelRenderer={labelRenderer(actionHistory)}
+          labelRenderer={actionLabelRenderer(actionHistory)}
           shouldExpandNodeInitially={() => false}
         />
       </div>
@@ -123,7 +141,7 @@ export function StateDebug() {
         <h1>{t('common:debug.actionsCached')}</h1>
         <JSONTree
           data={cachedHistory}
-          labelRenderer={labelRenderer(cachedHistory)}
+          labelRenderer={actionLabelRenderer(cachedHistory)}
           shouldExpandNodeInitially={() => false}
         />
       </div>

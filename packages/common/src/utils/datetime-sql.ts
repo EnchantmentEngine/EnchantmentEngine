@@ -44,6 +44,10 @@ export const toDisplayDateTime = (date: string | null | undefined) => {
     : '-'
 }
 
+export const toDisplayDateTimeUtc = (date: string | null | undefined) => {
+  return date ? new Date(date).toISOString().slice(0, 19).replace('T', ' ') : '-'
+}
+
 // https://stackoverflow.com/a/11150727
 export const fromDateTimeSql = (date: string) => {
   let dateObj: Date
@@ -104,4 +108,12 @@ export const timeAgo = (date: Date) => {
   }
 
   return ''
+}
+
+export const formatDateToMMDDYY = (timestamp: number): string => {
+  const date = new Date(timestamp * 1000)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const year = date.getFullYear().toString().slice(-2)
+  return `${month}/${day}/${year}`
 }

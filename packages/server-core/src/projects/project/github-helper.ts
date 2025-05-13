@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { Paginated } from '@feathersjs/feathers'
+import { createAppAuth } from '@octokit/auth-app'
 import { createOAuthAppAuth } from '@octokit/auth-oauth-app'
 import { Octokit } from '@octokit/rest'
 import appRootPath from 'app-root-path'
@@ -49,13 +50,11 @@ import {
   VolumetricFileTypes
 } from '@ir-engine/engine/src/assets/constants/fileTypes'
 
-import {
-  AuthAppCredentialsType,
-  authenticationSettingPath
-} from '@ir-engine/common/src/schemas/setting/authentication-setting.schema'
+import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import { Application } from '../../../declarations'
 import logger from '../../ServerLogger'
-import config from '../../appconfig'
+import config, { AuthenticationConfig } from '../../appconfig'
 import { createExecutorJob } from '../../k8s-job-helper'
 import { getFileKeysRecursive } from '../../media/storageprovider/storageProviderUtils'
 import { getStorageProvider } from '../../media/storageprovider/storageprovider'
@@ -69,8 +68,9 @@ const GITHUB_LFS_FLOOR = 30 * 1000 * 1000
 const TOKEN_REGEX = /"RemoteAuth ([0-9a-zA-Z-_]+)"/
 const OID_REGEX = /oid sha256:([0-9a-fA-F]{64})/
 const PUSH_TIMEOUT = 60 * 10 //10 minute timeout on GitHub push jobs completing or failing
+const COMMIT_FILE_PAGE_SIZE = 150 //Only upload 150 files in a push to GitHub; more than ~200 may trigger errors on uploading trees
 
-export const refreshToken = async (githubSettings: AuthAppCredentialsType, token: string, app: Application) => {
+export const refreshToken = async (githubSettings: AuthenticationConfig, token: string, app: Application) => {
   const identityProviderResponse = await app.service(identityProviderPath).find({
     query: {
       type: 'github',
@@ -81,8 +81,8 @@ export const refreshToken = async (githubSettings: AuthAppCredentialsType, token
   const identityProvider = identityProviderResponse.data[0]
   if (!identityProvider.oauthRefreshToken) return ''
   const params = new URLSearchParams()
-  params.append('client_id', githubSettings.key)
-  params.append('client_secret', githubSettings.secret)
+  params.append('client_id', githubSettings.oauth.github.key)
+  params.append('client_secret', githubSettings.oauth.github.secret)
   params.append('grant_type', 'refresh_token')
   params.append('refresh_token', identityProvider.oauthRefreshToken)
   const refreshResponse = await fetch(`https://github.com/login/oauth/access_token`, {
@@ -434,43 +434,55 @@ const uploadToRepo = async (
     fileBlobs.push(blob)
     filePaths.push(gitAttributesFilePath)
   }
-  // Create a new tree from all of the files, so that a new commit can be made from it
-  const newTree = await createNewTree(
-    octo,
-    org,
-    repo,
-    fileBlobs,
-    filePaths.map((path) => path.replace(`projects/${project.name}/`, '')),
-    currentCommit.treeSha
-  )
-  const date = Date.now()
-  const commitMessage = `Update by ${user.login} at ${new Date(date).toJSON()}`
-  //Create the new commit with all of the file changes
-  const newCommit = await createNewCommit(octo, org, repo, commitMessage, newTree.sha, currentCommit.commitSha)
+  let treeSha = currentCommit.treeSha
+  let commitSha = currentCommit.commitSha
+  //GitHub's tree creation endpoint sometimes throws errors if it's processing too many files in a single tree.
+  //We chunk the update into commits of 100 files to make sure we're staying under whatever limit it's running into.
+  for (let i = 0; i < fileBlobs.length; i += COMMIT_FILE_PAGE_SIZE) {
+    const blobSlice = fileBlobs.slice(i, i + COMMIT_FILE_PAGE_SIZE)
+    const pathsSlice = filePaths.slice(i, i + COMMIT_FILE_PAGE_SIZE)
+    // Create a new tree from all of the files, so that a new commit can be made from it
+    const newTree = await createNewTree(
+      octo,
+      org,
+      repo,
+      blobSlice,
+      pathsSlice.map((path) => path.replace(`projects/${project.name}/`, '')),
+      filePaths.map((path) => path.replace(`projects/${project.name}/`, '')),
+      treeSha
+    )
+    const date = Date.now()
+    const commitMessage = `Update by ${user.login} at ${new Date(date).toJSON()}`
+    //Create the new commit with all of the file changes
+    const newCommit = await createNewCommit(octo, org, repo, commitMessage, newTree.sha, commitSha)
+    treeSha = newCommit.tree.sha
+    commitSha = newCommit.sha
+
+    try {
+      //This pushes the commit to the main branch in GitHub
+      await setBranchToCommit(octo, org, repo, branch, commitSha)
+    } catch (err) {
+      console.log('error pushing commit', err)
+      // Couldn't push directly to branch for some reason, so making a new branch and opening a PR instead
+      await octo.git.createRef({
+        owner: org,
+        repo,
+        ref: `refs/heads/${user.login}-${date}`,
+        sha: commitSha
+      })
+      await octo.pulls.create({
+        owner: org,
+        repo,
+        head: `refs/heads/${user.login}-${date}`,
+        base: `refs/heads/${branch}`,
+        title: commitMessage
+      })
+    }
+  }
 
   await app
     .service(projectPath)
-    .patch(project.id, { commitSHA: newCommit.sha, commitDate: toDateTimeSql(new Date()), hasLocalChanges: false })
-
-  try {
-    //This pushes the commit to the main branch in GitHub
-    await setBranchToCommit(octo, org, repo, branch, newCommit.sha)
-  } catch (err) {
-    // Couldn't push directly to branch for some reason, so making a new branch and opening a PR instead
-    await octo.git.createRef({
-      owner: org,
-      repo,
-      ref: `refs/heads/${user.login}-${date}`,
-      sha: newCommit.sha
-    })
-    await octo.pulls.create({
-      owner: org,
-      repo,
-      head: `refs/heads/${user.login}-${date}`,
-      base: `refs/heads/${branch}`,
-      title: commitMessage
-    })
-  }
+    .patch(project.id, { commitSHA: commitSha, commitDate: toDateTimeSql(new Date()), hasLocalChanges: false })
 }
 export const getCurrentCommit = async (octo: Octokit, org: string, repo: string, branch = 'main') => {
   try {
@@ -534,11 +546,7 @@ export const getGithubOwnerRepo = (url: string) => {
 
 export const getOctokitForToken = async (app: Application, token: string) => {
   let octoKit = new Octokit({ auth: token })
-  const authenticationSettings = (
-    await app.service(authenticationSettingPath).find({
-      isInternal: true
-    })
-  ).data[0]
+  const authenticationSettings = await fetchAuthenticationSettings(app)
   try {
     const checkerOctokit = new Octokit({
       authStrategy: createOAuthAppAuth,
@@ -553,7 +561,7 @@ export const getOctokitForToken = async (app: Application, token: string) => {
       access_token: token
     })
   } catch (err) {
-    token = await refreshToken(authenticationSettings.oauth!.github!, token, app)
+    token = await refreshToken(authenticationSettings, token, app)
     octoKit = new Octokit({ auth: token })
   }
   return {
@@ -577,19 +585,15 @@ export const getOctokitForChecking = async (app: Application, url: string, param
     throw new Forbidden('You must have a connected GitHub account to access public repos')
   const { owner, repo } = getGithubOwnerRepo(url)
   let octoKit = new Octokit({ auth: githubIdentityProvider.data[0].oauthToken })
-  const authenticationSettings = (
-    await app.service(authenticationSettingPath).find({
-      isInternal: true
-    })
-  ).data[0]
+  const authenticationSettings = await fetchAuthenticationSettings(app)
   let token = githubIdentityProvider.data[0].oauthToken
   try {
     const checkerOctokit = new Octokit({
       authStrategy: createOAuthAppAuth,
       auth: {
         clientType: 'oauth-app',
-        clientId: authenticationSettings.oauth!.github!.key,
-        clientSecret: authenticationSettings.oauth!.github!.secret
+        clientId: authenticationSettings?.oauth!.github!.key,
+        clientSecret: authenticationSettings?.oauth!.github!.secret
       }
     })
     await checkerOctokit.rest.apps.checkToken({
@@ -597,7 +601,7 @@ export const getOctokitForChecking = async (app: Application, url: string, param
       access_token: token!
     })
   } catch (err) {
-    token = await refreshToken(authenticationSettings.oauth!.github!, token!, app)
+    token = await refreshToken(authenticationSettings, token!, app)
     octoKit = new Octokit({ auth: token })
   }
   return {
@@ -684,6 +688,7 @@ const createNewTree = async (
   repo: string,
   blobs: any[],
   paths: string[],
+  fullPaths: string[],
   parentTreeSha: string
 ) => {
   const oldTree = await octo.git.getTree({
@@ -702,7 +707,7 @@ const createNewTree = async (
     sha
   })) as any[]
   committableFilesMap.forEach((fileName) => {
-    if (fileName && paths.indexOf(fileName) < 0) {
+    if (fileName && fullPaths.indexOf(fileName) < 0) {
       tree.push({
         path: fileName,
         mode: `100644`,
@@ -756,4 +761,45 @@ const isBase64Encoded = (filePath: string) => {
     ModelFileTypes.indexOf(extension) > -1 ||
     BinaryFileTypes.indexOf(extension) > -1
   )
+}
+
+export const generateInstallationOctokit = (appId: string, privateKey: string, installationId: string) => {
+  return new Octokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId,
+      privateKey,
+      installationId
+    }
+  })
+}
+/**
+ * Fetches the authentication settings from the application's service.
+ *
+ * This function retrieves settings categorized under 'authentication' from the engine settings
+ * service and converts them into an `AuthenticationConfig` object. The settings are unflattened
+ * into a structured object using the `unflattenArrayToObject` utility.
+ *
+ * @param app - The application instance used to access the engine settings service.
+ * @returns A promise that resolves to the authentication settings as an `AuthenticationConfig` object.
+ */
+async function fetchAuthenticationSettings(app: Application) {
+  try {
+    const engineSettingData = await app.service(engineSettingPath).find({
+      isInternal: true,
+      query: {
+        category: 'authentication'
+      },
+      paginate: false
+    })
+
+    const authenticationSettings = unflattenArrayToObject(
+      engineSettingData.map((el) => ({ key: el.key, value: el.value, dataType: el.dataType }))
+    ) as AuthenticationConfig
+
+    return authenticationSettings
+  } catch (error) {
+    logger.error('Error fetching authentication settings:', error)
+    throw new Error('Failed to fetch authentication settings' + error)
+  }
 }

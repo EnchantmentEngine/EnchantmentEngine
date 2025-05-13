@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,11 +19,15 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  EntityID,
+  EntityTreeComponent,
+  SourceID,
+  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
@@ -37,13 +41,15 @@ import {
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
+import { assertColor } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
-import { LightHelperComponent } from '../../../common/debug/LightHelperComponent'
+import { NameComponent } from '../../../common/NameComponent'
 import { destroySpatialEngine } from '../../../initializeEngine'
 import { TransformComponent } from '../../../transform/components/TransformComponent'
 import { RendererState } from '../../RendererState'
 import { LineSegmentComponent } from '../LineSegmentComponent'
+import { ObjectComponent } from '../ObjectComponent'
 import { HemisphereLightComponent } from './HemisphereLightComponent'
 import { LightTagComponent } from './LightTagComponent'
 
@@ -59,26 +65,14 @@ const HemisphereLightComponentDefaults: HemisphereLightComponentData = {
   intensity: 1
 }
 
-function getColorHex(c: ColorRepresentation) {
-  return new Color(c).getHex()
-}
-
-export function assertColorEqual(l: ColorRepresentation, r: ColorRepresentation) {
-  assert.equal(getColorHex(l), getColorHex(r))
-}
-
-export function assertColorNotEqual(l: ColorRepresentation, r: ColorRepresentation) {
-  assert.notEqual(getColorHex(l), getColorHex(r))
-}
-
 function assertHemisphereLightComponentEq(A: HemisphereLightComponentData, B: HemisphereLightComponentData): void {
-  assertColorEqual(A.skyColor, B.skyColor)
-  assertColorEqual(A.groundColor, B.groundColor)
+  assertColor.eq(A.skyColor, B.skyColor)
+  assertColor.eq(A.groundColor, B.groundColor)
   assert.equal(A.intensity, B.intensity)
 }
 function assertHemisphereLightComponentNotEq(A: HemisphereLightComponentData, B: HemisphereLightComponentData): void {
-  assertColorNotEqual(A.skyColor, B.skyColor)
-  assertColorNotEqual(A.groundColor, B.groundColor)
+  assertColor.notEq(A.skyColor, B.skyColor)
+  assertColor.notEq(A.groundColor, B.groundColor)
   assert.notEqual(A.intensity, B.intensity)
 }
 
@@ -99,6 +93,10 @@ describe('HemisphereLightComponent', () => {
     beforeEach(async () => {
       createEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, HemisphereLightComponent)
     })
 
@@ -182,6 +180,10 @@ describe('HemisphereLightComponent', () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, TransformComponent)
     })
 
@@ -191,48 +193,56 @@ describe('HemisphereLightComponent', () => {
       return destroyEngine()
     })
 
-    it('should set a LightTagComponent on the entityContext when it is mounted', () => {
+    it('should set a LightTagComponent on the entityContext when it is mounted', async () => {
       // Sanity check before running
       assert.equal(hasComponent(testEntity, LightTagComponent), false)
 
       // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent)
-      assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
     })
 
-    it('should react when directionalLightComponent.groundColor changes', () => {
+    it('should react when directionalLightComponent.groundColor changes', async () => {
       const Expected = new Color(0x123456)
 
       // Set the data as expected
       setComponent(testEntity, HemisphereLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, HemisphereLightComponent).groundColor
-      assertColorEqual(before, HemisphereLightComponentDefaults.groundColor)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, HemisphereLightComponent).groundColor
+        assertColor.eq(before, HemisphereLightComponentDefaults.groundColor)
+      })
 
       // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent, { groundColor: Expected })
-      const result = getComponent(testEntity, HemisphereLightComponent).groundColor
-      assertColorEqual(result, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, HemisphereLightComponent).groundColor
+        assertColor.eq(result, Expected)
+      })
     })
 
-    it('should react when directionalLightComponent.skyColor changes', () => {
+    it('should react when directionalLightComponent.skyColor changes', async () => {
       const Expected = new Color(0x123456)
 
       // Set the data as expected
       setComponent(testEntity, HemisphereLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, HemisphereLightComponent).skyColor
-      assertColorEqual(before, HemisphereLightComponentDefaults.skyColor)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, HemisphereLightComponent).skyColor
+        assertColor.eq(before, HemisphereLightComponentDefaults.skyColor)
+      })
 
       // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent, { skyColor: Expected })
-      const result = getComponent(testEntity, HemisphereLightComponent).skyColor
-      assertColorEqual(result, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, HemisphereLightComponent).skyColor
+        assertColor.eq(result, Expected)
+      })
     })
 
-    it('should react when hemisphereLightComponent.intensity changes', () => {
+    it('should react when hemisphereLightComponent.intensity changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -240,19 +250,22 @@ describe('HemisphereLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, HemisphereLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, HemisphereLightComponent).intensity
-      assert.equal(before, HemisphereLightComponentDefaults.intensity)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, HemisphereLightComponent).intensity
+        assert.equal(before, HemisphereLightComponentDefaults.intensity)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent, { intensity: Expected })
-      const result = getComponent(testEntity, HemisphereLightComponent).intensity
-      assert.equal(result, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, HemisphereLightComponent).intensity
+        assert.equal(result, Expected)
+      })
     })
 
-    it('should react when debugEnabled changes', () => {
+    it('should react when debugEnabled changes', async () => {
       const Initial = false
       const Expected = !Initial
 
@@ -262,18 +275,22 @@ describe('HemisphereLightComponent', () => {
 
       // Run and Check the Initial result
       setComponent(testEntity, HemisphereLightComponent)
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Initial)
+      setComponent(testEntity, NameComponent, 'hemisphere-light')
 
       // Re-run and Check the result again
       getMutableState(RendererState).nodeHelperVisibility.set(Expected)
-      HemisphereLightComponent.reactorMap.get(testEntity)!.run()
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Expected)
-      assert.equal(getComponent(testEntity, LightHelperComponent).name, 'hemisphere-light-helper')
+      await vi.waitFor(() => {
+        const childEntity1 = getComponent(testEntity, EntityTreeComponent).children[0]
+        assert.equal(hasComponent(childEntity1, ObjectComponent), Expected)
+        assert.equal(getComponent(childEntity1, NameComponent), 'hemisphere-light-helper')
+      })
 
       // Re-run and Check the unmount case
       getMutableState(RendererState).nodeHelperVisibility.set(Initial)
-      HemisphereLightComponent.reactorMap.get(testEntity)!.run()
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Initial)
+      await vi.waitFor(() => {
+        const childEntity1 = getComponent(testEntity, EntityTreeComponent).children[0]
+        assert.equal(hasComponent(childEntity1, ObjectComponent), Initial)
+      })
     })
   }) //:: reactor
-})
+}) //:: HemisphereLightComponent

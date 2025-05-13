@@ -32,9 +32,9 @@ import { MdIntegrationInstructions } from 'react-icons/md'
 
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { VisualScriptComponent } from '@ir-engine/engine'
-import { BooleanInput } from '@ir-engine/ui/src/components/editor/input/Boolean'
-import InputGroup from '../../../input/Group'
+import { VisualScriptComponent } from '@ir-engine/engine/src/visualscript/components/VisualScriptComponent'
+import { Checkbox } from '@ir-engine/ui'
+import InputGroup from '../../input/Group'
 
 export const VisualScriptNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
@@ -48,20 +48,14 @@ export const VisualScriptNodeEditor: EditorComponentType = (props) => {
       description={t('editor:properties.visualScript.description')}
       Icon={VisualScriptNodeEditor.iconComponent}
     >
-      <InputGroup
-        name={t('editor:properties.visualScript.lbl-disabled')}
-        label={t('editor:properties.visualScript.lbl-disabled')}
-      >
-        <BooleanInput
-          value={visualScriptComponent.disabled.value}
+      <InputGroup name="Disable Visual Script" label="Disable Visual Script">
+        <Checkbox
+          checked={visualScriptComponent.disabled.value}
           onChange={commitProperty(VisualScriptComponent, 'disabled')}
         />
       </InputGroup>
-      <InputGroup
-        name={t('editor:properties.visualScript.lbl-run')}
-        label={t('editor:properties.visualScript.lbl-run')}
-      >
-        <BooleanInput value={visualScriptComponent.run.value} onChange={commitProperty(VisualScriptComponent, 'run')} />
+      <InputGroup name="Play Visual Script" label="Play Visual Script">
+        <Checkbox checked={visualScriptComponent.run.value} onChange={commitProperty(VisualScriptComponent, 'run')} />
       </InputGroup>
     </NodeEditor>
   )

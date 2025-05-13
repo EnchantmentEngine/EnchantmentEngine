@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,34 +19,38 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ECSState, defineQuery, useEntityContext } from '@ir-engine/ecs'
+import { defineQuery, ECSState, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
   getMutableComponent,
   getOptionalComponent,
+  hasComponent,
   removeComponent,
   setComponent,
-  useComponent
+  useComponent,
+  useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
-import { Clock, MathUtils, Raycaster, Vector3 } from 'three'
-import { EngineState } from '../../EngineState'
+import { Clock, MathUtils, Quaternion, Raycaster, Vector3 } from 'three'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Vector3_Up, Vector3_Zero } from '../../common/constants/MathConstants'
 import { createConeOfVectors } from '../../common/functions/MathFunctions'
 import { smoothDamp, smootherStep } from '../../common/functions/MathLerpFunctions'
+import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { ObjectLayerComponents } from '../../renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
+import { T } from '../../schema/schemaFunctions'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSceneMetadata'
@@ -60,61 +64,63 @@ export const FollowCameraComponent = defineComponent({
   name: 'FollowCameraComponent',
 
   schema: S.Object({
-    lerpValue: S.Number(0),
-    originalPosition: S.Vec3(),
-    originalOffset: S.Vec3(),
-    originalRotation: S.Quaternion(),
-    targetRotation: S.Quaternion(),
-    targetPosition: S.Vec3(),
-    targetOffset: S.Vec3(),
-    targetToCamera: S.Vec3(),
-    direction: S.Vec3(),
-    lookAtMatrix: S.Mat4(),
-    firstPersonOffset: S.Vec3(),
-    thirdPersonOffset: S.Vec3(),
-    currentOffset: S.Vec3(),
-    offsetSmoothness: S.Number(0.1),
+    lerpValue: S.Number({ default: 0 }),
+    originalPosition: T.Vec3(),
+    originalOffset: T.Vec3(),
+    originalRotation: T.Quaternion(),
+    targetRotation: T.Quaternion(),
+    targetPosition: T.Vec3(),
+    targetOffset: T.Vec3(),
+    targetToCamera: T.Vec3(),
+    direction: T.Vec3(),
+    lookAtMatrix: T.Mat4(),
+    firstPersonOffset: T.Vec3(),
+    thirdPersonOffset: T.Vec3(),
+    currentOffset: T.Vec3(),
+    offsetSmoothness: S.Number({ default: 0.1 }),
     targetEntity: S.Entity(),
-    currentTargetPosition: S.Vec3(),
-    targetPositionSmoothness: S.Number(0),
-    mode: S.Enum(FollowCameraMode, FollowCameraMode.ThirdPerson),
+    currentTargetPosition: T.Vec3(),
+    targetPositionSmoothness: S.Number({ default: 0 }),
+    mode: S.Enum(FollowCameraMode, { default: FollowCameraMode.ThirdPerson }),
     allowedModes: S.Array(S.Enum(FollowCameraMode), [
       FollowCameraMode.ThirdPerson,
       FollowCameraMode.FirstPerson,
       FollowCameraMode.TopDown,
       FollowCameraMode.ShoulderCam
     ]),
-    distance: S.Number(0),
-    targetDistance: S.Number(0),
+    distance: S.Number({ default: 0 }),
+    targetDistance: S.Number({ default: 0 }),
     zoomVelocity: S.Object({
-      value: S.Number(0)
+      value: S.Number({ default: 0 })
     }),
-    thirdPersonMinDistance: S.Number(0),
-    thirdPersonMaxDistance: S.Number(0),
-    effectiveMinDistance: S.Number(0),
-    effectiveMaxDistance: S.Number(0),
-    theta: S.Number(180),
-    phi: S.Number(10),
-    minPhi: S.Number(0),
-    maxPhi: S.Number(0),
-    locked: S.Bool(false),
-    enabled: S.Bool(true),
-    shoulderSide: S.Enum(FollowCameraShoulderSide, FollowCameraShoulderSide.Left),
+    thirdPersonMinDistance: S.Number({ default: 0 }),
+    thirdPersonMaxDistance: S.Number({ default: 0 }),
+    effectiveMinDistance: S.Number({ default: 0 }),
+    effectiveMaxDistance: S.Number({ default: 0 }),
+    theta: S.Number({ default: 180 }),
+    phi: S.Number({ default: 10 }),
+    minPhi: S.Number({ default: 0 }),
+    maxPhi: S.Number({ default: 0 }),
+    locked: S.Bool({ default: false }),
+    enabled: S.Bool({ default: true }),
+    shoulderSide: S.Enum(FollowCameraShoulderSide, { default: FollowCameraShoulderSide.Left }),
     raycastProps: S.Object({
-      enabled: S.Bool(true),
-      rayCount: S.Number(3),
-      rayLength: S.Number(15.0),
-      rayFrequency: S.Number(0.1),
-      rayConeAngle: S.Number(Math.PI / 12),
+      enabled: S.Bool({ default: true }),
+      rayCount: S.Number({ default: 3 }),
+      rayLength: S.Number({ default: 15.0 }),
+      rayFrequency: S.Number({ default: 0.1 }),
+      rayConeAngle: S.Number({ default: Math.PI / 12 }),
       camRayCastClock: S.Class(() => new Clock()),
       camRayCastCache: S.Object({
-        maxDistance: S.Number(-1),
-        targetHit: S.Bool(false)
+        maxDistance: S.Number({ default: -1 }),
+        targetHit: S.Bool({ default: false })
       }),
-      cameraRays: S.Array(S.Vec3(), [])
+      cameraRays: S.Array(T.Vec3(), [])
     }),
-    accumulatedZoomTriggerDebounceTime: S.Number(-1),
-    lastZoomStartDistance: S.Number(0)
+    pointerLock: S.Bool({ default: false }),
+    smoothLerp: S.Bool({ default: true }),
+    accumulatedZoomTriggerDebounceTime: S.Number({ default: -1 }),
+    lastZoomStartDistance: S.Number({ default: 0 })
   }),
 
   reactor: () => {
@@ -149,8 +155,8 @@ export const FollowCameraComponent = defineComponent({
       const distance = (windowHeight / windowWidth) * cameraSettings.startCameraDistance
 
       follow.merge({
-        distance: distance,
-        targetDistance: distance,
+        distance: cameraSettings.startCameraDistance,
+        targetDistance: cameraSettings.startCameraDistance,
         thirdPersonMinDistance: cameraSettings.minCameraDistance,
         thirdPersonMaxDistance: cameraSettings.maxCameraDistance,
         effectiveMinDistance: cameraSettings.minCameraDistance,
@@ -180,6 +186,45 @@ export const FollowCameraComponent = defineComponent({
       }
     }, [follow.mode])
 
+    const rendererComponent = useOptionalComponent(entity, RendererComponent)
+
+    useImmediateEffect(() => {
+      if (!follow.pointerLock.value || !rendererComponent) return
+
+      const canvas = rendererComponent.canvas.get(NO_PROXY) as HTMLCanvasElement
+      if (!canvas) return
+
+      const onClick = () => {
+        if (!hasComponent(entity, RendererComponent)) return
+        if (document.pointerLockElement !== canvas) {
+          /**
+           * @todo - add support for unadjustedMovement API
+           *  - https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API#handling_promise_and_non-promise_versions_of_requestpointerlock
+           */
+          canvas?.requestPointerLock()
+        }
+      }
+
+      const onPointerLock = () => {
+        // console.log('pointer lock')
+      }
+
+      const onPointerUnlock = () => {
+        // console.log('pointer unlock')
+      }
+
+      canvas?.addEventListener('click', onClick)
+      document.addEventListener('pointerlockchange', onPointerLock)
+      document.addEventListener('pointerlockerror', onPointerUnlock)
+
+      return () => {
+        canvas?.removeEventListener('click', onClick)
+        document.removeEventListener('pointerlockchange', onPointerLock)
+        document.removeEventListener('pointerlockerror', onPointerUnlock)
+        document.exitPointerLock()
+      }
+    }, [follow.pointerLock.value, !!rendererComponent?.canvas])
+
     useEffect(() => {
       follow.lerpValue.set(0)
       const followCamera = getComponent(entity, FollowCameraComponent)
@@ -199,19 +244,21 @@ const raycaster = new Raycaster()
 
 const MODE_SWITCH_DEBOUNCE = 0.03
 const LERP_TIME = 1
+const _targetRotation = new Quaternion()
+const _targetPosition = new Vector3()
 
 const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   const follow = getComponent(cameraEntity, FollowCameraComponent)
   const followState = getMutableComponent(cameraEntity, FollowCameraComponent)
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
-  const targetTransform = getComponent(referenceEntity, TransformComponent)
+  const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
 
   followState.lerpValue.set(
     follow.mode != FollowCameraMode.FirstPerson && follow.thirdPersonOffset.y === 0
       ? 0
       : Math.min(followState.lerpValue.value + getState(ECSState).deltaSeconds, LERP_TIME)
   )
-  const lerpVal = smootherStep(followState.lerpValue.value / LERP_TIME)
+  const lerpVal = follow.smoothLerp ? smootherStep(followState.lerpValue.value / LERP_TIME) : 1
 
   if (!targetTransform || !follow || !follow?.enabled) return
 
@@ -234,8 +281,8 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
 
   follow.targetPosition
     .copy(follow.targetOffset)
-    .applyQuaternion(TransformComponent.getWorldRotation(referenceEntity, targetTransform.rotation))
-    .add(TransformComponent.getWorldPosition(referenceEntity, new Vector3()))
+    .applyQuaternion(TransformComponent.getWorldRotation(referenceEntity, _targetRotation))
+    .add(TransformComponent.getWorldPosition(referenceEntity, _targetPosition))
 
   follow.currentTargetPosition.lerpVectors(
     follow.originalPosition ?? follow.currentTargetPosition,
@@ -410,12 +457,16 @@ const updateCameraTargetRotation = (cameraEntity: Entity) => {
 
   const delta = getState(ECSState).deltaSeconds
   if (!followCamera.locked) {
-    followCamera.phi = smoothDamp(followCamera.phi, target.phi, target.phiVelocity, target.time, delta)
-    followCamera.theta = smoothDamp(followCamera.theta, target.theta, target.thetaVelocity, target.time, delta)
+    followCamera.phi = followCamera.smoothLerp
+      ? smoothDamp(followCamera.phi, target.phi, target.phiVelocity, target.time, delta)
+      : target.phi
+    followCamera.theta = followCamera.smoothLerp
+      ? smoothDamp(followCamera.theta, target.theta, target.thetaVelocity, target.time, delta)
+      : target.theta
   }
 }
 
-const cameraLayerQuery = defineQuery([VisibleComponent, ObjectLayerComponents[ObjectLayers.Camera], MeshComponent])
+const cameraLayerQuery = defineQuery([VisibleComponent, ObjectLayerComponents[ObjectLayers.Scene], MeshComponent])
 
 const getMaxCamDistance = (cameraEntity: Entity, target: Vector3) => {
   const followCamera = getComponent(cameraEntity, FollowCameraComponent)
@@ -432,7 +483,7 @@ const getMaxCamDistance = (cameraEntity: Entity, target: Vector3) => {
   const sceneObjects = cameraLayerQuery().flatMap((e) => getComponent(e, MeshComponent))
 
   // Raycast to keep the line of sight with avatar
-  const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+  const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
   followCamera.targetToCamera.subVectors(cameraTransform.position, target)
   // raycaster.ray.origin.sub(targetToCamVec.multiplyScalar(0.1)) // move origin behind camera
 
@@ -441,9 +492,8 @@ const getMaxCamDistance = (cameraEntity: Entity, target: Vector3) => {
   let maxDistance = Math.min(followCamera.thirdPersonMaxDistance, raycastProps.rayLength)
 
   // Check hit with mid ray
-  raycaster.layers.set(ObjectLayers.Camera) // Ignore avatars
-  // @ts-ignore - todo figure out why typescript freaks out at this
-  raycaster.firstHitOnly = true // three-mesh-bvh setting
+  raycaster.layers.set(ObjectLayers.Scene)
+  raycaster.firstHitOnly = true
   raycaster.far = followCamera.thirdPersonMaxDistance
   raycaster.set(target, followCamera.targetToCamera.normalize())
   const hits = raycaster.intersectObjects(sceneObjects, false)

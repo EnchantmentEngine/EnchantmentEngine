@@ -34,25 +34,6 @@ export const FilesViewModeState = defineState({
   extension: syncStateWithLocalStorage(['viewMode'])
 })
 
-export const FilesViewModeSettings = defineState({
-  name: 'FilesViewModeSettings',
-  initial: {
-    icons: {
-      iconSize: 90
-    },
-    list: {
-      fontSize: 15,
-      selectedTableColumns: {
-        name: true,
-        type: true,
-        dateModified: true,
-        size: true
-      }
-    }
-  },
-  extension: syncStateWithLocalStorage(['icons', 'list'])
-})
-
 export const FilesState = defineState({
   name: 'FilesState',
   initial: () => ({

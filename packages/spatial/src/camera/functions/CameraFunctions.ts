@@ -27,8 +27,8 @@ import { ComponentType, getComponent, getOptionalComponent, setComponent } from 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
 import { getState } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponents'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
@@ -67,8 +67,13 @@ export function computeCameraDistanceAndCenter(
   padding: number = 1.1
 ) {
   // Create a bounding sphere from the points
-  const boundingSphere = new Sphere().setFromPoints(pointsToFocus)
 
+  //NO IDEA why `new Sphere().setFromPoints(pointsToFocus)` stopped properly calculating a center point after working fine for over a month
+  const boundingSphere = new Sphere()
+  for (const pt of pointsToFocus) {
+    //expandByPoint is a workaround to force calculating a real centerpoint, which stopped working with setFromPoints
+    boundingSphere.expandByPoint(pt)
+  }
   const center = boundingSphere.center
   const radius = boundingSphere.radius
 
@@ -148,7 +153,7 @@ const worldPosVec3 = new Vector3()
 
 export const inFrustum = (
   entityToCheck: Entity,
-  cameraEntity: Entity = getState(EngineState).viewerEntity
+  cameraEntity: Entity = getState(ReferenceSpaceState).viewerEntity
 ): boolean => {
   if (!cameraEntity) return false
 

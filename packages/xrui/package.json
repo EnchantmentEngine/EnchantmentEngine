@@ -26,7 +26,7 @@
     "url": "https://github.com/ir-engine/ir-engine/issues"
   },
   "engines": {
-    "node": ">= 18.12.0"
+    "node": ">= 22.11.0"
   },
   "publishConfig": {
     "access": "public"
@@ -36,13 +36,13 @@
     "check-errors": "tsc --noemit",
     "build": "npm run build:worker",
     "build:worker": "esbuild core/textures/KTX2Worker.ts --bundle --format=esm --outfile=core/textures/KTX2Worker.bundle.js --loader:.wasm=binary",
-    "test": "cross-env TEST=true vitest run"
+    "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts"
   },
   "dependencies": {
     "@juggle/resize-observer": "^3.4.0",
     "dexie": "^3.2.3",
     "fflate": "^0.7.4",
-    "msgpackr": "^1.8.5"
+    "msgpackr": "^1.9.2"
   },
   "devDependencies": {
     "@types/node": "18.15.5",

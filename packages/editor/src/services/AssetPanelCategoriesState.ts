@@ -20,11 +20,14 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState } from '@ir-engine/hyperflux'
 
+export const MyAssetCategory = 'My Assets'
+
 export const AssetsPanelCategories = defineState({
   name: 'AssetsPanelCategories',
   initial: {
     // 'Default Prefab': {},
-
+    [MyAssetCategory]: {},
+    Prefab: {},
     Model: {
       // NPC: {},
       // Avatar: {},
@@ -33,6 +36,7 @@ export const AssetsPanelCategories = defineState({
         // Backdrop: {},
         // Stage: {}
       },
+      Rooms: {},
       Architectural: {
         Floor: {},
         Ceiling: {},

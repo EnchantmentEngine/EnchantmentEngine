@@ -23,74 +23,26 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useMutation } from '@ir-engine/common'
 import { fileBrowserPath } from '@ir-engine/common/src/schema.type.module'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import React from 'react'
+import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
+import { twMerge } from 'tailwind-merge'
 import { Vector3 } from 'three'
 import ImageCompressionPanel from '../../components/assets/ImageCompressionPanel'
 import ModelCompressionPanel from '../../components/assets/ModelCompressionPanel'
 import { addMediaNode } from '../../functions/addMediaNode'
 import { getSpawnPositionAtCenter } from '../../functions/screenSpaceFunctions'
 import { FilesState, SelectedFilesState } from '../../services/FilesState'
-import { ScriptService } from '../../services/ScriptService'
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { fileConsistsOfContentType, useCurrentFiles } from './helpers'
 import DeleteFileModal from './modals/DeleteFileModal'
 import FilePropertiesModal from './modals/FilePropertiesModal'
 import RenameFileModal from './modals/RenameFileModal'
-
-function PasteFileButton({
-  newPath,
-  setAnchorEvent
-}: {
-  newPath?: string
-  setAnchorEvent: (event: React.MouseEvent | undefined) => void
-}) {
-  const { t } = useTranslation()
-  const { filesQuery } = useCurrentFiles()
-  const isFilesLoading = filesQuery?.status === 'pending'
-  const fileService = useMutation(fileBrowserPath)
-
-  const filesState = useMutableState(FilesState)
-  const clipboardFiles = filesState.clipboardFiles.files
-  const hasClipboardFiles = clipboardFiles.length > 0
-  const currentDirectory = filesState.selectedDirectory.value.startsWith('/')
-    ? filesState.selectedDirectory.value.substring(1)
-    : filesState.selectedDirectory.value
-
-  return (
-    <Button
-      variant="outline"
-      size="small"
-      fullWidth
-      data-testid="files-panel-context-menu-paste-asset-button"
-      disabled={!hasClipboardFiles}
-      onClick={async () => {
-        if (!hasClipboardFiles || isFilesLoading) return
-        setAnchorEvent(undefined)
-        for (const clipboardFile of clipboardFiles.get(NO_PROXY)) {
-          await fileService.update(null, {
-            oldProject: filesState.projectName.value,
-            newProject: filesState.projectName.value,
-            oldName: clipboardFile.fullName,
-            newName: clipboardFile.fullName,
-            oldPath: clipboardFile.path,
-            newPath: (newPath ?? currentDirectory) + clipboardFile.fullName,
-            isCopy: filesState.clipboardFiles.isCopy.value
-          })
-        }
-      }}
-    >
-      {t('editor:layout.filebrowser.pasteAsset')}
-    </Button>
-  )
-}
 
 export function FileContextMenu({
   anchorEvent,
@@ -105,228 +57,232 @@ export function FileContextMenu({
   const filesState = useMutableState(FilesState)
 
   const hasSelection = selectedFiles.length > 0
-  const hasFiles = selectedFiles.some((file) => !file.isFolder)
+  const hasFiles = selectedFiles.some((file) => !file.isFolder.value)
+
+  const { filesQuery } = useCurrentFiles()
+  const isFilesLoading = filesQuery?.status === 'pending'
+  const fileService = useMutation(fileBrowserPath)
+
+  const clipboardFiles = filesState.clipboardFiles.files
+  const hasClipboardFiles = clipboardFiles.length > 0
+  const currentDirectory = filesState.selectedDirectory.value.startsWith('/')
+    ? filesState.selectedDirectory.value.substring(1)
+    : filesState.selectedDirectory.value
+
+  const hasPaste = hasClipboardFiles
+
+  const fileActions = [
+    {
+      // CUT
+      condition: hasSelection,
+      label: t('editor:layout.filebrowser.cutAsset'),
+      action: () => {
+        filesState.clipboardFiles.set({ files: selectedFiles.get(NO_PROXY) })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-cut-asset-button'
+    },
+    {
+      // COPY
+      condition: hasSelection,
+      label: t('editor:layout.filebrowser.copyAsset'),
+      action: () => {
+        filesState.clipboardFiles.set({ files: selectedFiles.get(NO_PROXY), isCopy: true })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-copy-asset-button'
+    },
+    {
+      // PASTE
+      condition: hasPaste,
+      action: async () => {
+        if (!hasClipboardFiles || isFilesLoading) return
+        setAnchorEvent(undefined)
+        for (const clipboardFile of clipboardFiles.get(NO_PROXY)) {
+          // make sure we are not moving a folder into itself
+          if (!filesState.clipboardFiles.isCopy.value && currentDirectory.startsWith(clipboardFile.path)) return
+          await fileService.update(null, {
+            oldProject: filesState.projectName.value,
+            newProject: filesState.projectName.value,
+            oldName: clipboardFile.fullName,
+            newName: clipboardFile.fullName,
+            oldPath: clipboardFile.path,
+            newPath: currentDirectory,
+            isCopy: filesState.clipboardFiles.isCopy.value
+          })
+        }
+      },
+      testId: '',
+      label: t('editor:layout.filebrowser.pasteAsset')
+    },
+    {}, // BREAK
+    {
+      condition: selectedFiles.length === 1,
+      label: t('editor:layout.filebrowser.renameAsset'),
+      action: () => {
+        ModalState.openModal(
+          <RenameFileModal projectName={filesState.projectName.value} file={selectedFiles.value[0]} />
+        )
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-rename-asset-button'
+    },
+    {
+      // DELETE
+      condition: hasSelection,
+      label: t('editor:layout.assetGrid.deleteAsset'),
+      action: () => {
+        ModalState.openModal(
+          <DeleteFileModal
+            files={selectedFiles.get(NO_PROXY)}
+            onComplete={(err) => {
+              selectedFiles.set([])
+              ClickPlacementState.resetSelectedAsset()
+            }}
+          />
+        )
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-delete-asset-button'
+    },
+    {
+      // COMPRESS
+      condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'model'),
+      label: t('editor:layout.filebrowser.compress'),
+      action: () => {
+        ModalState.openModal(
+          <ModelCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
+        )
+        setAnchorEvent(undefined)
+      },
+      testId: ''
+    },
+    {
+      // COMPRESS IMAGE
+      condition: hasFiles && fileConsistsOfContentType(selectedFiles.value, 'image'),
+      label: t('editor:layout.filebrowser.compress') + ' Image',
+      action: () => {
+        ModalState.openModal(
+          <ImageCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
+        )
+        setAnchorEvent(undefined)
+      },
+      testId: ''
+    },
+    {}, // BREAK
+    {
+      // COPY
+      condition: hasSelection,
+      label: t('editor:layout.assetGrid.copyURL'),
+      action: () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(selectedFiles.map((file) => file.url.value).join(' '))
+        }
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-copy-url-button'
+    },
+    {
+      // OPEN IN NEW TAB
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.openInNewTab'),
+      action: () => {
+        selectedFiles.filter((file) => !file.isFolder.value).forEach((file) => window.open(file.url.value))
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-open-in-new-tab-button'
+    },
+    {}, // BREAK
+    {
+      // PLACE OBJECT
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.placeObject'),
+      action: () => {
+        const vec3 = new Vector3()
+        getSpawnPositionAtCenter(vec3)
+        selectedFiles
+          .filter((file) => !file.isFolder.value)
+          .map((file) => {
+            addMediaNode(file.url.value, undefined, undefined, [
+              { name: TransformComponent.jsonID, props: { position: vec3 } }
+            ])
+          })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-place-object-button'
+    },
+    {
+      // PLACE OBJECT AT ORIGIN
+      condition: hasFiles,
+      label: t('editor:layout.assetGrid.placeObjectAtOrigin'),
+      action: () => {
+        selectedFiles
+          .filter((file) => !file.isFolder.value)
+          .map((file) => {
+            addMediaNode(file.url.value, undefined, undefined, [
+              { name: TransformComponent.jsonID, props: { position: new Vector3() } }
+            ])
+          })
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-place-object-at-origin-button'
+    },
+    {}, // BREAK
+    {
+      // ADD NEW FOLDER
+      condition: true, // Always visible
+      label: t('editor:layout.filebrowser.addNewFolder'),
+      action: () => {
+        createNewFolder()
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-add-new-folder-button'
+    },
+    {
+      // VIEW PROPERTIES
+      condition: hasSelection,
+      label: t('editor:layout.filebrowser.viewAssetProperties'),
+      action: () => {
+        ModalState.openModal(<FilePropertiesModal />)
+        setAnchorEvent(undefined)
+      },
+      testId: 'files-panel-file-item-context-menu-view-asset-properties-button'
+    }
+  ]
 
   return (
     <ContextMenu anchorEvent={anchorEvent} onClose={() => setAnchorEvent(undefined)}>
-      <div
-        className="flex w-fit min-w-44 flex-col gap-1 truncate rounded-lg bg-neutral-900 shadow-lg"
-        data-testid="files-panel-file-item-context-menu"
-      >
-        {/* Place Object, Place Object At Origin */}
-        {hasFiles && (
-          <>
-            <Button
-              variant="outline"
-              size="small"
-              fullWidth
-              data-testid="files-panel-file-item-context-menu-place-object-button"
-              onClick={() => {
-                const vec3 = new Vector3()
-                getSpawnPositionAtCenter(vec3)
-                selectedFiles
-                  .filter((file) => !file.isFolder)
-                  .map((file) => {
-                    addMediaNode(file.url.value, undefined, undefined, [
-                      { name: TransformComponent.jsonID, props: { position: vec3 } }
-                    ])
-                  })
-                setAnchorEvent(undefined)
-              }}
-            >
-              {t('editor:layout.assetGrid.placeObject')}
-            </Button>
-            <Button
-              variant="outline"
-              size="small"
-              fullWidth
-              data-testid="files-panel-file-item-context-menu-place-object-at-origin-button"
-              onClick={() => {
-                selectedFiles
-                  .filter((file) => !file.isFolder)
-                  .map((file) => {
-                    addMediaNode(file.url.value)
-                  })
-                setAnchorEvent(undefined)
-              }}
-            >
-              {t('editor:layout.assetGrid.placeObjectAtOrigin')}
-            </Button>
-          </>
-        )}
-        {/* Open Script file*/}
-        {hasFiles && fileConsistsOfContentType(selectedFiles.value, 'application/') && (
-          <Button
-            variant="outline"
-            size="small"
-            fullWidth
-            disabled={!fileConsistsOfContentType(selectedFiles.value, 'application/')}
-            onClick={() => {
-              if (fileConsistsOfContentType(selectedFiles.value, 'application/')) {
-                selectedFiles.value.forEach((selectedFile) => {
-                  ScriptService.addScript(selectedFile.url)
-                })
-              }
-            }}
-          >
-            {t('editor:layout.filebrowser.open')}
-          </Button>
-        )}
-        {/* Copy URL */}
-        {hasSelection && (
-          <Button
-            variant="outline"
-            size="small"
-            fullWidth
-            disabled={!fileConsistsOfContentType(selectedFiles.value, 'application/')}
-            onClick={() => {
-              if (fileConsistsOfContentType(selectedFiles.value, 'application/')) {
-                selectedFiles.value.forEach((selectedFile) => {
-                  ScriptService.addScript(selectedFile.url)
-                })
-              }
-            }}
-          >
-            {t('editor:layout.filebrowser.open')}
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          size="small"
-          fullWidth
-          onClick={createNewFolder}
-          data-testid="files-panel-file-item-context-menu-add-new-folder-button"
-        >
-          {t('editor:layout.filebrowser.addNewFolder')}
-        </Button>
-        {hasSelection && (
-          <>
-            {/* Cut Asset */}
-            <Button
-              variant="outline"
-              size="small"
-              fullWidth
-              data-testid="files-panel-file-item-context-menu-cut-asset-button"
-              onClick={() => {
-                filesState.clipboardFiles.set({
-                  files: selectedFiles.get(NO_PROXY)
-                })
-                setAnchorEvent(undefined)
-              }}
-            >
-              {t('editor:layout.filebrowser.cutAsset')}
-            </Button>
-            {/* Copy Asset */}
-            <Button
-              variant="outline"
-              size="small"
-              fullWidth
-              data-testid="files-panel-file-item-context-menu-copy-asset-button"
-              onClick={() => {
-                filesState.clipboardFiles.set({
-                  files: selectedFiles.get(NO_PROXY),
-                  isCopy: true
-                })
-                setAnchorEvent(undefined)
-              }}
-            >
-              {t('editor:layout.filebrowser.copyAsset')}
-            </Button>
-          </>
-        )}
-        {/* Paste Asset */}
-        <PasteFileButton setAnchorEvent={setAnchorEvent} />
-        {/* Rename Asset */}
-        {selectedFiles.length === 1 && (
-          <Button
-            variant="outline"
-            size="small"
-            data-testid="files-panel-file-item-context-menu-rename-asset-button"
-            fullWidth
-            onClick={() => {
-              PopoverState.showPopupover(
-                <RenameFileModal projectName={filesState.projectName.value} file={selectedFiles.value[0]} />
-              )
-              setAnchorEvent(undefined)
-            }}
-          >
-            {t('editor:layout.filebrowser.renameAsset')}
-          </Button>
-        )}
-        {/* Delete Asset */}
-        {hasSelection && (
-          <Button
-            variant="outline"
-            size="small"
-            fullWidth
-            data-testid="files-panel-file-item-context-menu-delete-asset-button"
-            onClick={() => {
-              PopoverState.showPopupover(
-                <DeleteFileModal
-                  files={selectedFiles.value}
-                  onComplete={(err) => {
-                    selectedFiles.set([])
-                    ClickPlacementState.resetSelectedAsset()
-                  }}
-                />
-              )
-              setAnchorEvent(undefined)
-            }}
-          >
-            {t('editor:layout.assetGrid.deleteAsset')}
-          </Button>
-        )}
-        {/* Compress */}
-        {hasFiles && fileConsistsOfContentType(selectedFiles.value, 'model') && (
-          <Button
-            variant="outline"
-            size="small"
-            fullWidth
-            onClick={() => {
-              if (fileConsistsOfContentType(selectedFiles.value, 'model')) {
-                PopoverState.showPopupover(
-                  <ModelCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
-                )
-              }
-              setAnchorEvent(undefined)
-            }}
-          >
-            {t('editor:layout.filebrowser.compress')}
-          </Button>
-        )}
-        {hasFiles && fileConsistsOfContentType(selectedFiles.value, 'image') && (
-          <Button
-            variant="outline"
-            size="small"
-            fullWidth
-            onClick={() => {
-              if (fileConsistsOfContentType(selectedFiles.value, 'image')) {
-                PopoverState.showPopupover(
-                  <ImageCompressionPanel selectedFiles={selectedFiles.value} refreshDirectory={refreshDirectory} />
-                )
-              }
-              setAnchorEvent(undefined)
-            }}
-          >
-            {t('editor:layout.filebrowser.compress')}
-          </Button>
-        )}
+      <div className="w-40 overflow-hidden rounded bg-surface-0">
+        {fileActions
+          .filter((action) => action.condition || Object.keys(action).length === 0)
+          .map((action, index, arr) => {
+            if (Object.keys(action).length === 0 && index > 0 && Object.keys(arr[index - 1]).length === 0) {
+              return null
+            }
 
-        {/* View Asset Properties */}
-        {hasSelection && (
-          <Button
-            variant="outline"
-            size="small"
-            data-testid="files-panel-file-item-context-menu-view-asset-properties-button"
-            fullWidth
-            onClick={() => {
-              PopoverState.showPopupover(<FilePropertiesModal />)
-              setAnchorEvent(undefined)
-            }}
-          >
-            {t('editor:layout.filebrowser.viewAssetProperties')}
-          </Button>
-        )}
+            return (
+              <Fragment key={action.label || `separator-${index}`}>
+                {Object.keys(action).length === 0 && (
+                  <hr className="mx-auto w-[90%] border border-[0.5px] border-surface-outline-3-1" />
+                )}
+                {Object.keys(action).length > 0 && (
+                  <span
+                    key={index}
+                    onClick={action.action}
+                    className={twMerge(
+                      'block w-full px-4 py-2 text-left text-sm text-text-secondary transition-colors',
+                      action.condition
+                        ? 'cursor-pointer text-text-secondary hover:bg-surface-3'
+                        : 'cursor-not-allowed text-text-inactive'
+                    )}
+                    data-testid={action.testId}
+                  >
+                    {action.label || ''}
+                  </span>
+                )}
+              </Fragment>
+            )
+          })}
       </div>
     </ContextMenu>
   )

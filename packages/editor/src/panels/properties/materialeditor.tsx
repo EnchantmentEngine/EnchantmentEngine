@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
-  EntityUUID,
+  Layers,
   UUIDComponent,
   getComponent,
   getOptionalComponent,
@@ -38,29 +38,33 @@ import {
 import styles from '@ir-engine/editor/src/components/layout/styles.module.scss'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
+
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
-import { NO_PROXY, State, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import {
   MaterialPlugins,
-  MaterialPrototypeComponent,
+  MaterialPrototypeDefinitions,
   MaterialStateComponent,
-  prototypeQuery
+  PrototypeArgument
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { getDefaultType } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
-import { formatMaterialArgs, getMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import {
+  extractValues,
+  formatMaterialArgs,
+  setupMaterialParameters
+} from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { Button, Tooltip } from '@ir-engine/ui'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
 import StringInput from '@ir-engine/ui/src/components/editor/input/String'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import ParameterInput from '@ir-engine/ui/src/components/editor/properties/parameter'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Texture, Uniform } from 'three'
+import { Material, Texture, Uniform } from 'three'
 
 type ThumbnailData = {
   src: string
@@ -75,16 +79,21 @@ const toBlobs = (thumbnails: Record<string, ThumbnailData>): Record<string, stri
   return blobs
 }
 
-export function MaterialEditor(props: { materialUUID: EntityUUID }) {
+export function MaterialEditor(props: { entity: Entity }) {
   const { t } = useTranslation()
-  const prototypes = prototypeQuery().map((prototype) => ({
-    label: getComponent(prototype, NameComponent),
-    value: prototype
-  }))
-
-  const entity = UUIDComponent.getEntityByUUID(props.materialUUID)
+  const entity = props.entity
   const materialComponent = useComponent(entity, MaterialStateComponent)
-  const material = materialComponent.material.value!
+  const material = materialComponent.material.get(NO_PROXY) as Material
+
+  const prototypeName = useHookstate(material.type)
+
+  const definitions = useMutableState(MaterialPrototypeDefinitions)
+
+  const prototypes = Object.entries(definitions.value).map(([key, value]) => ({
+    label: key,
+    value: key
+  }))
+  const prototype = definitions.value[prototypeName.value]
   const thumbnails = useHookstate<Record<string, ThumbnailData>>({})
   const textureUnloadMap = useHookstate<Record<string, (() => void) | undefined>>({})
   const selectedPlugin = useHookstate(Object.keys(MaterialPlugins)[0])
@@ -137,15 +146,11 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
   const clearThumbs = useCallback(async () => {
     Object.values(thumbnails.value).map(({ blob }) => URL.revokeObjectURL(blob))
     thumbnails.set({})
-  }, [materialComponent, materialComponent.prototypeEntity])
-
-  const prototypeName = useHookstate('')
-
-  prototypeName.set(material.userData.type || material.type)
+  }, [materialComponent])
 
   const currentSelectedMaterial = useMutableState(MaterialSelectionState).selectedMaterial
   const materialName = useOptionalComponent(
-    UUIDComponent.getEntityByUUID(currentSelectedMaterial.value!),
+    UUIDComponent.getEntityByUUID(currentSelectedMaterial.value!, Layers.Authoring),
     NameComponent
   )
 
@@ -153,12 +158,9 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     clearThumbs().then(createThumbnails).then(checkThumbs)
   }, [prototypeName, currentSelectedMaterial])
 
-  const prototypeEntity = materialComponent.prototypeEntity.value!
-  const prototype = useComponent(prototypeEntity, MaterialPrototypeComponent)
-
-  const shouldLoadTexture = async (value, key: string, parametersObject: State<any>) => {
+  const shouldLoadTexture = async (value, key: string, parametersObject) => {
     let prop
-    if (parametersObject[key].type.value === 'texture') {
+    if (parametersObject[key].type === 'texture') {
       if (value) {
         const priorUnload = textureUnloadMap.get(NO_PROXY)[key]
         if (priorUnload) {
@@ -175,8 +177,23 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
     }
     return prop
   }
+  const materialParameters = useHookstate({})
 
-  /**@todo plugin UI parameter values are autogenerated - autogenerate for prototype values rather than storing in component */
+  useEffect(() => {
+    prototypeName.set(material.type)
+    setupMaterialParameters(entity, material)
+  }, [currentSelectedMaterial, material.type])
+
+  useEffect(() => {
+    materialParameters.set(
+      Object.fromEntries(
+        Object.keys(extractValues(definitions.value[prototypeName.value].arguments as PrototypeArgument, material)).map(
+          (k) => [k, material[k] ?? '']
+        )
+      )
+    )
+  }, [materialComponent.parameters])
+
   //for each parameter type, default values
   const pluginParameters = useHookstate({})
   //for the current values of the parameters
@@ -203,6 +220,14 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
       return
     }
   }, [selectedPlugin, useOptionalComponent(entity, MaterialPlugins[selectedPlugin.value])])
+
+  useEffect(() => {
+    if (prototypeName.value === material.type) return
+
+    EditorControlFunctions.updateMaterialPrototype(entity, prototypeName.value)
+    AuthoringState.snapshotEntities([entity])
+  }, [prototypeName])
+
   return (
     <div className="relative flex flex-col gap-2">
       <InputGroup name="Name" label={t('editor:properties.mesh.material.name')}>
@@ -219,46 +244,39 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
           <div className="justify-cneter flex items-center align-middle">
             <label>{t('editor:properties.mesh.material.path')}</label>
           </div>
-          <div className="break-all">{getOptionalComponent(entity, SourceComponent) ?? 'None'}</div>
+          <div className="break-all">{UUIDComponent.getSourceEntity(entity) ?? 'None'}</div>
         </div>
       </InputGroup>
       <br />
       <InputGroup name="Prototype" label={t('editor:properties.mesh.material.prototype')}>
         <SelectInput
-          value={prototypeEntity}
+          value={prototypeName.value}
           options={prototypes}
-          onChange={(prototypeEntity: Entity) => {
-            if (materialComponent.prototypeEntity.value)
-              materialComponent.prototypeEntity.set(prototypeEntity as Entity)
-            prototypeName.set(materialComponent.material.value.userData.type)
+          onChange={(value) => {
+            prototypeName.set(value as string)
           }}
         />
       </InputGroup>
 
-      <ParameterInput
-        entity={props.materialUUID}
-        values={materialComponent.parameters.value!}
-        onChange={(key) => async (value) => {
-          const property = await shouldLoadTexture(value, key, prototype.prototypeArguments)
-          const texture = property as Texture
-          if (texture?.isTexture) {
-            texture.flipY = false
-            texture.needsUpdate = true
-          }
-          EditorControlFunctions.modifyMaterial(
-            [materialComponent.material.value!.uuid],
-            materialComponent.material.value!.uuid as EntityUUID,
-            [{ [key]: property }]
-          )
-          if (materialComponent.parameters.value) materialComponent.parameters[key].set(property)
-          await checkThumbs()
-        }}
-        onModify={() => {
-          getMaterial(materialComponent.material.value.uuid as EntityUUID).needsUpdate = true
-        }}
-        defaults={prototype.prototypeArguments!.value}
-        thumbnails={toBlobs(thumbnails.value)}
-      />
+      {prototype && (
+        <ParameterInput
+          entity={UUIDComponent.get(entity)}
+          values={materialParameters.get(NO_PROXY)}
+          onChange={(key) => async (value) => {
+            const property = await shouldLoadTexture(value, key, prototype.arguments)
+            const texture = property as Texture
+            if (texture?.isTexture) {
+              texture.flipY = false
+              texture.needsUpdate = true
+            }
+            EditorControlFunctions.modifyMaterial(entity, [{ [key]: texture?.isTexture ? value : property }])
+            AuthoringState.snapshotEntities([entity])
+            await checkThumbs()
+          }}
+          defaults={prototype.arguments!.value}
+          thumbnails={toBlobs(thumbnails.value)}
+        />
+      )}
 
       <br />
       <div className="border-grey-500 flex flex-row justify-between rounded-lg border-2 border-solid p-1 align-middle">
@@ -268,8 +286,8 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
           onChange={(value) => selectedPlugin.set(value as string)}
         />
         <Button
-          variant="outline"
-          size="small"
+          variant="tertiary"
+          size="sm"
           onClick={() => {
             setComponent(entity, MaterialPlugins[selectedPlugin.value])
           }}
@@ -280,7 +298,7 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
       {hasComponent(entity, MaterialPlugins[selectedPlugin.value]) && (
         <div className={styles.contentContainer}>
           <ParameterInput
-            entity={props.materialUUID}
+            entity={UUIDComponent.get(entity)}
             values={pluginValues.value}
             onChange={(key) => async (value) => {
               const property = await shouldLoadTexture(value, key, pluginParameters)
@@ -290,8 +308,8 @@ export function MaterialEditor(props: { materialUUID: EntityUUID }) {
             defaults={pluginParameters.value}
           />
           <Button
-            variant="outline"
-            size="small"
+            variant="tertiary"
+            size="sm"
             onClick={() => {
               removeComponent(entity, MaterialPlugins[selectedPlugin.value])
             }}

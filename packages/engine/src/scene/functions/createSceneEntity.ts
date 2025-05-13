@@ -25,46 +25,31 @@ Infinite Reality Engine. All Rights Reserved.
 
 import {
   Entity,
+  EntityTreeComponent,
+  LayerComponent,
+  Layers,
+  SourceID,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
-  generateEntityUUID,
-  getOptionalComponent,
   setComponent
 } from '@ir-engine/ecs'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { Object3DComponent } from '@ir-engine/spatial/src/renderer/components/Object3DComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { Group } from 'three'
-import { proxifyParentChildRelationships } from './loadGLTFModel'
-
-import { SourceComponent } from '../components/SourceComponent'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 export const createSceneEntity = (name: string, parentEntity: Entity = UndefinedEntity): Entity => {
-  const entity = createEntity()
+  const sourceID = GLTFComponent.getSourceID(parentEntity) || ('source' as SourceID)
+  const layer = parentEntity ? LayerComponent.get(parentEntity) : Layers.Simulation
+  const entity = createEntity(layer)
+  setComponent(entity, UUIDComponent, { entitySourceID: sourceID, entityID: UUIDComponent.generate() })
   setComponent(entity, NameComponent, name)
   setComponent(entity, VisibleComponent)
   setComponent(entity, TransformComponent)
+  setComponent(entity, EntityTreeComponent)
   if (parentEntity !== UndefinedEntity) {
     setComponent(entity, EntityTreeComponent, { parentEntity })
   }
-  const sceneID = getOptionalComponent(parentEntity, SourceComponent)
-  if (sceneID != null) {
-    setComponent(entity, SourceComponent, sceneID)
-  }
-
-  setComponent(entity, UUIDComponent, generateEntityUUID())
-
-  // These additional properties and relations are required for
-  // the current GLTF exporter to successfully generate a GLTF.
-  const obj3d = new Group()
-  obj3d.entity = entity
-  addObjectToGroup(entity, obj3d)
-  proxifyParentChildRelationships(obj3d)
-  setComponent(entity, Object3DComponent, obj3d)
-
   return entity
 }

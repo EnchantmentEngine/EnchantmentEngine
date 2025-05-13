@@ -16,7 +16,11 @@
     "edit": "Edit",
     "save": "Save",
     "none": "None",
-    "update": "Update"
+    "update": "Update",
+    "clear": "Clear",
+    "embedCodeCopied": "Embed code copied to clipboard!",
+    "embed": "Embed",
+    "copyEmbedCode": "Copy Embed Code"
   },
   "tooltip": {
     "pressKey": "Press {{tip}} to {{message}}"
@@ -27,6 +31,16 @@
   "toast": {
     "joined": "joined",
     "left": "left"
+  },
+  "unsupportedDevice": {
+    "title": "Unsupported device type!",
+    "description": "Please use a desktop running the latest version of Google Chrome for the best experience with the iR Studio."
+  },
+  "unsupportedBrowser": {
+    "title": "Browser Not Supported!",
+    "description": "Please use Google Chrome for the best experience with the iR Studio.",
+    "downloadChrome": "Download Chrome",
+    "continue": "Continue Anyway"
   },
   "loader": {
     "connecting": "Connecting...",
@@ -47,7 +61,7 @@
     "loadingAllowed": "Loading allowed routes...",
     "loadingXRSystems": "Loading immersive session...",
     "connectingToWorld": "Connecting to world...",
-    "needToAgreeTOS": "You need to agree the terms of service to access chat.",
+    "needToVerifyAge": "You need to verify your age to access chat.",
     "needToLogIn": "You need to log in to access chat.",
     "connectingToMedia": "Connecting to media...",
     "entering": "Entering world...",
@@ -72,6 +86,7 @@
   "debug": {
     "refresh": "Refresh",
     "stats": "Stats",
+    "downloadState": "Download State Snapshot",
     "debugOptions": "Debug Options",
     "debug": "Debug Helpers",
     "preSystems": "Pre Systems",
@@ -84,7 +99,9 @@
     "gridDebug": "Grid",
     "tick": "Tick",
     "state": "State",
+    "api": "API",
     "systems": "Systems",
+    "resources": "Resources",
     "avgDuration": "Avg Duration: ",
     "entities": "Entities",
     "networks": "Networks",
@@ -93,7 +110,8 @@
     "physicsDebug": "Physics Debug",
     "bvhDebug": "BVH Debug",
     "avatarDebug": "Avatar Debug",
-    "respawn": "Respawn"
+    "respawn": "Respawn",
+    "close": "Close Debug"
   },
   "recording": {
     "videoRecorder": "Video recorder",
@@ -142,7 +160,11 @@
   },
   "table": {
     "refetching": "Refetching Data...",
-    "noData": "Data is Empty"
+    "noData": "Data is Empty",
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
+    }
   },
   "multiEmailInput": {
     "placeholder": "Type or paste email addresses and press `Enter`...",

@@ -6,8 +6,9 @@
   "search.useParentIgnoreFiles": true,
   "search.exclude": {
     "/packages/server/upload": true,
+    "/packages/**/coverage": true,
     "/packages/server/upload_test": true,
-    "/packages/client/dist": true
+    "/packages/**/dist": true
   },
   "editor.tabSize": 2,
   "scm.alwaysShowRepositories": true,

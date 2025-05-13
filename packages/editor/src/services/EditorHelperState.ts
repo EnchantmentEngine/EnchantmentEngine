@@ -23,6 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs'
+import { defineState, getMutableState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 import {
   SnapMode,
   SnapModeType,
@@ -32,8 +36,8 @@ import {
   TransformPivotType,
   TransformSpace,
   TransformSpaceType
-} from '@ir-engine/engine/src/scene/constants/transformConstants'
-import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
+} from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { useEffect } from 'react'
 import { EditorMode, EditorModeType } from '../constants/EditorModeTypes'
 
 export enum PlacementMode {
@@ -46,15 +50,37 @@ export const EditorHelperState = defineState({
   initial: () => ({
     editorMode: EditorMode.Simple as EditorModeType,
     transformMode: TransformMode.translate as TransformModeType,
-    transformModeOnCancel: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
-    transformPivot: TransformPivot.Center as TransformPivotType,
-    gridSnap: SnapMode.Grid as SnapModeType,
+    transformPivot: TransformPivot.FirstSelected as TransformPivotType,
+    transformGizmoEntity: UndefinedEntity as Entity,
+    gridSnap: SnapMode.Disabled as SnapModeType,
     translationSnap: 0.5,
     rotationSnap: 10,
     scaleSnap: 0.1,
     placementMode: PlacementMode.DRAG,
-    gizmoEnabled: true
+    gizmoEnabled: true,
+    gridVisibility: false,
+    gridHeight: 0,
+    showGlbChildren: true
   }),
-  extension: syncStateWithLocalStorage(['snapMode', 'translationSnap', 'rotationSnap', 'scaleSnap'])
+  extension: syncStateWithLocalStorage([
+    'snapMode',
+    'translationSnap',
+    'rotationSnap',
+    'scaleSnap',
+    'gridVisibility',
+    'gridHeight'
+  ]),
+  reactor: () => {
+    const [showGlbChildrenFlag] = useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.ShowGlbChildren])
+
+    useEffect(() => {
+      const showGlbChildren = getMutableState(EditorHelperState).showGlbChildren
+      if (typeof showGlbChildrenFlag !== 'undefined') {
+        showGlbChildren.set(showGlbChildrenFlag)
+      }
+    }, [showGlbChildrenFlag])
+
+    return null
+  }
 })

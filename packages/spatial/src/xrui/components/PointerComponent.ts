@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -36,24 +36,26 @@ import {
 } from 'three'
 
 import {
+  Entity,
+  EntityTreeComponent,
+  S,
+  createEntity,
   defineComponent,
   getComponent,
-  getMutableComponent,
+  removeEntity,
   setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
 import { WebContainer3D } from '@ir-engine/xrui'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { NameComponent } from '../../common/NameComponent'
 import { useAnimationTransition } from '../../common/functions/createTransitionState'
 import { InputSourceComponent } from '../../input/components/InputSourceComponent'
-import { addObjectToGroup, removeObjectFromGroup } from '../../renderer/components/GroupComponent'
+import { LineSegmentComponent } from '../../renderer/components/LineSegmentComponent'
+import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -63,10 +65,10 @@ export const PointerComponent = defineComponent({
 
   schema: S.Object({
     inputSource: S.Type<XRInputSource>(),
-    lastHit: S.Nullable(S.Type<ReturnType<typeof WebContainer3D.prototype.hitTest>>()),
+    lastHit: S.Type<ReturnType<typeof WebContainer3D.prototype.hitTest> | null>(),
     // internal
     pointer: S.Type<PointerObject>(),
-    cursor: S.Nullable(S.Type<Mesh<BufferGeometry, MeshBasicMaterial>>())
+    cursor: S.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
   }),
 
   reactor: () => {
@@ -95,16 +97,33 @@ export const PointerComponent = defineComponent({
 
     useEffect(() => {
       const inputSource = pointerComponentState.inputSource.value
-      const pointer = createPointer(inputSource as XRInputSource)
-      const cursor = createUICursor()
+      const cursor = new Mesh(new SphereGeometry(0.01, 16, 16), new MeshBasicMaterial({ color: 0xffffff, opacity: 0 }))
       const pointerEntity = createEntity()
-      addObjectToGroup(pointerEntity, pointer)
+      const cursorEntity = createEntity()
       setComponent(pointerEntity, EntityTreeComponent, { parentEntity: entity })
-      addObjectToGroup(pointerEntity, cursor)
-      getMutableComponent(entity, PointerComponent).merge({ pointer, cursor })
-      addObjectToGroup(entity, pointer)
+      setComponent(pointerEntity, TransformComponent)
+      setComponent(cursorEntity, EntityTreeComponent, { parentEntity: entity })
+      setComponent(cursorEntity, TransformComponent)
+
+      if (inputSource.targetRayMode === 'gaze') {
+        const geometry = new RingGeometry(0.02, 0.04, 32).translate(0, 0, -1)
+        const material = new MeshBasicMaterial({ opacity: 0, transparent: true })
+        const mesh = new Mesh(geometry, material)
+        pointerComponentState.merge({ pointer: mesh, cursor })
+        setComponent(pointerEntity, MeshComponent, mesh)
+      } else {
+        const geometry = new BufferGeometry()
+        geometry.setAttribute('position', new Float32BufferAttribute([0, 0, 0, 0, 0, -1], 3))
+        geometry.setAttribute('color', new Float32BufferAttribute([0.5, 0.5, 0.5, 0, 0, 0], 3))
+        const material = new LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, linewidth: 2 })
+        setComponent(pointerEntity, LineSegmentComponent, {
+          geometry,
+          material
+        })
+      }
+
       return () => {
-        if (entityExists(entity)) removeObjectFromGroup(entity, pointer)
+        removeEntity(cursorEntity)
         removeEntity(pointerEntity)
       }
     }, [pointerComponentState.inputSource])
@@ -121,7 +140,7 @@ export const PointerComponent = defineComponent({
     const entity = createEntity()
     setComponent(entity, PointerComponent, { inputSource })
     setComponent(entity, NameComponent, 'Pointer' + inputSource.handedness)
-    setComponent(entity, EntityTreeComponent, { parentEntity: getState(EngineState).localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, ComputedTransformComponent, {
       referenceEntities: [inputSourceEntity],
       computeFunction: () => {
@@ -145,30 +164,5 @@ export const PointerComponent = defineComponent({
     )
   }
 })
-
-// pointer taken from https://github.com/mrdoob/three.js/blob/master/examples/webxr_vr_ballshooter.html
-const createPointer = (inputSource: XRInputSource): PointerObject => {
-  switch (inputSource.targetRayMode) {
-    case 'gaze': {
-      const geometry = new RingGeometry(0.02, 0.04, 32).translate(0, 0, -1)
-      const material = new MeshBasicMaterial({ opacity: 0, transparent: true })
-      return new Mesh(geometry, material) as PointerObject
-    }
-    default:
-    case 'tracked-pointer': {
-      const geometry = new BufferGeometry()
-      geometry.setAttribute('position', new Float32BufferAttribute([0, 0, 0, 0, 0, -1], 3))
-      geometry.setAttribute('color', new Float32BufferAttribute([0.5, 0.5, 0.5, 0, 0, 0], 3))
-      const material = new LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, linewidth: 2 })
-      return new Line(geometry, material)
-    }
-  }
-}
-
-const createUICursor = () => {
-  const geometry = new SphereGeometry(0.01, 16, 16)
-  const material = new MeshBasicMaterial({ color: 0xffffff, opacity: 0 })
-  return new Mesh(geometry, material)
-}
 
 export type PointerObject = Line<BufferGeometry, LineBasicMaterial> | Mesh<RingGeometry, MeshBasicMaterial>

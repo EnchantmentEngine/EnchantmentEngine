@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
-import { VRMHumanBoneList, VRMHumanBoneName } from '@pixiv/three-vrm'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -42,21 +41,25 @@ import {
   Vector3
 } from 'three'
 
-import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { createEntity, removeEntity } from '@ir-engine/ecs'
+import { getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { getState } from '@ir-engine/hyperflux'
-import { Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addObjectToGroup, GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { AvatarRigComponent } from '../avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'
+import { VRMHumanBoneList } from '../avatar/maps/VRMHumanBoneList'
+import { VRMHumanBoneName } from '../avatar/maps/VRMHumanBoneName'
 import { LandmarkIndices } from './MocapConstants'
 import { MotionCaptureRigComponent } from './MotionCaptureRigComponent'
 
@@ -159,13 +162,13 @@ const drawMocapDebug = (label: string) => {
         const mesh = new Mesh(new SphereGeometry(0.01), new MeshBasicMaterial({ color }))
         const entity = createEntity()
         debugEntities[key] = entity
-        addObjectToGroup(entity, mesh)
+        setComponent(entity, MeshComponent, mesh)
         setVisibleComponent(entity, true)
         setComponent(entity, NameComponent, `Mocap Debug ${label} ${LandmarkNames[key]}`)
         setObjectLayers(mesh, ObjectLayers.AvatarHelper)
       }
       const entity = debugEntities[key]
-      const mesh = getComponent(entity, GroupComponent)[0] as any as Mesh<BufferGeometry, MeshBasicMaterial>
+      const mesh = getComponent(entity, ObjectComponent) as Mesh<BufferGeometry, MeshBasicMaterial>
       mesh.material.color.set(color)
       if (key === `${LandmarkIndices.RIGHT_WRIST}`) mesh.material.color.set(0xff0000)
       if (key === `${LandmarkIndices.RIGHT_PINKY}`) mesh.material.color.set(0x00ff00)
@@ -183,7 +186,7 @@ const drawMocapDebug = (label: string) => {
 
     if (!lineSegmentEntity) {
       lineSegmentEntity = createEntity()
-      addObjectToGroup(lineSegmentEntity, positionLineSegment)
+      setComponent(lineSegmentEntity, ObjectComponent, positionLineSegment)
       setVisibleComponent(lineSegmentEntity, true)
       setComponent(lineSegmentEntity, NameComponent, 'Mocap Debug Line Segment ' + label)
       setObjectLayers(positionLineSegment, ObjectLayers.AvatarHelper)
@@ -191,11 +194,11 @@ const drawMocapDebug = (label: string) => {
 
     for (let i = 0; i < PoseLandmarker.POSE_CONNECTIONS.length * 2; i += 2) {
       const { start, end } = PoseLandmarker.POSE_CONNECTIONS[i / 2]
-      const firstPoint = getComponent(debugEntities[start], GroupComponent)[0] as any as Mesh<
+      const firstPoint = getComponent(debugEntities[start], ObjectComponent) as any as Mesh<
         BufferGeometry,
         MeshBasicMaterial
       >
-      const secondPoint = getComponent(debugEntities[end], GroupComponent)[0] as any as Mesh<
+      const secondPoint = getComponent(debugEntities[end], ObjectComponent) as any as Mesh<
         BufferGeometry,
         MeshBasicMaterial
       >
@@ -275,8 +278,8 @@ export function solveMotionCapturePose(
     return filteredLandmarks
   }
 
-  const rig = getComponent(entity, AvatarRigComponent)
-  if (!rig || !rig.normalizedRig || !rig.normalizedRig.hips || !rig.normalizedRig.hips.node) {
+  const rig = getOptionalComponent(entity, AvatarRigComponent)?.bonesToEntities
+  if (!rig?.hips) {
     return
   }
 
@@ -453,7 +456,7 @@ export const solveSpine = (
   landmarks: NormalizedLandmark[],
   trackingLowerBody: boolean
 ) => {
-  const rig = getComponent(entity, AvatarRigComponent)
+  const rig = getComponent(entity, AvatarRigComponent).bonesToEntities
   const avatar = getComponent(entity, AvatarComponent)
 
   const rightHip = landmarks[LandmarkIndices.RIGHT_HIP]
@@ -477,7 +480,7 @@ export const solveSpine = (
       if (feetGrounded[i]) {
         const footLandmark =
           landmarks[i == feetIndices.rightFoot ? LandmarkIndices.RIGHT_ANKLE : LandmarkIndices.LEFT_ANKLE].y
-        const footY = footLandmark * -1 + rig.normalizedRig.hips.node.position.y
+        const footY = footLandmark * -1 + getComponent(rig.hips, BoneComponent).position.y
         MotionCaptureRigComponent.footOffset[entity] = footY
       }
     }
@@ -621,7 +624,7 @@ export const solveHand = (
 
   const rig = getComponent(entity, AvatarRigComponent)
 
-  const parentQuaternion = rig.normalizedRig[parentTargetBoneName]!.node.getWorldQuaternion(new Quaternion())
+  const parentQuaternion = getComponent(rig[parentTargetBoneName], BoneComponent).getWorldQuaternion(new Quaternion())
 
   startPoint.set(extent.x, lowestWorldY - extent.y, extent.z)
   ref1Point.set(ref1.x, lowestWorldY - ref1.y, ref1.z)
@@ -662,7 +665,7 @@ export const solveFoot = (
 
   const rig = getComponent(entity, AvatarRigComponent)
 
-  const parentQuaternion = rig.normalizedRig[parentTargetBoneName]!.node.getWorldQuaternion(new Quaternion())
+  const parentQuaternion = getComponent(rig[parentTargetBoneName], BoneComponent).getWorldQuaternion(new Quaternion())
 
   const targetQuat = new Quaternion()
   if (grounded) {

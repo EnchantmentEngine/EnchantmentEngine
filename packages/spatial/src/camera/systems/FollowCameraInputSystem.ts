@@ -37,7 +37,7 @@ import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { setTargetCameraRotation } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
-import { DefaultAxisAlias, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { DefaultAxisBindings, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
@@ -45,7 +45,7 @@ import { AxisValueMap } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { useEffect } from 'react'
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -53,7 +53,7 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
 const pointerPositionDelta = new Vector2()
-const rendererQuery = defineQuery([RendererComponent])
+const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent])
 const epsilon = 0.001
 
 const followCameraModeCycle = [
@@ -88,7 +88,7 @@ const onFollowCameraShoulderCam = (cameraEntity: Entity) => {
  */
 export const handleFollowCameraScroll = (
   cameraEntity: Entity,
-  axes: AxisValueMap<typeof DefaultAxisAlias>,
+  axes: AxisValueMap<typeof DefaultAxisBindings>,
   deltaTime: number
 ): void => {
   const follow = getComponent(cameraEntity, FollowCameraComponent)
@@ -122,22 +122,21 @@ const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
   const cameraSettings = getState(CameraSettings)
 
-  for (const cameraEntity of rendererQuery()) {
-    const buttons = InputComponent.getMergedButtons(cameraEntity)
-    const axes = InputComponent.getMergedAxes(cameraEntity)
+  for (const cameraEntity of followCameraQuery()) {
+    const buttons = InputComponent.getButtons(cameraEntity)
+    const axes = InputComponent.getAxes(cameraEntity)
 
     const inputPointerEntities = InputPointerComponent.getPointersForCamera(cameraEntity)
     const inputState = getState(InputState)
-
-    const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
-    if (!follow) continue
+    const follow = getComponent(cameraEntity, FollowCameraComponent)
 
     let { theta, phi } = getOptionalComponent(cameraEntity, TargetCameraRotationComponent) ?? follow
     let time = 0.3
 
-    if (buttons?.PrimaryClick?.pressed && buttons?.PrimaryClick?.dragging) {
-      InputState.setCapturingEntity(cameraEntity)
-    }
+    const canvas = getComponent(cameraEntity, RendererComponent).canvas
+
+    const hasPointerLock = follow.pointerLock && document.pointerLockElement === canvas
+
     if (buttons?.FollowCameraModeCycle?.down) onFollowCameraModeCycle(cameraEntity)
     if (buttons?.FollowCameraFirstPerson?.down) onFollowCameraFirstPerson(cameraEntity)
     if (buttons?.FollowCameraShoulderCam?.down) onFollowCameraShoulderCam(cameraEntity)
@@ -151,7 +150,8 @@ const execute = () => {
       theta -= x * 2
       phi += y * 2
       const pointerDragging = inputSource.buttons?.PrimaryClick?.dragging
-      if (pointerDragging) {
+      if (pointerDragging || hasPointerLock) {
+        InputState.setCapturingEntity(cameraEntity)
         const inputPointer = getComponent(inputPointerEid, InputPointerComponent)
         pointerPositionDelta.copy(inputPointer.movement)
         phi -= pointerPositionDelta.y * cameraSettings.cameraRotationSpeed
@@ -173,7 +173,7 @@ const reactor = () => {
   useEffect(() => {
     if (!xrSession) return
 
-    const { localFloorEntity, viewerEntity } = getState(EngineState)
+    const { localFloorEntity, viewerEntity } = getState(ReferenceSpaceState)
 
     /**
      * Upon entering a new XR session, we need to update the world origin to match the local floor.

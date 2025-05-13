@@ -33,12 +33,12 @@ export const SceneSettingsComponent = defineComponent({
   jsonID: 'EE_scene_settings',
 
   schema: S.Object({
-    thumbnailURL: S.String(''),
-    loadingScreenURL: S.String(''),
-    primaryColor: S.String('#000000'),
-    backgroundColor: S.String('#FFFFFF'),
-    alternativeColor: S.String('#000000'),
-    sceneKillHeight: S.Number(DefaultKillHeight),
-    spectateEntity: S.Nullable(S.EntityUUID())
+    thumbnailURL: S.String(),
+    loadingScreenURL: S.String(),
+    primaryColor: S.String({ default: '#000000' }),
+    backgroundColor: S.String({ default: '#FFFFFF' }),
+    alternativeColor: S.String({ default: '#000000' }),
+    sceneKillHeight: S.Number({ default: DefaultKillHeight }),
+    spectateEntity: S.EntityID()
   })
 })

@@ -25,15 +25,15 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { setTransformPivot, toggleTransformPivot } from '@ir-engine/editor/src/functions/transformFunctions'
 import { EditorHelperState } from '@ir-engine/editor/src/services/EditorHelperState'
-import { TransformPivot } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
-import Select from '@ir-engine/ui/src/primitives/tailwind/Select'
-import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
+import { TransformPivot } from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { Tooltip } from '@ir-engine/ui'
+import { ViewportButton } from '@ir-engine/ui/editor'
+import { SelectionMd } from '@ir-engine/ui/src/icons'
 import { t } from 'i18next'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaRegDotCircle } from 'react-icons/fa'
+import ToolbarDropdown from './ToolbarDropdown'
 
 const transformPivotOptions = [
   {
@@ -47,14 +47,9 @@ const transformPivotOptions = [
     value: TransformPivot.Center
   },
   {
-    label: t('editor:toolbar.transformPivot.lbl-bbox'),
-    description: t('editor:toolbar.transformPivot.info-bbox'),
-    value: TransformPivot.BoundingBox
-  },
-  {
-    label: t('editor:toolbar.transformPivot.lbl-bbox-bottom'),
-    description: t('editor:toolbar.transformPivot.info-bbox-bottom'),
-    value: TransformPivot.BoundingBoxBottom
+    label: t('editor:toolbar.transformPivot.lbl-bottom'),
+    description: t('editor:toolbar.transformPivot.info-bottom'),
+    value: TransformPivot.Bottom
   },
   {
     label: t('editor:toolbar.transformPivot.lbl-origin'),
@@ -69,31 +64,22 @@ const TransformPivotTool = () => {
   const editorHelperState = useHookstate(getMutableState(EditorHelperState))
 
   return (
-    <div className="flex items-center rounded bg-[#0E0F11]">
-      <Tooltip content={t('editor:toolbar.transformPivot.toggleTransformPivot')}>
-        <Button
-          startIcon={<FaRegDotCircle className="text-theme-input" />}
-          onClick={toggleTransformPivot}
-          variant="transparent"
-          className="px-0"
-          size="small"
-        />
+    <div className="flex items-center gap-x-1">
+      <Tooltip content={t('editor:toolbar.transformPivot.toggleTransformPivot')} position="bottom">
+        <ViewportButton onClick={toggleTransformPivot} icon={SelectionMd} />
       </Tooltip>
-      <Tooltip
-        content={
+      <ToolbarDropdown
+        tooltipContent={
           transformPivotOptions.find((pivot) => pivot.value === editorHelperState.transformPivot.value)?.description
         }
-        position="right center"
-      >
-        <Select
-          key={editorHelperState.transformPivot.value}
-          inputClassName="py-1 h-5 rounded-sm text-theme-gray3 text-xs"
-          className="m-1 w-32 border-theme-input text-theme-gray3"
-          onChange={setTransformPivot}
-          options={transformPivotOptions}
-          currentValue={editorHelperState.transformPivot.value}
-        />
-      </Tooltip>
+        tooltipPosition="right"
+        onChange={setTransformPivot}
+        options={transformPivotOptions}
+        value={editorHelperState.transformPivot.value}
+        width="full"
+        inputHeight="l"
+        dropdownParentClassName="w-[106px]"
+      />
     </div>
   )
 }

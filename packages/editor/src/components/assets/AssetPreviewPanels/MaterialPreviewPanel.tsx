@@ -26,17 +26,18 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect, useRef } from 'react'
 import { Mesh, SphereGeometry } from 'three'
 
-import { useRender3DPanelSystem } from '@ir-engine/client-core/src/user/components/Panel3D/useRender3DPanelSystem'
-import { generateEntityUUID, getMutableComponent, setComponent, useComponent, UUIDComponent } from '@ir-engine/ecs'
-import { EnvmapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
+import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
+import { EntityID, getComponent, Layers, setComponent, SourceID, useComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { TransformPivot, TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { getMaterial } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 
 export const MaterialPreviewCanvas = () => {
   const panelRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
@@ -46,24 +47,27 @@ export const MaterialPreviewCanvas = () => {
     if (!selectedMaterial.value) return
     const { sceneEntity, cameraEntity } = renderPanel
     setComponent(sceneEntity, NameComponent, 'Material Preview Entity')
-    const uuid = generateEntityUUID()
-    setComponent(sceneEntity, UUIDComponent, uuid)
+    setComponent(sceneEntity, UUIDComponent, { entitySourceID: 'preview' as SourceID, entityID: 'scene' as EntityID })
     setComponent(sceneEntity, VisibleComponent, true)
-    const material = getMaterial(getState(MaterialSelectionState).selectedMaterial!)
+    const material = getComponent(
+      UUIDComponent.getEntityByUUID(getState(MaterialSelectionState).selectedMaterial!, Layers.Authoring),
+      MaterialStateComponent
+    ).material
     if (!material) return
-    addObjectToGroup(sceneEntity, new Mesh(new SphereGeometry(5, 32, 32), material))
-    setComponent(sceneEntity, EnvmapComponent, { type: 'Skybox', envMapIntensity: 2 })
-    const orbitCamera = getMutableComponent(cameraEntity, CameraOrbitComponent)
-    orbitCamera.focusedEntities.set([sceneEntity])
-    orbitCamera.refocus.set(true)
+    setComponent(sceneEntity, MeshComponent, new Mesh(new SphereGeometry(5, 32, 32), material))
+    setComponent(sceneEntity, EnvMapComponent, { type: 'Skybox', envMapIntensity: 2 })
+    const pivot = computeTransformPivot([sceneEntity], TransformPivot.Center, TransformSpace.world)
+    if (!pivot?.position) return
+    CameraOrbitComponent.setFocus(cameraEntity, pivot.position, pivot.bounds)
   }, [
     selectedMaterial,
-    useComponent(UUIDComponent.getEntityByUUID(selectedMaterial.value!), MaterialStateComponent).material
+    useComponent(UUIDComponent.getEntityByUUID(selectedMaterial.value!, Layers.Authoring), MaterialStateComponent)
+      .material
   ])
   return (
     <>
       <div id="materialPreview" style={{ minHeight: '200px', width: '100%', height: '100%' }}>
-        <canvas ref={panelRef} style={{ pointerEvents: 'all' }} />
+        <canvas id="material-preview-canvas" ref={panelRef} style={{ pointerEvents: 'all' }} />
       </div>
     </>
   )

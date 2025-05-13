@@ -25,16 +25,14 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React from 'react'
 
-import { createEntity, setComponent } from '@ir-engine/ecs'
+import { EntityTreeComponent, createEntity, setComponent } from '@ir-engine/ecs'
 import { Entity } from '@ir-engine/ecs/src/Entity'
+import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
+import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
 import { hookstate, isClient } from '@ir-engine/hyperflux'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { createXRUI } from '@ir-engine/spatial/src/xrui/functions/createXRUI'
-import { useXRUIState } from '@ir-engine/spatial/src/xrui/functions/useXRUIState'
 import { Color, DoubleSide, Mesh, MeshPhysicalMaterial, Shape, ShapeGeometry, Vector3 } from 'three'
 
 export interface InteractiveModalState {
@@ -105,8 +103,7 @@ function createBackground(
   setComponent(backgroundEid, EntityTreeComponent, { parentEntity: parentEntity })
   setComponent(backgroundEid, MeshComponent, mesh)
   setComponent(backgroundEid, VisibleComponent)
-  const backgroundTransform = setComponent(backgroundEid, TransformComponent, { position: new Vector3(0, 0, -0.0001) })
-  addObjectToGroup(backgroundEid, mesh) // TODO: this should be managed by the MeshComponent
+  setComponent(backgroundEid, TransformComponent, { position: new Vector3(0, 0, -0.0001) })
   return backgroundEid
 }
 
@@ -136,25 +133,11 @@ export const InteractiveModalView: React.FC = (props: {
 
   if (!isClient) return <></>
 
-  React.useLayoutEffect(() => {
-    if (rootElement.current) {
-      createBackground(
-        props.entity,
-        rootElement.current.clientWidth,
-        rootElement.current.clientHeight,
-        props.borderRadiusPx,
-        props.bgPaddingPx,
-        props.contentVerticalPadPx,
-        props.contentHorizontalPadPx
-      )
-    }
-  }, [rootElement.current]) //TODO this isn't firing, not calculating size to add BG
-
   return (
     <div className={'modal'} ref={rootElement}>
       {modalState.interactMessage.value && modalState.interactMessage.value !== ''
         ? modalState.interactMessage.value
-        : 'E'}
+        : ''}
       <link href="https://fonts.googleapis.com/css?family=Lato:400" rel="stylesheet" type="text/css" />
       <style>
         {`

@@ -23,18 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useQuery, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, hasComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
   commitProperties,
   commitProperty,
   EditorComponentType,
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
-import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+
+import { useNodeOptions } from '@ir-engine/engine/src/authoring/functions/useNodeOptions'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -48,24 +47,13 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const inputComponent = useComponent(props.entity, InputComponent)
-  const authoringLayerEntities = useQuery([SourceComponent])
-
-  const options = authoringLayerEntities.map((entity) => {
-    return {
-      label: getComponent(entity, NameComponent),
-      value: getComponent(entity, UUIDComponent)
-    }
-  })
-  options.unshift({
-    label: 'Self',
-    value: getComponent(props.entity, UUIDComponent)
-  })
+  const options = useNodeOptions(props.entity)
 
   const addSink = () => {
     const sinks = [...(inputComponent.inputSinks.value ?? []), getComponent(props.entity, UUIDComponent)]
 
-    if (!EditorControlFunctions.hasComponentInAuthoringLayer(props.entity, InputComponent)) {
-      EditorControlFunctions.addOrRemoveComponent([props.entity], InputComponent, true, {
+    if (!hasComponent(props.entity, InputComponent)) {
+      setComponent(props.entity, InputComponent, {
         inputSinks: JSON.parse(JSON.stringify(sinks))
       })
     } else {
@@ -86,7 +74,11 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
       description={t('editor:properties.input.description')}
       Icon={InputComponentNodeEditor.iconComponent}
     >
-      <InputGroup name="ActivationDistance" label={t('editor:properties.input.lbl-activationDistance')}>
+      <InputGroup
+        name="ActivationDistance"
+        label={t('editor:properties.input.lbl-activationDistance')}
+        info={t('editor:properties.input.info-activationDistance')}
+      >
         <NumericInput
           value={inputComponent.activationDistance.value}
           onChange={updateProperty(InputComponent, 'activationDistance')}
@@ -94,7 +86,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
       <div className="flex w-full flex-1 justify-center">
-        <Button variant="outline" onClick={addSink}>
+        <Button variant="tertiary" onClick={addSink}>
           {t('editor:properties.input.lbl-addSinkTarget')}
         </Button>
       </div>
@@ -113,7 +105,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
                     />
                   </InputGroup>
                   <div className="flex w-full flex-1 justify-center">
-                    <Button variant="outline" onClick={() => removeSink(index)}>
+                    <Button variant="tertiary" onClick={() => removeSink(index)}>
                       {t('editor:properties.input.lbl-removeSinkTarget')}
                     </Button>
                   </div>

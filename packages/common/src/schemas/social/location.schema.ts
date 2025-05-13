@@ -31,11 +31,9 @@ import { OpaqueType } from '@ir-engine/common/src/interfaces/OpaqueType'
 
 import { UserID } from '../../schema.type.module'
 import { TypedString } from '../../types/TypeboxUtils'
-import { staticResourceSchema } from '../media/static-resource.schema'
 import { dataValidator, queryValidator } from '../validators'
 import { locationAdminDataSchema, locationAdminSchema } from './location-admin.schema'
 import { locationAuthorizedUserSchema } from './location-authorized-user.schema'
-import { locationBanSchema } from './location-ban.schema'
 import { locationSettingDataSchema, locationSettingPatchSchema, locationSettingSchema } from './location-setting.schema'
 
 export const locationPath = 'location'
@@ -62,12 +60,11 @@ export const locationSchema = Type.Object(
     /** @todo review */
     isFeatured: Type.Boolean(),
     url: Type.String(),
-    sceneAsset: Type.Ref(staticResourceSchema),
+    sceneURL: Type.String(),
     maxUsersPerInstance: Type.Number(),
     locationSetting: Type.Ref(locationSettingSchema),
     locationAdmin: Type.Optional(Type.Ref(locationAdminSchema)),
     locationAuthorizedUsers: Type.Array(Type.Ref(locationAuthorizedUserSchema)),
-    locationBans: Type.Array(Type.Ref(locationBanSchema)),
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),
@@ -79,10 +76,7 @@ export const locationSchema = Type.Object(
 export interface LocationType extends Static<typeof locationSchema> {}
 
 export interface LocationDatabaseType
-  extends Omit<
-    LocationType,
-    'locationSetting' | 'locationAuthorizedUsers' | 'locationBans' | 'locationAdmin' | 'sceneAsset' | 'url'
-  > {}
+  extends Omit<LocationType, 'locationSetting' | 'locationAuthorizedUsers' | 'locationAdmin' | 'sceneURL' | 'url'> {}
 
 // Schema for creating new entries
 export const locationDataProperties = Type.Pick(locationSchema, [
@@ -122,7 +116,7 @@ export const locationPatchProperties = Type.Pick(locationSchema, [
   'slugifiedName',
   'isLobby',
   'isFeatured',
-  'sceneAsset',
+  'sceneURL',
   'maxUsersPerInstance',
   'updatedBy'
 ])
@@ -162,7 +156,13 @@ export const locationQuerySchema = Type.Intersect(
       }
     }),
     // Add additional query properties here
-    Type.Object({ action: Type.Optional(Type.String()) }, { additionalProperties: false })
+    Type.Object(
+      {
+        action: Type.Optional(Type.String()),
+        search: Type.Optional(Type.String())
+      },
+      { additionalProperties: false }
+    )
   ],
   { additionalProperties: false }
 )

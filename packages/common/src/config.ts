@@ -24,7 +24,80 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { EMAIL_REGEX } from './regex'
-import type { MediaSettingsType } from './schema.type.module'
+/**
+ * Media settings configuration for audio, video, and screenshare
+ */
+export interface MediaSettingsType {
+  /**
+   * Audio settings configuration
+   */
+  audio: {
+    /**
+     * Maximum bitrate for audio in kbps
+     */
+    maxBitrate: number
+  }
+
+  /**
+   * Video settings configuration
+   */
+  video: {
+    /**
+     * Video codec (e.g., 'VP9', 'H264')
+     */
+    codec: string
+
+    /**
+     * Maximum resolution for video (e.g., 'hd', 'sd')
+     */
+    maxResolution: string
+
+    /**
+     * Maximum bitrate for low resolution video in kbps
+     */
+    lowResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for medium resolution video in kbps
+     */
+    midResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for high resolution video in kbps
+     */
+    highResMaxBitrate: number
+  }
+
+  /**
+   * Screen sharing settings configuration
+   */
+  screenshare: {
+    /**
+     * Screen sharing codec (e.g., 'VP9', 'H264')
+     */
+    codec: string
+
+    /**
+     * Maximum resolution for screen sharing (e.g., 'hd', 'sd')
+     */
+    maxResolution: string
+
+    /**
+     * Maximum bitrate for low resolution screen sharing in kbps
+     */
+    lowResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for medium resolution screen sharing in kbps
+     */
+    midResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for high resolution screen sharing in kbps
+     */
+    highResMaxBitrate: number
+  }
+}
 
 /**
  * Config settings (for client and isomorphic engine usage).
@@ -56,6 +129,7 @@ const client = {
     localBuildOrDev && globalThis.process.env.VITE_LOCAL_NGINX !== 'true'
       ? `https://${globalThis.process.env.VITE_APP_HOST}:${globalThis.process.env.VITE_APP_PORT}`
       : `https://${globalThis.process.env.VITE_APP_HOST}`,
+  rootDomainEnabled: globalThis.process.env.VITE_ROOT_DOMAIN_ENABLED === 'false' ? false : true, // default to true
   serverHost: globalThis.process.env.VITE_SERVER_HOST,
   serverUrl:
     localBuildOrDev && globalThis.process.env.VITE_LOCAL_NGINX !== 'true'
@@ -87,22 +161,30 @@ const client = {
   readyPlayerMeUrl: globalThis.process.env.VITE_READY_PLAYER_ME_URL,
   avaturnUrl: globalThis.process.env.VITE_AVATURN_URL,
   avaturnAPI: globalThis.process.env.VITE_AVATURN_API,
-  key8thWall: globalThis.process.env.VITE_8TH_WALL!,
   featherStoreKey: globalThis.process.env.VITE_FEATHERS_STORE_KEY,
-  gaMeasurementId: globalThis.process.env.VITE_GA_MEASUREMENT_ID,
-
   zendesk: {
     enabled: globalThis.process.env.VITE_ZENDESK_ENABLED,
     authenticationEnabled: globalThis.process.env.VITE_ZENDESK_AUTHENTICATION_ENABLED,
     key: globalThis.process.env.VITE_ZENDESK_KEY
-  }
+  },
+  maxFileSizeToUpload: globalThis.process.env.VITE_MAX_FILE_SIZE_TO_UPLOAD_MB
+    ? parseInt(globalThis.process.env.VITE_MAX_FILE_SIZE_TO_UPLOAD_MB, 10) * 1024 * 1024
+    : 1000 * 1024 * 1024 // 1000 MB or 1GB
 }
 
 /**
  * Full config
  */
 export const config = {
-  client
+  client,
+  websocket: {
+    pingTimeout: globalThis.process.env.VITE_WEBSOCKET_PING_TIMEOUT
+      ? parseInt(globalThis.process.env.VITE_WEBSOCKET_PING_TIMEOUT)
+      : 30000,
+    pingInterval: globalThis.process.env.VITE_WEBSOCKET_PING_INTERVAL
+      ? parseInt(globalThis.process.env.VITE_WEBSOCKET_PING_INTERVAL)
+      : 10000
+  }
 }
 
 export default config

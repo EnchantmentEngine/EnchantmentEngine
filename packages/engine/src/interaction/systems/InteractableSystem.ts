@@ -23,9 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Not } from 'bitecs'
+import { Not, UUIDComponent } from '@ir-engine/ecs'
 
-import { hasComponent, removeComponent, UUIDComponent } from '@ir-engine/ecs'
+import { hasComponent, removeComponent } from '@ir-engine/ecs'
 import { getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -134,8 +134,8 @@ const clickInteract = (entity: Entity) => {
   const interactable = getOptionalComponent(entity, InteractableComponent)
   if (!interactable) return
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue
@@ -150,8 +150,10 @@ const interactWithClosestInteractable = () => {
     const interactable = getOptionalComponent(interactableEntity, InteractableComponent)
     if (interactable) {
       for (const callback of interactable.callbacks) {
-        if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-        const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : interactableEntity
+        if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(interactableEntity, callback.target)) continue
+        const targetEntity = callback.target
+          ? UUIDComponent.getEntityFromSameSourceByID(interactableEntity, callback.target)
+          : interactableEntity
         if (targetEntity && callback.callbackID) {
           const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
           if (!callbacks) continue
