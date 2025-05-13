@@ -30,18 +30,19 @@ import React from 'react'
 export const ProgressState = defineState({
   name: 'CompressionProgressState',
   initial: {
-    progress: 0
+    progress: 0,
+    caption: ''
   }
 })
 
 export function CompressedPublishConfirmation() {
-  const progress = useHookstate(getMutableState(ProgressState).progress)
+  const progressState = useHookstate(getMutableState(ProgressState))
   return (
     <div className="flex items-center justify-center">
       <div className="absolute z-50 w-[30vw] rounded-lg border border-gray-800 bg-surface-2  p-20 shadow-lg">
         <ProgressBar
           bgColor={'#ffffff'}
-          completed={progress.value}
+          completed={progressState.progress.value * 100}
           loopingBarWidth={50}
           height="4px"
           baseBgColor="#2F3137"
@@ -50,7 +51,7 @@ export function CompressedPublishConfirmation() {
           loopingBarSpeed={0.4}
         />
         <div className="mb-8 mt-6  flex justify-between text-xs text-text-primary">
-          <span>Please wait for your space to be published...</span>
+          <span>{progressState.caption.value}</span>
         </div>
       </div>
     </div>
