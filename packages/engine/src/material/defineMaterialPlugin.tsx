@@ -45,9 +45,10 @@ import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materia
 import React, { useEffect } from 'react'
 import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
 
-export const TextureSchema = () => S.Class(() => null as GLTF.ITextureInfo | null)
+export const TextureSchema = () =>
+  S.Union([S.Class(() => null as GLTF.ITextureInfo | null), S.String(), S.Null()], { default: null, $isTexture: true })
 
-const isTextureUniform = (uniform: any) => typeof uniform === 'object' && 'index' in uniform
+const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.$isTexture
 
 /**
  *
@@ -113,7 +114,7 @@ export const defineMaterialPlugin = <T extends Schema>({
       const material = useComponent(entity, MaterialStateComponent).material.value as Material
 
       const textureUniforms = Object.fromEntries(
-        Object.entries(uniformSchema)
+        (Object.entries(uniformSchema) as Array<[keyof T, Schema]>)
           .filter(([key, value]) => isTextureUniform(value))
           .map(([key, value]) => [key, new Uniform(null)])
       ) as Record<keyof T, Uniform>

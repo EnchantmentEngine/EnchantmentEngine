@@ -900,7 +900,7 @@ function createPropagationArgsClass<C extends Component>(
   component: C
 ) {
   if (!obj) return undefined
-  if ('clone' in obj && typeof obj.clone === 'function') {
+  if (typeof obj === 'object' && 'clone' in obj && typeof obj.clone === 'function') {
     return obj.clone()
   } else {
     try {
