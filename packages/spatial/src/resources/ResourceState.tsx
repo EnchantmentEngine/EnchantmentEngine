@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,13 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
   AnimationClip,
   BufferAttribute,
+  Cache,
   CompressedTexture,
   InterleavedBufferAttribute,
   Light,
@@ -50,17 +51,17 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-
 import { NO_PROXY, State, defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
-import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
+import { isIPhone } from '../common/functions/isMobile'
 import iterateObject3D from '../common/functions/iterateObject3D'
 import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
-import { RendererComponent } from '../renderer/components/RendererComponent'
+import { RendererComponent } from '../renderer/WebGLRendererSystem'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
 
 export interface DisposableObject {
@@ -71,7 +72,7 @@ export interface DisposableObject {
   disposed?: boolean
 }
 
-// Cache.enabled = true
+Cache.enabled = false
 
 export enum ResourceType {
   Mesh = 'Mesh',
@@ -278,14 +279,15 @@ const resourceCallbacks = {
       discardUponUpload = false
     ) => {
       if (!asset.image) return
-
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: discardUponUpload })
+        //@ts-ignore
+        // asset.onUpdate = null
         const viewer = getState(ReferenceSpaceState).viewerEntity
         const renderer = getComponent(viewer, RendererComponent)
         const gl = renderer.renderContext as WebGL2RenderingContext
-        if (discardUponUpload && typeof gl.fenceSync === 'function') {
+        if (discardUponUpload && gl.fenceSync && isIPhone) {
           const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
           if (sync) {
             const checkSync = () => {
@@ -295,38 +297,8 @@ const resourceCallbacks = {
               } else {
                 gl.deleteSync(sync)
                 resource.metadata.merge({ onGPU: true, discarded: true })
-
-                // Use the TextureMemoryManager to offload texture data
-                import('@ir-engine/engine/src/assets/loaders/texture/TextureMemoryManager')
-                  .then(async ({ offloadTextureData }) => {
-                    try {
-                      await offloadTextureData(asset)
-                    } catch (err) {
-                      // Fallback to the old method if offloading fails
-                      asset.source.data.close?.()
-                      asset.source.data = {}
-                      if ((asset as CompressedTexture).isCompressedTexture) {
-                        ;(asset as CompressedTexture).mipmaps = []
-                      }
-                    }
-                  })
-                  .catch(() => {
-                    // Fallback to the old method if the import fails
-                    asset.source.data.close?.()
-                    asset.source.data = {}
-                    if ((asset as CompressedTexture).isCompressedTexture) {
-                      ;(asset as CompressedTexture).mipmaps = []
-                    }
-                  })
-
-                // Also ensure the texture patch is applied
-                import('@ir-engine/engine/src/assets/loaders/texture/TexturePatch')
-                  .then(({ applyTexturePatch }) => {
-                    applyTexturePatch()
-                  })
-                  .catch((err) => {
-                    console.error('Failed to apply texture patch:', err)
-                  })
+                asset.source.data = null
+                asset.mipmaps = []
               }
             }
             requestAnimationFrame(checkSync)
@@ -637,6 +609,7 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
+  /** @todo disposal currently causes errors */
   const entityHasAuthoringUpstream =
     getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
 
@@ -717,16 +690,6 @@ const useEntityResource = (entity: Entity, state: State<ResourceAssetType>) => {
   }, [state])
 }
 
-const getAllResourcesOfType = (type: ResourceType) => {
-  const resources = getState(ResourceState).resources
-  const result = [] as Resource[]
-  for (const key in resources) {
-    const resource = resources[key]
-    if (resource.type === type) result.push(resource)
-  }
-  return result
-}
-
 export const ResourceState = defineState({
   name: 'ResourceState',
 
@@ -743,8 +706,6 @@ export const ResourceState = defineState({
   debugWarn: (...data: any[]) => {
     if (getState(ResourceState).debug) console.warn(...data)
   },
-
-  getAllResourcesOfType,
 
   resourceCallbacks,
   useEntityResource,

@@ -29,7 +29,7 @@ import { DefaultLoadingManager, LoadingManager } from 'three'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { ResourceLoadingManager } from '../loaders/base/ResourceLoadingManager'
-import { ResourceCacheState, ResourceStatus } from './ResourceCacheState'
+import { AssetCacheState, ResourceStatus } from './AssetCacheState'
 
 export const setDefaultLoadingManager = (
   loadingManager: LoadingManager = new ResourceLoadingManager(
@@ -51,12 +51,12 @@ export const setDefaultLoadingManager = (
 }
 
 const onItemStart = (url: string) => {
-  const resourceCacheState = getMutableState(ResourceCacheState)
-  if (!resourceCacheState[url].value) {
+  const assetCacheState = getMutableState(AssetCacheState)
+  if (!assetCacheState[url].value) {
     // console.warn('ResourceState: asset loaded outside of the resource manager, url: ' + url)
     return
   }
-  const resource = resourceCacheState[url]
+  const resource = assetCacheState[url]
   if (resource.status.value === ResourceStatus.Unloaded) {
     resource.status.set(ResourceStatus.Loading)
   }

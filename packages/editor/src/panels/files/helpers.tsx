@@ -23,7 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ImmutableArray, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { ImmutableArray } from '@hookstate/core'
+import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'

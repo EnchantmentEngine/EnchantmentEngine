@@ -38,7 +38,7 @@ import {
 import { TransformComponent } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
-import { overrideFileLoaderEach } from '../../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AnimationComponent } from './AnimationComponent'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
@@ -48,7 +48,7 @@ import { startEngineReactor } from '../../../tests/startEngineReactor'
 
 describe('AnimationComponent', () => {
   describe('ECS PropertyBinding', () => {
-    overrideFileLoaderEach()
+    overrideFileLoaderLoad()
 
     beforeEach(() => {
       createEngine()

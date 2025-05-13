@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate } from '@hookstate/core'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
 import Tabs from '@ir-engine/ui/src/primitives/tailwind/Tabs'
 import React from 'react'

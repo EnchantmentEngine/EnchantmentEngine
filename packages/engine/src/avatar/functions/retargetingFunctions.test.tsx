@@ -40,7 +40,7 @@ import { act, render } from '@testing-library/react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestGLTFEntity } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
-import { overrideFileLoaderEach } from '../../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { mixamoVRMRigMap } from '../AvatarBoneMatching'
 import { AnimationComponent } from '../components/AnimationComponent'
@@ -52,7 +52,7 @@ const animation_pack = default_url + '/animations/emotes.glb'
 
 describe('retargetingFunctions', () => {
   describe('retargetAnimationClips', () => {
-    overrideFileLoaderEach()
+    overrideFileLoaderLoad()
 
     beforeEach(() => {
       createEngine()

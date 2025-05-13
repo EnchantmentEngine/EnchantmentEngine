@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 //https://stackoverflow.com/a/60476525
 
-import { useHookstate } from '@speigg/hookstate'
+import { useHookstate } from '@hookstate/core'
 import { useCallback } from 'react'
 
 export const useReactiveRef = <T extends HTMLElement>() => {

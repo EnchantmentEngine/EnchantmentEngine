@@ -138,8 +138,8 @@ export const setInputSources = (startEntity: Entity, inputSources: Entity[]) => 
     const sinkEntity =
       sinkEntityUUID === 'Self' ? inputEntity : UUIDComponent.getEntityFromSameSourceByID(inputEntity, sinkEntityUUID)
     if (!hasComponent(sinkEntity, InputComponent)) continue
-    const sinkInputComponent = getComponent(sinkEntity, InputComponent)
-    sinkInputComponent.inputSources.push(...inputSources)
+    const sinkInputComponent = getMutableComponent(sinkEntity, InputComponent)
+    sinkInputComponent.inputSources.merge(inputSources)
   }
 }
 

@@ -53,7 +53,7 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { InstancedMesh, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
-import { overrideFileLoaderEach } from '../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { GLTFComponent } from './GLTFComponent'
 import { KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
@@ -90,7 +90,7 @@ const setupEntity = () => {
 }
 
 describe('GLTF Loader', async () => {
-  overrideFileLoaderEach()
+  overrideFileLoaderLoad()
 
   beforeEach(async () => {
     createEngine()

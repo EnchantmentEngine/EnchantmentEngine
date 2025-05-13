@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { State } from '@speigg/hookstate'
+import { State } from '@hookstate/core'
 import { v4 as uuidv4 } from 'uuid'
 
 import { PeerID, UserID } from '../types/Types'
