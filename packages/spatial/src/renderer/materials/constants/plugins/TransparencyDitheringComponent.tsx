@@ -27,9 +27,9 @@ import { FrontSide, Material, Uniform, Vector3 } from 'three'
 
 import { defineComponent, getComponent, getOptionalComponent, useComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { useEffect } from 'react'
+import { MaterialStateComponent } from '../../MaterialComponent'
+import { setPlugin } from '../../materialFunctions'
 import {
   ditheringAlphatestChunk,
   ditheringFragUniform,

@@ -40,12 +40,12 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { useHookstate } from '@ir-engine/hyperflux'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
+import { ObjectLayerMaskComponent } from '../../renderer/components/ObjectLayerComponent'
+import { VisibleComponent } from '../../renderer/components/VisibleComponent'
+import { ObjectLayerMasks } from '../../renderer/constants/ObjectLayers'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { NameComponent } from '../NameComponent'
 
 type DisposableObject3D = Object3D & { update?: () => void; dispose?: () => void }
 

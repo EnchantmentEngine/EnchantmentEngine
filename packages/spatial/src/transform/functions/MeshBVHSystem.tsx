@@ -57,17 +57,13 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { getMutableState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import {
-  ObjectLayerComponents,
-  ObjectLayerMaskComponent
-} from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { NameComponent } from '../../common/NameComponent'
+import { MeshComponent } from '../../renderer/components/MeshComponent'
+import { ObjectComponent } from '../../renderer/components/ObjectComponent'
+import { ObjectLayerComponents, ObjectLayerMaskComponent } from '../../renderer/components/ObjectLayerComponent'
+import { VisibleComponent } from '../../renderer/components/VisibleComponent'
+import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
+import { RendererState } from '../../renderer/RendererState'
 import { TransformComponent } from '../components/TransformComponent'
 import { generateMeshBVH } from './bvhWorkerPool'
 

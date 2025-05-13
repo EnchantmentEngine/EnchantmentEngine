@@ -36,10 +36,10 @@ import {
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
-import { generateNoiseTexture } from '@ir-engine/spatial/src/renderer/functions/generateNoiseTexture'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useEffect } from 'react'
+import { generateNoiseTexture } from '../../../functions/generateNoiseTexture'
 import { MaterialStateComponent } from '../../MaterialComponent'
 import { setPlugin } from '../../materialFunctions'
 

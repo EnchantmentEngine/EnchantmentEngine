@@ -508,7 +508,7 @@ const _getComponentState = <C extends Component>(entity: Entity, component: C) =
           component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
           LayerFunctions.propagateLayer(entity, component)
         }
-      }))
+      })) as any
     )
   }
   return component.stateMap[entity]

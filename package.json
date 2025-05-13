@@ -168,5 +168,8 @@
     "patch-package": "^6.5.1",
     "ts-node": "10.9.2",
     "typescript": "5.6.3"
+  },
+  "overrides": {
+    "@hookstate/core": "npm:@speigg/hookstate@^4.0.2-1"
   }
 }

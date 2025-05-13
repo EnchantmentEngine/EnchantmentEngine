@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -33,17 +33,20 @@ import {
   ComponentType,
   defineSystem,
   ECSState,
+  Entity,
   getComponent,
   PresentationSystemGroup,
+  UndefinedEntity,
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { profile } from '@ir-engine/ecs/src/Timer'
 import { defineState, getMutableState, getState, State, useMutableState } from '@ir-engine/hyperflux'
-import { RendererComponent, RenderSettingsState } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 
 import { EngineState } from '@ir-engine/ecs'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
+import { RendererComponent } from './components/RendererComponent'
 import { RendererState } from './RendererState'
+import { RenderSettingsState } from './RenderSettingsState'
 
 type PerformanceTier = 0 | 1 | 2 | 3 | 4 | 5
 type TargetFPS = 30 | 60
@@ -158,7 +161,7 @@ export const PerformanceState = defineState({
     maxIndices: 0,
     maxVerticies: 0,
 
-    renderContext: null! as WebGL2RenderingContext,
+    rendererEntity: UndefinedEntity,
 
     // The lower the performance the higher the offset
     gpuPerformanceOffset: 0,
@@ -178,7 +181,7 @@ export const PerformanceState = defineState({
 
     useEffect(() => {
       if (!renderer?.renderer.value) return
-      PerformanceManager.buildPerformanceState(getComponent(viewerEntity, RendererComponent))
+      // PerformanceManager.buildPerformanceState(getComponent(viewerEntity, RendererComponent))
     }, [!!renderer?.renderer.value])
 
     const performanceState = useMutableState(PerformanceState)
@@ -306,9 +309,12 @@ const timeRenderFrameGPU = (callback: (number) => void = () => {}): (() => void)
     }
   }
 
-  const { renderContext } = getState(PerformanceState)
+  const { rendererEntity } = getState(PerformanceState)
+  if (!rendererEntity) return fallback()
+  const renderer = getComponent(rendererEntity, RendererComponent)
+  const { renderContext } = renderer
   if (renderContext) {
-    const gl = renderContext
+    const gl = renderContext as WebGL2RenderingContext
     const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2')
 
     if (ext) {
@@ -436,11 +442,9 @@ const decrementCPUPerformance = () => {
   )
 }
 
-const buildPerformanceState = async (
-  renderer: ComponentType<typeof RendererComponent>,
-  override?: GetGPUTier['override']
-) => {
+const buildPerformanceState = async (rendererEntity: Entity, override?: GetGPUTier['override']) => {
   const performanceState = getMutableState(PerformanceState)
+  const renderer = getComponent(rendererEntity, RendererComponent)
   const gl = renderer.renderContext as WebGL2RenderingContext
 
   // hack fix for nodejs
@@ -464,7 +468,7 @@ const buildPerformanceState = async (
     device: gpuTier.device || 'unknown',
     gpuTier: tier as PerformanceTier,
     targetFPS: gpuTier.isMobile ? 30 : 60,
-    renderContext: gl,
+    rendererEntity,
     maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
     max3DTextureSize: gl.getParameter(gl.MAX_3D_TEXTURE_SIZE),
     maxBufferSize:

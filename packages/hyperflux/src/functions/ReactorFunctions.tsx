@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { hookstate, none, State } from '@hookstate/core'
+import { hookstate, none, State } from '@speigg/hookstate'
 import React, { Profiler, Suspense, useTransition } from 'react'
 import Reconciler, { Fiber, FiberRoot } from 'react-reconciler'
 import { ConcurrentRoot, DefaultEventPriority } from 'react-reconciler/constants'

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -32,23 +32,24 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
-import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
-import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
-import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
-import { setTargetCameraRotation } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
-import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
-import { DefaultAxisBindings, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
-import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
-import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
-import { AxisValueMap } from '@ir-engine/spatial/src/input/state/ButtonState'
-import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
-import { XRState } from '@ir-engine/spatial/src/xr/XRState'
+
 import { useEffect } from 'react'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
-import { RendererComponent } from '../../renderer/WebGLRendererSystem'
+import { DefaultAxisBindings, InputComponent } from '../../input/components/InputComponent'
+import { InputPointerComponent } from '../../input/components/InputPointerComponent'
+import { InputSourceComponent } from '../../input/components/InputSourceComponent'
+import { getThumbstickOrThumbpadAxes } from '../../input/functions/getThumbstickOrThumbpadAxes'
+import { AxisValueMap } from '../../input/state/ButtonState'
+import { InputState } from '../../input/state/InputState'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { XRState } from '../../xr/XRState'
+import { CameraSettings } from '../CameraState'
+import { FollowCameraComponent } from '../components/FollowCameraComponent'
+import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
+import { setTargetCameraRotation } from '../functions/CameraFunctions'
+import { FollowCameraMode } from '../types/FollowCameraMode'
 
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
