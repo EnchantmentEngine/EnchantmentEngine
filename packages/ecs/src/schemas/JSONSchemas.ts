@@ -32,7 +32,6 @@ import {
   TArraySchema,
   TBoolSchema,
   TClassSchema,
-  TEnumSchema,
   TFuncSchema,
   TLiteralSchema,
   TLiteralValue,
@@ -104,13 +103,12 @@ export const S = {
     }) as TStringSchema,
 
   /**
-   * Schema that infers as a enum, requires that the enum to infer as be passed in, default to the first value of the enum
+   * Schema that infers as the const values of an object, requires that the object to infer as be passed in, default to the first value of the object
    */
-  Enum: <T extends Record<string, string | number>>(item: T, options?: TEnumSchema<T>['options']) =>
-    ({
-      ...buildSchema('Enum', options),
-      properties: item
-    }) as TEnumSchema<T>,
+  Const: <Value extends TLiteralValue>(
+    item: Record<string, Value>,
+    options?: TUnionSchema<TLiteralSchema<Value>[]>['options']
+  ) => S.LiteralUnion(Object.values(item), { default: Object.values(item)[0], ...options }),
 
   /**
    * Schema that infers as a literal value

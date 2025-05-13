@@ -143,7 +143,7 @@ export const MediaComponent = defineComponent({
     uiOffset: T.Vec3(),
     volume: S.Number({ default: 1 }),
     resources: S.Array(S.String()),
-    playMode: S.Enum(PlayMode, { default: PlayMode.loop }),
+    playMode: S.Const(PlayMode, { default: PlayMode.loop }),
     isMusic: S.Bool({ default: false }),
     seekTime: S.Number({ default: 0, serialized: false }),
     /**@deprecated */

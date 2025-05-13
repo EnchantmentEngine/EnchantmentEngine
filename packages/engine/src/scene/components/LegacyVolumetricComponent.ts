@@ -97,7 +97,7 @@ export const LegacyVolumetricComponent = defineComponent({
     hasAudio: S.Bool({ default: false }),
     ended: S.Bool({ default: true }),
     volume: S.Number({ default: 1 }),
-    playMode: S.Enum(PlayMode, { default: PlayMode.loop }),
+    playMode: S.Const(PlayMode, { default: PlayMode.loop }),
     track: S.Number({ default: -1 }),
     forceChangeTrack: S.Bool({ default: false }),
     currentTrackInfo: S.Object({

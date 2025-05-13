@@ -848,7 +848,7 @@ export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
     }),
     followLocalOrigin: S.Bool({ default: true })
   }),
-  renderMode: S.Enum(RenderMode, { default: RenderMode.BillBoard }),
+  renderMode: S.Const(RenderMode, { default: RenderMode.BillBoard }),
   texture: S.String({ default: '' }),
   /**
    * particle mesh geometry

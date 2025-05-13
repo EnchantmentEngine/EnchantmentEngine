@@ -1074,7 +1074,6 @@ function createPropagationArgsInner<C extends Component>(
     case 'Void':
     case 'Bool':
     case 'String':
-    case 'Enum':
     case 'Literal': {
       return obj
     }
@@ -1214,7 +1213,7 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
   return defineComponent({
     name: `${name}LayerComponent`,
     schema: S.Object({
-      relations: S.Record(S.Enum(Layers), S.Entity())
+      relations: S.Record(S.Const(Layers), S.Entity())
     }),
 
     // backward references

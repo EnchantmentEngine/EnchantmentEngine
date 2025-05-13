@@ -49,7 +49,7 @@ export const ColliderComponent = defineComponent({
     massCenter: T.Vec3(),
     friction: S.Number({ default: 0.5 }),
     restitution: S.Number({ default: 0.5 }),
-    collisionLayer: S.Enum(CollisionGroups, { default: CollisionGroups.Default }),
+    collisionLayer: S.Const(CollisionGroups, { default: CollisionGroups.Default }),
     collisionMask: S.Number({ default: DefaultCollisionMask }),
 
     //shape specific parameters

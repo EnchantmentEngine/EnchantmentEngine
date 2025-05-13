@@ -84,9 +84,9 @@ export const ImageComponent = defineComponent({
 
   schema: S.Object({
     source: S.String({ default: '' }),
-    alphaMode: S.Enum(ImageAlphaMode, { default: ImageAlphaMode.Opaque }),
+    alphaMode: S.Const(ImageAlphaMode, { default: ImageAlphaMode.Opaque }),
     alphaCutoff: S.Number({ default: 0.5 }),
-    projection: S.Enum(ImageProjection, { default: ImageProjection.Flat }),
+    projection: S.Const(ImageProjection, { default: ImageProjection.Flat }),
     side: SideSchema(DoubleSide),
     fit: ContentFitTypeSchema('stretch'),
 

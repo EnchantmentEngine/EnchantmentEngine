@@ -50,11 +50,11 @@ import { getState } from '@ir-engine/hyperflux'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
-export enum SDFMode {
-  TORUS,
-  BOX,
-  SPHERE,
-  FOG
+export const SDFMode = {
+  TORUS: 0 as const,
+  BOX: 1 as const,
+  SPHERE: 2 as const,
+  FOG: 3 as const
 }
 
 // lazy load the shader to avoid generating a noise texture
@@ -68,7 +68,7 @@ export const SDFComponent = defineComponent({
     color: T.Color(0xffffff),
     scale: T.Vec3(new Vector3(0.25, 0.001, 0.25)),
     enable: S.Bool({ default: false }),
-    mode: S.Enum(SDFMode, { default: SDFMode.TORUS })
+    mode: S.Const(SDFMode, { default: SDFMode.TORUS })
   }),
 
   reactor: () => {

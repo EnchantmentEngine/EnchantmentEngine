@@ -85,10 +85,10 @@ export const DefaultAxisBindings = {
 } satisfies InputAxisBindings
 
 const ButtonSchema = S.Union([
-  S.Enum(KeyboardButton),
-  S.Enum(MouseButton),
-  S.Enum(StandardGamepadButton),
-  S.Enum(XRStandardGamepadButton)
+  S.Const(KeyboardButton),
+  S.Const(MouseButton),
+  S.Const(StandardGamepadButton),
+  S.Const(XRStandardGamepadButton)
 ])
 
 /**

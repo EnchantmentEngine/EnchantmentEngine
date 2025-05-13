@@ -31,8 +31,9 @@ import {
   Schema,
   Static,
   TArraySchema,
-  TEnumSchema,
   TFuncSchema,
+  TLiteralSchema,
+  TLiteralValue,
   TPartialSchema,
   TProperties,
   TPropertyKeySchema,
@@ -122,11 +123,6 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       if (value === '__proto__') return undefined
       return value
     }
-    case 'Enum': {
-      if (!validValue(value)) return value
-      const enumValues = Object.values(schema.properties as TEnumSchema<Record<string, string | number>>['properties'])
-      return enumValues.includes(value as string | number) ? value : undefined
-    }
     case 'Literal': {
       if (!validValue(value)) return value
       return schema.properties === value ? value : undefined
@@ -156,6 +152,15 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(
       if (!Array.isArray(value)) return undefined
       const props = schema.properties as TTupleSchema<Schema[]>['properties']
       return value.map((item, i) => DeserializeSchemaValue(entity, props[i], curr[i], item) ?? curr[i]) as Val
+    }
+    case 'Union': {
+      if (!validValue(value)) return value
+      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      for (const prop of props) {
+        const deserializedValue = DeserializeSchemaValue(entity, prop, curr, value)
+        if (validValue(deserializedValue)) return deserializedValue
+      }
+      return undefined
     }
     case 'Object': {
       if (!validValue(value)) return value
@@ -289,7 +294,6 @@ export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
     case 'Number':
     case 'Bool':
     case 'String':
-    case 'Enum':
     case 'Literal':
     case 'Class':
     case 'Array':
@@ -337,8 +341,6 @@ export const CreateSchemaValue = <T extends Schema>(entity: Entity, schema: T): 
       return false
     case 'String':
       return ''
-    case 'Enum':
-      return Object.values(schema.properties as TEnumSchema<Record<string, string | number>>['properties'])[0]
     case 'Literal':
       return schema.properties
 
@@ -429,10 +431,6 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
       return typeof value === 'boolean'
     case 'String':
       return typeof value === 'string'
-    case 'Enum':
-      return Object.values(schema.properties as TEnumSchema<Record<string, string | number>>['properties']).includes(
-        value as string | number
-      )
     case 'Literal':
       return value === schema.properties
 
@@ -537,7 +535,6 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
     case 'Number':
     case 'Bool':
     case 'String':
-    case 'Enum':
     case 'Literal':
     case 'Any':
       return value
@@ -631,11 +628,6 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
     case 'String':
       jsonSchema.type = 'string'
       break
-    case 'Enum': {
-      const enumValues = Object.values(schema.properties as TEnumSchema<Record<string, string | number>>['properties'])
-      jsonSchema.enum = enumValues
-      break
-    }
     case 'Literal':
       jsonSchema.const = schema.properties
       break
@@ -688,6 +680,15 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
     }
     case 'Union': {
       const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const isLiteralUnion = props.every((prop) => prop[Kind] === 'Literal')
+      if (isLiteralUnion) {
+        const enumValues = Object.values(
+          schema.properties as TUnionSchema<TLiteralSchema<TLiteralValue>[]>['properties']
+        ).map((prop) => prop.properties)
+        jsonSchema.enum = enumValues
+        break
+      }
+
       jsonSchema.oneOf = props.map((prop) => GenerateJSONSchema(prop))
       break
     }

@@ -165,9 +165,9 @@ type TextMesh = Mesh & {
  * - `Basic`: Maps to THREE.MeshBasicMaterial
  * - `Standard`: Maps to THREE.MeshStandardMaterial
  */
-export enum FontMaterialKind {
-  Basic,
-  Standard
+export const FontMaterialKind = {
+  Basic: 0 as const,
+  Standard: 1 as const
 }
 
 /**
@@ -216,7 +216,7 @@ export const TextComponent = defineComponent({
     font: S.String({ default: '' }), // font: string|null
     fontSize: S.Number({ default: 0.2 }),
     fontColor: T.Color(0xffffff),
-    fontMaterial: S.Enum(FontMaterialKind, { default: FontMaterialKind.Basic }), // Default to whatever value is marked at id=0 in FontMaterialKind
+    fontMaterial: S.Const(FontMaterialKind, { default: FontMaterialKind.Basic }), // Default to whatever value is marked at id=0 in FontMaterialKind
     // Font Outline Properties
     outlineOpacity: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
     outlineWidth: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string

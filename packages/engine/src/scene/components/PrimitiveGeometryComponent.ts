@@ -38,9 +38,9 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Geometry } from '@ir-engine/spatial/src/common/constants/Geometry'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { DoubleSide } from 'three'
-import { GeometryTypeEnum, GeometryTypeToFactory } from '../constants/GeometryTypeEnum'
+import { GeometryType, GeometryTypeToFactory } from '../constants/GeometryTypeEnum'
 
-const createGeometry = (geometryType: GeometryTypeEnum, geometryParams: Record<string, any>): Geometry => {
+const createGeometry = (geometryType: GeometryType, geometryParams: Record<string, any>): Geometry => {
   const factory = GeometryTypeToFactory[geometryType]
   const geometry = factory(geometryParams)
   return geometry
@@ -51,7 +51,7 @@ export const PrimitiveGeometryComponent = defineComponent({
   jsonID: 'EE_primitive_geometry',
 
   schema: S.Object({
-    geometryType: S.Enum(GeometryTypeEnum, { default: GeometryTypeEnum.BoxGeometry }),
+    geometryType: S.Const(GeometryType, { default: GeometryType.BoxGeometry }),
     geometryParams: S.Record(S.String(), S.Any())
   }),
 

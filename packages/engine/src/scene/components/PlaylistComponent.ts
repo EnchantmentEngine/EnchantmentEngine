@@ -44,7 +44,7 @@ export const PlaylistComponent = defineComponent({
     currentTrackUUID: S.String(),
     currentTrackIndex: S.Number({ default: -1 }),
     paused: S.Bool({ default: true }),
-    playMode: S.Enum(PlayMode, { default: PlayMode.loop }),
+    playMode: S.Const(PlayMode, { default: PlayMode.loop }),
     autoplay: S.Bool({ default: true })
   }),
 

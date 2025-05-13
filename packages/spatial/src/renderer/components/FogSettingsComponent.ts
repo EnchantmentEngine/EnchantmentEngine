@@ -42,20 +42,22 @@ import { FogShaders } from '../FogSystem'
 import { initBrownianMotionFogShader, initHeightFogShader, removeFogShader } from './FogShaders'
 import { VisibleComponent } from './VisibleComponent'
 
-export enum FogType {
-  Disabled = 'disabled',
-  Linear = 'linear',
-  Exponential = 'exponential',
-  Brownian = 'brownian',
-  Height = 'height'
+export const FogType = {
+  Disabled: 'disabled' as const,
+  Linear: 'linear' as const,
+  Exponential: 'exponential' as const,
+  Brownian: 'brownian' as const,
+  Height: 'height' as const
 }
+
+export type FogType = (typeof FogType)[keyof typeof FogType]
 
 export const FogSettingsComponent = defineComponent({
   name: 'FogSettingsComponent',
   jsonID: 'EE_fog',
 
   schema: S.Object({
-    type: S.Enum(FogType, { default: FogType.Disabled }),
+    type: S.Const(FogType, { default: FogType.Disabled }),
     color: S.String({ default: '#FFFFFF' }),
     density: S.Number({ default: 0.005 }),
     near: S.Number({ default: 1 }),

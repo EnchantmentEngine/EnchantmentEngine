@@ -81,14 +81,14 @@ import { InteractiveModalState } from '../ui/InteractiveModalView'
  *
  * NOTE - if more states are added we need to modify logic in InteractableSystem.ts for state other than "none"
  */
-export enum XRUIVisibilityOverride {
-  none = 0,
-  on = 1,
-  off = 2
+export const XRUIVisibilityOverride = {
+  none: 0 as const,
+  on: 1 as const,
+  off: 2 as const
 }
-export enum XRUIActivationType {
-  proximity = 0,
-  hover = 1
+export const XRUIActivationType = {
+  proximity: 0 as const,
+  hover: 1 as const
 }
 
 const xrDistVec3 = new Vector3()
@@ -247,8 +247,8 @@ export const InteractableComponent = defineComponent({
     uiInteractable: S.Bool({ default: true, serialized: false }),
     uiEntity: S.Entity({ serialized: false }),
     label: S.String({ default: 'E' }),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, { default: XRUIVisibilityOverride.none, serialized: false }),
-    uiActivationType: S.Enum(XRUIActivationType, { default: XRUIActivationType.proximity }),
+    uiVisibilityOverride: S.Const(XRUIVisibilityOverride, { default: XRUIVisibilityOverride.none, serialized: false }),
+    uiActivationType: S.Const(XRUIActivationType, { default: XRUIActivationType.proximity }),
     activationDistance: S.Number({ default: 2 }),
     clickInteract: S.Bool({ default: false }),
     highlighted: S.Bool({ default: false, serialized: false }),

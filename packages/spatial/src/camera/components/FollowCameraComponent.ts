@@ -81,8 +81,8 @@ export const FollowCameraComponent = defineComponent({
     targetEntity: S.Entity(),
     currentTargetPosition: T.Vec3(),
     targetPositionSmoothness: S.Number({ default: 0 }),
-    mode: S.Enum(FollowCameraMode, { default: FollowCameraMode.ThirdPerson }),
-    allowedModes: S.Array(S.Enum(FollowCameraMode), [
+    mode: S.Const(FollowCameraMode, { default: FollowCameraMode.ThirdPerson }),
+    allowedModes: S.Array(S.Const(FollowCameraMode), [
       FollowCameraMode.ThirdPerson,
       FollowCameraMode.FirstPerson,
       FollowCameraMode.TopDown,
@@ -105,7 +105,7 @@ export const FollowCameraComponent = defineComponent({
     maxTheta: S.Number({ default: 0 }),
     locked: S.Bool({ default: false }),
     enabled: S.Bool({ default: true }),
-    shoulderSide: S.Enum(FollowCameraShoulderSide, { default: FollowCameraShoulderSide.Left }),
+    shoulderSide: S.Const(FollowCameraShoulderSide, { default: FollowCameraShoulderSide.Left }),
     raycastProps: S.Object({
       enabled: S.Bool({ default: true }),
       rayCount: S.Number({ default: 3 }),

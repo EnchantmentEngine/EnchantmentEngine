@@ -36,7 +36,6 @@ export type Kinds =
   | 'Number'
   | 'Bool'
   | 'String'
-  | 'Enum'
   | 'Literal'
   | 'Object'
   | 'Record'
@@ -115,13 +114,6 @@ export interface TStringSchema extends Schema {
     minLength?: number
     maxLength?: number
   }
-}
-
-export interface TEnumSchema<T extends object> extends Schema {
-  [Kind]: 'Enum'
-  static: T[keyof T]
-  properties: T
-  options: Options<this['static']>
 }
 
 export type TLiteralValue = boolean | number | string

@@ -213,7 +213,7 @@ export const VolumetricComponent = defineComponent({
       currentTarget: S.Number({ default: 0 }),
       userTarget: S.Number({ default: -1 })
     }),
-    geometryType: S.Enum(GeometryType),
+    geometryType: S.Const(GeometryType),
     textureBuffer: S.Type<Map<string, Map<string, CompressedTexture[]>>>(
       new Map<string, Map<string, CompressedTexture[]>>()
     ),

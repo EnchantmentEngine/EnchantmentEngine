@@ -35,8 +35,8 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { useVisualScriptRunner } from '../systems/useVisualScriptRunner'
 
-export enum VisualScriptDomain {
-  'ECS' = 'ECS'
+export const VisualScriptDomain = {
+  ECS: 'ECS' as const
 }
 
 export const VisualScriptComponent = defineComponent({
@@ -44,7 +44,7 @@ export const VisualScriptComponent = defineComponent({
   jsonID: 'EE_visual_script',
 
   schema: S.Object({
-    domain: S.Enum(VisualScriptDomain, { default: VisualScriptDomain.ECS }),
+    domain: S.Const(VisualScriptDomain, { default: VisualScriptDomain.ECS }),
     visualScript: S.Type<GraphJSON | null>({
       default: () => parseStorageProviderURLs(defaultVisualScript),
       deserialize(curr, value) {
