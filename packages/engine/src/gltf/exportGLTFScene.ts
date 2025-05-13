@@ -1260,7 +1260,8 @@ const exportEntity = async (
     } else {
       const compData = serializeComponent(entity, component)
       // Do we not want to serialize tag components?
-      if (!compData) continue
+      if (compData == null) continue
+
       extensions[component.jsonID] = compData
       context.extensionsUsed.add(component.jsonID)
     }
