@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -46,9 +46,9 @@ import { CameraComponent } from '@ir-engine/spatial/src/camera/components/Camera
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
@@ -220,11 +220,9 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
 
   const sceneComponent = useComponent(props.entity, SceneSettingsComponent)
   const [loadingTexture, error] = useTexture(sceneComponent.loadingScreenURL.value, props.entity)
-  const renderer = useComponent(Engine.instance.viewerEntity, RendererComponent)
 
   useEffect(() => {
     if (!loadingTexture) return
-    if (!renderer.renderer.value) return
 
     const mesh = getComponent(meshEntity, ObjectComponent) as any as Mesh<SphereGeometry, MeshBasicMaterial>
     if (sceneComponent && sceneComponent.loadingScreenURL && mesh.userData.url !== sceneComponent.loadingScreenURL) {
@@ -234,10 +232,10 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
     mesh.material.map = loadingTexture
     mesh.material.needsUpdate = true
     mesh.material.map.needsUpdate = true
-    renderer.renderer.value.initTexture(loadingTexture)
+    getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.initTexture(loadingTexture)
 
     getMutableState(LoadingUISystemState).ready.set(true)
-  }, [loadingTexture, renderer?.renderer.value])
+  }, [loadingTexture])
 
   useEffect(() => {
     if (!error) return
@@ -294,10 +292,9 @@ const execute = () => {
           const uiContainer = ui.container.rootLayer.querySelector('#loading-ui')
           if (!uiContainer) return
           const uiSize = uiContainer.domSize
-          const screenSize = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer?.getSize(
+          const screenSize = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.getSize(
             SCREEN_SIZE
           )
-          if (!screenSize) return
           const aspectRatio = screenSize.x / screenSize.y
           const scaleMultiplier = aspectRatio < 1 ? 1 / aspectRatio : 1
           const scale =

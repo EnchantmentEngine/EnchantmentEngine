@@ -45,10 +45,14 @@ import { mockEngineRenderer } from '../../tests/util/MockEngineRenderer'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { RendererState } from './RendererState'
-import { WebGLRendererSystem, getNestedVisibleChildren, getSceneParameters } from './WebGLRendererSystem'
+import {
+  RendererComponent,
+  WebGLRendererSystem,
+  getNestedVisibleChildren,
+  getSceneParameters
+} from './WebGLRendererSystem'
 import { FogSettingsComponent, FogType } from './components/FogSettingsComponent'
 import { ObjectComponent } from './components/ObjectComponent'
-import { RendererComponent } from './components/RendererComponent'
 import { BackgroundComponent, EnvironmentMapComponent, SceneComponent } from './components/SceneComponents'
 import { VisibleComponent } from './components/VisibleComponent'
 import { ObjectLayers } from './constants/ObjectLayers'

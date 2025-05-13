@@ -37,11 +37,15 @@ import {
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { NO_PROXY, getState } from '@ir-engine/hyperflux'
+import {
+  PluginType,
+  addOBCPlugin,
+  removeOBCPlugin
+} from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
-import { PluginType, addOBCPlugin, removeOBCPlugin } from '../common/functions/OnBeforeCompilePlugin'
 import { FogSettingsComponent, FogType } from './components/FogSettingsComponent'
-import { ObjectComponent } from './components/ObjectComponent'
-import { VisibleComponent } from './components/VisibleComponent'
 
 export const FogShaders = [] as Shader[]
 

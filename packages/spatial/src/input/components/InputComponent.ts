@@ -23,6 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useLayoutEffect } from 'react'
+
 import {
   defineSystem,
   EngineState,
@@ -32,12 +34,20 @@ import {
   useEntityContext,
   useExecute
 } from '@ir-engine/ecs'
-import { defineComponent, getMutableComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  getMutableComponent,
+  getOptionalComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import {
   AnyAxis,
   AnyButton,
@@ -87,16 +97,12 @@ const ButtonSchema = S.Union([
  * @param order Order of execution relative to the input system group
  * @param executeWhenEditing Whether to execute when in edit mode
  */
-function useExecuteWithInput(
-  executeOnInput: () => void,
-  order?: InputExecutionOrder,
-  executeWhenEditing?: boolean
-): void
+function useExecuteWithInput(executeOnInput: () => void, order?: InputExecutionOrder, executeWhenEditing?: boolean)
 
 /**
  * @deprecated Use the new parameter order: (executeOnInput, order, executeWhenEditing)
  */
-function useExecuteWithInput(executeOnInput: () => void, executeWhenEditing: boolean, order: InputExecutionOrder): void
+function useExecuteWithInput(executeOnInput: () => void, executeWhenEditing: boolean, order: InputExecutionOrder)
 
 // Implementation
 function useExecuteWithInput(
@@ -367,7 +373,16 @@ export const InputComponent = defineComponent({
   },
 
   reactor: () => {
-    // Reactor implementation removed in merge
+    const entity = useEntityContext()
+    const input = useComponent(entity, InputComponent)
+
+    useLayoutEffect(() => {
+      if (!input.inputSources.length || !input.highlight.value) return
+      setComponent(entity, HighlightComponent)
+      return () => {
+        removeComponent(entity, HighlightComponent)
+      }
+    }, [input.inputSources, input.highlight])
 
     // useEffect(() => {
     //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
@@ -413,6 +428,10 @@ function getLargestMagnitudeNumber(a: number, b: number) {
   return Math.abs(a) > Math.abs(b) ? a : b
 }
 
+function filterInputEntities(entity: Entity, index: number, arr: Entity[]) {
+  return arr.indexOf(entity) === index && entity !== UndefinedEntity
+}
+
 export const enum InputExecutionOrder {
   'Before' = -1,
   'With' = 0,
@@ -435,3 +454,13 @@ export const InputExecutionSystemGroup = defineSystem({
   uuid: 'ee.engine.InputExecutionSystemGroup',
   insert: { with: InputSystemGroup }
 })
+
+const mapInputButtons = (eid: Entity) => getComponent(eid, InputSourceComponent).buttons
+
+const inputSinkComponentQueryComponents = [InputSinkComponent]
+const inputComponentQueryComponents = [InputComponent]
+
+const reduceInputEntities = (prev: Entity[], eid: Entity) => {
+  prev.push(...getComponent(eid, InputComponent).inputSources)
+  return prev
+}

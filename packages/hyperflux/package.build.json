@@ -22,17 +22,12 @@
     "url": "https://github.com/ir-engine/ir-engine/issues"
   },
   "dependencies": {
-    "@speigg/hookstate": "^4.0.2-1",
+    "@hookstate/core": "^4.0.0",
     "@hookstate/identifiable": "^4.0.0",
     "react": "18.2.0",
     "react-reconciler": "0.29.0",
     "ts-matches": "5.3.0",
     "ts-toolbelt": "^9.6.0",
     "uuid": "9.0.0"
-  },
-  "overrides": {
-    "@hookstate/identifiable": {
-      "@hookstate/core": "npm:@speigg/hookstate@^4.0.2-1"
-    }
   }
 }

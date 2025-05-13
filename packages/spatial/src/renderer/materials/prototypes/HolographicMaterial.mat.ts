@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Color, Material, MeshStandardMaterial, MeshStandardMaterialParameters, Uniform } from 'three'
 
-import { addOBCPlugin } from '../../../common/functions/OnBeforeCompilePlugin'
+import { addOBCPlugin } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 import { MaterialPrototypeDefinition } from '../MaterialComponent'
 import { BasicArgs } from '../constants/BasicArgs'
 import { BoolArg, ColorArg, FloatArg } from '../constants/DefaultArgs'

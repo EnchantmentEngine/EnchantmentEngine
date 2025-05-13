@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import '@ir-engine/hyperflux'
+import '@hookstate/core'
 import assert from 'assert'
 import React, { useEffect } from 'react'
 import sinon from 'sinon'

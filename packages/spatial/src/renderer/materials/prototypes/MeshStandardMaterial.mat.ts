@@ -25,6 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { MeshStandardMaterial as Standard } from 'three'
 
+import { MaterialPrototypeDefinition } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+
 import {
   AoMapArgs,
   BasicArgs,
@@ -37,7 +39,6 @@ import {
   NormalMapArgs,
   RoughhnessMapArgs
 } from '../constants/BasicArgs'
-import { MaterialPrototypeDefinition } from '../MaterialComponent'
 
 export const MeshStandardArguments = {
   ...BasicArgs,
