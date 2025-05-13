@@ -42,7 +42,6 @@ import { applyIncomingActions, dispatchAction, startReactor } from '@ir-engine/h
 import { TransformComponent } from '@ir-engine/spatial'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import {
-  computeTransformMatrix,
   TransformDirtyCleanupSystem,
   TransformDirtyUpdateSystem,
   TransformSystem
@@ -51,7 +50,7 @@ import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockAnimatedAvatar } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
-import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderEach } from '../../../tests/util/loadGLTFAssetNode'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { AvatarIKComponent, AvatarIKTargetComponent, IKMatrixComponent } from '../components/AvatarIKComponents'
 import '../state/AvatarIKTargetState'
@@ -62,7 +61,7 @@ import { AvatarIkReactor, AvatarIKSystem } from './AvatarIKSystem'
 
 const default_url = 'packages/projects/default-project/assets'
 describe('AvatarIKSystem', () => {
-  overrideFileLoaderLoad()
+  overrideFileLoaderEach()
 
   beforeEach(async () => {
     createEngine()
@@ -219,7 +218,9 @@ describe('AvatarIKSystem', () => {
       SystemDefinitions.get(AnimationSystem)?.execute()
       SystemDefinitions.get(AvatarAnimationSystem)?.execute()
 
-      iterateEntityNode(avatarEntity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
+      iterateEntityNode(avatarEntity, TransformComponent.computeTransformMatrix, (e) =>
+        hasComponent(e, TransformComponent)
+      )
 
       const rightHandIkPos = TransformComponent.getWorldPosition(
         getComponent(avatarEntity, AvatarRigComponent).bonesToEntities.rightHand,

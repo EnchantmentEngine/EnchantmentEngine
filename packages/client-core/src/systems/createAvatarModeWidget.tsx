@@ -39,7 +39,6 @@ import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAva
 import { EntityNetworkState } from '@ir-engine/network'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { User01Lg } from '@ir-engine/ui/src/icons'
 import { Quaternion, Vector3 } from 'three'
 import { Widget, Widgets } from './Widgets'
@@ -62,7 +61,7 @@ export function createAvatarModeWidget() {
         const parentEntity = UUIDComponent.getEntityByUUID(parentUUID)
         setComponent(avatarEntity, EntityTreeComponent, { parentEntity })
         respawnAvatar(avatarEntity)
-        iterateEntityNode(avatarEntity, computeTransformMatrix)
+        iterateEntityNode(avatarEntity, TransformComponent.computeTransformMatrix)
       } else {
         getMutableState(XRState).avatarCameraMode.set('attached')
         setComponent(avatarEntity, EntityTreeComponent, {
@@ -76,7 +75,7 @@ export function createAvatarModeWidget() {
           getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent).position.y,
           getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent).position.z
         )
-        iterateEntityNode(avatarEntity, computeTransformMatrix)
+        iterateEntityNode(avatarEntity, TransformComponent.computeTransformMatrix)
       }
       dispatchAction(WidgetAppActions.showWidgetMenu({ shown: false }))
     }
