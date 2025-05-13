@@ -41,7 +41,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { NodeIDComponent } from '@ir-engine/engine/src/gltf/NodeIDComponent'
 import { MeshBVHSystem, ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
@@ -91,7 +90,7 @@ const createModelGLTF = () => ({
       name: 'Triangle',
       mesh: 0,
       extensions: {
-        [NodeIDComponent.jsonID]: 'mesh-id',
+        [UUIDComponent.jsonID]: 'mesh-id',
         [VisibleComponent.jsonID]: true
       }
     }
@@ -162,7 +161,7 @@ const createModelGLTF = () => ({
   asset: {
     version: '2.0'
   },
-  extensionsUsed: [NodeIDComponent.jsonID, VisibleComponent.jsonID]
+  extensionsUsed: [UUIDComponent.jsonID, VisibleComponent.jsonID]
 })
 
 const createMaterialGLTF = () => ({
@@ -231,7 +230,7 @@ describe('addMediaNode', () => {
       scenes: [{ nodes: [] }],
       scene: 0,
       nodes: [],
-      extensionsUsed: [NodeIDComponent.jsonID, VisibleComponent.jsonID]
+      extensionsUsed: [UUIDComponent.jsonID, VisibleComponent.jsonID]
     })
 
     const sceneURL = 'https://test.com/test-scene.gltf'
@@ -282,7 +281,7 @@ describe('addMediaNode', () => {
         {
           name: 'Model',
           extensions: {
-            [NodeIDComponent.jsonID]: 'model-node-id',
+            [UUIDComponent.jsonID]: 'model-node-id',
             [GLTFComponent.jsonID]: {
               src: 'https://test.com/test-model.gltf'
             },
@@ -290,7 +289,7 @@ describe('addMediaNode', () => {
           }
         }
       ],
-      extensionsUsed: [NodeIDComponent.jsonID, VisibleComponent.jsonID]
+      extensionsUsed: [UUIDComponent.jsonID, VisibleComponent.jsonID]
     })
 
     const sceneURL = 'https://test.com/test-scene.gltf'

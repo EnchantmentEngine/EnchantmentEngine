@@ -325,7 +325,6 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
         console.error(error)
       }
     }
-    console.log(finalState, filteredOperations)
 
     // update the state to the ECS
     applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
