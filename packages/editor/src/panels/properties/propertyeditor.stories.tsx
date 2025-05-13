@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, getComponent, Layers, setComponent, UUIDComponent } from '@ir-engine/ecs'
+import { createEntity, Layers, setComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { getMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React from 'react'
@@ -44,9 +44,12 @@ export default {
 
 const MaterialEditorRenderer = (args) => {
   const simulationEntity = createEntity(Layers.Authoring)
-  setComponent(simulationEntity, UUIDComponent, UUIDComponent.generateUUID())
+  setComponent(simulationEntity, UUIDComponent, {
+    entitySourceID: 'storybook' as SourceID,
+    entityID: UUIDComponent.generate()
+  })
   setComponent(simulationEntity, NameComponent, 'test object ')
-  const uuid = getComponent(simulationEntity, UUIDComponent)
+  const uuid = UUIDComponent.get(simulationEntity)
   getMutableState(SelectionState).selectedEntities.set([uuid])
 
   return <PropertiesEditor />
