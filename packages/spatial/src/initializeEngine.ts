@@ -97,6 +97,7 @@ export const useSpatialEngine = () => {
 
 export const initializeSpatialEngine = () => {
   const originEntity = createEntity()
+  console.log({ originEntity })
   setComponent(originEntity, NameComponent, 'origin')
   setComponent(originEntity, UUIDComponent, {
     entitySourceID: 'engine' as SourceID,
