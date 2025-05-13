@@ -74,54 +74,17 @@ type MaterialExtension<Comp extends Component> = {
   [Key in keyof ComponentType<Comp>]?: MaterialValue['contents']
 }
 
-const TextureInfoSchema = S.Object({
+export const TextureInfoSchema = S.Object({
   index: S.Number(),
   texCoord: S.Optional(S.Number()),
   extensions: S.Optional(S.Record(S.String(), S.Any())),
   extras: S.Optional(S.Record(S.String(), S.Any()))
 })
 
-const MaterialNormalTextureInfoSchema = S.Object({
+export const MaterialNormalTextureInfoSchema = S.Object({
   index: S.Number(),
   scale: S.Optional(S.Number()),
   texCoord: S.Optional(S.Number()),
-  extensions: S.Optional(S.Record(S.String(), S.Any())),
-  extras: S.Optional(S.Record(S.String(), S.Any()))
-})
-
-const MaterialMetallicRoughnessSchema = S.Object({
-  baseColorFactor: S.Optional(S.Array(S.Number())),
-  baseColorTexture: S.Optional(TextureInfoSchema),
-  metallicFactor: S.Optional(S.Number()),
-  roughnessFactor: S.Optional(S.Number()),
-  metallicRoughnessTexture: S.Optional(TextureInfoSchema)
-})
-
-const MaterialOcclusionTextureInfoSchema = S.Object({
-  index: S.Number(),
-  strength: S.Optional(S.Number()),
-  texCoord: S.Optional(S.Number()),
-  extensions: S.Optional(S.Record(S.String(), S.Any())),
-  extras: S.Optional(S.Record(S.String(), S.Any()))
-})
-
-const MaterialAlphaModeSchema = S.LiteralUnion(['OPAQUE', 'MASK', 'BLEND'])
-
-const MaterialDefinitionSchema = S.Object({
-  type: S.Union(
-    [S.Literal('MeshStandardMaterial'), S.Literal('MeshPhysicalMaterial'), S.Literal('MeshBasicMaterial'), S.String()],
-    { default: 'MeshStandardMaterial' }
-  ),
-
-  name: S.Optional(S.String()),
-  pbrMetallicRoughness: S.Optional(MaterialMetallicRoughnessSchema),
-  normalTexture: S.Optional(MaterialNormalTextureInfoSchema),
-  occlusionTexture: S.Optional(MaterialOcclusionTextureInfoSchema),
-  emissiveTexture: S.Optional(TextureInfoSchema),
-  emissiveFactor: S.Optional(S.Array(S.Number())),
-  alphaMode: S.Optional(MaterialAlphaModeSchema),
-  alphaCutoff: S.Optional(S.Number()),
-  doubleSided: S.Optional(S.Bool()),
   extensions: S.Optional(S.Record(S.String(), S.Any())),
   extras: S.Optional(S.Record(S.String(), S.Any()))
 })
