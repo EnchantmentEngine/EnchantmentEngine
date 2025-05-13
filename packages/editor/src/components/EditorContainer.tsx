@@ -63,7 +63,6 @@ import { HierarchyPanelTab } from '../panels/hierarchy'
 import { MaterialsPanelTab } from '../panels/materials'
 import { PropertiesPanelTab } from '../panels/properties'
 import { ScenePanelTab } from '../panels/scenes'
-import { ViewportPanelTab } from '../panels/viewport'
 import { VisualScriptPanelTab } from '../panels/visualscript'
 import { EditorWarningState } from '../services/EditorWarningServices'
 import { UIAddonsState } from '../services/UIAddonsState'
@@ -118,10 +117,10 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
           size: 8,
           children: [
             {
-              tabs: [ViewportPanelTab]
+              tabs: topLeftPanelTabs
             },
             {
-              tabs: tabs
+              tabs: bottomLeftPanelTabs
             }
           ]
         },
@@ -226,7 +225,16 @@ const EditorContainer = () => {
   const { initialized, isWidgetVisible, openChat } = useZendesk()
   const { t } = useTranslation()
 
-  const [visualScriptPanelEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.VisualScript])
+  const [visualScriptPanelEnabled, scriptPanelEnabled] = useFeatureFlags([
+    FeatureFlags.Studio.Panel.VisualScript,
+    FeatureFlags.Studio.Panel.Script
+  ])
+
+  useEffect(() => {
+    if (dockPanelRef.current) {
+      dockPanelRef.current.loadLayout(defaultLayout({ visualScriptPanelEnabled, scriptPanelEnabled }))
+    }
+  }, [visualScriptPanelEnabled, scriptPanelEnabled])
 
   useEffect(() => {
     return () => {

@@ -48,6 +48,7 @@ export const FeatureFlags = {
       ScreenshareTarget: 'ir.studio.components.screenshareTarget'
     },
     Panel: {
+      Script: 'ir.editor.panel.script',
       VisualScript: 'ir.editor.panel.visualScript',
       Portal: 'ir.editor.panel.portal',
       Grabble: 'ir.editor.panel.grabble'
