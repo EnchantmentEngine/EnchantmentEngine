@@ -35,7 +35,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
-  deserializeComponent,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -203,7 +202,7 @@ export async function addMediaNode(
             UUIDComponent.setSourceEntity(entity, rootEntity)
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
-                deserializeComponent(entity, TransformComponent, comp.props)
+                setComponent(entity, TransformComponent, comp.props)
               }
             }
           }
