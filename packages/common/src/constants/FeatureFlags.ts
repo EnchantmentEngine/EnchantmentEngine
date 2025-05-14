@@ -58,7 +58,8 @@ export const FeatureFlags = {
       Hierarchy: {
         ShowGlbChildren: 'ir.editor.ui.hierarchy.showGlbChildren'
       },
-      PointClick: 'ir.editor.ui.pointClick'
+      PointClick: 'ir.editor.ui.pointClick',
+      CompressOnPublish: 'ir.editor.ui.compressOnPublish'
     }
   }
 }
