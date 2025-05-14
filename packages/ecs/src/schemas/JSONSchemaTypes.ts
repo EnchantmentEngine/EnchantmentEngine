@@ -68,6 +68,7 @@ export interface Options<V = unknown> {
   validate?: (value: V, prev: V, entity: Entity) => boolean
   required?: boolean
   $comment?: string
+  metadata?: Record<string, any>
 }
 
 export interface TNullSchema extends Schema {

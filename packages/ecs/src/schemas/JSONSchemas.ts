@@ -108,7 +108,12 @@ export const S = {
   Const: <Value extends TLiteralValue>(
     item: Record<string, Value>,
     options?: TUnionSchema<TLiteralSchema<Value>[]>['options']
-  ) => S.LiteralUnion(Object.values(item), { default: Object.values(item)[0], ...options }),
+  ) =>
+    S.LiteralUnion(Object.values(item), {
+      default: Object.values(item)[0],
+      ...options,
+      metadata: { objectRef: item, ...options?.metadata }
+    }),
 
   /**
    * Schema that infers as a literal value

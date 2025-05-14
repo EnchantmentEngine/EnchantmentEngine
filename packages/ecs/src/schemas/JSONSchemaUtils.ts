@@ -691,6 +691,10 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
           schema.properties as TUnionSchema<TLiteralSchema<TLiteralValue>[]>['properties']
         ).map((prop) => prop.properties)
         jsonSchema.enum = enumValues
+        if (schema.options?.metadata?.objectRef) {
+          jsonSchema.metadata ??= {}
+          jsonSchema.metadata.enumKeys = Object.keys(schema.options.metadata.objectRef)
+        }
         break
       }
 

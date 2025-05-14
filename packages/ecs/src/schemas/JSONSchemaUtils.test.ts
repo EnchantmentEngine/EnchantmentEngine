@@ -2437,7 +2437,10 @@ describe('GenerateJSONSchema', () => {
     const schema = S.Const({ A: 'a', B: 'b' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
-      enum: ['a', 'b']
+      enum: ['a', 'b'],
+      metadata: {
+        enumKeys: ['A', 'B']
+      }
     })
   })
 
