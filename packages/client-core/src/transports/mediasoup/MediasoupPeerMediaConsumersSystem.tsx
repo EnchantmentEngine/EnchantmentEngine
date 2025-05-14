@@ -26,30 +26,35 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 
 import { useFind } from '@ir-engine/common'
-import { clientSettingPath, InstanceID } from '@ir-engine/common/src/schema.type.module'
+import { engineSettingPath, InstanceID } from '@ir-engine/common/src/schema.type.module'
 import {
   MediasoupMediaProducerConsumerState,
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
-import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
+import {
+  getMutableState,
+  getState,
+  NetworkState,
+  PeerID,
+  useHookstate,
+  useMutableState,
+  VideoConstants
+} from '@ir-engine/hyperflux'
+
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
+import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
   createPeerMediaChannels,
-  getMutableState,
-  getState,
   MediaChannelState,
-  NetworkState,
-  PeerID,
   removePeerMediaChannels,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
-  useHookstate,
-  useMutableState,
-  VideoConstants,
   webcamAudioMediaChannelType
 } from '@ir-engine/hyperflux'
 
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { ConsumerExtension, ProducerExtension } from './MediasoupClientFunctions'
 
@@ -134,8 +139,15 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
   //   }
   // }, [producerState.paused?.value])
 
-  const clientSettingQuery = useFind(clientSettingPath)
-  const clientSetting = clientSettingQuery.data[0]
+  const clientSettingQuery = useFind(engineSettingPath, {
+    query: {
+      category: 'client',
+      paginate: false
+    }
+  })
+  const clientSetting = unflattenArrayToObject(
+    clientSettingQuery.data.map((setting) => ({ key: setting.key, value: setting.value, dataType: setting.dataType }))
+  ) as ClientEngineSettingType
 
   const isPiP = peerMediaChannelState.quality.value === 'largest'
 

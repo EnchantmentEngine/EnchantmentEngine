@@ -87,13 +87,12 @@ import mime from 'mime-types'
 import { uploadToFeathersService } from '../../util/upload'
 import { getCanvasBlob } from '../utils'
 
-const getFilename = (url) => {
-  const path = new URL(url).pathname // Get the path part of the URL
+const getFilename = (path) => {
   return path.substring(path.lastIndexOf('/') + 1) // Get the filename after the last "/"
 }
 
 export function generateThumbnailKey(src: string, projectName: string): string {
-  const uniqueFileName = `${projectName}-${getFilename(src)}-${Date.now()}`
+  const uniqueFileName = `${projectName}-${getFilename(`${window.location}/${src}`)}-${Date.now()}`
   const encoder = new TextEncoder()
   const buffer = encoder.encode(uniqueFileName)
   let hash = createHash('sha256').update(buffer).digest('hex')
