@@ -64,7 +64,15 @@ export const updateScriptFile = async (fileName, script = 'console.log("hello wo
   return response as ScriptUploadResponse
 }
 
-const loadTypeDefinitions = async (monaco) => {
+let typesLoaded = false
+
+const loadTypeDefinitions = async () => {
+  if (typesLoaded) return
+
+  typesLoaded = true
+
+  const monaco = globalThis.monaco
+
   // Assuming you have @types/react and @types/three installed in node_modules
   const reactDTS = await fetch('/node_modules/@types/react/index.d.ts').then((res) => res.text())
   const threeDTS = await fetch('/node_modules/@types/three/index.d.ts').then((res) => res.text())
@@ -102,6 +110,9 @@ const ActiveScript = ({ scriptURL }) => {
         onChange={(newCode) => {
           setCode(newCode ?? code)
           setCodeChanged(true)
+        }}
+        onMount={() => {
+          // loadTypeDefinitions()
         }}
         theme="vs-dark"
       />
