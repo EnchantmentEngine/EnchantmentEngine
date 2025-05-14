@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -346,6 +346,7 @@ export const CanvasInputReactor = () => {
       axes[MouseScroll.HorizontalScroll] = normalizedValues.spinX
       axes[MouseScroll.VerticalScroll] = normalizedValues.spinY
       event.preventDefault()
+      event.stopPropagation()
     }
 
     canvas.addEventListener('dragstart', ClientInputFunctions.preventDefault, false)

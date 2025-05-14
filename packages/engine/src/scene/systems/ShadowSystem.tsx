@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -94,7 +94,6 @@ import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/Transf
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
 import { ShadowComponent } from '../components/ShadowComponent'
@@ -253,7 +252,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
   const renderSettingsComponent = useComponent(renderSettingsEntity, RenderSettingsComponent)
   const xrLightProbeEntity = useHookstate(getMutableState(XRLightProbeState).directionalLightEntity)
-  const activeLightEntity = NodeFunctions.getEntityFromNodeID(
+  const activeLightEntity = UUIDComponent.useEntityFromSameSourceByID(
     renderSettingsEntity,
     renderSettingsComponent.primaryLight.value
   )
@@ -285,7 +284,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
     if (renderSettingsComponent.primaryLight.value && primaryLightVisibleComponent) {
       activeLightEntityState.set(
-        NodeFunctions.getEntityFromNodeID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
+        UUIDComponent.getEntityFromSameSourceByID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
       )
       return
     }
@@ -461,11 +460,13 @@ const reactor = () => {
     <>
       {useShadows ? (
         <QueryReactor
+          key={'renderSettingsQueryReactor'}
           Components={[RenderSettingsComponent]}
           ChildEntityReactor={ShadowSystemReactors.RenderSettingsQueryReactor}
         />
       ) : shadowTexture ? (
         <QueryReactor
+          key={'dropShadowReactor'}
           Components={[VisibleComponent, ShadowComponent]}
           ChildEntityReactor={ShadowSystemReactors.DropShadowReactor}
         />

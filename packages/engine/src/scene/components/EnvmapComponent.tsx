@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -33,7 +33,6 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { NodeIDSchema } from '../../gltf/NodeIDComponent'
 import {
   envmapParsReplaceLambert,
   envmapPhysicalParsReplace,
@@ -51,7 +50,7 @@ export const EnvMapComponent = defineComponent({
     envMapSourceColor: T.Color('#8080FF'),
     envMapSourceURL: S.String(),
     envMapCubemapURL: S.String(),
-    envMapSourceEntityUUID: NodeIDSchema(),
+    envMapSourceEntityUUID: S.EntityID(),
     envMapIntensity: S.Number({ default: 1 })
   }),
 

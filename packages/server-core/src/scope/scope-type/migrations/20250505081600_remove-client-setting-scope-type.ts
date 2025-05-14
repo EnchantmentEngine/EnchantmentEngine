@@ -19,41 +19,32 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { scopeTypePath } from '@ir-engine/common/src/schemas/scope/scope-type.schema'
 import type { Knex } from 'knex'
-
-import { defaultMediaSettings } from '@ir-engine/common/src/constants/DefaultMediaSettings'
-import { clientSettingPath } from '@ir-engine/common/src/schemas/setting/client-setting.schema'
 
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
 export async function up(knex: Knex): Promise<void> {
-  const mediaSettingsColumnExists = await knex.schema.hasColumn(clientSettingPath, 'mediaSettings')
-  if (!mediaSettingsColumnExists) {
-    await knex.schema.alterTable(clientSettingPath, async (table) => {
-      table.json('mediaSettings')
-    })
-    await knex.table(clientSettingPath).update({
-      mediaSettings: JSON.stringify(defaultMediaSettings)
-    })
-  }
+  const clientSettingPath = 'client-setting'
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  // Remove client-setting scope types from scope-type table
+  await knex(scopeTypePath)
+    .where('type', `${clientSettingPath}:read`)
+    .orWhere('type', `${clientSettingPath}:write`)
+    .del()
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }
 
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export async function down(knex: Knex): Promise<void> {
-  const mediaSettingsColumnExists = await knex.schema.hasColumn(clientSettingPath, 'mediaSettings')
-
-  if (mediaSettingsColumnExists) {
-    await knex.schema.alterTable(clientSettingPath, async (table) => {
-      table.dropColumn('mediaSettings')
-    })
-  }
-}
+export async function down(knex: Knex): Promise<void> {}

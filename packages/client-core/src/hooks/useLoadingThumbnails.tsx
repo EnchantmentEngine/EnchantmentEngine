@@ -19,20 +19,42 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { v4 as uuidv4 } from 'uuid'
+import { State, useMutableState } from '@ir-engine/hyperflux'
+import { useEffect, useRef } from 'react'
+import { FileThumbnailJobState } from '../common/services/FileThumbnailJobState'
 
-import { EntityUUID } from './Entity'
+const useLoadingThumbnails = (isLoading: State<boolean>) => {
+  const thumbnailJobs = useMutableState(FileThumbnailJobState).jobs
+  const debouncedStatusRef = useRef<ReturnType<typeof setTimeout>>()
 
-/**
- * Due to cyclical module level references, pretty much the whole ECS wrapper.
- */
-export * from './ComponentFunctions'
+  useEffect(() => {
+    clearTimeout(debouncedStatusRef.current)
+  }, [])
 
-/** @deprecated use UUIDComponent.generateUUID() instead */
-export const generateEntityUUID = () => {
-  return uuidv4() as EntityUUID
+  useEffect(() => {
+    if (debouncedStatusRef) {
+      clearTimeout(debouncedStatusRef.current)
+    }
+
+    const isThumbnailsLoading = thumbnailJobs.length > 0
+    if (isThumbnailsLoading) {
+      isLoading.set(true)
+    } else {
+      debouncedStatusRef.current = setTimeout(() => {
+        isLoading.set(false)
+      }, 1000)
+    }
+
+    return () => {
+      clearTimeout(debouncedStatusRef.current)
+    }
+  }, [thumbnailJobs.length])
+
+  return
 }
+
+export default useLoadingThumbnails

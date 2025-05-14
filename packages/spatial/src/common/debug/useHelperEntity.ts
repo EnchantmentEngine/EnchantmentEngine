@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -29,8 +29,9 @@ import { Mesh, Object3D } from 'three'
 import {
   createEntity,
   Entity,
+  EntityID,
   EntityTreeComponent,
-  generateEntityUUID,
+  getComponent,
   getOptionalComponent,
   removeEntity,
   setComponent,
@@ -69,12 +70,14 @@ export function useHelperEntity<TObject extends DisposableObject3D>(
     setComponent(helperEntity, EntityTreeComponent, { parentEntity: parentEntity })
     setComponent(helperEntity, TransformComponent)
     setComponent(helperEntity, ObjectComponent, helper)
-    setComponent(helperEntity, UUIDComponent, generateEntityUUID())
+    setComponent(helperEntity, UUIDComponent, {
+      entityID: 'helper-entity' as EntityID,
+      entitySourceID: getComponent(parentEntity, UUIDComponent).entitySourceID
+    })
     setComponent(helperEntity, ObjectLayerMaskComponent, layerMask)
     setComponent(helperEntity, VisibleComponent, true)
     helperEntityState.set(helperEntity)
     if (typeof helper.update === 'function') helper.update()
-
     return () => {
       if (helperMesh) {
         helperMesh.material.dispose()

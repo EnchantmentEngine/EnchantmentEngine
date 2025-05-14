@@ -19,18 +19,19 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
   createEngine,
   destroyEngine,
-  generateEntityUUID,
+  EntityID,
   getComponent,
   hasComponent,
   removeComponent,
   setComponent,
+  SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
@@ -58,7 +59,37 @@ describe('LoopAnimationComponent', () => {
     it('Should start animation when index is set', async () => {
       const entity = createTestGLTFEntity()
 
-      setComponent(entity, UUIDComponent, generateEntityUUID())
+      setComponent(entity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'test' as EntityID
+      })
+      setComponent(entity, GLTFComponent, { src: rings_gltf })
+
+      await vi.waitFor(
+        () => {
+          return GLTFComponent.isSceneLoaded(entity)
+        },
+        { timeout: 20000, interval: 100 }
+      )
+
+      setComponent(entity, LoopAnimationComponent, {
+        activeClipIndex: 0
+      })
+
+      await act(() => render(null))
+
+      const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
+      assert(!!loopAnimationComponent._action)
+      assert(loopAnimationComponent._action.isRunning())
+    })
+
+    it('Should stop animation when index is set to -1', async () => {
+      const entity = createTestGLTFEntity()
+
+      setComponent(entity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'test' as EntityID
+      })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
       await vi.waitFor(
@@ -82,7 +113,10 @@ describe('LoopAnimationComponent', () => {
     it('Should stop animation when index is set to -1', async () => {
       const entity = createTestGLTFEntity()
 
-      setComponent(entity, UUIDComponent, generateEntityUUID())
+      setComponent(entity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'test' as EntityID
+      })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
       await vi.waitFor(
@@ -117,7 +151,10 @@ describe('LoopAnimationComponent', () => {
     it('Should stop animation when the component is removed', async () => {
       const entity = createTestGLTFEntity()
 
-      setComponent(entity, UUIDComponent, generateEntityUUID())
+      setComponent(entity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'test' as EntityID
+      })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
       await vi.waitFor(

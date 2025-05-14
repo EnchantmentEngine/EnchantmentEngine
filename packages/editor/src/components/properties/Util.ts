@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -30,12 +30,11 @@ import {
   serializeComponent,
   SerializedComponentType
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, SourceID } from '@ir-engine/ecs/src/Entity'
 import { setNestedObject } from '@ir-engine/hyperflux'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { SourceID } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
 import { SelectionState } from '../../services/SelectionServices'
 
@@ -98,7 +97,7 @@ export const commitProperties = <C extends Component>(
 ) => {
   EditorControlFunctions.modifyProperty(nodes, component, properties)
 
-  const affectedAssets = new Set<SourceID>(nodes.map((entity) => GLTFComponent.getInstanceID(entity)))
+  const affectedAssets = new Set<SourceID>(nodes.map((entity) => GLTFComponent.getSourceID(entity)))
 
   for (const assetID of affectedAssets) {
     AuthoringState.snapshot(assetID)

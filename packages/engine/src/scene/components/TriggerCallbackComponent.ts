@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -27,7 +27,6 @@ import { defineComponent, removeComponent, setComponent, useEntityContext } from
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TriggerComponent } from '@ir-engine/spatial/src/physics/components/TriggerComponent'
 import { useEffect } from 'react'
-import { NodeIDSchema } from '../../gltf/NodeIDComponent'
 
 export const TriggerCallbackComponent = defineComponent({
   name: 'TriggerCallbackComponent',
@@ -47,7 +46,7 @@ export const TriggerCallbackComponent = defineComponent({
         /**
          * empty string represents self
          */
-        target: NodeIDSchema()
+        target: S.EntityID()
       })
     )
   }),
