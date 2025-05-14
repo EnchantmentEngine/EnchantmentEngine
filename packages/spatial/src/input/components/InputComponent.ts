@@ -151,7 +151,7 @@ export const InputComponent = defineComponent({
     highlight: S.Bool({ default: false }),
     grow: S.Bool({ default: false }),
     buttonBindings: S.Record(S.String(), S.Array(S.Union([ButtonSchema, S.Array(ButtonSchema)])), {
-      ...DefaultButtonBindings
+      default: { ...DefaultButtonBindings }
     }),
     //internal
     /** populated automatically by ClientInputSystem */
@@ -322,7 +322,7 @@ export const InputComponent = defineComponent({
         for (let i = 0; i < 4; i++) {
           const newAxis = inputSource.source.gamepad.axes[i] ?? 0
           axes[i] = getLargestMagnitudeNumber(axes[i] ?? 0, newAxis)
-          axes[mapping[i]] = axes[i]
+          axes[Object.keys(mapping)[i]] = axes[i]
         }
       }
     }
