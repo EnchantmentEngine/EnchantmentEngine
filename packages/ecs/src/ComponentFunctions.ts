@@ -1213,7 +1213,13 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
   return defineComponent({
     name: `${name}LayerComponent`,
     schema: S.Object({
-      relations: S.Record(S.Const(Layers), S.Entity())
+      relations: S.Record(
+        S.Const(Layers, {
+          $comment:
+            "A numeric enum, ie. the value of one of the following key-value pairs: 'Simulation': 0, 'Authoring': 1"
+        }),
+        S.Entity()
+      )
     }),
 
     // backward references

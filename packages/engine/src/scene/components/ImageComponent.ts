@@ -84,9 +84,15 @@ export const ImageComponent = defineComponent({
 
   schema: S.Object({
     source: S.String({ default: '' }),
-    alphaMode: S.Const(ImageAlphaMode, { default: ImageAlphaMode.Opaque }),
+    alphaMode: S.Const(ImageAlphaMode, {
+      $comment: "A string enum, ie. one of the following values: 'Opaque', 'Blend', 'Mask'",
+      default: ImageAlphaMode.Opaque
+    }),
     alphaCutoff: S.Number({ default: 0.5 }),
-    projection: S.Const(ImageProjection, { default: ImageProjection.Flat }),
+    projection: S.Const(ImageProjection, {
+      $comment: "A string enum, ie. one of the following values: 'Flat', 'Equirectangular360'",
+      default: ImageProjection.Flat
+    }),
     side: SideSchema(DoubleSide),
     fit: ContentFitTypeSchema('stretch'),
 

@@ -848,7 +848,11 @@ export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
     }),
     followLocalOrigin: S.Bool({ default: true })
   }),
-  renderMode: S.Const(RenderMode, { default: RenderMode.BillBoard }),
+  renderMode: S.Const(RenderMode, {
+    $comment:
+      "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'BillBoard', 'StretchedBillBoard', 'Mesh', 'Trail'",
+    default: RenderMode.BillBoard
+  }),
   texture: S.String({ default: '' }),
   /**
    * particle mesh geometry
