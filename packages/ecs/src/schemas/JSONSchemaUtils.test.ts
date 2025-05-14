@@ -1569,6 +1569,32 @@ describe('CheckSchemaValue', () => {
     })
   }) //:: Kind.Number
 
+  describe('case Kind.Const', () => {
+    it('should return true if `@param schema`.properties includes `@param value`', () => {
+      const Expected = true
+
+      const value = 42
+      const properties = { expectedValue: value, One: 1, Two: 2 }
+      const schema = S.Const(properties)
+
+      const result = CheckSchemaValue(schema, value)
+
+      expect(result).toBe(Expected)
+    })
+
+    it('should return false if `@param schema`.properties does not include `@param value`', () => {
+      const Expected = false
+
+      const value = 42
+      const properties = { One: 1, Two: 2 }
+      const schema = S.Const(properties)
+
+      const result = CheckSchemaValue(schema, value)
+
+      expect(result).toBe(Expected)
+    })
+  }) //:: Kind.Const
+
   describe('case Kind.Literal', () => {
     const TestSchemaKind = 'Literal'
 
