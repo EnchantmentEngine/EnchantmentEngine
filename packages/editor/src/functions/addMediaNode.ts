@@ -35,6 +35,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
+  deserializeComponent,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -194,7 +195,7 @@ export async function addMediaNode(
         (entity) => {
           const rootEntity = getState(EditorState).rootEntity
           const source = UUIDComponent.getAsSourceID(entity)
-          const entities = UUIDComponent.getEntitiesBySource(source)
+          const entities = UUIDComponent.getEntitiesBySource(source, Layers.Authoring)
           const newSource = GLTFComponent.getSourceID(rootEntity)
           for (const entity of entities) {
             requestedName = getIncreamentedName(requestedName, parent)
@@ -202,7 +203,7 @@ export async function addMediaNode(
             UUIDComponent.setSourceEntity(entity, rootEntity)
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
-                setComponent(entity, TransformComponent, comp.props)
+                deserializeComponent(entity, TransformComponent, comp.props)
               }
             }
           }
