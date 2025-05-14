@@ -82,12 +82,14 @@ export const FollowCameraComponent = defineComponent({
     currentTargetPosition: T.Vec3(),
     targetPositionSmoothness: S.Number({ default: 0 }),
     mode: S.Const(FollowCameraMode, { default: FollowCameraMode.ThirdPerson }),
-    allowedModes: S.Array(S.Const(FollowCameraMode), [
-      FollowCameraMode.ThirdPerson,
-      FollowCameraMode.FirstPerson,
-      FollowCameraMode.TopDown,
-      FollowCameraMode.ShoulderCam
-    ]),
+    allowedModes: S.Array(S.Const(FollowCameraMode), {
+      default: [
+        FollowCameraMode.ThirdPerson,
+        FollowCameraMode.FirstPerson,
+        FollowCameraMode.TopDown,
+        FollowCameraMode.ShoulderCam
+      ]
+    }),
     distance: S.Number({ default: 0 }),
     targetDistance: S.Number({ default: 0 }),
     zoomVelocity: S.Object({
@@ -117,7 +119,7 @@ export const FollowCameraComponent = defineComponent({
         maxDistance: S.Number({ default: -1 }),
         targetHit: S.Bool({ default: false })
       }),
-      cameraRays: S.Array(T.Vec3(), [])
+      cameraRays: S.Array(T.Vec3())
     }),
     pointerLock: S.Bool({ default: false }),
     smoothLerp: S.Bool({ default: true }),

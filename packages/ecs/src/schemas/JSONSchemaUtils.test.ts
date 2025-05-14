@@ -2487,7 +2487,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for Array type', () => {
-    const schema = S.Array(S.Number(), { minItem: 1, maxItem: 10 })
+    const schema = S.Array(S.Number(), { minItems: 1, maxItems: 10 })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       type: 'array',

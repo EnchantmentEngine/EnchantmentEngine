@@ -34,6 +34,7 @@ import {
   TFuncSchema,
   TLiteralSchema,
   TLiteralValue,
+  TNumberSchema,
   TPartialSchema,
   TProperties,
   TPropertyKeySchema,
@@ -617,11 +618,13 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
 
   // Add type based on schema kind
   switch (schema[Kind]) {
-    case 'Number':
+    case 'Number': {
+      const options = schema.options as TNumberSchema['options']
       jsonSchema.type = 'number'
-      if (schema.options?.maximum !== undefined) jsonSchema.maximum = schema.options.maximum
-      if (schema.options?.minimum !== undefined) jsonSchema.minimum = schema.options.minimum
+      if (options?.maximum !== undefined) jsonSchema.maximum = options.maximum
+      if (options?.minimum !== undefined) jsonSchema.minimum = options.minimum
       break
+    }
     case 'Bool':
       jsonSchema.type = 'boolean'
       break
@@ -664,10 +667,12 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
     }
     case 'Array': {
       const props = schema.properties as TArraySchema<Schema>['properties']
+      const options = schema.options as TArraySchema<Schema>['options']
+
       jsonSchema.type = 'array'
       jsonSchema.items = GenerateJSONSchema(props)
-      if (schema.options?.minItem !== undefined) jsonSchema.minItems = schema.options.minItem
-      if (schema.options?.maxItem !== undefined) jsonSchema.maxItems = schema.options.maxItem
+      if (options?.minItems !== undefined) jsonSchema.minItems = options.minItems
+      if (options?.maxItems !== undefined) jsonSchema.maxItems = options.maxItems
       break
     }
     case 'Tuple': {

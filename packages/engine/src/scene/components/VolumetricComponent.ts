@@ -214,9 +214,9 @@ export const VolumetricComponent = defineComponent({
       userTarget: S.Number({ default: -1 })
     }),
     geometryType: S.Const(GeometryType),
-    textureBuffer: S.Type<Map<string, Map<string, CompressedTexture[]>>>(
-      new Map<string, Map<string, CompressedTexture[]>>()
-    ),
+    textureBuffer: S.Type<Map<string, Map<string, CompressedTexture[]>>>({
+      default: () => new Map<string, Map<string, CompressedTexture[]>>()
+    }),
     setIntervalId: S.Number({ default: -1 }),
     texture: S.Record(
       TextureTypeSchema,

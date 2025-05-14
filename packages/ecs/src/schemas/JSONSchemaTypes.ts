@@ -67,7 +67,7 @@ export interface Options<V = unknown> {
   deserialize?: (curr: V, value: V) => V
   validate?: (value: V, prev: V, entity: Entity) => boolean
   required?: boolean
-  [prop: string]: any
+  $comment?: string
 }
 
 export interface TNullSchema extends Schema {
@@ -176,8 +176,8 @@ export interface TArraySchema<T extends Schema> extends Schema {
   [Kind]: 'Array'
   static: ArrayStatic<T>
   options: Options<this['static']> & {
-    minItem?: number
-    maxItem?: number
+    minItems?: number
+    maxItems?: number
     minContains?: number
     maxContains?: number
     uniqueItems?: boolean
