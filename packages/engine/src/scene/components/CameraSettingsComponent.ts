@@ -33,6 +33,12 @@ import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSceneMe
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 
+// Define a new camera mode for POI navigation
+export enum CameraPoiMode {
+  Disabled = 'Disabled',
+  Enabled = 'Enabled'
+}
+
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
   jsonID: 'EE_camera_settings',
@@ -48,7 +54,12 @@ export const CameraSettingsComponent = defineComponent({
     cameraMode: S.Enum(FollowCameraMode, { default: FollowCameraMode.Dynamic }),
     cameraModeDefault: S.Enum(FollowCameraMode, { default: FollowCameraMode.ThirdPerson }),
     minPhi: S.Number({ default: -70 }),
-    maxPhi: S.Number({ default: 85 })
+    maxPhi: S.Number({ default: 85 }),
+    // New fields for POI camera mode
+    poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
+    poiEntities: S.Array(S.Entity(), []),
+    currentPoiIndex: S.Number({ default: -1 }),
+    poiLerpSpeed: S.Number({ default: 0.5 })
   }),
 
   reactor: () => {
