@@ -64,6 +64,8 @@ import { HierarchyPanelTab } from '../panels/hierarchy'
 import { MaterialsPanelTab } from '../panels/materials'
 import { PropertiesPanelTab } from '../panels/properties'
 import { ScenePanelTab } from '../panels/scenes'
+import { ScriptPanelTab } from '../panels/script'
+import { ViewportPanelTab } from '../panels/viewport'
 import { VisualScriptPanelTab } from '../panels/visualscript'
 import { EditorWarningState } from '../services/EditorWarningServices'
 import { UIAddonsState } from '../services/UIAddonsState'
@@ -105,9 +107,10 @@ const onEditorError = (error) => {
   )
 }
 
-const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData => {
+const defaultLayout = (flags: { visualScriptPanelEnabled: boolean; scriptPanelEnabled: boolean }): LayoutData => {
   const tabs = [AssetsPanelTab]
   flags.visualScriptPanelEnabled && tabs.push(VisualScriptPanelTab)
+  flags.scriptPanelEnabled && tabs.push(ScriptPanelTab)
 
   return {
     dockbox: {
@@ -118,10 +121,10 @@ const defaultLayout = (flags: { visualScriptPanelEnabled: boolean }): LayoutData
           size: 8,
           children: [
             {
-              tabs: topLeftPanelTabs
+              tabs: [ViewportPanelTab]
             },
             {
-              tabs: bottomLeftPanelTabs
+              tabs: tabs
             }
           ]
         },
@@ -282,7 +285,7 @@ const EditorContainer = () => {
                   <DockContainer>
                     <DockLayout
                       ref={dockPanelRef}
-                      defaultLayout={defaultLayout({ visualScriptPanelEnabled })}
+                      defaultLayout={defaultLayout({ visualScriptPanelEnabled, scriptPanelEnabled })}
                       style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
                     />
                   </DockContainer>

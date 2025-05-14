@@ -1915,6 +1915,34 @@
           "weight": 1
         }
       }
+    },
+    {
+      "name": "Script",
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        60,
+        1,
+        0,
+        1
+      ],
+      "extensions": {
+        "EE_uuid": "174d63bd-4177-4dc3-ad87-90894320986e",
+        "EE_visible": true,
+        "IR_script": {
+          "src": "__$project$__/ir-engine/default-project/assets/scripts/defaultObjectRotateScript.js"
+        }
+      }
     }
   ],
   "scene": 0,
@@ -1968,7 +1996,8 @@
         46,
         47,
         48,
-        43
+        43,
+        49
       ]
     }
   ],
@@ -2001,6 +2030,7 @@
     "EE_loop_animation",
     "EE_dynamic_load",
     "EE_envmapbake",
-    "EE_link"
+    "EE_link",
+    "IR_script"
   ]
 }

@@ -30,6 +30,7 @@ import { LightTransformSystem } from './LightTransformSystem'
 import { RenderInfoSystem } from './RenderInfoSystem'
 import { ViewportLightingSystem } from './ViewportLightingSystem'
 import { WebGLRendererSystem } from './WebGLRendererSystem'
+import { VisibleComponent } from './components/VisibleComponent'
 import { AmbientLightComponent } from './components/lights/AmbientLightComponent'
 import { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
 import { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
@@ -49,6 +50,7 @@ export {
   SpotLightComponent,
   TransformComponent,
   ViewportLightingSystem,
+  VisibleComponent,
   WebGLRendererSystem,
   XRAnchorComponent
 }

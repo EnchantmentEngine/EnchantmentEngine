@@ -55,7 +55,6 @@ import { TextComponent } from '@ir-engine/engine/src/scene/components/TextCompon
 import { VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
-import { VisualScriptComponent } from '@ir-engine/engine/src/visualscript/components/VisualScriptComponent'
 import { defineState } from '@ir-engine/hyperflux'
 import {
   AmbientLightComponent,
@@ -131,6 +130,7 @@ import TriggerComponentEditor from '@ir-engine/ui/src/components/editor/properti
 import VariantNodeEditor from '@ir-engine/ui/src/components/editor/properties/variant'
 import VideoNodeEditor from '@ir-engine/ui/src/components/editor/properties/video'
 
+import { ScriptComponent, VisualScriptComponent } from '@ir-engine/engine'
 import VolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric'
 import LegacyVolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric/legacy'
 import { EditorComponentType } from '../components/properties/Util'
