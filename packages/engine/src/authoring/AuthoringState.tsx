@@ -62,6 +62,7 @@ import {
 } from '@ir-engine/hyperflux'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
+import { AddOperation, CopyOperation, MoveOperation, ReplaceOperation } from 'rfc6902/diff'
 
 export type SourceData = Record<EntityID, object>
 
@@ -442,4 +443,199 @@ export const getSourceSnapshot = (sourceID: SourceID) => {
   }
 
   return sourceData
+}
+
+/**
+ * Takes a list of operations, and removes any redundant operations.
+ * @param {Operation[]} operations
+ * @returns {Operation[]}
+ */
+export const squashOperations = (operations: Operation[]): Operation[] => {
+  if (!operations || operations.length === 0) {
+    return []
+  }
+
+  // Make a copy of the operations to avoid modifying the input
+  const operationsCopy = [...operations]
+
+  // First pass: Identify all paths that will be removed
+  const removedPaths = new Set<string>()
+  for (const op of operationsCopy) {
+    if (op.op === 'remove') {
+      removedPaths.add(op.path)
+    }
+  }
+
+  // Second pass: Process operations in order
+  const result: Operation[] = []
+  const processedPaths = new Map<string, number>() // path -> index in result array
+
+  for (let i = 0; i < operationsCopy.length; i++) {
+    const operation = operationsCopy[i]
+    const { op, path } = operation
+
+    // Skip operations on paths that are covered by a parent remove
+    if (op !== 'remove' && isPathCoveredByAnyParentPath(path, removedPaths)) {
+      continue
+    }
+
+    switch (op) {
+      case 'add':
+      case 'replace': {
+        // If we've already processed this path, replace the operation
+        if (processedPaths.has(path)) {
+          const index = processedPaths.get(path)!
+          result[index] = operation
+        } else {
+          processedPaths.set(path, result.length)
+          result.push(operation)
+        }
+        break
+      }
+
+      case 'remove': {
+        // Remove any operations on child paths
+        for (let j = result.length - 1; j >= 0; j--) {
+          const resultOp = result[j]
+          if (resultOp.path !== path && resultOp.path.startsWith(path + '/')) {
+            result.splice(j, 1)
+            // Update processed paths indices
+            for (const [p, idx] of processedPaths.entries()) {
+              if (idx > j) {
+                processedPaths.set(p, idx - 1)
+              }
+            }
+            processedPaths.delete(resultOp.path)
+          }
+        }
+
+        // If we previously added this path, remove both operations
+        if (processedPaths.has(path)) {
+          const index = processedPaths.get(path)!
+          const prevOp = result[index]
+          if (prevOp.op === 'add' || prevOp.op === 'replace') {
+            result.splice(index, 1)
+            // Update processed paths indices
+            for (const [p, idx] of processedPaths.entries()) {
+              if (idx > index) {
+                processedPaths.set(p, idx - 1)
+              }
+            }
+            processedPaths.delete(path)
+          } else {
+            result[index] = operation
+          }
+        } else {
+          processedPaths.set(path, result.length)
+          result.push(operation)
+        }
+        break
+      }
+
+      case 'move': {
+        const fromPath = (operation as MoveOperation).from
+
+        // Skip if source path is covered by a remove
+        if (isPathCoveredByAnyParentPath(fromPath, removedPaths)) {
+          continue
+        }
+
+        // If we previously added the source path, optimize to an add at the destination
+        let sourceIndex = -1
+        for (let j = 0; j < result.length; j++) {
+          if ((result[j].op === 'add' || result[j].op === 'replace') && result[j].path === fromPath) {
+            sourceIndex = j
+            break
+          }
+        }
+
+        if (sourceIndex >= 0) {
+          const sourceOp = result[sourceIndex] as AddOperation | ReplaceOperation
+          // Add at destination
+          const addOp: AddOperation = { op: 'add', path, value: sourceOp.value }
+          if (processedPaths.has(path)) {
+            const destIndex = processedPaths.get(path)!
+            result[destIndex] = addOp
+          } else {
+            processedPaths.set(path, result.length)
+            result.push(addOp)
+          }
+
+          // Remove the source add
+          result.splice(sourceIndex, 1)
+          // Update processed paths indices
+          for (const [p, idx] of processedPaths.entries()) {
+            if (idx > sourceIndex) {
+              processedPaths.set(p, idx - 1)
+            }
+          }
+          processedPaths.delete(fromPath)
+        } else {
+          // Keep the move operation as is
+          processedPaths.set(path, result.length)
+          result.push(operation)
+        }
+        break
+      }
+
+      case 'copy': {
+        const fromPath = (operation as CopyOperation).from
+
+        // Skip if source path is covered by a remove
+        if (isPathCoveredByAnyParentPath(fromPath, removedPaths)) {
+          continue
+        }
+
+        // Keep the copy operation
+        if (processedPaths.has(path)) {
+          const index = processedPaths.get(path)!
+          result[index] = operation
+        } else {
+          processedPaths.set(path, result.length)
+          result.push(operation)
+        }
+        break
+      }
+
+      case 'test': {
+        // Test operations are always kept
+        result.push(operation)
+        break
+      }
+    }
+  }
+
+  // Final pass: Sort remove operations by path length (descending)
+  // to ensure we remove deepest paths first
+  const removeOps: Operation[] = []
+  const otherOps: Operation[] = []
+
+  for (const op of result) {
+    if (op.op === 'remove') {
+      removeOps.push(op)
+    } else {
+      otherOps.push(op)
+    }
+  }
+
+  removeOps.sort((a, b) => b.path.length - a.path.length)
+
+  return [...removeOps, ...otherOps]
+}
+
+/**
+ * Checks if a path is covered by any parent path in the given set
+ */
+const isPathCoveredByAnyParentPath = (path: string, parentPaths: Set<string>): boolean => {
+  const pathParts = path.split('/')
+
+  // Start with the full path and progressively check parent paths
+  for (let i = pathParts.length - 1; i > 0; i--) {
+    const parentPath = pathParts.slice(0, i).join('/')
+    if (parentPaths.has(parentPath)) {
+      return true
+    }
+  }
+
+  return false
 }
