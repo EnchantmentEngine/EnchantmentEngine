@@ -19,28 +19,28 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createSwaggerServiceOptions } from 'feathers-swagger'
+import React, { ReactNode } from 'react'
+import { twMerge } from 'tailwind-merge'
 
-import {
-  clientSettingDataSchema,
-  clientSettingPatchSchema,
-  clientSettingQuerySchema,
-  clientSettingSchema
-} from '@ir-engine/common/src/schemas/setting/client-setting.schema'
-
-export default createSwaggerServiceOptions({
-  schemas: {
-    clientSettingDataSchema,
-    clientSettingPatchSchema,
-    clientSettingQuerySchema,
-    clientSettingSchema
-  },
-  docs: {
-    description: 'Client setting service description',
-    securities: ['all']
-  }
-})
+type Props = Readonly<{
+  children: ReactNode
+  className: string
+}>
+export default function SceneCard({ children, className }: Props) {
+  return (
+    <div
+      className={twMerge(
+        'col-span-2 inline-flex h-64 w-64 min-w-64 max-w-64 flex-col',
+        'rounded-lg border border-ui-tertiary shadow-lg',
+        'dark:border-ui-outline dark:bg-ui-background lg:col-span-1',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}

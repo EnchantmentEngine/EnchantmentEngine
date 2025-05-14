@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -114,13 +114,15 @@ export function findProximity(
   sortedIntersections: IntersectionData[],
   intersectionData: Set<IntersectionData>
 ) {
-  const userID = getState(EngineState).userID
+  const userID = getState(EngineState).userID as string
   if (!userID) return
 
   const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
 
   // @todo need a better way to do this
-  const selfAvatarEntity = UUIDComponent.getEntityByUUID((userID + '_avatar') as EntityUUID)
+
+  /**@todo avatar logic not to be in spatial package */
+  const selfAvatarEntity = UUIDComponent.getEntityByUUID((userID + 'avatar') as EntityUUID)
 
   // use sourceEid if controller (one InputSource per controller), otherwise use avatar rather than InputSource-emulated-pointer
   const inputSourceEntity = isCameraAttachedToAvatar && isSpatialInput ? sourceEid : selfAvatarEntity

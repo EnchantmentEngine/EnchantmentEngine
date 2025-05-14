@@ -19,20 +19,29 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { v4 as uuidv4 } from 'uuid'
+import { moderationPath } from '@ir-engine/common/src/schemas/moderation/moderation.schema'
+import type { Knex } from 'knex'
 
-import { EntityUUID } from './Entity'
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
 
-/**
- * Due to cyclical module level references, pretty much the whole ECS wrapper.
- */
-export * from './ComponentFunctions'
+  await knex.schema.alterTable(moderationPath, (table) => {
+    table.string('reportedUserIpAddress', 255).nullable()
+  })
 
-/** @deprecated use UUIDComponent.generateUUID() instead */
-export const generateEntityUUID = () => {
-  return uuidv4() as EntityUUID
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
+}
+
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw('SET FOREIGN_KEY_CHECKS=0')
+
+  await knex.schema.alterTable(moderationPath, (table) => {
+    table.dropColumn('reportedUserIpAddress')
+  })
+
+  await knex.raw('SET FOREIGN_KEY_CHECKS=1')
 }

@@ -19,17 +19,21 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
 
-import { UUIDComponent } from '@ir-engine/ecs'
-import { Layers, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
-import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
+import {
+  defineSystem,
+  entityExists,
+  Layers,
+  PresentationSystemGroup,
+  removeComponent,
+  setComponent,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
 import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
 import { SelectionState } from '../services/SelectionServices'

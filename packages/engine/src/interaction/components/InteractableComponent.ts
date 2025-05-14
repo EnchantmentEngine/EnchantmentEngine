@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -36,7 +36,8 @@ import {
   removeEntity,
   setComponent,
   UndefinedEntity,
-  useEntityContext
+  useEntityContext,
+  UUIDComponent
 } from '@ir-engine/ecs'
 import {
   defineComponent,
@@ -71,8 +72,6 @@ import {
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { useEffect } from 'react'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
-import { NodeFunctions } from '../../gltf/NodeFunctions'
-import { NodeIDSchema } from '../../gltf/NodeIDComponent'
 import { createUI } from '../functions/createUI'
 import { InteractableState, InteractableTransitions } from '../functions/interactableFunctions'
 import { InteractiveModalState } from '../ui/InteractiveModalView'
@@ -248,8 +247,17 @@ export const InteractableComponent = defineComponent({
     uiInteractable: S.Bool({ default: true, serialized: false }),
     uiEntity: S.Entity({ serialized: false }),
     label: S.String({ default: 'E' }),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, { default: XRUIVisibilityOverride.none, serialized: false }),
-    uiActivationType: S.Enum(XRUIActivationType, { default: XRUIActivationType.proximity }),
+    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, {
+      $comment:
+        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'none', 'on', 'off'",
+      default: XRUIVisibilityOverride.none,
+      serialized: false
+    }),
+    uiActivationType: S.Enum(XRUIActivationType, {
+      $comment:
+        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'proximity', 'hover'",
+      default: XRUIActivationType.proximity
+    }),
     activationDistance: S.Number({ default: 2 }),
     clickInteract: S.Bool({ default: false }),
     highlighted: S.Bool({ default: false, serialized: false }),
@@ -262,7 +270,7 @@ export const InteractableComponent = defineComponent({
         /**
          * empty string represents self
          */
-        target: NodeIDSchema()
+        target: S.EntityID()
       })
     )
   }),
@@ -326,8 +334,8 @@ export const InteractableComponent = defineComponent({
 const callInteractCallbacks = (entity: Entity) => {
   const interactable = getComponent(entity, InteractableComponent)
   for (const callback of interactable.callbacks) {
-    if (callback.target && !NodeFunctions.getEntityFromNodeID(entity, callback.target)) continue
-    const targetEntity = callback.target ? NodeFunctions.getEntityFromNodeID(entity, callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue
