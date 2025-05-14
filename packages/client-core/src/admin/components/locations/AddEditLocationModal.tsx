@@ -53,6 +53,7 @@ import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -71,6 +72,7 @@ import { useTranslation } from 'react-i18next'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
+import useFeatureFlags from '../../../hooks/useFeatureFlags'
 import { deleteScene } from '../../../world/SceneAPI'
 import CompressedPublishConfirmation from './CompressedPublishConfirmation'
 
@@ -157,6 +159,9 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
     caption: ''
   })
   const lods = useHookstate<LODVariantDescriptor[]>([])
+
+  const [compressOnPublishEnabled] = useFeatureFlags([FeatureFlags.Studio.UI.CompressOnPublish])
+
   useEffect(() => {
     if (location) {
       name.set(location.name)
@@ -634,6 +639,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               <Button
                 className="bg-[#2F3A4D]"
                 data-testid="publish-panel-compress-and-publish-button"
+                disabled={isLoading || !compressOnPublishEnabled}
                 onClick={handlePublishFolder}
               >
                 <HiOutlineInformationCircle />
