@@ -44,8 +44,7 @@ import {
   setComponent,
   traverseEntityNode
 } from '@ir-engine/ecs'
-import { dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
-import { SceneUser } from '@ir-engine/network'
+import { SceneUser, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
