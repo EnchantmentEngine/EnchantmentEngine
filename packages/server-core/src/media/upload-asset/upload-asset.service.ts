@@ -64,7 +64,7 @@ export type UploadAssetArgs = {
 }
 
 export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
-  logger.info('uploadAsset', {
+  logger.info('uploadAsset %o', {
     project: args.project,
     name: args.name,
     path: args.path
@@ -86,12 +86,11 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
 
   const name = args.name ?? args.file.originalname
   const relativePath = args.path!.replace('projects/' + args.project + '/', '') + name
-
   const result = await app.service(fileBrowserPath).patch(
     null,
     {
       project: args.project,
-      body: args.file,
+      body: typeof args.file === 'object' && 'buffer' in args.file ? args.file.buffer : args.file,
       path: relativePath
     },
     {

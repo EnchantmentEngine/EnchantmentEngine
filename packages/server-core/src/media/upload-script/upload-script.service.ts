@@ -155,7 +155,7 @@ const uploadScripts = (app: Application) => async (data: UploadScriptData, param
   const processedScript = await processScript(app, rawScript, {
     project: data.args.project,
     path: data.args.path,
-    name: file.originalname
+    name: rawScript.name!
   })
 
   return {

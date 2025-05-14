@@ -43,7 +43,6 @@ import { RiSaveLine } from 'react-icons/ri'
 import { VscDiscard } from 'react-icons/vsc'
 import { twMerge } from 'tailwind-merge'
 import { commitProperties } from '../../components/properties/Util'
-import { ItemTypes } from '../../constants/AssetTypes'
 import { EditorState } from '../../services/EditorServices'
 import { ScriptService, ScriptState } from '../../services/ScriptService'
 import './ScriptTab.css'
@@ -54,11 +53,11 @@ type ScriptUploadResponse = {
 }
 
 export const updateScriptFile = async (fileName, script = 'console.log("hello world")') => {
-  const file = new File([script], fileName, { type: ItemTypes.Scripts[3] })
+  const file = new File([script], fileName, { type: 'js' })
   const response = await uploadToFeathersService(uploadScriptPath, [file], {
     args: {
       project: getState(EditorState).projectName,
-      path: 'public/scripts/' + fileName
+      path: 'public/scripts/'
     }
   }).promise
   return response as ScriptUploadResponse
@@ -73,9 +72,9 @@ const loadTypeDefinitions = async () => {
 
   const monaco = globalThis.monaco
 
-  // Assuming you have @types/react and @types/three installed in node_modules
-  const reactDTS = await fetch('/node_modules/@types/react/index.d.ts').then((res) => res.text())
-  const threeDTS = await fetch('/node_modules/@types/three/index.d.ts').then((res) => res.text())
+  // Fetch type definitions from unpkg CDN to work in both development and production
+  const reactDTS = await fetch('https://unpkg.com/@types/react/index.d.ts').then((res) => res.text())
+  const threeDTS = await fetch('https://unpkg.com/@types/three/index.d.ts').then((res) => res.text())
 
   // Add type definitions to Monaco
   monaco.languages.typescript.javascriptDefaults.addExtraLib(reactDTS, 'file:///node_modules/@types/react/index.d.ts')
@@ -112,7 +111,7 @@ const ActiveScript = ({ scriptURL }) => {
           setCodeChanged(true)
         }}
         onMount={() => {
-          // loadTypeDefinitions()
+          loadTypeDefinitions()
         }}
         theme="vs-dark"
       />

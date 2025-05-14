@@ -28,26 +28,25 @@ import {
   createEntity,
   defineQuery,
   defineSystem,
+  EntityTreeComponent,
   getComponent,
-  setComponent,
-  UUIDComponent
+  removeComponent,
+  setComponent
 } from '@ir-engine/ecs'
-import { DomainConfigState, GLTFComponent, SourceComponent } from '@ir-engine/engine'
+import { DomainConfigState, GLTFComponent } from '@ir-engine/engine'
 import { getState } from '@ir-engine/hyperflux'
 import {
-  addObjectToGroup,
-  EngineState,
-  EntityTreeComponent,
   MeshComponent,
   NameComponent,
-  setVisibleComponent,
-  TransformComponent
+  ReferenceSpaceState,
+  TransformComponent,
+  VisibleComponent
 } from '@ir-engine/spatial'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 
-const publicDomain = getState(DomainConfigState).publicDomain
+const cloudDomain = getState(DomainConfigState).cloudDomain
 
-const heightMap = `${publicDomain}/projects/ir-engine/default-project/assets/heightMap.png`
+const heightMap = `${cloudDomain}/projects/ir-engine/default-project/assets/heightMap.png`
 const tileScale = 5,
   heightmapScale = 100,
   loadDistance = 5 * tileScale
@@ -128,19 +127,16 @@ const triangulateHeightmap = (imageData, mapX, mapY, heightmapScale) => {
 const generateTile = (mapX, mapY, parentEntity) => {
   const entity = createEntity()
   setComponent(entity, NameComponent, `tile_${mapX}_${mapY}`)
-  setComponent(entity, UUIDComponent, UUIDComponent.generateUUID())
-  setVisibleComponent(entity, true)
+  setComponent(entity, VisibleComponent)
   const mapSize = totalTileCount * tileScale
   setComponent(entity, TransformComponent, {
     position: new Vector3(mapX * tileScale, 0, mapY * tileScale).sub(new Vector3(mapSize / 2, 0, mapSize / 2)),
     scale: new Vector3(tileScale, tileScale, tileScale)
   })
   setComponent(entity, EntityTreeComponent, { parentEntity: parentEntity })
-  setComponent(entity, SourceComponent, getComponent(parentEntity, SourceComponent))
   const geometry = triangulateHeightmap(imageData, mapX, mapY, heightmapScale)
   const mesh = new Mesh(geometry, new MeshBasicMaterial({ vertexColors: true }))
   setComponent(entity, MeshComponent, mesh)
-  addObjectToGroup(entity, mesh)
   return entity
 }
 
@@ -149,7 +145,7 @@ const _tempVector = new Vector3(0, 0, 0)
 const camPos = new Vector3(0, 0, 0)
 
 const execute = () => {
-  const parentEntity = gltfQuery()[0]
+  const parentEntity = getState(ReferenceSpaceState).originEntity
   if (!parentEntity) return
 
   for (let i = 0; i < totalTileCount; i++) {
@@ -160,7 +156,7 @@ const execute = () => {
     }
   }
 
-  const viewerEntity = getState(EngineState).viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
 
   TransformComponent.getWorldPosition(viewerEntity, camPos).y = 0
 
@@ -170,7 +166,8 @@ const execute = () => {
       const transform = getComponent(tileEntity, TransformComponent)
       _tempVector.copy(transform.position).y = 0
       const visible = camPos.distanceTo(_tempVector) < loadDistance
-      setVisibleComponent(tileEntity, visible)
+      if (visible) setComponent(tileEntity, VisibleComponent)
+      else removeComponent(tileEntity, VisibleComponent)
     }
   }
 }

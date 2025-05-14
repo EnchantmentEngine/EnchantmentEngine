@@ -67,8 +67,6 @@ export const ScriptComponent = defineComponent({
       if (!scriptComponent.bundledSrc.value) return // return for empty src
       if (!validateScriptUrl(entity, scriptComponent.bundledSrc.value)) return // validation step
       clearErrors(entity, ScriptComponent)
-      script.src = scriptComponent.bundledSrc.value
-      script.type = 'module'
 
       script.onerror = () => {
         addError(entity, ScriptComponent, 'MISSING_FILE', 'Failed to load the script!')
