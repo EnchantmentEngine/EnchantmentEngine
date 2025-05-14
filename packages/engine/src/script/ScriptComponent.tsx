@@ -23,10 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, EngineState, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, EngineState, S, useComponent, useEntityContext } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
-import { cleanStorageProviderURLs } from '../assets/functions/parseSceneJSON'
 import { addError, clearErrors, removeError } from '../scene/functions/ErrorFunctions'
 
 export function validateScriptUrl(entity, url: string): boolean {
@@ -52,23 +51,10 @@ export const ScriptComponent = defineComponent({
   name: 'ScriptComponent',
   jsonID: 'IR_script',
 
-  onInit: (entity) => {
-    return {
-      src: '' // default path is in the scripts directory
-    }
-  },
-
-  toJSON: (component) => {
-    return {
-      src: cleanStorageProviderURLs(JSON.parse(JSON.stringify(component.src)))
-    }
-  },
-
-  onSet: (entity, component, json) => {
-    if (!json) return
-
-    if (typeof json.src === 'string') component.src.set(json.src)
-  },
+  schema: S.Object({
+    src: S.String(),
+    bundledSrc: S.String()
+  }),
 
   // we make reactor for each component handle the engine
   reactor: () => {
@@ -78,10 +64,10 @@ export const ScriptComponent = defineComponent({
     useEffect(() => {
       if (getState(EngineState).isEditing) return
       const script = document.createElement('script')
-      if (!scriptComponent.src.value) return // return for empty src
-      if (!validateScriptUrl(entity, scriptComponent.src.value)) return // validation step
+      if (!scriptComponent.bundledSrc.value) return // return for empty src
+      if (!validateScriptUrl(entity, scriptComponent.bundledSrc.value)) return // validation step
       clearErrors(entity, ScriptComponent)
-      script.src = scriptComponent.src.value
+      script.src = scriptComponent.bundledSrc.value
       script.type = 'module'
 
       script.onerror = () => {
@@ -96,7 +82,7 @@ export const ScriptComponent = defineComponent({
       return () => {
         document.body.removeChild(script)
       }
-    }, [scriptComponent.src])
+    }, [scriptComponent.bundledSrc])
   },
   errors: ['MISSING_FILE', 'INVALID_URL_SCHEME', 'INVALID_SCRIPT_TYPE', 'INVALID_URL_FORMAT']
 })

@@ -30,12 +30,10 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { IoLogoJavascript } from 'react-icons/io5'
 
-import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import config from '@ir-engine/common/src/config'
-import { fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
-import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { updateScriptFile } from '@ir-engine/editor/src/panels/script'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { ScriptComponent } from '@ir-engine/engine'
 import { getEntityErrors } from '@ir-engine/engine/src/scene/components/ErrorComponent'
@@ -48,20 +46,6 @@ export const fetchCode = async (url) => {
   const response = await fetch(url)
   const text = await response.text()
   return text
-}
-
-export const updateScriptFile = async (fileName, script = 'console.log("hello world")') => {
-  const file = new File([script], fileName, { type: ItemTypes.Scripts[3] })
-  await uploadToFeathersService(fileBrowserUploadPath, [file], {
-    args: [
-      {
-        project: getState(EditorState).projectName,
-        path: 'assets/scripts/' + fileName,
-        contentType: file.type
-      }
-    ]
-  }).promise
-  return
 }
 
 export const createNewScriptFile = async () => {

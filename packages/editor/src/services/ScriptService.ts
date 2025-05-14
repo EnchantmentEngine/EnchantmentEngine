@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { createEntity, removeEntity, setComponent, UndefinedEntity } from '@ir-engine/ecs'
+import { createEntity, Entity, removeEntity, setComponent, UndefinedEntity } from '@ir-engine/ecs'
 import { ScriptComponent } from '@ir-engine/engine'
 import { defineState, getMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -32,7 +32,7 @@ export const ScriptState = defineState({
   name: 'ee.engine.scene.ScriptSystemState',
   initial: () => {
     // filter out the js files from the file browser
-    const scripts: Record<string, any> = {}
+    const scripts: Record<string, Entity> = {}
     return { scripts: scripts }
   }
 })

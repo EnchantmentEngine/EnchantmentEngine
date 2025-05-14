@@ -86,7 +86,8 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
 
   const name = args.name ?? args.file.originalname
   const relativePath = args.path!.replace('projects/' + args.project + '/', '') + name
-  await app.service(fileBrowserPath).patch(
+
+  const result = await app.service(fileBrowserPath).patch(
     null,
     {
       project: args.project,
@@ -101,7 +102,7 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
   return (
     await app.service(staticResourcePath).find({
       query: {
-        key: args.path,
+        key: result.key,
         $limit: 1
       }
     })
