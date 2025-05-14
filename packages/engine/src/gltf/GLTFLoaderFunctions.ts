@@ -134,7 +134,6 @@ import {
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { migrateSceneDeltas } from './migrateSceneDeltas'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
 type ComponentExt = Component & {
   loadNode?: (options: GLTFParserOptions, nodeIndex: number) => Promise<void>
@@ -546,7 +545,8 @@ const loadBuffer = async (options: GLTFParserOptions, bufferIndex: number): Prom
     )
   })
 
-  bufferDef.uri && cache?.set(bufferDef.uri, bufferPromise)
+  if (bufferDef.uri) cache?.set(bufferDef.uri, bufferPromise)
+
   return bufferPromise
 }
 
@@ -1562,13 +1562,20 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
 
     for (const entity of loadedNodeEntities) {
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
-      iterateEntityNode(
-        entity,
+      iterateEntityNode(entity, (e) => {
+        if (hasComponent(e, TransformComponent)) {
+          computeTransformMatrix(e)
+          TransformComponent.dirty[e] = 1
+        }
+      })
+    }
 
-  const animationClips = await Promise.all(animationPromises)
-  setAnimationClips(rootEntity, animationClips)
+    /** @todo this is a temporary hack */
+    if (!hasComponent(rootEntity, ObjectComponent)) {
+      const obj3d = new Object3D()
+      setComponent(rootEntity, ObjectComponent, obj3d)
+    }
 
-  // dereference body non-reactively if it exists
     const animationClips = await Promise.all(animationPromises)
     setAnimationClips(rootEntity, animationClips)
   } finally {
@@ -1677,8 +1684,6 @@ export type GLTFParserOptions = {
   manager: LoadingManager
   path: string
   requestHeader: Record<string, string>
-  // @todo
-  // abortController: AbortController
 }
 
 const validateVersionFormat = (vers: string): boolean => /^[0-9]{1,10}.[0-9]{1,10}$/.test(vers)
