@@ -55,6 +55,8 @@ import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
+
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
@@ -71,6 +73,7 @@ import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { Quaternion, Vector3 } from 'three'
 import { NotificationService } from '../../../common/services/NotificationService'
+import useFeatureFlags from '../../../hooks/useFeatureFlags'
 import CompressedPublishConfirmation from './CompressedPublishConfirmation'
 
 function formatPublishedDate(isoString) {
@@ -156,6 +159,9 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
     caption: ''
   })
   const lods = useHookstate<LODVariantDescriptor[]>([])
+
+  const [compressOnPublishEnabled] = useFeatureFlags([FeatureFlags.Studio.UI.CompressOnPublish])
+
   useEffect(() => {
     if (location) {
       name.set(location.name)
@@ -619,7 +625,12 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               </Button>
             )}
             <Tooltip content={t('editor:toolbar.publishLocation.createCompressedScenePublishInfo')}>
-              <Button className="bg-[#2F3A4D]" onClick={handlePublishFolder}>
+              <Button
+                className="bg-[#2F3A4D]"
+                data-testid="publish-panel-compress-and-publish-button"
+                disabled={isLoading || !compressOnPublishEnabled}
+                onClick={handlePublishFolder}
+              >
                 <HiOutlineInformationCircle />
                 {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
               </Button>
