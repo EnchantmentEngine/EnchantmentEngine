@@ -134,7 +134,28 @@ export const MaterialStateComponent = defineComponent({
         }
       })
     }
-    if (json.parameters) component.parameters.set(json.parameters)
+    if (json.parameters) {
+      component.parameters.set(json.parameters)
+      const material = component.material.value
+      // copied from material.setValues without the annoying console warnings
+      if (material) {
+        for (const key in json.parameters) {
+          const newValue = json.parameters[key]
+          if (newValue === undefined) continue
+
+          const currentValue = material[key]
+          if (currentValue === undefined) continue
+
+          if (currentValue && currentValue.isColor) {
+            currentValue.set(newValue)
+          } else if (currentValue && currentValue.isVector3 && newValue && newValue.isVector3) {
+            currentValue.copy(newValue)
+          } else {
+            material[key] = newValue
+          }
+        }
+      }
+    }
   },
 
   onRemove: (entity, component) => {

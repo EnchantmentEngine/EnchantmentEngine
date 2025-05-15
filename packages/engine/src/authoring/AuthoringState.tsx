@@ -297,10 +297,8 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
 
     // get the final state of the history
     const finalState = structuredClone(readonlyState.initial)
-    const operationsCount = operations.length
     const filteredOperations = [] as Operation[]
-    for (let i = 0; i < operationsCount; i++) {
-      const operation = operations[i]
+    for (const operation of operations) {
       if (operation.op === 'add') {
         const { path, value } = operation as AddOperation
         if (value !== 'MIGRATE_SYMBOL') {
@@ -318,6 +316,8 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
         const obj = resolveObjFromPath(finalState, paths.slice(0, -1).filter(Boolean))
         const finalPath = paths.at(-1)!
         if (!(finalPath in obj)) obj[finalPath] = {}
+      } else {
+        filteredOperations.push(operation)
       }
     }
     const validation = applyPatch(finalState, filteredOperations)

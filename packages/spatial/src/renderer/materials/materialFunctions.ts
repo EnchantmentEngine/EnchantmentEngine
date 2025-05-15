@@ -111,7 +111,7 @@ export const setupMaterialParameters = (entity: Entity, type: string, properties
       return
     }
     if (v.isColor) {
-      params[k] = (v as Color).getHex()
+      params[k] = new Color(v)
       return
     }
     if (typeof v === 'object') return

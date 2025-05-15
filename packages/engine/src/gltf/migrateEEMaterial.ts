@@ -28,6 +28,9 @@ import { GLTF } from '@gltf-transform/core'
 export const EEMaterialMigrationRegistry = {} as Record<string, string> // prototype name to jsonID
 
 EEMaterialMigrationRegistry['HolographicMaterial'] = 'IR_material_holographic'
+EEMaterialMigrationRegistry['MeshStandardMaterial'] = 'IR_material'
+EEMaterialMigrationRegistry['MeshBasicMaterial'] = 'KHR_materials_unlit'
+EEMaterialMigrationRegistry['MeshPhysicalMaterial'] = 'KHR_materials_specular'
 
 export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
   if (gltf.extensions) {
@@ -53,7 +56,9 @@ export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
     if (!EEMaterialMigrationRegistry[eeMaterial.prototype]) continue
     const jsonID = EEMaterialMigrationRegistry[eeMaterial.prototype]
     material.extensions[jsonID] = {
-      ...Object.fromEntries(Object.entries(eeMaterial.args).map(([k, v]) => [k, (v as any).contents]))
+      ...Object.fromEntries(
+        Object.entries(eeMaterial.args).map(([k, v]: [string, { type: string; contents: any }]) => [k, v.contents])
+      )
     }
     delete material.extensions.EE_material
   }
