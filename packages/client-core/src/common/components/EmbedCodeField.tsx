@@ -46,8 +46,8 @@ export const EmbedCodeField = ({
 }: Props) => {
   const { t } = useTranslation()
 
-  const embedCode = `<iframe style="border: 1px solid rgba (0, 0, 0, 0.1);" width="375" height="687" src="${url}" allowfullscreen></iframe>`
-
+  const embedCode = `<iframe src="${url}" 
+    height="100%" width="100%" allow="camera 'src'; microphone 'src';xr-spatial-tracking" style="pointer-events:all;user-select:none;border:none;"></iframe>`
   const handleCopyEmbed = () => {
     navigator.clipboard
       .writeText(embedCode)
