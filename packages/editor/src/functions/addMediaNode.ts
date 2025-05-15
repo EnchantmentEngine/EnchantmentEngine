@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Intersection, Mesh, Raycaster } from 'three'
+import { Intersection, Mesh, Raycaster, Vector2 } from 'three'
 
 import { getContentType } from '@ir-engine/common/src/utils/getContentType'
 import {
@@ -130,7 +130,7 @@ export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, 
   AuthoringState.snapshotEntities([targetEntity])
 }
 
-const allMeshes = defineQuery([MeshComponent], Layers.Authoring)
+const allMeshes = defineQuery([VisibleComponent, MeshComponent], Layers.Authoring)
 
 /**
  * Adds media node from passed url. Type of the media will be detected automatically
@@ -144,7 +144,8 @@ export async function addMediaNode(
   url: string,
   parent?: Entity,
   before?: Entity,
-  extraComponentJson: ComponentJsonType[] = []
+  extraComponentJson: ComponentJsonType[] = [],
+  screenPosition?: Vector2
 ): Promise<EntityUUID | null> {
   const contentType = (await getContentType(url)) || ''
   const { hostname } = new URL(url)
@@ -160,13 +161,14 @@ export async function addMediaNode(
         getState(ReferenceSpaceState).viewerEntity
       )
       const pointer = getComponent(inputPointerEntity, InputPointerComponent)
+      const pointerPosition = screenPosition ?? pointer.position
       const raycaster = new Raycaster()
       const intersections = [] as Intersection[]
-      raycaster.setFromCamera(pointer.position, getComponent(pointer.cameraEntity, CameraComponent))
+      raycaster.setFromCamera(pointerPosition, getComponent(pointer.cameraEntity, CameraComponent))
       raycaster.intersectObjects(allMeshes().map((e) => getComponent(e, MeshComponent)) as Mesh[], true, intersections)
       if (!intersections.length) return null
 
-      getIntersectingNodeOnScreen(raycaster, pointer.position, intersections)
+      getIntersectingNodeOnScreen(raycaster, pointerPosition, intersections)
 
       const { entity: targetEntity, materialIndex } = getEntityAndMaterialFromIntersection(intersections)
 
