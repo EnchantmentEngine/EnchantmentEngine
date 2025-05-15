@@ -246,6 +246,7 @@ export const GLTFComponentReactor = () => {
       for (const entity of loadedEntities) removeEntity(entity)
     }
 
+    console.log({ options })
     GLTFLoaderFunctions.loadScene(options, sceneIndex).then(() => {
       documentLoaded.set(true)
 
@@ -452,12 +453,14 @@ export const loadGLTFFile = (
         json = JSON.parse(data)
       } else if ('byteLength' in data) {
         const magic = textDecoder.decode(new Uint8Array(data, 0, 4))
-
+        console.log({ data })
         if (magic === BINARY_EXTENSION_HEADER_MAGIC) {
+          console.log('magic')
           const { json: jsonContent, body: bodyContent } = parseBinaryData(data)
           body = bodyContent
           json = jsonContent
         } else {
+          console.log(textDecoder.decode(data))
           json = JSON.parse(textDecoder.decode(data))
         }
       } else {
@@ -466,6 +469,8 @@ export const loadGLTFFile = (
 
       onLoad(parseStorageProviderURLs(JSON.parse(JSON.stringify(json))), body)
     } catch (error) {
+      console.log(error.message)
+      console.error(error)
       if (onError) onError(error)
       return
     }
@@ -500,7 +505,7 @@ const useGLTFDocument = (entity: Entity) => {
     const signal = abortController.signal
 
     const onError = (error: ErrorEvent) => {
-      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model')
+      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model ' + url)
     }
 
     removeError(entity, GLTFComponent, 'LOADING_ERROR')
