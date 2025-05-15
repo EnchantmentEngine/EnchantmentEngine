@@ -69,7 +69,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
       headers: this.requestHeader,
       withCredentials: this.withCredentials
     })
-    const cached = Cache.get(cacheKey)
+    const cached = Cache.get(cacheKey) || Cache.get(url)
 
     if (cached !== undefined) {
       this.manager.itemStart(url)
