@@ -612,18 +612,9 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                 </div>
               </div>
             </div>
-            {scene.value && scenes.status === 'success' && (
+            {location?.url && (
               <div className="border-t border-t-ui-outline py-6">
-                <EmbedCodeField
-                  url={(() => {
-                    const sceneResource = scenes.data.find((s) => s.id === scene.value)
-                    if (sceneResource) {
-                      const sceneName = sceneResource.key.split('/').pop()!.replace('.gltf', '')
-                      return `${config.client.clientUrl}/location/${sceneName}`
-                    }
-                    return ''
-                  })()}
-                />
+                <EmbedCodeField url={location?.url} />
               </div>
             )}
           </div>
