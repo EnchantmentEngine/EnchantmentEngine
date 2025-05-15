@@ -44,7 +44,6 @@ import {
   MaterialPrototypeDefinitions,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { changeMaterialPrototype } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { Button, Tooltip } from '@ir-engine/ui'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
@@ -167,10 +166,6 @@ export function MaterialEditor(props: { entity: Entity }) {
     return prop
   }
 
-  const changePrototype = useCallback((type) => {
-    changeMaterialPrototype(entity, type)
-  }, [])
-
   return (
     <div className="relative flex flex-col gap-2">
       <InputGroup name="Name" label={t('editor:properties.mesh.material.name')}>
@@ -180,13 +175,6 @@ export function MaterialEditor(props: { entity: Entity }) {
             setComponent(entity, NameComponent, name)
             materialName?.set(name)
           }}
-        />
-      </InputGroup>
-      <InputGroup name="Type" label={t('editor:properties.mesh.material.type')}>
-        <SelectInput
-          value={material.type}
-          options={Object.keys(getState(MaterialPrototypeDefinitions)).map((key) => ({ label: key, value: key }))}
-          onChange={changePrototype}
         />
       </InputGroup>
       <InputGroup name="Source" label={t('editor:properties.mesh.material.source')}>
