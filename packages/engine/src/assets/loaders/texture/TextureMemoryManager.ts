@@ -39,15 +39,20 @@ const TEXTURE_CACHE_PREFIX = 'texture_'
  * @returns True if the texture was offloaded, false otherwise
  */
 export async function offloadTextureData(texture: Texture): Promise<boolean> {
+  // Skip if ResourceCache is not available
+  if (!ResourceCache) return false
+
   // Skip if texture is already offloaded or doesn't have data
-  if (!texture || !texture.source || !texture.source.data) return false
+  if (!texture || (!texture.mipmaps && isEmpty(texture.source.data))) return false
 
   // We need a URL to be able to restore the texture later
   const url = texture.userData?.url
   if (!url) return false
 
-  // Skip if ResourceCache is not available
-  if (!ResourceCache) return false
+  const mipmaps = texture.mipmaps
+  const data = texture.source.data
+  texture.mipmaps = []
+  texture.source.data = {}
 
   try {
     // For compressed textures, store mipmaps
@@ -55,10 +60,10 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
       const compressedTexture = texture as CompressedTexture
 
       // Only cache if we have mipmaps
-      if (compressedTexture.mipmaps?.length > 0) {
+      if (mipmaps?.length > 0) {
         // Create a serializable object with all the texture data
         const textureData = {
-          mipmaps: compressedTexture.mipmaps.map((mip) => ({
+          mipmaps: mipmaps.map((mip) => ({
             width: mip.width,
             height: mip.height,
             data: Array.from(new Uint8Array(mip.data)) // Convert to regular array for serialization
@@ -71,30 +76,26 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
 
         // Store in ResourceCache
         const encoded = new TextEncoder().encode(JSON.stringify(textureData))
-        await ResourceCache.put(`${TEXTURE_CACHE_PREFIX}${url}`, encoded.buffer as ArrayBuffer)
-
-        // Clear mipmaps to free memory
-        compressedTexture.mipmaps = []
+        await ResourceCache.put(`${TEXTURE_CACHE_PREFIX}${url}`, encoded.buffer as ArrayBuffer).catch((err) => {
+          console.error(`Error storing texture data: ${err}`)
+        })
       }
-    } else if (texture.source.data instanceof ImageBitmap) {
+    } else if (data instanceof ImageBitmap) {
       // For regular textures with ImageBitmap, convert to PNG and store
-      const canvas = new OffscreenCanvas(texture.source.data.width, texture.source.data.height)
+      const canvas = new OffscreenCanvas(data.width, data.height)
       const ctx = canvas.getContext('2d')
       if (ctx) {
-        ctx.drawImage(texture.source.data, 0, 0)
+        ctx.drawImage(data, 0, 0)
         const blob = await canvas.convertToBlob({ type: 'image/png' })
         const buffer = await blob.arrayBuffer()
-
         // Store in ResourceCache
         await ResourceCache.put(`${TEXTURE_CACHE_PREFIX}${url}`, buffer)
-
         // Close the ImageBitmap to free memory
-        texture.source.data.close()
+        data.close()
       }
+    } else {
+      console.warn('Texture data is not a supported type, cannot offload')
     }
-
-    // Set to empty object instead of null to prevent errors when cloning
-    texture.source.data = {}
 
     return true
   } catch (error) {
@@ -235,9 +236,14 @@ async function loadFromURL(texture: Texture): Promise<boolean> {
  * @returns True if the texture needs restoration
  */
 export function textureNeedsRestoration(texture: Texture): boolean {
-  return (
-    !texture.source.data || (typeof texture.source.data === 'object' && Object.keys(texture.source.data).length === 0)
-  )
+  return !texture.source.data || isEmpty(texture.source.data)
+}
+
+function isEmpty(obj) {
+  for (let i in obj) {
+    return false
+  }
+  return true
 }
 
 /**

@@ -54,6 +54,7 @@ import {
 import { NO_PROXY, State, defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
+import { offloadTextureData } from '@ir-engine/engine/src/assets/loaders/texture/TextureMemoryManager'
 import React, { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
@@ -288,48 +289,27 @@ const resourceCallbacks = {
         if (discardUponUpload && typeof gl.fenceSync === 'function') {
           const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
           if (sync) {
+            gl.flush()
+            let count = 0
             const checkSync = () => {
               const status = gl.clientWaitSync(sync, 0, 0)
-              if (status === gl.TIMEOUT_EXPIRED) {
-                requestAnimationFrame(checkSync)
+              if (status === gl.TIMEOUT_EXPIRED && count++ < 10) {
+                setTimeout(checkSync)
               } else {
                 gl.deleteSync(sync)
                 resource.metadata.merge({ onGPU: true, discarded: true })
-
-                // Use the TextureMemoryManager to offload texture data
-                import('@ir-engine/engine/src/assets/loaders/texture/TextureMemoryManager')
-                  .then(async ({ offloadTextureData }) => {
-                    try {
-                      await offloadTextureData(asset)
-                    } catch (err) {
-                      // Fallback to the old method if offloading fails
-                      asset.source.data.close?.()
-                      asset.source.data = {}
-                      if ((asset as CompressedTexture).isCompressedTexture) {
-                        ;(asset as CompressedTexture).mipmaps = []
-                      }
-                    }
-                  })
-                  .catch(() => {
-                    // Fallback to the old method if the import fails
-                    asset.source.data.close?.()
-                    asset.source.data = {}
-                    if ((asset as CompressedTexture).isCompressedTexture) {
-                      ;(asset as CompressedTexture).mipmaps = []
-                    }
-                  })
-
-                // Also ensure the texture patch is applied
-                import('@ir-engine/engine/src/assets/loaders/texture/TexturePatch')
-                  .then(({ applyTexturePatch }) => {
-                    applyTexturePatch()
-                  })
-                  .catch((err) => {
-                    console.error('Failed to apply texture patch:', err)
-                  })
+                offloadTextureData(asset).catch((err) => {
+                  console.error('Failed to offload texture data:', err)
+                  // Fallback to the old method if offloading fails
+                  asset.source.data.close?.()
+                  asset.source.data = {}
+                  if ((asset as CompressedTexture).isCompressedTexture) {
+                    ;(asset as CompressedTexture).mipmaps = []
+                  }
+                })
               }
             }
-            requestAnimationFrame(checkSync)
+            setTimeout(checkSync)
           }
         }
       }

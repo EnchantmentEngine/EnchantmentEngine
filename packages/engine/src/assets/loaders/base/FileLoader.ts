@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -29,11 +29,11 @@ import { parseStorageProviderURLs } from '../../functions/parseSceneJSON'
 import { Loader } from './Loader'
 import { ResourceCache } from './ResourceCache'
 
-const loading = {}
-
+// Track in-progress requests
+export const loading = {}
 class HttpError extends Error {
-  response: any
-  constructor(message, response) {
+  response: Response
+  constructor(message: string, response: Response) {
     super(message)
     this.response = response
   }
@@ -191,6 +191,10 @@ class FileLoader<TData = unknown> extends Loader<TData> {
                       if (callback.onError) callback.onError(err)
                     }
 
+                    // Clean up reader and controller
+                    reader.cancel().catch(() => {})
+                    controller.error(err)
+
                     manager.itemError(url)
                   })
               }
@@ -258,14 +262,20 @@ class FileLoader<TData = unknown> extends Loader<TData> {
         const callbacks = loading[cacheKey]
         delete loading[cacheKey]
 
-        for (let i = 0, il = callbacks.length; i < il; i++) {
+        // Make a local copy of the data to avoid reference issues
+        const processedData = data
+
+        // Call all callbacks with the processed data
+        for (let i = 0, il = callbacks ? callbacks.length : 0; i < il; i++) {
           const callback = callbacks[i]
-          if (callback.onLoad) callback.onLoad(data)
+          if (callback.onLoad) callback.onLoad(processedData)
         }
+
+        // Clear references to help garbage collection
+        callbacks.length = 0
       })
       .catch((err) => {
         // Abort errors and other errors are handled the same
-
         const callbacks = loading[cacheKey]
 
         if (callbacks === undefined) {
@@ -276,14 +286,33 @@ class FileLoader<TData = unknown> extends Loader<TData> {
 
         delete loading[cacheKey]
 
+        // Make a local copy of the error to avoid reference issues
+        const processedError = err instanceof Error ? err : new Error(String(err))
+
+        // Call all error callbacks
         for (let i = 0, il = callbacks.length; i < il; i++) {
           const callback = callbacks[i]
-          if (callback.onError) callback.onError(err)
+          if (callback.onError) callback.onError(processedError)
         }
+
+        // Clear references to help garbage collection
+        callbacks.length = 0
 
         this.manager.itemError(url)
       })
       .finally(() => {
+        // Ensure loading object is cleaned up to prevent memory leaks
+        if (loading[cacheKey] !== undefined) {
+          // Clear any callbacks to help garbage collection
+          const callbacks = loading[cacheKey]
+          if (callbacks && Array.isArray(callbacks)) {
+            callbacks.length = 0
+          }
+
+          // Remove the entry from the loading object
+          delete loading[cacheKey]
+        }
+
         this.manager.itemEnd(url)
       })
 
@@ -295,7 +324,7 @@ class FileLoader<TData = unknown> extends Loader<TData> {
     return this
   }
 
-  setMimeType(value): this {
+  setMimeType(value: string): this {
     this.mimeType = value
     return this
   }

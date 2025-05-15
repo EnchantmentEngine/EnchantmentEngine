@@ -87,6 +87,9 @@ export const isAbsolutePath = (path) => {
 
 const getAbsolutePath = (url) => (isAbsolutePath(url) ? url : getState(DomainConfigState).publicDomain + url)
 
+/**
+ * @deprecated Use resourceLoaderHooks instead
+ */
 const loadAsset = async <T>(
   url: string,
   onLoad: (response: T) => void = () => {},
@@ -117,6 +120,5 @@ export const AssetLoader = {
   getAbsolutePath,
   getAssetType,
   getAssetClass,
-  /** @deprecated Use resourceLoaderHooks instead */
   loadAsset
 }

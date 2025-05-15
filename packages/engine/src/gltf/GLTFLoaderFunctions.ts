@@ -61,7 +61,7 @@ import {
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
-import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import {
   AnimationClip,
@@ -1023,6 +1023,7 @@ const loadImageSource = async (options: GLTFParserOptions, sourceIndex: number, 
       ResourceType.Texture,
       options.entity, // the GLTF entity
       (response) => {
+        ResourceState.addEntityResource(options.entity, response)
         resolve(response)
       },
       (request) => {
