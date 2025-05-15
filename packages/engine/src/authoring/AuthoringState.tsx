@@ -63,6 +63,7 @@ import {
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
+import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
 
@@ -190,7 +191,8 @@ export const AuthoringState = defineState({
     const { doneStack } = computeCommands(authoredCommands, sourceID)
     if (!doneStack.length) return []
     const flatStack = doneStack.reduce((acc, command) => acc.concat(command[sourceID]), [] as Operation[])
-    return flatStack
+    const optimizedStack = squashOperations(flatStack)
+    return optimizedStack
   },
 
   canRedo: () => {
