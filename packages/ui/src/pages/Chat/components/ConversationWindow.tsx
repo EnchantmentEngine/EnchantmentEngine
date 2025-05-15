@@ -41,8 +41,6 @@ import { EngineState } from '@ir-engine/ecs/src/EngineState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NetworkState } from '@ir-engine/network'
 import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
-import { getChannelName } from '@ir-engine/ui/src/components/Chat/Message'
-import { MediaCall } from '@ir-engine/ui/src/components/Chat/VideoCall'
 import { Expand06Lg, Maximize02Lg, Screenshare } from '@ir-engine/ui/src/icons'
 import { Resizable } from 're-resizable'
 import React, { useEffect, useRef } from 'react'
@@ -52,6 +50,8 @@ import { MdOpenInNew } from 'react-icons/md'
 import { NewChatState } from '../ChatState'
 import { MediaSessionState } from '../MediaSessionState'
 import { formatMessageTimestamp } from '../utils/dateUtils'
+import { getChannelName } from './ConversationList'
+import { MediaCall } from './VideoCall'
 
 const useCallParticipants = (channelId?: ChannelID) => {
   const participants = useHookstate<{ userId: UserID; peerId: string }[]>([])

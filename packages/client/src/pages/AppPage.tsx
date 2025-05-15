@@ -36,7 +36,6 @@ import { useAuthenticated } from '@ir-engine/client-core/src/user/services/AuthS
 import config from '@ir-engine/common/src/config'
 import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
-import GlobalVideoCallPopout from '@ir-engine/ui/src/components/Chat/GlobalVideoCallPopout'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import './styles.scss'
 
@@ -75,7 +74,6 @@ const AppPage = (props: { children: React.ReactNode; fallback?: JSX.Element; log
         {props.children}
       </LoadWebappInjection>
       {isLoggedIn && <ClientSettings />}
-      <GlobalVideoCallPopout />
     </>
   )
 }
