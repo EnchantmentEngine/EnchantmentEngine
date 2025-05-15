@@ -35,7 +35,6 @@ import {
   useComponent
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { TextureInfoSchema } from '@ir-engine/engine/src/gltf/MaterialExtensionComponents'
 import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
@@ -48,12 +47,11 @@ import { useTexture } from '../assets/functions/resourceLoaderHooks'
 
 /**
  * A JSON Schema for a texture uniform.
- * - `TextureInfoSchema` for glTF textures - @todo
  * - `string` for remote textures
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([TextureInfoSchema, S.String(), S.Null()], { default: null, $isTexture: true })
+  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, $isTexture: true })
 
 const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.$isTexture
 
