@@ -39,7 +39,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { createLoadingSpinner } from '@ir-engine/engine/src/scene/functions/spatialLoadingSpinner'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 
 const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const { entity } = props
@@ -48,15 +48,13 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const errors = !!useOptionalComponent(authoringCounterpart, ErrorComponent)?.value?.[GLTFComponent.name]
   const loaded = GLTFComponent.useSceneLoaded(authoringCounterpart)
   const isScene = useHasComponent(entity, SceneComponent)
-  const spinnerEntity = useRef<Entity | null>(null)
   const shouldHaveSpinned = !isScene && !!gltfComponent.src.value && !errors && !loaded
 
   useEffect(() => {
     if (!shouldHaveSpinned) return
-    spinnerEntity.current = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
+    const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
     return () => {
-      removeEntityNodeRecursively(spinnerEntity?.current!)
-      spinnerEntity.current = null
+      removeEntityNodeRecursively(spinnerEntity)
     }
   }, [shouldHaveSpinned])
 
@@ -67,6 +65,6 @@ export const ModelLoadingSpinnerSystem = defineSystem({
   uuid: 'ee.editor.ModelLoadingSpinnerSystem',
   insert: { before: PresentationSystemGroup },
   reactor: () => (
-    <QueryReactor ChildEntityReactor={LoadingSpinnerReactor} Components={[GLTFComponent]} layer={Layers.Simulation} />
+    <QueryReactor ChildEntityReactor={LoadingSpinnerReactor} Components={[GLTFComponent]} layer={Layers.Authoring} />
   )
 })

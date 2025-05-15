@@ -111,13 +111,13 @@ export const setupMaterialParameters = (entity: Entity, type: string, properties
       return
     }
     if (v.isColor) {
-      params[k] = new Color(v)
+      params[k] = new Color(v).getHex()
       return
     }
     if (typeof v === 'object') return
     params[k] = v
   })
-  getMutableComponent(entity, MaterialStateComponent).parameters.set(params)
+  getMutableComponent(entity, MaterialStateComponent).parameters.merge(params)
   return params
 }
 
@@ -130,11 +130,4 @@ export const getMaterialParameterKeys = (type: string) => {
   const prototype = getState(MaterialPrototypeDefinitions)[type]
   if (!prototype) return []
   return Object.keys(prototype.arguments)
-}
-
-export const changeMaterialPrototype = (entity: Entity, type: string) => {
-  const params = setupMaterialParameters(entity, type, getComponent(entity, MaterialStateComponent).parameters)
-  getMutableComponent(entity, MaterialStateComponent).material.set(
-    new (getState(MaterialPrototypeDefinitions)[type].prototypeConstructor)(params)
-  )
 }
