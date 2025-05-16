@@ -142,11 +142,11 @@ const processScript = async (
 
   const buffer = Buffer.from(scriptText)
 
-  // Always preserve the .tsx extension for the processed file
-  const outputFileName = fileName
+  // Always use the .js extension for the processed file
+  const outputFileName = fileName.replace(/\.[^\.]+$/, '.js')
 
   return uploadAsset(app, {
-    path: 'public/processed-scripts',
+    path: 'public/processed-scripts/',
     name: outputFileName,
     file: buffer as any as UploadFile,
     project: uploadArgs.project

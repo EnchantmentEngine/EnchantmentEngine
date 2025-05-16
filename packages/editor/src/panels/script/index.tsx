@@ -53,7 +53,7 @@ type ScriptUploadResponse = {
 }
 
 export const updateScriptFile = async (fileName, script = 'console.log("hello world")') => {
-  const file = new File([script], fileName, { type: 'js' })
+  const file = new File([script], fileName, { type: 'application/x-typescript' })
   const response = await uploadToFeathersService(uploadScriptPath, [file], {
     args: {
       project: getState(EditorState).projectName,

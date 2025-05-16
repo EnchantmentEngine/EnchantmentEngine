@@ -2001,7 +2001,6 @@
     "EE_loop_animation",
     "EE_dynamic_load",
     "EE_envmapbake",
-    "EE_link",
-    "IR_script"
+    "EE_link"
   ]
 }

@@ -31,18 +31,14 @@ import { addError, clearErrors, removeError } from '../scene/functions/ErrorFunc
 export function validateScriptUrl(entity, url: string): boolean {
   try {
     const parsedUrl = new URL(url)
+    console.log(parsedUrl)
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
       addError(entity, ScriptComponent, 'INVALID_URL_SCHEME', 'Invalid URL scheme')
       return false
     }
-    if (!(parsedUrl.pathname.endsWith('.js') || parsedUrl.pathname.endsWith('.tsx'))) {
+    if (!parsedUrl.pathname.endsWith('.js')) {
       // replace with itemTypes later
-      addError(
-        entity,
-        ScriptComponent,
-        'INVALID_SCRIPT_TYPE',
-        'URL does not point to a valid script file (.js or .tsx)'
-      )
+      addError(entity, ScriptComponent, 'INVALID_SCRIPT_TYPE', 'URL does not point to a valid script file (.js)')
       return false
     }
     return true
@@ -72,6 +68,8 @@ export const ScriptComponent = defineComponent({
       if (!scriptComponent.bundledSrc.value) return // return for empty src
       if (!validateScriptUrl(entity, scriptComponent.bundledSrc.value)) return // validation step
       clearErrors(entity, ScriptComponent)
+      script.src = scriptComponent.bundledSrc.value
+      script.type = 'module'
 
       script.onerror = () => {
         addError(entity, ScriptComponent, 'MISSING_FILE', 'Failed to load the script!')

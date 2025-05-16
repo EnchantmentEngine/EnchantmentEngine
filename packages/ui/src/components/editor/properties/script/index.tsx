@@ -49,7 +49,7 @@ export const fetchCode = async (url) => {
 }
 
 export const createNewScriptFile = async () => {
-  const fileName = `${uniqueId('RealityScript')}.js`
+  const fileName = `${uniqueId('RealityScript')}.tsx`
   await updateScriptFile(fileName)
   const relativePath = `projects/${getState(EditorState).projectName}/assets/scripts`
   return `${config.client.fileServer}/${relativePath}/${fileName}`

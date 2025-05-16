@@ -90,7 +90,7 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
     null,
     {
       project: args.project,
-      body: typeof args.file === 'object' && 'buffer' in args.file ? args.file.buffer : args.file,
+      body: args.file,
       path: relativePath
     },
     {
