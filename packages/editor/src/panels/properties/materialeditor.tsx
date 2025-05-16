@@ -191,21 +191,17 @@ export function MaterialEditor(props: { entity: Entity }) {
         values={materialComponent.parameters.get(NO_PROXY)}
         onChange={(key) => async (val) => {
           const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
-          const property = await shouldLoadTexture(val, key, args)
-          const texture = property as Texture
-          if (texture?.isTexture) {
-            texture.flipY = false
-            texture.needsUpdate = true
-          }
 
           commitProperty(MaterialStateComponent, ('parameters.' + key) as any)(val)
           // set property on material too, since it does't get serialized but also doesn't get update from parameters
           if (args[key].type === 'texture') {
-            const texture = await getTextureAsync(val)
-            if (texture[0]) {
-              texture[0].colorSpace = SRGBColorSpace
+            const texture = (await shouldLoadTexture(val, key, args)) as Texture
+            if (texture?.isTexture) {
+              texture.flipY = false
+              texture.needsUpdate = true
+              texture.colorSpace = SRGBColorSpace
             }
-            materialComponent.material[key].set(texture[0] ?? null)
+            materialComponent.material[key].set(texture ?? null)
           } else if (args[key].type === 'color') {
             materialComponent.material[key].set(val.isColor ? val : new Color(val))
           } else {
