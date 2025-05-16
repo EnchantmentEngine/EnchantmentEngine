@@ -56,6 +56,8 @@ import { SkyTypeEnum } from '../constants/SkyTypeEnum'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
 
+export * from '../constants/SkyTypeEnum'
+
 const tempColor = new Color()
 
 export const SkyboxComponent = defineComponent({

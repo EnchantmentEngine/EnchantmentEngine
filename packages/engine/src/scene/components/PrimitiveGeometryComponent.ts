@@ -40,6 +40,8 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { DoubleSide } from 'three'
 import { GeometryTypeEnum, GeometryTypeToFactory } from '../constants/GeometryTypeEnum'
 
+export * from '../constants/GeometryTypeEnum'
+
 const createGeometry = (geometryType: GeometryTypeEnum, geometryParams: Record<string, any>): Geometry => {
   const factory = GeometryTypeToFactory[geometryType]
   const geometry = factory(geometryParams)
