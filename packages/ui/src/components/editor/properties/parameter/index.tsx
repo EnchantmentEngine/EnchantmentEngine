@@ -100,6 +100,11 @@ export default function ParameterInput({
 12: "object"
 13: "list"
 14: "entity"*/
+  const valuesWithDefaults = {
+    ...Object.fromEntries(Object.entries(_defaults).map(([k, v]) => [k, v.default])),
+    ...values
+  }
+  console.log(valuesWithDefaults)
   return (
     <>
       {Object.entries(_defaults).map(([k, parms]: [string, any]) => {
@@ -107,27 +112,22 @@ export default function ParameterInput({
         return (
           <InputGroup key={compKey} name={k} label={camelCaseToSpacedString(capitalizeFirstLetter(k))}>
             {(() => {
-              if (!(k in values)) {
-                console.warn(`Key "${k}" not found in ParameterInput values object`)
-                return null
-              }
-
               switch (parms.type) {
                 case 'boolean':
-                  return <Checkbox checked={values[k]} onChange={setArgsProp(k)} />
+                  return <Checkbox checked={valuesWithDefaults[k]} onChange={setArgsProp(k)} />
                 case 'entity':
                 case 'integer':
                 case 'float':
-                  return <NumericInput value={values[k]} onChange={setArgsProp(k)} />
+                  return <NumericInput value={valuesWithDefaults[k]} onChange={setArgsProp(k)} />
                 case 'string':
-                  return <StringInput value={values[k]} onChange={setArgsProp(k)} />
+                  return <StringInput value={valuesWithDefaults[k]} onChange={setArgsProp(k)} />
                 case 'color':
-                  return <ColorInput value={values[k]} onChange={setArgsProp(k)} />
+                  return <ColorInput value={valuesWithDefaults[k]} onChange={setArgsProp(k)} />
                 case 'texture':
                   return (
                     <TexturePreviewInput
                       preview={thumbnails?.[k]}
-                      value={values[k]}
+                      value={valuesWithDefaults[k]}
                       onRelease={setArgsProp(k)}
                       onModify={onModify}
                     />
@@ -136,15 +136,15 @@ export default function ParameterInput({
                 case 'vec3':
                 case 'vec4':
                   return (
-                    typeof values[k]?.map === 'function' &&
-                    (values[k] as number[]).map((arrayVal, idx) => (
+                    typeof valuesWithDefaults[k]?.map === 'function' &&
+                    (valuesWithDefaults[k] as number[]).map((arrayVal, idx) => (
                       <NumericInput key={`${compKey}-${idx}`} value={arrayVal} onChange={setArgsArrayProp(k, idx)} />
                     ))
                   )
                 case 'select':
                   return (
                     <SelectInput
-                      value={values[k]}
+                      value={valuesWithDefaults[k]}
                       options={JSON.parse(JSON.stringify(parms.options))}
                       onChange={setArgsProp(k)}
                     />
@@ -153,7 +153,7 @@ export default function ParameterInput({
                   return (
                     <ParameterInput
                       path={compKey}
-                      values={values[k]}
+                      values={valuesWithDefaults[k]}
                       onChange={setArgsObjectProp(k)}
                       defaults={parms.default}
                     />
