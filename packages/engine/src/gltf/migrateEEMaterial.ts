@@ -28,9 +28,6 @@ import { GLTF } from '@gltf-transform/core'
 export const EEMaterialMigrationRegistry = {} as Record<string, string> // prototype name to jsonID
 
 EEMaterialMigrationRegistry['HolographicMaterial'] = 'IR_material_holographic'
-EEMaterialMigrationRegistry['MeshStandardMaterial'] = 'IR_material'
-EEMaterialMigrationRegistry['MeshBasicMaterial'] = 'KHR_materials_unlit'
-EEMaterialMigrationRegistry['MeshPhysicalMaterial'] = 'KHR_materials_specular'
 
 export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
   if (gltf.extensions) {
@@ -38,7 +35,18 @@ export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
       for (const nodeDeltas of Object.values(gltf.extensions['IR_scene_delta'])) {
         for (const nodeDelta of Object.values(nodeDeltas) as any) {
           if (nodeDelta.prototypeConstructor) {
-            nodeDelta[EEMaterialMigrationRegistry[nodeDelta.prototypeConstructor]] = nodeDelta.materialParameters
+            if (nodeDelta.prototypeConstructor === 'MeshBasicMaterial') {
+              nodeDelta.KHR_materials_unlit = {}
+            } else if (nodeDelta.prototypeConstructor === 'MeshPhysicalMaterial') {
+              nodeDelta.KHR_materials_specular = {
+                specularFactor: nodeDelta.materialParameters.specularIntensity,
+                specularTexture: nodeDelta.materialParameters.specularIntensityMap,
+                specularColorFactor: nodeDelta.materialParameters.specularColor,
+                specularColorTexture: nodeDelta.materialParameters.specularColorMap
+              }
+            } else {
+              nodeDelta[EEMaterialMigrationRegistry[nodeDelta.prototypeConstructor]] = nodeDelta.materialParameters
+            }
             delete nodeDelta.materialParameters
             delete nodeDelta.prototypeConstructor
           }
@@ -54,13 +62,24 @@ export const migrateEEMaterial = (gltf: GLTF.IGLTF) => {
     const eeMaterial = material.extensions!.EE_material as any
     if (!eeMaterial?.prototype) continue
     if (!EEMaterialMigrationRegistry[eeMaterial.prototype]) continue
+    if (eeMaterial.prototype === 'MeshBasicMaterial') {
+      material.extensions.KHR_materials_unlit = {}
+      continue
+    } else if (eeMaterial.prototype === 'MeshPhysicalMaterial') {
+      material.extensions.KHR_materials_specular = {
+        specularFactor: eeMaterial.args.specularIntensity,
+        specularTexture: eeMaterial.args.specularIntensityMap,
+        specularColorFactor: eeMaterial.args.specularColor,
+        specularColorTexture: eeMaterial.args.specularColorMap
+      }
+      continue
+    }
     const jsonID = EEMaterialMigrationRegistry[eeMaterial.prototype]
     material.extensions[jsonID] = {
       ...Object.fromEntries(
         Object.entries(eeMaterial.args).map(([k, v]: [string, { type: string; contents: any }]) => [k, v.contents])
       )
     }
-    delete material.extensions.EE_material
   }
 
   return gltf
