@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { Scene, Vector3 } from 'three'
 
 import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import CubemapCapturer from '@ir-engine/engine/src/scene/classes/CubemapCapturer'
@@ -38,6 +37,7 @@ import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvM
 import { ScenePreviewCameraComponent } from '@ir-engine/engine/src/scene/components/ScenePreviewCamera'
 import { getState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ReferenceSpaceState } from '@ir-engine/spatial/src/ReferenceSpaceState'
 import {
   RendererComponent,
   getNestedVisibleChildren,
@@ -134,11 +134,13 @@ export const generateEnvmapBake = (
     : entity
     ? getScenePositionForBake(entity)
     : getScenePositionForBake()
-  const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!
+
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+  const renderer = getComponent(viewerEntity, RendererComponent).renderer!
 
   const rootEntity = getState(EditorState).rootEntity
   const entitiesToRender = getNestedVisibleChildren(rootEntity)
-  const sceneData = getSceneParameters(entitiesToRender, Engine.instance.viewerEntity)
+  const sceneData = getSceneParameters(entitiesToRender, viewerEntity)
   const scene = new Scene()
   scene.children = sceneData.children
   scene.background = sceneData.background
