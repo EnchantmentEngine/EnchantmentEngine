@@ -23,7 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, NameComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { Entity, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import MultiSelect from '../../../../primitives/tailwind/MultiSelect'
