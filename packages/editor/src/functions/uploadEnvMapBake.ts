@@ -100,7 +100,11 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
   const editorState = getState(EditorState)
   const sceneName = editorState.sceneName!
   const projectName = editorState.projectName!
-  const filename = isSceneEntity ? `${sceneName}.envmap.ktx2` : `${sceneName}-${nameComponent.replace(' ', '-')}.ktx2`
+  const timestamp = Date.now()
+  // Add a cache-busting timestamp to the filename to ensure the envmap updates each bake
+  const filename = isSceneRootEntity
+    ? `${sceneName}.envmap.${timestamp}.ktx2`
+    : `${sceneName}-${nameComponent.replace(' ', '-')}.${timestamp}.ktx2`
 
   const currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
   const url = (
