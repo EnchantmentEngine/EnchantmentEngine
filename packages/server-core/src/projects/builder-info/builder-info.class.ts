@@ -25,6 +25,7 @@ import { getState } from '@ir-engine/hyperflux'
 
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
+import logger from '../../ServerLogger'
 import { ServerState } from '../../ServerState'
 import {
   dockerHubRegex,
@@ -50,18 +51,20 @@ export class BuilderInfoService implements ServiceInterface<BuilderInfoType> {
     const k8BatchClient = getState(ServerState).k8BatchClient
 
     if (k8AppsClient) {
+      logger.debug('Getting builder info')
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
       const builderJob = await k8BatchClient.listNamespacedJob({
         namespace: config.server.namespace,
         labelSelector: builderLabelSelector
       })
-
+      logger.debug(`builderJob items ${builderJob?.items.length}`)
       let builderContainer
       if (builderJob && builderJob.items.length > 0) {
         builderContainer = builderJob?.items[0]?.spec?.template?.spec?.containers?.find(
           (container) => container.name === 'ir-engine-builder'
         )
+        logger.debug(builderContainer, `builderContainer`)
       } else {
         const builderDeployment = await k8AppsClient.listNamespacedDeployment({
           namespace: config.server.namespace,
@@ -71,14 +74,20 @@ export class BuilderInfoService implements ServiceInterface<BuilderInfoType> {
         builderContainer = builderDeployment?.items[0]?.spec?.template?.spec?.containers?.find(
           (container) => container.name === 'ir-engine-builder'
         )
+
+        logger.debug(builderContainer, `builderDeployment`)
       }
+      logger.debug(builderContainer, `found??`)
       if (builderContainer) {
         const image = builderContainer.image
+
+        logger.debug(builderContainer.image, `builderContainer.image`)
         if (image && typeof image === 'string') {
           const dockerHubRegexExec = dockerHubRegex.exec(image)
           const publicECRRegexExec = publicECRTagRegex.exec(image)
           const privateECRRegexExec = privateECRTagRegex.exec(image)
           const gcpArtifactRegistryRegexExec = gcpArtifactRegistryTagRegex.exec(image)
+          logger.debug(gcpArtifactRegistryRegexExec, `gcpArtifactRegistryRegexExec`)
           returned.engineCommit =
             dockerHubRegexExec && !publicECRRegexExec
               ? dockerHubRegexExec[1]
@@ -92,6 +101,7 @@ export class BuilderInfoService implements ServiceInterface<BuilderInfoType> {
         }
       }
     }
+    logger.debug(returned, `returned`)
     return returned
   }
 }
