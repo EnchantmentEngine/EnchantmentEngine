@@ -189,7 +189,11 @@ export function MaterialEditor(props: { entity: Entity }) {
       <ParameterInput
         path={UUIDComponent.get(entity)}
         values={materialComponent.parameters.get(NO_PROXY)}
-        onChange={(key) => commitProperty(MaterialStateComponent, ('parameters.' + key) as any)}
+        onChange={(key) => (val) => {
+          commitProperty(MaterialStateComponent, ('parameters.' + key) as any)(val)
+          // set property on material too, since it does't get serialized but also doesn't get update from parameters
+          materialComponent.material[key].set(val)
+        }}
         defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
         thumbnails={toBlobs(thumbnails.value)}
       />
