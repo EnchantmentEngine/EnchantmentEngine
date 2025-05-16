@@ -119,10 +119,14 @@ import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapCo
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
+import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent.ts'
+import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent.ts'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
+import PoiCameraSettingsNodeEditor from '@ir-engine/ui/src/components/editor/properties/poiCameraSettings'
+import PoiHotspotNodeEditor from '@ir-engine/ui/src/components/editor/properties/poiHotspot'
 import SplineTrackNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline/track'
 import TextNodeEditor from '@ir-engine/ui/src/components/editor/properties/text'
 import TriggerComponentEditor from '@ir-engine/ui/src/components/editor/properties/trigger'
@@ -188,7 +192,9 @@ export const ComponentEditorsState = defineState({
       [TextComponent.name]: TextNodeEditor,
       [LookAtComponent.name]: LookAtNodeEditor,
       [ReflectionProbeComponent.name]: ReflectionProbeNodeEditor,
-      [MediaComponent.name]: MediaNodeEditor
+      [MediaComponent.name]: MediaNodeEditor,
+      [PoiCameraSettingsComponent.name]: PoiCameraSettingsNodeEditor,
+      [PoiHotspotComponent.name]: PoiHotspotNodeEditor
     } as Record<string, EditorComponentType>
   }
 })

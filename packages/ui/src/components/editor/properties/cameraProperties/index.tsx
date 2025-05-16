@@ -27,7 +27,7 @@ import { t } from 'i18next'
 import React from 'react'
 
 import { getOptionalComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 
 import { iterateEntityNode } from '@ir-engine/ecs'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
@@ -44,6 +44,7 @@ import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
 import { Slider } from '../../../../../editor'
 import Button from '../../../../primitives/tailwind/Button'
+import { EntityListInput } from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
@@ -248,6 +249,61 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
       {/*    />*/}
       {/*  </div>*/}
       {/*</InputGroup>*/}
+
+      {/* POI Camera Mode Settings */}
+      <InputGroup name="poiMode" label={t('editor:properties.cameraSettings.lbl-poiMode', 'POI Camera Mode')}>
+        <SelectInput
+          value={cameraSettings.poiMode.value}
+          onChange={commitProperty(CameraSettingsComponent, 'poiMode')}
+          options={[
+            { label: 'Disabled', value: CameraPoiMode.Disabled },
+            { label: 'Enabled', value: CameraPoiMode.Enabled }
+          ]}
+        />
+      </InputGroup>
+
+      {cameraSettings.poiMode.value === CameraPoiMode.Enabled && (
+        <>
+          <InputGroup name="poiEntities" label={t('editor:properties.cameraSettings.lbl-poiEntities', 'POI Entities')}>
+            <EntityListInput
+              value={cameraSettings.poiEntities.value}
+              onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
+              placeholder="Select entities to use as points of interest"
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="poiLerpSpeed"
+            label={t('editor:properties.cameraSettings.lbl-poiLerpSpeed', 'POI Transition Speed')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'poiLerpSpeed')}
+              onRelease={commitProperty(CameraSettingsComponent, 'poiLerpSpeed')}
+              min={0.01}
+              max={5}
+              smallStep={0.01}
+              mediumStep={0.1}
+              largeStep={0.5}
+              value={cameraSettings.poiLerpSpeed.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="targetPoiIndex"
+            label={t('editor:properties.cameraSettings.lbl-targetPoiIndex', 'Target POI Index')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'targetPoiIndex')}
+              onRelease={commitProperty(CameraSettingsComponent, 'targetPoiIndex')}
+              min={-1}
+              smallStep={1}
+              mediumStep={1}
+              largeStep={1}
+              value={cameraSettings.targetPoiIndex.value}
+            />
+          </InputGroup>
+        </>
+      )}
     </NodeEditor>
   )
 }

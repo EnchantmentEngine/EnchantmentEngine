@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Vector2 } from 'three'
 
-import { Entity } from '@ir-engine/ecs'
+import { Entity, setComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getMutableComponent,
@@ -55,7 +55,6 @@ import { useEffect } from 'react'
 import { Quaternion, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
-import { smoothDamp } from '../../common/functions/MathFunctions'
 import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 
@@ -119,7 +118,7 @@ export const handleFollowCameraScroll = (
   if (cameraSettingsEntity) {
     const cameraSettings = getComponent(cameraSettingsEntity, CameraSettingsComponent)
 
-    if (cameraSettings.poiMode === CameraPoiMode.Enabled && Math.abs(zoomDelta) > 0.1) {
+    if (cameraSettings.poiMode === CameraPoiMode.Enabled) {
       // Filter POI entities to only include those with PoiCameraSettingsComponent
       const validPoiEntities = cameraSettings.poiEntities.filter((entity) =>
         hasComponent(entity, PoiCameraSettingsComponent)
@@ -127,20 +126,42 @@ export const handleFollowCameraScroll = (
 
       if (validPoiEntities.length > 0) {
         const mutableCameraSettings = getMutableComponent(cameraSettingsEntity, CameraSettingsComponent)
-        let newIndex = cameraSettings.currentPoiIndex
 
-        // Scroll down (negative value) moves to next POI
-        if (zoomDelta < 0) {
-          newIndex = (newIndex + 1) % validPoiEntities.length
-        }
-        // Scroll up (positive value) moves to previous POI
-        else if (zoomDelta > 0) {
-          newIndex = (newIndex - 1 + validPoiEntities.length) % validPoiEntities.length
+        // If we don't have a valid target index yet, initialize it
+        if (cameraSettings.targetPoiIndex < 0) {
+          mutableCameraSettings.targetPoiIndex.set(0)
+          mutableCameraSettings.currentPoiIndex.set(0)
+          mutableCameraSettings.poiLerpValue.set(0)
         }
 
-        // Only update if the index has changed
-        if (newIndex !== cameraSettings.currentPoiIndex) {
-          mutableCameraSettings.currentPoiIndex.set(newIndex)
+        // Handle scrolling to change target POI
+        if (Math.abs(zoomDelta) > 0.1) {
+          let newTargetIndex = cameraSettings.targetPoiIndex
+
+          // Scroll down (negative value) moves to next POI
+          if (zoomDelta < 0) {
+            newTargetIndex = (newTargetIndex + 1) % validPoiEntities.length
+          }
+          // Scroll up (positive value) moves to previous POI
+          else if (zoomDelta > 0) {
+            newTargetIndex = (newTargetIndex - 1 + validPoiEntities.length) % validPoiEntities.length
+          }
+
+          // Only update if the target index has changed
+          if (newTargetIndex !== cameraSettings.targetPoiIndex) {
+            // Set the new target and reset lerp value to start transition
+            mutableCameraSettings.targetPoiIndex.set(newTargetIndex)
+            mutableCameraSettings.poiLerpValue.set(0)
+          }
+        }
+
+        // Update lerp value based on speed and delta time
+        const lerpValue = Math.min(cameraSettings.poiLerpValue + cameraSettings.poiLerpSpeed * deltaTime, 1)
+        mutableCameraSettings.poiLerpValue.set(lerpValue)
+
+        // If we've completed the lerp, update the current index
+        if (lerpValue >= 1 && cameraSettings.currentPoiIndex !== cameraSettings.targetPoiIndex) {
+          mutableCameraSettings.currentPoiIndex.set(cameraSettings.targetPoiIndex)
         }
 
         // We've handled the scroll in POI mode, so return early
@@ -230,76 +251,109 @@ const execute = () => {
     if (cameraSettingsEntity && viewerEntity === cameraEntity) {
       const settings = getComponent(cameraSettingsEntity, CameraSettingsComponent)
 
-      if (settings.poiMode === CameraPoiMode.Enabled && settings.currentPoiIndex >= 0) {
+      if (settings.poiMode === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
         // Filter POI entities to only include those with PoiCameraSettingsComponent
         const validPoiEntities = settings.poiEntities.filter((entity) =>
           hasComponent(entity, PoiCameraSettingsComponent)
         )
 
-        if (validPoiEntities.length > 0 && settings.currentPoiIndex < validPoiEntities.length) {
+        if (
+          validPoiEntities.length > 0 &&
+          settings.currentPoiIndex >= 0 &&
+          settings.currentPoiIndex < validPoiEntities.length &&
+          settings.targetPoiIndex >= 0 &&
+          settings.targetPoiIndex < validPoiEntities.length
+        ) {
+          // Get current and target POI entities
           const currentPoiEntity = validPoiEntities[settings.currentPoiIndex]
-          const poiSettings = getComponent(currentPoiEntity, PoiCameraSettingsComponent)
-          const poiTransform = getComponent(currentPoiEntity, TransformComponent)
+          const targetPoiEntity = validPoiEntities[settings.targetPoiIndex]
 
-          if (poiTransform && poiSettings) {
-            // Get the POI position
-            const poiPosition = poiTransform.position
+          // Get settings and transforms for both POIs
+          const currentPoiSettings = getComponent(currentPoiEntity, PoiCameraSettingsComponent)
+          const currentPoiTransform = getComponent(currentPoiEntity, TransformComponent)
+          const targetPoiSettings = getComponent(targetPoiEntity, PoiCameraSettingsComponent)
+          const targetPoiTransform = getComponent(targetPoiEntity, TransformComponent)
 
-            // Calculate target position based on POI settings
-            const targetDistance = poiSettings.cameraDistance
+          if (currentPoiTransform && currentPoiSettings && targetPoiTransform && targetPoiSettings) {
+            // Calculate positions for both POIs
+            const currentPoiPosition = new Vector3().copy(currentPoiTransform.position)
+            const targetPoiPosition = new Vector3().copy(targetPoiTransform.position)
 
-            // Set camera phi and theta if specified in POI settings
-            if (poiSettings.phi !== 0 || poiSettings.theta !== 0) {
-              setTargetCameraRotation(cameraEntity, poiSettings.phi, poiSettings.theta)
+            // Apply offsets if specified
+            if (currentPoiSettings.cameraOffset) {
+              currentPoiPosition.add(currentPoiSettings.cameraOffset)
+            }
+            if (targetPoiSettings.cameraOffset) {
+              targetPoiPosition.add(targetPoiSettings.cameraOffset)
             }
 
-            // Calculate the desired camera position
-            targetPosition.copy(poiPosition)
+            // Get the lerp value for smooth transitions
+            const lerpValue = settings.poiLerpValue
 
-            // Add any offset specified in the POI settings
-            if (poiSettings.cameraOffset) {
-              targetPosition.add(poiSettings.cameraOffset)
+            // Interpolate between current and target positions
+            targetPosition.lerpVectors(currentPoiPosition, targetPoiPosition, lerpValue)
+
+            // Interpolate camera distance
+            const currentDistance = currentPoiSettings.cameraDistance
+            const targetDistance = targetPoiSettings.cameraDistance
+            const lerpedDistance = currentDistance + (targetDistance - currentDistance) * lerpValue
+
+            // Interpolate phi and theta if specified
+            let phi = follow.phi
+            let theta = follow.theta
+
+            if (
+              (currentPoiSettings.phi !== 0 || currentPoiSettings.theta !== 0) &&
+              (targetPoiSettings.phi !== 0 || targetPoiSettings.theta !== 0)
+            ) {
+              // Interpolate between current and target angles
+              phi = currentPoiSettings.phi + (targetPoiSettings.phi - currentPoiSettings.phi) * lerpValue
+              theta = currentPoiSettings.theta + (targetPoiSettings.theta - currentPoiSettings.theta) * lerpValue
+              setTargetCameraRotation(cameraEntity, phi, theta)
+            } else if (currentPoiSettings.phi !== 0 || currentPoiSettings.theta !== 0) {
+              setTargetCameraRotation(cameraEntity, currentPoiSettings.phi, currentPoiSettings.theta)
+            } else if (targetPoiSettings.phi !== 0 || targetPoiSettings.theta !== 0) {
+              setTargetCameraRotation(cameraEntity, targetPoiSettings.phi, targetPoiSettings.theta)
             }
 
-            // Get current camera position
-            const cameraTransform = getComponent(cameraEntity, TransformComponent)
-            currentPosition.copy(cameraTransform.position)
+            // Handle look-at targets with lerping
+            let lookAtPosition = new Vector3()
 
-            // Smoothly move camera to target position
-            const smoothTime = 1.0 / settings.poiLerpSpeed
+            // Determine look-at positions for both current and target POIs
+            const currentLookAtPos = new Vector3()
+            const targetLookAtPos = new Vector3()
 
-            // Use smoothDamp for camera movement
-            smoothDamp(currentPosition, targetPosition, positionVelocity, smoothTime, deltaSeconds, currentPosition)
-
-            // Update camera position
-            const mutableCameraTransform = getMutableComponent(cameraEntity, TransformComponent)
-            mutableCameraTransform.position.set(currentPosition)
-
-            // If there's a specific lookAt target, make the camera look at it
-            if (poiSettings.lookAtTarget && hasComponent(poiSettings.lookAtTarget, TransformComponent)) {
-              const lookAtTransform = getComponent(poiSettings.lookAtTarget, TransformComponent)
-              const lookAtPosition = lookAtTransform.position
-
-              // Make camera look at the target
-              const direction = new Vector3().subVectors(lookAtPosition, currentPosition).normalize()
-              const lookAtQuaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 0, -1), direction)
-
-              // Update camera rotation
-              mutableCameraTransform.rotation.set(lookAtQuaternion)
+            // For current POI
+            if (currentPoiSettings.lookAtTarget && hasComponent(currentPoiSettings.lookAtTarget, TransformComponent)) {
+              const lookAtTransform = getComponent(currentPoiSettings.lookAtTarget, TransformComponent)
+              currentLookAtPos.copy(lookAtTransform.position)
             } else {
-              // Look at the POI itself
-              const direction = new Vector3().subVectors(poiPosition, currentPosition).normalize()
-              const lookAtQuaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 0, -1), direction)
-
-              // Update camera rotation
-              mutableCameraTransform.rotation.set(lookAtQuaternion)
+              currentLookAtPos.copy(currentPoiTransform.position)
             }
+
+            // For target POI
+            if (targetPoiSettings.lookAtTarget && hasComponent(targetPoiSettings.lookAtTarget, TransformComponent)) {
+              const lookAtTransform = getComponent(targetPoiSettings.lookAtTarget, TransformComponent)
+              targetLookAtPos.copy(lookAtTransform.position)
+            } else {
+              targetLookAtPos.copy(targetPoiTransform.position)
+            }
+
+            // Interpolate between look-at positions
+            lookAtPosition.lerpVectors(currentLookAtPos, targetLookAtPos, lerpValue)
+
+            // Make camera look at the interpolated position
+            const direction = new Vector3().subVectors(lookAtPosition, targetPosition).normalize()
+            const lookAtQuaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 0, -1), direction)
+
+            // Update camera position and rotation
+            setComponent(cameraEntity, TransformComponent, { position: targetPosition, rotation: lookAtQuaternion })
 
             // Update camera distance in follow camera component if needed
             const mutableFollowCamera = getMutableComponent(cameraEntity, FollowCameraComponent)
             if (mutableFollowCamera) {
-              mutableFollowCamera.targetDistance.set(targetDistance)
-              mutableFollowCamera.distance.set(targetDistance)
+              mutableFollowCamera.targetDistance.set(lerpedDistance)
+              mutableFollowCamera.distance.set(lerpedDistance)
             }
           }
         }

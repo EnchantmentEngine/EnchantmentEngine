@@ -71,6 +71,8 @@ export const CameraSettingsComponent = defineComponent({
     poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
     poiEntities: S.Array(S.Entity(), []),
     currentPoiIndex: S.Number({ default: -1 }),
+    targetPoiIndex: S.Number({ default: -1 }),
+    poiLerpValue: S.Number({ default: 0 }),
     poiLerpSpeed: S.Number({ default: 0.5 })
   }),
 
