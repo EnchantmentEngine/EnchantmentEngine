@@ -52,7 +52,7 @@ import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/edi
 import ParameterInput from '@ir-engine/ui/src/components/editor/properties/parameter'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Material, Texture } from 'three'
+import { Color, Material, SRGBColorSpace, Texture } from 'three'
 import { commitProperty } from '../../components/properties/Util'
 
 type ThumbnailData = {
@@ -189,10 +189,28 @@ export function MaterialEditor(props: { entity: Entity }) {
       <ParameterInput
         path={UUIDComponent.get(entity)}
         values={materialComponent.parameters.get(NO_PROXY)}
-        onChange={(key) => (val) => {
+        onChange={(key) => async (val) => {
+          const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
+          const property = await shouldLoadTexture(val, key, args)
+          const texture = property as Texture
+          if (texture?.isTexture) {
+            texture.flipY = false
+            texture.needsUpdate = true
+          }
+
           commitProperty(MaterialStateComponent, ('parameters.' + key) as any)(val)
           // set property on material too, since it does't get serialized but also doesn't get update from parameters
-          materialComponent.material[key].set(val)
+          if (args[key].type === 'texture') {
+            const texture = await getTextureAsync(val)
+            if (texture[0]) {
+              texture[0].colorSpace = SRGBColorSpace
+            }
+            materialComponent.material[key].set(texture[0] ?? null)
+          } else if (args[key].type === 'color') {
+            materialComponent.material[key].set(val.isColor ? val : new Color(val))
+          } else {
+            materialComponent.material[key].set(val)
+          }
         }}
         defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
         thumbnails={toBlobs(thumbnails.value)}
