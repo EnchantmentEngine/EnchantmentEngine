@@ -57,7 +57,7 @@ export const FogSettingsComponent = defineComponent({
   jsonID: 'EE_fog',
 
   schema: S.Object({
-    type: S.Const(FogType, {
+    type: S.Enum(FogType, {
       $comment:
         "A string enum, ie. one of the following values: 'disabled', 'linear', 'exponential', 'brownian', 'height'",
       default: FogType.Disabled

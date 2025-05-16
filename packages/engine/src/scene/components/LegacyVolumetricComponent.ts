@@ -97,7 +97,7 @@ export const LegacyVolumetricComponent = defineComponent({
     hasAudio: S.Bool({ default: false }),
     ended: S.Bool({ default: true }),
     volume: S.Number({ default: 1 }),
-    playMode: S.Const(PlayMode, {
+    playMode: S.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),

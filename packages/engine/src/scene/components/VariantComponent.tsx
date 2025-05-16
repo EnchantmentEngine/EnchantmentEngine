@@ -88,7 +88,7 @@ export const distanceMetadataSchema = S.Object({
 })
 
 export const deviceMetadataSchema = S.Object({
-  device: S.Const(Devices, {
+  device: S.Enum(Devices, {
     $comment: "Likely a string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
     default: Devices.DESKTOP
   })
@@ -107,7 +107,7 @@ export const VariantComponent = defineComponent({
         metadata: S.Union([distanceMetadataSchema, deviceMetadataSchema])
       })
     ),
-    heuristic: S.Const(Heuristic, {
+    heuristic: S.Enum(Heuristic, {
       $comment: "Likely a string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
       default: Heuristic.MANUAL
     }),

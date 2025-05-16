@@ -81,12 +81,12 @@ export const FollowCameraComponent = defineComponent({
     targetEntity: S.Entity(),
     currentTargetPosition: T.Vec3(),
     targetPositionSmoothness: S.Number({ default: 0 }),
-    mode: S.Const(FollowCameraMode, {
+    mode: S.Enum(FollowCameraMode, {
       $comment: "A limited string enum, ie. one of the values listed in the 'allowedModes' property",
       default: FollowCameraMode.ThirdPerson
     }),
     allowedModes: S.Array(
-      S.Const(FollowCameraMode, { $comment: "A list of allowed string values for the 'mode' property" }),
+      S.Enum(FollowCameraMode, { $comment: "A list of allowed string values for the 'mode' property" }),
       {
         default: [
           FollowCameraMode.ThirdPerson,
@@ -113,7 +113,7 @@ export const FollowCameraComponent = defineComponent({
     maxTheta: S.Number({ default: 0 }),
     locked: S.Bool({ default: false }),
     enabled: S.Bool({ default: true }),
-    shoulderSide: S.Const(FollowCameraShoulderSide, {
+    shoulderSide: S.Enum(FollowCameraShoulderSide, {
       $comment: "Likely a string enum, ie. one of the following values: 'Left', 'Right'",
       default: FollowCameraShoulderSide.Left
     }),

@@ -143,7 +143,7 @@ export const MediaComponent = defineComponent({
     uiOffset: T.Vec3(),
     volume: S.Number({ default: 1 }),
     resources: S.Array(S.String()),
-    playMode: S.Const(PlayMode, {
+    playMode: S.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),

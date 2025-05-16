@@ -1214,7 +1214,7 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
     name: `${name}LayerComponent`,
     schema: S.Object({
       relations: S.Record(
-        S.Const(Layers, {
+        S.Enum(Layers, {
           $comment:
             "A numeric enum, ie. the value of one of the following key-value pairs: 'Simulation': 0, 'Authoring': 1"
         }),

@@ -216,7 +216,7 @@ export const TextComponent = defineComponent({
     font: S.String({ default: '' }), // font: string|null
     fontSize: S.Number({ default: 0.2 }),
     fontColor: T.Color(0xffffff),
-    fontMaterial: S.Const(FontMaterialKind, {
+    fontMaterial: S.Enum(FontMaterialKind, {
       $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'Basic', 'Standard'",
       default: FontMaterialKind.Basic
     }), // Default to whatever value is marked at id=0 in FontMaterialKind

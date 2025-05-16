@@ -44,7 +44,7 @@ export const VisualScriptComponent = defineComponent({
   jsonID: 'EE_visual_script',
 
   schema: S.Object({
-    domain: S.Const(VisualScriptDomain, {
+    domain: S.Enum(VisualScriptDomain, {
       $comment: "Likely a string enum, ie. one of the following values: 'ECS'",
       default: VisualScriptDomain.ECS
     }),

@@ -213,7 +213,7 @@ export const VolumetricComponent = defineComponent({
       currentTarget: S.Number({ default: 0 }),
       userTarget: S.Number({ default: -1 })
     }),
-    geometryType: S.Const(GeometryType, {
+    geometryType: S.Enum(GeometryType, {
       $comment:
         "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'Corto', 'Draco', 'Unify'",
       default: GeometryType.Corto

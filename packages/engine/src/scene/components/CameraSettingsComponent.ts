@@ -41,7 +41,7 @@ export const CameraSettingsComponent = defineComponent({
     fov: S.Number({ default: 60 }),
     cameraNearClip: S.Number({ default: 0.1 }),
     cameraFarClip: S.Number({ default: 1000 }),
-    projectionType: S.Const(ProjectionType, {
+    projectionType: S.Enum(ProjectionType, {
       $comment:
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'Orthographic', 'Perspective'",
       default: ProjectionType.Perspective
@@ -49,12 +49,12 @@ export const CameraSettingsComponent = defineComponent({
     minCameraDistance: S.Number({ default: 1.5 }),
     maxCameraDistance: S.Number({ default: 50 }),
     startCameraDistance: S.Number({ default: 3 }),
-    cameraMode: S.Const(FollowCameraMode, {
+    cameraMode: S.Enum(FollowCameraMode, {
       $comment:
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
       default: FollowCameraMode.Dynamic
     }),
-    cameraModeDefault: S.Const(FollowCameraMode, {
+    cameraModeDefault: S.Enum(FollowCameraMode, {
       $comment:
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
       default: FollowCameraMode.ThirdPerson

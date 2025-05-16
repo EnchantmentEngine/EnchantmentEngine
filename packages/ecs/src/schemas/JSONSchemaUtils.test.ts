@@ -263,12 +263,12 @@ describe('DeserializeSchemaValue', () => {
     })
   }) //:: Kind.String
 
-  describe('case: S.Const', () => {
+  describe('case: S.Enum', () => {
     it("should return undefined when `@param value` is not contained in the enum's schema", () => {
       const Expected = undefined
 
       const properties = {}
-      const schema = S.Const(properties, { deserialize: undefined })
+      const schema = S.Enum(properties, { deserialize: undefined })
       const curr = {}
       const value = 42
 
@@ -281,7 +281,7 @@ describe('DeserializeSchemaValue', () => {
       const Expected = 42
 
       const properties = { one: 1, two: Expected }
-      const schema = S.Const(properties, { deserialize: undefined })
+      const schema = S.Enum(properties, { deserialize: undefined })
       const curr = {}
       const value = Expected
 
@@ -1370,7 +1370,7 @@ describe('CreateSchemaValue', () => {
     const Expected = 42
 
     const properties = { expectedValue: Expected, One: 1, Two: 2 }
-    const schema = S.Const(properties)
+    const schema = S.Enum(properties)
     const testEntity = 12345 as Entity
 
     const result = CreateSchemaValue(testEntity, schema)
@@ -1569,13 +1569,13 @@ describe('CheckSchemaValue', () => {
     })
   }) //:: Kind.Number
 
-  describe('case Kind.Const', () => {
+  describe('case Kind.Enum', () => {
     it('should return true if `@param schema`.properties includes `@param value`', () => {
       const Expected = true
 
       const value = 42
       const properties = { expectedValue: value, One: 1, Two: 2 }
-      const schema = S.Const(properties)
+      const schema = S.Enum(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1587,13 +1587,13 @@ describe('CheckSchemaValue', () => {
 
       const value = 42
       const properties = { One: 1, Two: 2 }
-      const schema = S.Const(properties)
+      const schema = S.Enum(properties)
 
       const result = CheckSchemaValue(schema, value)
 
       expect(result).toBe(Expected)
     })
-  }) //:: Kind.Const
+  }) //:: Kind.Enum
 
   describe('case Kind.Literal', () => {
     const TestSchemaKind = 'Literal'
@@ -2434,7 +2434,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should generate schema for Const type', () => {
-    const schema = S.Const({ A: 'a', B: 'b' })
+    const schema = S.Enum({ A: 'a', B: 'b' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       enum: ['a', 'b'],

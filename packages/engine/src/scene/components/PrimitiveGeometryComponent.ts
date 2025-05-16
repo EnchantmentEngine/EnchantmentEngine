@@ -51,7 +51,7 @@ export const PrimitiveGeometryComponent = defineComponent({
   jsonID: 'EE_primitive_geometry',
 
   schema: S.Object({
-    geometryType: S.Const(GeometryType, {
+    geometryType: S.Enum(GeometryType, {
       $comment:
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'BoxGeometry', 'SphereGeometry', 'CylinderGeometry', 'CapsuleGeometry', 'PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'TorusGeometry', 'DodecahedronGeometry', 'IcosahedronGeometry', 'OctahedronGeometry', 'TetrahedronGeometry', 'TorusKnotGeometry'",
       default: GeometryType.BoxGeometry

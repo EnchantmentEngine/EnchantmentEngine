@@ -61,7 +61,7 @@ export const RigidBodyComponent = defineComponent({
   name: 'RigidBodyComponent',
   jsonID: 'EE_rigidbody',
   schema: S.Object({
-    type: S.Const(BodyTypes, {
+    type: S.Enum(BodyTypes, {
       $comment: "A string enum, ie. one of the following values: 'fixed', 'dynamic', 'kinematic'",
       default: BodyTypes.Fixed
     }),

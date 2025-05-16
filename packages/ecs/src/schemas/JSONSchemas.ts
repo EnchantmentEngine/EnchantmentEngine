@@ -105,7 +105,7 @@ export const S = {
   /**
    * Schema that infers as the const values of an object, requires that the object to infer as be passed in, default to the first value of the object
    */
-  Const: <Value extends TLiteralValue>(
+  Enum: <Value extends TLiteralValue>(
     item: Record<string, Value>,
     options?: TUnionSchema<TLiteralSchema<Value>[]>['options']
   ) =>
