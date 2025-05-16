@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -58,14 +58,13 @@ import { getMutableState, getState, setNestedObject } from '@ir-engine/hyperflux
 import { DirectionalLightComponent, HemisphereLightComponent } from '@ir-engine/spatial'
 import { TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { serializeEntity } from '@ir-engine/engine/src/scene/functions/serializeWorld'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -306,7 +305,7 @@ const positionObject = (
 
     setComponent(entity, TransformComponent, { position: transform.position })
     getMutableComponent(entity, TransformComponent).position.set((v) => v)
-    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
+    iterateEntityNode(entity, TransformComponent.computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -342,7 +341,7 @@ const rotateObject = (nodes: Entity[], rotations: Quaternion[], space = getState
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
-    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
+    iterateEntityNode(entity, TransformComponent.computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -370,7 +369,7 @@ const rotateAround = (entities: Entity[], axis: Vector3, angle: number, pivot: V
 
     setComponent(entity, TransformComponent, { rotation: transform.rotation })
     getMutableComponent(entity, TransformComponent).rotation.set((v) => v)
-    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
+    iterateEntityNode(entity, TransformComponent.computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
@@ -416,7 +415,7 @@ const scaleObject = (entities: Entity[], scales: Vector3[], overrideScale = fals
 
     setComponent(entity, TransformComponent, { scale: transformComponent.scale })
     getMutableComponent(entity, TransformComponent).scale.set((v) => v)
-    iterateEntityNode(entity, computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
+    iterateEntityNode(entity, TransformComponent.computeTransformMatrix, (e) => hasComponent(e, TransformComponent))
 
     EditorState.markModifiedScene(entity)
   }
