@@ -37,7 +37,11 @@ export const getFileKeysRecursive = async (path: string, storageProviderName?: s
         // Skip directories which can be identified by:
         // 1. Keys ending with a slash '/'
         // 2. Empty files (Size === 0) that don't have a file extension (likely directory placeholders)
-        const isDirectory = Key.endsWith('/') || (Size === 0 && !Key.includes('.') && Key !== path)
+        // 3. Keys that contain the path followed by an object name that doesn't have a file extension (GCP style)
+        const isDirectory =
+          Key.endsWith('/') ||
+          (Size === 0 && !Key.includes('.') && Key !== path) ||
+          (Key.startsWith(path) && !path.endsWith('/') && !Key.substring(path.length).includes('.'))
 
         if (!isDirectory) {
           files.push(Key)
