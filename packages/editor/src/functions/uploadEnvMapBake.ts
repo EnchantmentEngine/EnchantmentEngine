@@ -48,20 +48,29 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { EditorState } from '../services/EditorServices'
 import { uploadProjectFiles } from './assetFunctions'
 
-const query = defineQuery([ScenePreviewCameraComponent, TransformComponent])
+const scenePreviewCameraQuery = defineQuery([ScenePreviewCameraComponent, TransformComponent])
 
+/**
+ * Gets the position for baking an environment map, using the provided entity, a scene preview camera, or a default position
+ * @param entity The entity to get the position from
+ * @returns The position for baking
+ */
 const getScenePositionForBake = (entity?: Entity) => {
   if (entity) {
     const transformComponent = getComponent(entity, TransformComponent)
-    return transformComponent.position
+    const position = new Vector3().copy(transformComponent.position)
+    if (hasComponent(entity, EnvMapBakeComponent)) {
+      const bakeComponent = getComponent(entity, EnvMapBakeComponent)
+      const offset = new Vector3().copy(bakeComponent.bakePositionOffset)
+      position.add(offset)
+    }
+    return position
   }
-  let entityToBakeFrom: Entity
-  entityToBakeFrom = query()[0]
 
-  // fall back somewhere behind the world origin
+  const entityToBakeFrom = scenePreviewCameraQuery()[0]
   if (entityToBakeFrom) {
     const transformComponent = getComponent(entityToBakeFrom, TransformComponent)
-    if (transformComponent?.position) return transformComponent.position
+    if (transformComponent?.position) return new Vector3().copy(transformComponent.position)
   }
   return new Vector3(0, 2, 5)
 }
