@@ -614,7 +614,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             </div>
             {location?.url && (
               <div className="border-t border-t-ui-outline py-6">
-                <EmbedCodeField url={location?.url} />
+                <EmbedCodeField url={location.url} />
               </div>
             )}
           </div>

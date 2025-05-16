@@ -22,7 +22,6 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
-import { CopyEmbedCodePopover } from '@ir-engine/client-core/src/common/components/popovers/CopyEmbedCodePopover'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { ThemeState } from '@ir-engine/client-core/src/common/services/ThemeService'
 import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
@@ -35,6 +34,7 @@ import RenameSceneModal from '@ir-engine/editor/src/panels/scenes/RenameSceneMod
 import { useMutableState } from '@ir-engine/hyperflux'
 import { Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
+import InputDialog from '@ir-engine/ui/src/components/tailwind/InputDialog'
 import MoreOptionsMenu from '@ir-engine/ui/src/components/tailwind/MoreOptionsMenu'
 import { CodeSnippet01Sm, Edit01Sm, Trash04Sm } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -143,7 +143,22 @@ export default function SceneItem({
               icon: <CodeSnippet01Sm fontSize={16} />,
               onClick: () => {
                 const sceneName = scene.key.split('/').pop()!.replace('.gltf', '')
-                ModalState.openModal(<CopyEmbedCodePopover url={`${config.client.clientUrl}/location/${sceneName}`} />)
+                const url = `${config.client.clientUrl}/location/${sceneName}`
+                ModalState.openModal(
+                  <InputDialog
+                    title={t('editor:hierarchy.lbl-copyEmbedCode')}
+                    fields={[
+                      {
+                        id: 'embedCode',
+                        label: t('common:components.embed'),
+                        type: 'codefield',
+                        url: url,
+                        readOnly: true
+                      }
+                    ]}
+                    onSubmit={async () => {}}
+                  />
+                )
               }
             },
             {
