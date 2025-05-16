@@ -74,11 +74,12 @@ const getScenePositionForBake = (entity?: Entity) => {
  *   which will dictate where the envmap is source from see issue #5751
  *
  * @param entity
- * @returns
+ * @returns The URL of the uploaded environment map, or null if the operation failed
  */
-
 export const uploadBPCEMBakeToServer = async (entity: Entity) => {
-  const isSceneEntity = entity === getState(EditorState).rootEntity
+  const bakeComponent = getComponent(entity, EnvMapBakeComponent)
+  const bakePosition = getScenePositionForBake(entity)
+  const isSceneRootEntity = entity === getState(EditorState).rootEntity
 
   if (isSceneEntity) {
     if (!hasComponent(entity, EnvMapBakeComponent)) {
@@ -86,27 +87,13 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
     }
   }
 
-  const bakeComponent = getComponent(entity, EnvMapBakeComponent)
-  const position = getScenePositionForBake(isSceneEntity ? undefined : entity)
-
-  const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!
-
-  const scene = new Scene()
-
-  const cubemapCapturer = new CubemapCapturer(renderer, scene, bakeComponent.resolution)
-  const renderTarget = cubemapCapturer.update(position)
-
-  if (isSceneEntity) scene.environment = renderTarget.texture
-
-  const envmapImageData = convertCubemapToEquiImageData(
-    renderer,
-    renderTarget.texture,
-    bakeComponent.resolution,
-    bakeComponent.resolution
-  ) as ImageData
+  const envmapImageData = generateEnvmapBake({
+    entity,
+    position: bakePosition,
+    resolution: bakeComponent.resolution
+  })
 
   const envmap = await convertImageDataToKTX2Blob(envmapImageData)
-
   if (!envmap) return null!
 
   const nameComponent = getComponent(entity, NameComponent)
@@ -127,9 +114,26 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
   setComponent(entity, EnvMapBakeComponent, { envMapOrigin: cleanURL.href })
 }
 
-/** @todo replace resolution with LODs */
-export const generateEnvmapBake = (resolution = 2048) => {
-  const position = getScenePositionForBake()
+/**
+ * Generates an environment map of the given resolution at a specific position, or from the entity's position
+ * @todo replace resolution with LODs
+ * @param options Configuration options for the environment map generation
+ * @returns ImageData of the generated environment map
+ */
+export const generateEnvmapBake = (
+  options: {
+    entity?: Entity
+    position?: Vector3
+    resolution?: number
+  } = {}
+) => {
+  const { entity, position, resolution = 2048 } = options
+
+  const cubemapPosition = position
+    ? new Vector3().copy(position)
+    : entity
+    ? getScenePositionForBake(entity)
+    : getScenePositionForBake()
   const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!
 
   const rootEntity = getState(EditorState).rootEntity
@@ -142,7 +146,7 @@ export const generateEnvmapBake = (resolution = 2048) => {
   scene.environment = sceneData.environment
 
   const cubemapCapturer = new CubemapCapturer(renderer, scene, resolution)
-  const renderTarget = cubemapCapturer.update(position)
+  const renderTarget = cubemapCapturer.update(cubemapPosition)
 
   const originalEnvironment = scene.environment
   scene.environment = renderTarget.texture
@@ -162,26 +166,7 @@ export const generateEnvmapBake = (resolution = 2048) => {
 const resolution = 1024
 
 /**
- * Generates a low res cubemap at a specific position in the world for preview.
- *
- * @param position
- * @returns
- */
-export const bakeEnvmapTexture = async (position: Vector3) => {
-  const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!
-  const previewCubemapCapturer = new CubemapCapturer(renderer, new Scene(), resolution)
-  const renderTarget = previewCubemapCapturer.update(position)
-  const bake = (await convertCubemapToEquiImageData(
-    renderer,
-    renderTarget.texture,
-    resolution,
-    resolution
-  )) as ImageData
-  return bake
-}
-
-/**
- * Generates and iploads a high res cubemap at a specific position in the world for saving and export.
+ * Generates and uploads a high res cubemap at a specific position in the world for saving and export.
  *
  * @param position
  * @returns
