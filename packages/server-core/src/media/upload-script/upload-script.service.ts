@@ -33,11 +33,14 @@ import { SupportedScriptImports } from '@ir-engine/engine/src/script/SupportedSc
 
 import { Application } from '../../../declarations'
 import { uploadAsset } from '../upload-asset/upload-asset.service'
+import { convertImportToGlobal, transpileTypeScript, validateScript } from './upload-script-utils'
 import hooks from './upload-script.hooks'
 
 // Using uploadScriptPath from schema.type.module.ts
 
 const multipartMiddleware = Multer({ limits: { fieldSize: Infinity } })
+
+// Disallowed features and validation are now imported from upload-script-utils.ts
 
 declare module '@ir-engine/common/declarations' {
   interface ServiceTypes {
@@ -91,19 +94,16 @@ const fetchScriptAsText = async (script: StaticResourceType) => {
  *            becomes
  *      const { Color } = globalThis.__MODULES__.THREE
  *
- * @param text
- * @param importStatement
- * @param globalName
- * @returns
- *
+ * @param text The script text to process
+ * @param importStatement The import statement to replace
+ * @param globalName The global name to use in the replacement
+ * @returns The processed script text
  *
  * @todo add JSX support
- * @todo add TypeScript support
  */
-const convertImportToGlobal = (text: string, importStatement: string, globalName: string) => {
-  const importRegex = new RegExp(`import\\s+({[^}]+})\\s+from\\s+['"]${importStatement}['"]`, 'g')
-  return text.replace(importRegex, `const $1 = globalThis.__MODULES__.${globalName}`)
-}
+// Import conversion is now imported from upload-script-utils.ts
+
+// TypeScript transpilation is now imported from upload-script-utils.ts
 
 const processScript = async (
   app: Application,
@@ -115,16 +115,38 @@ const processScript = async (
   }
 ) => {
   let scriptText = await fetchScriptAsText(script)
+  const fileName = script.name || 'script.js'
+  const isTypeScript = fileName.endsWith('.ts') || fileName.endsWith('.tsx')
 
+  // Validate script against disallowed features
+  const validationErrors = validateScript(scriptText)
+  if (validationErrors.length > 0) {
+    const errorMessages = validationErrors.map((error) => error.reason).join('\n')
+    throw new Error(`Script contains disallowed features:\n${errorMessages}`)
+  }
+
+  // Transpile TypeScript to JavaScript if needed
+  if (isTypeScript) {
+    try {
+      scriptText = transpileTypeScript(scriptText, fileName)
+    } catch (error) {
+      throw new Error(`TypeScript transpilation failed: ${(error as Error).message}`)
+    }
+  }
+
+  // Convert imports to global references
   for (const { import: imp, global } of SupportedScriptImports) {
     scriptText = convertImportToGlobal(scriptText, imp, global)
   }
 
   const buffer = Buffer.from(scriptText)
 
+  // Use .js extension for the processed file, even if original was .ts
+  const outputFileName = isTypeScript ? fileName.replace(/\.tsx?$/, '.js') : fileName
+
   return uploadAsset(app, {
     path: 'public/processed-scripts',
-    name: script.name,
+    name: outputFileName,
     file: buffer as any as UploadFile,
     project: uploadArgs.project
   })
@@ -143,7 +165,9 @@ const uploadScripts = (app: Application) => async (data: UploadScriptData, param
   // Files are already validated in the hooks
   const [file] = files
 
-  file.mimetype = 'application/javascript'
+  // Set appropriate mimetype based on file extension
+  const isTypeScript = file.originalname.endsWith('.ts') || file.originalname.endsWith('.tsx')
+  file.mimetype = isTypeScript ? 'application/x-typescript' : 'application/javascript'
 
   const rawScript = await uploadAsset(app, {
     path: data.args.path,
