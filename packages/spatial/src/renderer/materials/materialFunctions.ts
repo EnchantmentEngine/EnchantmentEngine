@@ -101,7 +101,7 @@ export const getMaterialIndices = (entity: Entity, materialEntity: Entity): numb
 }
 
 export const setupMaterialParameters = (entity: Entity, type: string, properties: { [_: string]: any }) => {
-  const params = getMaterialParameterDefaults(type)
+  const params = {} as Record<string, any>
   Object.entries(properties).map(([k, v]) => {
     if (!properties[k]) return
     if (typeof v === 'function') return

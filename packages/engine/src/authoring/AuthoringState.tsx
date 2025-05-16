@@ -33,6 +33,7 @@ import {
   EntityUUID,
   getAllComponents,
   getComponent,
+  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   Layers,
@@ -60,9 +61,15 @@ import {
   UserID,
   Validator
 } from '@ir-engine/hyperflux'
+import {
+  MaterialPrototypeDefinitions,
+  MaterialStateComponent
+} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
+import { Color, SRGBColorSpace, Vector2, Vector3 } from 'three'
+import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -412,6 +419,36 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
           continue
         }
         deserializeComponent(entity, Component, componentData)
+        // annoying necessity to ensure ops from scene deltas get applied
+        /** @todo this will be removed once material plugins handle all materials */
+        if (Component === MaterialStateComponent) {
+          const materialComponent = getMutableComponent(entity, MaterialStateComponent)
+          const { material, parameters } = materialComponent.get(NO_PROXY)
+          const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
+          for (const [key, val] of Object.entries(parameters)) {
+            if (typeof val === 'undefined' || typeof material[key] === 'undefined') continue
+            // set property on material too, since it does't get serialized but also doesn't get update from parameters
+            if (args[key].type === 'texture') {
+              if (!val || (material[key]?.isTexture && val === material[key].userData?.url)) continue
+              getTextureAsync(val).then(([texture]) => {
+                if (texture?.isTexture) {
+                  texture.flipY = false
+                  texture.needsUpdate = true
+                  texture.colorSpace = SRGBColorSpace
+                  materialComponent.material[key].set(texture ?? null)
+                }
+              })
+            } else if (args[key].type === 'color') {
+              materialComponent.material[key].set(val.isColor ? val : new Color(val))
+            } else if (args[key].type === 'vec2') {
+              materialComponent.material[key].set(val.isVector2 ? val : new Vector2().fromArray(val))
+            } else if (args[key].type === 'vec3') {
+              materialComponent.material[key].set(val.isVector3 ? val : new Vector3().fromArray(val))
+            } else {
+              materialComponent.material[key].set(val)
+            }
+          }
+        }
       }
       if (currentState[nodeID]) {
         for (const componentJsonID of Object.keys(currentState[nodeID])) {
