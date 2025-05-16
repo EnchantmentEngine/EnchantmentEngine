@@ -36,10 +36,22 @@ const validateFiles = (context: HookContext) => {
   const files = args?.[1]?.files
   files.forEach((file) => {
     if (
-      !file.originalname.endsWith('.js') ||
-      (file.mimetype !== 'application/javascript' && file.mimetype !== 'text/javascript')
+      !(
+        file.originalname.endsWith('.tsx') ||
+        file.originalname.endsWith('.ts') ||
+        file.originalname.endsWith('.jsx') ||
+        file.originalname.endsWith('.js')
+      ) ||
+      !(
+        file.mimetype === 'application/javascript' ||
+        file.mimetype === 'text/javascript' ||
+        file.mimetype === 'application/x-typescript' ||
+        file.mimetype === 'text/typescript'
+      )
     ) {
-      throw new BadRequest('Unsupported file type. Only JavaScript (.js) files are allowed.')
+      throw new BadRequest(
+        'Unsupported file type. Only TypeScript (.tsx, .ts) and JavaScript (.jsx, .js) files are allowed.'
+      )
     }
   })
 }

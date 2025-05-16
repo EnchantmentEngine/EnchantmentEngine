@@ -75,6 +75,9 @@ export const getIncrementalName = async function (
 export const isValidFileType = function (fileType: string, fileName: string): boolean {
   return (
     fileType === 'application/javascript' ||
+    fileType === 'text/javascript' ||
+    fileType === 'application/x-typescript' ||
+    fileType === 'text/typescript' ||
     fileType.startsWith('image/') ||
     fileType.startsWith('audio/') ||
     fileType.startsWith('video/') ||
@@ -83,7 +86,11 @@ export const isValidFileType = function (fileType: string, fileName: string): bo
       (fileName.endsWith('.ktx2') ||
         fileName.endsWith('.gltf') ||
         fileName.endsWith('.glb') ||
-        fileName.endsWith('.bin'))) ||
+        fileName.endsWith('.bin') ||
+        fileName.endsWith('.tsx') ||
+        fileName.endsWith('.ts') ||
+        fileName.endsWith('.jsx') ||
+        fileName.endsWith('.js'))) ||
     (fileType === 'application/macbinary' && fileName.endsWith('.bin')) // Mac changes the mimetype to this when using browser document upload.
   )
 }

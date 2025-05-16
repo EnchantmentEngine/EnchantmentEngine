@@ -115,8 +115,9 @@ const processScript = async (
   }
 ) => {
   let scriptText = await fetchScriptAsText(script)
-  const fileName = script.name || 'script.js'
-  const isTypeScript = fileName.endsWith('.ts') || fileName.endsWith('.tsx')
+  const fileName = script.name || 'script.tsx'
+  // Always treat all files as TypeScript with JSX support
+  const isTypeScript = true
 
   // Validate script against disallowed features
   const validationErrors = validateScript(scriptText)
@@ -141,8 +142,8 @@ const processScript = async (
 
   const buffer = Buffer.from(scriptText)
 
-  // Use .js extension for the processed file, even if original was .ts
-  const outputFileName = isTypeScript ? fileName.replace(/\.tsx?$/, '.js') : fileName
+  // Always preserve the .tsx extension for the processed file
+  const outputFileName = fileName
 
   return uploadAsset(app, {
     path: 'public/processed-scripts',
@@ -166,8 +167,8 @@ const uploadScripts = (app: Application) => async (data: UploadScriptData, param
   const [file] = files
 
   // Set appropriate mimetype based on file extension
-  const isTypeScript = file.originalname.endsWith('.ts') || file.originalname.endsWith('.tsx')
-  file.mimetype = isTypeScript ? 'application/x-typescript' : 'application/javascript'
+  // Always treat files as TypeScript with JSX support
+  file.mimetype = 'application/x-typescript'
 
   const rawScript = await uploadAsset(app, {
     path: data.args.path,
