@@ -36,12 +36,15 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
+  deserializeComponent,
+  getAllComponents,
   getComponent,
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerID,
   Layers,
+  serializeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
@@ -106,6 +109,7 @@ export const getEntityAndMaterialFromIntersection = (intersections: Intersection
 
 /**
  * Replaces the material index on the target entity with the material index from the asset entity
+ * @todo this is a placeholder for https://github.com/ir-engine/ir-engine/pull/1912
  */
 export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, materialIndex: number) => {
   const [newMaterialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
@@ -128,6 +132,36 @@ export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, 
   )
 
   /** @todo get material reference state, and if there are no references, remove the entity */
+
+  removeEntity(assetEntity)
+
+  AuthoringState.snapshotEntities([targetEntity])
+}
+
+const updateMaterial = (assetEntity: Entity, targetEntity: Entity, materialIndex: number) => {
+  const [newMaterialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
+
+  const newMaterialComponent = getComponent(newMaterialEntity, MaterialStateComponent)
+
+  const materialInstanceComponent = getComponent(targetEntity, MaterialInstanceComponent)
+  const materialEntity = materialInstanceComponent.entities[materialIndex]
+
+  /** Update the material parameters (will be applied to material via authoring state) */
+  setComponent(materialEntity, MaterialStateComponent, {
+    parameters: newMaterialComponent.parameters
+  })
+
+  const materialPluginComponents = getAllComponents(newMaterialEntity).filter(
+    (c) =>
+      c.jsonID &&
+      c !== UUIDComponent &&
+      c !== MaterialStateComponent &&
+      c !== EntityTreeComponent &&
+      c !== NameComponent
+  )
+  for (const component of materialPluginComponents) {
+    deserializeComponent(materialEntity, component, serializeComponent(newMaterialEntity, component))
+  }
 
   removeEntity(assetEntity)
 
@@ -177,7 +211,7 @@ export async function addMediaNode(
       const { entity: targetEntity, materialIndex } = getEntityAndMaterialFromIntersection(intersections)
 
       AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
-        (entity) => replaceMaterialIndex(entity, targetEntity, materialIndex)
+        (entity) => updateMaterial(entity, targetEntity, materialIndex)
       )
 
       return UUIDComponent.get(targetEntity)
