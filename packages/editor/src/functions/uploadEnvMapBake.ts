@@ -90,12 +90,6 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
   const bakePosition = getScenePositionForBake(entity)
   const isSceneRootEntity = entity === getState(EditorState).rootEntity
 
-  if (isSceneEntity) {
-    if (!hasComponent(entity, EnvMapBakeComponent)) {
-      setComponent(entity, EnvMapBakeComponent, { resolution: 1024 })
-    }
-  }
-
   const envmapImageData = generateEnvmapBake({
     entity,
     position: bakePosition,
