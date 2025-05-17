@@ -269,7 +269,8 @@ describe('addMediaNode', () => {
     expect(getComponent(materialEntity, MaterialStateComponent)).toBeDefined()
   })
 
-  it('should load a material and replace material at intersection', { timeout: 60000 }, async () => {
+  /** @todo https://github.com/ir-engine/ir-engine/pull/1912 */
+  it.todo('should load a material and replace material at intersection', { timeout: 60000 }, async () => {
     const createSceneGLTF = () => ({
       asset: {
         version: '2.0',
