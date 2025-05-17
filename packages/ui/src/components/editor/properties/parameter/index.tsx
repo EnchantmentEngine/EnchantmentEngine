@@ -104,7 +104,7 @@ export default function ParameterInput({
     ...Object.fromEntries(Object.entries(_defaults).map(([k, v]) => [k, v.default])),
     ...values
   }
-  console.log(valuesWithDefaults)
+
   return (
     <>
       {Object.entries(_defaults).map(([k, parms]: [string, any]) => {

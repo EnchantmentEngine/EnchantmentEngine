@@ -36,6 +36,7 @@ import {
 import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import { generateDefaults } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
@@ -206,6 +207,7 @@ export function MaterialEditor(props: { entity: Entity }) {
           onClick={() => {
             if (!selectedPlugin.value) return
             setComponent(entity, MaterialPluginComponents[selectedPlugin.value])
+            AuthoringState.snapshotEntities([entity])
           }}
         >
           {t('editor:properties.mesh.material.setPlugin')}
@@ -224,6 +226,7 @@ export function MaterialEditor(props: { entity: Entity }) {
             size="sm"
             onClick={() => {
               removeComponent(entity, MaterialPluginComponents[selectedPlugin.value])
+              AuthoringState.snapshotEntities([entity])
             }}
           >
             Remove Plugin
