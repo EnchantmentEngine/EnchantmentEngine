@@ -807,7 +807,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   if (EE_materialExtensionParams?.args) {
     for (const prop in EE_materialExtensionParams.args) {
       const contents = EE_materialExtensionParams.args[prop].contents
-      console.log(prop, EE_materialExtensionParams.args, contents)
       if (!!contents && typeof contents === 'object' && typeof contents.index === 'number') {
         extensionPromises.push(
           GLTFLoaderFunctions.assignTexture(options, contents).then((map) => {
@@ -1317,7 +1316,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   setComponent(entity, NameComponent, meshDef.name ?? 'Mesh-' + meshIndex)
 
   setComponent(entity, MaterialInstanceComponent, {
-    entities: materialEntities
+    entities: materialEntities.map((entity) => getComponent(entity, UUIDComponent).entityID)
   })
 
   if (Object.keys(mesh.geometry.morphAttributes).length > 0) {
