@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -61,9 +61,8 @@ import { Geometry } from '../common/constants/Geometry'
 import iterateObject3D from '../common/functions/iterateObject3D'
 import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
-import { RendererComponent } from '../renderer/WebGLRendererSystem'
+import { RendererComponent } from '../renderer/components/RendererComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
-
 export interface DisposableObject {
   uuid: string
   id: number

@@ -19,7 +19,7 @@ The Original Code is Ethereal Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Ethereal Engine team.
 
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023
+All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025 
 Ethereal Engine. All Rights Reserved.
 */
 
@@ -46,10 +46,9 @@ import {
 } from '@ir-engine/ecs'
 import { dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { SceneUser } from '@ir-engine/network'
-import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -62,7 +61,7 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import {
   AnimationClip,
   AnimationMixer,
@@ -131,6 +130,7 @@ import {
   assignExtrasToUserData,
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
+import { getMaxAnisotropy } from './gltfUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { migrateSceneDeltas } from './migrateSceneDeltas'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
@@ -987,7 +987,7 @@ const loadTextureImage = async (
   texture.minFilter = WEBGL_FILTERS[sampler.minFilter] || LinearMipmapLinearFilter
   texture.wrapS = WEBGL_WRAPPINGS[sampler.wrapS] || RepeatWrapping
   texture.wrapT = WEBGL_WRAPPINGS[sampler.wrapT] || RepeatWrapping
-
+  texture.anisotropy = getMaxAnisotropy()
   return texture
 }
 
@@ -1568,7 +1568,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       iterateEntityNode(entity, (e) => {
         if (hasComponent(e, TransformComponent)) {
-          computeTransformMatrix(e)
+          TransformComponent.computeTransformMatrix(e)
           TransformComponent.dirty[e] = 1
         }
       })
