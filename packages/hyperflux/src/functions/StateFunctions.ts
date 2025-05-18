@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { extend, ExtensionFactory, hookstate, SetInitialStateAction, State, useHookstate } from '@hookstate/core'
 import { Identifiable, identifiable } from '@hookstate/identifiable'
-import { extend, ExtensionFactory, hookstate, SetInitialStateAction, State, useHookstate } from '@speigg/hookstate'
 import type { Object as _Object, Function, String } from 'ts-toolbelt'
 
 import { DeepReadonly } from '../types/DeepReadonly'
@@ -33,9 +33,9 @@ import { isClient } from './EnvironmentConstants'
 import { startReactor } from './ReactorFunctions'
 import { HyperFlux, HyperStore } from './StoreFunctions'
 
+export * from '@hookstate/core'
+export { useHookstate as useState } from '@hookstate/core'
 export * from '@hookstate/identifiable'
-export * from '@speigg/hookstate'
-export { useHookstate as useState } from '@speigg/hookstate'
 
 /** @deprecated */
 export const createState = hookstate

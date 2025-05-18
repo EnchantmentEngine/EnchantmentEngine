@@ -22,7 +22,7 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
-import '@speigg/hookstate' // required for hookstate to override react properly work - see https://github.com/avkonst/hookstate/issues/412
+import '@hookstate/core' // required for hookstate to override react properly work - see https://github.com/avkonst/hookstate/issues/412
 
 export * from './src/EventDispatcher'
 export * from './src/functions/ActionFunctions'
