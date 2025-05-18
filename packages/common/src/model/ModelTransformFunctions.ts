@@ -96,7 +96,7 @@ import ModelTransformLoader from './ModelTransformLoader'
  * @param count
  * @returns
  */
-const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: Mesh, count) => {
+const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: Mesh, count: number) => {
   return mesh.listPrimitives().map((prim) => {
     const buffer = prim.getAttribute('POSITION')?.getBuffer() ?? doc.createBuffer()
 
@@ -188,7 +188,7 @@ const split: Transform = (document: Document) => {
   })
 }
 
-const pruneUnusedNodes = (nodes: Node[], logger) => {
+const pruneUnusedNodes = (nodes: Node[], logger: unknown) => {
   let node: Node | undefined
   let unusedNodes = 0
   while ((node = nodes.pop())) {
@@ -367,7 +367,7 @@ const Status = {
 export type ModelTransformStatus = (typeof Status)[keyof typeof Status]
 export { Status as ModelTransformStatus }
 
-const mimeToFileType = (mimeType) => {
+const mimeToFileType = (mimeType: string) => {
   switch (mimeType) {
     case 'image/jpg':
     case 'image/jpeg':
@@ -381,7 +381,7 @@ const mimeToFileType = (mimeType) => {
   }
 }
 
-const fileTypeToMime = (fileType) => {
+const fileTypeToMime = (fileType: string) => {
   switch (fileType) {
     case 'jpg':
       return 'image/jpg'
@@ -397,15 +397,15 @@ const fileTypeToMime = (fileType) => {
 const loaderIO = ModelTransformLoader().then(({ io }) => io)
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer, path?: string) => {
+const doUpload = async (projectName: string, fileName: string, buffer: ArrayBuffer | Blob, path?: string) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
-  let resolver
-  const promise = new Promise((resolve) => {
-    resolver = resolve
+  let resolveFunc!: () => void
+  const promise = new Promise<void>((resolve) => {
+    resolveFunc = () => resolve()
   })
-  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver, path: path }])
+  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolveFunc, path: path }])
   if (fileName.includes('combined-mesh')) {
     uploadRequestState.isOnPublishing.set(true)
   }
@@ -725,7 +725,7 @@ const writeFiles = async (
   if (['glb', 'vrm'].includes(modelFormat)) {
     // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), new Blob([data]), path)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -775,7 +775,7 @@ const writeFiles = async (
         resourceUri.length > 0 ? resourceUri : resourceName + '_resources',
         `${
           (image.uri ?? '').length > 0 ? removeExtension(image.uri!).replaceAll(/^\.\//g, '') : image.name
-        }.${mimeToFileType(image.mimeType)}`
+        }.${mimeToFileType(image.mimeType || '')}`
       )
       resources[nuURI] = resources[image.uri!]
       delete resources[image.uri!]
@@ -833,8 +833,8 @@ function preserveVertexColors(document: Document): Document {
 export const transformModel = async (
   srcURL: string,
   modelOperations: ModelTransformParameters[],
-  onMetadata: (index: number, key: string, data: any) => void = (key, data) => {},
-  onProgress?: (progress: number, status: Status, numerator?: number, denominator?: number) => void
+  onMetadata: (index: number, key: string, data: any) => void = (_key, _data) => {},
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
 ): Promise<string[]> => {
   onProgress?.(0, Status.TransformingModels)
 
@@ -895,7 +895,7 @@ export const transformModel = async (
     const params = modelOperations[i]
     const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
 
-    const document = await cloneDocument(srcDocument)
+    const document = cloneDocument(srcDocument)
 
     // Preserve vertex colors before applying transformations
     await document.transform(preserveVertexColors)
@@ -1161,7 +1161,7 @@ function adaptiveSimplify(document: Document, args: ModelTransformParameters): D
     const importance = calculateMeshImportance(mesh)
     const adaptiveRatio = args.simplifyRatio * importance
 
-    for (const prim of mesh.listPrimitives()) {
+    for (const _prim of mesh.listPrimitives()) {
       try {
         simplify({
           simplifier: MeshoptSimplifier,

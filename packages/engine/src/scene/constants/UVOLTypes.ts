@@ -405,7 +405,7 @@ export interface BasePlayerManifest {
 }
 
 export interface DRACO_Manifest extends BasePlayerManifest {
-  type: UVOL_TYPE.DRACO_WITH_COMPRESSED_TEXTURE
+  type: 'DRACO_WITH_COMPRESSED_TEXTURE'
   geometry: {
     targets: Record<string, DRACOTarget>
     path: EncoderManifest['geometryOutputPath']
@@ -413,7 +413,7 @@ export interface DRACO_Manifest extends BasePlayerManifest {
 }
 
 export interface UniformSolve_Manifest extends BasePlayerManifest {
-  type: UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE
+  type: 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE'
   geometry: {
     targets: Record<string, UniformSolveTarget>
     path: EncoderManifest['geometryOutputPath']

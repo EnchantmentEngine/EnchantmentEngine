@@ -277,8 +277,8 @@ export const CanvasInputReactor = () => {
       }
 
       let button = MouseButton.PrimaryClick
-      if (event.button === 1) button = MouseButton.AuxiliaryClick
-      else if (event.button === 2) button = MouseButton.SecondaryClick
+      if (event.button === 1) button = MouseButton.AuxiliaryClick as any
+      else if (event.button === 2) button = MouseButton.SecondaryClick as any
 
       const state = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
       if (down) {

@@ -35,11 +35,15 @@ interface EasingType {
 }
 
 class EasingBuilder<P extends string> {
-  private constructor(
-    private fn: (t: number) => number,
-    private path: P,
-    private isFinal: boolean = false
-  ) {}
+  private fn: (t: number) => number
+  private path: P
+  private isFinal: boolean
+
+  private constructor(fn: (t: number) => number, path: P, isFinal: boolean = false) {
+    this.fn = fn
+    this.path = path
+    this.isFinal = isFinal
+  }
 
   static create<P extends string>(fn: (t: number) => number, path: P): EasingType {
     const builder = new EasingBuilder(fn, path)
