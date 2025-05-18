@@ -802,7 +802,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
             return getP2PInstance({
               app: this.app,
               headers: params.headers || {},
-              channelId,
+              locationId,
               roomCode
             })
           }
