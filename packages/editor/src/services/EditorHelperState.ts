@@ -59,7 +59,7 @@ export const EditorHelperState = defineState({
     translationSnap: 0.5,
     rotationSnap: 10,
     scaleSnap: 0.1,
-    placementMode: PlacementMode.DRAG,
+    placementMode: PlacementMode.DRAG as PlacementModeType,
     gizmoEnabled: true,
     gridVisibility: false,
     gridHeight: 0,
