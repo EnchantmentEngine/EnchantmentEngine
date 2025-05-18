@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -124,7 +124,7 @@ const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: 
   })
 }
 
-const removeUVsOnUntexturedMeshes: Transform = (document: Document) => {
+function removeUVsOnUntexturedMeshes(document: Document): Document {
   document
     .getRoot()
     .listMeshes()
@@ -145,6 +145,7 @@ const removeUVsOnUntexturedMeshes: Transform = (document: Document) => {
       prim.setAttribute('TEXCOORD_0', null)
       prim.setAttribute('TEXCOORD_1', null)
     })
+  return document
 }
 
 const split: Transform = (document: Document) => {
@@ -356,13 +357,14 @@ const hashBuffer = (buffer: Uint8Array): string => {
   return `buffer_${hash}`
 }
 
-enum Status {
-  TransformingModels,
-  ProcessingTexture,
-  WritingFiles,
-  Complete
-}
+const Status = {
+  TransformingModels: 0,
+  ProcessingTexture: 1,
+  WritingFiles: 2,
+  Complete: 3
+} as const
 
+export type ModelTransformStatus = (typeof Status)[keyof typeof Status]
 export { Status as ModelTransformStatus }
 
 const mimeToFileType = (mimeType) => {
@@ -609,7 +611,7 @@ const createTextureOperations = (
 
   return operations
 }
-const validTextureFileName = (input: string) => {
+function validTextureFileName(input: string): string {
   let result = ''
   if (VALID_FILENAME_REGEX.test(input)) {
     return input
@@ -811,7 +813,7 @@ const writeFiles = async (
 }
 
 // Add a function to preserve vertex colors
-const preserveVertexColors: Transform = (document: Document) => {
+function preserveVertexColors(document: Document): Document {
   document
     .getRoot()
     .listMeshes()
@@ -825,6 +827,7 @@ const preserveVertexColors: Transform = (document: Document) => {
         colorAttr.setExtras({ preserve: true })
       }
     })
+  return document
 }
 
 export const transformModel = async (
@@ -1151,7 +1154,7 @@ const getVertexDensityImportance = (mesh: Mesh): number => {
 }
 
 // adaptiveSimplify function with inverted logic to increase simplification
-const adaptiveSimplify = (document: Document, args: ModelTransformParameters) => {
+function adaptiveSimplify(document: Document, args: ModelTransformParameters): Document {
   const meshes = document.getRoot().listMeshes()
 
   for (const mesh of meshes) {
@@ -1170,4 +1173,6 @@ const adaptiveSimplify = (document: Document, args: ModelTransformParameters) =>
       }
     }
   }
+
+  return document
 }

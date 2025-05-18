@@ -199,14 +199,14 @@ export class ServerLoop {
   _running: boolean
   _step: number
   _deltas: Array<number>
+  _times: number
+  _option?: Option
 
-  constructor(
-    update = () => {},
-    public _times: number = 10,
-    public _option?: Option
-  ) {
+  constructor(update = () => {}, times: number = 10, option?: Option) {
     this._update = update
     this._running = false
+    this._times = times
+    this._option = option
     this._step = 1000 / this._times
     this._lastFrameTime = this._time()
     this._deltas = Array<number>()
