@@ -19,14 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 /**
  * @note
  * Other related code that also has ECSLayers specific tests:
- * - EntityFunctions.test.tsx : createEntity removeEntity
+ * - ComponentFunctions.test.tsx : createEntity removeEntity
  * - UUIDComponent.test.tsx   : Almost every function
  * */
 
@@ -34,8 +34,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import assert from 'assert'
 import {
+  createEntity,
   CreatePropagationArgs,
   defineComponent,
+  entityExists,
   getAuthoringCounterpart,
   getComponent,
   getSimulationCounterpart,
@@ -54,7 +56,6 @@ import {
 } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
-import { createEntity, entityExists } from './EntityFunctions'
 import { defineQuery } from './QueryFunctions'
 import { S } from './schemas/JSONSchemas'
 import { Kind, Schema } from './schemas/JSONSchemaTypes'

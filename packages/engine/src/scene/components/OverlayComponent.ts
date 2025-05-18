@@ -19,14 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
 
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
 import { Entity } from '@ir-engine/ecs/src/Entity'

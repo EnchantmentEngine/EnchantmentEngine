@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -251,6 +251,8 @@ export const ModerationDetail = ({
           </Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.ipAddress')}</Text>
           <Text className="mb-4">{moderation.ipAddress}</Text>
+          <Text className="mb-4 text-text-primary">{t('admin:components.moderation.reportedUserIp')}</Text>
+          <Text className="mb-4">{moderation.reportedUserIpAddress}</Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.reportDetails')}</Text>
           <Text className="mb-4 mr-4 rounded-lg bg-[#f0f0f0] p-4 font-medium text-[#4a5568] dark:bg-surface-1 dark:text-text-primary">
             {moderation?.reportDetails}

@@ -19,13 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { FrontSide, Material, Uniform, Vector3 } from 'three'
 
-import { defineComponent, getComponent, getOptionalComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, getComponent, getOptionalComponent, useComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
@@ -46,7 +46,7 @@ export const MAX_DITHER_POINTS = 2 //should be equal to the length of the vec3 a
 
 export const TransparencyDitheringRootComponent = defineComponent({
   name: 'TransparencyDitheringRootComponent',
-  schema: S.Object({ materials: S.Array(S.EntityUUID()) })
+  schema: S.Object({ materials: S.Array(S.Entity()) })
 })
 
 export const TransparencyDitheringPluginComponent = defineComponent({
@@ -60,8 +60,7 @@ export const TransparencyDitheringPluginComponent = defineComponent({
     )
   }),
 
-  reactor: () => {
-    const entity = useEntityContext()
+  reactor: ({ entity }) => {
     const material = useComponent(entity, MaterialStateComponent).material
     useEffect(() => {
       const materialComponent = getOptionalComponent(entity, MaterialStateComponent)

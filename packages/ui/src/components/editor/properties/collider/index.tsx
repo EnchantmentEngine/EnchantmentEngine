@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -114,7 +114,7 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
               for (const entity of entities) setComponent(entity, RigidBodyComponent, { type: 'fixed' })
               AuthoringState.snapshotEntities(entities)
               // trigger the rerender for the editor panel
-              SelectionState.updateSelection(entities.map((node) => getComponent(node, UUIDComponent)))
+              SelectionState.updateSelection(entities.map((node) => UUIDComponent.get(node)))
             }}
           >
             <HiPlus />
