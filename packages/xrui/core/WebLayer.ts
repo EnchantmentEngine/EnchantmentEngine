@@ -159,11 +159,11 @@ export class WebLayer {
     return this.currentDOMStateKey ? this.manager.getLayerState(this.currentDOMStateKey) : undefined
   }
 
-  domMetrics: {
-    bounds: Bounds
-    padding: Edges
-    margin: Edges
-    border: Edges
+  domMetrics = {
+    bounds: new Bounds(),
+    padding: new Edges(),
+    margin: new Edges(),
+    border: new Edges()
   }
 
   get depth() {

@@ -316,7 +316,7 @@ export class WebLayer3D extends Object3D {
     return this._webLayer.parentLayer && this.container.manager.layersByElement.get(this._webLayer.parentLayer.element)
   }
 
-  childWebLayers: WebLayer3D[]
+  childWebLayers = [] as WebLayer3D[]
 
   /**
    * Specifies whether or not the DOM layout should be applied.
