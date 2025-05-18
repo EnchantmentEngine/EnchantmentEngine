@@ -81,15 +81,19 @@ import { InteractiveModalState } from '../ui/InteractiveModalView'
  *
  * NOTE - if more states are added we need to modify logic in InteractableSystem.ts for state other than "none"
  */
-export enum XRUIVisibilityOverride {
-  none = 0,
-  on = 1,
-  off = 2
-}
-export enum XRUIActivationType {
-  proximity = 0,
-  hover = 1
-}
+export const XRUIVisibilityOverride = {
+  none: 0,
+  on: 1,
+  off: 2
+} as const
+
+export type XRUIVisibilityOverrideType = (typeof XRUIVisibilityOverride)[keyof typeof XRUIVisibilityOverride]
+export const XRUIActivationType = {
+  proximity: 0,
+  hover: 1
+} as const
+
+export type XRUIActivationTypeType = (typeof XRUIActivationType)[keyof typeof XRUIActivationType]
 
 const xrDistVec3 = new Vector3()
 

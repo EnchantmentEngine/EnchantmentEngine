@@ -35,9 +35,11 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { useVisualScriptRunner } from '../systems/useVisualScriptRunner'
 
-export enum VisualScriptDomain {
-  'ECS' = 'ECS'
-}
+export const VisualScriptDomain = {
+  ECS: 'ECS'
+} as const
+
+export type VisualScriptDomainType = (typeof VisualScriptDomain)[keyof typeof VisualScriptDomain]
 
 export const VisualScriptComponent = defineComponent({
   name: 'VisualScriptComponent',

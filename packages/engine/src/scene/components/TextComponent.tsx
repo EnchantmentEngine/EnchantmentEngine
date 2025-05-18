@@ -165,10 +165,12 @@ type TextMesh = Mesh & {
  * - `Basic`: Maps to THREE.MeshBasicMaterial
  * - `Standard`: Maps to THREE.MeshStandardMaterial
  */
-export enum FontMaterialKind {
-  Basic,
-  Standard
-}
+export const FontMaterialKind = {
+  Basic: 0,
+  Standard: 1
+} as const
+
+export type FontMaterialKindType = (typeof FontMaterialKind)[keyof typeof FontMaterialKind]
 
 /**
  *  @description

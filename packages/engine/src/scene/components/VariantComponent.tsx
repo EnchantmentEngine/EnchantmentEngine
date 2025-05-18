@@ -68,17 +68,21 @@ export type VariantLevel = {
   metadata: Record<string, any>
 }
 
-export enum Heuristic {
-  DISTANCE = 'DISTANCE',
-  MANUAL = 'MANUAL',
-  DEVICE = 'DEVICE'
-}
+export const Heuristic = {
+  DISTANCE: 'DISTANCE',
+  MANUAL: 'MANUAL',
+  DEVICE: 'DEVICE'
+} as const
 
-export enum Devices {
-  DESKTOP = 'DESKTOP',
-  MOBILE = 'MOBILE',
-  XR = 'XR'
-}
+export type HeuristicType = (typeof Heuristic)[keyof typeof Heuristic]
+
+export const Devices = {
+  DESKTOP: 'DESKTOP',
+  MOBILE: 'MOBILE',
+  XR: 'XR'
+} as const
+
+export type DevicesType = (typeof Devices)[keyof typeof Devices]
 
 export const distanceMetadataSchema = S.Object({
   minDistance: S.Union([S.Number(), S.Undefined()], { default: undefined }),
