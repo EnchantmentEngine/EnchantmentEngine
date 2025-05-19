@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Vector2 } from 'three'
 
-import { Entity, setComponent } from '@ir-engine/ecs'
+import { Entity, UUIDComponent, setComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getMutableComponent,
@@ -120,9 +120,10 @@ export const handleFollowCameraScroll = (
 
     if (cameraSettings.poiMode === CameraPoiMode.Enabled) {
       // Filter POI entities to only include those with PoiCameraSettingsComponent
-      const validPoiEntities = cameraSettings.poiEntities.filter((entity) =>
-        hasComponent(entity, PoiCameraSettingsComponent)
-      )
+      const validPoiEntities = cameraSettings.poiEntities.filter((entityId) => {
+        const entity = UUIDComponent.getEntityByUUID(entityId)
+        return entity && hasComponent(entity, PoiCameraSettingsComponent)
+      })
 
       if (validPoiEntities.length > 0) {
         const mutableCameraSettings = getMutableComponent(cameraSettingsEntity, CameraSettingsComponent)
@@ -264,9 +265,15 @@ const execute = () => {
           settings.targetPoiIndex >= 0 &&
           settings.targetPoiIndex < validPoiEntities.length
         ) {
-          // Get current and target POI entities
-          const currentPoiEntity = validPoiEntities[settings.currentPoiIndex]
-          const targetPoiEntity = validPoiEntities[settings.targetPoiIndex]
+          // Get current and target POI entity IDs
+          const currentPoiEntityId = validPoiEntities[settings.currentPoiIndex]
+          const targetPoiEntityId = validPoiEntities[settings.targetPoiIndex]
+
+          // Get the actual entities from the IDs
+          const currentPoiEntity = UUIDComponent.getEntityByUUID(currentPoiEntityId)
+          const targetPoiEntity = UUIDComponent.getEntityByUUID(targetPoiEntityId)
+
+          if (!currentPoiEntity || !targetPoiEntity) return
 
           // Get settings and transforms for both POIs
           const currentPoiSettings = getComponent(currentPoiEntity, PoiCameraSettingsComponent)

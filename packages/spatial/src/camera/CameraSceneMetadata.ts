@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState } from '@ir-engine/hyperflux'
 
-import { Entity } from '@ir-engine/ecs'
 import { CameraPoiMode } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
 import { FollowCameraMode } from './types/FollowCameraMode'
 import { ProjectionType } from './types/ProjectionType'
@@ -46,7 +45,7 @@ export const CameraSettingsState = defineState({
     minPhi: -70,
     maxPhi: 85,
     poiMode: CameraPoiMode.Disabled,
-    poiEntities: [] as Entity[],
+    poiEntities: [] as string[],
     currentPoiIndex: -1,
     targetPoiIndex: -1,
     poiLerpValue: 0,

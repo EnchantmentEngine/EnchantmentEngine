@@ -69,7 +69,7 @@ export const CameraSettingsComponent = defineComponent({
     maxPhi: S.Number({ default: 85 }),
     // New fields for POI camera mode
     poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
-    poiEntities: S.Array(S.Entity(), []),
+    poiEntities: S.Array(S.EntityID(), []),
     currentPoiIndex: S.Number({ default: -1 }),
     targetPoiIndex: S.Number({ default: -1 }),
     poiLerpValue: S.Number({ default: 0 }),
