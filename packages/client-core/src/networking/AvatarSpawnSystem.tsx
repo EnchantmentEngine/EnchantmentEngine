@@ -56,6 +56,7 @@ import { config } from '@ir-engine/common/src/config'
 import { avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState, useChildrenWithComponents } from '@ir-engine/ecs'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
+import { ColliderLoadingState } from '@ir-engine/engine/src/physics/state/ColliderLoadingState'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -102,8 +103,11 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
 
   const userAvatar = userAvatarQuery.data[0]
 
+  const colliderState = useMutableState(ColliderLoadingState)
+  const collidersLoaded = colliderState.allCollidersLoaded.value
+
   useEffect(() => {
-    if (isSpectating || !userAvatar) return
+    if (isSpectating || !userAvatar || !collidersLoaded) return
 
     const rootUUID = getComponent(sceneEntity, UUIDComponent)
     const avatarSpawnPose = getRandomSpawnPoint(userID)
@@ -132,7 +136,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
         dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID: getComponent(selfAvatarEntity, UUIDComponent) }))
       }
     }
-  }, [isSpectating, !!userAvatar])
+  }, [isSpectating, !!userAvatar, collidersLoaded])
 
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
   const errorWithAvatar = useHasComponent(selfAvatarEntity, ErrorComponent)
