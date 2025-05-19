@@ -38,7 +38,6 @@ import {
   UndefinedEntity,
   useChildrenWithComponents,
   useComponent,
-  useEntityContext,
   useOptionalComponent,
   useQuery,
   UUIDComponent
@@ -67,8 +66,8 @@ import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
 import { createReflectionProbeRenderTarget } from '../functions/reflectionProbeFunctions'
 
-const EnvMapReactor = () => {
-  const entity = useEntityContext()
+const EnvMapReactor = (props: { entity: Entity }) => {
+  const { entity } = props
   const envMapComponent = useComponent(entity, EnvMapComponent).type.value
   const materialComponentEntities = useChildrenWithComponents(entity, [MaterialStateComponent])
   return (
