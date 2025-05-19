@@ -23,11 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { Entity, EntityID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import MultiSelect from '../../../../primitives/tailwind/MultiSelect'
+
+type EntityOptionType = { label: string; value: EntityID; entity: Entity }
 
 interface EntityListInputProps {
   value: Entity[]
@@ -40,29 +43,60 @@ interface EntityListInputProps {
 
 export const EntityListInput = ({ value, onChange, filter, placeholder, label, className }: EntityListInputProps) => {
   const { t } = useTranslation()
+  const entityOptions = useHookstate<EntityOptionType[]>([])
 
   // Query all entities
   const allEntities = useQuery([])
 
-  // Filter entities if a filter function is provided
-  const filteredEntities = filter ? allEntities.filter(filter) : allEntities
+  // Update entity options when entities change
+  useEffect(() => {
+    // Filter entities if a filter function is provided
+    const filteredEntities = filter ? allEntities.filter(filter) : allEntities
 
-  // Create options for the MultiSelect component
-  const entityOptions = filteredEntities.map((entity) => {
-    const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
+    // Create options for the MultiSelect component
+    const options = filteredEntities.map((entity) => {
+      const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
 
-    return {
-      label: name,
-      value: entity
+      const entityID = hasComponent(entity, UUIDComponent)
+        ? getComponent(entity, UUIDComponent).entityID
+        : (`${entity}` as EntityID)
+
+      return {
+        label: name,
+        value: entityID,
+        entity
+      }
+    })
+
+    entityOptions.set(options)
+  }, [allEntities.length, filter])
+
+  // Convert selected entities to option values
+  const selectedValues = value.map((entity) => {
+    if (hasComponent(entity, UUIDComponent)) {
+      return getComponent(entity, UUIDComponent).entityID
     }
+    return `${entity}` as EntityID
   })
+
+  // Handle selection change
+  const handleChange = (selected: EntityID[]) => {
+    const selectedEntities = selected
+      .map((id) => {
+        const option = entityOptions.value.find((opt) => opt.value === id)
+        return option ? option.entity : null
+      })
+      .filter(Boolean) as Entity[]
+
+    onChange(selectedEntities)
+  }
 
   return (
     <MultiSelect
       label={label || t('editor:properties.entityList.label')}
-      options={entityOptions}
-      selectedOptions={value}
-      onChange={onChange}
+      options={entityOptions.value.map((opt) => ({ label: opt.label, value: opt.value }))}
+      selectedOptions={selectedValues}
+      onChange={handleChange}
       placeholder={placeholder || t('editor:properties.entityList.placeholder')}
       className={className}
     />

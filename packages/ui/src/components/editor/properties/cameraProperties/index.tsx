@@ -26,8 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { t } from 'i18next'
 import React from 'react'
 
-import { getOptionalComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
 
 import { iterateEntityNode } from '@ir-engine/ecs'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
@@ -44,7 +45,7 @@ import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
 import { Slider } from '../../../../../editor'
 import Button from '../../../../primitives/tailwind/Button'
-import { EntityListInput } from '../../input/EntityList'
+import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import SelectInput from '../../input/Select'
@@ -266,9 +267,10 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
         <>
           <InputGroup name="poiEntities" label={t('editor:properties.cameraSettings.lbl-poiEntities', 'POI Entities')}>
             <EntityListInput
-              value={cameraSettings.poiEntities.value}
+              value={Array.from(cameraSettings.poiEntities.value)}
               onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
               placeholder="Select entities to use as points of interest"
+              filter={(entity: Entity) => hasComponent(entity, PoiCameraSettingsComponent)}
             />
           </InputGroup>
 

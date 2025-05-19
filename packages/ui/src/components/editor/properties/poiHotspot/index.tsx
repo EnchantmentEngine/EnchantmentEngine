@@ -33,7 +33,7 @@ import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { NO_PROXY } from '@ir-engine/hyperflux'
 import { HiOutlineLocationMarker } from 'react-icons/hi'
-import EntityInput from '../../input/Entity'
+import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import StringInput from '../../input/String'
@@ -87,9 +87,13 @@ export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
 
       <InputGroup name="lookAtTarget" label={t('editor:properties.poiHotspot.lbl-lookAtTarget', 'Look At Target')}>
-        <EntityInput
-          value={hotspotSettings.lookAtTarget.value}
-          onChange={commitProperty(PoiHotspotComponent, 'lookAtTarget')}
+        <EntityListInput
+          value={hotspotSettings.lookAtTarget.value ? [hotspotSettings.lookAtTarget.value] : []}
+          onChange={(entities) => {
+            const entity = entities.length > 0 ? entities[0] : null
+            commitProperty(PoiHotspotComponent, 'lookAtTarget')(entity)
+          }}
+          placeholder="Select an entity to look at"
         />
       </InputGroup>
 

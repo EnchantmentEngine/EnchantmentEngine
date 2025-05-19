@@ -26,15 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import { t } from 'i18next'
 import React from 'react'
 
-import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
+import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent'
 
+import { Entity } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { NO_PROXY } from '@ir-engine/hyperflux'
 import { HiOutlineCamera } from 'react-icons/hi'
-import EntityInput from '../../input/Entity'
-import { EntityListInput } from '../../input/EntityList'
+import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import Vector3Input from '../../input/Vector3'
@@ -80,9 +81,13 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
         name="lookAtTarget"
         label={t('editor:properties.poiCameraSettings.lbl-lookAtTarget', 'Look At Target')}
       >
-        <EntityInput
-          value={poiSettings.lookAtTarget.value}
-          onChange={commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')}
+        <EntityListInput
+          value={poiSettings.lookAtTarget.value ? [poiSettings.lookAtTarget.value] : []}
+          onChange={(entities) => {
+            const entity = entities.length > 0 ? entities[0] : null
+            commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')(entity)
+          }}
+          placeholder="Select an entity to look at"
         />
       </InputGroup>
 
@@ -117,9 +122,10 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.poiCameraSettings.lbl-hotspotEntities', 'Hotspot Entities')}
       >
         <EntityListInput
-          value={poiSettings.hotspotEntities.value}
+          value={Array.from(poiSettings.hotspotEntities.value)}
           onChange={commitProperty(PoiCameraSettingsComponent, 'hotspotEntities')}
           placeholder="Select entities to use as hotspots"
+          filter={(entity: Entity) => hasComponent(entity, PoiHotspotComponent)}
         />
       </InputGroup>
     </NodeEditor>
