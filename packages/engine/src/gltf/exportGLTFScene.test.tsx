@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -71,12 +71,10 @@ import {
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { createSceneEntity } from '../scene/functions/createSceneEntity'
 import { exportGLTFScene, materialExtensions } from './exportGLTFScene'
 import { GLTFComponent } from './GLTFComponent'
-import { EEMaterialComponent } from './MaterialExtensionComponents'
 
 describe('exportGLTFScene', () => {
   beforeEach(() => {
@@ -113,7 +111,7 @@ describe('exportGLTFScene', () => {
 
     const position = new Vector3(Math.random(), Math.random(), Math.random())
     setComponent(childEntity, TransformComponent, { position })
-    computeTransformMatrix(childEntity)
+    TransformComponent.computeTransformMatrix(childEntity)
 
     const [gltf] = (await exportGLTFScene(baseEntity, 'dud', 'test/path')) as [GLTF.IGLTF]
 
@@ -175,16 +173,13 @@ describe('exportGLTFScene', () => {
     assert(Array.isArray(gltf.materials))
     assert.strictEqual(gltf.materials.length, 1)
     const material = gltf.materials[0]
-    assert.strictEqual(typeof material.extensions![EEMaterialComponent.jsonID], 'object')
-    const eeMaterial = material.extensions![EEMaterialComponent.jsonID] as SerializedComponentType<
-      typeof EEMaterialComponent
-    >
-    assert.equal(eeMaterial.name, originalMaterial.name)
-    const serializedColor = new Color().fromArray(material.pbrMetallicRoughness!.baseColorFactor!)
-    for (const key of Object.keys(serializedColor)) {
-      assert.strictEqual(serializedColor[key], color[key])
+    assert(material.pbrMetallicRoughness)
+    assert(Array.isArray(material.pbrMetallicRoughness.baseColorFactor))
+    for (let i = 0; i < 3; i++) {
+      const channel = material.pbrMetallicRoughness.baseColorFactor[i]
+      assert.strictEqual(channel, color.toArray()[i])
     }
-    assert.strictEqual(eeMaterial.prototype, 'MeshStandardMaterial')
+    assert.strictEqual(material.name, originalMaterial.name)
   })
 
   it('export multi-material mesh', async () => {
@@ -270,32 +265,19 @@ describe('exportGLTFScene', () => {
     assert(Array.isArray(gltf.materials))
     assert.strictEqual(gltf.materials.length, 2)
 
-    // Verify the first material’s extension data.
+    // Assert that the exported materials have the correct colors.
     const exportedMaterial1 = gltf.materials[0]
-    assert.strictEqual(typeof exportedMaterial1.extensions![EEMaterialComponent.jsonID], 'object')
-    const eeMaterial1 = exportedMaterial1.extensions![EEMaterialComponent.jsonID] as SerializedComponentType<
-      typeof EEMaterialComponent
-    >
-    assert.equal(eeMaterial1.name, material1.name)
-    const serializedColor1 = new Color().fromArray(exportedMaterial1.pbrMetallicRoughness!.baseColorFactor!)
-    for (const key of Object.keys(serializedColor1)) {
-      assert.strictEqual(serializedColor1[key], color1[key])
-    }
-    assert.strictEqual(eeMaterial1.prototype, 'MeshStandardMaterial')
-
-    // Verify the second material’s extension data.
     const exportedMaterial2 = gltf.materials[1]
-    assert.strictEqual(typeof exportedMaterial2.extensions![EEMaterialComponent.jsonID], 'object')
-    const eeMaterial2 = exportedMaterial2.extensions![EEMaterialComponent.jsonID] as SerializedComponentType<
-      typeof EEMaterialComponent
-    >
-    assert.equal(eeMaterial2.name, material2.name)
-    const serializedColor2 = new Color().fromArray(exportedMaterial2.pbrMetallicRoughness!.baseColorFactor!)
-
-    for (const key of Object.keys(serializedColor2)) {
-      assert.strictEqual(serializedColor2[key], color2[key])
+    for (let i = 0; i < 3; i++) {
+      const channel1 = exportedMaterial1.pbrMetallicRoughness!.baseColorFactor![i]
+      const channel2 = exportedMaterial2.pbrMetallicRoughness!.baseColorFactor![i]
+      assert.strictEqual(channel1, color1.toArray()[i])
+      assert.strictEqual(channel2, color2.toArray()[i])
     }
-    assert.strictEqual(eeMaterial2.prototype, 'MeshStandardMaterial')
+
+    // Assert that the exported materials have the correct names.
+    assert.strictEqual(exportedMaterial1.name, material1.name)
+    assert.strictEqual(exportedMaterial2.name, material2.name)
   })
 
   const createDudMesh = () => {
@@ -325,10 +307,10 @@ describe('exportGLTFScene', () => {
       entitySourceID: GLTFComponent.getSourceID(baseEntity),
       entityID: 'material' as EntityID
     })
+    setComponent(materialEntity, NameComponent, material.name)
     setComponent(materialEntity, MaterialStateComponent, {
       material
     })
-    setComponent(materialEntity, NameComponent, material.name)
     setComponent(materialEntity, EntityTreeComponent, { parentEntity: baseEntity })
 
     // Create a mesh using the geometry and material.
@@ -369,15 +351,19 @@ describe('exportGLTFScene', () => {
     assert.strictEqual(gltf.materials.length, 1)
     const exportedMaterial = gltf.materials[0]
 
-    // Check that the exported material contains the EE_material extension.
-    assert.strictEqual(typeof exportedMaterial.extensions![EEMaterialComponent.jsonID], 'object')
+    // Assert that the exported material has the correct name.
+    assert.strictEqual(exportedMaterial.name, 'material-with-map')
 
-    // Verify that the texture URL was correctly serialized into the material's baseColorTexture field.
-    assert.strictEqual(exportedMaterial.pbrMetallicRoughness?.baseColorTexture?.index, 0)
+    // Assert that the exported material has the correct texture map.
+    assert(exportedMaterial.pbrMetallicRoughness)
+    assert(exportedMaterial.pbrMetallicRoughness.baseColorTexture)
+    assert.strictEqual(exportedMaterial.pbrMetallicRoughness.baseColorTexture.index, 0)
 
-    assert.strictEqual(gltf.images?.length, 1)
-    const image = gltf.images[0]
-    assert.strictEqual(image.uri, '../../../public/images/image.png')
+    // Assert that the exported texture has the correct URI.
+    assert(Array.isArray(gltf.images))
+    assert.strictEqual(gltf.images.length, 1)
+    const exportedTexture = gltf.images[0]
+    assert.strictEqual(exportedTexture.uri, '../../../public/images/image.png')
   })
 
   it('export mesh with material texture map into new folder', async () => {
@@ -435,18 +421,14 @@ describe('exportGLTFScene', () => {
     assert(Array.isArray(gltf.materials))
     assert.strictEqual(gltf.materials.length, 1)
     const material = gltf.materials[0]
-    assert.strictEqual(typeof material.extensions![EEMaterialComponent.jsonID], 'object')
-    const eeMaterial = material.extensions![EEMaterialComponent.jsonID] as SerializedComponentType<
-      typeof EEMaterialComponent
-    >
-    assert.equal(eeMaterial.name, originalMaterial.name)
-    const serializedColor = material.pbrMetallicRoughness!.baseColorFactor!
-    // Skip alpha channel
+    assert.strictEqual(material.name, originalMaterial.name)
+
+    assert(material.pbrMetallicRoughness)
+    assert(Array.isArray(material.pbrMetallicRoughness.baseColorFactor))
     for (let i = 0; i < 3; i++) {
-      const channel = serializedColor[i]
+      const channel = material.pbrMetallicRoughness.baseColorFactor[i]
       assert.strictEqual(channel, color.toArray()[i])
     }
-    assert.strictEqual(eeMaterial.prototype, 'MeshStandardMaterial')
   })
 
   it('should export animations', async () => {

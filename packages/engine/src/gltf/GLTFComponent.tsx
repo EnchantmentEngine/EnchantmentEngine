@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -59,6 +59,7 @@ import { getMutableState, getState, NO_PROXY_STEALTH, none, State, useHookstate 
 import { LayerComponent, useAncestorWithComponents } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
+import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
@@ -71,9 +72,9 @@ import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
-import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
+import { migrateEEMaterial } from './migrateEEMaterial'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
@@ -274,6 +275,7 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     if (!sceneLoaded || !scene) return
     setComponent(entity, SceneComponent, { active: true })
+    setComponent(entity, ActiveHelperComponent, { volumeEnabled: true })
   }, [sceneLoaded, !!scene])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
@@ -444,7 +446,7 @@ export const loadGLTFFile = (
     if (signal && signal.aborted) return
 
     const textDecoder = new TextDecoder()
-    let json: GLTF.IGLTF | SceneJsonType
+    let json: GLTF.IGLTF
     let body: ArrayBuffer | null = null
 
     try {
@@ -464,7 +466,11 @@ export const loadGLTFFile = (
         json = data
       }
 
-      onLoad(parseStorageProviderURLs(JSON.parse(JSON.stringify(json))), body)
+      json = JSON.parse(JSON.stringify(json))
+
+      json = migrateEEMaterial(json)
+
+      onLoad(parseStorageProviderURLs(json), body)
     } catch (error) {
       if (onError) onError(error)
       return

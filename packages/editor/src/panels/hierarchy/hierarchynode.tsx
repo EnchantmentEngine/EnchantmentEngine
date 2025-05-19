@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -49,7 +49,6 @@ import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GLTFLoaderFunctions } from '@ir-engine/engine/src/gltf/GLTFLoaderFunctions'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, getState, none, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
@@ -277,9 +276,6 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     if (event.detail === 1) {
       // Exit click placement mode when anything in the hierarchy is selected
       getMutableState(EditorHelperState).placementMode.set(PlacementMode.DRAG)
-      // Deselect material entity since we've just clicked on a hierarchy node
-      getMutableState(MaterialSelectionState).selectedMaterial.set(null)
-      const uuid = UUIDComponent.get(entity)
       if (usesCtrlKey() ? event.ctrlKey : event.metaKey) {
         if (entity === rootEntity) return
         EditorControlFunctions.toggleSelection([uuid])

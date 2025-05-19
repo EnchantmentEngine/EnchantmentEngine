@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -31,6 +31,7 @@ import {
   ModelTransformStatus
 } from '@ir-engine/common/src/model/ModelTransformFunctions'
 import {
+  Entity,
   getAncestorWithComponents,
   iterateEntityNode,
   removeEntityNodeRecursively,
@@ -42,7 +43,7 @@ import {
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
-import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useTranslation } from 'react-i18next'
@@ -52,6 +53,7 @@ import exportGLTF from '../../functions/exportGLTF'
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { Button } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
@@ -59,6 +61,7 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { HiPlus, HiXMark } from 'react-icons/hi2'
 import { MdClose } from 'react-icons/md'
 import { FileDataType } from '../../constants/AssetTypes'
+import { EditorState } from '../../services/EditorServices'
 import GLTFTransformProperties from '../properties/GLTFTransformProperties'
 
 const progressCaptions: Record<ModelTransformStatus, string> = {
@@ -73,6 +76,7 @@ const createLODVariants = async (
   lods: LODVariantDescriptor[],
   heuristic: Heuristic,
   exportCombined = false,
+  parentEntity: Entity,
   onProgress: (
     progress: number,
     status: ModelTransformStatus,
@@ -97,8 +101,7 @@ const createLODVariants = async (
 
   if (exportCombined) {
     const firstLODParams = lods[0].params
-
-    const result = createSceneEntity('container')
+    const result = createSceneEntity('container', parentEntity)
     const variant = createSceneEntity('LOD Variant', result)
     setComponent(variant, VariantComponent, {
       levels: lods.map((lod, lodIndex) => ({
@@ -150,11 +153,26 @@ export default function ModelCompressionPanel({
       progress: 0,
       caption: ''
     })
-    for (const file of selectedFiles) {
-      await compressModel(file)
+    try {
+      for (const file of selectedFiles) {
+        await compressModel(file)
+      }
+      await refreshDirectory()
+      NotificationService.dispatchNotify(t('editor:properties.model.transform.compressionComplete'), {
+        variant: 'success',
+        autoHideDuration: 3000
+      })
+    } catch (error) {
+      // Notify user of error
+      NotificationService.dispatchNotify(t('editor:properties.model.transform.compressionError'), {
+        variant: 'error'
+      })
+      console.error('Error during model compression:', error)
+    } finally {
+      compressionLoading.set(false)
+      // Close the modal when compression is complete
+      ModalState.closeModal()
     }
-    await refreshDirectory()
-    compressionLoading.set(false)
   }
 
   const applyPreset = (preset: ModelTransformParameters) => {
@@ -209,6 +227,7 @@ export default function ModelCompressionPanel({
       fileLODs,
       Heuristic.DISTANCE,
       exportCombined,
+      getState(EditorState).rootEntity,
       (progress, status, numerator, denominator) => {
         const caption = t(progressCaptions[status]!, {
           numerator: numerator + 1,

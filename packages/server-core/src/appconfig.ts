@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -179,7 +179,11 @@ const server = {
     : 10,
   namespace: (process.env.NAMESPACE as string) || 'default',
   requireAgeVerification:
-    typeof process.env.REQUIRE_AGE_VERIFICATION === 'string' ? process.env.REQUIRE_AGE_VERIFICATION === 'true' : true
+    typeof process.env.REQUIRE_AGE_VERIFICATION === 'string' ? process.env.REQUIRE_AGE_VERIFICATION === 'true' : true,
+  ipGeolocation: {
+    apiUrl: process.env.IP_GEOLOCATION_API_URL || 'https://api.ipinfo.io/lite',
+    apiToken: process.env.IP_GEOLOCATION_API_TOKEN || ''
+  }
 }
 const obj = kubernetesEnabled ? { protocol: 'https', hostname: server.hostname } : { protocol: 'https', ...server }
 server.url = process.env.SERVER_URL || url.format(obj)
