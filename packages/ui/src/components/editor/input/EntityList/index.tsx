@@ -38,8 +38,8 @@ import SelectInput from '../Select'
 type EntityOptionType = { label: string; value: EntityID; entity: Entity }
 
 interface EntityListInputProps {
-  value: Entity[]
-  onChange: (entities: Entity[]) => void
+  value: EntityID[]
+  onChange: (entityIDs: EntityID[]) => void
   filter?: (entity: Entity) => boolean
   placeholder?: string
   label?: string
@@ -78,16 +78,17 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
 
   // Handle adding a new entity to the list
   const handleAddEntity = () => {
-    // Add an empty entity slot that will be filled via dropdown
-    const newEntities = [...value, 0 as Entity] // Using 0 as a placeholder
-    onChange(newEntities)
+    // Add an empty entity ID slot that will be filled via dropdown
+    // Using an empty string as a placeholder
+    const newEntityIDs = [...value, '' as EntityID]
+    onChange(newEntityIDs)
   }
 
   // Handle removing an entity from the list
   const handleRemoveEntity = (index: number) => {
-    const newEntities = [...value]
-    newEntities.splice(index, 1)
-    onChange(newEntities)
+    const newEntityIDs = [...value]
+    newEntityIDs.splice(index, 1)
+    onChange(newEntityIDs)
   }
 
   // Handle changing an entity in the list
@@ -95,25 +96,9 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     const option = entityOptions.value.find((opt) => opt.value === entityId)
     if (!option) return
 
-    const newEntities = [...value]
-    newEntities[index] = option.entity
-    onChange(newEntities)
-  }
-
-  // Get entity name for display
-  const getEntityName = (entity: Entity) => {
-    if (hasComponent(entity, NameComponent)) {
-      return getComponent(entity, NameComponent)
-    }
-    return `Entity ${entity}`
-  }
-
-  // Get entity ID for the dropdown
-  const getEntityId = (entity: Entity): string | number => {
-    if (hasComponent(entity, UUIDComponent)) {
-      return getComponent(entity, UUIDComponent).entityID
-    }
-    return `${entity}`
+    const newEntityIDs = [...value]
+    newEntityIDs[index] = option.value
+    onChange(newEntityIDs)
   }
 
   return (
@@ -127,14 +112,14 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
           </Text>
         )}
 
-        {value.map((entity, index) => (
+        {value.map((entityID, index) => (
           <div key={index} className="flex items-center space-x-2">
             <SelectInput
               options={entityOptions.value.map((opt) => ({
                 label: opt.label,
                 value: opt.value
               }))}
-              value={getEntityId(entity)}
+              value={entityID}
               onChange={(value) => handleChangeEntity(index, value)}
               width="full"
             />

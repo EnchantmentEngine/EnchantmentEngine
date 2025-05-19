@@ -89,9 +89,9 @@ export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="lookAtTarget" label={t('editor:properties.poiHotspot.lbl-lookAtTarget', 'Look At Target')}>
         <EntityListInput
           value={hotspotSettings.lookAtTarget.value ? [hotspotSettings.lookAtTarget.value] : []}
-          onChange={(entities) => {
-            const entity = entities.length > 0 ? entities[0] : null
-            commitProperty(PoiHotspotComponent, 'lookAtTarget')(entity)
+          onChange={(entityIDs) => {
+            const entityID = entityIDs.length > 0 ? entityIDs[0] : null
+            commitProperty(PoiHotspotComponent, 'lookAtTarget')(entityID)
           }}
           placeholder="Select an entity to look at"
         />

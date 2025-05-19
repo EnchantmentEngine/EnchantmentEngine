@@ -83,9 +83,9 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
       >
         <EntityListInput
           value={poiSettings.lookAtTarget.value ? [poiSettings.lookAtTarget.value] : []}
-          onChange={(entities) => {
-            const entity = entities.length > 0 ? entities[0] : null
-            commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')(entity)
+          onChange={(entityIDs) => {
+            const entityID = entityIDs.length > 0 ? entityIDs[0] : null
+            commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')(entityID)
           }}
           placeholder="Select an entity to look at"
           className="w-full"
@@ -123,7 +123,7 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.poiCameraSettings.lbl-hotspotEntities', 'Hotspot Entities')}
       >
         <EntityListInput
-          value={Array.from(poiSettings.hotspotEntities.value)}
+          value={poiSettings.hotspotEntities.value}
           onChange={commitProperty(PoiCameraSettingsComponent, 'hotspotEntities')}
           placeholder="Select entities to use as hotspots"
           filter={(entity: Entity) => hasComponent(entity, PoiHotspotComponent)}
