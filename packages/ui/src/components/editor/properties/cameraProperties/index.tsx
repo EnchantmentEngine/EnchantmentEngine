@@ -271,6 +271,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
               placeholder="Select entities to use as points of interest"
               filter={(entity: Entity) => hasComponent(entity, PoiCameraSettingsComponent)}
+              className="w-full"
             />
           </InputGroup>
 

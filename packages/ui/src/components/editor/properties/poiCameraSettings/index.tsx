@@ -88,6 +88,7 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
             commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')(entity)
           }}
           placeholder="Select an entity to look at"
+          className="w-full"
         />
       </InputGroup>
 
@@ -126,6 +127,7 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
           onChange={commitProperty(PoiCameraSettingsComponent, 'hotspotEntities')}
           placeholder="Select entities to use as hotspots"
           filter={(entity: Entity) => hasComponent(entity, PoiHotspotComponent)}
+          className="w-full"
         />
       </InputGroup>
     </NodeEditor>

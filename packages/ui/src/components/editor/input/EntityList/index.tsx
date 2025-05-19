@@ -28,7 +28,12 @@ import { useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import MultiSelect from '../../../../primitives/tailwind/MultiSelect'
+import { FaPlus } from 'react-icons/fa'
+import { HiMiniXMark } from 'react-icons/hi2'
+import Button from '../../../../primitives/tailwind/Button'
+import Label from '../../../../primitives/tailwind/Label'
+import Text from '../../../../primitives/tailwind/Text'
+import SelectInput from '../Select'
 
 type EntityOptionType = { label: string; value: EntityID; entity: Entity }
 
@@ -53,7 +58,7 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     // Filter entities if a filter function is provided
     const filteredEntities = filter ? allEntities.filter(filter) : allEntities
 
-    // Create options for the MultiSelect component
+    // Create options for the Select components
     const options = filteredEntities.map((entity) => {
       const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
 
@@ -71,35 +76,82 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     entityOptions.set(options)
   }, [allEntities.length, filter])
 
-  // Convert selected entities to option values
-  const selectedValues = value.map((entity) => {
+  // Handle adding a new entity to the list
+  const handleAddEntity = () => {
+    // Add an empty entity slot that will be filled via dropdown
+    const newEntities = [...value, 0 as Entity] // Using 0 as a placeholder
+    onChange(newEntities)
+  }
+
+  // Handle removing an entity from the list
+  const handleRemoveEntity = (index: number) => {
+    const newEntities = [...value]
+    newEntities.splice(index, 1)
+    onChange(newEntities)
+  }
+
+  // Handle changing an entity in the list
+  const handleChangeEntity = (index: number, entityId: string | number) => {
+    const option = entityOptions.value.find((opt) => opt.value === entityId)
+    if (!option) return
+
+    const newEntities = [...value]
+    newEntities[index] = option.entity
+    onChange(newEntities)
+  }
+
+  // Get entity name for display
+  const getEntityName = (entity: Entity) => {
+    if (hasComponent(entity, NameComponent)) {
+      return getComponent(entity, NameComponent)
+    }
+    return `Entity ${entity}`
+  }
+
+  // Get entity ID for the dropdown
+  const getEntityId = (entity: Entity): string | number => {
     if (hasComponent(entity, UUIDComponent)) {
       return getComponent(entity, UUIDComponent).entityID
     }
-    return `${entity}` as EntityID
-  })
-
-  // Handle selection change
-  const handleChange = (selected: EntityID[]) => {
-    const selectedEntities = selected
-      .map((id) => {
-        const option = entityOptions.value.find((opt) => opt.value === id)
-        return option ? option.entity : null
-      })
-      .filter(Boolean) as Entity[]
-
-    onChange(selectedEntities)
+    return `${entity}`
   }
 
   return (
-    <MultiSelect
-      label={label || t('editor:properties.entityList.label')}
-      options={entityOptions.value.map((opt) => ({ label: opt.label, value: opt.value }))}
-      selectedOptions={selectedValues}
-      onChange={handleChange}
-      placeholder={placeholder || t('editor:properties.entityList.placeholder')}
-      className={className}
-    />
+    <div className={`flex flex-col ${className}`}>
+      {label && <Label>{label}</Label>}
+
+      <div className="mt-2 flex max-h-[300px] flex-col space-y-2 overflow-y-auto">
+        {value.length === 0 && (
+          <Text className="text-sm italic text-gray-400">
+            {placeholder || t('editor:properties.entityList.placeholder')}
+          </Text>
+        )}
+
+        {value.map((entity, index) => (
+          <div key={index} className="flex items-center space-x-2">
+            <SelectInput
+              options={entityOptions.value.map((opt) => ({
+                label: opt.label,
+                value: opt.value
+              }))}
+              value={getEntityId(entity)}
+              onChange={(value) => handleChangeEntity(index, value)}
+              width="full"
+            />
+            <Button onClick={() => handleRemoveEntity(index)} className="flex-shrink-0">
+              <HiMiniXMark className="h-5 w-5" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex justify-end">
+        <Button variant="secondary" size="sm" onClick={handleAddEntity} className="flex items-center gap-1">
+          <FaPlus className="h-3 w-3" />
+          <span>{t('editor:properties.entityList.addEntity', 'Add Entity')}</span>
+        </Button>
+      </div>
+    </div>
   )
 }
 
