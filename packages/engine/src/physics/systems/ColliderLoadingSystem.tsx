@@ -43,12 +43,8 @@ const execute = () => {
     if (!colliderState.pendingColliders.value.has(entity)) {
       ColliderLoadingState.registerPendingCollider(entity)
     }
-
-    // Check if the collider is loaded
-    if (!colliderState.pendingColliders.value.has(entity)) {
-      ColliderLoadingState.markColliderLoaded(entity)
-    }
   }
+  ColliderLoadingState.checkCollidersLoaded()
 }
 
 const SceneLoadingReactor = (props: { sceneEntity: Entity }) => {

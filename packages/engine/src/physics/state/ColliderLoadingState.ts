@@ -36,23 +36,18 @@ export const ColliderLoadingState = defineState({
   // Helper functions
   registerPendingCollider: (entity: Entity) => {
     const state = getMutableState(ColliderLoadingState)
-    state.pendingColliders.merge({ [entity]: false })
+    state.pendingColliders.merge({ [entity]: true })
     state.allCollidersLoaded.set(false)
   },
 
-  markColliderLoaded: (entity: Entity) => {
+  checkCollidersLoaded: () => {
     const state = getMutableState(ColliderLoadingState)
-    if (state.pendingColliders.value.has(entity)) {
-      state.pendingColliders.merge({ [entity]: true })
+    const allLoaded = Array.from(state.pendingColliders.value.keys()).every(
+      (e) => state.pendingColliders[e].value === true
+    )
 
-      // Check if all colliders are now loaded
-      const allLoaded = Array.from(state.pendingColliders.value.keys()).every(
-        (e) => state.pendingColliders[e].value === true
-      )
-
-      if (allLoaded) {
-        state.allCollidersLoaded.set(true)
-      }
+    if (allLoaded) {
+      state.allCollidersLoaded.set(true)
     }
   },
 
