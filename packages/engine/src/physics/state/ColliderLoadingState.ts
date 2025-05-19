@@ -40,15 +40,28 @@ export const ColliderLoadingState = defineState({
     state.allCollidersLoaded.set(false)
   },
 
-  checkCollidersLoaded: () => {
+  checkCollidersLoaded: (entities: Entity[]) => {
     const state = getMutableState(ColliderLoadingState)
+    // Check if all colliders are now loaded
     const allLoaded = Array.from(state.pendingColliders.value.keys()).every(
       (e) => state.pendingColliders[e].value === true
     )
+    // make sure all entites from query are in pending colliders
+    entities.forEach((entity) => {
+      if (!state.pendingColliders.value.has(entity)) {
+        return false
+      }
+    })
 
     if (allLoaded) {
       state.allCollidersLoaded.set(true)
     }
+    return state.allCollidersLoaded.value
+  },
+
+  setAllCollidersLoaded: () => {
+    const state = getMutableState(ColliderLoadingState)
+    state.allCollidersLoaded.set(true)
   },
 
   reset: () => {
