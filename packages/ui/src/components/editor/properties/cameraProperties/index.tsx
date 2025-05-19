@@ -26,11 +26,11 @@ Infinite Reality Engine. All Rights Reserved.
 import { t } from 'i18next'
 import React from 'react'
 
-import { Entity, getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
 
-import { iterateEntityNode } from '@ir-engine/ecs'
+import { Entity, iterateEntityNode } from '@ir-engine/ecs'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import {
   EditorComponentType,
