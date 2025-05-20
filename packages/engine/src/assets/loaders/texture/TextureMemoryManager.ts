@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { getState } from '@ir-engine/hyperflux'
 import { CompressedTexture, Texture } from 'three'
+import { AssetLoaderState } from '../../state/AssetLoaderState'
 import { ResourceCache } from '../base/ResourceCache'
 import { TextureLoader } from './TextureLoader'
 
@@ -68,8 +70,8 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
             height: mip.height,
             data: Array.from(new Uint8Array(mip.data)) // Convert to regular array for serialization
           })),
-          width: compressedTexture.image.width,
-          height: compressedTexture.image.height,
+          width: data.width,
+          height: data.height,
           format: compressedTexture.format,
           type: compressedTexture.type
         }
@@ -156,11 +158,8 @@ export async function restoreTextureData(texture: Texture): Promise<boolean> {
 
           // Restore mipmaps and dimensions
           compressedTexture.mipmaps = mipmaps
-          if (textureData.width) compressedTexture.image.width = textureData.width
-          if (textureData.height) compressedTexture.image.height = textureData.height
-
-          // Mark the texture as needing an update
-          texture.needsUpdate = true
+          if (textureData.width) compressedTexture.source.data.width = textureData.width
+          if (textureData.height) compressedTexture.source.data.height = textureData.height
           return true
         }
       } catch (e) {
@@ -197,21 +196,22 @@ export async function restoreTextureData(texture: Texture): Promise<boolean> {
  * @param texture The texture to load
  * @returns A promise that resolves to true if loading was successful
  */
-async function loadFromURL(texture: Texture): Promise<boolean> {
+async function loadFromURL(texture: Texture | CompressedTexture): Promise<boolean> {
   const url = texture.userData?.url
   if (!url) return false
 
   try {
     // Create a new TextureLoader instance
-    const loader = new TextureLoader()
+    const loader = 'isCompressedTexture' in texture ? getState(AssetLoaderState).ktx2Loader : new TextureLoader()
 
     return new Promise<boolean>((resolve) => {
       loader.load(
         url,
         // onLoad
-        (newTexture: Texture) => {
+        (newTexture: Texture | CompressedTexture) => {
           // Copy the new texture's source data to our texture
           texture.source.data = newTexture.source.data
+          texture.mipmaps = newTexture.mipmaps
           texture.needsUpdate = true
           resolve(true)
         },

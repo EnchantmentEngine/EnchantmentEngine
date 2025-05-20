@@ -312,10 +312,6 @@ const resourceCallbacks = {
           }
         }
       }
-      if ((asset as CompressedTexture).isCompressedTexture && discardUponUpload) {
-        // for some reason, this is necessary for the onUpdate to trigger
-        asset.needsUpdate = true
-      }
       //Compressed texture size
       if (asset.mipmaps[0]) {
         let size = 0
@@ -616,7 +612,6 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
-  /** @todo disposal currently causes errors */
   const entityHasAuthoringUpstream =
     getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
 

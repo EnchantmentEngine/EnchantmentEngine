@@ -172,7 +172,7 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
     const material = materialState.value as MeshStandardMaterial
     material.envMap = backgroundComponent.value.clone() as any
-  }, [backgroundComponent?.value, materialState])
+  }, [!!backgroundComponent?.value, !!materialState])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
