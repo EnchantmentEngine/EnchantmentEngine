@@ -35,6 +35,8 @@ import { TextureLoader } from './TextureLoader'
  */
 const TEXTURE_CACHE_PREFIX = 'texture_'
 
+const cachePromises = {} as Record<string, Promise<boolean>>
+
 /**
  * Offload texture data from memory after it's been uploaded to the GPU
  * @param texture The texture to offload
@@ -56,7 +58,12 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
   texture.mipmaps = []
   texture.source.data = {}
 
-  try {
+  const cachePromise = cachePromises[url]
+  if (cachePromise) return cachePromise
+
+  if (await ResourceCache.has(`${TEXTURE_CACHE_PREFIX}${url}`)) return false
+
+  const promise = new Promise<boolean>(async (resolve, reject) => {
     // For compressed textures, store mipmaps
     if ((texture as CompressedTexture).isCompressedTexture) {
       const compressedTexture = texture as CompressedTexture
@@ -78,8 +85,9 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
 
         // Store in ResourceCache
         const encoded = new TextEncoder().encode(JSON.stringify(textureData))
-        await ResourceCache.put(`${TEXTURE_CACHE_PREFIX}${url}`, encoded.buffer as ArrayBuffer).catch((err) => {
+        await ResourceCache!.put(`${TEXTURE_CACHE_PREFIX}${url}`, encoded.buffer as ArrayBuffer).catch((err) => {
           console.error(`Error storing texture data: ${err}`)
+          reject(err)
         })
       }
     } else if (data instanceof ImageBitmap) {
@@ -91,7 +99,7 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
         const blob = await canvas.convertToBlob({ type: 'image/png' })
         const buffer = await blob.arrayBuffer()
         // Store in ResourceCache
-        await ResourceCache.put(`${TEXTURE_CACHE_PREFIX}${url}`, buffer)
+        await ResourceCache!.put(`${TEXTURE_CACHE_PREFIX}${url}`, buffer)
         // Close the ImageBitmap to free memory
         data.close()
       }
@@ -99,11 +107,21 @@ export async function offloadTextureData(texture: Texture): Promise<boolean> {
       console.warn('Texture data is not a supported type, cannot offload')
     }
 
-    return true
-  } catch (error) {
-    console.error(`Error offloading texture data: ${error}`)
-    return false
-  }
+    resolve(true)
+  })
+
+  promise.catch((err) => {
+    console.error(`Error offloading texture data: ${err}`)
+    delete cachePromises[url]
+  })
+
+  promise.then(() => {
+    delete cachePromises[url]
+  })
+
+  cachePromises[url] = promise
+
+  return promise
 }
 
 /**
