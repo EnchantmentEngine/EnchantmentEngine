@@ -248,14 +248,12 @@ export const InteractableComponent = defineComponent({
     uiEntity: S.Entity({ serialized: false }),
     label: S.String({ default: 'E' }),
     uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, {
-      $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'none', 'on', 'off'",
+      $comment: "A number enum, where: 0 represents 'none', 1 represents 'on', 2 represents 'off'",
       default: XRUIVisibilityOverride.none,
       serialized: false
     }),
     uiActivationType: S.Enum(XRUIActivationType, {
-      $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'proximity', 'hover'",
+      $comment: "A number enum, where: 0 represents 'proximity', 1 represents 'hover'",
       default: XRUIActivationType.proximity
     }),
     activationDistance: S.Number({ default: 2 }),

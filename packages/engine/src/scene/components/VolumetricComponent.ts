@@ -214,8 +214,7 @@ export const VolumetricComponent = defineComponent({
       userTarget: S.Number({ default: -1 })
     }),
     geometryType: S.Enum(GeometryType, {
-      $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'Corto', 'Draco', 'Unify'",
+      $comment: "A number enum, where: 0 represents 'Corto', 1 represents 'Draco', 2 represents 'Unify'",
       default: GeometryType.Corto
     }),
     textureBuffer: S.Type<Map<string, Map<string, CompressedTexture[]>>>({
