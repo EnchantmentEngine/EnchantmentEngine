@@ -296,16 +296,13 @@ const resourceCallbacks = {
                 setTimeout(checkSync)
               } else {
                 gl.deleteSync(sync)
-                resource.metadata.merge({ onGPU: true, discarded: true })
-                offloadTextureData(asset).catch((err) => {
-                  console.error('Failed to offload texture data:', err)
-                  // Fallback to the old method if offloading fails
-                  asset.source.data.close?.()
-                  asset.source.data = {}
-                  if ((asset as CompressedTexture).isCompressedTexture) {
-                    ;(asset as CompressedTexture).mipmaps = []
-                  }
-                })
+                offloadTextureData(asset)
+                  .then(() => {
+                    resource.metadata.merge({ onGPU: true, discarded: true })
+                  })
+                  .catch((err) => {
+                    console.error(err)
+                  })
               }
             }
             setTimeout(checkSync)
