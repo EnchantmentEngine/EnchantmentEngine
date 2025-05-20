@@ -108,12 +108,24 @@ export const S = {
   Enum: <Value extends TLiteralValue>(
     item: Record<string, Value>,
     options?: TUnionSchema<TLiteralSchema<Value>[]>['options']
-  ) =>
-    S.LiteralUnion(Object.values(item), {
-      default: Object.values(item)[0],
+  ) => {
+    const defaultItem = Object.values(item)[0]
+    let deserialize
+    if (typeof defaultItem === 'string') {
+      // Handle migration from enum index to object value, eventually remove this
+      deserialize = (curr, value) => {
+        if (typeof value === 'number') return Object.values(item)[value]
+        return value
+      }
+    }
+
+    return S.LiteralUnion(Object.values(item), {
+      default: defaultItem,
+      deserialize: deserialize,
       ...options,
       metadata: { objectRef: item, ...options?.metadata }
-    }),
+    })
+  },
 
   /**
    * Schema that infers as a literal value
