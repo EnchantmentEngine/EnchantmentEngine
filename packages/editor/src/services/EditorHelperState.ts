@@ -59,6 +59,7 @@ export const EditorHelperState = defineState({
     scaleSnap: 0.1,
     placementMode: PlacementMode.DRAG,
     gizmoEnabled: true,
+    nodeIconEnabled: true,
     gridVisibility: false,
     gridHeight: 0,
     showGlbChildren: true
@@ -69,7 +70,8 @@ export const EditorHelperState = defineState({
     'rotationSnap',
     'scaleSnap',
     'gridVisibility',
-    'gridHeight'
+    'gridHeight',
+    'nodeIconEnabled'
   ]),
   reactor: () => {
     const [showGlbChildrenFlag] = useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.ShowGlbChildren])

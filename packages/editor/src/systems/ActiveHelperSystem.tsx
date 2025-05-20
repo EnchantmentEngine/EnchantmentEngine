@@ -31,7 +31,6 @@ import {
   getAuthoringCounterpart,
   getComponent,
   setComponent,
-  SimulationLayerComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -71,7 +70,7 @@ import { SelectionState } from '../services/SelectionServices'
 import { transformGizmoControllerQuery } from './TransformGizmoSystem'
 
 const _raycaster = new Raycaster() // for heuristic
-_raycaster.layers.enable(ObjectLayers.NodeIcon) // only icons
+_raycaster.layers.enable(ObjectLayers.Gizmos) // only icons
 _raycaster.firstHitOnly = true
 
 const inputObjectsQuery = defineQuery([InputComponent, VisibleComponent, ObjectComponent])
@@ -106,6 +105,7 @@ const ActiveHelperReactor = () => {
   const componentStudioIcon = getState(ComponentStudioIconState)
   const engineState = useHookstate(getMutableState(EngineState))
   const selectedEntities = SelectionState.useSelectedEntities() // all authoring layer
+  const editorHelperState = useHookstate(getMutableState(EditorHelperState)) // all authoring layer
 
   const entityComponents = getAllComponents(entity)
   const targetComponent: any = entityComponents.find((component) =>
@@ -125,26 +125,29 @@ const ActiveHelperReactor = () => {
       const lineEntitites = setupGizmo(
         getState(ReferenceSpaceState).originEntity,
         iconGizmoYHelper,
-        ObjectLayers.NodeIcon
+        ObjectLayers.Gizmos
       )
       activeHelperComponent.lineEntities.set(lineEntitites)
 
       if (getComponent(entity, ActiveHelperComponent).directional) {
-        const directionalEntities = setupGizmo(entity, iconGizmoArrow, ObjectLayers.NodeIcon)
+        const directionalEntities = setupGizmo(entity, iconGizmoArrow, ObjectLayers.Gizmos)
         activeHelperComponent.directionalEntities.set(directionalEntities)
       }
 
       if (getComponent(entity, ActiveHelperComponent).volumeEnabled) {
         setComponent(entity, BoundingBoxComponent)
       }
+
       return iconGizmo
     },
     activeHelperComponent.enabled.value,
-    ObjectLayerMasks.NodeIcon,
+    ObjectLayerMasks.Gizmos,
     'icon-helper'
   )
 
-  setComponent(entity, ActiveHelperComponent, { helperIconGizmo: studioIcon })
+  useEffect(() => {
+    activeHelperComponent.helperIconGizmo.set(studioIcon)
+  }, [studioIcon])
 
   InputComponent.useExecuteWithInput(
     () => {
@@ -198,8 +201,10 @@ const ActiveHelperReactor = () => {
         setVisibleComponent(entity, visible)
       })
     }
-    setGizmoVisibility(engineState.isEditing.value)
-  }, [engineState.isEditing])
+    setGizmoVisibility(
+      engineState.isEditing.value && editorHelperState.nodeIconEnabled.value && activeHelperComponent.enabled.value
+    )
+  }, [engineState.isEditing, editorHelperState.nodeIconEnabled, activeHelperComponent.enabled])
   return null
 }
 
@@ -208,12 +213,7 @@ const reactor = () => {
     InputHeuristicState.addHeuristic(1, studioIconGizmoInputHeuristic as HeuristicFunctions)
   }, [])
 
-  return (
-    <QueryReactor
-      Components={[ActiveHelperComponent, SimulationLayerComponent]}
-      ChildEntityReactor={ActiveHelperReactor}
-    />
-  )
+  return <QueryReactor Components={[ActiveHelperComponent]} ChildEntityReactor={ActiveHelperReactor} />
 }
 
 export const ActiveHelperSystem = defineSystem({

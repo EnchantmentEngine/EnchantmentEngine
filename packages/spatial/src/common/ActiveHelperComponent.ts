@@ -28,7 +28,6 @@ import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 export const ActiveHelperComponent = defineComponent({
   name: 'ActiveHelperComponent',
-  jsonID: 'EE_activeHelper',
   schema: S.Object({
     enabled: S.Bool({ default: true }),
     helperIconGizmo: S.Entity(UndefinedEntity), // manages the icon and minor gizmo
@@ -41,8 +40,5 @@ export const ActiveHelperComponent = defineComponent({
     volumeEnabled: S.Bool({ default: false }),
     volumeControlled: S.Bool({ default: true }),
     sizeFactor: S.Number({ default: 0.25 })
-  }),
-  reactor: () => {
-    return null
-  }
+  })
 })

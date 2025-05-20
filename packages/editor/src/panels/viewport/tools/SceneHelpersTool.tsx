@@ -50,7 +50,7 @@ export default function SceneHelpersTool() {
   const volumeVisibilty = useHookstate(VolumeVisibility.Auto) as any
 
   useEffect(() => {
-    setVolumeVisibility(volumeVisibilty)
+    setVolumeVisibility(volumeVisibilty.value)
   }, [volumeVisibilty])
 
   return (
@@ -79,8 +79,8 @@ export default function SceneHelpersTool() {
         position="bottom"
       >
         <ViewportButton
-          onClick={() => rendererState.nodeIconVisibility.set(!rendererState.nodeIconVisibility.value)}
-          selected={rendererState.nodeIconVisibility.value}
+          onClick={() => editorHelperState.nodeIconEnabled.set(!editorHelperState.nodeIconEnabled.value)}
+          selected={editorHelperState.nodeIconEnabled.value}
           icon={SunMd}
         />
       </Tooltip>

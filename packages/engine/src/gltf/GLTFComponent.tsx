@@ -275,7 +275,7 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     if (!sceneLoaded || !scene) return
     setComponent(entity, SceneComponent, { active: true })
-    setComponent(entity, ActiveHelperComponent, { volumeEnabled: true })
+    setComponent(getSimulationCounterpart(entity), ActiveHelperComponent, { volumeEnabled: true })
   }, [sceneLoaded, !!scene])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
