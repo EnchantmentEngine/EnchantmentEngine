@@ -164,6 +164,12 @@ const loadDependencies = {
       key: 'dependencies',
       eval: (dependencies?: ComponentDependencies) => componentDependenciesLoaded(dependencies)
     }
+  ],
+  ['EE_collider']: [
+    {
+      key: 'shape',
+      eval: (shape) => !!shape
+    }
   ]
 } as Record<string, DependencyEval[]>
 

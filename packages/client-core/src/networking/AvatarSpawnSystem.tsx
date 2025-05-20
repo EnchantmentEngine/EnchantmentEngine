@@ -55,7 +55,6 @@ import { config } from '@ir-engine/common/src/config'
 import { avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState, useChildrenWithComponents } from '@ir-engine/ecs'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import { ColliderLoadingState } from '@ir-engine/engine/src/physics/state/ColliderLoadingState'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -101,12 +100,10 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   })
 
   const userAvatar = userAvatarQuery.data[0]
-  const colliderState = useMutableState(ColliderLoadingState)
-  const collidersLoaded = colliderState.allCollidersLoaded.value
 
   // Only proceed with avatar spawning if colliders are loaded
   useEffect(() => {
-    if (isSpectating || !userAvatar || !collidersLoaded) return
+    if (isSpectating || !userAvatar) return
 
     const rootUUID = UUIDComponent.get(sceneEntity)
     const avatarSpawnPose = getRandomSpawnPoint(userID)
@@ -136,7 +133,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
         )
       }
     }
-  }, [isSpectating, !!userAvatar, collidersLoaded])
+  }, [isSpectating, !!userAvatar])
 
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
   const errorWithAvatar = useHasComponent(selfAvatarEntity, ErrorComponent)
