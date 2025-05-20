@@ -63,9 +63,9 @@ const renderEntityTreeRoots = (roots: Entity[]) => {
         if (!entity || !entityExists(entity)) return []
         return [
           `${entity} - ${
-            getOptionalComponent(entity, NameComponent) ?? hasComponent(entity, UUIDComponent)
-              ? UUIDComponent.get(entity)
-              : 'Unknown'
+            getOptionalComponent(entity, NameComponent) ??
+            (hasComponent(entity, UUIDComponent) && UUIDComponent.get(entity)) ??
+            'Unknown'
           }`,
           renderEntityTree(entity)
         ]
@@ -84,9 +84,9 @@ const renderEntityTree = (entity: Entity) => {
             (r, child) =>
               Object.assign(r, {
                 [`${child} - ${
-                  getOptionalComponent(child, NameComponent) ?? hasComponent(child, UUIDComponent)
-                    ? UUIDComponent.get(child)
-                    : 'Unknown'
+                  getOptionalComponent(child, NameComponent) ??
+                  (hasComponent(child, UUIDComponent) && UUIDComponent.get(child)) ??
+                  'Unknown'
                 }`]: renderEntityTree(child)
               }),
             {}
@@ -127,8 +127,8 @@ const renderAllEntities = (filter: string, queryString: string) => {
           if (!entityExists(eid)) return null!
 
           const label = `${eid} - ${
-            getOptionalComponent(eid, NameComponent) ||
-            (hasComponent(eid, UUIDComponent) && UUIDComponent.get(eid)) ||
+            getOptionalComponent(eid, NameComponent) ??
+            (hasComponent(eid, UUIDComponent) && UUIDComponent.get(eid)) ??
             ''
           }`
 
