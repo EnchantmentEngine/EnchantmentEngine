@@ -101,7 +101,6 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
 
   const userAvatar = userAvatarQuery.data[0]
 
-  // Only proceed with avatar spawning if colliders are loaded
   useEffect(() => {
     if (isSpectating || !userAvatar) return
 
