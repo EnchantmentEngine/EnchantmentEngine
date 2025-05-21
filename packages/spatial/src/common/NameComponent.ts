@@ -24,19 +24,8 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState, getState } from '@ir-engine/hyperflux'
 import { NonEmptyString } from '../schema/schemaFunctions'
-
-const NameComponentState = defineState({
-  name: 'NameComponentState',
-  initial: () => {
-    return {
-      entitiesByName: {} as Record<string, Set<Entity>>
-    }
-  }
-})
 
 export const NameComponent = defineComponent({
   name: 'NameComponent',
@@ -46,34 +35,5 @@ export const NameComponent = defineComponent({
   schema: S.String({
     default: '',
     validate: NonEmptyString('NameComponent expects a non-empty string')
-  }),
-
-  onSet: (entity, component, name: string) => {
-    const prevName = component.value
-
-    component.set(name)
-
-    const entitiesByName = getState(NameComponentState).entitiesByName
-
-    if (entitiesByName[prevName]) {
-      entitiesByName[prevName].delete(entity)
-    }
-
-    if (!entitiesByName[name]) {
-      entitiesByName[name] = new Set()
-    }
-
-    getState(NameComponentState).entitiesByName[name].add(entity)
-  },
-
-  onRemove: (entity, component) => {
-    const name = component.value
-    getState(NameComponentState).entitiesByName[name].delete(entity)
-  },
-
-  /** @deprecated - will be removed in the future */
-  getEntitiesByName: (name: string) => {
-    const entities = getState(NameComponentState).entitiesByName[name]
-    return entities ? [...entities] : []
-  }
+  })
 })
