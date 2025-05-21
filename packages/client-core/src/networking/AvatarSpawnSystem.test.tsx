@@ -48,7 +48,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
-import { overrideFileLoaderEach } from '@ir-engine/engine/tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad } from '@ir-engine/engine/tests/util/loadGLTFAssetNode'
 import {
   EventDispatcher,
   UserID,
@@ -90,11 +90,8 @@ const sceneID = 'scene id'
 const sceneURL = '/empty.gltf'
 
 describe('AvatarSpawnSystem', async () => {
-  overrideFileLoaderEach({
-    [sceneURL]: emptyGltf
-  })
-
   beforeEach(async () => {
+    overrideFileLoaderLoad()
     createEngine()
     initializeSpatialEngine()
     startEngineReactor()
