@@ -40,7 +40,6 @@ import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { Slider } from '@ir-engine/ui/editor'
 import { IoMapOutline } from 'react-icons/io5'
-import Button from '../../../../primitives/tailwind/Button'
 import ColorInput from '../../../../primitives/tailwind/Color'
 import FolderInput from '../../input/Folder'
 import InputGroup from '../../input/Group'
@@ -48,12 +47,8 @@ import SelectInput from '../../input/Select'
 
 /**
  * EnvMapSourceOptions array containing SourceOptions for Envmap
- * Note: Probes option is currently broken and has been commented out
- * For the latest discussion see: https://tsu.atlassian.net/browse/IR-7898 and https://theinfinitereality.slack.com/archives/C070ZGB7Q9E/p1746568563888759
  */
-const EnvMapSourceOptions = Object.values(EnvMapSourceType)
-  .filter((value) => value !== EnvMapSourceType.Probes) // Filter out the Probes option
-  .map((value) => ({ label: value, value }))
+const EnvMapSourceOptions = Object.values(EnvMapSourceType).map((value) => ({ label: value, value }))
 
 /**
  * EnvMapEditor provides the editor view for environment map property customization.
@@ -131,18 +126,6 @@ export const EnvMapEditor: EditorComponentType = (props) => {
             )}
           </InputGroup>
         </div>
-      )}
-      {envmapComponent.type.value === EnvMapSourceType.Probes && (
-        <Button
-          onClick={() => {
-            commitProperty(EnvMapComponent, 'type')(EnvMapSourceType.None)
-            setTimeout(() => {
-              commitProperty(EnvMapComponent, 'type')(EnvMapSourceType.Probes)
-            }, 1000)
-          }}
-        >
-          {t('editor:properties.envmap.bake-reflection-probes')}
-        </Button>
       )}
       <div className="w-full py-1.5 pl-8 pr-3.5">
         {envmapComponent.type.value !== EnvMapSourceType.None && (
