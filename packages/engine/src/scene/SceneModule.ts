@@ -23,9 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export * from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
-export * from '@ir-engine/spatial/src/renderer/FogSystem'
-export * from '@ir-engine/spatial/src/renderer/materials/constants/plugins/NoiseOffsetPlugin'
+import '@ir-engine/spatial'
 
 export * from '../audio/components/PositionalAudioComponent'
 export * from '../avatar/components/LoopAnimationComponent'
