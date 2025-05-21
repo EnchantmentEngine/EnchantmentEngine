@@ -28,6 +28,8 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import '@ir-engine/engine'
 
+import { Cache } from 'three'
+
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
@@ -48,7 +50,6 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
-import { overrideFileLoaderLoad } from '@ir-engine/engine/tests/util/loadGLTFAssetNode'
 import {
   EventDispatcher,
   UserID,
@@ -91,10 +92,12 @@ const sceneURL = '/empty.gltf'
 
 describe('AvatarSpawnSystem', async () => {
   beforeEach(async () => {
-    overrideFileLoaderLoad()
+    Cache.enabled = true
     createEngine()
     initializeSpatialEngine()
     startEngineReactor()
+
+    Cache.add(sceneURL, emptyGltf)
 
     await Physics.load()
 
@@ -191,7 +194,7 @@ describe('AvatarSpawnSystem', async () => {
     const url = new URL(location.href)
     url.search = ''
     history.replaceState(history.state, null!, url.href)
-
+    Cache.enabled = false
     return destroyEngine()
   })
 
