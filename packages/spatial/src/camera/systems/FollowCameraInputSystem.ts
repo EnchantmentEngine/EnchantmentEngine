@@ -254,8 +254,8 @@ const execute = () => {
 
       if (settings.poiMode === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
         // Filter POI entities to only include those with PoiCameraSettingsComponent
-        const validPoiEntities = settings.poiEntities.filter((entity) =>
-          hasComponent(entity, PoiCameraSettingsComponent)
+        const validPoiEntities = settings.poiEntities.filter((entityUUID) =>
+          hasComponent(UUIDComponent.getEntityByUUID(entityUUID), PoiCameraSettingsComponent)
         )
 
         if (
