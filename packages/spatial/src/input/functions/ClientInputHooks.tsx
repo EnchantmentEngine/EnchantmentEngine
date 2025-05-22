@@ -285,7 +285,7 @@ export const CanvasInputReactor = () => {
         //
       }
 
-      let button = MouseButton.PrimaryClick
+      let button: MouseButton = MouseButton.PrimaryClick
       if (event.button === 1) button = MouseButton.AuxiliaryClick
       else if (event.button === 2) button = MouseButton.SecondaryClick
 
