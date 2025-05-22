@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -61,7 +61,6 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import {
   AnimationClip,
   AnimationMixer,
@@ -647,7 +646,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
-  let materialConstructorParameters = {} as any
+  const materialConstructorParameters = {} as any
   const promises = [] as Promise<void>[]
   const materialExtensions = materialDef.extensions || {}
 
@@ -802,17 +801,31 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
     }
   }
 
+  // backwards support for EE_material
+  const EE_materialExtensionParams = materialDef.extensions?.['EE_material'] as any
+  if (EE_materialExtensionParams?.args) {
+    for (const prop in EE_materialExtensionParams.args) {
+      const contents = EE_materialExtensionParams.args[prop].contents
+      if (!!contents && typeof contents === 'object' && typeof contents.index === 'number') {
+        extensionPromises.push(
+          GLTFLoaderFunctions.assignTexture(options, contents).then((map) => {
+            materialConstructorParameters[prop] = map
+          })
+        )
+      } else {
+        materialConstructorParameters[prop] = contents
+      }
+    }
+  }
+
   await Promise.all(extensionPromises)
 
   const material = new materialConstructor(materialConstructorParameters)
   material.name = materialDef.name ?? 'Material-' + materialIndex
 
   setComponent(materialEntity, MaterialStateComponent, { material })
-  setupMaterialParameters(materialEntity, {
-    ...materialConstructorParameters,
-    uuid: material.uuid,
-    name: material.name
-  })
+
+  setupMaterialParameters(materialEntity, material.type, materialConstructorParameters)
 
   assignExtrasToUserData(material, materialDef)
 
@@ -1263,7 +1276,8 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   //   primitive.mode === undefined
   // ) {
   const materials = materialEntities.map((entity) => getComponent(entity, MaterialStateComponent).material)
-  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, materials) : new Mesh(geometry, materials)
+  const material = geometry.groups.length === 0 && materials.length === 1 ? materials[0] : materials
+  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, material) : new Mesh(geometry, material)
 
   //   if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
   //     mesh.geometry = toTrianglesDrawMode(mesh.geometry, TriangleStripDrawMode)
@@ -1298,7 +1312,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   // }
 
   setComponent(entity, MeshComponent, mesh)
-  setComponent(entity, NameComponent, meshDef.name ?? 'Mesh-' + meshIndex)
+  setComponent(entity, NameComponent, node.name ?? meshDef.name ?? `Mesh-${meshIndex}`)
 
   setComponent(entity, MaterialInstanceComponent, {
     entities: materialEntities
@@ -1568,7 +1582,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
     setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
     iterateEntityNode(entity, (e) => {
       if (hasComponent(e, TransformComponent)) {
-        computeTransformMatrix(e)
+        TransformComponent.computeTransformMatrix(e)
         TransformComponent.dirty[e] = 1
       }
     })

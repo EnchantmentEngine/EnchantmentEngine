@@ -160,7 +160,7 @@ export const VideoWindows = () => {
   const windows = useMediaWindows()
   return (
     <>
-      <div className="flex flex-col gap-y-2">
+      <div className="overflow-y scrollbar-hide flex h-[calc(100vh-48px)] flex-col gap-y-2 overflow-y-auto">
         {windows.map(({ peerID, type }) => (
           <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
         ))}
@@ -251,7 +251,7 @@ export const VideoWindowsWidget = () => {
   const windows = useMediaWindows()
 
   return (
-    <div className="flex flex-col gap-y-2">
+    <div className="overflow-y scrollbar-hide flex h-[calc(100vh-48px)] flex-col gap-y-2 overflow-y-auto">
       {windows.map(({ peerID, type }) => (
         <SingleVideoWindowWidget type={type} peerID={peerID} key={type + '-' + peerID} />
       ))}

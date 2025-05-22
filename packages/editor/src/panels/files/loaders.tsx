@@ -172,11 +172,15 @@ function GeneratingThumbnailsProgress() {
   useLoadingThumbnails(isLoading)
   let thumbnailjobCount = 0
   let dimensionJobCount = 0
+  let muiltiViewJobCount = 0
   for (const job of thumbnailJobs.value) {
     if (job.jobType === 'thumbnail') {
       thumbnailjobCount++
     } else if (job.jobType === 'dimension') {
       dimensionJobCount++
+    }
+    if (job.jobType === 'cv processing') {
+      muiltiViewJobCount++
     }
   }
   return isLoading.value ? (
@@ -187,12 +191,20 @@ function GeneratingThumbnailsProgress() {
         className="mx-2 my-auto h-6 w-6"
         title={t('editor:layout.filebrowser.generatingThumbnails', { count: thumbnailjobCount })}
       />
-      <LoadingView
+      {/* commenting out instead of dealing for future use */}
+      {/* <LoadingView
         titleClassname="mt-0"
         containerClassName="flex-row mt-1"
         className="mx-2 my-auto h-6 w-6"
         title={t('editor:layout.filebrowser.generatingDimension', { count: dimensionJobCount })}
-      />
+      /> */}
+      {/* commenting out can use for testing */}
+      {/* <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingMultiView', { count: muiltiViewJobCount })}
+      /> */}
     </>
   ) : null
 }
