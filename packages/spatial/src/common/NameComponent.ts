@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NonEmptyString } from '../schema/schemaFunctions'
 
 export const NameComponent = defineComponent({
   name: 'NameComponent',
@@ -33,7 +32,8 @@ export const NameComponent = defineComponent({
   jsonID: 'IR_name',
 
   schema: S.String({
-    default: '',
-    validate: NonEmptyString('NameComponent expects a non-empty string')
+    default: ''
+    /** @todo - previously this validation never ran because we had a custom onSet, so now it causes problems */
+    // validate: NonEmptyString('NameComponent expects a non-empty string')
   })
 })
