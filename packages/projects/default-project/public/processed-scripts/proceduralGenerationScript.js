@@ -27,11 +27,8 @@ const { DomainConfigState } = globalThis.__MODULES__.IR.Engine;
 const { getState } = globalThis.__MODULES__.IR.Hyperflux;
 const { MeshComponent, NameComponent, ReferenceSpaceState, TransformComponent, VisibleComponent } = globalThis.__MODULES__.IR.Spatial;
 const { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, Vector3 } = globalThis.__MODULES__.THREE;
-console.log('HI 1')
 const cloudDomain = getState(DomainConfigState).cloudDomain;
-console.log('HI 2')
 const heightMap = `${cloudDomain}/projects/ir-engine/default-project/assets/heightMap.png`;
-console.log('HI 3')
 const tileScale = 5, heightmapScale = 100, loadDistance = 5 * tileScale;
 const loadHeightmap = (url) => new Promise((resolve, reject) => {
     const img = new Image();
@@ -74,7 +71,6 @@ const tiles = {} // 2d array of tile entities indexed by x,y
     imageData = await loadHeightmap(heightMap);
     totalTileCount = imageData.width / heightmapScale;
 })();
-console.log('HI 4')
 const triangulateHeightmap = (imageData, mapX, mapY, heightmapScale) => {
     const geometry = new BufferGeometry();
     const vertices = [];

@@ -32,6 +32,7 @@ import { getFileName } from '@ir-engine/engine/src/assets/functions/pathResolver
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import { createNewScriptFile, fetchCode } from '@ir-engine/ui/src/components/editor/properties/script'
+import { PlayMd } from '@ir-engine/ui/src/icons'
 import Button from '@ir-engine/ui/src/primitives/tailwind/Button'
 import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 import { Editor } from '@monaco-editor/react'
@@ -39,6 +40,7 @@ import DockLayout, { DockMode, LayoutData, TabData } from 'rc-dock'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaLink, FaLinkSlash } from 'react-icons/fa6'
+import { MdClose } from 'react-icons/md'
 import { RiSaveLine } from 'react-icons/ri'
 import { VscDiscard } from 'react-icons/vsc'
 import { twMerge } from 'tailwind-merge'
@@ -52,7 +54,7 @@ type ScriptUploadResponse = {
   processedScript: StaticResourceType
 }
 
-export const updateScriptFile = async (fileName, script = 'console.log("hello world")') => {
+export const updateScriptFile = async (fileName: string, script = 'console.log("hello world")') => {
   const file = new File([script], fileName, { type: 'application/x-typescript' })
   const response = await uploadToFeathersService(uploadScriptPath, [file], {
     args: {
@@ -87,17 +89,27 @@ const loadTypeDefinitions = async () => {
   })
 }
 
-const ActiveScript = ({ scriptURL }) => {
+const ActiveScript = ({ scriptURL }: { scriptURL: string }) => {
   const scriptState = useHookstate(getMutableState(ScriptState))
+  const editorState = useHookstate(getMutableState(EditorState))
   const { t } = useTranslation()
   const [code, setCode] = useState('')
   const [codeChanged, setCodeChanged] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     fetchCode(scriptURL).then((code) => {
       setCode(code)
     })
   }, [scriptURL])
+
+  const handlePlayClick = () => {
+    setShowPreview(true)
+  }
+
+  const handleClosePreview = () => {
+    setShowPreview(false)
+  }
 
   return (
     <div className="relative flex h-full w-full flex-row items-center justify-center">
@@ -116,6 +128,11 @@ const ActiveScript = ({ scriptURL }) => {
         theme="vs-dark"
       />
       <div className="flex h-full w-[5%] min-w-10 flex-col items-center justify-end gap-2 py-2">
+        <Tooltip content={t('editor:script.panel.play')}>
+          <Button variant="primary" className="p-1" data-testid="script-panel-play-button" onClick={handlePlayClick}>
+            <PlayMd className="text-green-500 hover:text-amber-300" />
+          </Button>
+        </Tooltip>
         <Tooltip
           content={
             scriptState.scripts.value[scriptURL] === UndefinedEntity
@@ -183,11 +200,31 @@ const ActiveScript = ({ scriptURL }) => {
           </Button>
         </Tooltip>
       </div>
+
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+          <div className="relative h-full w-full">
+            <Button variant="primary" className="absolute right-4 top-4 z-50 p-2" onClick={handleClosePreview}>
+              <MdClose className="h-6 w-6" />
+            </Button>
+            <iframe
+              className="h-full w-full"
+              src={`/offline?project=${editorState.projectName.value}&scenePath=${editorState.scenePath.value!.replace(
+                'projects/' + editorState.projectName.value + '/',
+                ''
+              )}`}
+              style={{ border: 0 }}
+              allow="microphone; camera; autoplay; clipboard-write; encrypted-media"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-const createNewScriptTab = (scriptURL) => {
+const createNewScriptTab = (scriptURL: string) => {
   return {
     id: scriptURL,
     closable: true,
@@ -235,7 +272,7 @@ const ScriptContainer = () => {
     <div id="script-container" className="flex h-full w-full items-center justify-center">
       {scriptState.scripts.keys.length !== 0 ? (
         <DockLayout
-          onLayoutChange={(newLayout, currentTabId, direction) => {
+          onLayoutChange={(_newLayout, currentTabId, direction) => {
             if (direction === 'remove') ScriptService.removeScript(currentTabId)
           }}
           ref={dockPanelRef}
@@ -263,7 +300,7 @@ const ScriptContainer = () => {
   )
 }
 
-const ScriptTabTitle = ({ scriptName }) => {
+const ScriptTabTitle = ({ scriptName }: { scriptName: string }) => {
   const { t } = useTranslation()
 
   return (

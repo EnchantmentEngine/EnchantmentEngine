@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import * as ECS from '@ir-engine/ecs'
 import * as Engine from '@ir-engine/engine'
 import * as Hyperflux from '@ir-engine/hyperflux'
-import * as Network from '@ir-engine/network'
 import * as Spatial from '@ir-engine/spatial'
 
 import * as React from 'react'
@@ -35,7 +34,6 @@ import * as THREE from 'three'
 const IR = {
   Hyperflux,
   ECS,
-  Network,
   Spatial,
   Engine
 }

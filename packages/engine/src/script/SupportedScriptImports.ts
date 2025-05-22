@@ -41,10 +41,6 @@ export const SupportedScriptImports = [
     global: 'IR.ECS'
   },
   {
-    import: '@ir-engine/network',
-    global: 'IR.Network'
-  },
-  {
     import: '@ir-engine/spatial',
     global: 'IR.Spatial'
   },

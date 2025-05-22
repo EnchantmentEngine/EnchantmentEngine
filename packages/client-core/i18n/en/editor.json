@@ -1287,7 +1287,7 @@
       "lbl-scriptPath": "Script path",
       "error":{
         "invalid-location":"Cannot find script",
-        "invalid-type":"Script is not of valid type", 
+        "invalid-type":"Script is not of valid type",
         "invalid-format":"Url format is invalid",
         "invalid-schema":"Url schema is invalid"
 
@@ -1387,7 +1387,7 @@
     "panel": {
       "title": "Script",
       "addScript": "Add Script",
-
+      "play": "Preview script in scene",
       "link": "Script is linked to scene, Press to unlink",
       "unLink": "Script is not linked to scene, Press to link",
       "save": "Save  Changes",
