@@ -57,6 +57,7 @@ if (buttons.Trigger?.value) {
 #### Common Patterns
 
 1. **Click Detection**:
+
 ```typescript
 if (buttons.Interact?.up && !buttons.Interact.dragging) {
   // Handle click (press and release without dragging)
@@ -64,6 +65,7 @@ if (buttons.Interact?.up && !buttons.Interact.dragging) {
 ```
 
 2. **Drag Detection**:
+
 ```typescript
 if (buttons.PrimaryClick?.dragging) {
   const pointer = getOptionalComponent(buttons.PrimaryClick.inputSourceEntity, InputPointerComponent)
@@ -74,6 +76,7 @@ if (buttons.PrimaryClick?.dragging) {
 ```
 
 3. **Analog Control**:
+
 ```typescript
 const triggerValue = buttons.Trigger?.value ?? 0
 // Use normalized value for smooth control
@@ -133,6 +136,7 @@ const look = axes.Look
 
 ```typescript
 InputComponent.useExecuteWithInput(
+  entity,
   () => {
     // Handle input
   },
@@ -179,6 +183,7 @@ if (zoom) {
 ```typescript
 // In an interactable component
 InputComponent.useExecuteWithInput(
+  entity,
   () => {
     const buttons = InputComponent.getButtons(entity)
     if (buttons.Interact?.up && !buttons.Interact.dragging) {
@@ -200,6 +205,7 @@ The input system follows a component-based architecture:
 4. **Input Systems**: Process input and update state
 
 This architecture allows for:
+
 - Multiple input sources per entity
 - Input capture and focus management
 - Flexible binding of inputs to actions
