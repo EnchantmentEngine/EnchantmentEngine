@@ -33,7 +33,7 @@ import { applyTexturePatch } from '@ir-engine/engine/src/assets/loaders/texture/
 try {
   // Apply the texture patch directly - simpler and more direct
   applyTexturePatch()
-  console.log('Texture memory management patch applied')
+  // console.log('Texture memory management patch applied')
 } catch (e) {
   console.error('Error applying texture memory patch:', e)
 }
