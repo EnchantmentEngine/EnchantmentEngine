@@ -166,23 +166,6 @@ describe('upload-script-utils', () => {
       expect(reasons.some((reason) => reason.includes('localStorage'))).toBe(true)
       expect(reasons.some((reason) => reason.includes('eval'))).toBe(true)
     })
-
-    it('should detect disallowed features even in comments', () => {
-      const codeWithComments = `
-        import { Vector3 } from 'three';
-
-        // This is just a comment about fetch('https://example.com/api')
-        /*
-         * localStorage.setItem('key', 'value');
-         * eval('console.log("dangerous")');
-         */
-        const position = new Vector3(0, 1, 0);
-      `
-      const validationErrors = validateScript(codeWithComments)
-      // Our current implementation detects patterns even in comments
-      // This is actually a good security feature as it prevents hiding malicious code in comments
-      expect(validationErrors.length).toBeGreaterThan(0)
-    })
   })
 
   describe('transpileTypeScript', () => {

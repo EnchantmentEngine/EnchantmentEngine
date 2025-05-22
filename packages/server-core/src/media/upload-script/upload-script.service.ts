@@ -36,11 +36,7 @@ import { uploadAsset } from '../upload-asset/upload-asset.service'
 import { convertImportToGlobal, transpileTypeScript, validateScript } from './upload-script-utils'
 import hooks from './upload-script.hooks'
 
-// Using uploadScriptPath from schema.type.module.ts
-
 const multipartMiddleware = Multer({ limits: { fieldSize: Infinity } })
-
-// Disallowed features and validation are now imported from upload-script-utils.ts
 
 declare module '@ir-engine/common/declarations' {
   interface ServiceTypes {
@@ -82,29 +78,6 @@ const fetchScriptAsText = async (script: StaticResourceType) => {
   return await response.text()
 }
 
-/**
- * Takes a shallow module import and replace it with a global reference deconstructor
- * Example:
- *
- *      import { x } from '@ir-engine/spatial'
- *            becomes
- *      const { x } = globalThis.__MODULES__.ir.spatial
- *
- *      import { Color } from ‘three’
- *            becomes
- *      const { Color } = globalThis.__MODULES__.THREE
- *
- * @param text The script text to process
- * @param importStatement The import statement to replace
- * @param globalName The global name to use in the replacement
- * @returns The processed script text
- *
- * @todo add JSX support
- */
-// Import conversion is now imported from upload-script-utils.ts
-
-// TypeScript transpilation is now imported from upload-script-utils.ts
-
 const processScript = async (
   app: Application,
   script: StaticResourceType,
@@ -116,17 +89,14 @@ const processScript = async (
 ) => {
   let scriptText = await fetchScriptAsText(script)
   const fileName = script.name || 'script.tsx'
-  // Always treat all files as TypeScript with JSX support
   const isTypeScript = true
 
-  // Validate script against disallowed features
   const validationErrors = validateScript(scriptText)
   if (validationErrors.length > 0) {
     const errorMessages = validationErrors.map((error) => error.reason).join('\n')
     throw new Error(`Script contains disallowed features:\n${errorMessages}`)
   }
 
-  // Transpile TypeScript to JavaScript if needed
   if (isTypeScript) {
     try {
       scriptText = transpileTypeScript(scriptText, fileName)
@@ -135,14 +105,12 @@ const processScript = async (
     }
   }
 
-  // Convert imports to global references
   for (const { import: imp, global } of SupportedScriptImports) {
     scriptText = convertImportToGlobal(scriptText, imp, global)
   }
 
   const buffer = Buffer.from(scriptText)
 
-  // Always use the .js extension for the processed file
   const outputFileName = fileName.replace(/\.[^\.]+$/, '.js')
 
   return uploadAsset(app, {
@@ -163,11 +131,8 @@ const uploadScripts = (app: Application) => async (data: UploadScriptData, param
 
   if (files.length > 1) throw new Error('Only one file is allowed at a time')
 
-  // Files are already validated in the hooks
   const [file] = files
 
-  // Set appropriate mimetype based on file extension
-  // Always treat files as TypeScript with JSX support
   file.mimetype = 'application/x-typescript'
 
   const rawScript = await uploadAsset(app, {

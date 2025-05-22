@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -23,58 +23,98 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { SupportedScriptImports } from '@ir-engine/engine/src/script/SupportedScriptImports'
+import { Node, Project } from 'ts-morph'
 import * as ts from 'typescript'
 
 /**
- * Registry of disallowed features in scripts for security purposes
- * Each entry contains a pattern to match and a reason for disallowing
+ * Set of allowed imports from SupportedScriptImports
  */
-export const DISALLOWED_FEATURES = [
-  {
-    pattern: /\bfetch\s*\(/g,
-    reason: 'Network requests using fetch() are not allowed for security reasons'
-  },
-  {
-    pattern: /\bwindow\.fetch\s*\(/g,
-    reason: 'Network requests using window.fetch() are not allowed for security reasons'
-  },
-  {
-    pattern: /\bglobalThis\.fetch\s*\(/g,
-    reason: 'Network requests using globalThis.fetch() are not allowed for security reasons'
-  },
-  {
-    pattern: /\bnew\s+XMLHttpRequest\s*\(/g,
-    reason: 'Network requests using XMLHttpRequest are not allowed for security reasons'
-  },
-  {
-    pattern: /\bdocument\.cookie\b/g,
-    reason: 'Access to document.cookie is not allowed for security reasons'
-  },
-  {
-    pattern: /\blocalStorage\b/g,
-    reason: 'Access to localStorage is not allowed for security reasons'
-  },
-  {
-    pattern: /\bsessionStorage\b/g,
-    reason: 'Access to sessionStorage is not allowed for security reasons'
-  },
-  {
-    pattern: /\beval\s*\(/g,
-    reason: 'Use of eval() is not allowed for security reasons'
-  },
-  {
-    pattern: /\bFunction\s*\(\s*["'`].*["'`]\s*\)/g,
-    reason: 'Dynamic function creation is not allowed for security reasons'
-  }
-]
+const ALLOWED_IMPORTS = new Set(SupportedScriptImports.map((item) => item.import))
 
 /**
- * Validates script content against disallowed features
+ * Disallowed function calls and their reasons
+ */
+const DISALLOWED_FUNCTIONS = new Map([
+  ['eval', 'Use of eval() is not allowed for security reasons'],
+  ['Function', 'Dynamic function creation is not allowed for security reasons'],
+  ['setTimeout', 'Use of setTimeout() is not allowed for security reasons'],
+  ['setInterval', 'Use of setInterval() is not allowed for security reasons'],
+  ['fetch', 'Network requests using fetch() are not allowed for security reasons'],
+  ['XMLHttpRequest', 'Network requests using XMLHttpRequest are not allowed for security reasons']
+])
+
+/**
+ * Disallowed property accesses and their reasons
+ */
+const DISALLOWED_PROPERTIES = new Map([
+  ['document.cookie', 'Access to document.cookie is not allowed for security reasons'],
+  ['localStorage', 'Access to localStorage is not allowed for security reasons'],
+  ['sessionStorage', 'Access to sessionStorage is not allowed for security reasons'],
+  ['window.localStorage', 'Access to window.localStorage is not allowed for security reasons'],
+  ['window.sessionStorage', 'Access to window.sessionStorage is not allowed for security reasons'],
+  ['globalThis.localStorage', 'Access to globalThis.localStorage is not allowed for security reasons'],
+  ['globalThis.sessionStorage', 'Access to globalThis.sessionStorage is not allowed for security reasons']
+])
+
+/**
+ * Validates script content using ts-morph for more accurate analysis
  * @param scriptContent The script content to validate
  * @returns An array of validation errors, empty if valid
  */
-export const validateScript = (scriptContent: string): { pattern: RegExp; reason: string }[] => {
-  return DISALLOWED_FEATURES.filter(({ pattern }) => pattern.test(scriptContent))
+export const validateScript = (scriptContent: string): { reason: string }[] => {
+  const project = new Project()
+  const sourceFile = project.createSourceFile('userCode.tsx', scriptContent)
+  const violations: { reason: string }[] = []
+
+  sourceFile.getImportDeclarations().forEach((imp) => {
+    const moduleSpecifier = imp.getModuleSpecifierValue()
+    if (!ALLOWED_IMPORTS.has(moduleSpecifier)) {
+      violations.push({
+        reason: `Import from '${moduleSpecifier}' is not allowed. Only imports from approved modules are permitted.`
+      })
+    }
+  })
+
+  sourceFile.forEachDescendant((node) => {
+    if (Node.isCallExpression(node)) {
+      const expression = node.getExpression()
+      const expressionText = expression.getText()
+
+      for (const [funcName, reason] of DISALLOWED_FUNCTIONS.entries()) {
+        if (expressionText === funcName || expressionText.endsWith(`.${funcName}`)) {
+          violations.push({ reason })
+          break
+        }
+      }
+    } else if (Node.isNewExpression(node)) {
+      const expression = node.getExpression()
+      const expressionText = expression.getText()
+
+      if (expressionText === 'XMLHttpRequest') {
+        violations.push({
+          reason: 'Network requests using XMLHttpRequest are not allowed for security reasons'
+        })
+      }
+
+      if (expressionText === 'Function') {
+        violations.push({
+          reason: 'Dynamic function creation is not allowed for security reasons'
+        })
+      }
+    } else if (Node.isPropertyAccessExpression(node)) {
+      const fullText = node.getText()
+
+      for (const [propName, reason] of DISALLOWED_PROPERTIES.entries()) {
+        if (fullText === propName || fullText.includes(propName)) {
+          violations.push({ reason })
+          break
+        }
+      }
+    }
+  })
+
+  return violations
 }
 
 /**
