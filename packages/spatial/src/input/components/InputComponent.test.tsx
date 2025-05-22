@@ -494,9 +494,9 @@ describe('InputComponent', () => {
     it('should update its state to true whenever the ammount of entities returned by InputComponent.getInputSourceEntities is bigger than 0', async () => {
       const effectSpy = sinon.spy()
       const reactorSpy = sinon.spy()
-      const Reactor = () => {
+      const Reactor = ({ entity }: { entity: Entity }) => {
         reactorSpy()
-        const hasFocus = InputComponent.useHasFocus()
+        const hasFocus = InputComponent.useHasFocus(entity)
         useEffect(effectSpy, [hasFocus])
         return null
       }
@@ -511,7 +511,11 @@ describe('InputComponent', () => {
 
       // Create a reactor root to run the hook's reactor
       const root = startReactor(() => {
-        return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
+        return React.createElement(
+          EntityContext.Provider,
+          { value: testEntity },
+          React.createElement(Reactor, { entity: testEntity })
+        )
       }) as ReactorRoot
 
       // Run reactor before the entity has any sources attached
@@ -623,9 +627,9 @@ describe('InputComponent', () => {
           const executeSpy = sinon.spy()
           const reactorSpy = sinon.spy()
 
-          const Reactor = () => {
+          const Reactor = ({ entity }: { entity: Entity }) => {
             reactorSpy()
-            InputComponent.useExecuteWithInput(executeSpy, data_order, data.executeWhenEditing)
+            InputComponent.useExecuteWithInput(entity, executeSpy, data_order, data.executeWhenEditing)
             return null
           }
 
@@ -635,7 +639,11 @@ describe('InputComponent', () => {
           const testEntity = createEntity()
           setComponent(testEntity, InputComponent)
           const root = startReactor(() => {
-            return React.createElement(EntityContext.Provider, { value: testEntity }, React.createElement(Reactor, {}))
+            return React.createElement(
+              EntityContext.Provider,
+              { value: testEntity },
+              React.createElement(Reactor, { entity: testEntity })
+            )
           }) as ReactorRoot
 
           await flushAll()
