@@ -19,18 +19,17 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AvatarImage from './index'
+import { UserInfo } from './UserInfo'
 
 export default {
-  title: 'Primitives/Tailwind/AvatarImage',
-  component: AvatarImage,
+  title: 'Client/UserInfo',
+  component: UserInfo,
   parameters: {
-    componentSubtitle: 'AvatarImage',
-    jest: 'AvatarImage.test.tsx',
+    componentSubtitle: 'UserInfo',
     design: {
       type: 'figma',
       url: ''
@@ -40,7 +39,5 @@ export default {
 }
 
 export const Default = {
-  args: {
-    src: ''
-  }
+  args: {}
 }

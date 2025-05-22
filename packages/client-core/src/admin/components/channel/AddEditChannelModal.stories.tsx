@@ -19,28 +19,55 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AvatarImage from './index'
+import { ChannelType } from '@ir-engine/common/src/schemas/social/channel.schema'
+import AddEditChannelModal from './AddEditChannelModal'
+
+const argTypes = {
+  'channel.name': {
+    control: 'text',
+    description: 'Name of the channel'
+  },
+  'channel.instanceId': {
+    control: 'text',
+    description: 'Instance ID of the channel'
+  },
+  'channel.createdAt': {
+    control: 'date',
+    description: 'Creation date of the channel'
+  },
+  'channel.updatedAt': {
+    control: 'date',
+    description: 'Last update date of the channel'
+  }
+  // Add more controls as needed for other properties
+}
 
 export default {
-  title: 'Primitives/Tailwind/AvatarImage',
-  component: AvatarImage,
+  title: 'Client/AddEditChannelModal',
+  component: AddEditChannelModal,
   parameters: {
-    componentSubtitle: 'AvatarImage',
-    jest: 'AvatarImage.test.tsx',
+    componentSubtitle: 'AddEditChannelModal',
     design: {
       type: 'figma',
       url: ''
-    },
-    chromatic: { disable: true }
-  }
+    }
+  },
+  argTypes
 }
 
 export const Default = {
   args: {
-    src: ''
+    channel: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'General',
+      instanceId: '123e4567-e89b-12d3-a456-426614174001',
+      channelUsers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as unknown as ChannelType
   }
 }

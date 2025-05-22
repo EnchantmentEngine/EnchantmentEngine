@@ -1,4 +1,3 @@
-
 /*
 CPAL-1.0 License
 
@@ -24,59 +23,22 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-/// <reference types="vite-plugin-svgr/client" />
+import AvatarTable from './AvatarTable'
 
-
-/* eslint-disable no-unused-vars */
-declare module '*.jpg'
-declare module '*.png'
-declare module '*.svg'
-declare module '*.scss'
-declare module '*.scss?inline'
-declare module '*.svg?react'
-declare module '*.css'
-declare module '*.css?inline'
-declare module '*.svg?react'
-declare module '*.webp'
-declare module '*.json'
-declare module '*.wav'
-declare module '*.glb'
-declare module '*.frag'
-declare module '*.vert'
-
-declare interface Element {
-  setAttribute(qualifiedName: string, value: object): void
+export default {
+  title: 'Client/AvatarTable',
+  component: AvatarTable,
+  parameters: {
+    componentSubtitle: 'AvatarTable',
+    design: {
+      type: 'figma',
+      url: ''
+    }
+  }
 }
 
-declare type CbFunction = (this: { el: HTMLElement; [key: string]: any }) => void
-
-declare module '*.glb!text' {
-  const value: string
-  export default value
+export const Default = {
+  args: {
+    search: ''
+  }
 }
-
-declare module '*.frag!text' {
-  const value: string
-  export default value
-}
-
-declare module '*.vert!text' {
-  const value: string
-  export default value
-}
-
-declare module '*!text' {
-  const _: string
-  export default _
-}
-
-
-declare module '*.glb?url' {
-  const content: string
-  export default content
-}
-
-declare module '*.gltf?raw' {
-  const content: string
-  export default content
-} 

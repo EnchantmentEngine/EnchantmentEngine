@@ -19,28 +19,50 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import AvatarImage from './index'
+import { InviteType } from '@ir-engine/common/src/schemas/social/invite.schema'
+import RemoveInviteModal from './RemoveInviteModal'
 
 export default {
-  title: 'Primitives/Tailwind/AvatarImage',
-  component: AvatarImage,
+  title: 'Client/RemoveInviteModal',
+  component: RemoveInviteModal,
   parameters: {
-    componentSubtitle: 'AvatarImage',
-    jest: 'AvatarImage.test.tsx',
+    componentSubtitle: 'RemoveInviteModal',
     design: {
       type: 'figma',
       url: ''
-    },
-    chromatic: { disable: true }
+    }
   }
 }
 
 export const Default = {
   args: {
-    src: ''
+    invites: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        token: 'sample-token',
+        identityProviderType: 'google',
+        passcode: '123456',
+        targetObjectId: '123e4567-e89b-12d3-a456-426614174001',
+        deleteOnUse: false,
+        makeAdmin: true,
+        spawnType: 'default',
+        spawnDetails: null,
+        timed: false,
+        userId: '123e4567-e89b-12d3-a456-426614174002',
+        inviteeId: '123e4567-e89b-12d3-a456-426614174003',
+        inviteType: 'friend',
+        user: null,
+        invitee: null,
+        channelName: 'general',
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ] as unknown[] as InviteType[]
   }
 }
