@@ -27,9 +27,11 @@ import React, { useEffect } from 'react'
 
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
 import {
+  defineQuery,
   defineSystem,
   Entity,
   EntityID,
+  getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
   useHasComponent,
@@ -55,6 +57,7 @@ import { config } from '@ir-engine/common/src/config'
 import { avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState, useChildrenWithComponents } from '@ir-engine/ecs'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
+import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -172,9 +175,17 @@ const reactor = () => {
   const sceneEntity = useLoadedSceneEntity(locationSceneURL)
   const gltfLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
 
+  const cameraSettingsQuery = defineQuery([CameraSettingsComponent])
+  const cameraSettingsEntities = cameraSettingsQuery()
+  const cameraSettingsEntity = cameraSettingsEntities.length > 0 ? cameraSettingsEntities[0] : null
+  const cameraSettingsComponent = cameraSettingsEntity
+    ? getComponent(cameraSettingsEntities[0], CameraSettingsComponent)
+    : null
+  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.poiMode === 'Disabled' : true
+
   if (!gltfLoaded || !userID) return null
 
-  return <AvatarSpawnReactor key={sceneEntity} sceneEntity={sceneEntity} />
+  return (isAvatarUsed && <AvatarSpawnReactor key={sceneEntity} sceneEntity={sceneEntity} />) || null
 }
 
 export const AvatarSpawnSystem = defineSystem({
