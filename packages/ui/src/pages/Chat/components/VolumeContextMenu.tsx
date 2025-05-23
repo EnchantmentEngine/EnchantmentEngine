@@ -26,8 +26,13 @@ Infinite Reality Engine. All Rights Reserved.
 import { useClickOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
-import { PeerID, getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import {
+  MediaChannelState,
+  PeerID,
+  getMutableState,
+  useHookstate,
+  webcamAudioMediaChannelType
+} from '@ir-engine/hyperflux'
 import { VolumeMaxLg, VolumeXLg } from '@ir-engine/ui/src/icons'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -48,11 +53,11 @@ export const VolumeContextMenu: React.FC<VolumeContextMenuProps> = ({ peerID, ty
   const isSelf = peerID === Engine.instance.store.peerID || peerID === 'self'
 
   // Get the peer media channel state
-  const peerMediaChannelState = useHookstate(getMutableState(PeerMediaChannelState)[peerID][type])
+  const audioMediaChannelState = useHookstate(getMutableState(MediaChannelState)[peerID][webcamAudioMediaChannelType])
 
   // Get volume from state or use default
   const [volume, setVolume] = useState(
-    isSelf ? audioState.microphoneGain.value : peerMediaChannelState.audioElement.value?.volume || 1
+    isSelf ? audioState.microphoneGain.value : audioMediaChannelState.element.value?.volume || 1
   )
 
   // Handle volume change
@@ -65,7 +70,7 @@ export const VolumeContextMenu: React.FC<VolumeContextMenuProps> = ({ peerID, ty
       getMutableState(AudioState).microphoneGain.set(newVolume)
     } else {
       // Update volume for peer's audio element
-      const audioElement = peerMediaChannelState.audioElement.value as HTMLAudioElement | null
+      const audioElement = audioMediaChannelState.element.value as HTMLAudioElement | null
       if (audioElement) {
         audioElement.volume = newVolume
       }

@@ -29,9 +29,17 @@ import { twMerge } from 'tailwind-merge'
 
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
-import { getMutableState, PeerID, useHookstate } from '@ir-engine/hyperflux'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import {
+  getMutableState,
+  MediaChannelState,
+  MediaStreamState,
+  PeerID,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  useHookstate,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 
 import {
   Expand06Lg,
@@ -63,11 +71,19 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
 
   const isScreen = type === 'screen'
 
-  const peerMediaChannelState = useHookstate(getMutableState(PeerMediaChannelState)[peerID][type])
+  const videoMediaChannelState = useHookstate(
+    getMutableState(MediaChannelState)[peerID][
+      isScreen ? screenshareVideoMediaChannelType : webcamVideoMediaChannelType
+    ]
+  )
+  const audioMediaChannelState = useHookstate(
+    getMutableState(MediaChannelState)[peerID][
+      isScreen ? screenshareAudioMediaChannelType : webcamAudioMediaChannelType
+    ]
+  )
 
-  const audioStreamPaused = peerMediaChannelState.audioStreamPaused.value
-  const videoStreamPaused = peerMediaChannelState.videoStreamPaused.value
-  const videoMediaStream = peerMediaChannelState.videoMediaStream.value
+  const audioStreamPaused = audioMediaChannelState.paused.value
+  const videoStreamPaused = videoMediaChannelState.paused.value
 
   const volume = isSelf ? audioState.microphoneGain.value : mediaSessionState.peerVolumes[peerID]?.value || 1
 
@@ -77,7 +93,7 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
     } else if (isSelf && isScreen) {
       MediaStreamState.toggleScreenshareAudioPaused()
     } else {
-      peerMediaChannelState.audioStreamPaused.set((val) => !val)
+      audioMediaChannelState.paused.set((val) => !val)
     }
   }
 
@@ -87,7 +103,7 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
     } else if (isSelf && isScreen) {
       MediaStreamState.toggleScreenshareVideoPaused()
     } else {
-      peerMediaChannelState.videoStreamPaused.set((val) => !val)
+      videoMediaChannelState.paused.set((val) => !val)
     }
   }
 

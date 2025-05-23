@@ -29,18 +29,23 @@ import { ChannelState } from '@ir-engine/client-core/src/social/services/Channel
 import { useFind, useGet, useMutation } from '@ir-engine/common'
 import {
   ChannelID,
-  UserID,
   channelPath,
   instanceAttendancePath,
   instancePath,
   messagePath,
+  UserID,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { EngineState } from '@ir-engine/ecs/src/EngineState'
-import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+import {
+  getMutableState,
+  getState,
+  MediaStreamState,
+  NetworkState,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
 import { Expand06Lg, Maximize02Lg, Screenshare } from '@ir-engine/ui/src/icons'
 import { Resizable } from 're-resizable'
 import React, { useEffect, useRef } from 'react'

@@ -32,10 +32,20 @@ import { VolumeContextMenu } from './VolumeContextMenu'
 import { useMediaWindows } from '@ir-engine/client-core/src/user/VideoWindows'
 import { UserName } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { PeerID, State, getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
-import { PeerMediaChannelState, PeerMediaStreamInterface } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import {
+  MediaChannelState,
+  MediaStreamInterface,
+  MediaStreamState,
+  NetworkState,
+  PeerID,
+  State,
+  getMutableState,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  useHookstate,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { MediaSessionState } from '@ir-engine/ui/src/pages/Chat/MediaSessionState'
 
 export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (props) => {
@@ -63,31 +73,43 @@ export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (
     return username
   }
 
-  const peerMediaChannelState = useHookstate(
-    getMutableState(PeerMediaChannelState)[peerID][type] as State<PeerMediaStreamInterface>
+  const videoMediaChannelState = useHookstate(
+    getMutableState(MediaChannelState)[peerID][
+      isScreen ? screenshareVideoMediaChannelType : webcamVideoMediaChannelType
+    ] as State<MediaStreamInterface>
   )
   const mediaStreamState = useHookstate(getMutableState(MediaStreamState))
 
   // Get the media state values
-  const peerMediaState = peerMediaChannelState.get({
+  const videoMediaState = videoMediaChannelState.get({
     noproxy: true
-  }) as PeerMediaStreamInterface
+  }) as MediaStreamInterface
 
   // For self, use MediaStreamState directly to determine if audio/video is paused
-  const videoMediaStream = peerMediaState.videoMediaStream
+  const videoMediaStream = videoMediaState.stream
   const videoStreamPaused =
     isSelf && !isScreen
       ? !mediaStreamState.webcamEnabled.value
       : isSelf && isScreen
       ? !mediaStreamState.screenshareEnabled.value
-      : peerMediaState.videoStreamPaused
+      : videoMediaState.paused
+
+  const audioMediaChannelState = useHookstate(
+    getMutableState(MediaChannelState)[peerID][
+      isScreen ? screenshareAudioMediaChannelType : webcamAudioMediaChannelType
+    ] as State<MediaStreamInterface>
+  )
+
+  const audioMediaState = audioMediaChannelState.get({
+    noproxy: true
+  }) as MediaStreamInterface
 
   const audioStreamPaused =
     isSelf && !isScreen
       ? !mediaStreamState.microphoneEnabled.value
       : isSelf && isScreen
       ? mediaStreamState.screenShareAudioPaused.value
-      : peerMediaState.audioStreamPaused
+      : audioMediaState.paused
 
   const username = getUsername() as UserName
 
@@ -121,7 +143,7 @@ export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (
     } else if (isSelf && isScreen) {
       MediaStreamState.toggleScreenshareVideoPaused()
     } else {
-      peerMediaChannelState.videoStreamPaused.set((val) => !val)
+      videoMediaChannelState.paused.set((val) => !val)
     }
   }
 
@@ -132,7 +154,7 @@ export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (
     } else if (isSelf && isScreen) {
       MediaStreamState.toggleScreenshareAudioPaused()
     } else {
-      peerMediaChannelState.audioStreamPaused.set((val) => !val)
+      audioMediaChannelState.paused.set((val) => !val)
     }
   }
 
