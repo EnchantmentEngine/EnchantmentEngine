@@ -34,6 +34,7 @@ import {
   getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
+  setComponent,
   useHasComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -60,6 +61,8 @@ import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNe
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent.ts'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
@@ -182,6 +185,13 @@ const reactor = () => {
     ? getComponent(cameraSettingsEntities[0], CameraSettingsComponent)
     : null
   const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.poiMode === 'Disabled' : true
+
+  useEffect(() => {
+    if (!isAvatarUsed) {
+      const cameraEntity = getState(ReferenceSpaceState).viewerEntity
+      setComponent(cameraEntity, FollowCameraComponent)
+    }
+  }, [isAvatarUsed])
 
   if (!gltfLoaded || !userID) return null
 

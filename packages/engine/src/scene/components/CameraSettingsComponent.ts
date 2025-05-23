@@ -79,7 +79,7 @@ export const CameraSettingsComponent = defineComponent({
 
     for (const prop of Object.keys(getState(CameraSettingsState))) {
       useEffect(() => {
-        if (component[prop].value !== getState(CameraSettingsState)[prop]) {
+        if (component[prop].value && component[prop].value !== getState(CameraSettingsState)[prop]) {
           if (Array.isArray(component[prop].value)) {
             getMutableState(CameraSettingsState)[prop].set(Array.from(component[prop].value))
           } else {
