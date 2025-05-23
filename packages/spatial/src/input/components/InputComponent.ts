@@ -391,6 +391,15 @@ export const InputComponent = defineComponent({
     //   // collider.collisionLayer.set(collider.collisionLayer.value | CollisionGroups.Input)
     // }, [])
 
+    /** @todo - fix */
+    // useLayoutEffect(() => {
+    //   if (!input.inputSources.length || !input.grow.value) return
+    //   setComponent(entity, AnimateScaleComponent)
+    //   return () => {
+    //     removeComponent(entity, AnimateScaleComponent)
+    //   }
+    // }, [input.inputSources, input.grow])
+
     return null
   }
 })
