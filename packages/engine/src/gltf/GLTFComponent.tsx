@@ -59,6 +59,7 @@ import { getMutableState, getState, NO_PROXY_STEALTH, none, State, useHookstate 
 import { LayerComponent, useAncestorWithComponents } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
+import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
 import { ShapeSchema } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
@@ -71,9 +72,9 @@ import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadComponent'
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
-import { SceneJsonType } from '../scene/types/SceneTypes'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
+import { migrateEEMaterial } from './migrateEEMaterial'
 import { ResourcePendingComponent } from './ResourcePendingComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
@@ -274,6 +275,7 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     if (!sceneLoaded || !scene) return
     setComponent(entity, SceneComponent, { active: true })
+    setComponent(entity, ActiveHelperComponent, { volumeEnabled: true })
   }, [sceneLoaded, !!scene])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
@@ -424,10 +426,6 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: C
   )
 }
 
-const onProgress: (event: ProgressEvent) => void = (event) => {
-  // console.log(event)
-}
-
 /* BINARY EXTENSION */
 export const BINARY_EXTENSION_HEADER_MAGIC = 'glTF'
 export const BINARY_EXTENSION_HEADER_LENGTH = 12
@@ -444,7 +442,7 @@ export const loadGLTFFile = (
     if (signal && signal.aborted) return
 
     const textDecoder = new TextDecoder()
-    let json: GLTF.IGLTF | SceneJsonType
+    let json: GLTF.IGLTF
     let body: ArrayBuffer | null = null
 
     try {
@@ -452,7 +450,6 @@ export const loadGLTFFile = (
         json = JSON.parse(data)
       } else if ('byteLength' in data) {
         const magic = textDecoder.decode(new Uint8Array(data, 0, 4))
-
         if (magic === BINARY_EXTENSION_HEADER_MAGIC) {
           const { json: jsonContent, body: bodyContent } = parseBinaryData(data)
           body = bodyContent
@@ -464,7 +461,11 @@ export const loadGLTFFile = (
         json = data
       }
 
-      onLoad(parseStorageProviderURLs(JSON.parse(JSON.stringify(json))), body)
+      json = JSON.parse(JSON.stringify(json))
+
+      json = migrateEEMaterial(json)
+
+      onLoad(parseStorageProviderURLs(json), body)
     } catch (error) {
       if (onError) onError(error)
       return
@@ -500,7 +501,7 @@ const useGLTFDocument = (entity: Entity) => {
     const signal = abortController.signal
 
     const onError = (error: ErrorEvent) => {
-      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model')
+      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model ' + url)
     }
 
     removeError(entity, GLTFComponent, 'LOADING_ERROR')
@@ -513,7 +514,9 @@ const useGLTFDocument = (entity: Entity) => {
         const dependencies = buildComponentDependencies(entity, gltf)
         state.dependencies.set(dependencies)
       },
-      onProgress,
+      (progress: ProgressEvent) => {
+        //this is the gtlf file loading progress, not to be confused with the GTLF Component property "progress" which tracks if the gtlf is loaded into the scene
+      },
       onError,
       signal
     )

@@ -33,8 +33,7 @@ import { LocationService } from '@ir-engine/client-core/src/social/services/Loca
 import { AuthService } from '@ir-engine/client-core/src/user/services/AuthService'
 import { clientContextParams } from '@ir-engine/client-core/src/util/ClientContextState'
 import multiLogger from '@ir-engine/common/src/logger'
-import { getMutableState, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { getMutableState, NetworkState, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 
 import { ChatPageType, NewChatState } from './ChatState'

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -215,7 +215,7 @@ export type ComponentErrorsType<C extends Component> =
 
 type Primitive = string | number | bigint | boolean | undefined | symbol
 export type ComponentPropertyPath<T, Prefix = ''> = {
-  [K in keyof T]: T[K] extends Function // eslint-disable-line @typescript-eslint/ban-types
+  [K in keyof T]: T[K] extends Function
     ? never
     : T[K] extends Primitive | Array<any>
     ? `${string & Prefix}${string & K}`
@@ -900,7 +900,7 @@ function createPropagationArgsClass<C extends Component>(
   component: C
 ) {
   if (!obj) return undefined
-  if ('clone' in obj && typeof obj.clone === 'function') {
+  if (typeof obj === 'object' && 'clone' in obj && typeof obj.clone === 'function') {
     return obj.clone()
   } else {
     try {
@@ -927,7 +927,7 @@ function createPropagationArgsObject<C extends Component>(
   entity: Entity,
   component: C
 ) {
-  if (!obj) return undefined
+  if (!obj || typeof obj !== 'object') return undefined
   const props = schema.properties as any
   const args = {} as any
   for (const k in props) {
@@ -1065,8 +1065,7 @@ function createPropagationArgsInner<C extends Component>(
   component: C
 ) {
   const obj = key === '' ? data : data[key]
-  if (typeof obj === 'undefined') return undefined
-  if (!schema.options?.serialized && schema.options?.id !== 'Entity') return undefined
+  if (typeof obj === 'undefined' || !schema.options?.serialized) return undefined
 
   switch (schema[Kind]) {
     case 'Null':
@@ -1074,7 +1073,6 @@ function createPropagationArgsInner<C extends Component>(
     case 'Void':
     case 'Bool':
     case 'String':
-    case 'Enum':
     case 'Literal': {
       return obj
     }
