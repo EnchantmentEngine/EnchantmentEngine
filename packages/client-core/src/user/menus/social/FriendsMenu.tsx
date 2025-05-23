@@ -140,8 +140,6 @@ const FriendsMenu = ({ defaultSelectedTab }: Props): JSX.Element => {
     .filter((item) => item.userRelationshipType === 'friend')
     .map((item) => ({ id: item.relatedUserId, name: item.relatedUser.name, relationType: 'friend' as const }))
 
-  console.log([...pendingList], [...friendList])
-
   if (selectedTabName.value === 'friends') {
     displayList.push(...pendingList)
     displayList.push(...friendList)
