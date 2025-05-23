@@ -86,10 +86,6 @@ function PoiUIReactor() {
   }
 
   useEffect(() => {
-    cameraSettingsState.currentPoiIndex.set(0)
-  }, [])
-
-  useEffect(() => {
     console.log('mbf', cameraSettingsState.currentPoiIndex.value)
   }, [cameraSettingsState.currentPoiIndex.value])
 
