@@ -23,18 +23,21 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { disallow } from 'feathers-hooks-common'
+import { disallow, isProvider } from 'feathers-hooks-common'
 import { SYNC } from 'feathers-sync'
 
-import { BadRequest } from '@feathersjs/errors'
+import { BadRequest, MethodNotAllowed } from '@feathersjs/errors'
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { UploadFile } from '@ir-engine/common/src/interfaces/UploadAssetInterface'
+import { featureFlagSettingPath } from '@ir-engine/common/src/schema.type.module'
 import logRequest from '@ir-engine/server-core/src/hooks/log-request'
 import setLoggedInUser from '@ir-engine/server-core/src/hooks/set-loggedin-user-in-body'
-import { HookContext } from '../../../declarations'
+import { Application, HookContext } from '../../../declarations'
 
 const validateFiles = (context: HookContext) => {
   const args = context.arguments
-  const files = args?.[1]?.files
-  files.forEach((file) => {
+  const files = args?.[1]?.files as UploadFile[]
+  files.forEach((file: UploadFile) => {
     if (!file.originalname.includes('.')) throw new BadRequest('File name must include a file extension')
     if (
       !(
@@ -53,7 +56,36 @@ const validateFiles = (context: HookContext) => {
   })
 }
 
+/**
+ * Check if the scripting feature flag is enabled
+ * Disables the service if the flag is disabled
+ */
+const checkScriptingEnabled = async (context: HookContext) => {
+  if (!isProvider('external')(context)) {
+    return context
+  }
+
+  const app = context.app as Application
+  const result = await app.service(featureFlagSettingPath).find({
+    query: {
+      flagName: FeatureFlags.Studio.Panel.Script,
+      paginate: false
+    }
+  })
+
+  const data = result.data || result
+  if (Array.isArray(data) && data.length > 0 && data[0].flagValue === false) {
+    throw new MethodNotAllowed('Scripting is disabled')
+  }
+
+  return context
+}
+
 export default {
+  around: {
+    all: [checkScriptingEnabled]
+  },
+
   before: {
     all: [logRequest()],
     find: [disallow()],
@@ -69,8 +101,8 @@ export default {
     find: [],
     get: [],
     create: [
-      (context) => {
-        context[SYNC] = false
+      (context: HookContext) => {
+        ;(context as any)[SYNC] = false
         return context
       }
     ],
