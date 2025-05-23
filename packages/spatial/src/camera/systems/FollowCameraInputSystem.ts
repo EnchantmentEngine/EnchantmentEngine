@@ -36,7 +36,7 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import { CameraPoiMode } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
@@ -63,14 +63,9 @@ import { CameraSettingsState } from '../CameraSettingsState.ts'
 
 const pointerPositionDelta = new Vector2()
 const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent])
-const cameraSettingsQuery = defineQuery([CameraSettingsComponent])
-const poiCameraSettingsQuery = defineQuery([PoiCameraSettingsComponent])
-const epsilon = 0.001
 
 // Temporary vectors for POI camera calculations
 const targetPosition = new Vector3()
-const currentPosition = new Vector3()
-const positionVelocity = new Vector3()
 
 const followCameraModeCycle = [
   FollowCameraMode.FirstPerson,
@@ -101,13 +96,11 @@ const onFollowCameraShoulderCam = (cameraEntity: Entity) => {
 /**
  * Change camera distance or navigate between POIs.
  * @param cameraEntity Entity holding camera and input component.
- * @param cameraSettingsEntity Entity holding camera settings.
  * @param axes Input axes values.
  * @param deltaTime Delta time for smooth transitions.
  */
 export const handleFollowCameraScroll = (
   cameraEntity: Entity,
-  cameraSettingsEntity: Entity | null,
   axes: AxisValueMap<typeof DefaultAxisBindings>,
   deltaTime: number
 ): void => {
@@ -116,60 +109,59 @@ export const handleFollowCameraScroll = (
   const shoulderDelta = axes.FollowCameraShoulderCamScroll ?? 0
 
   // Check if we're in POI mode
-  if (cameraSettingsEntity) {
-    const cameraSettingsState = getMutableState(CameraSettingsState)
 
-    if (cameraSettingsState.poiMode.value === CameraPoiMode.Enabled) {
-      // Filter POI entities to only include those with PoiCameraSettingsComponent
-      const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
-        const entity = UUIDComponent.getEntityByUUID(entityId.value)
-        return entity && hasComponent(entity, PoiCameraSettingsComponent)
-      })
+  const cameraSettingsState = getMutableState(CameraSettingsState)
 
-      if (validPoiEntities.length > 0) {
-        // If we don't have a valid target index yet, initialize it
-        if (cameraSettingsState.targetPoiIndex.value < 0) {
-          cameraSettingsState.targetPoiIndex.set(0)
-          cameraSettingsState.currentPoiIndex.set(0)
+  if (cameraSettingsState.poiMode.value === CameraPoiMode.Enabled) {
+    // Filter POI entities to only include those with PoiCameraSettingsComponent
+    const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
+      const entity = UUIDComponent.getEntityByUUID(entityId.value)
+      return entity && hasComponent(entity, PoiCameraSettingsComponent)
+    })
+
+    if (validPoiEntities.length > 0) {
+      // If we don't have a valid target index yet, initialize it
+      if (cameraSettingsState.targetPoiIndex.value < 0) {
+        cameraSettingsState.targetPoiIndex.set(0)
+        cameraSettingsState.currentPoiIndex.set(0)
+        cameraSettingsState.poiLerpValue.set(0)
+      }
+
+      // Handle scrolling to change target POI
+      if (Math.abs(zoomDelta) > 0.1) {
+        let newTargetIndex = cameraSettingsState.targetPoiIndex.value
+
+        // Scroll down (negative value) moves to next POI
+        if (zoomDelta < 0) {
+          newTargetIndex = (newTargetIndex + 1) % validPoiEntities.length
+        }
+        // Scroll up (positive value) moves to previous POI
+        else if (zoomDelta > 0) {
+          newTargetIndex = (newTargetIndex - 1 + validPoiEntities.length) % validPoiEntities.length
+        }
+
+        // Only update if the target index has changed
+        if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
+          // Set the new target and reset lerp value to start transition
+          cameraSettingsState.targetPoiIndex.set(newTargetIndex)
           cameraSettingsState.poiLerpValue.set(0)
         }
-
-        // Handle scrolling to change target POI
-        if (Math.abs(zoomDelta) > 0.1) {
-          let newTargetIndex = cameraSettingsState.targetPoiIndex.value
-
-          // Scroll down (negative value) moves to next POI
-          if (zoomDelta < 0) {
-            newTargetIndex = (newTargetIndex + 1) % validPoiEntities.length
-          }
-          // Scroll up (positive value) moves to previous POI
-          else if (zoomDelta > 0) {
-            newTargetIndex = (newTargetIndex - 1 + validPoiEntities.length) % validPoiEntities.length
-          }
-
-          // Only update if the target index has changed
-          if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
-            // Set the new target and reset lerp value to start transition
-            cameraSettingsState.targetPoiIndex.set(newTargetIndex)
-            cameraSettingsState.poiLerpValue.set(0)
-          }
-        }
-
-        // Update lerp value based on speed and delta time
-        const lerpValue = Math.min(
-          cameraSettingsState.poiLerpValue.value + cameraSettingsState.poiLerpSpeed.value * deltaTime,
-          1
-        )
-        cameraSettingsState.poiLerpValue.set(lerpValue)
-
-        // If we've completed the lerp, update the current index
-        if (lerpValue >= 1 && cameraSettingsState.currentPoiIndex !== cameraSettingsState.targetPoiIndex) {
-          cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
-        }
-
-        // We've handled the scroll in POI mode, so return early
-        return
       }
+
+      // Update lerp value based on speed and delta time
+      const lerpValue = Math.min(
+        cameraSettingsState.poiLerpValue.value + cameraSettingsState.poiLerpSpeed.value * deltaTime,
+        1
+      )
+      cameraSettingsState.poiLerpValue.set(lerpValue)
+
+      // If we've completed the lerp, update the current index
+      if (lerpValue >= 1 && cameraSettingsState.currentPoiIndex !== cameraSettingsState.targetPoiIndex) {
+        cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
+      }
+
+      // We've handled the scroll in POI mode, so return early
+      return
     }
   }
 
@@ -199,10 +191,6 @@ const execute = () => {
 
   const deltaSeconds = getState(ECSState).deltaSeconds
   const cameraSettings = getState(CameraSettings)
-
-  // Get camera settings entity if available
-  const cameraSettingsEntities = cameraSettingsQuery()
-  const cameraSettingsEntity = cameraSettingsEntities.length > 0 ? cameraSettingsEntities[0] : null
 
   // Get the viewer entity
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
@@ -248,10 +236,10 @@ const execute = () => {
     if (getState(InputState).capturingEntity === cameraEntity) {
       setTargetCameraRotation(cameraEntity, phi, theta, time)
     }
-    handleFollowCameraScroll(cameraEntity, cameraSettingsEntity, axes, deltaSeconds)
+    handleFollowCameraScroll(cameraEntity, axes, deltaSeconds)
 
     // Handle POI camera movement if in POI mode
-    if (cameraSettingsEntity && viewerEntity === cameraEntity) {
+    if (viewerEntity === cameraEntity) {
       const settings = getMutableState(CameraSettingsState)
 
       if (settings.poiMode.value === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
