@@ -290,21 +290,6 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={cameraSettings.poiLerpSpeed.value}
             />
           </InputGroup>
-
-          <InputGroup
-            name="targetPoiIndex"
-            label={t('editor:properties.cameraSettings.lbl-targetPoiIndex', 'Target POI Index')}
-          >
-            <NumericInput
-              onChange={updateProperty(CameraSettingsComponent, 'targetPoiIndex')}
-              onRelease={commitProperty(CameraSettingsComponent, 'targetPoiIndex')}
-              min={-1}
-              smallStep={1}
-              mediumStep={1}
-              largeStep={1}
-              value={cameraSettings.targetPoiIndex.value}
-            />
-          </InputGroup>
         </>
       )}
     </NodeEditor>
