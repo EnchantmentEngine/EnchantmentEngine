@@ -29,7 +29,7 @@ import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSceneMetadata'
+import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState.ts'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 
@@ -70,9 +70,6 @@ export const CameraSettingsComponent = defineComponent({
     // New fields for POI camera mode
     poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
     poiEntities: S.Array(S.EntityUUID(), []),
-    currentPoiIndex: S.Number({ default: -1 }),
-    targetPoiIndex: S.Number({ default: -1 }),
-    poiLerpValue: S.Number({ default: 0 }),
     poiLerpSpeed: S.Number({ default: 0.5 })
   }),
 

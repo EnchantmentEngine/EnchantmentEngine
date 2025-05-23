@@ -38,7 +38,7 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
@@ -57,6 +57,7 @@ import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { CameraSettingsState } from '../CameraSettingsState.ts'
 
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
@@ -116,28 +117,26 @@ export const handleFollowCameraScroll = (
 
   // Check if we're in POI mode
   if (cameraSettingsEntity) {
-    const cameraSettings = getComponent(cameraSettingsEntity, CameraSettingsComponent)
+    const cameraSettingsState = getMutableState(CameraSettingsState)
 
-    if (cameraSettings.poiMode === CameraPoiMode.Enabled) {
+    if (cameraSettingsState.poiMode.value === CameraPoiMode.Enabled) {
       // Filter POI entities to only include those with PoiCameraSettingsComponent
-      const validPoiEntities = cameraSettings.poiEntities.filter((entityId) => {
-        const entity = UUIDComponent.getEntityByUUID(entityId)
+      const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
+        const entity = UUIDComponent.getEntityByUUID(entityId.value)
         return entity && hasComponent(entity, PoiCameraSettingsComponent)
       })
 
       if (validPoiEntities.length > 0) {
-        const mutableCameraSettings = getMutableComponent(cameraSettingsEntity, CameraSettingsComponent)
-
         // If we don't have a valid target index yet, initialize it
-        if (cameraSettings.targetPoiIndex < 0) {
-          mutableCameraSettings.targetPoiIndex.set(0)
-          mutableCameraSettings.currentPoiIndex.set(0)
-          mutableCameraSettings.poiLerpValue.set(0)
+        if (cameraSettingsState.targetPoiIndex.value < 0) {
+          cameraSettingsState.targetPoiIndex.set(0)
+          cameraSettingsState.currentPoiIndex.set(0)
+          cameraSettingsState.poiLerpValue.set(0)
         }
 
         // Handle scrolling to change target POI
         if (Math.abs(zoomDelta) > 0.1) {
-          let newTargetIndex = cameraSettings.targetPoiIndex
+          let newTargetIndex = cameraSettingsState.targetPoiIndex.value
 
           // Scroll down (negative value) moves to next POI
           if (zoomDelta < 0) {
@@ -149,20 +148,23 @@ export const handleFollowCameraScroll = (
           }
 
           // Only update if the target index has changed
-          if (newTargetIndex !== cameraSettings.targetPoiIndex) {
+          if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
             // Set the new target and reset lerp value to start transition
-            mutableCameraSettings.targetPoiIndex.set(newTargetIndex)
-            mutableCameraSettings.poiLerpValue.set(0)
+            cameraSettingsState.targetPoiIndex.set(newTargetIndex)
+            cameraSettingsState.poiLerpValue.set(0)
           }
         }
 
         // Update lerp value based on speed and delta time
-        const lerpValue = Math.min(cameraSettings.poiLerpValue + cameraSettings.poiLerpSpeed * deltaTime, 1)
-        mutableCameraSettings.poiLerpValue.set(lerpValue)
+        const lerpValue = Math.min(
+          cameraSettingsState.poiLerpValue.value + cameraSettingsState.poiLerpSpeed.value * deltaTime,
+          1
+        )
+        cameraSettingsState.poiLerpValue.set(lerpValue)
 
         // If we've completed the lerp, update the current index
-        if (lerpValue >= 1 && cameraSettings.currentPoiIndex !== cameraSettings.targetPoiIndex) {
-          mutableCameraSettings.currentPoiIndex.set(cameraSettings.targetPoiIndex)
+        if (lerpValue >= 1 && cameraSettingsState.currentPoiIndex !== cameraSettingsState.targetPoiIndex) {
+          cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
         }
 
         // We've handled the scroll in POI mode, so return early
@@ -250,24 +252,24 @@ const execute = () => {
 
     // Handle POI camera movement if in POI mode
     if (cameraSettingsEntity && viewerEntity === cameraEntity) {
-      const settings = getComponent(cameraSettingsEntity, CameraSettingsComponent)
+      const settings = getMutableState(CameraSettingsState)
 
-      if (settings.poiMode === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
+      if (settings.poiMode.value === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
         // Filter POI entities to only include those with PoiCameraSettingsComponent
         const validPoiEntities = settings.poiEntities.filter((entityUUID) =>
-          hasComponent(UUIDComponent.getEntityByUUID(entityUUID), PoiCameraSettingsComponent)
+          hasComponent(UUIDComponent.getEntityByUUID(entityUUID.value), PoiCameraSettingsComponent)
         )
 
         if (
           validPoiEntities.length > 0 &&
-          settings.currentPoiIndex >= 0 &&
-          settings.currentPoiIndex < validPoiEntities.length &&
-          settings.targetPoiIndex >= 0 &&
-          settings.targetPoiIndex < validPoiEntities.length
+          settings.currentPoiIndex.value >= 0 &&
+          settings.currentPoiIndex.value < validPoiEntities.length &&
+          settings.targetPoiIndex.value >= 0 &&
+          settings.targetPoiIndex.value < validPoiEntities.length
         ) {
           // Get current and target POI entity IDs
-          const currentPoiEntityId = validPoiEntities[settings.currentPoiIndex]
-          const targetPoiEntityId = validPoiEntities[settings.targetPoiIndex]
+          const currentPoiEntityId = validPoiEntities[settings.currentPoiIndex.value].value
+          const targetPoiEntityId = validPoiEntities[settings.targetPoiIndex.value].value
 
           // Get the actual entities from the IDs
           const currentPoiEntity = UUIDComponent.getEntityByUUID(currentPoiEntityId)
@@ -295,7 +297,7 @@ const execute = () => {
             }
 
             // Get the lerp value for smooth transitions
-            const lerpValue = settings.poiLerpValue
+            const lerpValue = settings.poiLerpValue.value
 
             // Interpolate between current and target positions
             targetPosition.lerpVectors(currentPoiPosition, targetPoiPosition, lerpValue)
