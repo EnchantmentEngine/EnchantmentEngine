@@ -375,7 +375,12 @@ export function ViewportContainer() {
         {sceneName.value ? <CameraGizmoTool viewportRef={ref} toolbarRef={toolbarRef} /> : null}
         <div
           id="engine-renderer-canvas-container"
-          ref={(ref) => canvasRef.set({ current: ref })}
+          ref={(ref) => {
+            if (canvasRef.value?.current) return
+            else {
+              canvasRef.set({ current: ref })
+            }
+          }}
           className="absolute z-10 h-full w-full"
         />
         {sceneName.value ? (

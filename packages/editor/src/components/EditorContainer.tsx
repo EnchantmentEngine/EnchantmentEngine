@@ -156,7 +156,6 @@ const EditorContainer = () => {
   const { metadata } = useHookstate(getMutableState(ClickPlacementState)).value
   const editorUIAddon = useMutableState(UIAddonsState).editor
   const currentLoadedSceneURL = useHookstate(null as string | null)
-
   useEngineCanvas(canvasRef.value as React.RefObject<HTMLElement> | null)
 
   /**
