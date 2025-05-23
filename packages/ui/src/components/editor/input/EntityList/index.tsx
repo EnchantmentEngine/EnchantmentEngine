@@ -62,9 +62,7 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     const options = filteredEntities.map((entity) => {
       const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
 
-      const entityUUID = hasComponent(entity, UUIDComponent)
-        ? getComponent(entity, UUIDComponent)
-        : (`${entity}` as EntityUUID)
+      const entityUUID = hasComponent(entity, UUIDComponent) ? UUIDComponent.get(entity) : (`${entity}` as EntityUUID)
 
       return {
         label: name,
