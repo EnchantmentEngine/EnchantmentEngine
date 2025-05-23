@@ -26,12 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  hasComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState.ts'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
+import { PoiUIComponent } from './PoiUIComponent'
 
 // Define a new camera mode for POI navigation
 export enum CameraPoiMode {
@@ -88,6 +95,15 @@ export const CameraSettingsComponent = defineComponent({
         }
       }, [component[prop]])
     }
+
+    useEffect(() => {
+      const hasPoiUI = hasComponent(entity, PoiUIComponent)
+      if (component.poiMode.value === CameraPoiMode.Enabled) {
+        if (!hasPoiUI) setComponent(entity, PoiUIComponent)
+      } else {
+        if (hasPoiUI) removeComponent(entity, PoiUIComponent)
+      }
+    }, [component.poiMode])
 
     return null
   }
