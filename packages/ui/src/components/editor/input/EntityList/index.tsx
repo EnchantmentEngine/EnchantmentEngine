@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, EntityID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { Entity, EntityUUID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
 import React, { useEffect } from 'react'
@@ -35,11 +35,11 @@ import Label from '../../../../primitives/tailwind/Label'
 import Text from '../../../../primitives/tailwind/Text'
 import SelectInput from '../Select'
 
-type EntityOptionType = { label: string; value: EntityID; entity: Entity }
+type EntityOptionType = { label: string; value: EntityUUID; entity: Entity }
 
 interface EntityListInputProps {
-  value: EntityID[]
-  onChange: (entityIDs: EntityID[]) => void
+  value: EntityUUID[]
+  onChange: (entityUUIDs: EntityUUID[]) => void
   filter?: (entity: Entity) => boolean
   placeholder?: string
   label?: string
@@ -62,13 +62,11 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     const options = filteredEntities.map((entity) => {
       const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
 
-      const entityID = hasComponent(entity, UUIDComponent)
-        ? getComponent(entity, UUIDComponent).entityID
-        : (`${entity}` as EntityID)
+      const entityUUID = hasComponent(entity, UUIDComponent) ? UUIDComponent.get(entity) : (`${entity}` as EntityUUID)
 
       return {
         label: name,
-        value: entityID,
+        value: entityUUID,
         entity
       }
     })
@@ -80,7 +78,7 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
   const handleAddEntity = () => {
     // Add an empty entity ID slot that will be filled via dropdown
     // Using an empty string as a placeholder
-    const newEntityIDs = [...value, '' as EntityID]
+    const newEntityIDs = [...value, '' as EntityUUID]
     onChange(newEntityIDs)
   }
 
