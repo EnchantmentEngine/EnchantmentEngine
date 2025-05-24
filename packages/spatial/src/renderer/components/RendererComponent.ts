@@ -27,9 +27,10 @@ import { defineComponent, Entity, getComponent, hasComponent, S, useComponent, u
 import { getState, NO_PROXY, none, State, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
-import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
+import { ArrayCamera, Scene, WebGLRendererParameters } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
-import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
+import { WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
 import CSMHelper from '../csm/CSMHelper'
 import { HighlightState } from '../HighlightState'
@@ -59,7 +60,7 @@ export const RendererComponent = defineComponent({
 
       canvas: S.Type<HTMLCanvasElement | null>(),
 
-      renderer: S.Type<WebGLRenderer | null>(),
+      renderer: S.Type<WebGPURenderer | null>(),
       effectComposer: S.Type<EffectComposer | null>(),
 
       scenes: S.Array(S.Entity()),
@@ -163,103 +164,140 @@ export const RendererComponent = defineComponent({
 
     useEffect(() => {
       const canvas = rendererComponent.canvas.value as HTMLCanvasElement
-      const context = canvas.getContext('webgl2')
 
-      rendererComponent.renderContext.set(context)
+      // Don't get WebGL2 context if we're going to use WebGPU
+      if (navigator.gpu) {
+        console.log('WebGPU is supported')
+      } else {
+        const context = canvas.getContext('webgl2')
+        rendererComponent.renderContext.set(context)
+        console.log('Falling back to WebGL2')
+      }
     }, [])
 
     useEffect(() => {
-      const context = rendererComponent.renderContext.get(NO_PROXY) as WebGLRenderingContext | WebGL2RenderingContext
-      if (!context) return
-
       const canvas = rendererComponent.canvas.get(NO_PROXY) as HTMLCanvasElement
 
-      const options: WebGLRendererParameters = {
-        precision: 'highp',
-        powerPreference: 'high-performance',
-        stencil: false,
-        antialias: false,
-        depth: true,
-        logarithmicDepthBuffer: false,
-        canvas,
-        context,
-        preserveDrawingBuffer: false,
-        //@ts-ignore
-        multiviewStereo: true
-      }
+      if (navigator.gpu) {
+        // Use WebGPU
+        const renderer = new WebGPURenderer({ forceWebGL: false, canvas })
+        renderer
+          .init()
+          .then((r) => {
+            console.log('WebGPU renderer initialized', r)
+            rendererComponent.renderer.set(r)
+            document.body.appendChild(renderer.domElement)
+            //renderer.debug.checkShaderErrors = isDev
+            renderer.autoClear = true
 
-      const renderer = new WebGLRenderer(options)
-      rendererComponent.renderer.set(renderer)
-      renderer.outputColorSpace = SRGBColorSpace
+            // Set up resize handlers
+            const onResize = () => {
+              rendererComponent.needsResize.set(true)
+            }
+            canvas.style.touchAction = 'none'
+            canvas.addEventListener('resize', onResize, false)
+            window.addEventListener('resize', onResize, false)
+          })
+          .catch((err) => {
+            console.error('WebGPU initialization failed:', err)
+            // Could add fallback to WebGL here
+          })
+      } else {
+        // WebGL fallback logic
+        const context = rendererComponent.renderContext.get(NO_PROXY) as WebGLRenderingContext | WebGL2RenderingContext
+        if (!context) return
 
-      const composer = new EffectComposer(renderer)
-      rendererComponent.effectComposer.set(composer)
-      const renderPass = new RenderPass()
-      composer.addPass(renderPass)
-      rendererComponent.renderPass.set(renderPass)
+        const options: WebGLRendererParameters = {
+          precision: 'highp',
+          powerPreference: 'high-performance',
+          stencil: false,
+          antialias: false,
+          depth: true,
+          logarithmicDepthBuffer: false,
+          canvas,
+          context,
+          preserveDrawingBuffer: false,
+          //@ts-ignore
+          multiviewStereo: true
+        }
 
-      // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
-      // renderer.debug.checkShaderErrors = isDev
+        const renderer = new WebGPURenderer({ forceWebGL: false, canvas })
+        renderer.init().then((r) => {
+          console.log('WebGPU renderer initialized', r)
+          rendererComponent.renderer.set(r)
+        })
+        document.body.appendChild(renderer.domElement)
+        // renderer.outputColorSpace = SRGBColorSpace
 
-      const xrManager = createWebXRManager(renderer)
-      renderer.xr = xrManager as any
-      rendererComponent.merge({ xrManager })
-      xrManager.cameraAutoUpdate = false
-      xrManager.enabled = true
+        // const composer = new EffectComposer(renderer)
+        // rendererComponent.effectComposer.set(composer)
+        // const renderPass = new RenderPass()
+        // composer.addPass(renderPass)
+        // rendererComponent.renderPass.set(renderPass)
 
-      const onResize = () => {
-        rendererComponent.needsResize.set(true)
-      }
+        // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
+        // renderer.debug.checkShaderErrors = isDev
 
-      // https://stackoverflow.com/questions/48124372/pointermove-event-not-working-with-touch-why-not
-      canvas.style.touchAction = 'none'
-      canvas.addEventListener('resize', onResize, false)
-      window.addEventListener('resize', onResize, false)
+        // const xrManager = createWebXRManager(renderer)
+        // renderer.xr = xrManager as any
+        // rendererComponent.merge({ xrManager })
+        // xrManager.cameraAutoUpdate = false
+        // xrManager.enabled = true
 
-      renderer.autoClear = true
+        const onResize = () => {
+          rendererComponent.needsResize.set(true)
+        }
 
-      /**
-       * This can be tested with document.getElementById('engine-renderer-canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
-       */
-      rendererComponent.webGLLostContext.set(context.getExtension('WEBGL_lose_context'))
+        // https://stackoverflow.com/questions/48124372/pointermove-event-not-working-with-touch-why-not
+        canvas.style.touchAction = 'none'
+        canvas.addEventListener('resize', onResize, false)
+        window.addEventListener('resize', onResize, false)
 
-      if (!rendererComponent.webGLLostContext.value) {
-        console.warn('Browser does not support `WEBGL_lose_context` extension')
-      }
+        renderer.autoClear = true
 
-      const handleWebGLContextLost = (e) => {
-        console.log('Browser lost the context.', e, rendererComponent.webGLLostContext.value)
-        e.preventDefault()
-        rendererComponent.needsResize.set(false)
-        setTimeout(() => {
-          rendererComponent.webGLLostContext.get(NO_PROXY)!.restoreContext()
-        }, 1)
-      }
+        /**
+         * This can be tested with document.getElementById('engine-renderer-canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
+         */
+        rendererComponent.webGLLostContext.set(context.getExtension('WEBGL_lose_context'))
 
-      /** @todo this seems unnecessary, since threejs recovers internally */
-      // const handleWebGLContextRestore = (e) => {
-      //   const canvas = rendererComponent.canvas.value as HTMLCanvasElement
-      //   canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
-      //   canvas.removeEventListener('webglcontextrestored', handleWebGLContextRestore)
-      //   const context = rendererComponent.supportWebGL2.value
-      //     ? canvas.getContext('webgl2')!
-      //     : canvas.getContext('webgl')!
-      //   rendererComponent.renderContext.set(context)
-      //   rendererComponent.needsResize.set(true)
-      //   console.log("Browser's context is restored.", e)
-      // }
+        if (!rendererComponent.webGLLostContext.value) {
+          console.warn('Browser does not support `WEBGL_lose_context` extension')
+        }
 
-      canvas.addEventListener('webglcontextlost', handleWebGLContextLost)
+        const handleWebGLContextLost = (e) => {
+          console.log('Browser lost the context.', e, rendererComponent.webGLLostContext.value)
+          e.preventDefault()
+          rendererComponent.needsResize.set(false)
+          setTimeout(() => {
+            rendererComponent.webGLLostContext.get(NO_PROXY)!.restoreContext()
+          }, 1)
+        }
 
-      return () => {
-        canvas.removeEventListener('resize', onResize, false)
-        window.removeEventListener('resize', onResize, false)
+        /** @todo this seems unnecessary, since threejs recovers internally */
+        // const handleWebGLContextRestore = (e) => {
+        //   const canvas = rendererComponent.canvas.value as HTMLCanvasElement
+        //   canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
+        //   canvas.removeEventListener('webglcontextrestored', handleWebGLContextRestore)
+        //   const context = rendererComponent.supportWebGL2.value
+        //     ? canvas.getContext('webgl2')!
+        //     : canvas.getContext('webgl')!
+        //   rendererComponent.renderContext.set(context)
+        //   rendererComponent.needsResize.set(true)
+        //   console.log("Browser's context is restored.", e)
+        // }
 
-        canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
-        // canvas.removeEventListener('webglcontextrestored', handleWebGLContextRestore)
+        canvas.addEventListener('webglcontextlost', handleWebGLContextLost)
 
-        renderer.dispose()
-        composer.dispose()
+        return () => {
+          canvas.removeEventListener('resize', onResize, false)
+          window.removeEventListener('resize', onResize, false)
+
+          canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
+          // canvas.removeEventListener('webglcontextrestored', handleWebGLContextRestore)
+
+          //renderer.dispose()
+          // composer.dispose()
+        }
       }
     }, [rendererComponent.renderContext.value])
 
@@ -308,7 +346,7 @@ export const RendererComponent = defineComponent({
         console.warn(e) /** @todo Implement user messaging Ex: (Can not use multiple convolution effects) */
       }
 
-      effectComposer.setRenderer(rendererComponent.renderer.value as WebGLRenderer)
+      // effectComposer.setRenderer(rendererComponent.renderer.value as WebGLRenderer)
 
       return () => {
         if (!hasComponent(entity, RendererComponent)) return

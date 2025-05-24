@@ -29,7 +29,6 @@ import { OverlaySystem } from '@ir-engine/client-core/src/systems/OverlaySystem'
 import { AvatarSpawnSystem } from '../networking/AvatarSpawnSystem'
 import { AvatarUISystem } from '../systems/AvatarUISystem'
 import { LinkErrorSystem } from '../systems/LinkErrorSystem'
-import { LoadingUISystem } from '../systems/LoadingUISystem'
 import { MediaControlSystem } from '../systems/MediaControlSystem'
 import { PositionalAudioSystem } from '../systems/PositionalAudioSystem'
 import { PoiUiSystem } from '../systems/ui/PoiUI'
@@ -46,7 +45,7 @@ export {
   AvatarUISystem,
   LinkErrorSystem,
   LinkRedirectSystem,
-  LoadingUISystem,
+  // LoadingUISystem,
   MediaControlSystem,
   OverlaySystem,
   PoiUiSystem,
