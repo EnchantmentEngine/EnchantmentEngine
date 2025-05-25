@@ -23,21 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, EngineState, S, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { defineComponent, EngineState, Entity, S, useComponent } from '@ir-engine/ecs'
+import { getState, isClient } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { addError, clearErrors, removeError } from '../scene/functions/ErrorFunctions'
 
-export function validateScriptUrl(entity, url: string): boolean {
+export function validateScriptUrl(entity: Entity, url: string): boolean {
   try {
     const parsedUrl = new URL(url)
-    console.log(parsedUrl)
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
       addError(entity, ScriptComponent, 'INVALID_URL_SCHEME', 'Invalid URL scheme')
       return false
     }
     if (!parsedUrl.pathname.endsWith('.js')) {
-      // replace with itemTypes later
       addError(entity, ScriptComponent, 'INVALID_SCRIPT_TYPE', 'URL does not point to a valid script file (.js)')
       return false
     }
@@ -57,17 +55,21 @@ export const ScriptComponent = defineComponent({
     bundledSrc: S.String()
   }),
 
-  // we make reactor for each component handle the engine
-  reactor: () => {
-    const entity = useEntityContext()
+  reactor: ({ entity }) => {
+    // Must never run scripts in editor or server
+    if (getState(EngineState).isEditor || !isClient) return
+
     const scriptComponent = useComponent(entity, ScriptComponent)
 
     useEffect(() => {
-      if (getState(EngineState).isEditing) return
       const script = document.createElement('script')
+
       if (!scriptComponent.bundledSrc.value) return // return for empty src
+
       if (!validateScriptUrl(entity, scriptComponent.bundledSrc.value)) return // validation step
+
       clearErrors(entity, ScriptComponent)
+
       script.src = scriptComponent.bundledSrc.value
       script.type = 'module'
 
@@ -75,15 +77,16 @@ export const ScriptComponent = defineComponent({
         addError(entity, ScriptComponent, 'MISSING_FILE', 'Failed to load the script!')
       }
 
-      script.onload = () => {
+      script.onload = (e) => {
         removeError(entity, ScriptComponent, 'MISSING_FILE')
       }
 
       document.body.appendChild(script)
+
       return () => {
         document.body.removeChild(script)
       }
-    }, [scriptComponent.bundledSrc])
+    }, [])
   },
   errors: ['MISSING_FILE', 'INVALID_URL_SCHEME', 'INVALID_SCRIPT_TYPE', 'INVALID_URL_FORMAT']
 })
