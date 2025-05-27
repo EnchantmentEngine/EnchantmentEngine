@@ -109,7 +109,6 @@ export const handleFollowCameraScroll = (
   const shoulderDelta = axes.FollowCameraShoulderCamScroll ?? 0
 
   // Check if we're in POI mode
-
   const cameraSettingsState = getMutableState(CameraSettingsState)
 
   if (cameraSettingsState.poiMode.value === CameraPoiMode.Enabled) {
@@ -125,39 +124,80 @@ export const handleFollowCameraScroll = (
         cameraSettingsState.targetPoiIndex.set(0)
         cameraSettingsState.currentPoiIndex.set(0)
         cameraSettingsState.poiLerpValue.set(0)
+        cameraSettingsState.scrollAccumulator.set(0)
       }
 
-      // Handle scrolling to change target POI
-      if (Math.abs(zoomDelta) > 0.1) {
-        let newTargetIndex = cameraSettingsState.targetPoiIndex.value
+      // Handle manual scroll-based POI navigation
+      if (Math.abs(zoomDelta) > 0.01) {
+        const currentLerpValue = cameraSettingsState.poiLerpValue.value
+        const scrollSensitivity = cameraSettingsState.scrollSensitivity.value
+        const deadzone = cameraSettingsState.scrollDeadzone.value
 
-        // Scroll down (negative value) moves to next POI
-        if (zoomDelta < 0) {
-          newTargetIndex = (newTargetIndex + 1) % validPoiEntities.length
+        // Accumulate scroll distance
+        let newScrollAccumulator = cameraSettingsState.scrollAccumulator.value + zoomDelta * scrollSensitivity
+
+        // Check if we're at a target (lerp value is 0 or 1) and apply deadzone
+        const isAtTarget = currentLerpValue <= 0.01 || currentLerpValue >= 0.99
+
+        if (isAtTarget) {
+          // Apply deadzone - need to scroll past deadzone before movement starts
+          if (Math.abs(newScrollAccumulator) > deadzone) {
+            // We've exceeded the deadzone, start moving
+            if (newScrollAccumulator > deadzone) {
+              // Moving forward (to next POI)
+              const newTargetIndex = (cameraSettingsState.targetPoiIndex.value + 1) % validPoiEntities.length
+              if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
+                cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
+                cameraSettingsState.targetPoiIndex.set(newTargetIndex)
+                cameraSettingsState.poiLerpValue.set(0)
+                cameraSettingsState.scrollAccumulator.set(newScrollAccumulator - deadzone)
+              }
+            } else if (newScrollAccumulator < -deadzone) {
+              // Moving backward (to previous POI)
+              const newTargetIndex =
+                (cameraSettingsState.targetPoiIndex.value - 1 + validPoiEntities.length) % validPoiEntities.length
+              if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
+                cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
+                cameraSettingsState.targetPoiIndex.set(newTargetIndex)
+                cameraSettingsState.poiLerpValue.set(1) // Start from the end when going backward
+                cameraSettingsState.scrollAccumulator.set(newScrollAccumulator + deadzone)
+              }
+            } else {
+              cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
+            }
+          } else {
+            // Still within deadzone, just accumulate
+            cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
+          }
+        } else {
+          // Not at target, directly control lerp value
+          cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
+
+          // Convert scroll accumulator to lerp value (0 to 1)
+          let newLerpValue = currentLerpValue + zoomDelta * scrollSensitivity * 0.1
+          newLerpValue = Math.max(0, Math.min(1, newLerpValue))
+
+          cameraSettingsState.poiLerpValue.set(newLerpValue)
+
+          // Update current index when we reach the target
+          if (
+            newLerpValue >= 0.99 &&
+            cameraSettingsState.currentPoiIndex.value !== cameraSettingsState.targetPoiIndex.value
+          ) {
+            cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
+            cameraSettingsState.scrollAccumulator.set(0)
+          } else if (
+            newLerpValue <= 0.01 &&
+            cameraSettingsState.currentPoiIndex.value !== cameraSettingsState.targetPoiIndex.value
+          ) {
+            // If we're going backward and reach the start, update indices accordingly
+            const temp = cameraSettingsState.currentPoiIndex.value
+            cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
+            cameraSettingsState.targetPoiIndex.set(temp)
+            cameraSettingsState.poiLerpValue.set(1)
+            cameraSettingsState.scrollAccumulator.set(0)
+          }
         }
-        // Scroll up (positive value) moves to previous POI
-        else if (zoomDelta > 0) {
-          newTargetIndex = (newTargetIndex - 1 + validPoiEntities.length) % validPoiEntities.length
-        }
-
-        // Only update if the target index has changed
-        if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
-          // Set the new target and reset lerp value to start transition
-          cameraSettingsState.targetPoiIndex.set(newTargetIndex)
-          cameraSettingsState.poiLerpValue.set(0)
-        }
-      }
-
-      // Update lerp value based on speed and delta time
-      const lerpValue = Math.min(
-        cameraSettingsState.poiLerpValue.value + cameraSettingsState.poiLerpSpeed.value * deltaTime,
-        1
-      )
-      cameraSettingsState.poiLerpValue.set(lerpValue)
-
-      // If we've completed the lerp, update the current index
-      if (lerpValue >= 1 && cameraSettingsState.currentPoiIndex !== cameraSettingsState.targetPoiIndex) {
-        cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
       }
 
       // We've handled the scroll in POI mode, so return early

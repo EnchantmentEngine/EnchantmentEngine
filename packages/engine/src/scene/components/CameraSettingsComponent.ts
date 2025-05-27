@@ -70,7 +70,10 @@ export const CameraSettingsComponent = defineComponent({
     // New fields for POI camera mode
     poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
     poiEntities: S.Array(S.EntityUUID(), []),
-    poiLerpSpeed: S.Number({ default: 0.5 })
+    poiLerpSpeed: S.Number({ default: 0.5 }),
+    // Manual scroll control properties
+    scrollDeadzone: S.Number({ default: 0.3 }),
+    scrollSensitivity: S.Number({ default: 2.0 })
   }),
 
   reactor: () => {

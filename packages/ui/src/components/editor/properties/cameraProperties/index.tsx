@@ -290,6 +290,38 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={cameraSettings.poiLerpSpeed.value}
             />
           </InputGroup>
+
+          <InputGroup
+            name="scrollDeadzone"
+            label={t('editor:properties.cameraSettings.lbl-scrollDeadzone', 'Scroll Deadzone')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollDeadzone')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollDeadzone')}
+              min={0.1}
+              max={2}
+              smallStep={0.05}
+              mediumStep={0.1}
+              largeStep={0.2}
+              value={cameraSettings.scrollDeadzone.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollSensitivity"
+            label={t('editor:properties.cameraSettings.lbl-scrollSensitivity', 'Scroll Sensitivity')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollSensitivity')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollSensitivity')}
+              min={0.5}
+              max={10}
+              smallStep={0.1}
+              mediumStep={0.5}
+              largeStep={1}
+              value={cameraSettings.scrollSensitivity.value}
+            />
+          </InputGroup>
         </>
       )}
     </NodeEditor>

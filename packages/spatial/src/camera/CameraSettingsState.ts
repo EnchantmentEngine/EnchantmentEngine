@@ -50,6 +50,10 @@ export const CameraSettingsState = defineState({
     currentPoiIndex: -1,
     targetPoiIndex: -1,
     poiLerpValue: 0,
-    poiLerpSpeed: 0.5
+    poiLerpSpeed: 0.5,
+    // Manual scroll control properties
+    scrollAccumulator: 0,
+    scrollDeadzone: 0.3,
+    scrollSensitivity: 2.0
   }
 })
