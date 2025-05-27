@@ -54,6 +54,7 @@ export const CameraSettingsState = defineState({
     // Manual scroll control properties
     scrollAccumulator: 0,
     scrollDeadzone: 0.3,
-    scrollSensitivity: 2.0
+    scrollSensitivity: 2.0,
+    scrollDistancePerPoi: 3.0
   }
 })

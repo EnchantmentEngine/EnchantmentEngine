@@ -129,74 +129,53 @@ export const handleFollowCameraScroll = (
 
       // Handle manual scroll-based POI navigation
       if (Math.abs(zoomDelta) > 0.01) {
-        const currentLerpValue = cameraSettingsState.poiLerpValue.value
         const scrollSensitivity = cameraSettingsState.scrollSensitivity.value
         const deadzone = cameraSettingsState.scrollDeadzone.value
+        const scrollDistancePerPoi = cameraSettingsState.scrollDistancePerPoi.value
 
         // Accumulate scroll distance
         let newScrollAccumulator = cameraSettingsState.scrollAccumulator.value + zoomDelta * scrollSensitivity
 
-        // Check if we're at a target (lerp value is 0 or 1) and apply deadzone
-        const isAtTarget = currentLerpValue <= 0.01 || currentLerpValue >= 0.99
+        // Calculate the total scroll range needed to traverse all POIs
+        const totalScrollRange = (validPoiEntities.length - 1) * scrollDistancePerPoi
 
-        if (isAtTarget) {
-          // Apply deadzone - need to scroll past deadzone before movement starts
-          if (Math.abs(newScrollAccumulator) > deadzone) {
-            // We've exceeded the deadzone, start moving
-            if (newScrollAccumulator > deadzone) {
-              // Moving forward (to next POI)
-              const newTargetIndex = (cameraSettingsState.targetPoiIndex.value + 1) % validPoiEntities.length
-              if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
-                cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
-                cameraSettingsState.targetPoiIndex.set(newTargetIndex)
-                cameraSettingsState.poiLerpValue.set(0)
-                cameraSettingsState.scrollAccumulator.set(newScrollAccumulator - deadzone)
-              }
-            } else if (newScrollAccumulator < -deadzone) {
-              // Moving backward (to previous POI)
-              const newTargetIndex =
-                (cameraSettingsState.targetPoiIndex.value - 1 + validPoiEntities.length) % validPoiEntities.length
-              if (newTargetIndex !== cameraSettingsState.targetPoiIndex.value) {
-                cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
-                cameraSettingsState.targetPoiIndex.set(newTargetIndex)
-                cameraSettingsState.poiLerpValue.set(1) // Start from the end when going backward
-                cameraSettingsState.scrollAccumulator.set(newScrollAccumulator + deadzone)
-              }
-            } else {
-              cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
-            }
-          } else {
-            // Still within deadzone, just accumulate
-            cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
-          }
+        // Apply deadzones at the boundaries
+        const currentScrollPosition = newScrollAccumulator
+        const isAtStart = currentScrollPosition <= 0
+        const isAtEnd = currentScrollPosition >= totalScrollRange
+
+        // Handle boundary conditions with deadzones
+        if (isAtStart && zoomDelta > 0) {
+          // At start, scrolling backward - apply deadzone
+          newScrollAccumulator = Math.max(-deadzone, newScrollAccumulator)
+        } else if (isAtEnd && zoomDelta < 0) {
+          // At end, scrolling forward - apply deadzone
+          newScrollAccumulator = Math.min(totalScrollRange + deadzone, newScrollAccumulator)
         } else {
-          // Not at target, directly control lerp value
-          cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
+          // Normal scrolling - clamp to valid range
+          newScrollAccumulator = Math.max(0, Math.min(totalScrollRange, newScrollAccumulator))
+        }
 
-          // Convert scroll accumulator to lerp value (0 to 1)
-          let newLerpValue = currentLerpValue + zoomDelta * scrollSensitivity * 0.1
-          newLerpValue = Math.max(0, Math.min(1, newLerpValue))
+        cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
 
-          cameraSettingsState.poiLerpValue.set(newLerpValue)
+        // Calculate which POI segment we're in and the lerp value within that segment
+        const clampedScrollPosition = Math.max(0, Math.min(totalScrollRange, newScrollAccumulator))
+        const poiSegment = clampedScrollPosition / scrollDistancePerPoi
+        const currentPoiIndex = Math.floor(poiSegment)
+        const targetPoiIndex = Math.min(currentPoiIndex + 1, validPoiEntities.length - 1)
+        const lerpValue = poiSegment - currentPoiIndex
 
-          // Update current index when we reach the target
-          if (
-            newLerpValue >= 0.99 &&
-            cameraSettingsState.currentPoiIndex.value !== cameraSettingsState.targetPoiIndex.value
-          ) {
-            cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
-            cameraSettingsState.scrollAccumulator.set(0)
-          } else if (
-            newLerpValue <= 0.01 &&
-            cameraSettingsState.currentPoiIndex.value !== cameraSettingsState.targetPoiIndex.value
-          ) {
-            // If we're going backward and reach the start, update indices accordingly
-            const temp = cameraSettingsState.currentPoiIndex.value
-            cameraSettingsState.currentPoiIndex.set(cameraSettingsState.targetPoiIndex.value)
-            cameraSettingsState.targetPoiIndex.set(temp)
-            cameraSettingsState.poiLerpValue.set(1)
-            cameraSettingsState.scrollAccumulator.set(0)
-          }
+        // Handle edge cases
+        if (currentPoiIndex >= validPoiEntities.length - 1) {
+          // At the last POI
+          cameraSettingsState.currentPoiIndex.set(validPoiEntities.length - 1)
+          cameraSettingsState.targetPoiIndex.set(validPoiEntities.length - 1)
+          cameraSettingsState.poiLerpValue.set(1)
+        } else {
+          // Normal case - between two POIs
+          cameraSettingsState.currentPoiIndex.set(currentPoiIndex)
+          cameraSettingsState.targetPoiIndex.set(targetPoiIndex)
+          cameraSettingsState.poiLerpValue.set(Math.max(0, Math.min(1, lerpValue)))
         }
       }
 

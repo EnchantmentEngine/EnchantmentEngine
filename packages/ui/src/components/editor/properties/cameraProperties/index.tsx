@@ -322,6 +322,22 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={cameraSettings.scrollSensitivity.value}
             />
           </InputGroup>
+
+          <InputGroup
+            name="scrollDistancePerPoi"
+            label={t('editor:properties.cameraSettings.lbl-scrollDistancePerPoi', 'Scroll Distance Per POI')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollDistancePerPoi')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollDistancePerPoi')}
+              min={1}
+              max={10}
+              smallStep={0.1}
+              mediumStep={0.5}
+              largeStep={1}
+              value={cameraSettings.scrollDistancePerPoi.value}
+            />
+          </InputGroup>
         </>
       )}
     </NodeEditor>

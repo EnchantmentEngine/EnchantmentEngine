@@ -73,7 +73,8 @@ export const CameraSettingsComponent = defineComponent({
     poiLerpSpeed: S.Number({ default: 0.5 }),
     // Manual scroll control properties
     scrollDeadzone: S.Number({ default: 0.3 }),
-    scrollSensitivity: S.Number({ default: 2.0 })
+    scrollSensitivity: S.Number({ default: 2.0 }),
+    scrollDistancePerPoi: S.Number({ default: 3.0 })
   }),
 
   reactor: () => {
