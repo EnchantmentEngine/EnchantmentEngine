@@ -137,51 +137,59 @@ export const handleFollowCameraScroll = (
         // Accumulate scroll distance
         let newScrollAccumulator = cameraSettingsState.scrollAccumulator.value + zoomDelta * scrollSensitivity
 
-        // Helper function to apply deadzone logic around targets
-        const applyDeadzoneLogic = (scrollPosition: number, totalRange: number, isWrapping: boolean) => {
-          // Each POI has a deadzone split half before and half after the target
-          const halfDeadzone = deadzone / 2
-          const effectiveDistancePerPoi = scrollDistancePerPoi - deadzone
+        // Helper function to apply smooth deadzone curve around targets
+        const applySmoothDeadzone = (
+          scrollDelta: number,
+          scrollPosition: number,
+          totalRange: number,
+          isWrapping: boolean
+        ) => {
+          // Find the nearest POI target position
+          const rawPoiSegment = scrollPosition / scrollDistancePerPoi
+          const nearestPoiIndex = Math.round(rawPoiSegment)
+          const nearestPoiPosition = nearestPoiIndex * scrollDistancePerPoi
 
-          if (effectiveDistancePerPoi <= 0) {
-            // If deadzone is larger than distance per POI, just snap to targets
-            const targetIndex = Math.round(scrollPosition / scrollDistancePerPoi)
-            return {
-              currentIndex: isWrapping
-                ? ((targetIndex % validPoiEntities.length) + validPoiEntities.length) % validPoiEntities.length
-                : Math.max(0, Math.min(validPoiEntities.length - 1, targetIndex)),
-              targetIndex: isWrapping
-                ? ((targetIndex % validPoiEntities.length) + validPoiEntities.length) % validPoiEntities.length
-                : Math.max(0, Math.min(validPoiEntities.length - 1, targetIndex)),
-              lerpValue: 0
-            }
+          // Calculate distance from the nearest POI center
+          let distanceFromCenter = Math.abs(scrollPosition - nearestPoiPosition)
+
+          // For wrapping, we need to consider the wrapped distance as well
+          if (isWrapping) {
+            const totalScrollRange = validPoiEntities.length * scrollDistancePerPoi
+            const wrappedDistance = Math.min(distanceFromCenter, totalScrollRange - distanceFromCenter)
+            distanceFromCenter = wrappedDistance
           }
 
+          // Calculate the scroll speed multiplier based on distance from POI center
+          // Use a gentle curve that reduces speed near the center but maintains minimum movement
+          const halfDeadzone = deadzone / 2
+          let speedMultiplier = 1.0
+
+          if (distanceFromCenter < halfDeadzone) {
+            // Inside the deadzone - apply gentle curve
+            // Use a gentler quadratic curve with minimum speed: 0.2 + 0.8 * (distance / halfDeadzone)^2
+            const normalizedDistance = distanceFromCenter / halfDeadzone
+            const minSpeed = 0.1 // Minimum speed multiplier (20% of normal speed)
+            const speedRange = 0.9 // Range from min to full speed
+            speedMultiplier = minSpeed + speedRange * Math.pow(normalizedDistance, 2)
+          }
+
+          // Apply the speed multiplier to the scroll delta
+          const adjustedScrollDelta = scrollDelta * speedMultiplier
+          const newScrollPosition = scrollPosition + adjustedScrollDelta
+
+          return newScrollPosition
+        }
+
+        // Helper function to calculate POI indices and lerp value from scroll position
+        const calculatePoiState = (scrollPosition: number, isWrapping: boolean) => {
           // Find which POI segment we're in
           const rawPoiSegment = scrollPosition / scrollDistancePerPoi
           const basePoiIndex = Math.floor(rawPoiSegment)
           const segmentProgress = rawPoiSegment - basePoiIndex
 
-          // Calculate position within the segment, accounting for deadzones
           let currentIndex = basePoiIndex
           let targetIndex = basePoiIndex + 1
-          let lerpValue = 0
-
-          const deadzoneStartThreshold = halfDeadzone / scrollDistancePerPoi
-          const deadzoneEndThreshold = (scrollDistancePerPoi - halfDeadzone) / scrollDistancePerPoi
-
-          if (segmentProgress <= deadzoneStartThreshold) {
-            // In the deadzone at the start of the segment (near current POI)
-            lerpValue = 0
-          } else if (segmentProgress >= deadzoneEndThreshold) {
-            // In the deadzone at the end of the segment (near target POI)
-            lerpValue = 1
-          } else {
-            // In the active lerp zone between deadzones
-            const activeZoneProgress =
-              (segmentProgress - deadzoneStartThreshold) / (deadzoneEndThreshold - deadzoneStartThreshold)
-            lerpValue = Math.max(0, Math.min(1, activeZoneProgress))
-          }
+          let lerpValue = segmentProgress
 
           // Handle wrapping or clamping for indices
           if (isWrapping) {
@@ -200,31 +208,49 @@ export const handleFollowCameraScroll = (
             }
           }
 
-          return { currentIndex, targetIndex, lerpValue }
+          return { currentIndex, targetIndex, lerpValue: Math.max(0, Math.min(1, lerpValue)) }
         }
 
         if (scrollBehavior === CameraScrollBehavior.Wrap) {
           // Wrap behavior - allow infinite scrolling with wrapping
           const totalScrollRange = validPoiEntities.length * scrollDistancePerPoi
+          const currentScrollPosition = cameraSettingsState.scrollAccumulator.value
+
+          // Apply smooth deadzone curve to the scroll delta
+          const adjustedScrollPosition = applySmoothDeadzone(
+            zoomDelta * scrollSensitivity,
+            currentScrollPosition,
+            totalScrollRange,
+            true
+          )
 
           // Normalize scroll position to wrap around using modulo
           const normalizedScrollPosition =
-            ((newScrollAccumulator % totalScrollRange) + totalScrollRange) % totalScrollRange
+            ((adjustedScrollPosition % totalScrollRange) + totalScrollRange) % totalScrollRange
           cameraSettingsState.scrollAccumulator.set(normalizedScrollPosition)
 
-          const result = applyDeadzoneLogic(normalizedScrollPosition, totalScrollRange, true)
+          const result = calculatePoiState(normalizedScrollPosition, true)
           cameraSettingsState.currentPoiIndex.set(result.currentIndex)
           cameraSettingsState.targetPoiIndex.set(result.targetIndex)
           cameraSettingsState.poiLerpValue.set(result.lerpValue)
         } else {
           // Clamp behavior - stop at boundaries
           const totalScrollRange = (validPoiEntities.length - 1) * scrollDistancePerPoi
+          const currentScrollPosition = cameraSettingsState.scrollAccumulator.value
+
+          // Apply smooth deadzone curve to the scroll delta
+          const adjustedScrollPosition = applySmoothDeadzone(
+            zoomDelta * scrollSensitivity,
+            currentScrollPosition,
+            totalScrollRange,
+            false
+          )
 
           // Clamp scroll position to valid range
-          const clampedScrollPosition = Math.max(0, Math.min(totalScrollRange, newScrollAccumulator))
+          const clampedScrollPosition = Math.max(0, Math.min(totalScrollRange, adjustedScrollPosition))
           cameraSettingsState.scrollAccumulator.set(clampedScrollPosition)
 
-          const result = applyDeadzoneLogic(clampedScrollPosition, totalScrollRange, false)
+          const result = calculatePoiState(clampedScrollPosition, false)
           cameraSettingsState.currentPoiIndex.set(result.currentIndex)
           cameraSettingsState.targetPoiIndex.set(result.targetIndex)
           cameraSettingsState.poiLerpValue.set(result.lerpValue)
