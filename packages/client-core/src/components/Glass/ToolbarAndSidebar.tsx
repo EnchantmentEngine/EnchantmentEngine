@@ -106,11 +106,11 @@ const closeButtonStyles = `
 const Tab = ({ onClick, heading, active }: TabProps) => {
   return (
     <button className={`group lg:hidden`} onClick={onClick}>
-      <h2>
+      <h2 className={`grid gap-y-1`}>
         {heading}
         <div
           className={twMerge(
-            `h-[0.09em] w-full rounded-full group-hover:bg-white/80`,
+            `h-[0.14em] w-full rounded-full group-hover:bg-white/80`,
             active ? `bg-white/80` : `bg-transparent`
           )}
         />
