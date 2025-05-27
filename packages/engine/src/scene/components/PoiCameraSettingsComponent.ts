@@ -41,13 +41,13 @@ export const PoiCameraSettingsComponent = defineComponent({
     cameraDistance: S.Number({ default: 5 }),
 
     // Optional entities that can be hotspots within this POI
-    hotspotEntities: S.Array(S.Entity(), []),
+    hotspotEntities: S.Array(S.EntityUUID(), []),
 
     // Optional camera position offset when viewing this POI
     cameraOffset: T.Vec3(),
 
     // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.Entity()]),
+    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
 
     // Optional camera phi angle when viewing this POI
     phi: S.Number({ default: 0 }),
