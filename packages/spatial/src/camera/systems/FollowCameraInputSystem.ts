@@ -141,18 +141,14 @@ export const handleFollowCameraScroll = (
           // Wrap behavior - allow infinite scrolling with wrapping
           const totalScrollRange = validPoiEntities.length * scrollDistancePerPoi
 
-          // Normalize scroll position to wrap around
-          while (newScrollAccumulator < 0) {
-            newScrollAccumulator += totalScrollRange
-          }
-          while (newScrollAccumulator >= totalScrollRange) {
-            newScrollAccumulator -= totalScrollRange
-          }
+          // Normalize scroll position to wrap around using modulo
+          const normalizedScrollPosition =
+            ((newScrollAccumulator % totalScrollRange) + totalScrollRange) % totalScrollRange
 
-          cameraSettingsState.scrollAccumulator.set(newScrollAccumulator)
+          cameraSettingsState.scrollAccumulator.set(normalizedScrollPosition)
 
           // Calculate which POI segment we're in and the lerp value within that segment
-          const poiSegment = newScrollAccumulator / scrollDistancePerPoi
+          const poiSegment = normalizedScrollPosition / scrollDistancePerPoi
           const currentPoiIndex = Math.floor(poiSegment) % validPoiEntities.length
           const targetPoiIndex = (currentPoiIndex + 1) % validPoiEntities.length
           const lerpValue = poiSegment - Math.floor(poiSegment)
