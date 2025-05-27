@@ -27,7 +27,11 @@ import { t } from 'i18next'
 import React from 'react'
 
 import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import {
+  CameraPoiMode,
+  CameraScrollBehavior,
+  CameraSettingsComponent
+} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
 
 import { Entity, iterateEntityNode } from '@ir-engine/ecs'
@@ -314,11 +318,11 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             <NumericInput
               onChange={updateProperty(CameraSettingsComponent, 'scrollSensitivity')}
               onRelease={commitProperty(CameraSettingsComponent, 'scrollSensitivity')}
-              min={0.5}
-              max={10}
-              smallStep={0.1}
-              mediumStep={0.5}
-              largeStep={1}
+              min={0.1}
+              max={1}
+              smallStep={0.05}
+              mediumStep={0.1}
+              largeStep={0.5}
               value={cameraSettings.scrollSensitivity.value}
             />
           </InputGroup>
@@ -336,6 +340,20 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               mediumStep={0.5}
               largeStep={1}
               value={cameraSettings.scrollDistancePerPoi.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollBehavior"
+            label={t('editor:properties.cameraSettings.lbl-scrollBehavior', 'Scroll Behavior')}
+          >
+            <SelectInput
+              value={cameraSettings.scrollBehavior.value}
+              onChange={commitProperty(CameraSettingsComponent, 'scrollBehavior')}
+              options={[
+                { label: 'Wrap', value: CameraScrollBehavior.Wrap },
+                { label: 'Clamp', value: CameraScrollBehavior.Clamp }
+              ]}
             />
           </InputGroup>
         </>

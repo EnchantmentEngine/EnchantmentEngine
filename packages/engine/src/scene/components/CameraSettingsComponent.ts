@@ -39,6 +39,12 @@ export enum CameraPoiMode {
   Enabled = 'Enabled'
 }
 
+// Define scroll behavior for POI navigation
+export enum CameraScrollBehavior {
+  Wrap = 'Wrap',
+  Clamp = 'Clamp'
+}
+
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
   jsonID: 'EE_camera_settings',
@@ -74,7 +80,8 @@ export const CameraSettingsComponent = defineComponent({
     // Manual scroll control properties
     scrollDeadzone: S.Number({ default: 0.3 }),
     scrollSensitivity: S.Number({ default: 2.0 }),
-    scrollDistancePerPoi: S.Number({ default: 3.0 })
+    scrollDistancePerPoi: S.Number({ default: 3.0 }),
+    scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp })
   }),
 
   reactor: () => {
