@@ -33,6 +33,21 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 const rootDir = packageRoot.path
 
+const projects = fs.existsSync(path.resolve(rootDir, 'packages/projects/projects'))
+  ? fs
+      .readdirSync(path.resolve(rootDir, 'packages/projects/projects'), { withFileTypes: true })
+      .filter((orgDir) => orgDir.isDirectory())
+      .map((orgDir) => {
+        return fs
+          .readdirSync(path.resolve(rootDir, 'packages/projects/projects', orgDir.name), {
+            withFileTypes: true
+          })
+          .filter((projectDir) => projectDir.isDirectory())
+          .map((projectDir) => `${orgDir.name}/${projectDir.name}`)
+      })
+      .flat()
+  : []
+
 const mainFile = process.env.MAIN_FILE ?? '/src/main.tsx'
 const projectName = process.env.PROJECT_NAME
 if (!projectName) throw new Error('PROJECT_NAME is not set')
@@ -47,15 +62,18 @@ export default defineConfig(async ({ command }) => {
     path: rootDir + '/.env.local'
   })
 
-  const destDir = path.resolve(rootDir, 'packages/client/public/projects', projectName)
-  if (fs.existsSync(path.resolve(projectDirectory, 'public')))
-    await fs.promises.cp(path.resolve(projectDirectory, 'public'), path.resolve(destDir, 'public'), {
-      recursive: true
-    })
-  if (fs.existsSync(path.resolve(projectDirectory, 'assets')))
-    await fs.promises.cp(path.resolve(projectDirectory, 'assets'), path.resolve(destDir, 'assets'), {
-      recursive: true
-    })
+  for (const project of projects) {
+    const destDir = path.resolve(rootDir, 'packages/client/public/projects', project)
+    const projDirectory = path.resolve(rootDir, 'packages/projects/projects', project)
+    if (fs.existsSync(path.resolve(projDirectory, 'public')))
+      await fs.promises.cp(path.resolve(projDirectory, 'public'), path.resolve(destDir, 'public'), {
+        recursive: true
+      })
+    if (fs.existsSync(path.resolve(projDirectory, 'assets')))
+      await fs.promises.cp(path.resolve(projDirectory, 'assets'), path.resolve(destDir, 'assets'), {
+        recursive: true
+      })
+  }
 
   const isDev = process.env.APP_ENV === 'development'
 
@@ -135,31 +153,17 @@ export default defineConfig(async ({ command }) => {
         name: 'copy-public-assets',
         enforce: 'post',
         writeBundle: async (options, bundle) => {
-          const projects = fs.existsSync(path.resolve(rootDir, 'packages/projects/projects'))
-            ? fs
-                .readdirSync(path.resolve(rootDir, 'packages/projects/projects'), { withFileTypes: true })
-                .filter((orgDir) => orgDir.isDirectory())
-                .map((orgDir) => {
-                  return fs
-                    .readdirSync(path.resolve(rootDir, 'packages/projects/projects', orgDir.name), {
-                      withFileTypes: true
-                    })
-                    .filter((projectDir) => projectDir.isDirectory())
-                    .map((projectDir) => `${orgDir.name}/${projectDir.name}`)
-                })
-                .flat()
-            : []
-
           for (const project of projects) {
             const destDir = path.resolve(projectDirectory, 'dist/projects', project)
+            const projDir = path.resolve(rootDir, 'packages/projects/projects', project)
 
-            if (fs.existsSync(path.resolve(projectDirectory, 'public')))
-              await fs.promises.cp(path.resolve(projectDirectory, 'public'), path.resolve(destDir, 'public'), {
+            if (fs.existsSync(path.resolve(projDir, 'public')))
+              await fs.promises.cp(path.resolve(projDir, 'public'), path.resolve(destDir, 'public'), {
                 recursive: true
               })
 
-            if (fs.existsSync(path.resolve(projectDirectory, 'assets')))
-              await fs.promises.cp(path.resolve(projectDirectory, 'assets'), path.resolve(destDir, 'assets'), {
+            if (fs.existsSync(path.resolve(projDir, 'assets')))
+              await fs.promises.cp(path.resolve(projDir, 'assets'), path.resolve(destDir, 'assets'), {
                 recursive: true
               })
           }

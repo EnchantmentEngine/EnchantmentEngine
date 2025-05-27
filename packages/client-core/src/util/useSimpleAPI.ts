@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import feathers from '@feathersjs/client'
 import Primus from 'primus-client'
-import { useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import primusClient from '@ir-engine/client-core/src/util/primus-client'
@@ -37,8 +36,10 @@ import {
   UserID,
   defineState,
   getMutableState,
-  syncStateWithLocalStorage
+  syncStateWithLocalStorage,
+  useHookstate
 } from '@ir-engine/hyperflux'
+import { useEffect } from 'react'
 
 /**
  * @todo a simple user service to persist userids across refreshes - not secure
@@ -52,7 +53,7 @@ const UserState = defineState({
 })
 
 export const useSimpleAPI = (host: string) => {
-  useEffect(() => {
+  const primus = useHookstate(() => {
     const userID = getMutableState(UserState).userID
 
     if (!userID.value) userID.set(uuidv4() as UserID)
@@ -73,6 +74,10 @@ export const useSimpleAPI = (host: string) => {
 
     API.instance = feathersClient
 
+    return primus
+  })
+
+  useEffect(() => {
     return () => {
       primus.end()
     }
