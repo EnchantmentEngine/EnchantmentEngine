@@ -27,12 +27,14 @@ import {
   defineComponent,
   Entity,
   getMutableComponent,
+  getOptionalComponent,
   getOptionalMutableComponent,
   removeComponent,
-  setComponent
+  setComponent,
+  useOptionalComponent
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { none } from '@ir-engine/hyperflux'
+import { NO_PROXY, none } from '@ir-engine/hyperflux'
 
 export const ResourcePendingComponent = defineComponent({
   name: 'ResourcePendingComponent',
@@ -62,5 +64,43 @@ export const ResourcePendingComponent = defineComponent({
     if (!component.keys.length) {
       removeComponent(entity, ResourcePendingComponent)
     }
+  },
+
+  getResourcesLoaded(entity: Entity) {
+    const component = getOptionalComponent(entity, ResourcePendingComponent)
+    if (!component) return true
+
+    return Object.values(component).every((resource) => resource.progress === 100)
+  },
+
+  useResourcesLoaded(entity: Entity) {
+    const component = useOptionalComponent(entity, ResourcePendingComponent)
+    if (!component) return true
+
+    return Object.values(component.get(NO_PROXY)).every((resource) => resource.progress === 100)
+  },
+
+  getResourcesProgress(entity: Entity) {
+    const component = getOptionalComponent(entity, ResourcePendingComponent)
+    if (!component) return 100
+
+    const resources = Object.values(component)
+    const progress = resources.reduce((acc, resource) => acc + resource.progress, 0)
+    const total = resources.reduce((acc, resource) => acc + resource.total, 0)
+    if (!total) return 0
+
+    return (progress / total) * 100
+  },
+
+  useResourcesProgress(entity: Entity) {
+    const component = useOptionalComponent(entity, ResourcePendingComponent)
+    if (!component) return 100
+
+    const resources = Object.values(component.get(NO_PROXY))
+    const progress = resources.reduce((acc, resource) => acc + resource.progress, 0)
+    const total = resources.reduce((acc, resource) => acc + resource.total, 0)
+    if (!total) return 0
+
+    return (progress / total) * 100
   }
 })

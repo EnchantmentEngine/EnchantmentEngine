@@ -50,7 +50,6 @@ import {
   useHasComponent,
   useHasComponents,
   useOptionalComponent,
-  useQuery,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
@@ -292,7 +291,7 @@ export const GLTFComponentReactor = () => {
 
 const ResourceReactor = (props: { documentID: SourceID; entity: Entity; documentLoaded: boolean }) => {
   const dependenciesLoaded = GLTFComponent.useDependenciesLoaded(props.entity)
-  const resourceQuery = useQuery([ResourcePendingComponent])
+  const resourceProgress = ResourcePendingComponent.useResourcesProgress(props.entity)
 
   const simulationEntity = getSimulationCounterpart(props.entity)
   useApplyCollidersToChildMeshesEffect(simulationEntity)
@@ -300,33 +299,10 @@ const ResourceReactor = (props: { documentID: SourceID; entity: Entity; document
   useEffect(() => {
     if (!hasComponent(props.entity, GLTFComponent) || !props.documentLoaded) return
     if (getComponent(props.entity, GLTFComponent).progress === 100) return
-    const entities = resourceQuery.filter((e) => UUIDComponent.getSourceEntity(e) === props.entity)
-    if (!entities.length) {
-      if (dependenciesLoaded) getMutableComponent(props.entity, GLTFComponent).progress.set(100)
-      return
-    }
 
-    const resources = entities
-      .map((entity) => {
-        const resource = getOptionalComponent(entity, ResourcePendingComponent)
-        if (!resource) return []
-        return Object.values(resource).map((resource) => {
-          return {
-            progress: resource.progress,
-            total: resource.total
-          }
-        })
-      })
-      .flat()
-      .filter(Boolean)
-
-    const progress = resources.reduce((acc, resource) => acc + resource.progress, 0)
-    const total = resources.reduce((acc, resource) => acc + resource.total, 0)
-    if (!total) return
-
-    const percentage = Math.floor(Math.min((progress / total) * 100, dependenciesLoaded ? 100 : 99))
+    const percentage = Math.floor(Math.min(resourceProgress, dependenciesLoaded ? 100 : 99))
     getMutableComponent(props.entity, GLTFComponent).progress.set(percentage)
-  }, [resourceQuery, dependenciesLoaded, props.documentLoaded])
+  }, [resourceProgress, dependenciesLoaded, props.documentLoaded])
 
   return null
 }
