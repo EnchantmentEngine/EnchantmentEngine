@@ -29,7 +29,7 @@ import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState.ts'
+import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 
@@ -78,8 +78,8 @@ export const CameraSettingsComponent = defineComponent({
     poiEntities: S.Array(S.EntityUUID(), []),
     poiLerpSpeed: S.Number({ default: 0.5 }),
     // Manual scroll control properties
-    scrollDeadzone: S.Number({ default: 0.3 }),
-    scrollSensitivity: S.Number({ default: 2.0 }),
+    scrollDeadzone: S.Number({ default: 1.0 }),
+    scrollSensitivity: S.Number({ default: 0.1 }),
     scrollDistancePerPoi: S.Number({ default: 3.0 }),
     scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp })
   }),

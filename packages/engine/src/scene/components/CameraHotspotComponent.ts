@@ -32,9 +32,9 @@ import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
  * Component for entities that serve as hotspots within a POI.
  * This component stores settings related to how the camera should behave when focusing on this hotspot.
  */
-export const PoiHotspotComponent = defineComponent({
-  name: 'PoiHotspotComponent',
-  jsonID: 'EE_poi_hotspot',
+export const CameraHotspotComponent = defineComponent({
+  name: 'CameraHotspotComponent',
+  jsonID: 'EE_camera_hotspot_component',
 
   schema: S.Object({
     // Distance from which the camera should view this hotspot
@@ -44,7 +44,7 @@ export const PoiHotspotComponent = defineComponent({
     cameraOffset: T.Vec3(),
 
     // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.Entity()]),
+    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
 
     // Optional camera phi angle when viewing this hotspot
     phi: S.Number({ default: 0 }),
@@ -61,7 +61,7 @@ export const PoiHotspotComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const component = useComponent(entity, PoiHotspotComponent)
+    const component = useComponent(entity, CameraHotspotComponent)
 
     return null
   }

@@ -32,6 +32,8 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GrabbableComponent } from '@ir-engine/engine/src/grabbable/GrabbableComponent'
 import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
 import { AudioAnalysisComponent } from '@ir-engine/engine/src/scene/components/AudioAnalysisComponent'
+import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
+import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
@@ -44,8 +46,6 @@ import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComp
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { ParticleSystemComponent } from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
-import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent.ts'
-import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent.ts'
 import { PortalComponent } from '@ir-engine/engine/src/scene/components/PortalComponent'
 import { PrimitiveGeometryComponent } from '@ir-engine/engine/src/scene/components/PrimitiveGeometryComponent'
 import { ReflectionProbeComponent } from '@ir-engine/engine/src/scene/components/ReflectionProbeComponent'
@@ -116,7 +116,7 @@ export const ComponentShelfCategoriesState = defineState({
         FogSettingsComponent,
         ReflectionProbeComponent
       ],
-      Camera: [PoiCameraSettingsComponent, PoiHotspotComponent]
+      Camera: [CameraPoiComponent, CameraHotspotComponent]
     } as Record<string, Component[]>
   },
   reactor: () => {

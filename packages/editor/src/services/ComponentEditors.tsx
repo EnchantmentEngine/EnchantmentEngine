@@ -115,18 +115,16 @@ import SkyboxNodeEditor from '@ir-engine/ui/src/components/editor/properties/sky
 import SpawnPointNodeEditor from '@ir-engine/ui/src/components/editor/properties/spawnPoint'
 import SplineNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline'
 
+import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
+import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
-import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent.ts'
-import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent.ts'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
-import PoiCameraSettingsNodeEditor from '@ir-engine/ui/src/components/editor/properties/poiCameraSettings'
-import PoiHotspotNodeEditor from '@ir-engine/ui/src/components/editor/properties/poiHotspot'
 import SplineTrackNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline/track'
 import TextNodeEditor from '@ir-engine/ui/src/components/editor/properties/text'
 import TriggerComponentEditor from '@ir-engine/ui/src/components/editor/properties/trigger'
@@ -135,6 +133,8 @@ import VideoNodeEditor from '@ir-engine/ui/src/components/editor/properties/vide
 import VisualScriptNodeEditor from '@ir-engine/ui/src/components/editor/properties/visualScript'
 import VolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric'
 import LegacyVolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric/legacy'
+import PoiHotspotNodeEditor from '../../../ui/src/components/editor/properties/cameraHotspot'
+import CameraPoiNodeEditor from '../../../ui/src/components/editor/properties/cameraPoi'
 import { EditorComponentType } from '../components/properties/Util'
 
 export const ComponentEditorsState = defineState({
@@ -192,8 +192,8 @@ export const ComponentEditorsState = defineState({
       [LookAtComponent.name]: LookAtNodeEditor,
       [ReflectionProbeComponent.name]: ReflectionProbeNodeEditor,
       [MediaComponent.name]: MediaNodeEditor,
-      [PoiCameraSettingsComponent.name]: PoiCameraSettingsNodeEditor,
-      [PoiHotspotComponent.name]: PoiHotspotNodeEditor
+      [CameraPoiComponent.name]: CameraPoiNodeEditor,
+      [CameraHotspotComponent.name]: PoiHotspotNodeEditor
     } as Record<string, EditorComponentType>
   }
 })

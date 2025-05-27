@@ -36,8 +36,8 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
+import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { CameraPoiMode, CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
@@ -57,7 +57,7 @@ import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { CameraSettingsState } from '../CameraSettingsState.ts'
+import { CameraSettingsState } from '../CameraSettingsState'
 
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
@@ -115,7 +115,7 @@ export const handleFollowCameraScroll = (
     // Filter POI entities to only include those with PoiCameraSettingsComponent
     const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
       const entity = UUIDComponent.getEntityByUUID(entityId.value)
-      return entity && hasComponent(entity, PoiCameraSettingsComponent)
+      return entity && hasComponent(entity, CameraPoiComponent)
     })
 
     if (validPoiEntities.length > 0) {
@@ -342,7 +342,7 @@ const execute = () => {
       if (settings.poiMode.value === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
         // Filter POI entities to only include those with PoiCameraSettingsComponent
         const validPoiEntities = settings.poiEntities.filter((entityUUID) =>
-          hasComponent(UUIDComponent.getEntityByUUID(entityUUID.value), PoiCameraSettingsComponent)
+          hasComponent(UUIDComponent.getEntityByUUID(entityUUID.value), CameraPoiComponent)
         )
 
         if (
@@ -363,9 +363,9 @@ const execute = () => {
           if (!currentPoiEntity || !targetPoiEntity) return
 
           // Get settings and transforms for both POIs
-          const currentPoiSettings = getComponent(currentPoiEntity, PoiCameraSettingsComponent)
+          const currentPoiSettings = getComponent(currentPoiEntity, CameraPoiComponent)
           const currentPoiTransform = getComponent(currentPoiEntity, TransformComponent)
-          const targetPoiSettings = getComponent(targetPoiEntity, PoiCameraSettingsComponent)
+          const targetPoiSettings = getComponent(targetPoiEntity, CameraPoiComponent)
           const targetPoiTransform = getComponent(targetPoiEntity, TransformComponent)
 
           if (currentPoiTransform && currentPoiSettings && targetPoiTransform && targetPoiSettings) {
@@ -417,17 +417,18 @@ const execute = () => {
             const currentLookAtPos = new Vector3()
             const targetLookAtPos = new Vector3()
 
+            const lookAtTargetEntity = UUIDComponent.getEntityByUUID(currentPoiSettings.lookAtTarget!)
             // For current POI
-            if (currentPoiSettings.lookAtTarget && hasComponent(currentPoiSettings.lookAtTarget, TransformComponent)) {
-              const lookAtTransform = getComponent(currentPoiSettings.lookAtTarget, TransformComponent)
+            if (currentPoiSettings.lookAtTarget && hasComponent(lookAtTargetEntity, TransformComponent)) {
+              const lookAtTransform = getComponent(lookAtTargetEntity, TransformComponent)
               currentLookAtPos.copy(lookAtTransform.position)
             } else {
               currentLookAtPos.copy(currentPoiTransform.position)
             }
 
             // For target POI
-            if (targetPoiSettings.lookAtTarget && hasComponent(targetPoiSettings.lookAtTarget, TransformComponent)) {
-              const lookAtTransform = getComponent(targetPoiSettings.lookAtTarget, TransformComponent)
+            if (targetPoiSettings.lookAtTarget && hasComponent(lookAtTargetEntity, TransformComponent)) {
+              const lookAtTransform = getComponent(lookAtTargetEntity, TransformComponent)
               targetLookAtPos.copy(lookAtTransform.position)
             } else {
               targetLookAtPos.copy(targetPoiTransform.position)
