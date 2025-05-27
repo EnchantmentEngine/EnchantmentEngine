@@ -47,6 +47,16 @@ export default defineConfig(async ({ command }) => {
     path: rootDir + '/.env.local'
   })
 
+  const destDir = path.resolve(rootDir, 'packages/client/public/projects', projectName)
+  if (fs.existsSync(path.resolve(projectDirectory, 'public')))
+    await fs.promises.cp(path.resolve(projectDirectory, 'public'), path.resolve(destDir, 'public'), {
+      recursive: true
+    })
+  if (fs.existsSync(path.resolve(projectDirectory, 'assets')))
+    await fs.promises.cp(path.resolve(projectDirectory, 'assets'), path.resolve(destDir, 'assets'), {
+      recursive: true
+    })
+
   const isDev = process.env.APP_ENV === 'development'
 
   process.env.VITE_FILE_SERVER = isDev
@@ -141,16 +151,15 @@ export default defineConfig(async ({ command }) => {
             : []
 
           for (const project of projects) {
-            const projectDir = path.resolve(rootDir, 'packages/projects/projects', project)
             const destDir = path.resolve(projectDirectory, 'dist/projects', project)
 
-            if (fs.existsSync(path.resolve(projectDir, 'public')))
-              await fs.promises.cp(path.resolve(projectDir, 'public'), path.resolve(destDir, 'public'), {
+            if (fs.existsSync(path.resolve(projectDirectory, 'public')))
+              await fs.promises.cp(path.resolve(projectDirectory, 'public'), path.resolve(destDir, 'public'), {
                 recursive: true
               })
 
-            if (fs.existsSync(path.resolve(projectDir, 'assets')))
-              await fs.promises.cp(path.resolve(projectDir, 'assets'), path.resolve(destDir, 'assets'), {
+            if (fs.existsSync(path.resolve(projectDirectory, 'assets')))
+              await fs.promises.cp(path.resolve(projectDirectory, 'assets'), path.resolve(destDir, 'assets'), {
                 recursive: true
               })
           }
