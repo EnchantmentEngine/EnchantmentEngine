@@ -141,6 +141,8 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   const scene = useHookstate((location ? location.sceneId : props.sceneID) || '')
   const videoEnabled = useHookstate<boolean>(location?.locationSetting.videoEnabled || true)
   const audioEnabled = useHookstate<boolean>(location?.locationSetting.audioEnabled || true)
+  const jumpControlEnabled = useHookstate<boolean>(location?.locationSetting.jumpControlEnabled || true)
+  const vrEnabled = useHookstate<boolean>(location?.locationSetting.vrEnabled || true)
   const screenSharingEnabled = useHookstate<boolean>(location?.locationSetting.screenSharingEnabled || true)
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
   const progressState = useHookstate(getMutableState(ProgressState))
@@ -153,6 +155,8 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
       audioEnabled.set(location.locationSetting.audioEnabled)
       screenSharingEnabled.set(location.locationSetting.screenSharingEnabled)
       locationType.set(location.locationSetting.locationType)
+      jumpControlEnabled.set(location.locationSetting.jumpControlEnabled)
+      vrEnabled.set(location.locationSetting.vrEnabled)
 
       if (!props.sceneID) scene.set(location.sceneId)
     }
@@ -385,7 +389,9 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         audioEnabled: Boolean(audioEnabled.value),
         screenSharingEnabled: Boolean(screenSharingEnabled.value),
         faceStreamingEnabled: false,
-        videoEnabled: Boolean(videoEnabled.value)
+        videoEnabled: Boolean(videoEnabled.value),
+        jumpControlEnabled: Boolean(jumpControlEnabled.value),
+        vrEnabled: Boolean(vrEnabled.value)
       },
       isLobby: false,
       isFeatured: false
@@ -515,6 +521,32 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               )}
 
               <div className="grid h-full grid-rows-[auto,1fr] gap-5">
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-je')}
+                    value={jumpControlEnabled.value}
+                    onChange={jumpControlEnabled.set}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.vrCapabilitiesFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.vrCapabilitiesFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-vre')}
+                    value={vrEnabled.value}
+                    onChange={vrEnabled.set}
+                    disabled={isLoading}
+                  />
+                </div>
+
                 <div className="flex h-auto flex-col self-start">
                   <h5>{t('editor:toolbar.publishLocation.multiplayerFeatures')}</h5>
                   <span className="text-xs">{t('editor:toolbar.publishLocation.multiplayerDescription')}</span>
