@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -59,7 +59,7 @@ import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialEngine, initializeSpatialViewer } from '../../initializeEngine'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import ClientInputFunctions from '../functions/ClientInputFunctions'
-import { KeyboardButton, MouseButton, MouseScroll, createInitialButtonState } from '../state/ButtonState'
+import { AnyAxis, KeyboardButton, MouseButton, MouseScroll, createInitialButtonState } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
 import { InputButtonBindings, InputComponent, InputExecutionOrder, InputExecutionSystemGroup } from './InputComponent'
 import { InputSinkComponent } from './InputSinkComponent'
@@ -406,8 +406,8 @@ describe('InputComponent', () => {
 
       // Create the `@param inputAlias` object
       const SomeAliasList = {
-        SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll],
-        SomeWrongAxis: [10]
+        SomeAxisOne: [MouseScroll.HorizontalScroll, MouseScroll.VerticalScroll] as AnyAxis[],
+        SomeWrongAxis: [10 as AnyAxis]
       }
       // Set the low and high values
       const OtherX = 2.0

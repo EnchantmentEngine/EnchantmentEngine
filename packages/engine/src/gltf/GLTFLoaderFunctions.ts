@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Ethereal Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Ethereal Engine team.
 
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023 
+All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025 
 Ethereal Engine. All Rights Reserved.
 */
 
@@ -44,12 +44,11 @@ import {
   setComponent,
   traverseEntityNode
 } from '@ir-engine/ecs'
-import { dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
-import { SceneUser } from '@ir-engine/network'
+import { SceneUser, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -62,7 +61,6 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
-import { computeTransformMatrix } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import {
   AnimationClip,
   AnimationMixer,
@@ -130,6 +128,7 @@ import {
   assignExtrasToUserData,
   getNormalizedComponentScale
 } from './GLTFLoaderUtils'
+import { getMaxAnisotropy } from './gltfUtils'
 import { KHRTextureTransformExtensionComponent, KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { migrateSceneDeltas } from './migrateSceneDeltas'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
@@ -647,7 +646,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity, childIndex: materialIndex })
   setComponent(materialEntity, NameComponent, materialDef.name ?? 'Material-' + materialIndex)
 
-  let materialConstructorParameters = {} as any
+  const materialConstructorParameters = {} as any
   const promises = [] as Promise<void>[]
   const materialExtensions = materialDef.extensions || {}
 
@@ -802,17 +801,31 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
     }
   }
 
+  // backwards support for EE_material
+  const EE_materialExtensionParams = materialDef.extensions?.['EE_material'] as any
+  if (EE_materialExtensionParams?.args) {
+    for (const prop in EE_materialExtensionParams.args) {
+      const contents = EE_materialExtensionParams.args[prop].contents
+      if (!!contents && typeof contents === 'object' && typeof contents.index === 'number') {
+        extensionPromises.push(
+          GLTFLoaderFunctions.assignTexture(options, contents).then((map) => {
+            materialConstructorParameters[prop] = map
+          })
+        )
+      } else {
+        materialConstructorParameters[prop] = contents
+      }
+    }
+  }
+
   await Promise.all(extensionPromises)
 
   const material = new materialConstructor(materialConstructorParameters)
   material.name = materialDef.name ?? 'Material-' + materialIndex
 
   setComponent(materialEntity, MaterialStateComponent, { material })
-  setupMaterialParameters(materialEntity, {
-    ...materialConstructorParameters,
-    uuid: material.uuid,
-    name: material.name
-  })
+
+  setupMaterialParameters(materialEntity, material.type, materialConstructorParameters)
 
   assignExtrasToUserData(material, materialDef)
 
@@ -985,7 +998,7 @@ const loadTextureImage = async (
   texture.minFilter = WEBGL_FILTERS[sampler.minFilter] || LinearMipmapLinearFilter
   texture.wrapS = WEBGL_WRAPPINGS[sampler.wrapS] || RepeatWrapping
   texture.wrapT = WEBGL_WRAPPINGS[sampler.wrapT] || RepeatWrapping
-
+  texture.anisotropy = getMaxAnisotropy()
   return texture
 }
 
@@ -1263,7 +1276,8 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   //   primitive.mode === undefined
   // ) {
   const materials = materialEntities.map((entity) => getComponent(entity, MaterialStateComponent).material)
-  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, materials) : new Mesh(geometry, materials)
+  const material = geometry.groups.length === 0 && materials.length === 1 ? materials[0] : materials
+  const mesh = isSkinnedMesh === true ? new SkinnedMesh(geometry, material) : new Mesh(geometry, material)
 
   //   if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
   //     mesh.geometry = toTrianglesDrawMode(mesh.geometry, TriangleStripDrawMode)
@@ -1298,7 +1312,7 @@ const loadMesh = async (options: GLTFParserOptions, entity: Entity, nodeIndex: n
   // }
 
   setComponent(entity, MeshComponent, mesh)
-  setComponent(entity, NameComponent, meshDef.name ?? 'Mesh-' + meshIndex)
+  setComponent(entity, NameComponent, node.name ?? meshDef.name ?? `Mesh-${meshIndex}`)
 
   setComponent(entity, MaterialInstanceComponent, {
     entities: materialEntities
@@ -1538,8 +1552,8 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const overrides = json.extensions?.[OVERRIDE_EXTENSION_NAME]
   if (overrides) {
     for (const [id, ops] of Object.entries(overrides)) {
-      const rootUUID = UUIDComponent.get(rootEntity)
-      const overrideUUID = rootUUID + id
+      const rootUUID = UUIDComponent.getAsSourceID(rootEntity)
+      const overrideUUID = UUIDComponent.join({ entitySourceID: rootUUID, entityID: id as EntityID })
       dispatchAction(AuthoringActions.ops({ ops: { [overrideUUID]: ops }, $user: SceneUser }))
     }
   }
@@ -1568,7 +1582,7 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
     setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
     iterateEntityNode(entity, (e) => {
       if (hasComponent(e, TransformComponent)) {
-        computeTransformMatrix(e)
+        TransformComponent.computeTransformMatrix(e)
         TransformComponent.dirty[e] = 1
       }
     })
@@ -1667,8 +1681,16 @@ export const getDependency = <
   return dependency
 }
 
-export const getNodeID = (node: GLTF.INode, nodeIndex: number) =>
-  (node.extensions?.[UUIDComponent.jsonID] as EntityID) ?? (`${nodeIndex}` as EntityID)
+export const getNodeID = (node: GLTF.INode, nodeIndex: number) => {
+  if (node.extensions && UUIDComponent.jsonID in node.extensions) {
+    // backwards compat
+    if (typeof node.extensions[UUIDComponent.jsonID] === 'string')
+      return node.extensions[UUIDComponent.jsonID] as EntityID
+    const ext = node.extensions[UUIDComponent.jsonID] as { entityID: EntityID }
+    return ext.entityID as EntityID
+  }
+  return `${nodeIndex}` as EntityID
+}
 
 export type GLTFParserOptions = {
   url: string

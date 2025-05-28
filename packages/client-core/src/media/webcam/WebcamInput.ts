@@ -6,8 +6,7 @@ import { iterateEntityNode } from '@ir-engine/ecs'
 import { getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
-import { getMutableState } from '@ir-engine/hyperflux'
-import { MediaStreamState } from '@ir-engine/network/src/media/MediaStreamState'
+import { MediaStreamState, getMutableState } from '@ir-engine/hyperflux'
 import { createWorkerFromCrossOriginURL } from '@ir-engine/spatial/src/common/functions/createWorkerFromCrossOriginURL'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 import { WebcamInputComponent } from './WebcamInputComponent'
@@ -33,7 +32,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 

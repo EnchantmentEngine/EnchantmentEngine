@@ -14,7 +14,7 @@ specific language governing rights and limitations under the License.
 The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -26,13 +26,13 @@ import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   defineState,
   getMutableState,
+  NetworkState,
   NO_PROXY,
   NO_PROXY_STEALTH,
   StateDefinitions,
   syncStateWithLocalStorage,
   useHookstate
 } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
 import { Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { useFrameUpdate } from './useFrameUpdate'

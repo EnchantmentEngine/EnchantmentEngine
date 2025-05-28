@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -31,8 +31,9 @@ import { Button } from '@ir-engine/ui'
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCodepen, FiTool } from 'react-icons/fi'
-import Scene1 from '/static/editor/scene-1.png'
-import Scene2 from '/static/editor/scene-2.png'
+
+const Scene1 = '/static/editor/scene-1.png'
+const Scene2 = '/static/editor/scene-2.png'
 
 const handleOpenSceneInStudio = async (projectName: string, sceneKey: string) => {
   const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${sceneKey}`
