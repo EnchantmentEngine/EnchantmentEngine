@@ -67,6 +67,7 @@ const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent]
 
 // Temporary vectors for POI camera calculations
 const targetPosition = new Vector3()
+const targetRotation = new Quaternion()
 
 const followCameraModeCycle = [
   FollowCameraMode.FirstPerson,
@@ -364,88 +365,23 @@ const execute = () => {
           if (!currentPoiEntity || !targetPoiEntity) return
 
           // Get settings and transforms for both POIs
-          const currentPoiSettings = getComponent(currentPoiEntity, CameraPoiComponent)
           const currentPoiTransform = getComponent(currentPoiEntity, TransformComponent)
-          const targetPoiSettings = getComponent(targetPoiEntity, CameraPoiComponent)
           const targetPoiTransform = getComponent(targetPoiEntity, TransformComponent)
 
-          if (currentPoiTransform && currentPoiSettings && targetPoiTransform && targetPoiSettings) {
+          if (currentPoiTransform && targetPoiTransform) {
             // Calculate positions for both POIs
             const currentPoiPosition = new Vector3().copy(currentPoiTransform.position)
             const targetPoiPosition = new Vector3().copy(targetPoiTransform.position)
-
-            // Apply offsets if specified
-            if (currentPoiSettings.cameraOffset) {
-              currentPoiPosition.add(currentPoiSettings.cameraOffset)
-            }
-            if (targetPoiSettings.cameraOffset) {
-              targetPoiPosition.add(targetPoiSettings.cameraOffset)
-            }
 
             // Get the lerp value for smooth transitions
             const lerpValue = settings.poiLerpValue.value
 
             // Interpolate between current and target positions
             targetPosition.lerpVectors(currentPoiPosition, targetPoiPosition, lerpValue)
-
-            // Interpolate camera distance
-            const currentDistance = currentPoiSettings.cameraDistance
-            const targetDistance = targetPoiSettings.cameraDistance
-            const lerpedDistance = currentDistance + (targetDistance - currentDistance) * lerpValue
-
-            // Interpolate phi and theta rotation using the same lerp logic as position
-            const currentPhi = currentPoiSettings.phi || 0
-            const currentTheta = currentPoiSettings.theta || 0
-            const targetPhi = targetPoiSettings.phi || 0
-            const targetTheta = targetPoiSettings.theta || 0
-
-            // Lerp between current and target rotations
-            const lerpedPhi = currentPhi + (targetPhi - currentPhi) * lerpValue
-            const lerpedTheta = currentTheta + (targetTheta - currentTheta) * lerpValue
-
-            // Apply the interpolated rotation
-            setTargetCameraRotation(cameraEntity, lerpedPhi, lerpedTheta)
-
-            // Handle look-at targets with lerping
-            let lookAtPosition = new Vector3()
-
-            // Determine look-at positions for both current and target POIs
-            const currentLookAtPos = new Vector3()
-            const targetLookAtPos = new Vector3()
-
-            const lookAtTargetEntity = UUIDComponent.getEntityByUUID(currentPoiSettings.lookAtTarget!)
-            // For current POI
-            if (currentPoiSettings.lookAtTarget && hasComponent(lookAtTargetEntity, TransformComponent)) {
-              const lookAtTransform = getComponent(lookAtTargetEntity, TransformComponent)
-              currentLookAtPos.copy(lookAtTransform.position)
-            } else {
-              currentLookAtPos.copy(currentPoiTransform.position)
-            }
-
-            // For target POI
-            if (targetPoiSettings.lookAtTarget && hasComponent(lookAtTargetEntity, TransformComponent)) {
-              const lookAtTransform = getComponent(lookAtTargetEntity, TransformComponent)
-              targetLookAtPos.copy(lookAtTransform.position)
-            } else {
-              targetLookAtPos.copy(targetPoiTransform.position)
-            }
-
-            // Interpolate between look-at positions
-            lookAtPosition.lerpVectors(currentLookAtPos, targetLookAtPos, lerpValue)
-
-            // Make camera look at the interpolated position
-            const direction = new Vector3().subVectors(lookAtPosition, targetPosition).normalize()
-            const lookAtQuaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 0, -1), direction)
+            targetRotation.slerpQuaternions(currentPoiTransform.rotation, targetPoiTransform.rotation, lerpValue)
 
             // Update camera position and rotation
-            setComponent(cameraEntity, TransformComponent, { position: targetPosition, rotation: lookAtQuaternion })
-
-            // Update camera distance in follow camera component if needed
-            const mutableFollowCamera = getMutableComponent(cameraEntity, FollowCameraComponent)
-            if (mutableFollowCamera) {
-              mutableFollowCamera.targetDistance.set(lerpedDistance)
-              mutableFollowCamera.distance.set(lerpedDistance)
-            }
+            setComponent(cameraEntity, TransformComponent, { position: targetPosition, rotation: targetRotation })
           }
         }
       }
