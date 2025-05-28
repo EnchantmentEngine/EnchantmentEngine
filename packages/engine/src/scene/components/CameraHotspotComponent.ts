@@ -26,32 +26,16 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 /**
  * Component for entities that serve as hotspots within a POI.
- * This component stores settings related to how the camera should behave when focusing on this hotspot.
+ * This component stores metadata for hotspots such as title and description.
  */
 export const CameraHotspotComponent = defineComponent({
   name: 'CameraHotspotComponent',
   jsonID: 'EE_camera_hotspot_component',
 
   schema: S.Object({
-    // Distance from which the camera should view this hotspot
-    cameraDistance: S.Number({ default: 2 }),
-
-    // Optional camera position offset when viewing this hotspot
-    cameraOffset: T.Vec3(),
-
-    // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
-
-    // Optional camera phi angle when viewing this hotspot
-    phi: S.Number({ default: 0 }),
-
-    // Optional camera theta angle when viewing this hotspot
-    theta: S.Number({ default: 0 }),
-
     // Optional title or label for this hotspot
     title: S.String({ default: '' }),
 
