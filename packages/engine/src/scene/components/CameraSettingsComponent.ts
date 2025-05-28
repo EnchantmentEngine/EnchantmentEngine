@@ -35,7 +35,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
-import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState.ts'
+import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { PoiUIComponent } from './PoiUIComponent'
@@ -44,6 +44,12 @@ import { PoiUIComponent } from './PoiUIComponent'
 export enum CameraPoiMode {
   Disabled = 'Disabled',
   Enabled = 'Enabled'
+}
+
+// Define scroll behavior for POI navigation
+export enum CameraScrollBehavior {
+  Wrap = 'Wrap',
+  Clamp = 'Clamp'
 }
 
 export const CameraSettingsComponent = defineComponent({
@@ -77,7 +83,12 @@ export const CameraSettingsComponent = defineComponent({
     // New fields for POI camera mode
     poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
     poiEntities: S.Array(S.EntityUUID(), []),
-    poiLerpSpeed: S.Number({ default: 0.5 })
+    poiLerpSpeed: S.Number({ default: 0.5 }),
+    // Manual scroll control properties
+    scrollDeadzone: S.Number({ default: 1.0 }),
+    scrollSensitivity: S.Number({ default: 0.1 }),
+    scrollDistancePerPoi: S.Number({ default: 3.0 }),
+    scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp })
   }),
 
   reactor: () => {

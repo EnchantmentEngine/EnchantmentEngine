@@ -27,12 +27,12 @@ import { t } from 'i18next'
 import React from 'react'
 
 import { hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
-import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent'
 
 import { Entity } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
+import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { NO_PROXY } from '@ir-engine/hyperflux'
 import { HiOutlineCamera } from 'react-icons/hi'
 import EntityListInput from '../../input/EntityList'
@@ -40,24 +40,21 @@ import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
 import Vector3Input from '../../input/Vector3'
 
-export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
-  const poiSettings = useComponent(props.entity, PoiCameraSettingsComponent)
+export const CameraPoiNodeEditor: EditorComponentType = (props) => {
+  const poiSettings = useComponent(props.entity, CameraPoiComponent)
 
   return (
     <NodeEditor
       {...props}
-      name={t('editor:properties.poiCameraSettings.name', 'POI Camera Settings')}
-      description={t('editor:properties.poiCameraSettings.description', 'Settings for a point of interest camera view')}
-      Icon={PoiCameraSettingsNodeEditor.iconComponent}
+      name={t('editor:properties.cameraPoi.name', 'POI Camera Settings')}
+      description={t('editor:properties.cameraPoi.description', 'Settings for a point of interest camera view')}
+      Icon={CameraPoiNodeEditor.iconComponent}
       entity={props.entity}
     >
-      <InputGroup
-        name="cameraDistance"
-        label={t('editor:properties.poiCameraSettings.lbl-cameraDistance', 'Camera Distance')}
-      >
+      <InputGroup name="cameraDistance" label={t('editor:properties.cameraPoi.lbl-cameraDistance', 'Camera Distance')}>
         <NumericInput
-          onChange={updateProperty(PoiCameraSettingsComponent, 'cameraDistance')}
-          onRelease={commitProperty(PoiCameraSettingsComponent, 'cameraDistance')}
+          onChange={updateProperty(CameraPoiComponent, 'cameraDistance')}
+          onRelease={commitProperty(CameraPoiComponent, 'cameraDistance')}
           min={0.1}
           smallStep={0.1}
           mediumStep={1}
@@ -66,36 +63,30 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
 
-      <InputGroup
-        name="cameraOffset"
-        label={t('editor:properties.poiCameraSettings.lbl-cameraOffset', 'Camera Offset')}
-      >
+      <InputGroup name="cameraOffset" label={t('editor:properties.cameraPoi.lbl-cameraOffset', 'Camera Offset')}>
         <Vector3Input
           value={poiSettings.cameraOffset.get(NO_PROXY)}
-          onChange={updateProperty(PoiCameraSettingsComponent, 'cameraOffset')}
-          onRelease={commitProperty(PoiCameraSettingsComponent, 'cameraOffset')}
+          onChange={updateProperty(CameraPoiComponent, 'cameraOffset')}
+          onRelease={commitProperty(CameraPoiComponent, 'cameraOffset')}
         />
       </InputGroup>
 
-      <InputGroup
-        name="lookAtTarget"
-        label={t('editor:properties.poiCameraSettings.lbl-lookAtTarget', 'Look At Target')}
-      >
+      <InputGroup name="lookAtTarget" label={t('editor:properties.cameraPoi.lbl-lookAtTarget', 'Look At Target')}>
         <EntityListInput
           value={poiSettings.lookAtTarget.value ? [poiSettings.lookAtTarget.value] : []}
-          onChange={(entityIDs) => {
-            const entityID = entityIDs.length > 0 ? entityIDs[0] : null
-            commitProperty(PoiCameraSettingsComponent, 'lookAtTarget')(entityID)
+          onChange={(entityUUIDs) => {
+            const entityUUID = entityUUIDs.length > 0 ? entityUUIDs[0] : null
+            commitProperty(CameraPoiComponent, 'lookAtTarget')(entityUUID)
           }}
           placeholder="Select an entity to look at"
           className="w-full"
         />
       </InputGroup>
 
-      <InputGroup name="phi" label={t('editor:properties.poiCameraSettings.lbl-phi', 'Phi Angle')}>
+      <InputGroup name="phi" label={t('editor:properties.cameraPoi.lbl-phi', 'Phi Angle')}>
         <NumericInput
-          onChange={updateProperty(PoiCameraSettingsComponent, 'phi')}
-          onRelease={commitProperty(PoiCameraSettingsComponent, 'phi')}
+          onChange={updateProperty(CameraPoiComponent, 'phi')}
+          onRelease={commitProperty(CameraPoiComponent, 'phi')}
           min={-180}
           max={180}
           smallStep={1}
@@ -105,10 +96,10 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
         />
       </InputGroup>
 
-      <InputGroup name="theta" label={t('editor:properties.poiCameraSettings.lbl-theta', 'Theta Angle')}>
+      <InputGroup name="theta" label={t('editor:properties.cameraPoi.lbl-theta', 'Theta Angle')}>
         <NumericInput
-          onChange={updateProperty(PoiCameraSettingsComponent, 'theta')}
-          onRelease={commitProperty(PoiCameraSettingsComponent, 'theta')}
+          onChange={updateProperty(CameraPoiComponent, 'theta')}
+          onRelease={commitProperty(CameraPoiComponent, 'theta')}
           min={-180}
           max={180}
           smallStep={1}
@@ -120,13 +111,13 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
 
       <InputGroup
         name="hotspotEntities"
-        label={t('editor:properties.poiCameraSettings.lbl-hotspotEntities', 'Hotspot Entities')}
+        label={t('editor:properties.cameraPoi.lbl-hotspotEntities', 'Hotspot Entities')}
       >
         <EntityListInput
-          value={poiSettings.hotspotEntities.value}
-          onChange={commitProperty(PoiCameraSettingsComponent, 'hotspotEntities')}
+          value={Array.from(poiSettings.hotspotEntityUUIDs.value)}
+          onChange={commitProperty(CameraPoiComponent, 'hotspotEntityUUIDs')}
           placeholder="Select entities to use as hotspots"
-          filter={(entity: Entity) => hasComponent(entity, PoiHotspotComponent)}
+          filter={(entity: Entity) => hasComponent(entity, CameraHotspotComponent)}
           className="w-full"
         />
       </InputGroup>
@@ -134,6 +125,6 @@ export const PoiCameraSettingsNodeEditor: EditorComponentType = (props) => {
   )
 }
 
-PoiCameraSettingsNodeEditor.iconComponent = HiOutlineCamera
+CameraPoiNodeEditor.iconComponent = HiOutlineCamera
 
-export default PoiCameraSettingsNodeEditor
+export default CameraPoiNodeEditor

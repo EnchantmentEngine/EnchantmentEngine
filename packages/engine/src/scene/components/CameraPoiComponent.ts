@@ -29,39 +29,36 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 /**
- * Component for entities that serve as hotspots within a POI.
- * This component stores settings related to how the camera should behave when focusing on this hotspot.
+ * Component for entities that serve as points of interest for the camera system.
+ * This component stores settings related to how the camera should behave when focusing on this POI.
  */
-export const PoiHotspotComponent = defineComponent({
-  name: 'PoiHotspotComponent',
-  jsonID: 'EE_poi_hotspot',
+export const CameraPoiComponent = defineComponent({
+  name: 'CameraPoiComponent',
+  jsonID: 'EE_camera_poi_component',
 
   schema: S.Object({
-    // Distance from which the camera should view this hotspot
-    cameraDistance: S.Number({ default: 2 }),
+    // Distance from which the camera should view this POI
+    cameraDistance: S.Number({ default: 5 }),
 
-    // Optional camera position offset when viewing this hotspot
+    // Optional entities that can be hotspots within this POI
+    hotspotEntityUUIDs: S.Array(S.EntityUUID(), []),
+
+    // Optional camera position offset when viewing this POI
     cameraOffset: T.Vec3(),
 
     // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.Entity()]),
+    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
 
-    // Optional camera phi angle when viewing this hotspot
+    // Optional camera phi angle when viewing this POI
     phi: S.Number({ default: 0 }),
 
-    // Optional camera theta angle when viewing this hotspot
-    theta: S.Number({ default: 0 }),
-
-    // Optional title or label for this hotspot
-    title: S.String({ default: '' }),
-
-    // Optional description for this hotspot
-    description: S.String({ default: '' })
+    // Optional camera theta angle when viewing this POI
+    theta: S.Number({ default: 0 })
   }),
 
   reactor: () => {
     const entity = useEntityContext()
-    const component = useComponent(entity, PoiHotspotComponent)
+    const component = useComponent(entity, CameraPoiComponent)
 
     return null
   }

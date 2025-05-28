@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineState } from '@ir-engine/hyperflux'
 
 import { EntityUUID } from '@ir-engine/ecs'
-import { CameraPoiMode } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
+import { CameraPoiMode, CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
 import { FollowCameraMode } from './types/FollowCameraMode'
 import { ProjectionType } from './types/ProjectionType'
 
@@ -50,6 +50,12 @@ export const CameraSettingsState = defineState({
     currentPoiIndex: -1,
     targetPoiIndex: -1,
     poiLerpValue: 0,
-    poiLerpSpeed: 0.5
+    poiLerpSpeed: 0.5,
+    // Manual scroll control properties
+    scrollAccumulator: 0,
+    scrollDeadzone: 0.3,
+    scrollSensitivity: 2.0,
+    scrollDistancePerPoi: 3.0,
+    scrollBehavior: CameraScrollBehavior.Clamp
   }
 })

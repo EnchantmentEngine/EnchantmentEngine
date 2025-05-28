@@ -29,36 +29,39 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 /**
- * Component for entities that serve as points of interest for the camera system.
- * This component stores settings related to how the camera should behave when focusing on this POI.
+ * Component for entities that serve as hotspots within a POI.
+ * This component stores settings related to how the camera should behave when focusing on this hotspot.
  */
-export const PoiCameraSettingsComponent = defineComponent({
-  name: 'PoiCameraSettingsComponent',
-  jsonID: 'EE_poi_camera_settings',
+export const CameraHotspotComponent = defineComponent({
+  name: 'CameraHotspotComponent',
+  jsonID: 'EE_camera_hotspot_component',
 
   schema: S.Object({
-    // Distance from which the camera should view this POI
-    cameraDistance: S.Number({ default: 5 }),
+    // Distance from which the camera should view this hotspot
+    cameraDistance: S.Number({ default: 2 }),
 
-    // Optional entities that can be hotspots within this POI
-    hotspotEntities: S.Array(S.Entity(), []),
-
-    // Optional camera position offset when viewing this POI
+    // Optional camera position offset when viewing this hotspot
     cameraOffset: T.Vec3(),
 
     // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.Entity()]),
+    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
 
-    // Optional camera phi angle when viewing this POI
+    // Optional camera phi angle when viewing this hotspot
     phi: S.Number({ default: 0 }),
 
-    // Optional camera theta angle when viewing this POI
-    theta: S.Number({ default: 0 })
+    // Optional camera theta angle when viewing this hotspot
+    theta: S.Number({ default: 0 }),
+
+    // Optional title or label for this hotspot
+    title: S.String({ default: '' }),
+
+    // Optional description for this hotspot
+    description: S.String({ default: '' })
   }),
 
   reactor: () => {
     const entity = useEntityContext()
-    const component = useComponent(entity, PoiCameraSettingsComponent)
+    const component = useComponent(entity, CameraHotspotComponent)
 
     return null
   }

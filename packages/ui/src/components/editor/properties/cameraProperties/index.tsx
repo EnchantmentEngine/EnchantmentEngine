@@ -27,8 +27,11 @@ import { t } from 'i18next'
 import React from 'react'
 
 import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { CameraPoiMode, CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-import { PoiCameraSettingsComponent } from '@ir-engine/engine/src/scene/components/PoiCameraSettingsComponent'
+import {
+  CameraPoiMode,
+  CameraScrollBehavior,
+  CameraSettingsComponent
+} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 
 import { Entity, iterateEntityNode } from '@ir-engine/ecs'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
@@ -40,6 +43,7 @@ import {
 } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
@@ -270,7 +274,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={Array.from(cameraSettings.poiEntities.value)}
               onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
               placeholder="Select entities to use as points of interest"
-              filter={(entity: Entity) => hasComponent(entity, PoiCameraSettingsComponent)}
+              filter={(entity: Entity) => hasComponent(entity, CameraPoiComponent)}
               className="w-full"
             />
           </InputGroup>
@@ -288,6 +292,68 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               mediumStep={0.1}
               largeStep={0.5}
               value={cameraSettings.poiLerpSpeed.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollDeadzone"
+            label={t('editor:properties.cameraSettings.lbl-scrollDeadzone', 'Scroll Deadzone')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollDeadzone')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollDeadzone')}
+              min={0.1}
+              max={2}
+              smallStep={0.05}
+              mediumStep={0.1}
+              largeStep={0.2}
+              value={cameraSettings.scrollDeadzone.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollSensitivity"
+            label={t('editor:properties.cameraSettings.lbl-scrollSensitivity', 'Scroll Sensitivity')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollSensitivity')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollSensitivity')}
+              min={0.1}
+              max={1}
+              smallStep={0.05}
+              mediumStep={0.1}
+              largeStep={0.5}
+              value={cameraSettings.scrollSensitivity.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollDistancePerPoi"
+            label={t('editor:properties.cameraSettings.lbl-scrollDistancePerPoi', 'Scroll Distance Per POI')}
+          >
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'scrollDistancePerPoi')}
+              onRelease={commitProperty(CameraSettingsComponent, 'scrollDistancePerPoi')}
+              min={1}
+              max={10}
+              smallStep={0.1}
+              mediumStep={0.5}
+              largeStep={1}
+              value={cameraSettings.scrollDistancePerPoi.value}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="scrollBehavior"
+            label={t('editor:properties.cameraSettings.lbl-scrollBehavior', 'Scroll Behavior')}
+          >
+            <SelectInput
+              value={cameraSettings.scrollBehavior.value}
+              onChange={commitProperty(CameraSettingsComponent, 'scrollBehavior')}
+              options={[
+                { label: 'Wrap', value: CameraScrollBehavior.Wrap },
+                { label: 'Clamp', value: CameraScrollBehavior.Clamp }
+              ]}
             />
           </InputGroup>
         </>
