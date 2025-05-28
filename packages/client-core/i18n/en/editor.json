@@ -888,8 +888,21 @@
       "lbl-cameraDistance": "Camera Distance",
       "lbl-startCameraDistance": "Start Camera Distance",
       "lbl-phi": "Phi",
-      "lbl-cameraMode": "Camera Mode"
-
+      "lbl-cameraMode": "Camera Mode",
+      "lbl-avatar": "Avatar",
+      "lbl-avatarVisible": "Avatar is Visible",
+      "lbl-directCameraModes": "Direct Camera Modes",
+      "lbl-directCameraFristPerson": "First Person Camera",
+      "lbl-directCameraThirdPerson": "Third Person Camera",
+      "lbl-directCameraTopDown": "Top-Down Camera",
+      "lbl-directCameraError": "You need to select at least one Direct Camera Mode",
+      "lbl-firstPersonSettings": "First Person Camera Settings",
+      "lbl-thirdPersonSettings": "Third Person Camera Settings",
+      "lbl-topDownSettings": "Top-Down Camera Settings",
+      "lbl-defaultDistance": "Default Distance",
+      "lbl-freeCamera": "Free Camera",
+      "lbl-cameraLimits": "Camera Limits",
+      "lbl-cameraReset": "Camera Reset"
     },
     "cameraComponent": {
       "name": "Camera",

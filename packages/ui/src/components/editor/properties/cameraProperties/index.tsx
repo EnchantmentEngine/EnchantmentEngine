@@ -23,8 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { t } from 'i18next'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
@@ -49,6 +49,8 @@ import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
 import { Slider } from '../../../../../editor'
 import Button from '../../../../primitives/tailwind/Button'
+import Checkbox from '../../../../primitives/tailwind/Checkbox'
+import Label from '../../../../primitives/tailwind/Label'
 import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
@@ -71,6 +73,7 @@ const _box3 = new Box3()
 
 export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
   const cameraSettings = useComponent(props.entity, CameraSettingsComponent)
+  const { t } = useTranslation()
 
   const calculateClippingPlanes = () => {
     const box = new Box3()
@@ -268,7 +271,193 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
 
       {/* DIRECT Camera Mode Settings */}
-      {cameraSettings.cameraMode.value === CameraMode.DIRECT && <></>}
+      {cameraSettings.cameraMode.value === CameraMode.DIRECT && (
+        <>
+          <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-avatar')}>
+            <Checkbox
+              label={t('editor:properties.cameraSettings.lbl-avatarVisible')}
+              variantTextPlacement={'right'}
+              checked={cameraSettings.isAvatarVisible.value}
+              onChange={commitProperty(CameraSettingsComponent, 'isAvatarVisible')}
+            />
+          </InputGroup>
+          <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-directCameraModes')}>
+            <Checkbox
+              label={t('editor:properties.cameraSettings.lbl-directCameraFristPerson')}
+              variantTextPlacement={'right'}
+              checked={cameraSettings.canCameraFirstPerson.value}
+              onChange={commitProperty(CameraSettingsComponent, 'canCameraFirstPerson')}
+            />
+            <Checkbox
+              label={t('editor:properties.cameraSettings.lbl-directCameraThirdPerson')}
+              variantTextPlacement={'right'}
+              checked={cameraSettings.canCameraThirdPerson.value}
+              onChange={commitProperty(CameraSettingsComponent, 'canCameraThirdPerson')}
+            />
+            <Checkbox
+              label={t('editor:properties.cameraSettings.lbl-directCameraTopDown')}
+              variantTextPlacement={'right'}
+              checked={cameraSettings.canCameraTopDown.value}
+              onChange={commitProperty(CameraSettingsComponent, 'canCameraTopDown')}
+            />
+            {!cameraSettings.canCameraFirstPerson.value &&
+              !cameraSettings.canCameraThirdPerson.value &&
+              !cameraSettings.canCameraTopDown.value && (
+                <Label className="text-text-error">{t('editor:properties.cameraSettings.lbl-directCameraError')}</Label>
+              )}
+          </InputGroup>
+          {cameraSettings.canCameraFirstPerson.value && (
+            <InputGroup name="cameraFirstPerson" label={t('editor:properties.cameraSettings.lbl-firstPersonSettings')}>
+              <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-freeCamera')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isFistPersonFreeCamera.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isFistPersonFreeCamera')}
+                />
+                {cameraSettings.isFistPersonFreeCamera.value && (
+                  <InputGroup
+                    name="defaultDistance"
+                    label={t('editor:properties.cameraSettings.lbl-cameraLimits')}
+                    className="w-2/3 flex-grow"
+                  >
+                    <div className="flex w-full items-center gap-2">
+                      <NumericInput
+                        onChange={updateProperty(CameraSettingsComponent, 'firstPersonCameraLimits')}
+                        onRelease={commitProperty(CameraSettingsComponent, 'firstPersonCameraLimits')}
+                        min={0.001}
+                        smallStep={0.001}
+                        mediumStep={0.01}
+                        largeStep={0.1}
+                        value={cameraSettings.firstPersonCameraLimits.value}
+                        className="flex w-full flex-grow"
+                      />
+                    </div>
+                  </InputGroup>
+                )}
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-cameraReset')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isFirstPersonCameraReset.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isFirstPersonCameraReset')}
+                />
+              </div>
+            </InputGroup>
+          )}
+          {cameraSettings.canCameraThirdPerson.value && (
+            <InputGroup name="cameraThirdPerson" label={t('editor:properties.cameraSettings.lbl-thirdPersonSettings')}>
+              <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
+                <InputGroup
+                  name="defaultDistance"
+                  label={t('editor:properties.cameraSettings.lbl-defaultDistance')}
+                  className="w-2/3 flex-grow"
+                >
+                  <div className="flex w-full items-center gap-2">
+                    <NumericInput
+                      onChange={updateProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')}
+                      onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')}
+                      min={0.001}
+                      smallStep={0.001}
+                      mediumStep={0.01}
+                      largeStep={0.1}
+                      value={cameraSettings.thirdPersonDefaultDistance.value}
+                      className="flex w-full flex-grow"
+                    />
+                  </div>
+                </InputGroup>
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-freeCamera')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isThirdPersonFreeCamera.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isThirdPersonFreeCamera')}
+                />
+                {cameraSettings.isThirdPersonFreeCamera.value && (
+                  <InputGroup
+                    name="defaultDistance"
+                    label={t('editor:properties.cameraSettings.lbl-cameraLimits')}
+                    className="w-2/3 flex-grow"
+                  >
+                    <div className="flex w-full items-center gap-2">
+                      <NumericInput
+                        onChange={updateProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')}
+                        onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')}
+                        min={0.001}
+                        smallStep={0.001}
+                        mediumStep={0.01}
+                        largeStep={0.1}
+                        value={cameraSettings.thirdPersonCameraLimits.value}
+                        className="flex w-full flex-grow"
+                      />
+                    </div>
+                  </InputGroup>
+                )}
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-cameraReset')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isThirdPersonCameraReset.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isThirdPersonCameraReset')}
+                />
+              </div>
+            </InputGroup>
+          )}
+          {cameraSettings.canCameraTopDown.value && (
+            <InputGroup name="cameraTopDown" label={t('editor:properties.cameraSettings.lbl-topDownSettings')}>
+              <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
+                <InputGroup
+                  name="defaultDistance"
+                  label={t('editor:properties.cameraSettings.lbl-defaultDistance')}
+                  className="w-2/3 flex-grow"
+                >
+                  <div className="flex w-full items-center gap-2">
+                    <NumericInput
+                      onChange={updateProperty(CameraSettingsComponent, 'topDownDefaultDistance')}
+                      onRelease={commitProperty(CameraSettingsComponent, 'topDownDefaultDistance')}
+                      min={0.001}
+                      smallStep={0.001}
+                      mediumStep={0.01}
+                      largeStep={0.1}
+                      value={cameraSettings.topDownDefaultDistance.value}
+                      className="flex w-full flex-grow"
+                    />
+                  </div>
+                </InputGroup>
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-freeCamera')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isTopDownFreeCamera.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isTopDownFreeCamera')}
+                />
+                {cameraSettings.isTopDownFreeCamera.value && (
+                  <InputGroup
+                    name="defaultDistance"
+                    label={t('editor:properties.cameraSettings.lbl-cameraLimits')}
+                    className="w-2/3 flex-grow"
+                  >
+                    <div className="flex w-full items-center gap-2">
+                      <NumericInput
+                        onChange={updateProperty(CameraSettingsComponent, 'topDownCameraLimits')}
+                        onRelease={commitProperty(CameraSettingsComponent, 'topDownCameraLimits')}
+                        min={0.001}
+                        smallStep={0.001}
+                        mediumStep={0.01}
+                        largeStep={0.1}
+                        value={cameraSettings.topDownCameraLimits.value}
+                        className="flex w-full flex-grow"
+                      />
+                    </div>
+                  </InputGroup>
+                )}
+                <Checkbox
+                  label={t('editor:properties.cameraSettings.lbl-cameraReset')}
+                  variantTextPlacement={'right'}
+                  checked={cameraSettings.isTopDownCameraReset.value}
+                  onChange={commitProperty(CameraSettingsComponent, 'isTopDownCameraReset')}
+                />
+              </div>
+            </InputGroup>
+          )}
+        </>
+      )}
 
       {/* POI Camera Mode Settings */}
       {cameraSettings.cameraMode.value === CameraMode.POI && (

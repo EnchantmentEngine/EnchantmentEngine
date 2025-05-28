@@ -54,6 +54,7 @@ export const CameraSettingsState = defineState({
     scrollDeadzone: 0.3,
     scrollSensitivity: 2.0,
     scrollDistancePerPoi: 3.0,
-    scrollBehavior: CameraScrollBehavior.Clamp
+    scrollBehavior: CameraScrollBehavior.Clamp,
+    isAvatarVisible: true
   }
 })
