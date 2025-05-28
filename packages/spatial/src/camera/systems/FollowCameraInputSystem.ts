@@ -392,23 +392,18 @@ const execute = () => {
             const targetDistance = targetPoiSettings.cameraDistance
             const lerpedDistance = currentDistance + (targetDistance - currentDistance) * lerpValue
 
-            // Interpolate phi and theta if specified
-            let phi = follow.phi
-            let theta = follow.theta
+            // Interpolate phi and theta rotation using the same lerp logic as position
+            const currentPhi = currentPoiSettings.phi || 0
+            const currentTheta = currentPoiSettings.theta || 0
+            const targetPhi = targetPoiSettings.phi || 0
+            const targetTheta = targetPoiSettings.theta || 0
 
-            if (
-              (currentPoiSettings.phi !== 0 || currentPoiSettings.theta !== 0) &&
-              (targetPoiSettings.phi !== 0 || targetPoiSettings.theta !== 0)
-            ) {
-              // Interpolate between current and target angles
-              phi = currentPoiSettings.phi + (targetPoiSettings.phi - currentPoiSettings.phi) * lerpValue
-              theta = currentPoiSettings.theta + (targetPoiSettings.theta - currentPoiSettings.theta) * lerpValue
-              setTargetCameraRotation(cameraEntity, phi, theta)
-            } else if (currentPoiSettings.phi !== 0 || currentPoiSettings.theta !== 0) {
-              setTargetCameraRotation(cameraEntity, currentPoiSettings.phi, currentPoiSettings.theta)
-            } else if (targetPoiSettings.phi !== 0 || targetPoiSettings.theta !== 0) {
-              setTargetCameraRotation(cameraEntity, targetPoiSettings.phi, targetPoiSettings.theta)
-            }
+            // Lerp between current and target rotations
+            const lerpedPhi = currentPhi + (targetPhi - currentPhi) * lerpValue
+            const lerpedTheta = currentTheta + (targetTheta - currentTheta) * lerpValue
+
+            // Apply the interpolated rotation
+            setTargetCameraRotation(cameraEntity, lerpedPhi, lerpedTheta)
 
             // Handle look-at targets with lerping
             let lookAtPosition = new Vector3()
