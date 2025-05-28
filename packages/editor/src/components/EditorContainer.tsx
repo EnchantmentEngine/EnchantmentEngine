@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -157,7 +157,13 @@ const EditorContainer = () => {
   const editorUIAddon = useMutableState(UIAddonsState).editor
   const currentLoadedSceneURL = useHookstate(null as string | null)
 
-  useEngineCanvas(canvasRef.value as React.RefObject<HTMLElement> | null)
+  // Check if wizard is enabled from URL params
+  const urlParams = new URLSearchParams(window.location.search)
+  const wizardEnabled = urlParams.get('wizardEnabled') === 'true'
+
+  // Conditionally use engine canvas based on wizard state and canvas availability
+  const shouldUseCanvas = !wizardEnabled || (wizardEnabled && canvasRef.value?.current)
+  useEngineCanvas(shouldUseCanvas ? (canvasRef.value as React.RefObject<HTMLElement> | null) : null)
 
   /**
    * what is our source of truth for which scene is loaded?
