@@ -74,6 +74,8 @@ export const CameraSettingsComponent = defineComponent({
 
     isAvatarVisible: S.Bool({ default: true }),
 
+    directCameraScrollSensitivity: S.Number({ default: 1 }),
+
     canCameraFirstPerson: S.Bool({ default: true }),
     canCameraThirdPerson: S.Bool({ default: true }),
     canCameraTopDown: S.Bool({ default: true }),

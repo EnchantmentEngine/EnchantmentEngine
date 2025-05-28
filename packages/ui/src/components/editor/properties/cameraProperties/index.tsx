@@ -281,6 +281,19 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               onChange={commitProperty(CameraSettingsComponent, 'isAvatarVisible')}
             />
           </InputGroup>
+          <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-scrollingSpeed')}>
+            <NumericInput
+              onChange={updateProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
+              onRelease={commitProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
+              min={0.001}
+              smallStep={0.001}
+              mediumStep={0.01}
+              largeStep={0.1}
+              value={cameraSettings.directCameraScrollSensitivity.value}
+              className="flex w-full flex-grow"
+            />
+          </InputGroup>
+
           <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-directCameraModes')}>
             <Checkbox
               label={t('editor:properties.cameraSettings.lbl-directCameraFristPerson')}
