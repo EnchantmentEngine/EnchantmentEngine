@@ -164,15 +164,19 @@ export default {
       async (context: HookContext<InstanceAttendanceService>) => {
         // Track instance attendance in metrics
         const metricsService = context.app.get('metricsService')
-        if (!metricsService) return context
+        if (!metricsService || !context.result) return context
 
         const data = Array.isArray(context.result)
           ? context.result
           : 'data' in context.result
-          ? context.result!.data
+          ? context.result.data
           : [context.result]
 
+        if (!data) return context
+
         for (const instanceAttendance of data) {
+          if (!instanceAttendance) continue
+
           // Track instance attendance
           metricsService.trackInstanceAttendance(instanceAttendance.instanceId)
 
@@ -181,7 +185,7 @@ export default {
             try {
               // Get the instance to find the locationId (world)
               const instance = await context.app.service('instance').get(instanceAttendance.instanceId)
-              if (instance.locationId) {
+              if (instance?.locationId) {
                 metricsService.trackWorldVisit(instance.locationId)
               }
             } catch (error) {

@@ -74,8 +74,8 @@ export default {
     create: [
       (context: HookContext<BuildStatusService>) => {
         // Track build start in metrics
-        const metricsService = context.app.get('metricsService')
-        if (metricsService) {
+        const metricsService = context.app.get('metricsService') as any
+        if (metricsService && typeof metricsService.trackBuildStart === 'function') {
           metricsService.trackBuildStart()
         }
         return context
@@ -85,16 +85,14 @@ export default {
     patch: [
       (context: HookContext<BuildStatusService>) => {
         // Track build completion in metrics if status is changed from pending
-        const metricsService = context.app.get('metricsService')
-        if (!metricsService) return context
+        const metricsService = context.app.get('metricsService') as any
+        if (!metricsService || typeof metricsService.trackBuildCompletion !== 'function') return context
 
         const data = context.data as Partial<BuildStatusType>
+        const buildStatus = context.result as BuildStatusType
 
         // Only track completion if status is being updated and it's not 'pending'
         if (data.status && data.status !== 'pending') {
-          // Get the original build status to calculate duration
-          const buildStatus = context.result as BuildStatusType
-
           // Calculate duration if both dateStarted and dateEnded are available
           if (buildStatus.dateStarted && buildStatus.dateEnded) {
             const startDate = new Date(buildStatus.dateStarted)

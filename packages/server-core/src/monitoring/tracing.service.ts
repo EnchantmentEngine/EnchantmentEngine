@@ -27,7 +27,7 @@ import { Application } from '@feathersjs/koa'
 import { context, Span, SpanStatusCode, trace } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import * as resources from '@opentelemetry/resources'
+import { resourceFromAttributes } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-node'
@@ -83,7 +83,7 @@ export class TracingService {
 
     // Create SDK
     this.sdk = new NodeSDK({
-      resource: new resources.Resource({
+      resource: resourceFromAttributes({
         [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
         [SemanticResourceAttributes.SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
         [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',

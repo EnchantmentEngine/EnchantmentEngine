@@ -27,6 +27,12 @@ import { Application } from '@feathersjs/koa'
 
 import { logger } from '../ServerLogger'
 
+declare module '@ir-engine/common/declarations' {
+  interface ServiceTypes {
+    'p2p-metrics': P2PMetricsService
+  }
+}
+
 /**
  * P2P Metrics Service for tracking metrics in P2P mode
  */
