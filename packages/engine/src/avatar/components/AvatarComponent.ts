@@ -24,13 +24,22 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { EngineState, EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
-import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  getComponent,
+  removeComponent,
+  setComponent,
+  useComponent,
+  useOptionalComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, UserID } from '@ir-engine/hyperflux'
+import { getState, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { NetworkObjectComponent } from '@ir-engine/network'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useEffect } from 'react'
 import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 
@@ -107,10 +116,20 @@ export const AvatarComponent = defineComponent({
   reactor: ({ entity }) => {
     const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const avatarComponent = useComponent(entity, AvatarComponent)
+    const cameraSettingsState = useMutableState(CameraSettingsState)
 
     useEffect(() => {
       setAvatarColliderTransform(entity)
     }, [avatarComponent?.avatarHeight, camera.near])
+
+    const hasVisibleComponent = useOptionalComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
+    useEffect(() => {
+      if (cameraSettingsState.isAvatarVisible.value) {
+        if (!hasVisibleComponent) setComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
+      } else {
+        if (hasVisibleComponent) removeComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
+      }
+    }, [cameraSettingsState.isAvatarVisible, hasVisibleComponent])
 
     return null
   }
