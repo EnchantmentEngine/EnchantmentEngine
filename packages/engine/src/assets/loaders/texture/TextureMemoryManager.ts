@@ -43,15 +43,24 @@ const cachePromises = {} as Record<string, Promise<boolean>>
  * @returns True if the texture was offloaded, false otherwise
  */
 export async function offloadTextureData(texture: Texture): Promise<boolean> {
-  // Skip if ResourceCache is not available
-  if (!ResourceCache) return false
-
-  // Skip if texture is already offloaded or doesn't have data
-  if (!texture || (!texture.mipmaps && isEmpty(texture.source.data))) return false
-
   // We need a URL to be able to restore the texture later
   const url = texture.userData?.url
-  if (!url) return false
+  if (!url) {
+    console.warn(`Texture does not have a URL, cannot offload: ${url}`)
+    return false
+  }
+
+  // Skip if ResourceCache is not available
+  if (!ResourceCache) {
+    console.warn(`ResourceCache not available, cannot offload texture data: ${url}`)
+    return false
+  }
+
+  // Skip if texture is already offloaded or doesn't have data
+  if (!texture || (!texture.mipmaps && isEmpty(texture.source.data))) {
+    console.warn(`Texture is already offloaded or does not have data, cannot offload: ${url}`)
+    return false
+  }
 
   console.info(`Offloading texture data: ${url}`)
 
