@@ -440,7 +440,7 @@ const redis = {
  */
 const monitoring = {
   metrics: {
-    enabled: process.env.METRICS_ENABLED === 'true',
+    enabled: process.env.PROMETHEUS_METRICS_ENABLED === 'true',
     endpoint: process.env.METRICS_ENDPOINT || '/metrics',
     // For GCP Cloud Monitoring integration
     gcpProject: process.env.GCP_PROJECT,

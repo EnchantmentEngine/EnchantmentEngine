@@ -29,7 +29,6 @@ import * as promClient from 'prom-client'
 
 import { buildStatusPath } from '@ir-engine/common/src/schemas/cluster/build-status.schema'
 import { logger } from '../ServerLogger'
-import { default as config } from '../appconfig'
 
 /**
  * MetricsService class for handling Prometheus metrics
@@ -297,7 +296,7 @@ export class MetricsService {
    * HTTP metrics middleware
    */
   public httpMetricsMiddleware = async (ctx: Context, next: Next): Promise<void> => {
-    if (!config.monitoring?.metrics?.enabled) {
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') {
       await next()
       return
     }
@@ -339,7 +338,7 @@ export class MetricsService {
    * Track WebSocket connection
    */
   public trackWebSocketConnection(status: 'connected' | 'disconnected'): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.wsConnectionsTotal.inc({ status })
 
@@ -354,7 +353,7 @@ export class MetricsService {
    * Track WebSocket message
    */
   public trackWebSocketMessage(direction: 'incoming' | 'outgoing', type: string): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.wsMessagesTotal.inc({ direction, type })
   }
@@ -363,7 +362,7 @@ export class MetricsService {
    * Track user registration
    */
   public trackUserRegistration(): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.userRegistrations.inc()
   }
@@ -372,7 +371,7 @@ export class MetricsService {
    * Track user login
    */
   public trackUserLogin(): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.userLogins.inc()
   }
@@ -381,7 +380,7 @@ export class MetricsService {
    * Track world visit
    */
   public trackWorldVisit(worldId: string): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.worldVisits.inc({ world_id: worldId })
   }
@@ -390,7 +389,7 @@ export class MetricsService {
    * Track instance attendance
    */
   public trackInstanceAttendance(instanceId: string): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.instanceAttendanceTotal.inc({ instance_id: instanceId })
   }
@@ -399,7 +398,7 @@ export class MetricsService {
    * Track P2P metrics - used when P2P mode is enabled
    */
   public trackP2PMetrics(instanceId: string, locationId?: string): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     // Track instance attendance
     this.trackInstanceAttendance(instanceId)
@@ -414,7 +413,7 @@ export class MetricsService {
    * Track project creation
    */
   public trackProjectCreation(): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.projectsCreated.inc()
   }
@@ -423,7 +422,7 @@ export class MetricsService {
    * Track build start
    */
   public trackBuildStart(): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.buildStatusTotal.inc()
     this.buildStatusByStatus.inc({ status: 'pending' })
@@ -436,7 +435,7 @@ export class MetricsService {
    * @param durationSeconds - The build duration in seconds
    */
   public trackBuildCompletion(status: string, durationSeconds: number): void {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.buildStatusByStatus.inc({ status })
     this.buildStatusInProgress.dec()
@@ -447,7 +446,7 @@ export class MetricsService {
    * Update user metrics
    */
   public async updateUserMetrics(): Promise<void> {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     try {
       // Get total users count
@@ -487,7 +486,7 @@ export class MetricsService {
    * Update world and scene metrics
    */
   public async updateWorldAndSceneMetrics(): Promise<void> {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     try {
       // Get total worlds count (locations)
@@ -547,7 +546,7 @@ export class MetricsService {
    * Update project metrics
    */
   public async updateProjectMetrics(): Promise<void> {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     try {
       // Get total projects count
@@ -567,7 +566,7 @@ export class MetricsService {
    * Update build status metrics
    */
   public async updateBuildStatusMetrics(): Promise<void> {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     try {
       // Count builds in progress (pending status)
@@ -592,7 +591,7 @@ export class MetricsService {
    * Update all application metrics
    */
   public async updateAllMetrics(): Promise<void> {
-    if (!config.monitoring?.metrics?.enabled) return
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     await Promise.all([
       this.updateUserMetrics(),
@@ -608,10 +607,13 @@ export class MetricsService {
  */
 export default (options = {}) => {
   return (app: Application): void => {
-    if (!config.monitoring?.metrics?.enabled) {
-      logger.info('Metrics are disabled')
+    // Check if metrics are enabled via environment variable
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') {
+      logger.info('Prometheus metrics are disabled via environment configuration')
       return
     }
+
+    logger.info('Prometheus metrics are enabled - initializing metrics service')
 
     const metricsService = new MetricsService(app)
 
@@ -619,8 +621,9 @@ export default (options = {}) => {
     app.use(metricsService.httpMetricsMiddleware)
 
     // Add metrics endpoint
+    const metricsEndpoint = process.env.METRICS_ENDPOINT || '/metrics'
     app.use(async (ctx, next) => {
-      if (ctx.path === config.monitoring.metrics.endpoint) {
+      if (ctx.path === metricsEndpoint) {
         await metricsService.metricsEndpoint(ctx)
       } else {
         await next()
@@ -643,7 +646,7 @@ export default (options = {}) => {
       })
     }, metricsUpdateInterval)
 
-    logger.info(`Metrics endpoint available at: ${config.monitoring.metrics.endpoint}`)
+    logger.info(`Metrics endpoint available at: ${metricsEndpoint}`)
     logger.info(`Application metrics will be updated every ${metricsUpdateInterval / 1000} seconds`)
   }
 }

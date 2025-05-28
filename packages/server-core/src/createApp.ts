@@ -50,7 +50,7 @@ import { Application } from '../declarations'
 import packagejson from '../package.json'
 import { logger } from './ServerLogger'
 import { ServerMode, ServerState, ServerTypeMode } from './ServerState'
-import { default as appConfig, default as config } from './appconfig'
+import { default as appConfig } from './appconfig'
 import authenticate from './hooks/authenticate'
 import { logError } from './hooks/log-error'
 import persistHeaders from './hooks/persist-headers'
@@ -105,7 +105,7 @@ export const configurePrimus =
 
     // Get metrics service if it exists
     const metricsService = app.get('metricsService')
-    const metricsEnabled = config.monitoring?.metrics?.enabled
+    const metricsEnabled = process.env.PROMETHEUS_METRICS_ENABLED === 'true'
 
     app.configure(
       primus(
