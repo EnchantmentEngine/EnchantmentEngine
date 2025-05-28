@@ -63,6 +63,7 @@ import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComp
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent.ts'
+import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
@@ -184,7 +185,7 @@ const reactor = () => {
   const cameraSettingsComponent = cameraSettingsEntity
     ? getComponent(cameraSettingsEntities[0], CameraSettingsComponent)
     : null
-  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.poiMode === 'Disabled' : true
+  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.cameraMode === CameraMode.DIRECT : true
 
   useEffect(() => {
     if (!isAvatarUsed) {

@@ -26,18 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  hasComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
-import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
+import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
-
-// Define a new camera mode for POI navigation
-export enum CameraPoiMode {
-  Disabled = 'Disabled',
-  Enabled = 'Enabled'
-}
+import { PoiUIComponent } from './PoiUIComponent'
 
 // Define scroll behavior for POI navigation
 export enum CameraScrollBehavior {
@@ -50,7 +51,6 @@ export const CameraSettingsComponent = defineComponent({
   jsonID: 'EE_camera_settings',
 
   schema: S.Object({
-    fov: S.Number({ default: 60 }),
     cameraNearClip: S.Number({ default: 0.1 }),
     cameraFarClip: S.Number({ default: 1000 }),
     projectionType: S.Enum(ProjectionType, {
@@ -58,23 +58,44 @@ export const CameraSettingsComponent = defineComponent({
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'Orthographic', 'Perspective'",
       default: ProjectionType.Perspective
     }),
+    fov: S.Number({ default: 60 }),
+
+    cameraMode: S.Enum(CameraMode, {
+      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'DIRECT', 'POI' ",
+      default: CameraMode.DIRECT
+    }),
+
+    //Fields for DIRECT camera mode
     minCameraDistance: S.Number({ default: 1.5 }),
     maxCameraDistance: S.Number({ default: 50 }),
     startCameraDistance: S.Number({ default: 3 }),
-    cameraMode: S.Enum(FollowCameraMode, {
-      $comment:
-        "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
-      default: FollowCameraMode.Dynamic
-    }),
-    cameraModeDefault: S.Enum(FollowCameraMode, {
-      $comment:
-        "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
-      default: FollowCameraMode.ThirdPerson
-    }),
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
-    // New fields for POI camera mode
-    poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
+
+    isAvatarVisible: S.Bool({ default: true }),
+
+    directCameraScrollSensitivity: S.Number({ default: 1 }),
+
+    canCameraFirstPerson: S.Bool({ default: true }),
+    canCameraThirdPerson: S.Bool({ default: true }),
+    canCameraTopDown: S.Bool({ default: true }),
+
+    thirdPersonDefaultDistance: S.Number({ default: 3 }),
+    topDownDefaultDistance: S.Number({ default: 3 }),
+
+    isFistPersonFreeCamera: S.Bool({ default: true }),
+    isThirdPersonFreeCamera: S.Bool({ default: true }),
+    isTopDownFreeCamera: S.Bool({ default: false }),
+
+    firstPersonCameraLimits: S.Number({ default: 360 }),
+    thirdPersonCameraLimits: S.Number({ default: 180 }),
+    topDownCameraLimits: S.Number({ default: 180 }),
+
+    isFirstPersonCameraReset: S.Bool({ default: true }),
+    isThirdPersonCameraReset: S.Bool({ default: true }),
+    isTopDownCameraReset: S.Bool({ default: true }),
+
+    // ields for POI camera mode
     poiEntities: S.Array(S.EntityUUID(), []),
     poiLerpSpeed: S.Number({ default: 0.5 }),
     // Manual scroll control properties
@@ -90,15 +111,24 @@ export const CameraSettingsComponent = defineComponent({
 
     for (const prop of Object.keys(getState(CameraSettingsState))) {
       useEffect(() => {
-        if (component[prop].value && component[prop].value !== getState(CameraSettingsState)[prop]) {
+        if (component[prop].value !== undefined && component[prop].value !== getState(CameraSettingsState)[prop]) {
           if (Array.isArray(component[prop].value)) {
             getMutableState(CameraSettingsState)[prop].set(Array.from(component[prop].value))
           } else {
             getMutableState(CameraSettingsState)[prop].set(component[prop].value)
           }
         }
-      }, [component[prop]])
+      }, [component[prop].value])
     }
+
+    useEffect(() => {
+      const hasPoiUI = hasComponent(entity, PoiUIComponent)
+      if (component.cameraMode.value === CameraMode.POI) {
+        if (!hasPoiUI) setComponent(entity, PoiUIComponent)
+      } else {
+        if (hasPoiUI) removeComponent(entity, PoiUIComponent)
+      }
+    }, [component.cameraMode])
 
     return null
   }
