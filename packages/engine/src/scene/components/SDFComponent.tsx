@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -41,8 +41,8 @@ import { AnimationSystemGroup, defineSystem, ECSState, Entity, useEntityContext 
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { createSDFShader } from '@ir-engine/spatial/src/renderer/effects/sdf/SDFShader'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -50,11 +50,11 @@ import { getState } from '@ir-engine/hyperflux'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
-export enum SDFMode {
-  TORUS,
-  BOX,
-  SPHERE,
-  FOG
+export const SDFMode = {
+  TORUS: 0 as const,
+  BOX: 1 as const,
+  SPHERE: 2 as const,
+  FOG: 3 as const
 }
 
 // lazy load the shader to avoid generating a noise texture
@@ -68,7 +68,11 @@ export const SDFComponent = defineComponent({
     color: T.Color(0xffffff),
     scale: T.Vec3(new Vector3(0.25, 0.001, 0.25)),
     enable: S.Bool({ default: false }),
-    mode: S.Enum(SDFMode, { default: SDFMode.TORUS })
+    mode: S.Enum(SDFMode, {
+      $comment:
+        "A number enum, where: 0 represents 'TORUS', 1 represents 'BOX', 2 represents 'SPHERE', 3 represents 'FOG'",
+      default: SDFMode.TORUS
+    })
   }),
 
   reactor: () => {

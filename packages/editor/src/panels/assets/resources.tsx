@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 import { removeFromFileThumbnailsSeen } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
@@ -205,7 +205,7 @@ export function FileCard({
             {name}
           </Text>
         </Tooltip>
-        <span className="text-xs text-[#375DAF]">{info}</span>
+        <span className="w-24 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[#375DAF]">{info}</span>
       </div>
     </>
   )
@@ -235,6 +235,23 @@ function ResourceFile({
     multiple: false
   }))
 
+  const metadata = {
+    thumbnail: resource.thumbnailURL,
+    name: resource.name,
+    type: assetType,
+    author: '',
+    dateCreated: resource.createdAt,
+    fileSize: '',
+    dimensions: {
+      height: resource.height,
+      width: resource.width,
+      depth: resource.depth
+    },
+    mesh: '',
+    resources: '',
+    tags: resource.tags
+  }
+
   useEffect(() => {
     if (preview) preview(getEmptyImage(), { captureDraggingState: true })
   }, [preview])
@@ -256,7 +273,10 @@ function ResourceFile({
         <FileCard
           item={resource}
           name={name}
-          onClick={() => ClickPlacementState.setSelectedAsset(resource.url)}
+          onClick={() => {
+            ClickPlacementState.setSelectedAsset(resource.url)
+            ClickPlacementState.setSelectedAssetData(metadata)
+          }}
           onContextMenu={(event) => {
             event.preventDefault()
             event.stopPropagation()

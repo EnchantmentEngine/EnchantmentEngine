@@ -19,25 +19,25 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  defineSystem,
   Entity,
   EntityTreeComponent,
+  getComponent,
+  hasComponent,
   PresentationSystemGroup,
   QueryReactor,
   QuerySubReactor,
-  UUIDComponent,
-  defineSystem,
-  getComponent,
-  hasComponent,
   useComponent,
-  useEntityContext
+  useEntityContext,
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkState, ScenePeer, SceneUser, WorldNetworkAction } from '@ir-engine/network'
+import { dispatchAction, NetworkState, ScenePeer, SceneUser, useHookstate } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'

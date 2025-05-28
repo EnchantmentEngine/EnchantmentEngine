@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -49,6 +49,9 @@ import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/S
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import {
   EventDispatcher,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
   UserID,
   applyIncomingActions,
   dispatchAction,
@@ -56,8 +59,7 @@ import {
   getState,
   startReactor
 } from '@ir-engine/hyperflux'
-import { NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
-import { createMockNetwork } from '@ir-engine/network/tests/createMockNetwork'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { SpectateActions } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { act, render } from '@testing-library/react'

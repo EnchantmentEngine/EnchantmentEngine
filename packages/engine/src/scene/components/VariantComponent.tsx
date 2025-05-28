@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -68,16 +68,18 @@ export type VariantLevel = {
   metadata: Record<string, any>
 }
 
-export enum Heuristic {
-  DISTANCE = 'DISTANCE',
-  MANUAL = 'MANUAL',
-  DEVICE = 'DEVICE'
+export const Heuristic = {
+  DISTANCE: 'DISTANCE' as const,
+  MANUAL: 'MANUAL' as const,
+  DEVICE: 'DEVICE' as const
 }
 
-export enum Devices {
-  DESKTOP = 'DESKTOP',
-  MOBILE = 'MOBILE',
-  XR = 'XR'
+export type Heuristic = (typeof Heuristic)[keyof typeof Heuristic]
+
+export const Devices = {
+  DESKTOP: 'DESKTOP' as const,
+  MOBILE: 'MOBILE' as const,
+  XR: 'XR' as const
 }
 
 export const distanceMetadataSchema = S.Object({
@@ -86,7 +88,10 @@ export const distanceMetadataSchema = S.Object({
 })
 
 export const deviceMetadataSchema = S.Object({
-  device: S.Enum(Devices)
+  device: S.Enum(Devices, {
+    $comment: "A string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
+    default: Devices.DESKTOP
+  })
 })
 
 export type VariantMetadata = Static<typeof distanceMetadataSchema> | Static<typeof deviceMetadataSchema>
@@ -102,7 +107,10 @@ export const VariantComponent = defineComponent({
         metadata: S.Union([distanceMetadataSchema, deviceMetadataSchema])
       })
     ),
-    heuristic: S.Enum(Heuristic, { default: Heuristic.MANUAL }),
+    heuristic: S.Enum(Heuristic, {
+      $comment: "A string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
+      default: Heuristic.MANUAL
+    }),
     currentLevel: S.Number({ default: 0, serialized: false })
   }),
 
