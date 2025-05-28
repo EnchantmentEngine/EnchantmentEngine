@@ -140,7 +140,7 @@ const ActiveHelperReactor = () => {
 
       return iconGizmo
     },
-    activeHelperComponent.enabled.value,
+    editorHelperState.gizmoEnabled.value && activeHelperComponent.enabled.value,
     ObjectLayerMasks.Gizmos,
     'icon-helper'
   )
@@ -201,10 +201,11 @@ const ActiveHelperReactor = () => {
         setVisibleComponent(entity, visible)
       })
     }
+
     setGizmoVisibility(
-      engineState.isEditing.value && editorHelperState.nodeIconEnabled.value && activeHelperComponent.enabled.value
+      engineState.isEditing.value && editorHelperState.gizmoEnabled.value && activeHelperComponent.enabled.value
     )
-  }, [engineState.isEditing, editorHelperState.nodeIconEnabled, activeHelperComponent.enabled])
+  }, [engineState.isEditing, editorHelperState.gizmoEnabled, activeHelperComponent.enabled])
   return null
 }
 
