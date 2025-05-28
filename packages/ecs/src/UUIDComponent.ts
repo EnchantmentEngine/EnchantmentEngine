@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -51,6 +51,14 @@ import { S } from './schemas/JSONSchemas'
 export const EntitiesBySourceState = defineState({
   name: 'ir.world.EntitiesBySourceState',
   initial: {} as Record<LayerID, Record<SourceID, Entity[]>>
+})
+
+/**
+ * Internal global state
+ */
+export const EntitiesByUUIDState = defineState({
+  name: 'ir.ecs.EntitiesByUUIDState',
+  initial: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>
 })
 
 /**
@@ -92,12 +100,12 @@ export const UUIDComponent = defineComponent({
       }
       const uuid = UUIDComponent.join(idPair)
       const layer = LayerComponent.get(entity)
-      if (!UUIDComponent.entitiesByUUIDState[layer]) {
-        UUIDComponent.entitiesByUUIDState[layer] = {}
+      if (!getState(EntitiesByUUIDState)[layer]) {
+        getState(EntitiesByUUIDState)[layer] = {}
         return true
       }
       // throw error if uuid is already in use
-      const currentEntity = UUIDComponent.entitiesByUUIDState[layer][uuid]?.value
+      const currentEntity = getState(EntitiesByUUIDState)[layer][uuid]?.value
       if (currentEntity && currentEntity !== entity) {
         console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
         return false
@@ -108,7 +116,14 @@ export const UUIDComponent = defineComponent({
     required: true
   }),
 
+  toJSON(component) {
+    return { entityID: component.entityID }
+  },
+
   onSet(entity, component, idPair: EntityUUIDPair) {
+    if (!idPair.entitySourceID) throw new Error('UUID context cannot be empty')
+    if (!idPair.entityID) throw new Error('UUID id cannot be empty')
+
     const layer = LayerComponent.get(entity)
     const prev =
       component.value.entityID && component.value.entitySourceID ? UUIDComponent.join(component.value) : undefined
@@ -137,8 +152,8 @@ export const UUIDComponent = defineComponent({
   onRemove: (entity, component) => {
     const uuid = UUIDComponent.join(component.value)
     const layer = LayerComponent.get(entity)
-    destroy(UUIDComponent.entitiesByUUIDState[layer][uuid])
-    delete UUIDComponent.entitiesByUUIDState[layer][uuid]
+    destroy(getState(EntitiesByUUIDState)[layer][uuid])
+    delete getState(EntitiesByUUIDState)[layer][uuid]
 
     const source = component.value.entitySourceID.toString()
     const entities = getState(EntitiesBySourceState)[layer][source].filter((currentEntity) => currentEntity !== entity)
@@ -174,12 +189,14 @@ export const UUIDComponent = defineComponent({
   /** Gets an entity from the same source by ID */
   getEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = getComponent(entity, UUIDComponent).entitySourceID
+
     return UUIDComponent.getEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
 
   /** Reactively gets an entity from the same source by ID */
   useEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
     const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
+
     return UUIDComponent.useEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
 
@@ -192,12 +209,14 @@ export const UUIDComponent = defineComponent({
   getSourceEntity(entity: Entity) {
     const layer = LayerComponent.get(entity)
     const entitySourceID = getComponent(entity, UUIDComponent).entitySourceID as any as EntityUUID
+
     return UUIDComponent.getEntityByUUID(entitySourceID, layer)
   },
 
   useSourceEntity(entity: Entity) {
     const layer = LayerComponent.get(entity)
     const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value as any as EntityUUID
+
     return UUIDComponent.useEntityByUUID(entitySourceID, layer)
   },
 
@@ -221,7 +240,6 @@ export const UUIDComponent = defineComponent({
 
   /** Joins an EntityUUIDPair into a string */
   join: (idPair: EntityUUIDPair) => `${idPair.entitySourceID}${idPair.entityID}` as EntityUUID,
-
   /** @deprecated use UUIDComponent.generate() instead */
   generateUUID() {
     return UUIDComponent.generate()
@@ -234,10 +252,10 @@ export const UUIDComponent = defineComponent({
 })
 
 function _getUUIDState(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
-  let layerState = UUIDComponent.entitiesByUUIDState[layer]
+  let layerState = getState(EntitiesByUUIDState)[layer]
   if (!layerState) {
     layerState = {}
-    UUIDComponent.entitiesByUUIDState[layer] = layerState
+    getState(EntitiesByUUIDState)[layer] = layerState
   }
 
   let entityState = layerState[uuid]

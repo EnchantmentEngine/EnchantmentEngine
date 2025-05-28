@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 import '@hookstate/core' // required for hookstate to override react properly work - see https://github.com/avkonst/hookstate/issues/412
@@ -36,6 +36,15 @@ export * from './src/hooks/useForceUpdate'
 export * from './src/hooks/useImmediateEffect'
 export * from './src/hooks/usePrevious'
 export * from './src/hooks/useReactiveRef'
+export * from './src/media/DataChannelRegistry'
+export * from './src/media/MediaChannelState'
+export * from './src/media/MediaStreamState'
+export * from './src/media/VideoConstants'
+export * from './src/media/WebRTCPeerConnection'
+export * from './src/media/WebRTCTransportFunctions'
+export * from './src/network/NetworkActionFunctions'
+export * from './src/network/NetworkPeerState'
+export * from './src/network/NetworkState'
 
 export type * from './src/types/DeepReadonly'
 export type * from './src/types/OpaqueType'

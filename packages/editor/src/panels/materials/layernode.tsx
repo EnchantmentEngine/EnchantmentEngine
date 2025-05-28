@@ -19,14 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Entity, UUIDComponent, getComponent, hasComponent } from '@ir-engine/ecs'
 import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
-import { MaterialSelectionState } from '@ir-engine/engine/src/scene/materials/MaterialLibraryState'
 import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
@@ -39,7 +38,7 @@ import { twMerge } from 'tailwind-merge'
 export default function MaterialLayerNode(props: ListChildComponentProps<{ nodes: Entity[] }>) {
   const data = props.data
   const entity = data.nodes[props.index]
-  const materialSelection = useHookstate(getMutableState(MaterialSelectionState).selectedMaterial)
+  const materialSelection = useHookstate(getMutableState(SelectionState).selectedEntities[0])
   const selectionState = useMutableState(SelectionState)
 
   const source = !hasComponent(entity, MaterialStateComponent)

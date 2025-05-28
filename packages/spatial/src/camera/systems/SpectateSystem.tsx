@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -34,19 +34,21 @@ import {
   matchesEntityID,
   removeComponent,
   setComponent,
-  UUIDComponent
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
 import {
   defineAction,
   defineState,
   getMutableState,
   getState,
+  matchesUserID,
+  NetworkTopics,
   none,
   useHookstate,
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
-import { matchesUserID, NetworkTopics, WorldNetworkAction } from '@ir-engine/network'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'

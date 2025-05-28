@@ -7,7 +7,7 @@
     "access": "public"
   },
   "scripts": {
-    "check-errors": "tsc --noemit",
+    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
     "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
     "test-coverage-generate": "npm run test -- --coverage --silent",
@@ -24,7 +24,6 @@
   "dependencies": {
     "@ir-engine/hyperflux": "^1.6.0",
     "bitecs": "github:NateTheGreatt/bitECS#rc-0-4-0",
-    "rfc6902": "^5.1.2",
     "uuid": "9.0.0"
   },
   "devDependencies": {

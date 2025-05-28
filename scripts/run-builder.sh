@@ -201,6 +201,23 @@ setup_package_environment() {
     mv package.jsonmoved package.json
     return 1
   }
+  
+  # Determine suffix based on APP_HOST
+  if [[ "$APP_HOST" =~ "studio" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
+    SUFFIX="mt"
+  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+    SUFFIX="-mt-rc"
+  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
+    SUFFIX="-mt-int"
+  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
+    SUFFIX="-mt-qat"
+  elif [[ "$APP_HOST" =~ "mt" ]]; then
+    SUFFIX="-mt"
+  elif [[ "$APP_HOST" =~ "qat" ]]; then
+    SUFFIX="-qat"
+  else
+    SUFFIX=""
+  fi
 
   # Restore original package.json
   rm -f package.json
@@ -338,6 +355,12 @@ determine_gcp_suffix() {
     suffix="mt"
   elif [[ "$app_host" =~ "qat" ]]; then
     suffix="qat"
+  elif [[ "$app_host" =~ "mt-nightly" ]]; then
+    suffix="mt-nightly"
+  elif [[ "$app_host" =~ "mt-weekly" ]]; then
+    suffix="mt-weekly"
+  elif [[ "$app_host" =~ "mt-prdmirr" ]]; then
+    suffix="mt-prdmirr"
   else
     suffix=""
   fi
