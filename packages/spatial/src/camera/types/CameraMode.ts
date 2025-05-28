@@ -23,37 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState } from '@ir-engine/hyperflux'
-
-import { EntityUUID } from '@ir-engine/ecs'
-import { CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
-import { CameraMode } from './types/CameraMode'
-import { ProjectionType } from './types/ProjectionType'
-
-// TODO: don't mix camera settings and follow camera settings
-export const CameraSettingsState = defineState({
-  name: 'CameraSettingsState',
-  initial: {
-    fov: 60,
-    cameraNearClip: 0.1,
-    cameraFarClip: 1000,
-    projectionType: ProjectionType.Perspective,
-    minCameraDistance: 1.5,
-    maxCameraDistance: 50,
-    startCameraDistance: 3,
-    minPhi: -70,
-    maxPhi: 85,
-    cameraMode: CameraMode.DIRECT,
-    poiEntities: [] as EntityUUID[],
-    currentPoiIndex: -1,
-    targetPoiIndex: -1,
-    poiLerpValue: 0,
-    poiLerpSpeed: 0.5,
-    // Manual scroll control properties
-    scrollAccumulator: 0,
-    scrollDeadzone: 0.3,
-    scrollSensitivity: 2.0,
-    scrollDistancePerPoi: 3.0,
-    scrollBehavior: CameraScrollBehavior.Clamp
-  }
-})
+/** Camera Modes. */
+export enum CameraMode {
+  DIRECT = 'DIRECT',
+  POI = 'POI'
+}

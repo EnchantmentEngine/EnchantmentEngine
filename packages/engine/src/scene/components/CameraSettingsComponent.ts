@@ -36,15 +36,9 @@ import {
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
-import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
+import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { PoiUIComponent } from './PoiUIComponent'
-
-// Define a new camera mode for POI navigation
-export enum CameraPoiMode {
-  Disabled = 'Disabled',
-  Enabled = 'Enabled'
-}
 
 // Define scroll behavior for POI navigation
 export enum CameraScrollBehavior {
@@ -57,7 +51,6 @@ export const CameraSettingsComponent = defineComponent({
   jsonID: 'EE_camera_settings',
 
   schema: S.Object({
-    fov: S.Number({ default: 60 }),
     cameraNearClip: S.Number({ default: 0.1 }),
     cameraFarClip: S.Number({ default: 1000 }),
     projectionType: S.Enum(ProjectionType, {
@@ -65,23 +58,21 @@ export const CameraSettingsComponent = defineComponent({
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'Orthographic', 'Perspective'",
       default: ProjectionType.Perspective
     }),
+
+    cameraMode: S.Enum(CameraMode, {
+      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'DIRECT', 'POI' ",
+      default: CameraMode.DIRECT
+    }),
+
+    fov: S.Number({ default: 60 }),
     minCameraDistance: S.Number({ default: 1.5 }),
     maxCameraDistance: S.Number({ default: 50 }),
     startCameraDistance: S.Number({ default: 3 }),
-    cameraMode: S.Enum(FollowCameraMode, {
-      $comment:
-        "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
-      default: FollowCameraMode.Dynamic
-    }),
-    cameraModeDefault: S.Enum(FollowCameraMode, {
-      $comment:
-        "An indexed enum, ie. the numeric index of a value in the following sequence: 'FirstPerson', 'ShoulderCam', 'ThirdPerson', 'TopDown', 'Strategic', 'Dynamic'",
-      default: FollowCameraMode.ThirdPerson
-    }),
+
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
+
     // New fields for POI camera mode
-    poiMode: S.Enum(CameraPoiMode, { default: CameraPoiMode.Disabled }),
     poiEntities: S.Array(S.EntityUUID(), []),
     poiLerpSpeed: S.Number({ default: 0.5 }),
     // Manual scroll control properties
@@ -109,12 +100,12 @@ export const CameraSettingsComponent = defineComponent({
 
     useEffect(() => {
       const hasPoiUI = hasComponent(entity, PoiUIComponent)
-      if (component.poiMode.value === CameraPoiMode.Enabled) {
+      if (component.cameraMode.value === CameraMode.POI) {
         if (!hasPoiUI) setComponent(entity, PoiUIComponent)
       } else {
         if (hasPoiUI) removeComponent(entity, PoiUIComponent)
       }
-    }, [component.poiMode])
+    }, [component.cameraMode])
 
     return null
   }

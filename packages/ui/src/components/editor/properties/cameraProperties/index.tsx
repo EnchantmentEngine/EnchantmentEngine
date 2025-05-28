@@ -28,7 +28,6 @@ import React from 'react'
 
 import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
-  CameraPoiMode,
   CameraScrollBehavior,
   CameraSettingsComponent
 } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
@@ -44,6 +43,7 @@ import {
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
+import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
@@ -255,19 +255,23 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
       {/*  </div>*/}
       {/*</InputGroup>*/}
 
-      {/* POI Camera Mode Settings */}
-      <InputGroup name="poiMode" label={t('editor:properties.cameraSettings.lbl-poiMode', 'POI Camera Mode')}>
+      {/* Camera Mode*/}
+      <InputGroup name="cameraMode" label={t('editor:properties.cameraSettings.lbl-cameraMode')}>
         <SelectInput
-          value={cameraSettings.poiMode.value}
-          onChange={commitProperty(CameraSettingsComponent, 'poiMode')}
+          value={cameraSettings.cameraMode.value}
+          onChange={commitProperty(CameraSettingsComponent, 'cameraMode')}
           options={[
-            { label: 'Disabled', value: CameraPoiMode.Disabled },
-            { label: 'Enabled', value: CameraPoiMode.Enabled }
+            { label: 'DIRECT', value: CameraMode.DIRECT },
+            { label: 'POI', value: CameraMode.POI }
           ]}
         />
       </InputGroup>
 
-      {cameraSettings.poiMode.value === CameraPoiMode.Enabled && (
+      {/* DIRECT Camera Mode Settings */}
+      {cameraSettings.cameraMode.value === CameraMode.DIRECT && <></>}
+
+      {/* POI Camera Mode Settings */}
+      {cameraSettings.cameraMode.value === CameraMode.POI && (
         <>
           <InputGroup name="poiEntities" label={t('editor:properties.cameraSettings.lbl-poiEntities', 'POI Entities')}>
             <EntityListInput

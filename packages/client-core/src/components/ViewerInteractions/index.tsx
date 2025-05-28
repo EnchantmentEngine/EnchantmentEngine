@@ -30,6 +30,7 @@ import UserMenus from '@ir-engine/client-core/src/user/menus'
 import { EngineState } from '@ir-engine/ecs'
 import { getMutableState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
+import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
@@ -92,7 +93,7 @@ export const ViewerInteractions = () => {
         <MediaIconsBox />
       </div>
 
-      {cameraSettingsState.poiMode.value === 'Disabled' && (
+      {cameraSettingsState.cameraMode.value === CameraMode.DIRECT && (
         <div className="pointer-events-auto absolute left-0 top-0 select-none pl-[inherit] pt-[inherit]">
           <VideoWindows />
         </div>

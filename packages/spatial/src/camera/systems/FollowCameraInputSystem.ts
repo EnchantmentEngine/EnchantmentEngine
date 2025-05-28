@@ -37,7 +37,7 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
-import { CameraPoiMode, CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import { CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
@@ -58,6 +58,7 @@ import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
+import { CameraMode } from '../types/CameraMode'
 
 // const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
@@ -111,7 +112,7 @@ export const handleFollowCameraScroll = (
   // Check if we're in POI mode
   const cameraSettingsState = getMutableState(CameraSettingsState)
 
-  if (cameraSettingsState.poiMode.value === CameraPoiMode.Enabled) {
+  if (cameraSettingsState.cameraMode.value === CameraMode.POI) {
     // Filter POI entities to only include those with PoiCameraSettingsComponent
     const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
       const entity = UUIDComponent.getEntityByUUID(entityId.value)
@@ -339,7 +340,7 @@ const execute = () => {
     if (viewerEntity === cameraEntity) {
       const settings = getMutableState(CameraSettingsState)
 
-      if (settings.poiMode.value === CameraPoiMode.Enabled && settings.poiEntities.length > 0) {
+      if (settings.cameraMode.value === CameraMode.POI && settings.poiEntities.length > 0) {
         // Filter POI entities to only include those with PoiCameraSettingsComponent
         const validPoiEntities = settings.poiEntities.filter((entityUUID) =>
           hasComponent(UUIDComponent.getEntityByUUID(entityUUID.value), CameraPoiComponent)

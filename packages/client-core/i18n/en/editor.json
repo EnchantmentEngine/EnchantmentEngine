@@ -887,7 +887,9 @@
       "lbl-maxCamDist": "Max",
       "lbl-cameraDistance": "Camera Distance",
       "lbl-startCameraDistance": "Start Camera Distance",
-      "lbl-phi": "Phi"
+      "lbl-phi": "Phi",
+      "lbl-cameraMode": "Camera Mode"
+
     },
     "cameraComponent": {
       "name": "Camera",
