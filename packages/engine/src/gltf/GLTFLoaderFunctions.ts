@@ -1652,6 +1652,7 @@ export const GLTFLoaderFunctions = {
   loadMesh,
   loadNode,
   loadScene,
+  loadSkin,
   unloadScene
 }
 
