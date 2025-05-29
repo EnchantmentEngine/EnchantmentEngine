@@ -59,7 +59,7 @@ const containerStyles = `
   transition-transform
 `
 
-const sidebarContainerStyles = `
+export const sidebarContainerStyles = `
   inline-grid
   grid-rows-[min-content_min-content_1fr]
   content-start

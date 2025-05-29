@@ -532,18 +532,24 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               )}
 
               <div className="grid h-full grid-rows-[auto,1fr] gap-5">
-                <div className="flex h-auto flex-col self-start">
-                  <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
-                  <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
-                </div>
-                <div className="flex flex-col gap-5">
-                  <Toggle
-                    label={t('admin:components.location.lbl-je')}
-                    value={jumpControlEnabled.value}
-                    onChange={jumpControlEnabled.set}
-                    disabled={isLoading}
-                  />
-                </div>
+                {xrEnabled ? (
+                  <>
+                    <div className="flex h-auto flex-col self-start">
+                      <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
+                      <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
+                    </div>
+                    <div className="flex flex-col gap-5">
+                      <Toggle
+                        label={t('admin:components.location.lbl-je')}
+                        value={jumpControlEnabled.value}
+                        onChange={jumpControlEnabled.set}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  ''
+                )}
 
                 {xrEnabled ? (
                   <>
