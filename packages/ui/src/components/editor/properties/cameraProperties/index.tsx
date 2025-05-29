@@ -29,7 +29,8 @@ import { useTranslation } from 'react-i18next'
 import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
   CameraScrollBehavior,
-  CameraSettingsComponent
+  CameraSettingsComponent,
+  PoiScrollTransitionType
 } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 
 import { Entity, iterateEntityNode } from '@ir-engine/ecs'
@@ -560,6 +561,35 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                 { label: 'Wrap', value: CameraScrollBehavior.Wrap },
                 { label: 'Clamp', value: CameraScrollBehavior.Clamp }
               ]}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="poiScrollTransitionType"
+            label={t('editor:properties.cameraSettings.lbl-poiScrollTransitionType', 'POI Scroll Transition Type')}
+          >
+            <SelectInput
+              value={cameraSettings.poiScrollTransitionType.value}
+              onChange={commitProperty(CameraSettingsComponent, 'poiScrollTransitionType')}
+              options={[
+                { label: 'Scrolling', value: PoiScrollTransitionType.Scrolling },
+                { label: 'Snapping', value: PoiScrollTransitionType.Snapping }
+              ]}
+            />
+          </InputGroup>
+
+          <InputGroup
+            name="enableTransitionButtons"
+            label={t('editor:properties.cameraSettings.lbl-enableTransitionButtons', 'Enable Transition Buttons')}
+          >
+            <Checkbox
+              label={t(
+                'editor:properties.cameraSettings.lbl-enableTransitionButtonsDescription',
+                'Show navigation buttons'
+              )}
+              variantTextPlacement={'right'}
+              checked={cameraSettings.enableTransitionButtons.value}
+              onChange={commitProperty(CameraSettingsComponent, 'enableTransitionButtons')}
             />
           </InputGroup>
         </>

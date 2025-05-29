@@ -26,7 +26,10 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineState } from '@ir-engine/hyperflux'
 
 import { EntityUUID } from '@ir-engine/ecs'
-import { CameraScrollBehavior } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
+import {
+  CameraScrollBehavior,
+  PoiScrollTransitionType
+} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
 import { CameraMode } from './types/CameraMode'
 import { ProjectionType } from './types/ProjectionType'
 
@@ -55,6 +58,8 @@ export const CameraSettingsState = defineState({
     scrollSensitivity: 2.0,
     scrollDistancePerPoi: 3.0,
     scrollBehavior: CameraScrollBehavior.Clamp,
+    poiScrollTransitionType: PoiScrollTransitionType.Scrolling,
+    enableTransitionButtons: false,
 
     isAvatarVisible: true,
     directCameraScrollSensitivity: 1,
