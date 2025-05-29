@@ -379,18 +379,13 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     // Move from first person mode to third person mode
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
-      if (
-        follow.allowedModes.includes(FollowCameraMode.ThirdPerson) &&
-        newZoomDistance > 0.1 * follow.thirdPersonMinDistance
-      ) {
+      const isExitingFirstPerson = newZoomDistance > 0.1 * follow.thirdPersonMinDistance
+      if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingFirstPerson) {
         // setup third person mode
         setTargetCameraRotation(cameraEntity, 0, follow.theta)
         followState.mode.set(FollowCameraMode.ThirdPerson)
         follow.targetDistance = newZoomDistance = follow.thirdPersonMinDistance
-      } else if (
-        follow.allowedModes.includes(FollowCameraMode.TopDown) &&
-        newZoomDistance > 0.1 * follow.thirdPersonMinDistance
-      ) {
+      } else if (follow.allowedModes.includes(FollowCameraMode.TopDown) && isExitingFirstPerson) {
         setTargetCameraRotation(cameraEntity, 85, follow.theta)
         followState.mode.set(FollowCameraMode.TopDown)
         follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
@@ -433,21 +428,16 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     // Move from top down mode to third person mode
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
-      if (
-        follow.allowedModes.includes(FollowCameraMode.FirstPerson) &&
+      const isExitingTopDown =
         newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
         Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
-      ) {
+      if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingTopDown) {
+        setTargetCameraRotation(cameraEntity, 0, follow.theta)
+        followState.mode.set(FollowCameraMode.ThirdPerson)
+      } else if (follow.allowedModes.includes(FollowCameraMode.FirstPerson) && isExitingTopDown) {
         setTargetCameraRotation(cameraEntity, 0, follow.theta)
         followState.mode.set(FollowCameraMode.FirstPerson)
         follow.targetDistance = newZoomDistance = 0
-      } else if (
-        follow.allowedModes.includes(FollowCameraMode.ThirdPerson) &&
-        newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
-        Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
-      ) {
-        setTargetCameraRotation(cameraEntity, 0, follow.theta)
-        followState.mode.set(FollowCameraMode.ThirdPerson)
       }
       follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
     }
