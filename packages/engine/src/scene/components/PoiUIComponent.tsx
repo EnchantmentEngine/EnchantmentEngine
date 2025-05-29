@@ -28,7 +28,7 @@ import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunct
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 import { CameraScrollBehavior, PoiScrollTransitionType } from './CameraSettingsComponent'
@@ -76,6 +76,10 @@ export const PoiUIComponent = defineComponent({
 
 function PoiUIReactor() {
   const cameraSettingsState = useMutableState(CameraSettingsState)
+
+  // State for reactive boolean variables
+  const [showPrevious, setShowPrevious] = useState(false)
+  const [showNext, setShowNext] = useState(false)
 
   const previousClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value
@@ -130,27 +134,20 @@ function PoiUIReactor() {
   }
 
   useEffect(() => {
-    console.log('mbf', cameraSettingsState.currentPoiIndex.value)
-  }, [cameraSettingsState.currentPoiIndex.value])
+    const scrollBehavior = cameraSettingsState.scrollBehavior.value
+    const activeIndex = cameraSettingsState.currentPoiIndex.value
+
+    // Update button visibility based on scroll behavior
+    setShowPrevious(scrollBehavior === CameraScrollBehavior.Wrap || activeIndex > 0)
+    setShowNext(
+      scrollBehavior === CameraScrollBehavior.Wrap || activeIndex < cameraSettingsState.poiEntities.length - 1
+    )
+  }, [cameraSettingsState.currentPoiIndex.value, cameraSettingsState.poiEntities.length])
 
   // Don't show buttons if they're disabled
   if (!cameraSettingsState.enableTransitionButtons.value) {
     return null
   }
-
-  const transitionType = cameraSettingsState.poiScrollTransitionType.value
-  const scrollBehavior = cameraSettingsState.scrollBehavior.value
-  const poiCount = cameraSettingsState.poiEntities.length
-
-  // Use target index for button visibility in snap mode, current index in scrolling mode
-  const activeIndex =
-    transitionType === PoiScrollTransitionType.Snapping
-      ? cameraSettingsState.targetPoiIndex.value
-      : cameraSettingsState.currentPoiIndex.value
-
-  // Determine button visibility based on scroll behavior
-  const showPrevious = scrollBehavior === CameraScrollBehavior.Wrap || activeIndex > 0
-  const showNext = scrollBehavior === CameraScrollBehavior.Wrap || activeIndex < poiCount - 1
 
   return (
     <>
