@@ -376,6 +376,14 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
 
   if (follow.mode === FollowCameraMode.FirstPerson) {
     newZoomDistance = Math.sqrt(follow.targetDistance) * 0.5
+
+    if (
+      !follow.allowedModes.includes(FollowCameraMode.ThirdPerson) &&
+      !follow.allowedModes.includes(FollowCameraMode.TopDown)
+    ) {
+      follow.targetDistance = newZoomDistance = 0
+    }
+
     // Move from first person mode to third person mode
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
@@ -396,6 +404,21 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     }
   } else if (follow.mode === FollowCameraMode.ThirdPerson) {
     newZoomDistance = newZoomDistance + minSpringFactor + maxSpringFactor
+
+    if (
+      !follow.allowedModes.includes(FollowCameraMode.FirstPerson) &&
+      follow.targetDistance < follow.effectiveMinDistance
+    ) {
+      follow.targetDistance = newZoomDistance = follow.effectiveMinDistance
+    }
+
+    if (
+      !follow.allowedModes.includes(FollowCameraMode.TopDown) &&
+      follow.targetDistance > follow.effectiveMaxDistance
+    ) {
+      follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+    }
+
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
       if (
@@ -425,6 +448,12 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     }
   } else if (follow.mode === FollowCameraMode.TopDown) {
     newZoomDistance += minSpringFactor + maxSpringFactor * 0.1
+    if (
+      !follow.allowedModes.includes(FollowCameraMode.FirstPerson) &&
+      !follow.allowedModes.includes(FollowCameraMode.ThirdPerson)
+    ) {
+      follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+    }
     // Move from top down mode to third person mode
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
