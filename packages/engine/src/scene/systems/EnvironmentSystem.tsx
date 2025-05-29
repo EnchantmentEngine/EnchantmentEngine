@@ -62,10 +62,8 @@ import {
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { EnvMapBakeComponent } from '../components/EnvMapBakeComponent'
 import { BoxProjectionPlugin, EnvMapComponent } from '../components/EnvmapComponent'
-import { ReflectionProbeComponent } from '../components/ReflectionProbeComponent'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
-import { createReflectionProbeRenderTarget } from '../functions/reflectionProbeFunctions'
 
 const EnvMapReactor = (props: { entity: Entity }) => {
   const { entity } = props
@@ -110,14 +108,6 @@ const EnvMapReactor = (props: { entity: Entity }) => {
           case 'Bake':
             return (
               <EnvMapBakeReactor
-                key={envMapComponent + '-' + materialComponentEntity + '-' + index}
-                entity={materialComponentEntity}
-                rootEntity={entity}
-              />
-            )
-          case 'Probes':
-            return (
-              <EnvmapProbesReactor
                 key={envMapComponent + '-' + materialComponentEntity + '-' + index}
                 entity={materialComponentEntity}
                 rootEntity={entity}
@@ -220,41 +210,6 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
       }
     )
   }, [envMapComponent.envMapCubemapURL])
-
-  return <IntensityReactor entity={entity} rootEntity={rootEntity} />
-}
-
-const EnvmapProbesReactor = (props: { entity: Entity; rootEntity: Entity }) => {
-  const { entity, rootEntity } = props
-  const materialState = useOptionalComponent(entity, MaterialStateComponent)?.material as State<
-    MeshStandardMaterial,
-    Identifiable
-  >
-
-  const probeQuery = useQuery([ReflectionProbeComponent])
-
-  useEffect(() => {
-    return () => {
-      const materialComponent = getOptionalMutableComponent(entity, MaterialStateComponent) as
-        | State<MeshStandardMaterial>
-        | undefined
-      if (materialComponent?.envMap?.value) {
-        const material = materialComponent.value as MeshStandardMaterial
-        material.envMap = null
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!materialState || disallowedMaterials.has(materialState.type.value)) return
-
-    const [renderTexture, unload] = createReflectionProbeRenderTarget(entity, probeQuery)
-    const material = materialState.value as MeshStandardMaterial
-    material.envMap = renderTexture
-    return () => {
-      unload()
-    }
-  }, [probeQuery])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
