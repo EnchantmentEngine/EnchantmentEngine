@@ -176,6 +176,18 @@ export const FollowCameraComponent = defineComponent({
         maxPhi: cameraSettings.maxPhi,
         lastZoomStartDistance: (cameraSettings.minCameraDistance + cameraSettings.minCameraDistance) / 2
       })
+
+      let allowedModes: FollowCameraMode[] = []
+      if (cameraSettings.canCameraFirstPerson) {
+        allowedModes.push(FollowCameraMode.FirstPerson)
+      }
+      if (cameraSettings.canCameraThirdPerson) {
+        allowedModes.push(FollowCameraMode.ThirdPerson)
+      }
+      if (cameraSettings.canCameraTopDown) {
+        allowedModes.push(FollowCameraMode.TopDown)
+      }
+      follow.allowedModes.set(allowedModes)
     }, [cameraSettingsState])
 
     useEffect(() => {
