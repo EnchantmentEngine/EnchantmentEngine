@@ -259,7 +259,8 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               ? 'vrm'
               : 'glb',
             resourceUri: '',
-            adaptiveSimplification: true
+            adaptiveSimplification: true,
+            textureCompressionType: 'uastc'
           }
 
           progressState.set({

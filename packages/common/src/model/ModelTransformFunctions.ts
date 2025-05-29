@@ -42,6 +42,7 @@ import {
   dedup,
   draco,
   flatten,
+  getBounds,
   join,
   palette,
   partition,
@@ -891,7 +892,6 @@ export const transformModel = async (
     const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
 
     const document = await cloneDocument(srcDocument)
-
     // Preserve vertex colors before applying transformations
     await document.transform(preserveVertexColors)
 
@@ -903,7 +903,18 @@ export const transformModel = async (
     params.dedup && (await document.transform(dedup()))
     params.flatten && (await document.transform(flatten()))
     params.join.enabled && (await document.transform(join(params.join.options)))
+    const scene = document.getRoot().getDefaultScene()
+    if (scene) {
+      const bounds = getBounds(scene)
+      const size = {
+        x: bounds.max[0] - bounds.min[0],
+        y: bounds.max[1] - bounds.min[1],
+        z: bounds.max[2] - bounds.min[2]
+      }
+      onMetadata(i, 'dimensions', size)
+    }
 
+    // await document.transform(getBounds())
     if (params.simplifyRatio < 1) {
       const simplifyTransforms = [] as Transform[]
       if (!params.weld.enabled) simplifyTransforms.push(weld())
