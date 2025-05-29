@@ -166,7 +166,7 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     const material = materialState.value as MeshStandardMaterial
     material.envMap = backgroundComponent.value.clone() as any
     ResourceState.addEntityResource(entity, material.envMap!)
-  }, [!!backgroundComponent?.value, !!materialState])
+  }, [backgroundComponent?.value, materialState.value])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
@@ -209,7 +209,7 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
         addError(entity, EnvMapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
       }
     )
-  }, [envMapComponent.envMapCubemapURL])
+  }, [envMapComponent.envMapCubemapURL, materialState.value])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
@@ -242,7 +242,7 @@ const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entit
     envMapTexture.mapping = EquirectangularReflectionMapping
     const material = materialState.value as MeshStandardMaterial
     material.envMap = envMapTexture
-  }, [envMapTexture])
+  }, [envMapTexture, materialState.value])
 
   useEffect(() => {
     if (!error) return
@@ -289,7 +289,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     texture.mapping = EquirectangularReflectionMapping
     const material = materialState.value as MeshStandardMaterial
     material.envMap = texture
-  }, [envMaptexture, envMapComponent.type, materialState])
+  }, [envMaptexture, envMapComponent.type, materialState.value])
 
   useEffect(() => {
     if (!bakeComponent) return
@@ -360,7 +360,7 @@ const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     return () => {
       texture.dispose()
     }
-  }, [envMapComponent.envMapSourceColor, materialState, envMapComponent.type])
+  }, [envMapComponent.envMapSourceColor, materialState.value, envMapComponent.type])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
