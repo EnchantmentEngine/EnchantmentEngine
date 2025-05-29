@@ -259,6 +259,16 @@ export const FollowCameraComponent = defineComponent({
       follow.currentOffset.value.copy(Vector3_Zero)
     }, [follow.targetEntity])
 
+    useEffect(() => {
+      if (!follow.allowedModes.value.includes(follow.mode.value)) {
+        if (follow.allowedModes.length > 0) {
+          follow.mode.set(follow.allowedModes.value[0])
+        } else {
+          follow.mode.set(FollowCameraMode.ThirdPerson)
+        }
+      }
+    }, [follow.allowedModes.length, follow.allowedModes.value])
+
     return null
   }
 })
@@ -377,6 +387,13 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
         setTargetCameraRotation(cameraEntity, 0, follow.theta)
         followState.mode.set(FollowCameraMode.ThirdPerson)
         follow.targetDistance = newZoomDistance = follow.thirdPersonMinDistance
+      } else if (
+        follow.allowedModes.includes(FollowCameraMode.TopDown) &&
+        newZoomDistance > 0.1 * follow.thirdPersonMinDistance
+      ) {
+        setTargetCameraRotation(cameraEntity, 85, follow.theta)
+        followState.mode.set(FollowCameraMode.TopDown)
+        follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
       } else {
         // reset first person mode
         follow.targetDistance = newZoomDistance = 0
@@ -417,6 +434,14 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
       if (
+        follow.allowedModes.includes(FollowCameraMode.FirstPerson) &&
+        newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
+        Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
+      ) {
+        setTargetCameraRotation(cameraEntity, 0, follow.theta)
+        followState.mode.set(FollowCameraMode.FirstPerson)
+        follow.targetDistance = newZoomDistance = 0
+      } else if (
         follow.allowedModes.includes(FollowCameraMode.ThirdPerson) &&
         newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
         Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
