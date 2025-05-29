@@ -31,6 +31,7 @@ import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSetting
 import React, { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
+import { CameraScrollBehavior, PoiScrollTransitionType } from './CameraSettingsComponent'
 
 /**
  * Component for entities that serve as points of interest for the camera system.
@@ -77,23 +78,85 @@ function PoiUIReactor() {
   const cameraSettingsState = useMutableState(CameraSettingsState)
 
   const previousClicked = () => {
-    cameraSettingsState.currentPoiIndex.set(cameraSettingsState.currentPoiIndex.value - 1)
-    console.log('previous clicked')
+    const transitionType = cameraSettingsState.poiScrollTransitionType.value
+    const scrollBehavior = cameraSettingsState.scrollBehavior.value
+    const currentTargetIndex = cameraSettingsState.targetPoiIndex.value
+    const poiCount = cameraSettingsState.poiEntities.length
+
+    let newTargetIndex = currentTargetIndex - 1
+
+    // Handle wrapping or clamping
+    if (scrollBehavior === CameraScrollBehavior.Wrap) {
+      newTargetIndex = ((newTargetIndex % poiCount) + poiCount) % poiCount
+    } else {
+      newTargetIndex = Math.max(0, newTargetIndex)
+    }
+
+    if (transitionType === PoiScrollTransitionType.Snapping) {
+      // Snap mode: set target and reset lerp
+      cameraSettingsState.targetPoiIndex.set(newTargetIndex)
+      cameraSettingsState.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point
+      cameraSettingsState.poiLerpValue.set(0) // Reset lerp to start transition
+    } else {
+      // Scrolling mode: directly set current index (legacy behavior)
+      cameraSettingsState.currentPoiIndex.set(newTargetIndex)
+    }
   }
+
   const nextClicked = () => {
-    cameraSettingsState.currentPoiIndex.set(cameraSettingsState.currentPoiIndex.value + 1)
-    console.log('next clicked')
+    const transitionType = cameraSettingsState.poiScrollTransitionType.value
+    const scrollBehavior = cameraSettingsState.scrollBehavior.value
+    const currentTargetIndex = cameraSettingsState.targetPoiIndex.value
+    const poiCount = cameraSettingsState.poiEntities.length
+
+    let newTargetIndex = currentTargetIndex + 1
+
+    // Handle wrapping or clamping
+    if (scrollBehavior === CameraScrollBehavior.Wrap) {
+      newTargetIndex = ((newTargetIndex % poiCount) + poiCount) % poiCount
+    } else {
+      newTargetIndex = Math.min(poiCount - 1, newTargetIndex)
+    }
+
+    if (transitionType === PoiScrollTransitionType.Snapping) {
+      // Snap mode: set target and reset lerp
+      cameraSettingsState.targetPoiIndex.set(newTargetIndex)
+      cameraSettingsState.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point
+      cameraSettingsState.poiLerpValue.set(0) // Reset lerp to start transition
+    } else {
+      // Scrolling mode: directly set current index (legacy behavior)
+      cameraSettingsState.currentPoiIndex.set(newTargetIndex)
+    }
   }
 
   useEffect(() => {
     console.log('mbf', cameraSettingsState.currentPoiIndex.value)
   }, [cameraSettingsState.currentPoiIndex.value])
 
+  // Don't show buttons if they're disabled
+  if (!cameraSettingsState.enableTransitionButtons.value) {
+    return null
+  }
+
+  const transitionType = cameraSettingsState.poiScrollTransitionType.value
+  const scrollBehavior = cameraSettingsState.scrollBehavior.value
+  const poiCount = cameraSettingsState.poiEntities.length
+
+  // Use target index for button visibility in snap mode, current index in scrolling mode
+  const activeIndex =
+    transitionType === PoiScrollTransitionType.Snapping
+      ? cameraSettingsState.targetPoiIndex.value
+      : cameraSettingsState.currentPoiIndex.value
+
+  // Determine button visibility based on scroll behavior
+  const showPrevious = scrollBehavior === CameraScrollBehavior.Wrap || activeIndex > 0
+  const showNext = scrollBehavior === CameraScrollBehavior.Wrap || activeIndex < poiCount - 1
+
   return (
     <>
       <div className="flex h-full w-full flex-row">
         <div className="flex h-full w-1/2 items-center justify-start">
-          {cameraSettingsState.currentPoiIndex.value > 0 && (
+          {showPrevious && (
             <button
               className="pointer-events-auto ml-4 flex h-16 w-16 items-center justify-center rounded-md bg-ui-background text-text-primary-button"
               onClick={previousClicked}
@@ -103,7 +166,7 @@ function PoiUIReactor() {
           )}
         </div>
         <div className="flex h-full w-1/2 items-center justify-end">
-          {cameraSettingsState.currentPoiIndex.value < cameraSettingsState.poiEntities.length - 1 && (
+          {showNext && (
             <button
               className="pointer-events-auto mr-4 flex h-16 w-16 items-center justify-center rounded-md bg-ui-background text-text-primary-button"
               onClick={nextClicked}
