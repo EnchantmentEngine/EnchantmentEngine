@@ -41,6 +41,7 @@ import {
   Microphone01Md,
   MicrophoneOff,
   Monitor01Md,
+  ShoppingCardLg,
   VideoRecorderLg,
   VideoRecorderMd,
   VideoRecorderOffLg,
@@ -73,6 +74,7 @@ type MultimediaState = {
   _ScreenshareIcon: IconType
   _MultiVideoIcon: IconType
   _VRIcon: IconType
+  _CartIcon: IconType
 
   onMicClick: () => void
   onCamClick: () => void
@@ -151,9 +153,9 @@ const useMultimediaState = () => {
 
   const isNetworkReady = mediaNetworkReady && mediaNetworkState?.ready?.value
 
-  const isMicReady = audioEnabled && hasAudioDevice && isNetworkReady
+  const isMicReady = audioEnabled /**&& hasAudioDevice && isNetworkReady**/
 
-  const isCamReady = videoEnabled && hasVideoDevice && isNetworkReady
+  const isCamReady = videoEnabled /**&& hasVideoDevice && isNetworkReady**/
 
   const isScreenshareReady =
     !isMobile &&
@@ -178,6 +180,7 @@ const useMultimediaState = () => {
   const _ScreenshareIcon = Monitor01Md
   const _VRIcon = VrIcon
   const _MultiVideoIcon = MdFlipCameraAndroid
+  const _CartIcon = ShoppingCardLg
 
   const onMicClick = MediaStreamState.toggleMicrophonePaused
 
@@ -214,6 +217,7 @@ const useMultimediaState = () => {
     _ScreenshareIcon,
     _MultiVideoIcon,
     _VRIcon,
+    _CartIcon,
 
     onMicClick,
     onCamClick,
