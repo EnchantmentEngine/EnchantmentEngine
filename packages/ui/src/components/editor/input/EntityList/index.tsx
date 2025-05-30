@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Entity, EntityUUID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
 import { useHookstate } from '@ir-engine/hyperflux'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaPlus } from 'react-icons/fa'
@@ -94,9 +94,9 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     const option = entityOptions.value.find((opt) => opt.value === entityId)
     if (!option) return
 
-    const newEntityIDs = [...value]
-    newEntityIDs[index] = option.value
-    onChange(newEntityIDs)
+    const newEntityUUIDs = [...value]
+    newEntityUUIDs[index] = option.value
+    onChange(newEntityUUIDs)
   }
 
   return (
@@ -110,14 +110,14 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
           </Text>
         )}
 
-        {value.map((entityID, index) => (
+        {value.map((entityUUID, index) => (
           <div key={index} className="flex items-center space-x-2">
             <SelectInput
               options={entityOptions.value.map((opt) => ({
                 label: opt.label,
                 value: opt.value
               }))}
-              value={entityID}
+              value={entityUUID}
               onChange={(value) => handleChangeEntity(index, value)}
               width="full"
             />

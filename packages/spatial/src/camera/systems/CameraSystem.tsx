@@ -45,7 +45,7 @@ import { NetworkObjectOwnedTag, NetworkObjectSendPeriodicUpdatesTag, WorldNetwor
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { CameraSettingsState } from '../CameraSettingsState.ts'
+import { CameraSettingsState } from '../CameraSettingsState'
 import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
