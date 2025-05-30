@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Entity, EntityUUID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
 import { useHookstate } from '@ir-engine/hyperflux'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent.ts'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaPlus } from 'react-icons/fa'

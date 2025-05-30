@@ -62,7 +62,7 @@ import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent.ts'
+import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
