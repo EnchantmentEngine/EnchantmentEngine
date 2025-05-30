@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 /**
  * Component for entities that serve as points of interest for the camera system.
@@ -37,23 +36,8 @@ export const CameraPoiComponent = defineComponent({
   jsonID: 'EE_camera_poi_component',
 
   schema: S.Object({
-    // Distance from which the camera should view this POI
-    cameraDistance: S.Number({ default: 5 }),
-
     // Optional entities that can be hotspots within this POI
-    hotspotEntityUUIDs: S.Array(S.EntityUUID(), []),
-
-    // Optional camera position offset when viewing this POI
-    cameraOffset: T.Vec3(),
-
-    // Optional camera look-at target (if different from the entity's position)
-    lookAtTarget: S.Union([S.Null(), S.EntityUUID()]),
-
-    // Optional camera phi angle when viewing this POI
-    phi: S.Number({ default: 0 }),
-
-    // Optional camera theta angle when viewing this POI
-    theta: S.Number({ default: 0 })
+    hotspotEntityUUIDs: S.Array(S.EntityUUID(), [])
   }),
 
   reactor: () => {

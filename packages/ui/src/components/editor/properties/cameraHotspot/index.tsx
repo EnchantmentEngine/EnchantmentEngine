@@ -31,13 +31,9 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
-import { NO_PROXY } from '@ir-engine/hyperflux'
 import { HiOutlineLocationMarker } from 'react-icons/hi'
-import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
-import NumericInput from '../../input/Numeric'
 import StringInput from '../../input/String'
-import Vector3Input from '../../input/Vector3'
 
 export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
   const hotspotComponent = useComponent(props.entity, CameraHotspotComponent)
@@ -66,66 +62,6 @@ export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
           value={hotspotComponent.description.value}
           onChange={updateProperty(CameraHotspotComponent, 'description')}
           onRelease={commitProperty(CameraHotspotComponent, 'description')}
-        />
-      </InputGroup>
-
-      <InputGroup
-        name="cameraDistance"
-        label={t('editor:properties.cameraHotspot.lbl-cameraDistance', 'Camera Distance')}
-      >
-        <NumericInput
-          onChange={updateProperty(CameraHotspotComponent, 'cameraDistance')}
-          onRelease={commitProperty(CameraHotspotComponent, 'cameraDistance')}
-          min={0.1}
-          smallStep={0.1}
-          mediumStep={1}
-          largeStep={5}
-          value={hotspotComponent.cameraDistance.value}
-        />
-      </InputGroup>
-
-      <InputGroup name="cameraOffset" label={t('editor:properties.cameraHotspot.lbl-cameraOffset', 'Camera Offset')}>
-        <Vector3Input
-          value={hotspotComponent.cameraOffset.get(NO_PROXY)}
-          onChange={updateProperty(CameraHotspotComponent, 'cameraOffset')}
-          onRelease={commitProperty(CameraHotspotComponent, 'cameraOffset')}
-        />
-      </InputGroup>
-
-      <InputGroup name="lookAtTarget" label={t('editor:properties.cameraHotspot.lbl-lookAtTarget', 'Look At Target')}>
-        <EntityListInput
-          value={hotspotComponent.lookAtTarget.value ? [hotspotComponent.lookAtTarget.value] : []}
-          onChange={(entityUUIDs) => {
-            const entityUUID = entityUUIDs.length > 0 ? entityUUIDs[0] : null
-            commitProperty(CameraHotspotComponent, 'lookAtTarget')(entityUUID)
-          }}
-          placeholder="Select an entity to look at"
-        />
-      </InputGroup>
-
-      <InputGroup name="phi" label={t('editor:properties.cameraHotspot.lbl-phi', 'Phi Angle')}>
-        <NumericInput
-          onChange={updateProperty(CameraHotspotComponent, 'phi')}
-          onRelease={commitProperty(CameraHotspotComponent, 'phi')}
-          min={-180}
-          max={180}
-          smallStep={1}
-          mediumStep={5}
-          largeStep={15}
-          value={hotspotComponent.phi.value}
-        />
-      </InputGroup>
-
-      <InputGroup name="theta" label={t('editor:properties.cameraHotspot.lbl-theta', 'Theta Angle')}>
-        <NumericInput
-          onChange={updateProperty(CameraHotspotComponent, 'theta')}
-          onRelease={commitProperty(CameraHotspotComponent, 'theta')}
-          min={-180}
-          max={180}
-          smallStep={1}
-          mediumStep={5}
-          largeStep={15}
-          value={hotspotComponent.theta.value}
         />
       </InputGroup>
     </NodeEditor>

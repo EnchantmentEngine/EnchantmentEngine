@@ -46,6 +46,12 @@ export enum CameraScrollBehavior {
   Clamp = 'Clamp'
 }
 
+// Define POI scroll transition types
+export enum PoiScrollTransitionType {
+  Scrolling = 'Scrolling',
+  Snapping = 'Snapping'
+}
+
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
   jsonID: 'EE_camera_settings',
@@ -102,7 +108,9 @@ export const CameraSettingsComponent = defineComponent({
     scrollDeadzone: S.Number({ default: 1.0 }),
     scrollSensitivity: S.Number({ default: 0.1 }),
     scrollDistancePerPoi: S.Number({ default: 3.0 }),
-    scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp })
+    scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp }),
+    poiScrollTransitionType: S.Enum(PoiScrollTransitionType, { default: PoiScrollTransitionType.Scrolling }),
+    enableTransitionButtons: S.Bool({ default: false })
   }),
 
   reactor: () => {
@@ -129,6 +137,12 @@ export const CameraSettingsComponent = defineComponent({
         if (hasPoiUI) removeComponent(entity, PoiUIComponent)
       }
     }, [component.cameraMode])
+
+    useEffect(() => {
+      if (component.poiScrollTransitionType.value === PoiScrollTransitionType.Scrolling) {
+        component.enableTransitionButtons.set(false)
+      }
+    }, [component.poiScrollTransitionType])
 
     return null
   }
