@@ -578,20 +578,22 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             />
           </InputGroup>
 
-          <InputGroup
-            name="enableTransitionButtons"
-            label={t('editor:properties.cameraSettings.lbl-enableTransitionButtons', 'Enable Transition Buttons')}
-          >
-            <Checkbox
-              label={t(
-                'editor:properties.cameraSettings.lbl-enableTransitionButtonsDescription',
-                'Show navigation buttons'
-              )}
-              variantTextPlacement={'right'}
-              checked={cameraSettings.enableTransitionButtons.value}
-              onChange={commitProperty(CameraSettingsComponent, 'enableTransitionButtons')}
-            />
-          </InputGroup>
+          {cameraSettings.poiScrollTransitionType.value === PoiScrollTransitionType.Snapping && (
+            <InputGroup
+              name="enableTransitionButtons"
+              label={t('editor:properties.cameraSettings.lbl-enableTransitionButtons', 'Enable Transition Buttons')}
+            >
+              <Checkbox
+                label={t(
+                  'editor:properties.cameraSettings.lbl-enableTransitionButtonsDescription',
+                  'Show navigation buttons'
+                )}
+                variantTextPlacement={'right'}
+                checked={cameraSettings.enableTransitionButtons.value}
+                onChange={commitProperty(CameraSettingsComponent, 'enableTransitionButtons')}
+              />
+            </InputGroup>
+          )}
         </>
       )}
     </NodeEditor>

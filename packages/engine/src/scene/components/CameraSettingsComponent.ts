@@ -138,6 +138,12 @@ export const CameraSettingsComponent = defineComponent({
       }
     }, [component.cameraMode])
 
+    useEffect(() => {
+      if (component.poiScrollTransitionType.value === PoiScrollTransitionType.Scrolling) {
+        component.enableTransitionButtons.set(false)
+      }
+    }, [component.poiScrollTransitionType])
+
     return null
   }
 })

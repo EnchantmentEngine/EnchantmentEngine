@@ -888,7 +888,7 @@
       "lbl-cameraDistance": "Camera Distance",
       "lbl-startCameraDistance": "Start Camera Distance",
       "lbl-enableTransitionButtons": "Transition Buttons",
-      "lbl-enableTransitionButtonsDescription": "Toggle UI buttons for navigating between POIs.",
+      "lbl-enableTransitionButtonsDescription": "Show UI buttons for navigating between POIs.",
       "lbl-phi": "Phi",
       "lbl-cameraMode": "Camera Mode",
       "lbl-avatar": "Avatar",
