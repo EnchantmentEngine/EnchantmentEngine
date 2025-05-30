@@ -374,6 +374,32 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
       0
     ) * 0.5
 
+  const resetCameraFirstPerson = () => {
+    setTargetCameraRotation(cameraEntity, 0, follow.theta)
+    follow.targetDistance = newZoomDistance = 0
+  }
+  const resetCameraThirdPerson = () => {
+    setTargetCameraRotation(cameraEntity, 0, follow.theta)
+    follow.targetDistance = newZoomDistance = follow.thirdPersonMinDistance
+  }
+  const resetCameraTopDown = () => {
+    setTargetCameraRotation(cameraEntity, 85, follow.theta)
+    follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+  }
+
+  const switchToFirstPerson = () => {
+    followState.mode.set(FollowCameraMode.FirstPerson)
+    resetCameraFirstPerson()
+  }
+  const switchToThirdPerson = () => {
+    followState.mode.set(FollowCameraMode.ThirdPerson)
+    resetCameraThirdPerson()
+  }
+  const switchToTopDown = () => {
+    followState.mode.set(FollowCameraMode.TopDown)
+    resetCameraTopDown()
+  }
+
   if (follow.mode === FollowCameraMode.FirstPerson) {
     newZoomDistance = Math.sqrt(follow.targetDistance) * 0.5
 
@@ -389,14 +415,9 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
       follow.accumulatedZoomTriggerDebounceTime = -1
       const isExitingFirstPerson = newZoomDistance > 0.1 * follow.thirdPersonMinDistance
       if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingFirstPerson) {
-        // setup third person mode
-        setTargetCameraRotation(cameraEntity, 0, follow.theta)
-        followState.mode.set(FollowCameraMode.ThirdPerson)
-        follow.targetDistance = newZoomDistance = follow.thirdPersonMinDistance
+        switchToThirdPerson()
       } else if (follow.allowedModes.includes(FollowCameraMode.TopDown) && isExitingFirstPerson) {
-        setTargetCameraRotation(cameraEntity, 85, follow.theta)
-        followState.mode.set(FollowCameraMode.TopDown)
-        follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+        switchToTopDown()
       } else {
         // reset first person mode
         follow.targetDistance = newZoomDistance = 0
@@ -427,18 +448,14 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
         follow.targetDistance < follow.effectiveMinDistance - follow.effectiveMaxDistance * 0.05 &&
         Math.abs(follow.lastZoomStartDistance - follow.effectiveMinDistance) < follow.effectiveMaxDistance * 0.05
       ) {
-        setTargetCameraRotation(cameraEntity, 0, follow.theta)
-        followState.mode.set(FollowCameraMode.FirstPerson)
-        follow.targetDistance = newZoomDistance = 0
+        switchToFirstPerson()
       } else if (
         // Move from third person mode to top down mode
         follow.allowedModes.includes(FollowCameraMode.TopDown) &&
         follow.targetDistance > follow.effectiveMaxDistance + follow.effectiveMaxDistance * 0.02 &&
         Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < follow.effectiveMaxDistance * 0.02
       ) {
-        setTargetCameraRotation(cameraEntity, 85, follow.theta)
-        followState.mode.set(FollowCameraMode.TopDown)
-        follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+        switchToTopDown()
       } else {
         follow.targetDistance = newZoomDistance = Math.max(
           Math.min(follow.targetDistance, follow.effectiveMaxDistance),
@@ -461,12 +478,9 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
         newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
         Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
       if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingTopDown) {
-        setTargetCameraRotation(cameraEntity, 0, follow.theta)
-        followState.mode.set(FollowCameraMode.ThirdPerson)
+        switchToThirdPerson()
       } else if (follow.allowedModes.includes(FollowCameraMode.FirstPerson) && isExitingTopDown) {
-        setTargetCameraRotation(cameraEntity, 0, follow.theta)
-        followState.mode.set(FollowCameraMode.FirstPerson)
-        follow.targetDistance = newZoomDistance = 0
+        switchToFirstPerson()
       }
       follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
     }
