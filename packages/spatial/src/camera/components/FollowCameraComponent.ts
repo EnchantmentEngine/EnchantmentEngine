@@ -137,7 +137,12 @@ export const FollowCameraComponent = defineComponent({
     accumulatedZoomTriggerDebounceTime: S.Number({ default: -1 }),
     lastZoomStartDistance: S.Number({ default: 0 }),
     isFreeCamera: S.Bool({ default: true }),
-    isResetCamera: S.Bool({ default: false })
+    isResetCamera: S.Bool({ default: false }),
+    lastCameraAdjustmentTime: S.Number({ default: -1 }),
+    lastCyclePosition: T.Vec3(),
+    lastCycleDistance: S.Number({ default: 0 }),
+    lastCyclePhi: S.Number({ default: 0 }),
+    lastCycleTheta: S.Number({ default: 0 })
   }),
 
   reactor: () => {
@@ -471,6 +476,17 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     resetMode[followState.mode.value]()
   }
 
+  const timeInSeconds = Math.floor(Date.now() / 1000)
+  const resetThreshold = 3 //in seconds
+  if (follow.isResetCamera) {
+    if (follow.lastCameraAdjustmentTime !== -1 && follow.lastCameraAdjustmentTime + resetThreshold <= timeInSeconds) {
+      resetMode[followState.mode.value]()
+      follow.lastCameraAdjustmentTime = -1
+    }
+  } else {
+    follow.lastCameraAdjustmentTime = -1
+  }
+
   if (follow.mode === FollowCameraMode.FirstPerson) {
     newZoomDistance = Math.sqrt(follow.targetDistance) * 0.5
 
@@ -567,8 +583,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     Math.min(lerpVal * 3, 1) *
     smoothDamp(follow.distance, newZoomDistance, follow.zoomVelocity, smoothingSpeed, deltaSeconds)
 
-  const theta = follow.theta
-  const thetaRad = MathUtils.degToRad(theta)
+  const thetaRad = MathUtils.degToRad(follow.theta)
   const phiRad = MathUtils.degToRad(follow.phi)
 
   follow.direction.set(Math.sin(thetaRad) * Math.cos(phiRad), Math.sin(phiRad), Math.cos(thetaRad) * Math.cos(phiRad))
@@ -588,6 +603,31 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     follow.targetRotation,
     lerpVal
   )
+
+  const updatedPosition = new Vector3().copy(cameraTransform.position)
+  const updatedDistance = follow.distance
+  const updatedPhi = follow.phi
+  const updatedTheta = follow.theta
+
+  const positionThreshold = 0.01
+  const distanceThreshold = 0.01
+  const phiThreshold = 0.01
+  const thetaThreshold = 0.01
+
+  if (
+    updatedPosition.distanceTo(follow.lastCyclePosition) > positionThreshold &&
+    Math.abs(updatedDistance - follow.lastCycleDistance) <= distanceThreshold &&
+    Math.abs(updatedPhi - follow.lastCyclePhi) <= phiThreshold &&
+    Math.abs(updatedTheta - follow.lastCycleTheta) <= thetaThreshold
+  ) {
+    follow.lastCameraAdjustmentTime = timeInSeconds
+  }
+
+  //update last cycle values to use in checking the camera reset
+  follow.lastCyclePosition = updatedPosition
+  follow.lastCycleDistance = updatedDistance
+  follow.lastCyclePhi = updatedPhi
+  follow.lastCycleTheta = updatedTheta
 
   updateCameraTargetRotation(cameraEntity)
 }
