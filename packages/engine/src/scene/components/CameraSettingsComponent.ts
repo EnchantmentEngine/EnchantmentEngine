@@ -87,7 +87,7 @@ export const CameraSettingsComponent = defineComponent({
     canCameraTopDown: S.Bool({ default: true }),
 
     thirdPersonDefaultDistance: S.Number({ default: 3 }),
-    topDownDefaultDistance: S.Number({ default: 3 }),
+    topDownDefaultDistance: S.Number({ default: 50 }),
 
     isFistPersonFreeCamera: S.Bool({ default: true }),
     isThirdPersonFreeCamera: S.Bool({ default: true }),

@@ -69,7 +69,7 @@ export const CameraSettingsState = defineState({
     canCameraTopDown: true,
 
     thirdPersonDefaultDistance: 3,
-    topDownDefaultDistance: 3,
+    topDownDefaultDistance: 50,
 
     isFistPersonFreeCamera: true,
     isThirdPersonFreeCamera: true,
