@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
+import { Engine, getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
 import { getState, none, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { destroySpatialViewer, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
@@ -55,6 +55,8 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
 
     return () => {
       observer.disconnect()
+      const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
+      if (!parent.contains(canvas)) return
       parent.removeChild(canvas)
       originalParent.appendChild(canvas)
       if (poiUI) {
@@ -69,6 +71,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
     initializeSpatialViewer(canvas)
     return () => {
+      if (!Engine.instance) return
       destroySpatialViewer()
     }
   }, [])
@@ -88,6 +91,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     rendererComponent.scenes.merge([originEntity])
 
     return () => {
+      if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.value.indexOf(originEntity)
       rendererComponent.scenes[index].set(none)
@@ -103,6 +107,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     rendererComponent.scenes.merge([localFloorEntity])
 
     return () => {
+      if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.value.indexOf(localFloorEntity)
       rendererComponent.scenes[index].set(none)
