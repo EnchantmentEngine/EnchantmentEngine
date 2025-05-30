@@ -38,7 +38,7 @@ import {
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, NO_PROXY, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Clock, MathUtils, Quaternion, Raycaster, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
@@ -59,6 +59,7 @@ import { FollowCameraMode, FollowCameraShoulderSide } from '../types/FollowCamer
 import { TargetCameraRotationComponent } from './TargetCameraRotationComponent'
 
 const window = 'window' in globalThis ? globalThis.window : ({} as any as Window)
+const topDownDefaultPhi = 85
 
 export const FollowCameraComponent = defineComponent({
   name: 'FollowCameraComponent',
@@ -95,6 +96,7 @@ export const FollowCameraComponent = defineComponent({
       ]
     ),
     distance: S.Number({ default: 0 }),
+    defaultDistance: S.Number({ default: 0 }),
     targetDistance: S.Number({ default: 0 }),
     zoomVelocity: S.Object({
       value: S.Number({ default: 0 })
@@ -109,6 +111,8 @@ export const FollowCameraComponent = defineComponent({
     maxPhi: S.Number({ default: 0 }),
     minTheta: S.Number({ default: 0 }),
     maxTheta: S.Number({ default: 0 }),
+    defaultTheta: S.Number({ default: 0 }),
+    defaultPhi: S.Number({ default: 0 }),
     locked: S.Bool({ default: false }),
     enabled: S.Bool({ default: true }),
     shoulderSide: S.Enum(FollowCameraShoulderSide, {
@@ -131,7 +135,9 @@ export const FollowCameraComponent = defineComponent({
     pointerLock: S.Bool({ default: false }),
     smoothLerp: S.Bool({ default: true }),
     accumulatedZoomTriggerDebounceTime: S.Number({ default: -1 }),
-    lastZoomStartDistance: S.Number({ default: 0 })
+    lastZoomStartDistance: S.Number({ default: 0 }),
+    isFreeCamera: S.Bool({ default: true }),
+    isResetCamera: S.Bool({ default: false })
   }),
 
   reactor: () => {
@@ -161,20 +167,55 @@ export const FollowCameraComponent = defineComponent({
       }
       follow.raycastProps.cameraRays.set(cameraRays)
 
-      const windowHeight = 'innerHeight' in window ? window.innerHeight : 1
-      const windowWidth = 'innerWidth' in window ? window.innerWidth : 2
-      const distance = (windowHeight / windowWidth) * cameraSettings.startCameraDistance
+      let startDistance = 1
+      let minTheta = 0
+      let maxTheta = 0
+      let isFreeCamera = follow.isFreeCamera.value
+      let isResetCamera = follow.isResetCamera.value
+      let defaultPhi = follow.defaultPhi.value
+      let defaultTheta = follow.defaultTheta.value
+      if (follow.mode.value === FollowCameraMode.FirstPerson) {
+        startDistance = 0
+        minTheta = -cameraSettings.firstPersonCameraLimits / 2
+        maxTheta = cameraSettings.firstPersonCameraLimits / 2
+        isFreeCamera = cameraSettings.isFistPersonFreeCamera
+        isResetCamera = cameraSettings.isFirstPersonCameraReset
+        defaultPhi = 0
+        defaultTheta = 0
+      } else if (follow.mode.value === FollowCameraMode.ThirdPerson) {
+        startDistance = cameraSettings.thirdPersonDefaultDistance
+        minTheta = -cameraSettings.thirdPersonCameraLimits / 2
+        maxTheta = cameraSettings.thirdPersonCameraLimits / 2
+        isFreeCamera = cameraSettings.isThirdPersonFreeCamera
+        isResetCamera = cameraSettings.isThirdPersonCameraReset
+        defaultPhi = 0
+        defaultTheta = 0
+      } else if (follow.mode.value === FollowCameraMode.TopDown) {
+        startDistance = cameraSettings.topDownDefaultDistance
+        minTheta = -cameraSettings.topDownCameraLimits / 2
+        maxTheta = cameraSettings.topDownCameraLimits / 2
+        isFreeCamera = cameraSettings.isTopDownFreeCamera
+        isResetCamera = cameraSettings.isTopDownCameraReset
+        defaultPhi = topDownDefaultPhi
+        defaultTheta = 0
+      }
 
       follow.merge({
-        distance: cameraSettings.startCameraDistance,
-        targetDistance: cameraSettings.startCameraDistance,
+        distance: startDistance,
+        targetDistance: startDistance,
         thirdPersonMinDistance: cameraSettings.minCameraDistance,
         thirdPersonMaxDistance: cameraSettings.maxCameraDistance,
         effectiveMinDistance: cameraSettings.minCameraDistance,
         effectiveMaxDistance: cameraSettings.maxCameraDistance,
         minPhi: cameraSettings.minPhi,
         maxPhi: cameraSettings.maxPhi,
-        lastZoomStartDistance: (cameraSettings.minCameraDistance + cameraSettings.minCameraDistance) / 2
+        minTheta: minTheta,
+        maxTheta: maxTheta,
+        lastZoomStartDistance: (cameraSettings.minCameraDistance + cameraSettings.minCameraDistance) / 2,
+        isFreeCamera: isFreeCamera,
+        isResetCamera: isResetCamera,
+        defaultPhi: defaultPhi,
+        defaultTheta: defaultTheta
       })
 
       let allowedModes: FollowCameraMode[] = []
@@ -285,6 +326,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   const followState = getMutableComponent(cameraEntity, FollowCameraComponent)
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
+  const cameraSettings = getMutableState(CameraSettingsState)
 
   followState.lerpValue.set(
     follow.mode != FollowCameraMode.FirstPerson && follow.thirdPersonOffset.y === 0
@@ -374,30 +416,59 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
       0
     ) * 0.5
 
+  const resetMode = {
+    [FollowCameraMode.FirstPerson]: () => resetCameraFirstPerson(),
+    [FollowCameraMode.ThirdPerson]: () => resetCameraThirdPerson(),
+    [FollowCameraMode.TopDown]: () => resetCameraTopDown()
+  }
   const resetCameraFirstPerson = () => {
+    follow.defaultDistance = 0
+    follow.defaultTheta = 0
+    follow.targetDistance = newZoomDistance = follow.defaultDistance
+    follow.maxTheta = cameraSettings.firstPersonCameraLimits.value / 2
+    follow.minTheta = -cameraSettings.firstPersonCameraLimits.value / 2
+    follow.isFreeCamera = cameraSettings.isFistPersonFreeCamera.value
+    follow.isResetCamera = cameraSettings.isFirstPersonCameraReset.value
+    follow.defaultPhi = 0
+    follow.defaultTheta = 0
     setTargetCameraRotation(cameraEntity, 0, follow.theta)
-    follow.targetDistance = newZoomDistance = 0
   }
   const resetCameraThirdPerson = () => {
+    follow.defaultDistance = cameraSettings.thirdPersonDefaultDistance.value
+    follow.defaultTheta = 0
+    follow.targetDistance = newZoomDistance = follow.defaultDistance
+    follow.maxTheta = cameraSettings.thirdPersonCameraLimits.value / 2
+    follow.minTheta = -cameraSettings.thirdPersonCameraLimits.value / 2
+    follow.isFreeCamera = cameraSettings.isThirdPersonFreeCamera.value
+    follow.isResetCamera = cameraSettings.isThirdPersonCameraReset.value
+    follow.defaultPhi = 0
+    follow.defaultTheta = 0
     setTargetCameraRotation(cameraEntity, 0, follow.theta)
-    follow.targetDistance = newZoomDistance = follow.thirdPersonMinDistance
   }
   const resetCameraTopDown = () => {
-    setTargetCameraRotation(cameraEntity, 85, follow.theta)
-    follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
+    follow.defaultDistance = cameraSettings.topDownDefaultDistance.value
+    follow.defaultTheta = 0
+    follow.targetDistance = newZoomDistance = follow.defaultDistance
+    follow.maxTheta = cameraSettings.topDownCameraLimits.value / 2
+    follow.minTheta = -cameraSettings.topDownCameraLimits.value / 2
+    follow.isFreeCamera = cameraSettings.isTopDownFreeCamera.value
+    follow.isResetCamera = cameraSettings.isTopDownCameraReset.value
+    follow.defaultPhi = topDownDefaultPhi
+    follow.defaultTheta = 0
+    setTargetCameraRotation(cameraEntity, topDownDefaultPhi, follow.theta)
   }
 
   const switchToFirstPerson = () => {
     followState.mode.set(FollowCameraMode.FirstPerson)
-    resetCameraFirstPerson()
+    resetMode[followState.mode.value]()
   }
   const switchToThirdPerson = () => {
     followState.mode.set(FollowCameraMode.ThirdPerson)
-    resetCameraThirdPerson()
+    resetMode[followState.mode.value]()
   }
   const switchToTopDown = () => {
     followState.mode.set(FollowCameraMode.TopDown)
-    resetCameraTopDown()
+    resetMode[followState.mode.value]()
   }
 
   if (follow.mode === FollowCameraMode.FirstPerson) {
@@ -525,19 +596,25 @@ const updateCameraTargetRotation = (cameraEntity: Entity) => {
   if (!cameraEntity) return
   const followCamera = getComponent(cameraEntity, FollowCameraComponent)
   const target = getOptionalComponent(cameraEntity, TargetCameraRotationComponent)
+
   if (!target) return
 
-  const epsilon = 0.001
+  if (followCamera.isFreeCamera) {
+    target.phi = Math.min(followCamera.maxPhi, Math.max(followCamera.minPhi, target.phi))
 
-  target.phi = Math.min(followCamera.maxPhi, Math.max(followCamera.minPhi, target.phi))
+    const thetaSwing = Math.abs(followCamera.maxTheta) + Math.abs(followCamera.minTheta)
+    if (thetaSwing < 360) {
+      target.theta = Math.min(followCamera.maxTheta, Math.max(followCamera.minTheta, target.theta))
+    }
 
-  if (followCamera.maxTheta && followCamera.minTheta) {
-    target.theta = Math.min(followCamera.maxTheta, Math.max(followCamera.minTheta, target.theta))
-  }
-
-  if (Math.abs(target.phi - followCamera.phi) < epsilon && Math.abs(target.theta - followCamera.theta) < epsilon) {
-    removeComponent(followCamera.targetEntity, TargetCameraRotationComponent)
-    return
+    const epsilon = 0.001
+    if (Math.abs(target.phi - followCamera.phi) < epsilon && Math.abs(target.theta - followCamera.theta) < epsilon) {
+      removeComponent(followCamera.targetEntity, TargetCameraRotationComponent)
+      return
+    }
+  } else {
+    target.phi = followCamera.defaultPhi
+    target.theta = followCamera.defaultTheta
   }
 
   const delta = getState(ECSState).deltaSeconds
