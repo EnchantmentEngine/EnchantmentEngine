@@ -37,7 +37,7 @@ export const CameraPoiComponent = defineComponent({
 
   schema: S.Object({
     // Optional entities that can be hotspots within this POI
-    hotspotEntityUUIDs: S.Array(S.EntityUUID(), [])
+    hotspotEntityUUIDs: S.Array(S.EntityUUID())
   }),
 
   reactor: () => {
