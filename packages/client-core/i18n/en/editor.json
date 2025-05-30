@@ -886,7 +886,6 @@
       "lbl-minCamDist": "Min",
       "lbl-maxCamDist": "Max",
       "lbl-cameraDistance": "Camera Distance",
-      "lbl-startCameraDistance": "Start Camera Distance",
       "lbl-enableTransitionButtons": "Transition Buttons",
       "lbl-enableTransitionButtonsDescription": "Show UI buttons for navigating between POIs.",
       "lbl-phi": "Phi",

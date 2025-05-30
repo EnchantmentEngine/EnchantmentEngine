@@ -74,7 +74,6 @@ export const CameraSettingsComponent = defineComponent({
     //Fields for DIRECT camera mode
     minCameraDistance: S.Number({ default: 1.5 }),
     maxCameraDistance: S.Number({ default: 50 }),
-    startCameraDistance: S.Number({ default: 3 }),
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
 

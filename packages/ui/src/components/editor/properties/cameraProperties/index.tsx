@@ -48,7 +48,6 @@ import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
-import { Slider } from '../../../../../editor'
 import Button from '../../../../primitives/tailwind/Button'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import Label from '../../../../primitives/tailwind/Label'
@@ -213,26 +212,6 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             />
           </InputGroup>
         </div>
-      </InputGroup>
-      <InputGroup name="startCameraDistance" label={t('editor:properties.cameraSettings.lbl-startCameraDistance')}>
-        {/*<NumericInput*/}
-        {/*  onChange={updateProperty(CameraSettingsComponent, 'startCameraDistance')}*/}
-        {/*  onRelease={commitProperty(CameraSettingsComponent, 'startCameraDistance')}*/}
-        {/*  min={0.001}*/}
-        {/*  smallStep={0.001}*/}
-        {/*  mediumStep={0.01}*/}
-        {/*  largeStep={0.1}*/}
-        {/*  value={cameraSettings.startCameraDistance.value}*/}
-        {/*/>*/}
-        <Slider
-          min={cameraSettings.minCameraDistance.value}
-          max={cameraSettings.maxCameraDistance.value}
-          step={0.01}
-          value={cameraSettings.startCameraDistance.value}
-          onChange={updateProperty(CameraSettingsComponent, 'startCameraDistance')}
-          onRelease={commitProperty(CameraSettingsComponent, 'startCameraDistance')}
-          label={''}
-        />
       </InputGroup>
       {/*<InputGroup name="minPhi" label={t('editor:properties.cameraSettings.lbl-phi')} containerClassName="gap-2">*/}
       {/*  <div className="flex gap-2">*/}
