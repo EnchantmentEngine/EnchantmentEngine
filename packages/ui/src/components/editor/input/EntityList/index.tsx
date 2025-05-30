@@ -94,9 +94,9 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
     const option = entityOptions.value.find((opt) => opt.value === entityId)
     if (!option) return
 
-    const newEntityIDs = [...value]
-    newEntityIDs[index] = option.value
-    onChange(newEntityIDs)
+    const newEntityUUIDs = [...value]
+    newEntityUUIDs[index] = option.value
+    onChange(newEntityUUIDs)
   }
 
   return (
@@ -110,14 +110,14 @@ export const EntityListInput = ({ value, onChange, filter, placeholder, label, c
           </Text>
         )}
 
-        {value.map((entityID, index) => (
+        {value.map((entityUUID, index) => (
           <div key={index} className="flex items-center space-x-2">
             <SelectInput
               options={entityOptions.value.map((opt) => ({
                 label: opt.label,
                 value: opt.value
               }))}
-              value={entityID}
+              value={entityUUID}
               onChange={(value) => handleChangeEntity(index, value)}
               width="full"
             />
