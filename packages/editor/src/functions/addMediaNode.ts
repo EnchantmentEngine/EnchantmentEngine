@@ -219,18 +219,28 @@ export async function addMediaNode(
         (entity) => {
           const firstChild = getComponent(entity, EntityTreeComponent).children[0]
           const json = serializeEntity(firstChild)
+
+          const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
+            [...json, ...extraComponentJson],
+            parent!,
+            before,
+            requestedName
+          )
+
           EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
           removeEntity(entity)
           const rootEntity = getState(EditorState).rootEntity
           const newSource = GLTFComponent.getSourceID(rootEntity)
           AuthoringState.snapshot(newSource)
+
+          return entityUUID
         }
       )
     } else if (contentType.startsWith('model/prefab')) {
       /**
        * Load all entities from the prefab and attach them to the current scene
        */
-      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+      AssetState.loadAsync(url, false, UUIDComponent.generate(), UndefinedEntity, Layers.Authoring as LayerID).then(
         (entity) => {
           const rootEntity = getState(EditorState).rootEntity
           const source = UUIDComponent.getAsSourceID(entity)
@@ -239,7 +249,11 @@ export async function addMediaNode(
           for (const entity of entities) {
             requestedName = getIncreamentedName(requestedName, parent)
             setComponent(entity, NameComponent, requestedName)
-            UUIDComponent.setSourceEntity(entity, rootEntity)
+
+            const sourceID = GLTFComponent.getSourceID(rootEntity)
+            const entityID = UUIDComponent.generate()
+            setComponent(entity, UUIDComponent, { entitySourceID: sourceID, entityID })
+
             for (const comp of extraComponentJson) {
               if (comp.name === TransformComponent.jsonID) {
                 setComponent(entity, TransformComponent, comp.props)
@@ -248,6 +262,7 @@ export async function addMediaNode(
           }
           for (const childEntity of getComponent(entity, EntityTreeComponent).children) {
             setComponent(childEntity, EntityTreeComponent, { parentEntity: parent ?? rootEntity })
+            if (hasComponent(childEntity, TransformComponent)) TransformComponent.computeTransformMatrix(childEntity)
           }
           removeEntity(entity)
           const gltfEntity = getAncestorWithComponents(parent ?? rootEntity, [GLTFComponent])

@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
+import { EngineState, EntityID, NetworkObjectComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -35,7 +35,6 @@ import {
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getState, useMutableState, UserID } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent } from '@ir-engine/network'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'

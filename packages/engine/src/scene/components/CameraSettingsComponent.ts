@@ -101,7 +101,7 @@ export const CameraSettingsComponent = defineComponent({
     isTopDownCameraReset: S.Bool({ default: true }),
 
     // ields for POI camera mode
-    poiEntities: S.Array(S.EntityUUID(), []),
+    poiEntities: S.Array(S.EntityUUID()),
     poiLerpSpeed: S.Number({ default: 0.5 }),
     // Manual scroll control properties
     scrollDeadzone: S.Number({ default: 1.0 }),
