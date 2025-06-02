@@ -235,21 +235,21 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             />
           </InputGroup>
 
-          <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-directCameraModes')}>
+          <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-followCameraModes')}>
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraFristPerson')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraFristPerson')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraFirstPerson.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraFirstPerson')}
             />
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraThirdPerson')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraThirdPerson')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraThirdPerson.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraThirdPerson')}
             />
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraTopDown')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraTopDown')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraTopDown.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraTopDown')}
@@ -257,7 +257,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             {!cameraSettings.canCameraFirstPerson.value &&
               !cameraSettings.canCameraThirdPerson.value &&
               !cameraSettings.canCameraTopDown.value && (
-                <Label className="text-text-error">{t('editor:properties.cameraSettings.lbl-directCameraError')}</Label>
+                <Label className="text-text-error">{t('editor:properties.cameraSettings.lbl-followCameraError')}</Label>
               )}
           </InputGroup>
           {cameraSettings.canCameraFirstPerson.value && (
