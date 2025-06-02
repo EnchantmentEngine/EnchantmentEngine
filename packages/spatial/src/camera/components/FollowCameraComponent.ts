@@ -103,8 +103,8 @@ export const FollowCameraComponent = defineComponent({
     zoomVelocity: S.Object({
       value: S.Number({ default: 0 })
     }),
-    thirdPersonMinDistance: S.Number({ default: 0 }),
-    thirdPersonMaxDistance: S.Number({ default: 0 }),
+    minDistance: S.Number({ default: 0 }),
+    maxDistance: S.Number({ default: 0 }),
     effectiveMinDistance: S.Number({ default: 0 }),
     effectiveMaxDistance: S.Number({ default: 0 }),
     theta: S.Number({ default: 180 }),
@@ -174,56 +174,67 @@ export const FollowCameraComponent = defineComponent({
       }
       follow.raycastProps.cameraRays.set(cameraRays)
 
-      let startDistance = 1
       let minTheta = 0
       let maxTheta = 0
       let isFreeCamera = follow.isFreeCamera.value
       let isResetCamera = follow.isResetCamera.value
       let defaultPhi = follow.defaultPhi.value
       let defaultTheta = follow.defaultTheta.value
+      let minDistance = 0
+      let maxDistance = 0
+      let defaultDistance = 0
+
       if (follow.mode.value === FollowCameraMode.FirstPerson) {
-        startDistance = 0
         minTheta = -cameraSettings.firstPersonCameraLimits / 2
         maxTheta = cameraSettings.firstPersonCameraLimits / 2
         isFreeCamera = cameraSettings.isFistPersonFreeCamera
         isResetCamera = cameraSettings.isFirstPersonCameraReset
         defaultPhi = 0
         defaultTheta = 0
+        minDistance = 0
+        maxDistance = 0
+        defaultDistance = 0
       } else if (follow.mode.value === FollowCameraMode.ThirdPerson) {
-        startDistance = cameraSettings.thirdPersonDefaultDistance
         minTheta = -cameraSettings.thirdPersonCameraLimits / 2
         maxTheta = cameraSettings.thirdPersonCameraLimits / 2
         isFreeCamera = cameraSettings.isThirdPersonFreeCamera
         isResetCamera = cameraSettings.isThirdPersonCameraReset
         defaultPhi = 0
         defaultTheta = 0
+        minDistance = cameraSettings.thirdPersonMinDistance
+        maxDistance = cameraSettings.thirdPersonMaxDistance
+        defaultDistance = cameraSettings.thirdPersonDefaultDistance
       } else if (follow.mode.value === FollowCameraMode.TopDown) {
-        startDistance = cameraSettings.topDownDefaultDistance
         minTheta = -cameraSettings.topDownCameraLimits / 2
         maxTheta = cameraSettings.topDownCameraLimits / 2
         isFreeCamera = cameraSettings.isTopDownFreeCamera
         isResetCamera = cameraSettings.isTopDownCameraReset
         defaultPhi = topDownDefaultPhi
         defaultTheta = 0
+        minDistance = cameraSettings.topDownMinDistance
+        maxDistance = cameraSettings.topDownMaxDistance
+        defaultDistance = cameraSettings.topDownDefaultDistance
       }
 
       follow.merge({
-        distance: startDistance,
-        targetDistance: startDistance,
-        thirdPersonMinDistance: cameraSettings.minCameraDistance,
-        thirdPersonMaxDistance: cameraSettings.maxCameraDistance,
-        effectiveMinDistance: cameraSettings.minCameraDistance,
-        effectiveMaxDistance: cameraSettings.maxCameraDistance,
+        distance: defaultDistance,
+        targetDistance: defaultDistance,
+        minDistance: minDistance,
+        maxDistance: maxDistance,
+        effectiveMinDistance: minDistance,
+        effectiveMaxDistance: maxDistance,
         minPhi: cameraSettings.minPhi,
         maxPhi: cameraSettings.maxPhi,
         minTheta: minTheta,
         maxTheta: maxTheta,
-        lastZoomStartDistance: (cameraSettings.minCameraDistance + cameraSettings.minCameraDistance) / 2,
+        lastZoomStartDistance: (minDistance + maxDistance) / 2,
         isFreeCamera: isFreeCamera,
         isResetCamera: isResetCamera,
         defaultPhi: defaultPhi,
         defaultTheta: defaultTheta
       })
+
+      follow.raycastProps.rayLength.set(maxDistance)
 
       let allowedModes: FollowCameraMode[] = []
       if (cameraSettings.canCameraFirstPerson) {
@@ -387,13 +398,11 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   if (follow.mode === FollowCameraMode.FirstPerson) {
     follow.effectiveMinDistance = follow.effectiveMaxDistance = 0
   } else if (follow.mode === FollowCameraMode.ThirdPerson || follow.mode === FollowCameraMode.ShoulderCam) {
-    follow.effectiveMaxDistance = Math.min(obstacleDistance * (obstacleHit ? 0.8 : 1), follow.thirdPersonMaxDistance)
-    follow.effectiveMinDistance = Math.min(follow.thirdPersonMinDistance, follow.effectiveMaxDistance)
+    follow.effectiveMaxDistance = Math.min(obstacleDistance * (obstacleHit ? 0.8 : 1), follow.maxDistance)
+    follow.effectiveMinDistance = Math.min(follow.minDistance, follow.effectiveMaxDistance)
   } else if (follow.mode === FollowCameraMode.TopDown) {
-    follow.effectiveMinDistance = follow.effectiveMaxDistance = Math.min(
-      obstacleDistance * (obstacleHit ? 0.9 : 1),
-      follow.thirdPersonMaxDistance
-    )
+    follow.effectiveMaxDistance = Math.min(obstacleDistance * (obstacleHit ? 0.8 : 1), follow.maxDistance)
+    follow.effectiveMinDistance = Math.min(obstacleDistance * (obstacleHit ? 0.9 : 1), follow.minDistance)
   }
 
   let newZoomDistance = Math.max(
@@ -429,8 +438,10 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     [FollowCameraMode.TopDown]: () => resetCameraTopDown()
   }
   const resetCameraFirstPerson = () => {
+    follow.minDistance = 0
+    follow.maxDistance = 0
     follow.defaultDistance = 0
-    follow.defaultTheta = 0
+    follow.raycastProps.rayLength = 1
     follow.targetDistance = newZoomDistance = follow.defaultDistance
     follow.maxTheta = cameraSettings.firstPersonCameraLimits.value / 2
     follow.minTheta = -cameraSettings.firstPersonCameraLimits.value / 2
@@ -441,8 +452,10 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     setTargetCameraRotation(cameraEntity, 0, follow.theta)
   }
   const resetCameraThirdPerson = () => {
+    follow.minDistance = cameraSettings.thirdPersonMinDistance.value
+    follow.maxDistance = cameraSettings.thirdPersonMaxDistance.value
     follow.defaultDistance = cameraSettings.thirdPersonDefaultDistance.value
-    follow.defaultTheta = 0
+    follow.raycastProps.rayLength = follow.maxDistance
     follow.targetDistance = newZoomDistance = follow.defaultDistance
     follow.maxTheta = cameraSettings.thirdPersonCameraLimits.value / 2
     follow.minTheta = -cameraSettings.thirdPersonCameraLimits.value / 2
@@ -453,8 +466,10 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     setTargetCameraRotation(cameraEntity, 0, follow.theta)
   }
   const resetCameraTopDown = () => {
+    follow.minDistance = cameraSettings.topDownMinDistance.value
+    follow.maxDistance = cameraSettings.topDownMaxDistance.value
     follow.defaultDistance = cameraSettings.topDownDefaultDistance.value
-    follow.defaultTheta = 0
+    follow.raycastProps.rayLength = follow.maxDistance
     follow.targetDistance = newZoomDistance = follow.defaultDistance
     follow.maxTheta = cameraSettings.topDownCameraLimits.value / 2
     follow.minTheta = -cameraSettings.topDownCameraLimits.value / 2
@@ -502,7 +517,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     // Move from first person mode to third person mode
     if (triggerZoomShift) {
       follow.accumulatedZoomTriggerDebounceTime = -1
-      const isExitingFirstPerson = newZoomDistance > 0.1 * follow.thirdPersonMinDistance
+      const isExitingFirstPerson = newZoomDistance > 0.1 * follow.maxDistance
       if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingFirstPerson) {
         switchToThirdPerson()
       } else if (follow.allowedModes.includes(FollowCameraMode.TopDown) && isExitingFirstPerson) {
@@ -565,13 +580,12 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
       follow.accumulatedZoomTriggerDebounceTime = -1
       const isExitingTopDown =
         newZoomDistance < follow.effectiveMaxDistance * 0.98 &&
-        Math.abs(follow.lastZoomStartDistance - follow.effectiveMaxDistance) < 0.05 * follow.effectiveMaxDistance
+        Math.abs(follow.lastZoomStartDistance - follow.effectiveMinDistance) < 0.05 * follow.effectiveMaxDistance
       if (follow.allowedModes.includes(FollowCameraMode.ThirdPerson) && isExitingTopDown) {
         switchToThirdPerson()
       } else if (follow.allowedModes.includes(FollowCameraMode.FirstPerson) && isExitingTopDown) {
         switchToFirstPerson()
       }
-      follow.targetDistance = newZoomDistance = follow.effectiveMaxDistance
     }
   }
 
@@ -693,12 +707,12 @@ const getMaxCamDistance = (cameraEntity: Entity, target: Vector3) => {
 
   createConeOfVectors(followCamera.targetToCamera, cameraRays, rayConeAngle)
 
-  let maxDistance = Math.min(followCamera.thirdPersonMaxDistance, raycastProps.rayLength)
+  let maxDistance = Math.min(followCamera.maxDistance, raycastProps.rayLength)
 
   // Check hit with mid ray
   raycaster.layers.set(ObjectLayers.Scene)
   raycaster.firstHitOnly = true
-  raycaster.far = followCamera.thirdPersonMaxDistance
+  raycaster.far = followCamera.maxDistance
   raycaster.set(target, followCamera.targetToCamera.normalize())
   const hits = raycaster.intersectObjects(sceneObjects, false)
 

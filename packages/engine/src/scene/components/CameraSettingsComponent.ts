@@ -99,9 +99,9 @@ export const CameraSettingsComponent = defineComponent({
     thirdPersonMaxDistance: S.Number({ default: 50 }),
     thirdPersonDefaultDistance: S.Number({ default: 3 }),
 
-    topDownMinDistance: S.Number({ default: 1.5 }),
-    topDownMaxDistance: S.Number({ default: 50 }),
-    topDownDefaultDistance: S.Number({ default: 50 }),
+    topDownMinDistance: S.Number({ default: 10 }),
+    topDownMaxDistance: S.Number({ default: 70 }),
+    topDownDefaultDistance: S.Number({ default: 40 }),
 
     // Fields for POI camera mode
     poiEntities: S.Array(S.EntityUUID()),
