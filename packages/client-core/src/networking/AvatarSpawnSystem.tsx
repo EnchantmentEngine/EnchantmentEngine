@@ -187,7 +187,7 @@ const reactor = () => {
   const cameraSettingsComponent = cameraSettingsEntity
     ? getComponent(cameraSettingsQuery[0], CameraSettingsComponent)
     : null
-  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.cameraMode === CameraMode.DIRECT : true
+  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.cameraMode === CameraMode.FOLLOW : true
 
   useEffect(() => {
     const cameraEntity = getState(ReferenceSpaceState).viewerEntity

@@ -65,27 +65,21 @@ export const CameraSettingsComponent = defineComponent({
     fov: S.Number({ default: 60 }),
 
     cameraMode: S.Enum(CameraMode, {
-      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'DIRECT', 'POI' ",
-      default: CameraMode.DIRECT
+      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'FOLLOW', 'POI' ",
+      default: CameraMode.FOLLOW
     }),
 
-    //Fields for DIRECT camera mode
-    minCameraDistance: S.Number({ default: 1.5 }),
-    maxCameraDistance: S.Number({ default: 50 }),
-    startCameraDistance: S.Number({ default: 3 }),
+    //Fields for FOLLOW camera mode
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
 
     isAvatarVisible: S.Bool({ default: true }),
 
-    directCameraScrollSensitivity: S.Number({ default: 1 }),
+    followCameraScrollSensitivity: S.Number({ default: 1 }),
 
     canCameraFirstPerson: S.Bool({ default: true }),
     canCameraThirdPerson: S.Bool({ default: true }),
     canCameraTopDown: S.Bool({ default: true }),
-
-    thirdPersonDefaultDistance: S.Number({ default: 3 }),
-    topDownDefaultDistance: S.Number({ default: 3 }),
 
     isFistPersonFreeCamera: S.Bool({ default: true }),
     isThirdPersonFreeCamera: S.Bool({ default: true }),
@@ -98,6 +92,14 @@ export const CameraSettingsComponent = defineComponent({
     isFirstPersonCameraReset: S.Bool({ default: true }),
     isThirdPersonCameraReset: S.Bool({ default: true }),
     isTopDownCameraReset: S.Bool({ default: true }),
+
+    thirdPersonMinDistance: S.Number({ default: 1.5 }),
+    thirdPersonMaxDistance: S.Number({ default: 50 }),
+    thirdPersonDefaultDistance: S.Number({ default: 3 }),
+
+    topDownMinDistance: S.Number({ default: 10 }),
+    topDownMaxDistance: S.Number({ default: 70 }),
+    topDownDefaultDistance: S.Number({ default: 40 }),
 
     // Fields for POI camera mode
     poiEntities: S.Array(S.EntityUUID()),

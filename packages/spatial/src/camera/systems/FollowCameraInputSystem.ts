@@ -314,24 +314,31 @@ export const handleFollowCameraScroll = (
   }
   */
 
-  // Standard camera zoom behavior if not in POI mode or no valid POIs
-  follow.targetDistance = Math.max(follow.targetDistance + zoomDelta, 0)
+  if (cameraSettingsState.cameraMode.value === CameraMode.FOLLOW) {
+    // Standard camera zoom behavior if not in POI mode or no valid POIs
+    follow.targetDistance = Math.max(
+      follow.targetDistance + zoomDelta * cameraSettingsState.followCameraScrollSensitivity.value,
+      0
+    )
 
-  // Math.min(
-  //   Math.max(follow.targetDistance + zoomDelta, follow.effectiveMinDistance * 0.8),
-  //   follow.effectiveMaxDistance * 1.2
-  // )
+    const outsideMinMaxRange =
+      follow.targetDistance < follow.effectiveMinDistance || follow.targetDistance > follow.effectiveMaxDistance
 
-  const outsideMinMaxRange =
-    follow.targetDistance < follow.effectiveMinDistance || follow.targetDistance > follow.effectiveMaxDistance
-
-  if (zoomDelta === 0 && shoulderDelta === 0 && follow.accumulatedZoomTriggerDebounceTime >= 0 && outsideMinMaxRange) {
-    follow.accumulatedZoomTriggerDebounceTime += deltaTime
-  } else if (Math.abs(zoomDelta) > 0 || Math.abs(shoulderDelta) > 0) {
-    if (follow.accumulatedZoomTriggerDebounceTime === -1) {
-      follow.lastZoomStartDistance = follow.distance
+    if (
+      zoomDelta === 0 &&
+      shoulderDelta === 0 &&
+      follow.accumulatedZoomTriggerDebounceTime >= 0 &&
+      outsideMinMaxRange
+    ) {
+      follow.accumulatedZoomTriggerDebounceTime += deltaTime
+    } else if (Math.abs(zoomDelta) > 0 || Math.abs(shoulderDelta) > 0) {
+      if (follow.accumulatedZoomTriggerDebounceTime === -1) {
+        follow.lastZoomStartDistance = follow.distance
+      }
+      follow.accumulatedZoomTriggerDebounceTime = 0
     }
-    follow.accumulatedZoomTriggerDebounceTime = 0
+    // We've handled the scroll in DIRECT mode, so return early
+    return
   }
 }
 

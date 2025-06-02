@@ -48,7 +48,6 @@ import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
-import { Slider } from '../../../../../editor'
 import Button from '../../../../primitives/tailwind/Button'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import Label from '../../../../primitives/tailwind/Label'
@@ -174,66 +173,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           </InputGroup>
         </div>
       </InputGroup>
-      <InputGroup
-        name="minCameraDistance"
-        label={t('editor:properties.cameraSettings.lbl-cameraDistance')}
-        containerClassName="gap-2"
-      >
-        <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
-          <InputGroup
-            name="Min"
-            label={t('editor:properties.cameraSettings.lbl-minCamDist')}
-            className="w-2/3 flex-grow"
-          >
-            <NumericInput
-              onChange={updateProperty(CameraSettingsComponent, 'minCameraDistance')}
-              onRelease={commitProperty(CameraSettingsComponent, 'minCameraDistance')}
-              min={0.001}
-              smallStep={0.001}
-              mediumStep={0.01}
-              largeStep={0.1}
-              value={cameraSettings.minCameraDistance.value}
-              className="flex w-full flex-grow"
-            />
-          </InputGroup>
-          <InputGroup
-            name="Max"
-            label={t('editor:properties.cameraSettings.lbl-maxCamDist')}
-            className="w-2/3 flex-grow"
-          >
-            <NumericInput
-              onChange={updateProperty(CameraSettingsComponent, 'maxCameraDistance')}
-              onRelease={commitProperty(CameraSettingsComponent, 'maxCameraDistance')}
-              min={0.001}
-              smallStep={0.001}
-              mediumStep={0.01}
-              largeStep={0.1}
-              value={cameraSettings.maxCameraDistance.value}
-              className="flex w-full flex-grow"
-            />
-          </InputGroup>
-        </div>
-      </InputGroup>
-      <InputGroup name="startCameraDistance" label={t('editor:properties.cameraSettings.lbl-startCameraDistance')}>
-        {/*<NumericInput*/}
-        {/*  onChange={updateProperty(CameraSettingsComponent, 'startCameraDistance')}*/}
-        {/*  onRelease={commitProperty(CameraSettingsComponent, 'startCameraDistance')}*/}
-        {/*  min={0.001}*/}
-        {/*  smallStep={0.001}*/}
-        {/*  mediumStep={0.01}*/}
-        {/*  largeStep={0.1}*/}
-        {/*  value={cameraSettings.startCameraDistance.value}*/}
-        {/*/>*/}
-        <Slider
-          min={cameraSettings.minCameraDistance.value}
-          max={cameraSettings.maxCameraDistance.value}
-          step={0.01}
-          value={cameraSettings.startCameraDistance.value}
-          onChange={updateProperty(CameraSettingsComponent, 'startCameraDistance')}
-          onRelease={commitProperty(CameraSettingsComponent, 'startCameraDistance')}
-          label={''}
-        />
-      </InputGroup>
+
       {/*<InputGroup name="minPhi" label={t('editor:properties.cameraSettings.lbl-phi')} containerClassName="gap-2">*/}
       {/*  <div className="flex gap-2">*/}
       {/*    <NumericInput*/}
@@ -265,14 +205,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           value={cameraSettings.cameraMode.value}
           onChange={commitProperty(CameraSettingsComponent, 'cameraMode')}
           options={[
-            { label: 'DIRECT', value: CameraMode.DIRECT },
+            { label: 'FOLLOW', value: CameraMode.FOLLOW },
             { label: 'POI', value: CameraMode.POI }
           ]}
         />
       </InputGroup>
 
       {/* DIRECT Camera Mode Settings */}
-      {cameraSettings.cameraMode.value === CameraMode.DIRECT && (
+      {cameraSettings.cameraMode.value === CameraMode.FOLLOW && (
         <>
           <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-avatar')}>
             <Checkbox
@@ -284,32 +224,32 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           </InputGroup>
           <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-scrollingSpeed')}>
             <NumericInput
-              onChange={updateProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
-              onRelease={commitProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
+              onChange={updateProperty(CameraSettingsComponent, 'followCameraScrollSensitivity')}
+              onRelease={commitProperty(CameraSettingsComponent, 'followCameraScrollSensitivity')}
               min={0.001}
               smallStep={0.001}
               mediumStep={0.01}
               largeStep={0.1}
-              value={cameraSettings.directCameraScrollSensitivity.value}
+              value={cameraSettings.followCameraScrollSensitivity.value}
               className="flex w-full flex-grow"
             />
           </InputGroup>
 
-          <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-directCameraModes')}>
+          <InputGroup name="direstCameraModes" label={t('editor:properties.cameraSettings.lbl-followCameraModes')}>
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraFristPerson')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraFristPerson')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraFirstPerson.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraFirstPerson')}
             />
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraThirdPerson')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraThirdPerson')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraThirdPerson.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraThirdPerson')}
             />
             <Checkbox
-              label={t('editor:properties.cameraSettings.lbl-directCameraTopDown')}
+              label={t('editor:properties.cameraSettings.lbl-followCameraTopDown')}
               variantTextPlacement={'right'}
               checked={cameraSettings.canCameraTopDown.value}
               onChange={commitProperty(CameraSettingsComponent, 'canCameraTopDown')}
@@ -317,7 +257,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
             {!cameraSettings.canCameraFirstPerson.value &&
               !cameraSettings.canCameraThirdPerson.value &&
               !cameraSettings.canCameraTopDown.value && (
-                <Label className="text-text-error">{t('editor:properties.cameraSettings.lbl-directCameraError')}</Label>
+                <Label className="text-text-error">{t('editor:properties.cameraSettings.lbl-followCameraError')}</Label>
               )}
           </InputGroup>
           {cameraSettings.canCameraFirstPerson.value && (
@@ -361,6 +301,39 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           {cameraSettings.canCameraThirdPerson.value && (
             <InputGroup name="cameraThirdPerson" label={t('editor:properties.cameraSettings.lbl-thirdPersonSettings')}>
               <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
+                <InputGroup
+                  name="ThirdPersonMinDistance"
+                  label={t('editor:properties.cameraSettings.lbl-minCamDist')}
+                  className="w-2/3 flex-grow"
+                >
+                  <NumericInput
+                    onChange={updateProperty(CameraSettingsComponent, 'thirdPersonMinDistance')}
+                    onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonMinDistance')}
+                    min={0.001}
+                    smallStep={0.001}
+                    mediumStep={0.01}
+                    largeStep={0.1}
+                    value={cameraSettings.thirdPersonMinDistance.value}
+                    className="flex w-full flex-grow"
+                  />
+                </InputGroup>
+                <InputGroup
+                  name="Max"
+                  label={t('editor:properties.cameraSettings.lbl-maxCamDist')}
+                  className="w-2/3 flex-grow"
+                >
+                  <NumericInput
+                    onChange={updateProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')}
+                    onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')}
+                    min={0.001}
+                    smallStep={0.001}
+                    mediumStep={0.01}
+                    largeStep={0.1}
+                    value={cameraSettings.thirdPersonMaxDistance.value}
+                    className="flex w-full flex-grow"
+                  />
+                </InputGroup>
+
                 <InputGroup
                   name="defaultDistance"
                   label={t('editor:properties.cameraSettings.lbl-defaultDistance')}
@@ -417,6 +390,39 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           {cameraSettings.canCameraTopDown.value && (
             <InputGroup name="cameraTopDown" label={t('editor:properties.cameraSettings.lbl-topDownSettings')}>
               <div className="flex w-full flex-col gap-2 border-[0.5px] border-[#42454D] pb-1 pl-4 pr-4 pt-1">
+                <InputGroup
+                  name="ThirdPersonMinDistance"
+                  label={t('editor:properties.cameraSettings.lbl-minCamDist')}
+                  className="w-2/3 flex-grow"
+                >
+                  <NumericInput
+                    onChange={updateProperty(CameraSettingsComponent, 'topDownMinDistance')}
+                    onRelease={commitProperty(CameraSettingsComponent, 'topDownMinDistance')}
+                    min={0.001}
+                    smallStep={0.001}
+                    mediumStep={0.01}
+                    largeStep={0.1}
+                    value={cameraSettings.topDownMinDistance.value}
+                    className="flex w-full flex-grow"
+                  />
+                </InputGroup>
+                <InputGroup
+                  name="Max"
+                  label={t('editor:properties.cameraSettings.lbl-maxCamDist')}
+                  className="w-2/3 flex-grow"
+                >
+                  <NumericInput
+                    onChange={updateProperty(CameraSettingsComponent, 'topDownMaxDistance')}
+                    onRelease={commitProperty(CameraSettingsComponent, 'topDownMaxDistance')}
+                    min={0.001}
+                    smallStep={0.001}
+                    mediumStep={0.01}
+                    largeStep={0.1}
+                    value={cameraSettings.topDownMaxDistance.value}
+                    className="flex w-full flex-grow"
+                  />
+                </InputGroup>
+
                 <InputGroup
                   name="defaultDistance"
                   label={t('editor:properties.cameraSettings.lbl-defaultDistance')}

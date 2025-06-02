@@ -49,7 +49,7 @@
           "minCameraDistance": 1,
           "maxCameraDistance": 50,
           "startCameraDistance": 3,
-          "cameraMode": "DIRECT",
+          "cameraMode": "FOLLOW",
           "minPhi": -70,
           "maxPhi": 85
         },

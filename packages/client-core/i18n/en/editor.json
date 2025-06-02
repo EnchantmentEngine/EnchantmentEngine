@@ -89,7 +89,7 @@
   },
   "warnings": {
     "addChildToGlbError": "Re-parenting was canceled - Adding children to glb model prefabs is currently not supported.",
-    "rigidbodyDropWarning" : "Re-parenting was canceled - Entities with a rigidbody are not allowed to have an ancestor with a rigidbody. Please remove one of the rigidbodies and try again.",
+    "rigidbodyDropWarning": "Re-parenting was canceled - Entities with a rigidbody are not allowed to have an ancestor with a rigidbody. Please remove one of the rigidbodies and try again.",
     "sceneComplexity": "Scene complexity is {{sceneComplexity}}. Consider optimizing your Scene for better performance. Refer to our docs for optimization guidelines."
   },
   "viewport": {
@@ -787,6 +787,7 @@
         "probability": "Burst Probability"
       },
       "addBehavior": "Add Behavior",
+      "behaviors": "Behaviors",
       "remove": "Remove"
     },
     "clouds": {
@@ -897,10 +898,9 @@
       "lbl-clippingPlanes": "Clipping Planes",
       "lbl-nearClip": "Near",
       "lbl-farClip": "Far ",
-      "lbl-minCamDist": "Min",
-      "lbl-maxCamDist": "Max",
+      "lbl-minCamDist": "Min Distance",
+      "lbl-maxCamDist": "Max Distance",
       "lbl-cameraDistance": "Camera Distance",
-      "lbl-startCameraDistance": "Start Camera Distance",
       "lbl-enableTransitionButtons": "Transition Buttons",
       "lbl-enableTransitionButtonsDescription": "Show UI buttons for navigating between POIs.",
       "lbl-phi": "Phi",
@@ -908,11 +908,11 @@
       "lbl-avatar": "Avatar",
       "lbl-avatarVisible": "Avatar is Visible",
       "lbl-scrollingSpeed": "Scolling Speed",
-      "lbl-directCameraModes": "Direct Camera Modes",
-      "lbl-directCameraFristPerson": "First Person Camera",
-      "lbl-directCameraThirdPerson": "Third Person Camera",
-      "lbl-directCameraTopDown": "Top-Down Camera",
-      "lbl-directCameraError": "You need to select at least one Direct Camera Mode",
+      "lbl-followCameraModes": "Follow Camera Modes",
+      "lbl-followCameraFristPerson": "First Person Camera",
+      "lbl-followCameraThirdPerson": "Third Person Camera",
+      "lbl-followCameraTopDown": "Top-Down Camera",
+      "lbl-followCameraError": "You need to select at least one Follow Camera Mode",
       "lbl-firstPersonSettings": "First Person Camera Settings",
       "lbl-thirdPersonSettings": "Third Person Camera Settings",
       "lbl-topDownSettings": "Top-Down Camera Settings",
