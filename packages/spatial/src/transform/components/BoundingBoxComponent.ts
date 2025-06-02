@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { Box3, Box3Helper, BufferGeometry, Mesh } from 'three'
+import { Box3, Box3Helper, BufferGeometry, Matrix4, Mesh } from 'three'
 
 import { EntityTreeComponent, createEntity, iterateEntityNode, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
@@ -119,12 +119,23 @@ export const updateBoundingBox = (entity: Entity) => {
     return
   }
 
+  // Ensure all children transforms are computed before calculating bounding box
+  TransformComponent.computeTransformMatrixWithChildren(entity)
+
   const box = boxComponent.box
   box.makeEmpty()
 
+  // Get the entity's transform matrix to compute relative transforms
+  const entityTransform = getOptionalComponent(entity, TransformComponent)
+  const entityMatrixInverse = entityTransform
+    ? new Matrix4().copy(entityTransform.matrixWorld).invert()
+    : new Matrix4().identity()
+
   const callback = (child: Entity) => {
     const obj = getOptionalComponent(child, MeshComponent)
-    if (obj) expandBoxByObject(obj, box)
+    if (obj) {
+      expandBoxByObject(obj, box, entityMatrixInverse)
+    }
   }
 
   iterateEntityNode(entity, callback)
@@ -135,13 +146,17 @@ export const updateBoundingBox = (entity: Entity) => {
   if (!helperEntity) return
 
   const helperObject = getComponent(helperEntity, ObjectComponent) as any as Box3Helper
-  helperObject.updateMatrixWorld(true)
+
+  // Update the helper's box to match the computed bounding box
+  helperObject.box.copy(box)
   helperObject.position.set(0, 0, 0)
+  helperObject.updateMatrixWorld(true)
 }
 
 const _box = new Box3()
+const _relativeMatrix = new Matrix4()
 
-const expandBoxByObject = (object: Mesh<BufferGeometry>, box: Box3) => {
+const expandBoxByObject = (object: Mesh<BufferGeometry>, box: Box3, entityMatrixInverse?: Matrix4) => {
   const geometry = object.geometry
   if (!geometry) return
 
@@ -149,8 +164,18 @@ const expandBoxByObject = (object: Mesh<BufferGeometry>, box: Box3) => {
     geometry.computeBoundingBox()
   }
 
+  object.updateMatrixWorld(true)
+
   _box.copy(geometry.boundingBox!)
-  _box.applyMatrix4(object.matrixWorld)
+
+  if (entityMatrixInverse) {
+    // Compute the transform matrix from object to entity local space
+    _relativeMatrix.multiplyMatrices(entityMatrixInverse, object.matrixWorld)
+    _box.applyMatrix4(_relativeMatrix)
+  } else {
+    _box.applyMatrix4(object.matrixWorld)
+  }
+
   box.union(_box)
 }
 
