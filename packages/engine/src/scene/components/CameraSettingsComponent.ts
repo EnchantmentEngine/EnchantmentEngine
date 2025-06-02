@@ -72,8 +72,6 @@ export const CameraSettingsComponent = defineComponent({
     }),
 
     //Fields for DIRECT camera mode
-    minCameraDistance: S.Number({ default: 1.5 }),
-    maxCameraDistance: S.Number({ default: 50 }),
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
 
@@ -84,9 +82,6 @@ export const CameraSettingsComponent = defineComponent({
     canCameraFirstPerson: S.Bool({ default: true }),
     canCameraThirdPerson: S.Bool({ default: true }),
     canCameraTopDown: S.Bool({ default: true }),
-
-    thirdPersonDefaultDistance: S.Number({ default: 3 }),
-    topDownDefaultDistance: S.Number({ default: 50 }),
 
     isFistPersonFreeCamera: S.Bool({ default: true }),
     isThirdPersonFreeCamera: S.Bool({ default: true }),
@@ -99,6 +94,14 @@ export const CameraSettingsComponent = defineComponent({
     isFirstPersonCameraReset: S.Bool({ default: true }),
     isThirdPersonCameraReset: S.Bool({ default: true }),
     isTopDownCameraReset: S.Bool({ default: true }),
+
+    thirdPersonMinDistance: S.Number({ default: 1.5 }),
+    thirdPersonMaxDistance: S.Number({ default: 50 }),
+    thirdPersonDefaultDistance: S.Number({ default: 3 }),
+
+    topDownMinDistance: S.Number({ default: 1.5 }),
+    topDownMaxDistance: S.Number({ default: 50 }),
+    topDownDefaultDistance: S.Number({ default: 50 }),
 
     // Fields for POI camera mode
     poiEntities: S.Array(S.EntityUUID()),
