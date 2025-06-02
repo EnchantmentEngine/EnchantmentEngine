@@ -29,7 +29,7 @@ import { EntityUUID } from '@ir-engine/ecs'
 import {
   CameraScrollBehavior,
   PoiScrollTransitionType
-} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent.ts'
+} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { CameraMode } from './types/CameraMode'
 import { ProjectionType } from './types/ProjectionType'
 
