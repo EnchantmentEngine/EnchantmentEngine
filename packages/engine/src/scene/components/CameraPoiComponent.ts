@@ -23,8 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 
 /**
@@ -33,17 +32,11 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
  */
 export const CameraPoiComponent = defineComponent({
   name: 'CameraPoiComponent',
-  jsonID: 'EE_camera_poi_component',
+  jsonID: 'IR_camera_poi_component',
 
   schema: S.Object({
-    // Optional entities that can be hotspots within this POI
-    hotspotEntityUUIDs: S.Array(S.EntityUUID())
-  }),
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const component = useComponent(entity, CameraPoiComponent)
-
-    return null
-  }
+    hotspotEntityUUIDs: S.Array(S.EntityUUID(), {
+      $comment: 'Optional entities that can be hotspots within this POI'
+    })
+  })
 })

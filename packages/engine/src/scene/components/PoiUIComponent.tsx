@@ -23,9 +23,8 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState } from '@ir-engine/ecs'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import React, { useEffect, useState } from 'react'
@@ -39,13 +38,9 @@ import { CameraScrollBehavior, PoiScrollTransitionType } from './CameraSettingsC
  */
 export const PoiUIComponent = defineComponent({
   name: 'PoiUIComponent',
-  jsonID: 'EE_poi_ui',
-
-  schema: S.Object({}),
+  jsonID: 'IR_poi_ui',
 
   reactor: () => {
-    const entity = useEntityContext()
-    const component = useComponent(entity, PoiUIComponent)
     const engineState = useMutableState(EngineState)
 
     useEffect(() => {

@@ -297,6 +297,22 @@ export const handleFollowCameraScroll = (
       return
     }
   }
+  //lock snapping input while still transitioning
+  //possibly get rid of double-click transition
+  //add gizmos to the POIs similar to the camera
+  //modify camera gizmo so it has an arrow
+  //change enums... -
+
+  /*
+  export const EnvMapSourceType = {
+    Skybox: 'Skybox' as const,
+    Bake: 'Bake' as const,
+    Cubemap: 'Cubemap' as const,
+    Equirectangular: 'Equirectangular' as const,
+    Color: 'Color' as const,
+    None: 'None' as const
+  }
+  */
 
   // Standard camera zoom behavior if not in POI mode or no valid POIs
   follow.targetDistance = Math.max(follow.targetDistance + zoomDelta, 0)

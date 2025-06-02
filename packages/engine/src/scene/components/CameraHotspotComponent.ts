@@ -23,8 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 
 /**
@@ -33,20 +32,10 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
  */
 export const CameraHotspotComponent = defineComponent({
   name: 'CameraHotspotComponent',
-  jsonID: 'EE_camera_hotspot_component',
+  jsonID: 'IR_camera_hotspot_component',
 
   schema: S.Object({
-    // Optional title or label for this hotspot
-    title: S.String({ default: '' }),
-
-    // Optional description for this hotspot
-    description: S.String({ default: '' })
-  }),
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const component = useComponent(entity, CameraHotspotComponent)
-
-    return null
-  }
+    title: S.String({ default: '', $comment: 'Optional title or label for this hotspot' }),
+    description: S.String({ default: '', $comment: 'Optional description for this hotspot' })
+  })
 })

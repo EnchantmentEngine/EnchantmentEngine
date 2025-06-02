@@ -27,15 +27,16 @@ import React, { useEffect } from 'react'
 
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
 import {
-  defineQuery,
   defineSystem,
   Entity,
   EntityID,
   getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
+  removeComponent,
   setComponent,
   useHasComponent,
+  useQuery,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -180,20 +181,23 @@ const reactor = () => {
   const sceneEntity = useLoadedSceneEntity(locationSceneURL)
   const gltfLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
 
-  const cameraSettingsQuery = defineQuery([CameraSettingsComponent])
-  const cameraSettingsEntities = cameraSettingsQuery()
-  const cameraSettingsEntity = cameraSettingsEntities.length > 0 ? cameraSettingsEntities[0] : null
+  const cameraSettingsQuery = useQuery([CameraSettingsComponent])
+  const cameraSettingsEntity = cameraSettingsQuery.length > 0 ? cameraSettingsQuery[0] : null
+  const engineState = useMutableState(EngineState)
   const cameraSettingsComponent = cameraSettingsEntity
-    ? getComponent(cameraSettingsEntities[0], CameraSettingsComponent)
+    ? getComponent(cameraSettingsQuery[0], CameraSettingsComponent)
     : null
   const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.cameraMode === CameraMode.DIRECT : true
 
   useEffect(() => {
+    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
     if (!isAvatarUsed) {
-      const cameraEntity = getState(ReferenceSpaceState).viewerEntity
-      setComponent(cameraEntity, FollowCameraComponent)
+      if (!engineState.isEditing.value) setComponent(cameraEntity, FollowCameraComponent)
     }
-  }, [isAvatarUsed])
+    return () => {
+      removeComponent(cameraEntity, FollowCameraComponent)
+    }
+  }, [isAvatarUsed, engineState.isEditing])
 
   if (!gltfLoaded || !userID) return null
 

@@ -23,22 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, EntityID, NetworkObjectComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  removeComponent,
-  setComponent,
-  useComponent,
-  useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
+import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getState, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useEffect } from 'react'
 import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 
@@ -116,19 +109,16 @@ export const AvatarComponent = defineComponent({
     const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const avatarComponent = useComponent(entity, AvatarComponent)
     const cameraSettingsState = useMutableState(CameraSettingsState)
+    const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
 
     useEffect(() => {
       setAvatarColliderTransform(entity)
     }, [avatarComponent?.avatarHeight, camera.near])
 
-    const hasVisibleComponent = useOptionalComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
     useEffect(() => {
-      if (cameraSettingsState.isAvatarVisible.value) {
-        if (!hasVisibleComponent) setComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
-      } else {
-        if (hasVisibleComponent) removeComponent(AvatarComponent.getSelfAvatarEntity(), VisibleComponent)
-      }
-    }, [cameraSettingsState.isAvatarVisible, hasVisibleComponent])
+      if (selfAvatarEntity === UndefinedEntity) return
+      setVisibleComponent(selfAvatarEntity, cameraSettingsState.isAvatarVisible.value)
+    }, [selfAvatarEntity, cameraSettingsState.isAvatarVisible])
 
     return null
   }

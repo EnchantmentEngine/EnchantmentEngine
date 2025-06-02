@@ -40,13 +40,11 @@ import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { PoiUIComponent } from './PoiUIComponent'
 
-// Define scroll behavior for POI navigation
 export enum CameraScrollBehavior {
   Wrap = 'Wrap',
   Clamp = 'Clamp'
 }
 
-// Define POI scroll transition types
 export enum PoiScrollTransitionType {
   Scrolling = 'Scrolling',
   Snapping = 'Snapping'
@@ -104,7 +102,6 @@ export const CameraSettingsComponent = defineComponent({
     // Fields for POI camera mode
     poiEntities: S.Array(S.EntityUUID()),
     poiLerpSpeed: S.Number({ default: 0.5 }),
-    // Manual scroll control properties
     scrollDeadzone: S.Number({ default: 1.0 }),
     scrollSensitivity: S.Number({ default: 0.1 }),
     scrollDistancePerPoi: S.Number({ default: 3.0 }),
