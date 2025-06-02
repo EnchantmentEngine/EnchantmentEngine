@@ -44,7 +44,7 @@ export const CameraSettingsState = defineState({
     startCameraDistance: 3,
     minPhi: -70,
     maxPhi: 85,
-    cameraMode: CameraMode.DIRECT,
+    cameraMode: CameraMode.FOLLOW,
     poiEntities: [] as EntityUUID[],
     currentPoiIndex: -1,
     targetPoiIndex: -1,
@@ -60,7 +60,7 @@ export const CameraSettingsState = defineState({
     enableTransitionButtons: false,
 
     isAvatarVisible: true,
-    directCameraScrollSensitivity: 1,
+    followCameraScrollSensitivity: 1,
 
     canCameraFirstPerson: true,
     canCameraThirdPerson: true,
@@ -82,8 +82,8 @@ export const CameraSettingsState = defineState({
     thirdPersonMaxDistance: 50,
     thirdPersonDefaultDistance: 3,
 
-    topDownMinDistance: 1.5,
-    topDownMaxDistance: 50,
-    topDownDefaultDistance: 50
+    topDownMinDistance: 10,
+    topDownMaxDistance: 70,
+    topDownDefaultDistance: 40
   }
 })

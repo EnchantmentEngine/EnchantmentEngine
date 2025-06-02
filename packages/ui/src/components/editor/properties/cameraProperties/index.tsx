@@ -205,14 +205,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           value={cameraSettings.cameraMode.value}
           onChange={commitProperty(CameraSettingsComponent, 'cameraMode')}
           options={[
-            { label: 'DIRECT', value: CameraMode.DIRECT },
+            { label: 'FOLLOW', value: CameraMode.FOLLOW },
             { label: 'POI', value: CameraMode.POI }
           ]}
         />
       </InputGroup>
 
       {/* DIRECT Camera Mode Settings */}
-      {cameraSettings.cameraMode.value === CameraMode.DIRECT && (
+      {cameraSettings.cameraMode.value === CameraMode.FOLLOW && (
         <>
           <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-avatar')}>
             <Checkbox
@@ -224,13 +224,13 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
           </InputGroup>
           <InputGroup name="avatar" label={t('editor:properties.cameraSettings.lbl-scrollingSpeed')}>
             <NumericInput
-              onChange={updateProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
-              onRelease={commitProperty(CameraSettingsComponent, 'directCameraScrollSensitivity')}
+              onChange={updateProperty(CameraSettingsComponent, 'followCameraScrollSensitivity')}
+              onRelease={commitProperty(CameraSettingsComponent, 'followCameraScrollSensitivity')}
               min={0.001}
               smallStep={0.001}
               mediumStep={0.01}
               largeStep={0.1}
-              value={cameraSettings.directCameraScrollSensitivity.value}
+              value={cameraSettings.followCameraScrollSensitivity.value}
               className="flex w-full flex-grow"
             />
           </InputGroup>

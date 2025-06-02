@@ -67,17 +67,17 @@ export const CameraSettingsComponent = defineComponent({
     fov: S.Number({ default: 60 }),
 
     cameraMode: S.Enum(CameraMode, {
-      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'DIRECT', 'POI' ",
-      default: CameraMode.DIRECT
+      $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'FOLLOW', 'POI' ",
+      default: CameraMode.FOLLOW
     }),
 
-    //Fields for DIRECT camera mode
+    //Fields for FOLLOW camera mode
     minPhi: S.Number({ default: -70 }),
     maxPhi: S.Number({ default: 85 }),
 
     isAvatarVisible: S.Bool({ default: true }),
 
-    directCameraScrollSensitivity: S.Number({ default: 1 }),
+    followCameraScrollSensitivity: S.Number({ default: 1 }),
 
     canCameraFirstPerson: S.Bool({ default: true }),
     canCameraThirdPerson: S.Bool({ default: true }),

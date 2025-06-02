@@ -25,6 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 /** Camera Modes. */
 export enum CameraMode {
-  DIRECT = 'DIRECT',
+  FOLLOW = 'FOLLOW',
   POI = 'POI'
 }

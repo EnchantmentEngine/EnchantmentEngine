@@ -93,7 +93,7 @@ export const ViewerInteractions = () => {
         <MediaIconsBox />
       </div>
 
-      {cameraSettingsState.cameraMode.value === CameraMode.DIRECT && (
+      {cameraSettingsState.cameraMode.value === CameraMode.FOLLOW && (
         <div className="pointer-events-auto absolute left-0 top-0 select-none pl-[inherit] pt-[inherit]">
           <VideoWindows />
         </div>

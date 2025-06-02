@@ -298,10 +298,10 @@ export const handleFollowCameraScroll = (
     }
   }
 
-  if (cameraSettingsState.cameraMode.value === CameraMode.DIRECT) {
+  if (cameraSettingsState.cameraMode.value === CameraMode.FOLLOW) {
     // Standard camera zoom behavior if not in POI mode or no valid POIs
     follow.targetDistance = Math.max(
-      follow.targetDistance + zoomDelta * cameraSettingsState.directCameraScrollSensitivity.value,
+      follow.targetDistance + zoomDelta * cameraSettingsState.followCameraScrollSensitivity.value,
       0
     )
 
