@@ -164,8 +164,6 @@ export const generateEnvmapBake = (
   return envmapImageData
 }
 
-const resolution = 1024
-
 /**
  * Generates and uploads a high res cubemap at a specific position in the world for saving and export.
  *
