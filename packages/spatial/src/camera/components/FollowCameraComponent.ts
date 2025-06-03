@@ -152,6 +152,107 @@ export const FollowCameraComponent = defineComponent({
     const follow = useComponent(entity, FollowCameraComponent)
     const cameraSettingsState = useMutableState(CameraSettingsState)
 
+    const setupModeFirstPerson = () => {
+      const cameraSettings = cameraSettingsState.value
+      const minTheta = -cameraSettings.firstPersonCameraLimits / 2
+      const maxTheta = cameraSettings.firstPersonCameraLimits / 2
+      const isFreeCamera = cameraSettings.isFistPersonFreeCamera
+      const isResetCamera = cameraSettings.isFirstPersonCameraReset
+      const defaultPhi = 0
+      const defaultTheta = 0
+      const minDistance = 0
+      const maxDistance = 0
+      const defaultDistance = 0
+
+      follow.merge({
+        distance: defaultDistance,
+        targetDistance: defaultDistance,
+        minDistance: minDistance,
+        maxDistance: maxDistance,
+        effectiveMinDistance: minDistance,
+        effectiveMaxDistance: maxDistance,
+        minPhi: cameraSettings.minPhi,
+        maxPhi: cameraSettings.maxPhi,
+        minTheta: minTheta,
+        maxTheta: maxTheta,
+        lastZoomStartDistance: (minDistance + maxDistance) / 2,
+        isFreeCamera: isFreeCamera,
+        isResetCamera: isResetCamera,
+        defaultPhi: defaultPhi,
+        defaultTheta: defaultTheta
+      })
+      follow.raycastProps.rayLength.set(maxDistance)
+    }
+
+    const setupMode = {
+      [FollowCameraMode.FirstPerson]: () => setupModeFirstPerson(),
+      [FollowCameraMode.ThirdPerson]: () => setupModeThirdPerson(),
+      [FollowCameraMode.TopDown]: () => setupModeTopDown()
+    }
+    const setupModeThirdPerson = () => {
+      const cameraSettings = cameraSettingsState.value
+      const minTheta = -cameraSettings.thirdPersonCameraLimits / 2
+      const maxTheta = cameraSettings.thirdPersonCameraLimits / 2
+      const isFreeCamera = cameraSettings.isThirdPersonFreeCamera
+      const isResetCamera = cameraSettings.isThirdPersonCameraReset
+      const defaultPhi = 0
+      const defaultTheta = 0
+      const minDistance = cameraSettings.thirdPersonMinDistance
+      const maxDistance = cameraSettings.thirdPersonMaxDistance
+      const defaultDistance = cameraSettings.thirdPersonDefaultDistance
+
+      follow.merge({
+        distance: defaultDistance,
+        targetDistance: defaultDistance,
+        minDistance: minDistance,
+        maxDistance: maxDistance,
+        effectiveMinDistance: minDistance,
+        effectiveMaxDistance: maxDistance,
+        minPhi: cameraSettings.minPhi,
+        maxPhi: cameraSettings.maxPhi,
+        minTheta: minTheta,
+        maxTheta: maxTheta,
+        lastZoomStartDistance: (minDistance + maxDistance) / 2,
+        isFreeCamera: isFreeCamera,
+        isResetCamera: isResetCamera,
+        defaultPhi: defaultPhi,
+        defaultTheta: defaultTheta
+      })
+      follow.raycastProps.rayLength.set(maxDistance)
+    }
+
+    const setupModeTopDown = () => {
+      const cameraSettings = cameraSettingsState.value
+      const minTheta = -cameraSettings.topDownCameraLimits / 2
+      const maxTheta = cameraSettings.topDownCameraLimits / 2
+      const isFreeCamera = cameraSettings.isTopDownFreeCamera
+      const isResetCamera = cameraSettings.isTopDownCameraReset
+      const defaultPhi = topDownDefaultPhi
+      const defaultTheta = 0
+      const minDistance = cameraSettings.topDownMinDistance
+      const maxDistance = cameraSettings.topDownMaxDistance
+      const defaultDistance = cameraSettings.topDownDefaultDistance
+
+      follow.merge({
+        distance: defaultDistance,
+        targetDistance: defaultDistance,
+        minDistance: minDistance,
+        maxDistance: maxDistance,
+        effectiveMinDistance: minDistance,
+        effectiveMaxDistance: maxDistance,
+        minPhi: cameraSettings.minPhi,
+        maxPhi: cameraSettings.maxPhi,
+        minTheta: minTheta,
+        maxTheta: maxTheta,
+        lastZoomStartDistance: (minDistance + maxDistance) / 2,
+        isFreeCamera: isFreeCamera,
+        isResetCamera: isResetCamera,
+        defaultPhi: defaultPhi,
+        defaultTheta: defaultTheta
+      })
+      follow.raycastProps.rayLength.set(maxDistance)
+    }
+
     useImmediateEffect(() => {
       const cameraSettings = cameraSettingsState.value
 
@@ -174,68 +275,6 @@ export const FollowCameraComponent = defineComponent({
       }
       follow.raycastProps.cameraRays.set(cameraRays)
 
-      let minTheta = 0
-      let maxTheta = 0
-      let isFreeCamera = follow.isFreeCamera.value
-      let isResetCamera = follow.isResetCamera.value
-      let defaultPhi = follow.defaultPhi.value
-      let defaultTheta = follow.defaultTheta.value
-      let minDistance = 0
-      let maxDistance = 0
-      let defaultDistance = 0
-
-      if (follow.mode.value === FollowCameraMode.FirstPerson) {
-        minTheta = -cameraSettings.firstPersonCameraLimits / 2
-        maxTheta = cameraSettings.firstPersonCameraLimits / 2
-        isFreeCamera = cameraSettings.isFistPersonFreeCamera
-        isResetCamera = cameraSettings.isFirstPersonCameraReset
-        defaultPhi = 0
-        defaultTheta = 0
-        minDistance = 0
-        maxDistance = 0
-        defaultDistance = 0
-      } else if (follow.mode.value === FollowCameraMode.ThirdPerson) {
-        minTheta = -cameraSettings.thirdPersonCameraLimits / 2
-        maxTheta = cameraSettings.thirdPersonCameraLimits / 2
-        isFreeCamera = cameraSettings.isThirdPersonFreeCamera
-        isResetCamera = cameraSettings.isThirdPersonCameraReset
-        defaultPhi = 0
-        defaultTheta = 0
-        minDistance = cameraSettings.thirdPersonMinDistance
-        maxDistance = cameraSettings.thirdPersonMaxDistance
-        defaultDistance = cameraSettings.thirdPersonDefaultDistance
-      } else if (follow.mode.value === FollowCameraMode.TopDown) {
-        minTheta = -cameraSettings.topDownCameraLimits / 2
-        maxTheta = cameraSettings.topDownCameraLimits / 2
-        isFreeCamera = cameraSettings.isTopDownFreeCamera
-        isResetCamera = cameraSettings.isTopDownCameraReset
-        defaultPhi = topDownDefaultPhi
-        defaultTheta = 0
-        minDistance = cameraSettings.topDownMinDistance
-        maxDistance = cameraSettings.topDownMaxDistance
-        defaultDistance = cameraSettings.topDownDefaultDistance
-      }
-
-      follow.merge({
-        distance: defaultDistance,
-        targetDistance: defaultDistance,
-        minDistance: minDistance,
-        maxDistance: maxDistance,
-        effectiveMinDistance: minDistance,
-        effectiveMaxDistance: maxDistance,
-        minPhi: cameraSettings.minPhi,
-        maxPhi: cameraSettings.maxPhi,
-        minTheta: minTheta,
-        maxTheta: maxTheta,
-        lastZoomStartDistance: (minDistance + maxDistance) / 2,
-        isFreeCamera: isFreeCamera,
-        isResetCamera: isResetCamera,
-        defaultPhi: defaultPhi,
-        defaultTheta: defaultTheta
-      })
-
-      follow.raycastProps.rayLength.set(maxDistance)
-
       let allowedModes: FollowCameraMode[] = []
       if (cameraSettings.canCameraFirstPerson) {
         allowedModes.push(FollowCameraMode.FirstPerson)
@@ -247,6 +286,8 @@ export const FollowCameraComponent = defineComponent({
         allowedModes.push(FollowCameraMode.TopDown)
       }
       follow.allowedModes.set(allowedModes)
+
+      setupMode[follow.mode.value]()
     }, [cameraSettingsState])
 
     useEffect(() => {
@@ -261,12 +302,6 @@ export const FollowCameraComponent = defineComponent({
         followCamera.originalPosition.copy(Vector3_Zero)
       }
     }, [])
-
-    useImmediateEffect(() => {
-      if (follow.mode.value === FollowCameraMode.FirstPerson) {
-        follow.targetDistance.set(0)
-      }
-    }, [follow.mode])
 
     const rendererComponent = useOptionalComponent(entity, RendererComponent)
 
@@ -325,6 +360,7 @@ export const FollowCameraComponent = defineComponent({
         } else {
           follow.mode.set(FollowCameraMode.ThirdPerson)
         }
+        setupMode[follow.mode.value]()
       }
     }, [follow.allowedModes.length, follow.allowedModes.value])
 
