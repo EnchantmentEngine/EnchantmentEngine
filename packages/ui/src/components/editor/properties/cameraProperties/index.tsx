@@ -277,8 +277,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   >
                     <div className="flex w-full items-center gap-2">
                       <NumericInput
-                        onChange={updateProperty(CameraSettingsComponent, 'firstPersonCameraLimits')}
-                        onRelease={commitProperty(CameraSettingsComponent, 'firstPersonCameraLimits')}
+                        onChange={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          updateProperty(CameraSettingsComponent, 'firstPersonCameraLimits')(val)
+                        }}
+                        onRelease={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          commitProperty(CameraSettingsComponent, 'firstPersonCameraLimits')(val)
+                        }}
                         min={0.001}
                         smallStep={0.001}
                         mediumStep={0.01}
@@ -307,8 +313,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   className="w-2/3 flex-grow"
                 >
                   <NumericInput
-                    onChange={updateProperty(CameraSettingsComponent, 'thirdPersonMinDistance')}
-                    onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonMinDistance')}
+                    onChange={(val) => {
+                      val = Math.min(val, cameraSettings.thirdPersonDefaultDistance.value)
+                      updateProperty(CameraSettingsComponent, 'thirdPersonMinDistance')(val)
+                    }}
+                    onRelease={(val) => {
+                      val = Math.min(val, cameraSettings.thirdPersonDefaultDistance.value)
+                      commitProperty(CameraSettingsComponent, 'thirdPersonMinDistance')(val)
+                    }}
                     min={0.001}
                     smallStep={0.001}
                     mediumStep={0.01}
@@ -323,8 +335,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   className="w-2/3 flex-grow"
                 >
                   <NumericInput
-                    onChange={updateProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')}
-                    onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')}
+                    onChange={(val) => {
+                      val = Math.max(val, cameraSettings.thirdPersonDefaultDistance.value)
+                      updateProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')(val)
+                    }}
+                    onRelease={(val) => {
+                      val = Math.max(val, cameraSettings.thirdPersonDefaultDistance.value)
+                      commitProperty(CameraSettingsComponent, 'thirdPersonMaxDistance')(val)
+                    }}
                     min={0.001}
                     smallStep={0.001}
                     mediumStep={0.01}
@@ -341,8 +359,24 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                 >
                   <div className="flex w-full items-center gap-2">
                     <NumericInput
-                      onChange={updateProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')}
-                      onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')}
+                      onChange={(val) => {
+                        if (val < cameraSettings.thirdPersonMinDistance.value) {
+                          val = cameraSettings.thirdPersonMinDistance.value
+                        }
+                        if (val > cameraSettings.thirdPersonMaxDistance.value) {
+                          val = cameraSettings.thirdPersonMaxDistance.value
+                        }
+                        updateProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')(val)
+                      }}
+                      onRelease={(val) => {
+                        if (val < cameraSettings.thirdPersonMinDistance.value) {
+                          val = cameraSettings.thirdPersonMinDistance.value
+                        }
+                        if (val > cameraSettings.thirdPersonMaxDistance.value) {
+                          val = cameraSettings.thirdPersonMaxDistance.value
+                        }
+                        commitProperty(CameraSettingsComponent, 'thirdPersonDefaultDistance')(val)
+                      }}
                       min={0.001}
                       smallStep={0.001}
                       mediumStep={0.01}
@@ -366,8 +400,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   >
                     <div className="flex w-full items-center gap-2">
                       <NumericInput
-                        onChange={updateProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')}
-                        onRelease={commitProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')}
+                        onChange={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          updateProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')(val)
+                        }}
+                        onRelease={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          commitProperty(CameraSettingsComponent, 'thirdPersonCameraLimits')(val)
+                        }}
                         min={0.001}
                         smallStep={0.001}
                         mediumStep={0.01}
@@ -396,8 +436,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   className="w-2/3 flex-grow"
                 >
                   <NumericInput
-                    onChange={updateProperty(CameraSettingsComponent, 'topDownMinDistance')}
-                    onRelease={commitProperty(CameraSettingsComponent, 'topDownMinDistance')}
+                    onChange={(val) => {
+                      val = Math.min(val, cameraSettings.topDownDefaultDistance.value)
+                      updateProperty(CameraSettingsComponent, 'topDownMinDistance')(val)
+                    }}
+                    onRelease={(val) => {
+                      val = Math.min(val, cameraSettings.topDownDefaultDistance.value)
+                      commitProperty(CameraSettingsComponent, 'topDownMinDistance')(val)
+                    }}
                     min={0.001}
                     smallStep={0.001}
                     mediumStep={0.01}
@@ -412,8 +458,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   className="w-2/3 flex-grow"
                 >
                   <NumericInput
-                    onChange={updateProperty(CameraSettingsComponent, 'topDownMaxDistance')}
-                    onRelease={commitProperty(CameraSettingsComponent, 'topDownMaxDistance')}
+                    onChange={(val) => {
+                      val = Math.max(val, cameraSettings.topDownDefaultDistance.value)
+                      updateProperty(CameraSettingsComponent, 'topDownMaxDistance')(val)
+                    }}
+                    onRelease={(val) => {
+                      val = Math.max(val, cameraSettings.topDownDefaultDistance.value)
+                      commitProperty(CameraSettingsComponent, 'topDownMaxDistance')(val)
+                    }}
                     min={0.001}
                     smallStep={0.001}
                     mediumStep={0.01}
@@ -430,8 +482,24 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                 >
                   <div className="flex w-full items-center gap-2">
                     <NumericInput
-                      onChange={updateProperty(CameraSettingsComponent, 'topDownDefaultDistance')}
-                      onRelease={commitProperty(CameraSettingsComponent, 'topDownDefaultDistance')}
+                      onChange={(val) => {
+                        if (val < cameraSettings.topDownMinDistance.value) {
+                          val = cameraSettings.topDownMinDistance.value
+                        }
+                        if (val > cameraSettings.topDownMaxDistance.value) {
+                          val = cameraSettings.topDownMaxDistance.value
+                        }
+                        updateProperty(CameraSettingsComponent, 'topDownDefaultDistance')(val)
+                      }}
+                      onRelease={(val) => {
+                        if (val < cameraSettings.topDownMinDistance.value) {
+                          val = cameraSettings.topDownMinDistance.value
+                        }
+                        if (val > cameraSettings.topDownMaxDistance.value) {
+                          val = cameraSettings.topDownMaxDistance.value
+                        }
+                        commitProperty(CameraSettingsComponent, 'topDownDefaultDistance')(val)
+                      }}
                       min={0.001}
                       smallStep={0.001}
                       mediumStep={0.01}
@@ -455,8 +523,14 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                   >
                     <div className="flex w-full items-center gap-2">
                       <NumericInput
-                        onChange={updateProperty(CameraSettingsComponent, 'topDownCameraLimits')}
-                        onRelease={commitProperty(CameraSettingsComponent, 'topDownCameraLimits')}
+                        onChange={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          updateProperty(CameraSettingsComponent, 'topDownCameraLimits')(val)
+                        }}
+                        onRelease={(val) => {
+                          val = Math.min(Math.max(val, 0), 360)
+                          commitProperty(CameraSettingsComponent, 'topDownCameraLimits')(val)
+                        }}
                         min={0.001}
                         smallStep={0.001}
                         mediumStep={0.01}
