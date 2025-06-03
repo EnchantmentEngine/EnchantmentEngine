@@ -23,32 +23,37 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@hookstate/core'
-import React from 'react'
-import FieldItem from './FieldItem'
-import { Section } from './Section'
+import { InputField, InputFieldProps } from '@ir-engine/ui/viewer'
+import React, { useRef } from 'react'
 
-interface UsernamePasswordScreenProps {
-  navigateTo: (screen: string) => void
+interface FieldItemProps extends InputFieldProps {
+  label: string
+  className?: string
 }
 
-const UsernamePasswordScreen: React.FC<UsernamePasswordScreenProps> = () => {
-  const originalName = 'Dan'
-  const displayName = useHookstate(originalName)
-
+const FieldItem: React.FC<FieldItemProps> = ({ label, className = '', value, onChange, isDirty, onReset }) => {
+  const ref = useRef<HTMLInputElement>(null)
   return (
-    <div className="flex h-full flex-col gap-4">
-      <Section>
-        <FieldItem
-          label="Display Name"
-          value={displayName.value}
-          onChange={displayName.set}
-          isDirty={displayName.value !== originalName}
-          onReset={() => displayName.set(originalName)}
-        />
-      </Section>
+    <div
+      onClick={(e) => {
+        ref.current?.focus()
+        if (e.currentTarget === e.target) {
+          ref.current?.setSelectionRange(value.length, value.length)
+        }
+      }}
+      className={`flex w-full items-center justify-between px-4 py-3.5 text-white/90 transition-colors hover:bg-white/5 ${className}`}
+    >
+      <span className="text-sm font-medium">{label}</span>
+      <InputField
+        ref={ref}
+        label="Display Name"
+        value={value}
+        onChange={onChange}
+        isDirty={isDirty}
+        onReset={onReset}
+      />
     </div>
   )
 }
 
-export default UsernamePasswordScreen
+export default FieldItem

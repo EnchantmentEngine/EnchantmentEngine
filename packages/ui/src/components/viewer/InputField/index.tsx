@@ -23,32 +23,41 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@hookstate/core'
+import { XCloseMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
-import FieldItem from './FieldItem'
-import { Section } from './Section'
 
-interface UsernamePasswordScreenProps {
-  navigateTo: (screen: string) => void
+export interface InputFieldProps {
+  label: string
+  value: string
+  isPassword?: boolean
+  onChange: (value: string) => void
+  onReset?: () => void
+  isDirty?: boolean
+  className?: string
 }
 
-const UsernamePasswordScreen: React.FC<UsernamePasswordScreenProps> = () => {
-  const originalName = 'Dan'
-  const displayName = useHookstate(originalName)
+/**
+ * A reusable input field component with reset functionality
+ */
+const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(
+  ({ label, value, isPassword = false, onChange, isDirty = false, onReset, className = '' }, ref) => (
+    <div className={`flex max-w-[20ch] flex-1 items-center gap-2 ${className}`}>
+      <input
+        ref={ref}
+        type={isPassword ? 'password' : 'text'}
+        className="w-full bg-transparent text-right focus-visible:outline-none"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      />
 
-  return (
-    <div className="flex h-full flex-col gap-4">
-      <Section>
-        <FieldItem
-          label="Display Name"
-          value={displayName.value}
-          onChange={displayName.set}
-          isDirty={displayName.value !== originalName}
-          onReset={() => displayName.set(originalName)}
-        />
-      </Section>
+      <button onClick={onReset} className={isDirty ? 'visible' : 'invisible'} aria-label={`Reset ${label}`}>
+        <XCloseMd className="h-4 w-4 text-white/70" />
+      </button>
     </div>
   )
-}
+)
 
-export default UsernamePasswordScreen
+InputField.displayName = 'InputField'
+
+export default InputField
