@@ -65,6 +65,7 @@ import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComp
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
+import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
 import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
@@ -187,17 +188,29 @@ const reactor = () => {
   const cameraSettingsComponent = cameraSettingsEntity
     ? getComponent(cameraSettingsQuery[0], CameraSettingsComponent)
     : null
-  const isAvatarUsed = cameraSettingsComponent ? cameraSettingsComponent.cameraMode === CameraMode.FOLLOW : true
+  const cameraMode = cameraSettingsComponent ? cameraSettingsComponent.cameraMode : CameraMode.FOLLOW
+  const isAvatarUsed = cameraMode === CameraMode.FOLLOW
 
   useEffect(() => {
     const cameraEntity = getState(ReferenceSpaceState).viewerEntity
-    if (!isAvatarUsed) {
-      if (!engineState.isEditing.value) setComponent(cameraEntity, FollowCameraComponent)
+
+    if (!engineState.isEditing.value) {
+      if (cameraMode === CameraMode.FOLLOW) {
+        if (!isAvatarUsed) {
+          setComponent(cameraEntity, FollowCameraComponent)
+        }
+        removeComponent(cameraEntity, PoiCameraComponent)
+      } else if (cameraMode === CameraMode.POI) {
+        setComponent(cameraEntity, PoiCameraComponent)
+        removeComponent(cameraEntity, FollowCameraComponent)
+      }
     }
+
     return () => {
       removeComponent(cameraEntity, FollowCameraComponent)
+      removeComponent(cameraEntity, PoiCameraComponent)
     }
-  }, [isAvatarUsed, engineState.isEditing])
+  }, [cameraMode, isAvatarUsed, engineState.isEditing])
 
   if (!gltfLoaded || !userID) return null
 

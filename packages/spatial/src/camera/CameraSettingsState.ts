@@ -47,12 +47,8 @@ export const CameraSettingsState = defineState({
     maxPhi: 85,
     cameraMode: CameraMode.FOLLOW as CameraModeType,
     poiEntities: [] as EntityUUID[],
-    currentPoiIndex: -1,
-    targetPoiIndex: -1,
-    poiLerpValue: 0,
     poiLerpSpeed: 0.5,
     // Manual scroll control properties
-    scrollAccumulator: 0,
     scrollDeadzone: 0.3,
     scrollSensitivity: 2.0,
     scrollDistancePerPoi: 3.0,

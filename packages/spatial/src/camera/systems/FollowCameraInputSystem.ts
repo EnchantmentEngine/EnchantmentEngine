@@ -25,22 +25,12 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Vector2 } from 'three'
 
-import { Entity, UUIDComponent, setComponent } from '@ir-engine/ecs'
-import {
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  hasComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity } from '@ir-engine/ecs'
+import { getComponent, getMutableComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
-import {
-  CameraScrollBehavior,
-  PoiScrollTransition
-} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
@@ -55,22 +45,14 @@ import { AxisValueMap } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { useEffect } from 'react'
-import { Quaternion, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
-import { CameraMode } from '../types/CameraMode'
-
-// const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
 
 const pointerPositionDelta = new Vector2()
 const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent])
-
-// Temporary vectors for POI camera calculations
-const targetPosition = new Vector3()
-const targetRotation = new Quaternion()
 
 const followCameraModeCycle = [
   FollowCameraMode.FirstPerson,
@@ -99,7 +81,7 @@ const onFollowCameraShoulderCam = (cameraEntity: Entity) => {
 }
 
 /**
- * Change camera distance or navigate between POIs.
+ * Change camera distance for follow camera mode.
  * @param cameraEntity Entity holding camera and input component.
  * @param axes Input axes values.
  * @param deltaTime Delta time for smooth transitions.
@@ -113,241 +95,24 @@ export const handleFollowCameraScroll = (
   const zoomDelta = axes.FollowCameraZoomScroll ?? 0
   const shoulderDelta = axes.FollowCameraShoulderCamScroll ?? 0
 
-  // Check if we're in POI mode
   const cameraSettingsState = getMutableState(CameraSettingsState)
 
-  if (cameraSettingsState.cameraMode.value === CameraMode.POI) {
-    // Filter POI entities to only include those with PoiCameraSettingsComponent
-    const validPoiEntities = cameraSettingsState.poiEntities.filter((entityId) => {
-      const entity = UUIDComponent.getEntityByUUID(entityId.value)
-      return entity && hasComponent(entity, CameraPoiComponent)
-    })
+  // Standard camera zoom behavior for follow mode
+  follow.targetDistance = Math.max(
+    follow.targetDistance + zoomDelta * cameraSettingsState.followCameraScrollSensitivity.value,
+    0
+  )
 
-    if (validPoiEntities.length > 0) {
-      // If we don't have a valid target index yet, initialize it
-      if (cameraSettingsState.targetPoiIndex.value < 0) {
-        cameraSettingsState.targetPoiIndex.set(0)
-        cameraSettingsState.currentPoiIndex.set(0)
-        cameraSettingsState.poiLerpValue.set(0)
-        cameraSettingsState.scrollAccumulator.set(0)
-      }
+  const outsideMinMaxRange =
+    follow.targetDistance < follow.effectiveMinDistance || follow.targetDistance > follow.effectiveMaxDistance
 
-      // Check if we're in snapping mode and a transition is active
-      const transitionType = cameraSettingsState.poiScrollTransitionType.value
-      const isSnappingMode = transitionType === PoiScrollTransition.Snapping
-      const isTransitionActive = isSnappingMode && cameraSettingsState.poiLerpValue.value < 1
-
-      // Lock scroll input during active snapping transitions
-      if (isTransitionActive) {
-        // We've handled the scroll in POI mode (by ignoring it), so return early
-        return
-      }
-
-      // Handle manual scroll-based POI navigation
-      if (Math.abs(zoomDelta) > 0.01) {
-        const scrollSensitivity = cameraSettingsState.scrollSensitivity.value
-        const deadzone = cameraSettingsState.scrollDeadzone.value
-        const scrollDistancePerPoi = cameraSettingsState.scrollDistancePerPoi.value
-        const scrollBehavior = cameraSettingsState.scrollBehavior.value
-        const transitionType = cameraSettingsState.poiScrollTransitionType.value
-
-        if (transitionType === PoiScrollTransition.Snapping) {
-          // Snap navigation: single scroll increment changes target POI
-          const currentTargetIndex = cameraSettingsState.targetPoiIndex.value
-          let newTargetIndex = currentTargetIndex
-
-          // Determine scroll direction and update target index
-          if (zoomDelta > 0) {
-            newTargetIndex = currentTargetIndex + 1
-          } else if (zoomDelta < 0) {
-            newTargetIndex = currentTargetIndex - 1
-          }
-
-          // Handle wrapping or clamping for the new target index
-          if (scrollBehavior === CameraScrollBehavior.Wrap) {
-            newTargetIndex =
-              ((newTargetIndex % validPoiEntities.length) + validPoiEntities.length) % validPoiEntities.length
-          } else {
-            newTargetIndex = Math.max(0, Math.min(validPoiEntities.length - 1, newTargetIndex))
-          }
-
-          // Only update if the target index actually changed
-          if (newTargetIndex !== currentTargetIndex) {
-            cameraSettingsState.targetPoiIndex.set(newTargetIndex)
-            cameraSettingsState.currentPoiIndex.set(currentTargetIndex) // Keep current as the starting point
-            cameraSettingsState.poiLerpValue.set(0) // Reset lerp to start transition
-          }
-        } else {
-          // Scrolling navigation: gradual movement between POIs
-          // Accumulate scroll distance
-          let newScrollAccumulator = cameraSettingsState.scrollAccumulator.value + zoomDelta * scrollSensitivity
-
-          // Helper function to apply smooth deadzone curve around targets
-          const applySmoothDeadzone = (
-            scrollDelta: number,
-            scrollPosition: number,
-            totalRange: number,
-            isWrapping: boolean
-          ) => {
-            // Find the nearest POI target position
-            const rawPoiSegment = scrollPosition / scrollDistancePerPoi
-            const nearestPoiIndex = Math.round(rawPoiSegment)
-            const nearestPoiPosition = nearestPoiIndex * scrollDistancePerPoi
-
-            // Calculate distance from the nearest POI center
-            let distanceFromCenter = Math.abs(scrollPosition - nearestPoiPosition)
-
-            // For wrapping, we need to consider the wrapped distance as well
-            if (isWrapping) {
-              const totalScrollRange = validPoiEntities.length * scrollDistancePerPoi
-              const wrappedDistance = Math.min(distanceFromCenter, totalScrollRange - distanceFromCenter)
-              distanceFromCenter = wrappedDistance
-            }
-
-            // Calculate the scroll speed multiplier based on distance from POI center
-            // Use a gentle curve that reduces speed near the center but maintains minimum movement
-            const halfDeadzone = deadzone / 2
-            let speedMultiplier = 1.0
-
-            if (distanceFromCenter < halfDeadzone) {
-              // Inside the deadzone - apply gentle curve
-              // Use a gentler quadratic curve with minimum speed: 0.2 + 0.8 * (distance / halfDeadzone)^2
-              const normalizedDistance = distanceFromCenter / halfDeadzone
-              const minSpeed = 0.1 // Minimum speed multiplier (20% of normal speed)
-              const speedRange = 0.9 // Range from min to full speed
-              speedMultiplier = minSpeed + speedRange * Math.pow(normalizedDistance, 2)
-            }
-
-            // Apply the speed multiplier to the scroll delta
-            const adjustedScrollDelta = scrollDelta * speedMultiplier
-            const newScrollPosition = scrollPosition + adjustedScrollDelta
-
-            return newScrollPosition
-          }
-
-          // Helper function to calculate POI indices and lerp value from scroll position
-          const calculatePoiState = (scrollPosition: number, isWrapping: boolean) => {
-            // Find which POI segment we're in
-            const rawPoiSegment = scrollPosition / scrollDistancePerPoi
-            const basePoiIndex = Math.floor(rawPoiSegment)
-            const segmentProgress = rawPoiSegment - basePoiIndex
-
-            let currentIndex = basePoiIndex
-            let targetIndex = basePoiIndex + 1
-            let lerpValue = segmentProgress
-
-            // Handle wrapping or clamping for indices
-            if (isWrapping) {
-              currentIndex =
-                ((currentIndex % validPoiEntities.length) + validPoiEntities.length) % validPoiEntities.length
-              targetIndex =
-                ((targetIndex % validPoiEntities.length) + validPoiEntities.length) % validPoiEntities.length
-            } else {
-              currentIndex = Math.max(0, Math.min(validPoiEntities.length - 1, currentIndex))
-              targetIndex = Math.max(0, Math.min(validPoiEntities.length - 1, targetIndex))
-
-              // Handle edge case at the last POI
-              if (currentIndex >= validPoiEntities.length - 1) {
-                currentIndex = validPoiEntities.length - 1
-                targetIndex = validPoiEntities.length - 1
-                lerpValue = 1
-              }
-            }
-
-            return { currentIndex, targetIndex, lerpValue: Math.max(0, Math.min(1, lerpValue)) }
-          }
-
-          if (scrollBehavior === CameraScrollBehavior.Wrap) {
-            // Wrap behavior - allow infinite scrolling with wrapping
-            const totalScrollRange = validPoiEntities.length * scrollDistancePerPoi
-            const currentScrollPosition = cameraSettingsState.scrollAccumulator.value
-
-            // Apply smooth deadzone curve to the scroll delta
-            const adjustedScrollPosition = applySmoothDeadzone(
-              zoomDelta * scrollSensitivity,
-              currentScrollPosition,
-              totalScrollRange,
-              true
-            )
-
-            // Normalize scroll position to wrap around using modulo
-            const normalizedScrollPosition =
-              ((adjustedScrollPosition % totalScrollRange) + totalScrollRange) % totalScrollRange
-            cameraSettingsState.scrollAccumulator.set(normalizedScrollPosition)
-
-            const result = calculatePoiState(normalizedScrollPosition, true)
-            cameraSettingsState.currentPoiIndex.set(result.currentIndex)
-            cameraSettingsState.targetPoiIndex.set(result.targetIndex)
-            cameraSettingsState.poiLerpValue.set(result.lerpValue)
-          } else {
-            // Clamp behavior - stop at boundaries
-            const totalScrollRange = (validPoiEntities.length - 1) * scrollDistancePerPoi
-            const currentScrollPosition = cameraSettingsState.scrollAccumulator.value
-
-            // Apply smooth deadzone curve to the scroll delta
-            const adjustedScrollPosition = applySmoothDeadzone(
-              zoomDelta * scrollSensitivity,
-              currentScrollPosition,
-              totalScrollRange,
-              false
-            )
-
-            // Clamp scroll position to valid range
-            const clampedScrollPosition = Math.max(0, Math.min(totalScrollRange, adjustedScrollPosition))
-            cameraSettingsState.scrollAccumulator.set(clampedScrollPosition)
-
-            const result = calculatePoiState(clampedScrollPosition, false)
-            cameraSettingsState.currentPoiIndex.set(result.currentIndex)
-            cameraSettingsState.targetPoiIndex.set(result.targetIndex)
-            cameraSettingsState.poiLerpValue.set(result.lerpValue)
-          }
-        }
-      }
-
-      // We've handled the scroll in POI mode, so return early
-      return
+  if (zoomDelta === 0 && shoulderDelta === 0 && follow.accumulatedZoomTriggerDebounceTime >= 0 && outsideMinMaxRange) {
+    follow.accumulatedZoomTriggerDebounceTime += deltaTime
+  } else if (Math.abs(zoomDelta) > 0 || Math.abs(shoulderDelta) > 0) {
+    if (follow.accumulatedZoomTriggerDebounceTime === -1) {
+      follow.lastZoomStartDistance = follow.distance
     }
-  }
-  //possibly get rid of double-click transition
-  //add gizmos to the POIs similar to the camera
-  //modify camera gizmo so it has an arrow
-
-  /*
-  export const EnvMapSourceType = {
-    Skybox: 'Skybox' as const,
-    Bake: 'Bake' as const,
-    Cubemap: 'Cubemap' as const,
-    Equirectangular: 'Equirectangular' as const,
-    Color: 'Color' as const,
-    None: 'None' as const
-  }
-  */
-
-  if (cameraSettingsState.cameraMode.value === CameraMode.FOLLOW) {
-    // Standard camera zoom behavior if not in POI mode or no valid POIs
-    follow.targetDistance = Math.max(
-      follow.targetDistance + zoomDelta * cameraSettingsState.followCameraScrollSensitivity.value,
-      0
-    )
-
-    const outsideMinMaxRange =
-      follow.targetDistance < follow.effectiveMinDistance || follow.targetDistance > follow.effectiveMaxDistance
-
-    if (
-      zoomDelta === 0 &&
-      shoulderDelta === 0 &&
-      follow.accumulatedZoomTriggerDebounceTime >= 0 &&
-      outsideMinMaxRange
-    ) {
-      follow.accumulatedZoomTriggerDebounceTime += deltaTime
-    } else if (Math.abs(zoomDelta) > 0 || Math.abs(shoulderDelta) > 0) {
-      if (follow.accumulatedZoomTriggerDebounceTime === -1) {
-        follow.lastZoomStartDistance = follow.distance
-      }
-      follow.accumulatedZoomTriggerDebounceTime = 0
-    }
-    // We've handled the scroll in DIRECT mode, so return early
-    return
+    follow.accumulatedZoomTriggerDebounceTime = 0
   }
 }
 
@@ -402,72 +167,6 @@ const execute = () => {
       setTargetCameraRotation(cameraEntity, phi, theta, time)
     }
     handleFollowCameraScroll(cameraEntity, axes, deltaSeconds)
-
-    // Handle POI camera movement if in POI mode
-    if (viewerEntity === cameraEntity) {
-      const settings = getMutableState(CameraSettingsState)
-
-      if (settings.cameraMode.value === CameraMode.POI && settings.poiEntities.length > 0) {
-        // Filter POI entities to only include those with PoiCameraSettingsComponent
-        const validPoiEntities = settings.poiEntities.filter((entityUUID) =>
-          hasComponent(UUIDComponent.getEntityByUUID(entityUUID.value), CameraPoiComponent)
-        )
-
-        if (
-          validPoiEntities.length > 0 &&
-          settings.currentPoiIndex.value >= 0 &&
-          settings.currentPoiIndex.value < validPoiEntities.length &&
-          settings.targetPoiIndex.value >= 0 &&
-          settings.targetPoiIndex.value < validPoiEntities.length
-        ) {
-          // Handle automatic lerp progression for snap mode
-          if (settings.poiScrollTransitionType.value === PoiScrollTransition.Snapping) {
-            const currentLerpValue = settings.poiLerpValue.value
-            if (currentLerpValue < 1) {
-              // Automatically progress the lerp using poiLerpSpeed
-              const lerpSpeed = settings.poiLerpSpeed.value
-              const newLerpValue = Math.min(1, currentLerpValue + lerpSpeed * deltaSeconds)
-              settings.poiLerpValue.set(newLerpValue)
-
-              // When lerp completes, update current index to match target
-              if (newLerpValue >= 1) {
-                settings.currentPoiIndex.set(settings.targetPoiIndex.value)
-              }
-            }
-          }
-
-          // Get current and target POI entity IDs
-          const currentPoiEntityId = validPoiEntities[settings.currentPoiIndex.value].value
-          const targetPoiEntityId = validPoiEntities[settings.targetPoiIndex.value].value
-
-          // Get the actual entities from the IDs
-          const currentPoiEntity = UUIDComponent.getEntityByUUID(currentPoiEntityId)
-          const targetPoiEntity = UUIDComponent.getEntityByUUID(targetPoiEntityId)
-
-          if (!currentPoiEntity || !targetPoiEntity) return
-
-          // Get settings and transforms for both POIs
-          const currentPoiTransform = getComponent(currentPoiEntity, TransformComponent)
-          const targetPoiTransform = getComponent(targetPoiEntity, TransformComponent)
-
-          if (currentPoiTransform && targetPoiTransform) {
-            // Calculate positions for both POIs
-            const currentPoiPosition = new Vector3().copy(currentPoiTransform.position)
-            const targetPoiPosition = new Vector3().copy(targetPoiTransform.position)
-
-            // Get the lerp value for smooth transitions
-            const lerpValue = settings.poiLerpValue.value
-
-            // Interpolate between current and target positions
-            targetPosition.lerpVectors(currentPoiPosition, targetPoiPosition, lerpValue)
-            targetRotation.slerpQuaternions(currentPoiTransform.rotation, targetPoiTransform.rotation, lerpValue)
-
-            // Update camera position and rotation
-            setComponent(cameraEntity, TransformComponent, { position: targetPosition, rotation: targetRotation })
-          }
-        }
-      }
-    }
   }
 }
 
