@@ -19,11 +19,12 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
+import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThumbnails'
 import { useFind } from '@ir-engine/common'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -37,13 +38,7 @@ import { FilesState, FilesViewModeState, SelectedFilesState } from '../../servic
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { FileContextMenu } from './contextmenu'
 import FileItem, { TableWrapper } from './fileitem'
-import {
-  CurrentFilesQueryProvider,
-  FILES_PAGE_LIMIT,
-  canDropOnFileBrowser,
-  useCurrentFiles,
-  useFileBrowserDrop
-} from './helpers'
+import { FILES_PAGE_LIMIT, canDropOnFileBrowser, useCurrentFiles, useFileBrowserDrop } from './helpers'
 import FilesLoaders from './loaders'
 
 export function Browser() {
@@ -65,6 +60,9 @@ export function Browser() {
 
   const [sortConfig, setSortConfig] = useState({ key: null as null | string, direction: 'asc' })
 
+  const isLoading = useHookstate(false)
+  useLoadingThumbnails(isLoading)
+
   const handleSort = (columnKey: string) => {
     setSortConfig((prevConfig) => {
       const newDirection = prevConfig.key === columnKey && prevConfig.direction === 'asc' ? 'desc' : 'asc'
@@ -73,8 +71,9 @@ export function Browser() {
   }
 
   useEffect(() => {
+    if (isLoading.value) return
     refreshDirectory()
-  }, [thumbnailJobState.jobs.length])
+  }, [isLoading.value])
 
   const staticResourceDataQuery = useFind(staticResourcePath, {
     query: {
@@ -140,34 +139,32 @@ export function Browser() {
           filesQuery?.setLimit(filesQuery.limit + FILES_PAGE_LIMIT)
         }}
       >
-        <div className="relative mt-auto flex h-full w-full flex-wrap gap-2">
-          {sortedFiles.map((file, idx) => {
-            const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
-            return (
-              <FileItem
-                file={{ ...file, ...staticResourceData.value[file?.key] }}
-                onContextMenu={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
-                    selectedFiles.set([file])
-                  }
-                  setAnchorEvent(event)
-                }}
-                key={file.key}
-                data-testid="files-panel-file-item"
-                className={`${isListView ? `${backgroundColor}` : ''}`}
-              />
-            )
-          })}
-        </div>
+        {sortedFiles.map((file, idx) => {
+          const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
+          return (
+            <FileItem
+              file={{ ...file, ...staticResourceData.value[file?.key] }}
+              onContextMenu={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
+                  selectedFiles.set([file])
+                }
+                setAnchorEvent(event)
+              }}
+              key={file.key}
+              data-testid="files-panel-file-item"
+              className={`${isListView ? `${backgroundColor}` : ''}`}
+            />
+          )
+        })}
       </InfiniteScroll>
     </>
   )
 
   return (
     <div
-      className={twMerge('h-full overflow-y-scroll bg-surface-1', isFileDropOver ? 'border-2 border-gray-300' : '')}
+      className={twMerge('h-full overflow-y-auto bg-surface-1', isFileDropOver ? 'border-2 border-gray-300' : '')}
       ref={fileDropRef}
       onContextMenu={(event) => {
         event.preventDefault()
@@ -210,9 +207,9 @@ export default function FileBrowser() {
   }, [projectName])
 
   return (
-    <CurrentFilesQueryProvider>
+    <>
       <FilesLoaders />
       <Browser />
-    </CurrentFilesQueryProvider>
+    </>
   )
 }

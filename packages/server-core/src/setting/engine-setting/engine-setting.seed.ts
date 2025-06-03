@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,13 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Knex } from 'knex'
 import { v4 as uuidv4 } from 'uuid'
 
+import { defaultMediaSettings } from '@ir-engine/common/src/constants/DefaultMediaSettings'
 import { defaultWebRTCSettings } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { identityProviderPath } from '@ir-engine/common/src/schema.type.module'
@@ -91,58 +92,71 @@ export async function seed(knex: Knex): Promise<void> {
     ],
     'coil'
   )
-  const instanceServerSeedData = await generateSeedData(
-    [
-      {
-        key: EngineSettings.InstanceServer.ClientHost,
-        value: process.env.APP_HOST || ''
-      },
-      {
-        key: EngineSettings.InstanceServer.RtcStartPort,
-        value: process.env.RTC_START_PORT || ''
-      },
-      {
-        key: EngineSettings.InstanceServer.RtcEndPort,
-        value: process.env.RTC_END_PORT || ''
-      },
-      {
-        key: EngineSettings.InstanceServer.RtcPortBlockSize,
-        value: process.env.RTC_PORT_BLOCK_SIZE || ''
-      },
-      {
-        key: EngineSettings.InstanceServer.IdentifierDigits,
-        value: '5'
-      },
-      {
-        key: EngineSettings.InstanceServer.Local,
-        value: `${process.env.LOCAL === 'true'}`
-      },
-      {
-        key: EngineSettings.InstanceServer.Domain,
-        value: process.env.INSTANCESERVER_DOMAIN || 'instanceserver.etherealengine.com'
-      },
-      {
-        key: EngineSettings.InstanceServer.ReleaseName,
-        value: process.env.RELEASE_NAME || 'local'
-      },
-      {
-        key: EngineSettings.InstanceServer.Port,
-        value: process.env.INSTANCESERVER_PORT || '3031'
-      },
-      {
-        key: EngineSettings.InstanceServer.Mode,
-        value: process.env.INSTANCESERVER_MODE || 'dev'
-      },
-      {
-        key: EngineSettings.InstanceServer.LocationName,
-        value: process.env.PRELOAD_LOCATION_NAME || ''
-      },
-      {
-        key: EngineSettings.InstanceServer.ShutdownDelayMs,
-        value: process.env.INSTANCESERVER_SHUTDOWN_DELAY_MS || '0'
-      }
-    ],
-    'instance-server'
+  const instanceServerSeedData = (
+    await generateSeedData(
+      [
+        {
+          key: EngineSettings.InstanceServer.ClientHost,
+          value: process.env.APP_HOST || ''
+        },
+        {
+          key: EngineSettings.InstanceServer.RtcStartPort,
+          value: process.env.RTC_START_PORT || ''
+        },
+        {
+          key: EngineSettings.InstanceServer.RtcEndPort,
+          value: process.env.RTC_END_PORT || ''
+        },
+        {
+          key: EngineSettings.InstanceServer.RtcPortBlockSize,
+          value: process.env.RTC_PORT_BLOCK_SIZE || ''
+        },
+        {
+          key: EngineSettings.InstanceServer.IdentifierDigits,
+          value: '5'
+        },
+        {
+          key: EngineSettings.InstanceServer.Local,
+          value: `${process.env.LOCAL === 'true'}`
+        },
+        {
+          key: EngineSettings.InstanceServer.Domain,
+          value: process.env.INSTANCESERVER_DOMAIN || 'instanceserver.etherealengine.com'
+        },
+        {
+          key: EngineSettings.InstanceServer.ReleaseName,
+          value: process.env.RELEASE_NAME || 'local'
+        },
+        {
+          key: EngineSettings.InstanceServer.Port,
+          value: process.env.INSTANCESERVER_PORT || '3031'
+        },
+        {
+          key: EngineSettings.InstanceServer.Mode,
+          value: process.env.INSTANCESERVER_MODE || 'dev'
+        },
+        {
+          key: EngineSettings.InstanceServer.LocationName,
+          value: process.env.PRELOAD_LOCATION_NAME || ''
+        },
+        {
+          key: EngineSettings.InstanceServer.ShutdownDelayMs,
+          value: process.env.INSTANCESERVER_SHUTDOWN_DELAY_MS || '0'
+        }
+      ],
+      'instance-server'
+    )
+  ).concat(
+    await generateSeedData(
+      [
+        {
+          key: EngineSettings.InstanceServer.MaxUsersPerInstance,
+          value: process.env.INSTANCESERVER_MAX_USERS_PER_INSTANCE || '5'
+        }
+      ],
+      'instance-server',
+      'public'
+    )
   )
 
   const instanceServerWebRtc: EngineSettingType[] = await Promise.all(
@@ -253,6 +267,14 @@ export async function seed(knex: Knex): Promise<void> {
       {
         key: EngineSettings.Server.LocalStorageProvider,
         value: process.env.LOCAL_STORAGE_PROVIDER || ''
+      },
+      {
+        key: EngineSettings.Server.IpGeolocation.ApiUrl,
+        value: process.env.IP_GEOLOCATION_API_URL || 'https://api.ipinfo.io/lite'
+      },
+      {
+        key: EngineSettings.Server.IpGeolocation.ApiToken,
+        value: process.env.IP_GEOLOCATION_API_TOKEN || ''
       },
       {
         key: EngineSettings.Server.PerformDryRun,
@@ -697,6 +719,82 @@ export async function seed(knex: Knex): Promise<void> {
     }
   })
 
+  // Client settings
+  // Exclude fields that should not be migrated
+  const clientSettingSeedData = {
+    logo: process.env.APP_LOGO || '',
+    title: process.env.APP_TITLE || '',
+    shortTitle: process.env.APP_TITLE || '',
+    startPath: '/',
+    releaseName: process.env.RELEASE_NAME || 'local',
+    siteDescription: process.env.SITE_DESC || 'IR Engine',
+    url:
+      process.env.APP_URL ||
+      (process.env.VITE_LOCAL_BUILD
+        ? 'http://' + process.env.APP_HOST + ':' + process.env.APP_PORT
+        : 'https://' + process.env.APP_HOST + ':' + process.env.APP_PORT),
+    appleTouchIcon: 'apple-touch-icon.png',
+    favicon32px: '/favicon-32x32.png',
+    favicon16px: '/favicon-16x16.png',
+    icon192px: '/android-chrome-192x192.png',
+    icon512px: '/android-chrome-512x512.png',
+    siteManifest: '/site.webmanifest',
+    safariPinnedTab: '/safari-pinned-tab.svg',
+    favicon: '/favicon.ico',
+    appBackground: 'static/main-background.png',
+    appTitle: 'static/ir-logo.svg',
+    appSubtitle: 'IR Engine',
+    appDescription: 'FREE, OPEN, & INTEROPERABLE IMMERSIVE WEB TECHNOLOGY',
+    gtmContainerId: process.env.GOOGLE_TAG_MANAGER_CONTAINER_ID || '',
+    gtmAuth: process.env.GOOGLE_TAG_MANAGER_AUTH || '',
+    gtmPreview: process.env.GOOGLE_TAG_MANAGER_PREVIEW || '',
+    appSocialLinks: JSON.stringify([
+      { icon: 'static/discord.svg', link: 'https://discord.gg/xrf' },
+      { icon: 'static/github.svg', link: 'https://github.com/ir-engine' }
+    ]),
+    privacyPolicy: 'https://www.ir.world/privacy-policy',
+    termsOfService: 'https://www.ir.world/terms-of-service',
+    assistanceLink: 'https://help.theinfinitereality.com/hc/en-us',
+    homepageLinkButtonEnabled: false,
+    homepageLinkButtonRedirect: '',
+    homepageLinkButtonText: '',
+    webmanifestLink: '',
+    swScriptLink: '',
+    mediaSettings: defaultMediaSettings
+  }
+
+  // Create a clean copy of the client setting seed data
+  const clientSettingData = { ...clientSettingSeedData }
+
+  // Parse JSON fields if they are strings
+  try {
+    if (typeof clientSettingData.appSocialLinks === 'string') {
+      clientSettingData.appSocialLinks = JSON.parse(clientSettingData.appSocialLinks)
+    }
+    if (typeof clientSettingData.mediaSettings === 'string') {
+      clientSettingData.mediaSettings = JSON.parse(clientSettingData.mediaSettings)
+    }
+  } catch (error) {
+    console.error('Error parsing JSON fields in client settings:', error)
+  }
+
+  // Flatten client settings
+  const flattenedClientData = flattenObjectToArray(clientSettingData)
+
+  // Create client settings entries
+  const clientSeedData = await Promise.all(
+    flattenedClientData.map(async (clientSetting) => ({
+      id: uuidv4(),
+      key: clientSetting.key,
+      value: `${clientSetting.value}`,
+      dataType: getDataType(`${clientSetting.value}`),
+      type: 'public' as EngineSettingType['type'],
+      category: 'client',
+      createdAt: await getDateTimeSql(),
+      updatedAt: await getDateTimeSql()
+    }))
+  )
+
   const seedData: EngineSettingType[] = [
     ...taskServerSeedData,
     ...chargebeeSettingSeedData,
@@ -710,7 +808,8 @@ export async function seed(knex: Knex): Promise<void> {
     ...helmSeedData,
     ...awsSeedData,
     ...emailSeedData,
-    ...authSeedData
+    ...authSeedData,
+    ...clientSeedData
   ]
 
   if (forceRefresh || testEnabled) {

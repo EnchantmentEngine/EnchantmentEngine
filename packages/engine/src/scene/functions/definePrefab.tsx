@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -29,21 +29,29 @@ import {
   defineComponent,
   deserializeComponent,
   Entity,
+  EntityID,
   EntityUUID,
   getComponent,
+  matchesEntityID,
+  matchesEntitySourceID,
+  SourceID,
   Static,
   TObjectSchema,
   TProperties,
   useComponent,
-  UUIDComponent
+  useHasComponent,
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+
 import {
   defineAction,
   defineState,
   dispatchAction,
   getMutableState,
   matches,
+  NetworkState,
+  NetworkTopics,
   NO_PROXY,
   none,
   useHookstate,
@@ -51,10 +59,10 @@ import {
   useMutableState,
   Validator
 } from '@ir-engine/hyperflux'
-import { NetworkState, NetworkTopics, WorldNetworkAction } from '@ir-engine/network'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
 import { Quaternion, Vector3 } from 'three'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 /**
  * Creates a prefab definition that can be used both statically in scenes and dynamically at runtime.
@@ -106,7 +114,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
   const $Actions = {
     spawn: defineAction({
       type: 'ir.engine.prefab_' + definition.name,
-      entityUUID: matches.string,
+      entityID: matchesEntityID,
+      entitySourceID: matchesEntitySourceID,
       /** @todo once actions use JSON Schemas, we can include that strictness here */
       data: matches.object as Validator<unknown, Static<S>>
     })
@@ -119,9 +128,9 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
     receptors: {
       onSpawn: $Actions.spawn.receive((action) => {
-        getMutableState($State)[action.entityUUID].set(
-          Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]]))
-        )
+        getMutableState($State)[
+          UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+        ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]])))
       }),
       onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
         getMutableState($State)[action.entityUUID].set(none)
@@ -173,7 +182,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
    * @param props.data - The prefab data matching the schema definition
    */
   const spawnPrefab = (props: {
-    entityUUID: EntityUUID
+    entityID: EntityID
+    entitySourceID: SourceID
     parentUUID: EntityUUID
     position: Vector3
     rotation: Quaternion
@@ -181,7 +191,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
   }) => {
     dispatchAction(
       $Actions.spawn({
-        entityUUID: props.entityUUID,
+        entityID: props.entityID,
+        entitySourceID: props.entitySourceID,
         /** @todo fix when actions use JSON Schemas */
         // @ts-ignore
         data: props.data
@@ -189,7 +200,8 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
     )
     dispatchAction(
       SpawnObjectActions.spawnObject({
-        entityUUID: props.entityUUID,
+        entityID: props.entityID,
+        entitySourceID: props.entitySourceID,
         parentUUID: props.parentUUID,
         position: props.position,
         rotation: props.rotation,
@@ -207,26 +219,34 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
     spawn: spawnPrefab,
 
-    reactor: ({ entity }) => {
-      /** Suspend the context if this component is not spawned as part of a scene */
-      useComponent(entity, SourceComponent)
+    action: $Actions.spawn,
 
-      /** If from a scene, implicitly utilizes the SceneNetworkSystem to create the entity on the network */
+    reactor: ({ entity }) => {
+      const sourceEntity = UUIDComponent.useSourceEntity(entity)
+      const isFromScene = useHasComponent(sourceEntity, GLTFComponent)
+
+      /** If from a scene, we don't need an action as SceneNetworkSystem handles this for us */
       useEffect(() => {
-        const entityUUID = getComponent(entity, UUIDComponent)
+        if (isFromScene) return
+
+        const entityUUIDPair = getComponent(entity, UUIDComponent)
 
         dispatchAction(
           $Actions.spawn({
-            entityUUID,
+            entityID: entityUUIDPair.entityID,
+            entitySourceID: entityUUIDPair.entitySourceID,
             /** @todo fix when actions use JSON Schemas */
             // @ts-ignore
             data: getComponent(entity, $Component)
           })
         )
         return () => {
+          const entityUUID = UUIDComponent.join(entityUUIDPair)
           dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))
         }
-      }, [])
+      }, [isFromScene])
+
+      return null
     }
   })
 

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -72,7 +72,7 @@ export function TableWrapper({
               className="table-cell p-2 text-xs font-normal dark:text-[#A3A3A3]"
             >
               <div className="flex items-center justify-between">
-                <span>{t(`editor:layout.filebrowser.table-list.headers.${header}`)}</span>
+                <span className="whitespace-nowrap">{t(`editor:layout.filebrowser.table-list.headers.${header}`)}</span>
                 <MdKeyboardArrowDown />
               </div>
             </th>

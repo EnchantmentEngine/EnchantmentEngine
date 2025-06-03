@@ -19,14 +19,15 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { generateMultiViewThumbnails } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { REMOVE_EDGE_SLASH_REGEX } from '@ir-engine/common/src/regex'
-import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Input, Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
 import {
@@ -35,18 +36,25 @@ import {
   FolderPlusSm,
   FolderSm,
   Grid01Sm,
+  Image01Sm,
   PlusCircleSm,
   Refresh1Sm,
-  SearchSmSm
+  SearchSmSm,
+  XCircleLg
 } from '@ir-engine/ui/src/icons'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaList } from 'react-icons/fa'
 import { twMerge } from 'tailwind-merge'
-import { handleUploadFiles, inputFileWithAddToScene } from '../../functions/assetFunctions'
+import {
+  handleConvertGifFileToVideoAndUpload,
+  handleUploadFiles,
+  inputFileWithAddToScene
+} from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState, FilesViewModeState } from '../../services/FilesState'
+import { useAssetsQuery } from '../assets/hooks'
 import { useCurrentFiles } from './helpers'
 import { handleDownloadProject } from './loaders'
 
@@ -67,7 +75,6 @@ export function BreadCrumbSlash() {
 
 export const showMultipleFileModal = (projectName: string, directoryPath: string, files: File[]) => {
   const fileNames = files.map((file) => file.name)
-
   const onSubmit = async () => {
     await handleUploadFiles(projectName, directoryPath, files)
     ModalState.closeModal()
@@ -85,6 +92,65 @@ export const showMultipleFileModal = (projectName: string, directoryPath: string
   )
 }
 
+export const GifFileConfirmationModal = ({ projectName, directoryPath, files, onClose }) => {
+  const { refetchResources } = useAssetsQuery()
+  const fileNames = files.map((file) => file.name)
+
+  const onSubmit = async () => {
+    await handleConvertGifFileToVideoAndUpload(projectName, directoryPath, files)
+    await refetchResources(true) // Refresh assets after conversion
+    onClose()
+  }
+
+  return (
+    <Modal title={'GIF Conversion Confirmation'} className="w-[50vw] max-w-2xl" onSubmit={onSubmit} onClose={onClose}>
+      <div className="flex flex-col rounded-lg bg-[#0e0f11] px-5 py-10 text-center">
+        Warning: We don't support animated GIF files, do you want to convert them to Video? <br />
+        {fileNames.length > 0 && `Files: ${fileNames.join(', ')}`}
+      </div>
+    </Modal>
+  )
+}
+
+export const showGifFileConfimation = (projectName: string, directoryPath: string, files: File[]) => {
+  ModalState.openModal(
+    <GifFileConfirmationModal
+      projectName={projectName}
+      directoryPath={directoryPath}
+      files={files}
+      onClose={ModalState.closeModal}
+    />
+  )
+}
+export const generateMultiView = (resources: any[]): void => {
+  try {
+    const projectName = getState(EditorState).projectName
+    if (!projectName) {
+      NotificationService.dispatchNotify('No project selected', { variant: 'error' })
+      return
+    }
+
+    if (!resources || resources.length === 0) {
+      NotificationService.dispatchNotify('No assets found', { variant: 'error' })
+      return
+    }
+
+    // Filter for 3D model files
+    const modelFiles = resources.filter((file: any) => file.type === 'gltf' || file.type === 'glb')
+
+    if (modelFiles.length > 0) {
+      modelFiles.forEach((modelFile: any) => {
+        generateMultiViewThumbnails(modelFile.url, projectName as string)
+      })
+    } else {
+      NotificationService.dispatchNotify('No 3D model files (GLTF or GLB) found in the current directory.', {
+        variant: 'error'
+      })
+    }
+  } catch (err) {
+    NotificationService.dispatchNotify(err.message, { variant: 'error' })
+  }
+}
 function BreadcrumbItems() {
   const filesState = useMutableState(FilesState)
   const { changeDirectoryByPath } = useCurrentFiles()
@@ -156,7 +222,7 @@ export default function FilesToolbar() {
     filesState.selectedDirectory.value.startsWith('/projects/' + filesState.projectName.value + '/public/') ||
     filesState.selectedDirectory.value.startsWith('/projects/' + filesState.projectName.value + '/assets/')
 
-  const { backDirectory, refreshDirectory } = useCurrentFiles()
+  const { backDirectory, refreshDirectory, files } = useCurrentFiles()
 
   return (
     <PanelToolbar
@@ -173,6 +239,11 @@ export default function FilesToolbar() {
           height="xs"
           startComponent={<SearchSmSm className="h-[14px] w-[14px] text-[#9CA0AA]" />}
           data-testid="files-panel-search-input"
+          endComponent={
+            <button className="h-4 w-4" onClick={() => filesState.searchText.set('')}>
+              <XCircleLg className="h-full w-full" />
+            </button>
+          }
         />
       }
       dataTestIdJson={{
@@ -222,6 +293,7 @@ export default function FilesToolbar() {
       uploadButton={
         <>
           <Button
+            variant="tertiary"
             size="l"
             disabled={!showUploadButtons}
             onClick={() =>
@@ -242,6 +314,7 @@ export default function FilesToolbar() {
           </Button>
           <Button
             size="l"
+            variant="tertiary"
             disabled={!showUploadButtons}
             className="disabled:bg-[#212226]"
             onClick={() =>
@@ -250,7 +323,7 @@ export default function FilesToolbar() {
                 directoryPath: filesState.selectedDirectory.get(NO_PROXY).slice(1),
                 preserveDirectory: true
               })
-                .then(refreshDirectory)
+                .then(() => refreshDirectory())
                 .catch((err) => {
                   NotificationService.dispatchNotify(err.message, { variant: 'error' })
                 })
@@ -259,6 +332,18 @@ export default function FilesToolbar() {
           >
             <FolderSm />
             <span className="text-nowrap">{t('editor:layout.filebrowser.uploadFolder')}</span>
+          </Button>
+
+          <Button
+            size="l"
+            variant="tertiary"
+            disabled={!showUploadButtons}
+            className="disabled:bg-[#212226]"
+            onClick={() => generateMultiView(files)}
+            data-testid="files-panel-generate-multiview-button"
+          >
+            <Image01Sm />
+            <span className="text-nowrap">Generate Multi-View</span>
           </Button>
         </>
       }
