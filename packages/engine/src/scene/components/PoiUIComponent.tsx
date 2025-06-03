@@ -27,10 +27,10 @@ import { EngineState } from '@ir-engine/ecs'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
+import { CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
-import { CameraScrollBehavior, PoiScrollTransition } from './CameraSettingsComponent'
 
 /**
  * Component for entities that serve as points of interest for the camera system.

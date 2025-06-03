@@ -26,13 +26,15 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineState } from '@ir-engine/hyperflux'
 
 import { EntityUUID } from '@ir-engine/ecs'
+
 import {
+  CameraMode,
+  CameraModeType,
   CameraScrollBehavior,
   CameraScrollBehaviorType,
   PoiScrollTransition,
   PoiScrollTransitionType
-} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-import { CameraMode, CameraModeType } from './types/CameraMode'
+} from './types/CameraMode'
 import { ProjectionType } from './types/ProjectionType'
 
 // TODO: don't mix camera settings and follow camera settings

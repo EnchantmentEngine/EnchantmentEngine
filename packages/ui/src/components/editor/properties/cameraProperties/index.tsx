@@ -26,14 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import {
-  CameraScrollBehavior,
-  CameraSettingsComponent,
-  PoiScrollTransition
-} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-
 import { Entity, iterateEntityNode } from '@ir-engine/ecs'
+import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import {
   EditorComponentType,
@@ -44,7 +38,8 @@ import {
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
-import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
+import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
+import { CameraMode, CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'

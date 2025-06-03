@@ -36,21 +36,9 @@ import {
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
-import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
+import { CameraMode, CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { PoiUIComponent } from './PoiUIComponent'
-
-export const CameraScrollBehavior = {
-  Wrap: 'Wrap' as const,
-  Clamp: 'Clamp' as const
-}
-export type CameraScrollBehaviorType = (typeof CameraScrollBehavior)[keyof typeof CameraScrollBehavior]
-
-export const PoiScrollTransition = {
-  Scrolling: 'Scrolling' as const,
-  Snapping: 'Snapping' as const
-}
-export type PoiScrollTransitionType = (typeof PoiScrollTransition)[keyof typeof PoiScrollTransition]
 
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
