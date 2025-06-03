@@ -129,6 +129,17 @@ export const handleFollowCameraScroll = (
         cameraSettingsState.scrollAccumulator.set(0)
       }
 
+      // Check if we're in snapping mode and a transition is active
+      const transitionType = cameraSettingsState.poiScrollTransitionType.value
+      const isSnappingMode = transitionType === PoiScrollTransition.Snapping
+      const isTransitionActive = isSnappingMode && cameraSettingsState.poiLerpValue.value < 1
+
+      // Lock scroll input during active snapping transitions
+      if (isTransitionActive) {
+        // We've handled the scroll in POI mode (by ignoring it), so return early
+        return
+      }
+
       // Handle manual scroll-based POI navigation
       if (Math.abs(zoomDelta) > 0.01) {
         const scrollSensitivity = cameraSettingsState.scrollSensitivity.value
@@ -294,11 +305,9 @@ export const handleFollowCameraScroll = (
       return
     }
   }
-  //lock snapping input while still transitioning
   //possibly get rid of double-click transition
   //add gizmos to the POIs similar to the camera
   //modify camera gizmo so it has an arrow
-  //change enums... -
 
   /*
   export const EnvMapSourceType = {
