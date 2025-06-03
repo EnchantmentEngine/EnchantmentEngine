@@ -75,6 +75,7 @@ function PoiUIReactor() {
   // State for reactive boolean variables
   const [showPrevious, setShowPrevious] = useState(false)
   const [showNext, setShowNext] = useState(false)
+  const [buttonsDisabled, setButtonsDisabled] = useState(false)
 
   const previousClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value
@@ -139,6 +140,15 @@ function PoiUIReactor() {
     )
   }, [cameraSettingsState.currentPoiIndex.value, cameraSettingsState.poiEntities.length])
 
+  // Check if buttons should be disabled during snapping transitions
+  useEffect(() => {
+    const transitionType = cameraSettingsState.poiScrollTransitionType.value
+    const isSnappingMode = transitionType === PoiScrollTransition.Snapping
+    const isTransitionActive = isSnappingMode && cameraSettingsState.poiLerpValue.value < 1
+
+    setButtonsDisabled(isTransitionActive)
+  }, [cameraSettingsState.poiScrollTransitionType.value, cameraSettingsState.poiLerpValue.value])
+
   // Don't show buttons if they're disabled
   if (!cameraSettingsState.enableTransitionButtons.value) {
     return null
@@ -150,20 +160,30 @@ function PoiUIReactor() {
         <div className="flex h-full w-1/2 items-center justify-start">
           {showPrevious && (
             <button
-              className="pointer-events-auto ml-4 flex h-16 w-16 items-center justify-center rounded-md bg-ui-background text-text-primary-button"
-              onClick={previousClicked}
+              className={`pointer-events-auto ml-4 flex h-16 w-16 items-center justify-center rounded-md ${
+                buttonsDisabled
+                  ? 'cursor-not-allowed bg-gray-400 text-gray-600 opacity-50'
+                  : 'bg-ui-background text-text-primary-button hover:bg-gray-200'
+              }`}
+              onClick={buttonsDisabled ? undefined : previousClicked}
+              disabled={buttonsDisabled}
             >
-              <FaArrowLeft className="text-black" />
+              <FaArrowLeft className={buttonsDisabled ? 'text-gray-600' : 'text-black'} />
             </button>
           )}
         </div>
         <div className="flex h-full w-1/2 items-center justify-end">
           {showNext && (
             <button
-              className="pointer-events-auto mr-4 flex h-16 w-16 items-center justify-center rounded-md bg-ui-background text-text-primary-button"
-              onClick={nextClicked}
+              className={`pointer-events-auto mr-4 flex h-16 w-16 items-center justify-center rounded-md ${
+                buttonsDisabled
+                  ? 'cursor-not-allowed bg-gray-400 text-gray-600 opacity-50'
+                  : 'bg-ui-background text-text-primary-button hover:bg-gray-200'
+              }`}
+              onClick={buttonsDisabled ? undefined : nextClicked}
+              disabled={buttonsDisabled}
             >
-              <FaArrowRight className="text-black" />
+              <FaArrowRight className={buttonsDisabled ? 'text-gray-600' : 'text-black'} />
             </button>
           )}
         </div>
