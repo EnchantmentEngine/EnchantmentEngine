@@ -23,9 +23,15 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Scene, Vector3 } from 'three'
+import { Object3D, Vector3 } from 'three'
 
-import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  getComponent,
+  hasComponent,
+  LayerComponents,
+  Layers,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import CubemapCapturer from '@ir-engine/engine/src/scene/classes/CubemapCapturer'
@@ -38,8 +44,9 @@ import { ScenePreviewCameraComponent } from '@ir-engine/engine/src/scene/compone
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
-import { getNestedVisibleChildren, getSceneParameters } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { EditorState } from '../services/EditorServices'
 import { uploadProjectFiles } from './assetFunctions'
@@ -135,18 +142,24 @@ export const generateEnvmapBake = (
     : getScenePositionForBake()
 
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-  const renderer = getComponent(viewerEntity, RendererComponent).renderer!
-
-  const rootEntity = getState(EditorState).rootEntity
-  const entitiesToRender = getNestedVisibleChildren(rootEntity)
-  const sceneData = getSceneParameters(entitiesToRender, viewerEntity)
-  const scene = new Scene()
-  scene.children = sceneData.children
-  scene.background = sceneData.background
-  scene.fog = sceneData.fog
-  scene.environment = sceneData.environment
-
+  const rendererComponent = getComponent(viewerEntity, RendererComponent)
+  const renderer = rendererComponent.renderer!
+  const scene = rendererComponent.scene!
   const cubemapCapturer = new CubemapCapturer(renderer, scene, resolution)
+
+  // Match the visibility of the simulation layer to the authoring layer, since the cubemap capturer uses the simulation layer
+  const visibilityChanges = new Map<Object3D, boolean>()
+  const simulationQuery = defineQuery([ObjectComponent, LayerComponents[Layers.Simulation]])
+  for (const entity of simulationQuery()) {
+    const obj = getComponent(entity, ObjectComponent)
+    const originalVisible = obj.visible
+    const authoringEntity = LayerComponents[Layers.Simulation].refs[entity]
+    const shouldBeVisible = authoringEntity && hasComponent(authoringEntity, VisibleComponent)
+    if (obj.visible !== shouldBeVisible) {
+      visibilityChanges.set(obj, originalVisible)
+      obj.visible = shouldBeVisible
+    }
+  }
   const renderTarget = cubemapCapturer.update(cubemapPosition)
 
   const originalEnvironment = scene.environment
@@ -160,6 +173,10 @@ export const generateEnvmapBake = (
   ) as ImageData
 
   scene.environment = originalEnvironment
+
+  for (const [obj, originalVisibility] of visibilityChanges) {
+    obj.visible = originalVisibility
+  }
 
   return envmapImageData
 }
