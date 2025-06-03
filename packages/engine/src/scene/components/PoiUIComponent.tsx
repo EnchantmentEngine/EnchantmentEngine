@@ -30,7 +30,7 @@ import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSetting
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
-import { CameraScrollBehavior, PoiScrollTransitionType } from './CameraSettingsComponent'
+import { CameraScrollBehavior, PoiScrollTransition } from './CameraSettingsComponent'
 
 /**
  * Component for entities that serve as points of interest for the camera system.
@@ -91,7 +91,7 @@ function PoiUIReactor() {
       newTargetIndex = Math.max(0, newTargetIndex)
     }
 
-    if (transitionType === PoiScrollTransitionType.Snapping) {
+    if (transitionType === PoiScrollTransition.Snapping) {
       // Snap mode: set target and reset lerp
       cameraSettingsState.targetPoiIndex.set(newTargetIndex)
       cameraSettingsState.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point
@@ -117,7 +117,7 @@ function PoiUIReactor() {
       newTargetIndex = Math.min(poiCount - 1, newTargetIndex)
     }
 
-    if (transitionType === PoiScrollTransitionType.Snapping) {
+    if (transitionType === PoiScrollTransition.Snapping) {
       // Snap mode: set target and reset lerp
       cameraSettingsState.targetPoiIndex.set(newTargetIndex)
       cameraSettingsState.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point

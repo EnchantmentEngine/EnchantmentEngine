@@ -28,3 +28,5 @@ export const CameraMode = {
   FOLLOW: 'FOLLOW' as const,
   POI: 'POI' as const
 }
+
+export type CameraModeType = (typeof CameraMode)[keyof typeof CameraMode]

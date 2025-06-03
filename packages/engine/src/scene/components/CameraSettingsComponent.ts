@@ -40,15 +40,17 @@ import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { PoiUIComponent } from './PoiUIComponent'
 
-export enum CameraScrollBehavior {
-  Wrap = 'Wrap',
-  Clamp = 'Clamp'
+export const CameraScrollBehavior = {
+  Wrap: 'Wrap' as const,
+  Clamp: 'Clamp' as const
 }
+export type CameraScrollBehaviorType = (typeof CameraScrollBehavior)[keyof typeof CameraScrollBehavior]
 
-export enum PoiScrollTransitionType {
-  Scrolling = 'Scrolling',
-  Snapping = 'Snapping'
+export const PoiScrollTransition = {
+  Scrolling: 'Scrolling' as const,
+  Snapping: 'Snapping' as const
 }
+export type PoiScrollTransitionType = (typeof PoiScrollTransition)[keyof typeof PoiScrollTransition]
 
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
@@ -108,7 +110,7 @@ export const CameraSettingsComponent = defineComponent({
     scrollSensitivity: S.Number({ default: 0.1 }),
     scrollDistancePerPoi: S.Number({ default: 3.0 }),
     scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp }),
-    poiScrollTransitionType: S.Enum(PoiScrollTransitionType, { default: PoiScrollTransitionType.Scrolling }),
+    poiScrollTransitionType: S.Enum(PoiScrollTransition, { default: PoiScrollTransition.Scrolling }),
     enableTransitionButtons: S.Bool({ default: false })
   }),
 
@@ -138,7 +140,7 @@ export const CameraSettingsComponent = defineComponent({
     }, [component.cameraMode])
 
     useEffect(() => {
-      if (component.poiScrollTransitionType.value === PoiScrollTransitionType.Scrolling) {
+      if (component.poiScrollTransitionType.value === PoiScrollTransition.Scrolling) {
         component.enableTransitionButtons.set(false)
       }
     }, [component.poiScrollTransitionType])

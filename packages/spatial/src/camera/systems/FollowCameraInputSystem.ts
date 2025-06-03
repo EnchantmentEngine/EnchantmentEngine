@@ -39,7 +39,7 @@ import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import {
   CameraScrollBehavior,
-  PoiScrollTransitionType
+  PoiScrollTransition
 } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
@@ -140,7 +140,7 @@ export const handleFollowCameraScroll = (
         const scrollBehavior = cameraSettingsState.scrollBehavior.value
         const transitionType = cameraSettingsState.poiScrollTransitionType.value
 
-        if (transitionType === PoiScrollTransitionType.Snapping) {
+        if (transitionType === PoiScrollTransition.Snapping) {
           // Snap navigation: single scroll increment changes target POI
           const currentTargetIndex = cameraSettingsState.targetPoiIndex.value
           let newTargetIndex = currentTargetIndex
@@ -412,7 +412,7 @@ const execute = () => {
           settings.targetPoiIndex.value < validPoiEntities.length
         ) {
           // Handle automatic lerp progression for snap mode
-          if (settings.poiScrollTransitionType.value === PoiScrollTransitionType.Snapping) {
+          if (settings.poiScrollTransitionType.value === PoiScrollTransition.Snapping) {
             const currentLerpValue = settings.poiLerpValue.value
             if (currentLerpValue < 1) {
               // Automatically progress the lerp using poiLerpSpeed

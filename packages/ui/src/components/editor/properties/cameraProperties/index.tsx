@@ -30,7 +30,7 @@ import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs
 import {
   CameraScrollBehavior,
   CameraSettingsComponent,
-  PoiScrollTransitionType
+  PoiScrollTransition
 } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 
 import { Entity, iterateEntityNode } from '@ir-engine/ecs'
@@ -578,13 +578,13 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={cameraSettings.poiScrollTransitionType.value}
               onChange={commitProperty(CameraSettingsComponent, 'poiScrollTransitionType')}
               options={[
-                { label: 'Scrolling', value: PoiScrollTransitionType.Scrolling },
-                { label: 'Snapping', value: PoiScrollTransitionType.Snapping }
+                { label: 'Scrolling', value: PoiScrollTransition.Scrolling },
+                { label: 'Snapping', value: PoiScrollTransition.Snapping }
               ]}
             />
           </InputGroup>
 
-          {cameraSettings.poiScrollTransitionType.value === PoiScrollTransitionType.Snapping && (
+          {cameraSettings.poiScrollTransitionType.value === PoiScrollTransition.Snapping && (
             <InputGroup
               name="enableTransitionButtons"
               label={t('editor:properties.cameraSettings.lbl-enableTransitionButtons', 'Enable Transition Buttons')}

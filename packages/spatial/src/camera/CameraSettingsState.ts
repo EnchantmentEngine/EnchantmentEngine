@@ -28,9 +28,11 @@ import { defineState } from '@ir-engine/hyperflux'
 import { EntityUUID } from '@ir-engine/ecs'
 import {
   CameraScrollBehavior,
+  CameraScrollBehaviorType,
+  PoiScrollTransition,
   PoiScrollTransitionType
 } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-import { CameraMode } from './types/CameraMode'
+import { CameraMode, CameraModeType } from './types/CameraMode'
 import { ProjectionType } from './types/ProjectionType'
 
 // TODO: don't mix camera settings and follow camera settings
@@ -44,7 +46,7 @@ export const CameraSettingsState = defineState({
     startCameraDistance: 3,
     minPhi: -70,
     maxPhi: 85,
-    cameraMode: CameraMode.FOLLOW,
+    cameraMode: CameraMode.FOLLOW as CameraModeType,
     poiEntities: [] as EntityUUID[],
     currentPoiIndex: -1,
     targetPoiIndex: -1,
@@ -55,8 +57,8 @@ export const CameraSettingsState = defineState({
     scrollDeadzone: 0.3,
     scrollSensitivity: 2.0,
     scrollDistancePerPoi: 3.0,
-    scrollBehavior: CameraScrollBehavior.Clamp,
-    poiScrollTransitionType: PoiScrollTransitionType.Scrolling,
+    scrollBehavior: CameraScrollBehavior.Clamp as CameraScrollBehaviorType,
+    poiScrollTransitionType: PoiScrollTransition.Scrolling as PoiScrollTransitionType,
     enableTransitionButtons: false,
 
     isAvatarVisible: true,
