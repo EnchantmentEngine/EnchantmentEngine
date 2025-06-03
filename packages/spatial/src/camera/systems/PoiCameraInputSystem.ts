@@ -30,10 +30,6 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
-import {
-  CameraScrollBehavior,
-  PoiScrollTransition
-} from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
@@ -42,6 +38,7 @@ import { Quaternion, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState.ts'
 import { CameraSettingsState } from '../CameraSettingsState'
 import { PoiCameraComponent } from '../components/PoiCameraComponent'
+import { CameraScrollBehavior, PoiScrollTransition } from '../types/CameraMode.ts'
 
 const poiCameraQuery = defineQuery([RendererComponent, PoiCameraComponent])
 
