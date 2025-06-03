@@ -55,7 +55,6 @@ import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/Col
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayerMasks, ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import { Raycaster, Vector3 } from 'three'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
 import { iconGizmoArrow, iconGizmoYHelper, setupGizmo } from '../constants/GizmoPresets'
@@ -136,7 +135,7 @@ const ActiveHelperReactor = () => {
       }
 
       if (getComponent(entity, ActiveHelperComponent).volumeEnabled) {
-        setComponent(entity, BoundingBoxComponent)
+        setComponent(entity, ActiveHelperComponent, { volumeControlled: true })
       }
       return iconGizmo
     },

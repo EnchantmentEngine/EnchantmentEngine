@@ -68,6 +68,7 @@ import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/compon
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import { LoaderUtils } from 'three'
 import { loadResource } from '../assets/functions/resourceLoaderFunctions'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
@@ -277,6 +278,7 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     if (!sceneLoaded) return
     setComponent(entity, ActiveHelperComponent, { volumeEnabled: true })
+    setComponent(entity, BoundingBoxComponent)
   }, [sceneLoaded])
 
   const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as ComponentDependencies | undefined
