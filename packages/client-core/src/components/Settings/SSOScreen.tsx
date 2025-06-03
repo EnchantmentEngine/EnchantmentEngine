@@ -72,8 +72,12 @@ const SSOScreen: React.FC<SSOScreenProps> = () => {
   const { data: authSetting } = useEngineSetting<AuthenticationConfig>('authentication')
 
   useEffect(() => {
+    console.log({ authSetting })
     if (authSetting) {
       const temp = { ...initialAuthState }
+
+      // authStrategies is typed as string[], yet when printed the result is an array of objects.
+      const strategies = authSetting.authStrategies as unknown as { [key: string]: boolean }[]
       authSetting?.authStrategies?.forEach((el) => {
         Object.entries(el).forEach(([strategyName, strategy]) => {
           temp[strategyName] = strategy

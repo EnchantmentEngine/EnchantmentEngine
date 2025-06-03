@@ -23,13 +23,16 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
+import { useHookstate } from '@hookstate/core'
+import React, { useState } from 'react'
 import { Section } from './Section'
 import ToggleItem from './ToggleItem'
 
 export default function SetupScreen() {
-  const [tosAgreed, setTosAgreed] = React.useState(false)
-  const [ageAgreed, setAgeAgreed] = React.useState(false)
+  const [tosAgreed, setTosAgreed] = useState(false)
+  const [ageAgreed, setAgeAgreed] = useState(false)
+
+  const magicLinkSent = useHookstate(false)
 
   return (
     <div className="flex h-full flex-col gap-4">
