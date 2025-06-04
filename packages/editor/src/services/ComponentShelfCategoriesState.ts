@@ -44,6 +44,8 @@ import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComp
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { ParticleSystemComponent } from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
+import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent'
 import { PortalComponent } from '@ir-engine/engine/src/scene/components/PortalComponent'
 import { PrimitiveGeometryComponent } from '@ir-engine/engine/src/scene/components/PrimitiveGeometryComponent'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
@@ -73,8 +75,6 @@ import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/Col
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { FogSettingsComponent } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
-import { PoiComponent } from 'packages/engine/src/scene/components/PoiComponent.ts'
-import { PoiHotspotComponent } from 'packages/engine/src/scene/components/PoiHotspotComponent.ts'
 import { useEffect } from 'react'
 
 export const ComponentShelfCategoriesState = defineState({

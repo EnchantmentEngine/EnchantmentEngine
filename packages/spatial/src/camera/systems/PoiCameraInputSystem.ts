@@ -32,10 +32,10 @@ import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { Quaternion, Vector3 } from 'three'
-import { ReferenceSpaceState } from '../../ReferenceSpaceState.ts'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { CameraSettingsState } from '../CameraSettingsState'
 import { PoiCameraComponent } from '../components/PoiCameraComponent'
-import { CameraScrollBehavior, PoiScrollTransition } from '../types/CameraMode.ts'
+import { CameraScrollBehavior, PoiScrollTransition } from '../types/CameraMode'
 
 const targetPosition = new Vector3()
 const targetRotation = new Quaternion()

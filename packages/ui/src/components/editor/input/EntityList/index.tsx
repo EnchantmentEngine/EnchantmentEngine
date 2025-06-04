@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { EntityUUID } from '@ir-engine/ecs'
-import { useEntityOptions } from '@ir-engine/engine/src/authoring/functions/useNodeOptions.ts'
+import { useEntityOptions } from '@ir-engine/engine/src/authoring/functions/useNodeOptions'
 import * as bitECS from 'bitecs'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
