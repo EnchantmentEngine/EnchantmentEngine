@@ -24,15 +24,51 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useHookstate } from '@hookstate/core'
-import React, { useState } from 'react'
+import { validateEmail } from '@ir-engine/common/src/config'
+import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
+import { PlusCircleMd } from '@ir-engine/ui/src/icons'
+import { Divider } from '@ir-engine/ui/viewer'
+import React, { useEffect, useState } from 'react'
+import { FaLink } from 'react-icons/fa'
+import { NotificationService } from '../../common/services/NotificationService'
+import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'
+import { useMagicLink } from '../../hooks/useMagicLink'
+import { AuthService } from '../../user/services/AuthService'
+import FieldItem from './FieldItem'
+import { MenuItem } from './MenuItem'
 import { Section } from './Section'
+import { Socials } from './SSOScreen'
 import ToggleItem from './ToggleItem'
 
-export default function SetupScreen() {
+export default function SignupScreen() {
   const [tosAgreed, setTosAgreed] = useState(false)
   const [ageAgreed, setAgeAgreed] = useState(false)
+  const username = useHookstate('Test')
+  const email = useHookstate('test@gmail.com')
+  const isValid = useHookstate(false)
 
-  const magicLinkSent = useHookstate(false)
+  const { pending, handleMagicLink, sent } = useMagicLink()
+
+  const onMagicLinkClick = async () => {
+    sent.set(true)
+    await handleMagicLink(email.value, true)
+    NotificationService.dispatchNotify('Check your email for a magic link', { variant: 'success' })
+  }
+
+  useEffect(() => {
+    isValid.set(validateEmail(email.value))
+  }, [email.value])
+
+  const agreedToAll = tosAgreed && ageAgreed
+  const enableCTA = agreedToAll && isValid.value
+  const oauthConnectedState = useOAuthState()
+  const authSettings = useAuthSettings()
+
+  const handleProviderClick = (client: string) => {
+    AuthService.loginUserByOAuth(client, location, true, location.href)
+  }
+
+  const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -48,6 +84,35 @@ export default function SetupScreen() {
           onClick={() => setAgeAgreed(!ageAgreed)}
           label="I am 18 years of age or older"
         />
+      </Section>
+      <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>
+        <FieldItem label="Username" onChange={username.set} value={username.value} />
+        <FieldItem label="Email" onChange={email.set} value={email.value} />
+      </Section>
+
+      <GlassButton
+        disabled={!agreedToAll || pending.value || sent.value || !isValid.value}
+        onClick={onMagicLinkClick}
+        className={`text-md mx-auto flex w-1/2 gap-[1ch] ${enableCTA && !sent.value ? '' : 'opacity-50'}`}
+      >
+        {sent.value ? 'Sent!' : 'Send magic link'}
+        <FaLink />
+      </GlassButton>
+
+      <div className={`mt-4 ${agreedToAll ? '' : 'opacity-50'}`}>Or Connect to:</div>
+      <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>
+        {disconnectedProviders.map((provider, index) => (
+          <React.Fragment key={provider.client}>
+            <MenuItem
+              label={provider.label}
+              onClick={() => handleProviderClick(provider.client)}
+              leftIcon={provider.icon}
+              rightIcon={<PlusCircleMd />}
+              hasChevron
+            />
+            {index < disconnectedProviders.length - 1 && <Divider />}
+          </React.Fragment>
+        ))}
       </Section>
     </div>
   )

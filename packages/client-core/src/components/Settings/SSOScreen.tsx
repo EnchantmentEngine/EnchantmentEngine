@@ -23,30 +23,18 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useHookstate } from '@hookstate/core'
-import { useFind } from '@ir-engine/common'
-import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
-import { identityProviderPath } from '@ir-engine/common/src/schema.type.module'
-import { AuthenticationConfig } from '@ir-engine/server-core/src/appconfig'
 import Divider from '@ir-engine/ui/src/components/viewer/Divider'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { FaApple, FaGithub, FaGoogle, FaMinusCircle } from 'react-icons/fa'
-import { initialAuthState, initialOAuthConnectedState } from '../../common/initialAuthState'
+import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'
 import { AuthService } from '../../user/services/AuthService'
 import { MenuItem } from './MenuItem'
 import { Section } from './Section'
 
 interface SSOScreenProps {}
 
-interface SSOProvider {
-  id: string
-  name: string
-  icon: React.ReactNode
-  connected: boolean
-}
-
-const Socials = [
+export const Socials = [
   {
     client: 'google',
     label: 'Google',
@@ -65,36 +53,8 @@ const Socials = [
 ]
 
 const SSOScreen: React.FC<SSOScreenProps> = () => {
-  const identityProvidersQuery = useFind(identityProviderPath)
-  const oauthConnectedState = useHookstate(Object.assign({}, initialOAuthConnectedState))
-  const authState = useHookstate(initialAuthState)
-
-  const { data: authSetting } = useEngineSetting<AuthenticationConfig>('authentication')
-
-  useEffect(() => {
-    console.log({ authSetting })
-    if (authSetting) {
-      const temp = { ...initialAuthState }
-
-      // authStrategies is typed as string[], yet when printed the result is an array of objects.
-      const strategies = authSetting.authStrategies as unknown as { [key: string]: boolean }[]
-      authSetting?.authStrategies?.forEach((el) => {
-        Object.entries(el).forEach(([strategyName, strategy]) => {
-          temp[strategyName] = strategy
-        })
-      })
-      authState.set(temp)
-    }
-  }, [authSetting])
-
-  useEffect(() => {
-    const { data } = identityProvidersQuery
-    if (!data) return
-
-    for (const ip of data) {
-      oauthConnectedState.merge({ [ip.type]: true })
-    }
-  }, [identityProvidersQuery.data])
+  const oauthConnectedState = useOAuthState()
+  const authSettings = useAuthSettings()
 
   const handleProviderClick = (client: string) => {
     AuthService.loginUserByOAuth(client, location, true, location.href)
@@ -104,8 +64,8 @@ const SSOScreen: React.FC<SSOScreenProps> = () => {
     AuthService.removeUserOAuth(client)
   }
 
-  const connectedProviders = Socials.filter((p) => oauthConnectedState[p.client].value && authState.value[p.client])
-  const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authState.value[p.client])
+  const connectedProviders = Socials.filter((p) => oauthConnectedState[p.client].value && authSettings[p.client])
+  const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
 
   return (
     <div className="h-full space-y-4">
