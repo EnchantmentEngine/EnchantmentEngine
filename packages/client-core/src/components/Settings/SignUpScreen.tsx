@@ -60,12 +60,11 @@ export default function SignupScreen() {
   }, [email.value])
 
   const agreedToAll = tosAgreed && ageAgreed
-  const enableCTA = agreedToAll && isValid.value
   const oauthConnectedState = useOAuthState()
   const authSettings = useAuthSettings()
 
   const handleProviderClick = (client: string) => {
-    AuthService.loginUserByOAuth(client, location, true, location.href)
+    AuthService.loginUserByOAuth(client, location, true, location.href, username.value)
   }
 
   const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])

@@ -28,7 +28,7 @@ import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstan
 import multiLogger from '@ir-engine/common/src/logger'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
 import { UserName } from '@ir-engine/common/src/schema.type.module'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { useMutableState } from '@ir-engine/hyperflux'
 import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import React, { useEffect, useMemo } from 'react'
 import { AuthState } from '../../user/services/AuthService'
@@ -43,7 +43,7 @@ interface UsernamePasswordScreenProps {
 const logger = multiLogger.child({ component: 'engine:ecs:DisplayName', modifier: clientContextParams })
 
 const DisplayNameScreen: React.FC<UsernamePasswordScreenProps> = () => {
-  const { name, id } = useHookstate(getMutableState(AuthState).user)
+  const { name, id } = useMutableState(AuthState).user
   const displayName = useHookstate(name.value as string)
   const saved = useHookstate(false)
 
