@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -23,30 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import React from 'react'
+
+export interface DividerProps {
+  className?: string
+  width?: string
+}
 
 /**
- * Component for POI (Point of Interest) camera behavior.
- * This component manages camera state specific to POI mode navigation.
+ * Divider component for separating items within sections
+ * Uses a centered, rounded horizontal line with customizable width and opacity
  */
-export const PoiCameraComponent = defineComponent({
-  name: 'PoiCameraComponent',
-  jsonID: 'IR_poi_camera',
+const Divider: React.FC<DividerProps> = ({ className = '' }) => (
+  <div className={`mx-auto h-px rounded-full ${className} w-[80%] bg-white/10 ${className}`} />
+)
 
-  schema: S.Object({
-    // Current POI navigation state
-    currentPoiIndex: S.Number({ default: -1 }),
-    targetPoiIndex: S.Number({ default: -1 }),
-    poiLerpValue: S.Number({ default: 0 }),
-
-    // Scroll accumulation for manual control
-    scrollAccumulator: S.Number({ default: 0 }),
-
-    // Transition state for snapping mode
-    isTransitioning: S.Bool({ default: false }),
-
-    // runtime props
-    xruiEntity: S.Entity({ serialized: false })
-  })
-})
+export default Divider

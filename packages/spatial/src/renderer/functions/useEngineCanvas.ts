@@ -36,16 +36,11 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     const parent = ref.current as HTMLElement
     if (!parent) return
     const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
-    const poiUI = document.getElementById('poi-ui-container') as HTMLElement
 
     const originalParent = canvas.parentElement!
     canvas.hidden = false
 
     parent.appendChild(canvas)
-    if (poiUI) {
-      poiUI.parentElement?.removeChild(poiUI)
-      parent.appendChild(poiUI)
-    }
 
     const observer = new ResizeObserver(() => {
       getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).needsResize = true
@@ -59,10 +54,6 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
       if (!parent.contains(canvas)) return
       parent.removeChild(canvas)
       originalParent.appendChild(canvas)
-      if (poiUI) {
-        poiUI.parentElement?.removeChild(poiUI)
-        originalParent.appendChild(poiUI)
-      }
       canvas.hidden = true
     }
   }, [ref?.current])
@@ -123,11 +114,6 @@ export const useRemoveEngineCanvas = () => {
 
     return () => {
       parent?.appendChild(canvas)
-      const poiUI = document.getElementById('poi-ui-container') as HTMLElement
-      if (poiUI) {
-        poiUI.parentElement?.removeChild(poiUI)
-        parent?.appendChild(poiUI)
-      }
     }
   }, [])
 

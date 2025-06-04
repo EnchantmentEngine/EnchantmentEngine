@@ -23,61 +23,62 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, useQuery } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { Engine, Entity, EntityTreeComponent } from '@ir-engine/ecs'
+import {
+  getMutableComponent,
+  getOptionalComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { createXRUI, XRUI } from '@ir-engine/engine/src/xrui/createXRUI'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
 import { CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
+import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import React, { useEffect, useState } from 'react'
-import { createRoot } from 'react-dom/client'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 
-/**
- * Component for entities that serve as points of interest for the camera system.
- * This component stores settings related to how the camera should behave when focusing on this POI.
- */
-export const PoiUIComponent = defineComponent({
-  name: 'PoiUIComponent',
-  jsonID: 'IR_poi_ui',
+export function setupPoiUi(cameraEntity: Entity) {
+  const poiCameraComponent = getMutableComponent(cameraEntity, PoiCameraComponent)
+  poiCameraComponent.xruiEntity.set(createPoiUI(cameraEntity).entity)
+  setComponent(poiCameraComponent.xruiEntity.value, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
 
-  reactor: () => {
-    const engineState = useMutableState(EngineState)
+  const { viewerEntity } = getState(ReferenceSpaceState)
+  setComponent(poiCameraComponent.xruiEntity.value, ComputedTransformComponent, {
+    referenceEntities: [viewerEntity],
+    computeFunction: () => {
+      const camera = getOptionalComponent(viewerEntity, CameraComponent)
+      if (!camera) return
+      const distance = camera.near * 1.1 // 10% in front of camera
+      ObjectFitFunctions.attachObjectInFrontOfCamera(poiCameraComponent.xruiEntity.value, 0.2, distance)
+    }
+  })
+}
 
-    useEffect(() => {
-      if (engineState.isEditing.value) return
+export const createPoiUI = (cameraEntity: Entity, aspectRatio: number = 1) => {
+  const ui = createPoiUiView(cameraEntity)
+  setComponent(ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(ui.entity, NameComponent, 'poi-ui-' + cameraEntity)
+  return ui
+}
 
-      const canvas = document.getElementById('engine-renderer-canvas') as HTMLMediaElement
-      const uiContainer = document.createElement('div')
-      uiContainer.id = 'poi-ui-container'
-      uiContainer.style.width = '100%'
-      uiContainer.style.height = '100%'
-      uiContainer.style.position = 'absolute'
-      uiContainer.style.pointerEvents = 'none'
+export function createPoiUiView(cameraEntity: Entity): XRUI<null> {
+  const PoiUi = () => <PoiUiView cameraEntity={cameraEntity} />
+  const xrUI = createXRUI(PoiUi, null, { interactable: true })
+  return xrUI
+}
 
-      canvas.parentElement?.appendChild(uiContainer)
-      const reactRoot = createRoot(uiContainer)
-      reactRoot.render(<PoiUIReactor />)
+type PoiUiProps = {
+  cameraEntity: Entity
+}
 
-      return () => {
-        reactRoot.unmount()
-        canvas.parentElement?.removeChild(uiContainer)
-        uiContainer.remove()
-      }
-    }, [engineState.isEditing.value])
-
-    return null
-  }
-})
-
-function PoiUIReactor() {
-  const poiCameraQuery = useQuery([RendererComponent, PoiCameraComponent])
-  if (poiCameraQuery.length < 1) {
-    return null
-  }
-  const cameraEntity = poiCameraQuery[0]
-  const poiCamera = useComponent(cameraEntity, PoiCameraComponent)
+const PoiUiView = (props: PoiUiProps) => {
+  const poiCamera = useComponent(props.cameraEntity, PoiCameraComponent)
   const cameraSettingsState = useMutableState(CameraSettingsState)
 
   // State for reactive boolean variables
@@ -168,6 +169,7 @@ function PoiUIReactor() {
         <div className="flex h-full w-1/2 items-center justify-start">
           {showPrevious && (
             <button
+              xr-layer="true"
               className={`pointer-events-auto ml-4 flex h-16 w-16 items-center justify-center rounded-md ${
                 buttonsDisabled
                   ? 'cursor-not-allowed bg-gray-400 text-gray-600 opacity-50'
@@ -183,6 +185,7 @@ function PoiUIReactor() {
         <div className="flex h-full w-1/2 items-center justify-end">
           {showNext && (
             <button
+              xr-layer="true"
               className={`pointer-events-auto mr-4 flex h-16 w-16 items-center justify-center rounded-md ${
                 buttonsDisabled
                   ? 'cursor-not-allowed bg-gray-400 text-gray-600 opacity-50'

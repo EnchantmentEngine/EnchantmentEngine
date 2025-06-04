@@ -71,6 +71,7 @@ import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
 import { LocationState } from '../social/services/LocationService'
+import { setupPoiUi } from '../systems/ui/PoiUI'
 import { AuthState } from '../user/services/AuthService'
 
 export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
@@ -202,6 +203,7 @@ const reactor = () => {
         removeComponent(cameraEntity, PoiCameraComponent)
       } else if (cameraMode === CameraMode.POI) {
         setComponent(cameraEntity, PoiCameraComponent)
+        setupPoiUi(cameraEntity)
         removeComponent(cameraEntity, FollowCameraComponent)
       }
     }
