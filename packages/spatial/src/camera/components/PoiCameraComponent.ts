@@ -32,7 +32,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
  */
 export const PoiCameraComponent = defineComponent({
   name: 'PoiCameraComponent',
-  jsonID: 'EE_poi_camera',
+  jsonID: 'IR_poi_camera',
 
   schema: S.Object({
     // Current POI navigation state
