@@ -125,7 +125,7 @@ export default function SelectionBox({
         ) {
           setComponent(simulationEntity, BoundingBoxComponent)
           updateBoundingBox(simulationEntity)
-          const boundingBox = getComponent(simulationEntity, BoundingBoxComponent).box
+          const boundingBox = getComponent(simulationEntity, BoundingBoxComponent).worldBox
           const status = frustum.intersectsBox(boundingBox)
           if (status) {
             const uuid = UUIDComponent.get(entity)

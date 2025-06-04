@@ -56,6 +56,7 @@ export const BoundingBoxComponent = defineComponent({
 
   schema: S.Object({
     box: T.Box3(),
+    worldBox: T.Box3(),
     helper: S.Entity()
   }),
 
@@ -119,13 +120,13 @@ export const updateBoundingBox = (entity: Entity) => {
     return
   }
 
-  // Ensure all children transforms are computed before calculating bounding box
   TransformComponent.computeTransformMatrixWithChildren(entity)
 
   const box = boxComponent.box
+  const worldBox = boxComponent.worldBox
   box.makeEmpty()
+  worldBox.makeEmpty()
 
-  // Get the entity's transform matrix to compute relative transforms
   const entityTransform = getOptionalComponent(entity, TransformComponent)
   const entityMatrixInverse = entityTransform
     ? new Matrix4().copy(entityTransform.matrixWorld).invert()
@@ -135,6 +136,7 @@ export const updateBoundingBox = (entity: Entity) => {
     const obj = getOptionalComponent(child, MeshComponent)
     if (obj) {
       expandBoxByObject(obj, box, entityMatrixInverse)
+      expandBoxByObject(obj, worldBox)
     }
   }
 
@@ -147,9 +149,7 @@ export const updateBoundingBox = (entity: Entity) => {
 
   const helperObject = getComponent(helperEntity, ObjectComponent) as any as Box3Helper
 
-  // Update the helper's box to match the computed bounding box
   helperObject.box.copy(box)
-  helperObject.position.set(0, 0, 0)
   helperObject.updateMatrixWorld(true)
 }
 
@@ -169,10 +169,11 @@ const expandBoxByObject = (object: Mesh<BufferGeometry>, box: Box3, entityMatrix
   _box.copy(geometry.boundingBox!)
 
   if (entityMatrixInverse) {
-    // Compute the transform matrix from object to entity local space
+    // Transform to local space
     _relativeMatrix.multiplyMatrices(entityMatrixInverse, object.matrixWorld)
     _box.applyMatrix4(_relativeMatrix)
   } else {
+    // Keep in world space
     _box.applyMatrix4(object.matrixWorld)
   }
 

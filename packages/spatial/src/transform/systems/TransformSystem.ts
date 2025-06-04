@@ -185,7 +185,8 @@ const execute = () => {
   _frustum.setFromProjectionMatrix(_projScreenMatrix)
 
   for (const entity of frustumCulledQuery()) {
-    const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)?.box
+    const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)?.worldBox
+
     const shouldNotCull = boundingBox
       ? _frustum.intersectsBox(boundingBox)
       : _frustum.containsPoint(TransformComponent.getWorldPosition(entity, _worldPos))
