@@ -23,17 +23,25 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Mesh, MeshPhysicalMaterial, SphereGeometry } from 'three'
+import { Box3, Box3Helper, Mesh, MeshPhysicalMaterial, SphereGeometry } from 'three'
 
-import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { createEntity, Entity, EntityTreeComponent, removeEntity, setComponent } from '@ir-engine/ecs'
+import {
+  defineComponent,
+  getComponent,
+  useComponent,
+  useOptionalComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { useEffect } from 'react'
 import { EnvMapBakeRefreshTypes } from '../types/EnvMapBakeRefreshTypes'
 import { EnvMapBakeTypes } from '../types/EnvMapBakeTypes'
@@ -61,15 +69,46 @@ export const EnvMapBakeComponent = defineComponent({
     boxProjection: S.Bool({ default: true })
   }),
 
-  reactor: function () {
-    const entity = useEntityContext()
+  reactor: function (props: { entity: Entity }) {
+    const { entity } = props
     const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
+    const bakeComponent = useComponent(entity, EnvMapBakeComponent)
+    const transformComponent = useOptionalComponent(entity, TransformComponent)
     const debugEnabled =
       activeHelperComponent !== undefined &&
       activeHelperComponent.enabled.value &&
       (activeHelperComponent.selected.value || activeHelperComponent.hovered.value)
-
     const helperEntity = useHelperEntity(entity, () => new Mesh(sphereGeometry, helperMeshMaterial), debugEnabled)
+
+    // Box projection visual helper
+    useEffect(() => {
+      if (!debugEnabled || !bakeComponent.boxProjection.value || !transformComponent) return
+
+      const boxProjectionHelper = new Box3Helper(new Box3(), 'cyan')
+      const boundsHelperEntity = createEntity()
+      setComponent(boundsHelperEntity, ObjectComponent, boxProjectionHelper)
+      setComponent(boundsHelperEntity, TransformComponent)
+      setComponent(boundsHelperEntity, EntityTreeComponent, { parentEntity: entity })
+      setComponent(boundsHelperEntity, VisibleComponent)
+
+      const helperTransform = getComponent(boundsHelperEntity, TransformComponent)
+      helperTransform.position.copy(bakeComponent.bakePositionOffset.value)
+      boxProjectionHelper.box.setFromCenterAndSize(
+        bakeComponent.bakePositionOffset.value,
+        bakeComponent.bakeScale.value
+      )
+      boxProjectionHelper.updateMatrixWorld(true)
+
+      return () => {
+        removeEntity(boundsHelperEntity)
+      }
+    }, [
+      debugEnabled,
+      bakeComponent.boxProjection.value,
+      bakeComponent.bakePositionOffset.value,
+      bakeComponent.bakeScale.value,
+      transformComponent?.position.value
+    ])
 
     useEffect(() => {
       activeHelperComponent?.helperSelectedGizmo.set(helperEntity)
