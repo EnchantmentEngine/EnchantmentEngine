@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+// ECS and component system imports
 import { Engine, Entity, EntityTreeComponent } from '@ir-engine/ecs'
 import {
   getMutableComponent,
@@ -30,16 +31,26 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
+
+// XR UI system imports
 import { createXRUI, XRUI } from '@ir-engine/engine/src/xrui/createXRUI'
+
+// State management imports
 import { getState, useMutableState } from '@ir-engine/hyperflux'
+
+// Spatial and camera system imports
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
 import { CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
+
+// Common components and utilities
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
+
+// React and UI imports
 import React, { useEffect, useState } from 'react'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 

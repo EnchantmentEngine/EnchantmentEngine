@@ -32,6 +32,7 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
   BoxGeometry,
+  BufferAttribute,
   BufferGeometry,
   CylinderGeometry,
   DoubleSide,
@@ -39,6 +40,7 @@ import {
   Float32BufferAttribute,
   Line,
   LineBasicMaterial,
+  LineSegments,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
@@ -311,6 +313,71 @@ const cameraPicker: GizmoDefinition = {
   Zn: [[new Mesh(new CylinderGeometry(0.2, 0, 0.6, 4), matInvisible), [0, 0, -0.3], [-Math.PI / 2, 0, 0]]]
 }
 
+// POI Camera Frustum Gizmo - creates a wireframe camera frustum shape
+const createPoiFrustumGeometry = () => {
+  // Camera frustum vertices (8 corners: 4 near plane, 4 far plane)
+  // Near plane: smaller rectangle, Far plane: larger rectangle
+  const positions = new Float32Array([
+    // Near plane (smaller rectangle at z=0)
+    -0.3,
+    0.2,
+    0, // 0: top-left
+    0.3,
+    0.2,
+    0, // 1: top-right
+    0.3,
+    -0.2,
+    0, // 2: bottom-right
+    -0.3,
+    -0.2,
+    0, // 3: bottom-left
+
+    // Far plane (larger rectangle at z=-1)
+    -0.8,
+    0.6,
+    -1, // 4: top-left
+    0.8,
+    0.6,
+    -1, // 5: top-right
+    0.8,
+    -0.6,
+    -1, // 6: bottom-right
+    -0.8,
+    -0.6,
+    -1 // 7: bottom-left
+  ])
+
+  // Line indices to connect the frustum wireframe
+  const indices = new Uint16Array([
+    // Near plane edges
+    0, 1, 1, 2, 2, 3, 3, 0,
+    // Far plane edges
+    4, 5, 5, 6, 6, 7, 7, 4,
+    // Connecting edges (near to far)
+    0, 4, 1, 5, 2, 6, 3, 7
+  ])
+
+  const geometry = new BufferGeometry()
+  geometry.setIndex(new BufferAttribute(indices, 1))
+  geometry.setAttribute('position', new BufferAttribute(positions, 3))
+  return geometry
+}
+
+const poiFrustumGizmo: GizmoDefinition = {
+  FRUSTUM: [
+    [
+      new LineSegments(
+        createPoiFrustumGeometry(),
+        new LineBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.8 })
+      )
+    ]
+  ]
+}
+
+const poiFrustumPicker: GizmoDefinition = {
+  FRUSTUM: [[new Mesh(new BoxGeometry(1.6, 1.2, 1), matInvisible), [0, 0, -0.5]]]
+}
+
 const gizmoTranslate: GizmoDefinition = {
   X: [
     [new Mesh(arrowGeometry, matRed), [0.5, 0, 0], [0, 0, -Math.PI / 2]],
@@ -518,5 +585,7 @@ export {
   pickerRotate,
   pickerScale,
   pickerTranslate,
+  poiFrustumGizmo,
+  poiFrustumPicker,
   setupGizmo
 }

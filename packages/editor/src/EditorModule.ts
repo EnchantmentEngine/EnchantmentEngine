@@ -36,6 +36,7 @@ import { EditorControlSystem } from './systems/EditorControlSystem'
 import { ModelHandlingSystem } from './systems/ModelHandlingSystem'
 import { ModelLoadingSpinnerSystem } from './systems/ModelLoadingSpinnerSystem'
 import { ObjectGridSnapSystem } from './systems/ObjectGridSnapSystem'
+import { PoiGizmoSystem } from './systems/PoiGizmoSystem'
 import { RenderMonitorSystem } from './systems/RenderMonitorSystem'
 import { SelectionHighlightSystem } from './systems/SelectionHighlightSystem'
 import { TransformGizmoSystem } from './systems/TransformGizmoSystem'
@@ -51,6 +52,7 @@ export {
   ModelLoadingSpinnerSystem,
   ObjectGridSnapSystem,
   OverlaySystem,
+  PoiGizmoSystem,
   PositionalAudioSystem,
   RenderInfoSystem,
   RenderMonitorSystem,

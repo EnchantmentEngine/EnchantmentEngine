@@ -29,6 +29,7 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 /**
  * Component for entities that serve as points of interest for the camera system.
  * This component stores settings related to how the camera should behave when focusing on this POI.
+ * Gizmos are automatically created for POI entities in the editor by the PoiGizmoSystem.
  */
 export const PoiComponent = defineComponent({
   name: 'PoiComponent',
