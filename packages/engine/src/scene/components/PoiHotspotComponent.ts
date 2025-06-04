@@ -30,9 +30,9 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
  * Component for entities that serve as hotspots within a POI.
  * This component stores metadata for hotspots such as title and description.
  */
-export const CameraHotspotComponent = defineComponent({
-  name: 'CameraHotspotComponent',
-  jsonID: 'IR_camera_hotspot_component',
+export const PoiHotspotComponent = defineComponent({
+  name: 'PoiHotspotComponent',
+  jsonID: 'IR_poi_hotspot_component',
 
   schema: S.Object({
     title: S.String({ default: '', $comment: 'Optional title or label for this hotspot' }),

@@ -30,21 +30,21 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
-import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
+import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent'
 import { HiOutlineCamera } from 'react-icons/hi'
 import EntityListInput from '../../input/EntityList'
 import InputGroup from '../../input/Group'
 
-export const CameraPoiNodeEditor: EditorComponentType = (props) => {
-  const poiSettings = useComponent(props.entity, CameraPoiComponent)
+export const PoiNodeEditor: EditorComponentType = (props) => {
+  const poiSettings = useComponent(props.entity, PoiComponent)
 
   return (
     <NodeEditor
       {...props}
       name={t('editor:properties.cameraPoi.name', 'POI Camera Settings')}
       description={t('editor:properties.cameraPoi.description', 'Settings for a point of interest camera view')}
-      Icon={CameraPoiNodeEditor.iconComponent}
+      Icon={PoiNodeEditor.iconComponent}
       entity={props.entity}
     >
       <InputGroup
@@ -53,9 +53,9 @@ export const CameraPoiNodeEditor: EditorComponentType = (props) => {
       >
         <EntityListInput
           value={Array.from(poiSettings.hotspotEntityUUIDs.value)}
-          onChange={commitProperty(CameraPoiComponent, 'hotspotEntityUUIDs')}
+          onChange={commitProperty(PoiComponent, 'hotspotEntityUUIDs')}
           placeholder="Select entities to use as hotspots"
-          filter={[CameraHotspotComponent]}
+          filter={[PoiHotspotComponent]}
           className="w-full"
         />
       </InputGroup>
@@ -63,6 +63,6 @@ export const CameraPoiNodeEditor: EditorComponentType = (props) => {
   )
 }
 
-CameraPoiNodeEditor.iconComponent = HiOutlineCamera
+PoiNodeEditor.iconComponent = HiOutlineCamera
 
-export default CameraPoiNodeEditor
+export default PoiNodeEditor

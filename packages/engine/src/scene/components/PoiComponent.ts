@@ -30,9 +30,9 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
  * Component for entities that serve as points of interest for the camera system.
  * This component stores settings related to how the camera should behave when focusing on this POI.
  */
-export const CameraPoiComponent = defineComponent({
-  name: 'CameraPoiComponent',
-  jsonID: 'IR_camera_poi_component',
+export const PoiComponent = defineComponent({
+  name: 'PoiComponent',
+  jsonID: 'IR_poi_component',
 
   schema: S.Object({
     hotspotEntityUUIDs: S.Array(S.EntityUUID(), {

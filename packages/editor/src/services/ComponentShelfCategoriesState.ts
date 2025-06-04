@@ -32,8 +32,6 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GrabbableComponent } from '@ir-engine/engine/src/grabbable/GrabbableComponent'
 import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
 import { AudioAnalysisComponent } from '@ir-engine/engine/src/scene/components/AudioAnalysisComponent'
-import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
-import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
@@ -75,6 +73,8 @@ import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/Col
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { FogSettingsComponent } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
+import { PoiComponent } from 'packages/engine/src/scene/components/PoiComponent.ts'
+import { PoiHotspotComponent } from 'packages/engine/src/scene/components/PoiHotspotComponent.ts'
 import { useEffect } from 'react'
 
 export const ComponentShelfCategoriesState = defineState({
@@ -115,7 +115,7 @@ export const ComponentShelfCategoriesState = defineState({
         LookAtComponent,
         FogSettingsComponent
       ],
-      Camera: [CameraPoiComponent, CameraHotspotComponent]
+      Camera: [PoiComponent, PoiHotspotComponent]
     } as Record<string, Component[]>
   },
   reactor: () => {

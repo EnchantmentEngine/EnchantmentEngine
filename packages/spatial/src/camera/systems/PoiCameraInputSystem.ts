@@ -146,7 +146,7 @@ const execute = () => {
   const settings = getMutableState(CameraSettingsState)
 
   if (settings.poiEntities.length > 0) {
-    // Filter POI entities to only include those with CameraPoiComponent
+    // Filter POI entities to only include those with PoiComponent
 
     if (settings.poiEntities.length > 0) {
       const currentIndex = Math.max(0, Math.min(poiCamera.currentPoiIndex, settings.poiEntities.length - 1))

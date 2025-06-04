@@ -37,10 +37,10 @@ import {
 } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { CameraMode, CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { PoiComponent } from 'packages/engine/src/scene/components/PoiComponent.ts'
 import { HiOutlineCamera } from 'react-icons/hi'
 import { Box3, Vector3 } from 'three'
 import Button from '../../../../primitives/tailwind/Button'
@@ -556,7 +556,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={Array.from(cameraSettings.poiEntities.value)}
               onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
               placeholder="Select entities to use as points of interest"
-              filter={[CameraPoiComponent]}
+              filter={[PoiComponent]}
               className="w-full"
             />
           </InputGroup>

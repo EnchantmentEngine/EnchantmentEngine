@@ -113,12 +113,12 @@ import SkyboxNodeEditor from '@ir-engine/ui/src/components/editor/properties/sky
 import SpawnPointNodeEditor from '@ir-engine/ui/src/components/editor/properties/spawnPoint'
 import SplineNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline'
 
-import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
-import { CameraPoiComponent } from '@ir-engine/engine/src/scene/components/CameraPoiComponent'
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
+import { PoiHotspotComponent } from '@ir-engine/engine/src/scene/components/PoiHotspotComponent'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
@@ -131,8 +131,8 @@ import VideoNodeEditor from '@ir-engine/ui/src/components/editor/properties/vide
 import VisualScriptNodeEditor from '@ir-engine/ui/src/components/editor/properties/visualScript'
 import VolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric'
 import LegacyVolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric/legacy'
-import PoiHotspotNodeEditor from '../../../ui/src/components/editor/properties/cameraHotspot'
-import CameraPoiNodeEditor from '../../../ui/src/components/editor/properties/cameraPoi'
+import PoiNodeEditor from '../../../ui/src/components/editor/properties/cameraPoi'
+import PoiHotspotNodeEditor from '../../../ui/src/components/editor/properties/poiHotspot'
 import { EditorComponentType } from '../components/properties/Util'
 
 export const ComponentEditorsState = defineState({
@@ -189,8 +189,8 @@ export const ComponentEditorsState = defineState({
       [TextComponent.name]: TextNodeEditor,
       [LookAtComponent.name]: LookAtNodeEditor,
       [MediaComponent.name]: MediaNodeEditor,
-      [CameraPoiComponent.name]: CameraPoiNodeEditor,
-      [CameraHotspotComponent.name]: PoiHotspotNodeEditor
+      [PoiComponent.name]: PoiNodeEditor,
+      [PoiHotspotComponent.name]: PoiHotspotNodeEditor
     } as Record<string, EditorComponentType>
   }
 })

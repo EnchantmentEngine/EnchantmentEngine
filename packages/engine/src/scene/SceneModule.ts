@@ -30,8 +30,6 @@ import { LoopAnimationComponent } from '../avatar/components/LoopAnimationCompon
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
 import { MountPointSystem } from '../interaction/systems/MountPointSystem'
 import { MaterialLibrarySystem } from '../scene/materials/systems/MaterialLibrarySystem'
-import { CameraHotspotComponent } from './components/CameraHotspotComponent'
-import { CameraPoiComponent } from './components/CameraPoiComponent'
 import { CameraSettingsComponent } from './components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from './components/EnvMapBakeComponent'
 import { EnvMapComponent } from './components/EnvmapComponent'
@@ -44,6 +42,8 @@ import { LookAtComponent } from './components/LookAtComponent'
 import { MediaComponent } from './components/MediaComponent'
 import { MountPointComponent } from './components/MountPointComponent'
 import { ParticleSystemComponent } from './components/ParticleSystemComponent'
+import { PoiComponent } from './components/PoiComponent.ts'
+import { PoiHotspotComponent } from './components/PoiHotspotComponent.ts'
 import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
 import { RenderSettingsComponent } from './components/RenderSettingsComponent'
 import { SceneDynamicLoadComponent } from './components/SceneDynamicLoadComponent'
@@ -87,8 +87,8 @@ export const SceneComponents = [
   HyperspaceTagComponent,
   ImageComponent,
   // InteriorComponent,
-  CameraPoiComponent,
-  CameraHotspotComponent,
+  PoiComponent,
+  PoiHotspotComponent,
   LookAtComponent,
   MediaComponent,
   // MediaSettingsComponent,
