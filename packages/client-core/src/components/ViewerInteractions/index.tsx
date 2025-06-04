@@ -130,7 +130,7 @@ export const ViewerInteractions = () => {
       <ARPlacement />
       <XRLoading />
 
-      <TouchGamepad />
+      {isMobile && <TouchGamepad />}
     </div>
   )
 }
