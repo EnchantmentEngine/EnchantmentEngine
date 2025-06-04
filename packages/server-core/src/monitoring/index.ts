@@ -23,27 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Application } from '@feathersjs/koa'
 import configureMetrics from './metrics.service'
-import configureP2PMetrics from './p2p-metrics'
 import configureTracing from './tracing.service'
 
-/**
- * Configure monitoring for the application
- */
-export default (options = {}) => {
-  return (app: Application): void => {
-    // Configure metrics
-    app.configure(configureMetrics(options))
-
-    // Configure P2P metrics
-    app.configure(configureP2PMetrics(options))
-
-    // Configure tracing
-    app.configure(configureTracing(options))
-  }
-}
-
-export { MetricsService } from './metrics.service'
-export { P2PMetricsService } from './p2p-metrics'
-export { TracingService } from './tracing.service'
+export default [configureMetrics, configureTracing]

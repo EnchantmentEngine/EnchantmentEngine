@@ -27,7 +27,6 @@ import { Application } from '@feathersjs/koa'
 import { context, Span, SpanStatusCode, trace } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { resourceFromAttributes } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-node'
@@ -38,146 +37,111 @@ import { logger } from '../ServerLogger'
 import { default as config } from '../appconfig'
 
 /**
- * TracingService class for handling OpenTelemetry tracing
+ * Initialize OpenTelemetry SDK
  */
-export class TracingService {
-  private app: Application
-  private sdk: NodeSDK
-  private serviceName: string
-  private tracer: any
-
-  /**
-   * Constructor for TracingService
-   * @param app - Feathers application instance
-   * @param serviceName - Name of the service
-   */
-  constructor(app: Application, serviceName: string) {
-    this.app = app
-    this.serviceName = serviceName
-
-    if (!config.monitoring?.tracing?.enabled) {
-      logger.info('Tracing is disabled')
-      return
-    }
-
-    // Create trace exporter
-    const traceExporter = new OTLPTraceExporter({
-      url: config.monitoring.tracing.endpoint
-    })
-
-    // Configure a sampling strategy
-    const sampler = new ParentBasedSampler({
-      root: new TraceIdRatioBasedSampler(config.monitoring.tracing.samplingRatio)
-    })
-
-    // Add custom attributes based on environment
-    const customAttributes: Record<string, string> = {
-      'ir_engine.version': process.env.npm_package_version || '1.0.0',
-      'ir_engine.environment': process.env.NODE_ENV || 'development'
-    }
-
-    // Add GCP-specific attributes if using Cloud Trace
-    if (config.monitoring.tracing.useCloudTrace && config.gcp.project) {
-      customAttributes['gcp.project.id'] = config.gcp.project
-    }
-
-    // Create SDK
-    this.sdk = new NodeSDK({
-      resource: resourceFromAttributes({
-        [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-        [SemanticResourceAttributes.SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
-        [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
-        ...customAttributes
-      }),
-      traceExporter,
-      spanProcessor: new BatchSpanProcessor(traceExporter),
-      sampler,
-      instrumentations: [
-        getNodeAutoInstrumentations({
-          '@opentelemetry/instrumentation-fs': { enabled: true },
-          '@opentelemetry/instrumentation-http': { enabled: true },
-          '@opentelemetry/instrumentation-express': { enabled: true },
-          '@opentelemetry/instrumentation-koa': { enabled: true },
-          '@opentelemetry/instrumentation-mysql2': { enabled: true },
-          '@opentelemetry/instrumentation-redis': { enabled: true },
-          '@opentelemetry/instrumentation-winston': { enabled: true },
-          '@opentelemetry/instrumentation-pino': { enabled: true }
-        })
-      ]
-    })
-
-    // Get tracer
-    this.tracer = trace.getTracer(serviceName)
-
-    logger.info('Tracing service initialized')
+function initializeSDK(serviceName: string): { sdk: NodeSDK; tracer: any } {
+  if (!config.monitoring?.tracing?.enabled) {
+    logger.info('Tracing is disabled')
+    return { sdk: null as any, tracer: null }
   }
 
-  /**
-   * Start the tracing SDK
-   */
-  public start(): void {
-    if (!config.monitoring?.tracing?.enabled) return
+  // Create trace exporter
+  const traceExporter = new OTLPTraceExporter({
+    url: config.monitoring.tracing.endpoint
+  })
 
-    this.sdk.start()
-    logger.info('OpenTelemetry tracing started')
+  // Configure a sampling strategy
+  const sampler = new ParentBasedSampler({
+    root: new TraceIdRatioBasedSampler(config.monitoring.tracing.samplingRatio)
+  })
+
+  // Add custom attributes based on environment
+  const customAttributes: Record<string, string> = {
+    'ir_engine.version': process.env.npm_package_version || '1.0.0',
+    'ir_engine.environment': process.env.NODE_ENV || 'development'
   }
 
-  /**
-   * Shutdown the tracing SDK
-   */
-  public shutdown(): Promise<void> {
-    if (!config.monitoring?.tracing?.enabled) return Promise.resolve()
+  // Add GCP-specific attributes if using Cloud Trace
+  if (config.monitoring.tracing.useCloudTrace && config.gcp.project) {
+    customAttributes['gcp.project.id'] = config.gcp.project
+  }
 
-    return this.sdk
-      .shutdown()
-      .then(() => {
-        logger.info('OpenTelemetry tracing stopped')
+  // Create SDK
+  const sdk = new NodeSDK({
+    resource: new resources.Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+      [SemanticResourceAttributes.SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
+      [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+      ...customAttributes
+    }),
+    traceExporter,
+    spanProcessor: new BatchSpanProcessor(traceExporter),
+    sampler,
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-fs': { enabled: true },
+        '@opentelemetry/instrumentation-http': { enabled: true },
+        '@opentelemetry/instrumentation-express': { enabled: true },
+        '@opentelemetry/instrumentation-koa': { enabled: true },
+        '@opentelemetry/instrumentation-mysql2': { enabled: true },
+        '@opentelemetry/instrumentation-redis': { enabled: true },
+        '@opentelemetry/instrumentation-winston': { enabled: true },
+        '@opentelemetry/instrumentation-pino': { enabled: true }
       })
-      .catch((error) => {
-        logger.error('Error shutting down OpenTelemetry tracing', error)
+    ]
+  })
+
+  // Get tracer
+  const tracer = trace.getTracer(serviceName)
+
+  logger.info('Tracing service initialized')
+  return { sdk, tracer }
+}
+
+/**
+ * Create a custom span
+ * @param tracer - OpenTelemetry tracer
+ * @param name - Name of the span
+ * @param fn - Function to execute within the span
+ * @param attributes - Span attributes
+ */
+async function createSpan<T>(
+  tracer: any,
+  name: string,
+  fn: (span: Span) => Promise<T>,
+  attributes: Record<string, any> = {}
+): Promise<T> {
+  if (!config.monitoring?.tracing?.enabled) return fn({} as Span)
+
+  return await tracer.startActiveSpan(name, { attributes }, async (span: Span) => {
+    try {
+      const result = await fn(span)
+      span.setStatus({ code: SpanStatusCode.OK })
+      return result
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error)
       })
-  }
+      throw error
+    } finally {
+      span.end()
+    }
+  })
+}
 
-  /**
-   * Create a custom span
-   * @param name - Name of the span
-   * @param fn - Function to execute within the span
-   * @param attributes - Span attributes
-   */
-  public async createSpan<T>(
-    name: string,
-    fn: (span: Span) => Promise<T>,
-    attributes: Record<string, any> = {}
-  ): Promise<T> {
-    if (!config.monitoring?.tracing?.enabled) return fn({} as Span)
-
-    return await this.tracer.startActiveSpan(name, { attributes }, async (span: Span) => {
-      try {
-        const result = await fn(span)
-        span.setStatus({ code: SpanStatusCode.OK })
-        return result
-      } catch (error) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error)
-        })
-        throw error
-      } finally {
-        span.end()
-      }
-    })
-  }
-
-  /**
-   * Middleware for tracing HTTP requests
-   */
-  public tracingMiddleware = async (ctx: Context, next: Next): Promise<void> => {
+/**
+ * Create tracing middleware for HTTP requests
+ * @param tracer - OpenTelemetry tracer
+ */
+function createTracingMiddleware(tracer: any) {
+  return async (ctx: Context, next: Next): Promise<void> => {
     if (!config.monitoring?.tracing?.enabled) {
       await next()
       return
     }
 
-    const requestSpan = this.tracer.startSpan(`HTTP ${ctx.method} ${ctx.path}`, {
+    const requestSpan = tracer.startSpan(`HTTP ${ctx.method} ${ctx.path}`, {
       attributes: {
         'http.method': ctx.method,
         'http.url': ctx.url,
@@ -221,22 +185,34 @@ export default (options = {}) => {
     }
 
     const serviceName = app.get('name') || 'ir-engine-api'
-    const tracingService = new TracingService(app, serviceName)
+    const { sdk, tracer } = initializeSDK(serviceName)
+
+    if (!sdk || !tracer) return
 
     // Add tracing middleware
-    app.use(tracingService.tracingMiddleware)
+    app.use(createTracingMiddleware(tracer))
 
     // Start tracing
-    tracingService.start()
+    sdk.start()
+    logger.info('OpenTelemetry tracing started')
 
-    // Store tracing service in app for later use
-    app.set('tracingService', tracingService)
+    // Store tracing utilities in app for later use
+    app.set('tracingSDK', sdk)
+    app.set('tracer', tracer)
+    app.set('createSpan', (name: string, fn: (span: Span) => Promise<any>, attributes?: Record<string, any>) =>
+      createSpan(tracer, name, fn, attributes)
+    )
 
     // Handle shutdown
     process.on('SIGTERM', () => {
-      tracingService.shutdown().catch((err) => {
-        logger.error('Error shutting down tracing', err)
-      })
+      sdk
+        .shutdown()
+        .then(() => {
+          logger.info('OpenTelemetry tracing stopped')
+        })
+        .catch((error) => {
+          logger.error('Error shutting down OpenTelemetry tracing', error)
+        })
     })
 
     logger.info('Tracing service configured')

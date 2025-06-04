@@ -141,30 +141,6 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
       API.instance.service(instanceSignalingPath).get({ instanceID })
     }, 5000)
 
-    // Track P2P metrics if the service is available (enabled via environment config)
-    const instance = getState(PeerToPeerNetworkState)[instanceID]
-    if (instance) {
-      try {
-        API.instance
-          .service('p2p-metrics')
-          .create({
-            instanceId: instanceID,
-            locationId: instance.locationId
-          })
-          .catch((err) => {
-            // Only log error if it's not a "service not found" error
-            if (!err.message?.includes('not found')) {
-              console.error('Error tracking P2P metrics:', err)
-            }
-          })
-      } catch (err) {
-        // Only log error if it's not a "service not found" error
-        if (!err.message?.includes('not found')) {
-          console.error('Error tracking P2P metrics:', err)
-        }
-      }
-    }
-
     dispatchAction(
       NetworkActions.peerJoined({
         $network: network.id,

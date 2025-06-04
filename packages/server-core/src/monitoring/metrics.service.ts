@@ -395,21 +395,6 @@ export class MetricsService {
   }
 
   /**
-   * Track P2P metrics - used when P2P mode is enabled
-   */
-  public trackP2PMetrics(instanceId: string, locationId?: string): void {
-    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
-
-    // Track instance attendance
-    this.trackInstanceAttendance(instanceId)
-
-    // If this is a world instance (has locationId), track world visit
-    if (locationId) {
-      this.trackWorldVisit(locationId)
-    }
-  }
-
-  /**
    * Track project creation
    */
   public trackProjectCreation(): void {

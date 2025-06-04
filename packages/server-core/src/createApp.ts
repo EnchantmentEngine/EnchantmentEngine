@@ -55,7 +55,7 @@ import authenticate from './hooks/authenticate'
 import { logError } from './hooks/log-error'
 import persistHeaders from './hooks/persist-headers'
 import { createDefaultStorageProvider } from './media/storageprovider/storageprovider'
-import monitoringService from './monitoring'
+import monitoringServices from './monitoring'
 import mysql from './mysql'
 import services from './services'
 import authentication from './user/authentication'
@@ -206,7 +206,7 @@ export const configureMonitoring = () => (app: Application) => {
   app.set('name', serviceName)
 
   // Configure monitoring services
-  app.configure(monitoringService())
+  monitoringServices.forEach((service) => app.configure(service()))
 
   return app
 }
