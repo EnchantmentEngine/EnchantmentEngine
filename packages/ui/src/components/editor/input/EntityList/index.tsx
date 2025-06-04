@@ -23,10 +23,10 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Entity, EntityUUID, UUIDComponent, getComponent, hasComponent, useQuery } from '@ir-engine/ecs'
-import { useHookstate } from '@ir-engine/hyperflux'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import React, { useEffect } from 'react'
+import { EntityUUID } from '@ir-engine/ecs'
+import { useEntityOptions } from '@ir-engine/engine/src/authoring/functions/useNodeOptions.ts'
+import * as bitECS from 'bitecs'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaPlus } from 'react-icons/fa'
 import { HiMiniXMark } from 'react-icons/hi2'
@@ -35,12 +35,10 @@ import Label from '../../../../primitives/tailwind/Label'
 import Text from '../../../../primitives/tailwind/Text'
 import SelectInput from '../Select'
 
-type EntityOptionType = { label: string; value: EntityUUID; entity: Entity }
-
 interface EntityListInputProps {
   value: EntityUUID[]
   onChange: (entityUUIDs: EntityUUID[]) => void
-  filter?: (entity: Entity) => boolean
+  filter: bitECS.QueryTerm[]
   placeholder?: string
   label?: string
   className?: string
@@ -48,31 +46,9 @@ interface EntityListInputProps {
 
 export const EntityListInput = ({ value, onChange, filter, placeholder, label, className }: EntityListInputProps) => {
   const { t } = useTranslation()
-  const entityOptions = useHookstate<EntityOptionType[]>([])
 
   // Query all entities
-  const allEntities = useQuery([])
-
-  // Update entity options when entities change
-  useEffect(() => {
-    // Filter entities if a filter function is provided
-    const filteredEntities = filter ? allEntities.filter(filter) : allEntities
-
-    // Create options for the Select components
-    const options = filteredEntities.map((entity) => {
-      const name = hasComponent(entity, NameComponent) ? getComponent(entity, NameComponent) : `Entity ${entity}`
-
-      const entityUUID = hasComponent(entity, UUIDComponent) ? UUIDComponent.get(entity) : (`${entity}` as EntityUUID)
-
-      return {
-        label: name,
-        value: entityUUID,
-        entity
-      }
-    })
-
-    entityOptions.set(options)
-  }, [allEntities.length, filter])
+  const entityOptions = useEntityOptions(filter)
 
   // Handle adding a new entity to the list
   const handleAddEntity = () => {

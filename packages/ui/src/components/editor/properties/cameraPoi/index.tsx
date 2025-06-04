@@ -26,9 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { t } from 'i18next'
 import React from 'react'
 
-import { hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { Entity } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { CameraHotspotComponent } from '@ir-engine/engine/src/scene/components/CameraHotspotComponent'
@@ -56,7 +55,7 @@ export const CameraPoiNodeEditor: EditorComponentType = (props) => {
           value={Array.from(poiSettings.hotspotEntityUUIDs.value)}
           onChange={commitProperty(CameraPoiComponent, 'hotspotEntityUUIDs')}
           placeholder="Select entities to use as hotspots"
-          filter={(entity: Entity) => hasComponent(entity, CameraHotspotComponent)}
+          filter={[CameraHotspotComponent]}
           className="w-full"
         />
       </InputGroup>

@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Entity, iterateEntityNode } from '@ir-engine/ecs'
-import { getOptionalComponent, hasComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { iterateEntityNode } from '@ir-engine/ecs'
+import { getOptionalComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import {
   EditorComponentType,
@@ -556,7 +556,7 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
               value={Array.from(cameraSettings.poiEntities.value)}
               onChange={commitProperty(CameraSettingsComponent, 'poiEntities')}
               placeholder="Select entities to use as points of interest"
-              filter={(entity: Entity) => hasComponent(entity, CameraPoiComponent)}
+              filter={[CameraPoiComponent]}
               className="w-full"
             />
           </InputGroup>
