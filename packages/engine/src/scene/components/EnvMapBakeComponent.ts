@@ -46,7 +46,6 @@ export const EnvMapBakeComponent = defineComponent({
   jsonID: 'EE_envmapbake',
 
   schema: S.Object({
-    bakePosition: T.Vec3(),
     bakePositionOffset: T.Vec3(),
     bakeScale: T.Vec3(Vector3_One),
     bakeType: S.Enum(EnvMapBakeTypes, {
