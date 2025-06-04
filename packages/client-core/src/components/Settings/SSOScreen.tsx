@@ -23,6 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useHookstate } from '@hookstate/core'
+import { capitalize } from '@ir-engine/server-core/src/util/capitalize'
+import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import Divider from '@ir-engine/ui/src/components/viewer/Divider'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
@@ -55,17 +58,32 @@ export const Socials = [
 const SSOScreen: React.FC<SSOScreenProps> = () => {
   const oauthConnectedState = useOAuthState()
   const authSettings = useAuthSettings()
+  const deleteSSO = useHookstate('')
 
   const handleProviderClick = (client: string) => {
     AuthService.loginUserByOAuth(client, location, true, location.href)
   }
 
-  const disableProvider = (client: string) => {
-    AuthService.removeUserOAuth(client)
-  }
-
   const connectedProviders = Socials.filter((p) => oauthConnectedState[p.client].value && authSettings[p.client])
   const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
+
+  const disableProvider = (client: string) => {
+    deleteSSO.set(client)
+  }
+
+  if (deleteSSO.value) {
+    return (
+      <div className="flex h-full flex-col items-center justify-between pb-2">
+        <div className="text-dm-sans m-auto flex w-full flex-1 flex-col justify-center text-center text-2xl text-white">
+          Are you sure you want to remove social login from {capitalize(deleteSSO.value)}?
+        </div>
+        <div className="flex w-1/2 flex-col items-center gap-1">
+          <GlassButton onClick={() => AuthService.removeUserOAuth(deleteSSO.value)}>Remove</GlassButton>
+          <GlassButton onClick={() => deleteSSO.set('')}>Nevermind</GlassButton>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full space-y-4">

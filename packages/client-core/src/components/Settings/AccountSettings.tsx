@@ -38,9 +38,7 @@ interface ScreenProps {
 const AccountSettings: React.FC<ScreenProps> = ({ navigateTo }) => (
   <div className="h-full space-y-4">
     <Section>
-      <MenuItem label="Username & Password" onClick={() => navigateTo('usernamePassword')} hasChevron />
-      <Divider />
-      <MenuItem label="User ID" onClick={() => navigateTo('userId')} hasChevron />
+      <MenuItem label="Display Name" onClick={() => navigateTo('displayName')} hasChevron />
       <Divider />
       <MenuItem label="Permissions" onClick={() => navigateTo('permissions')} hasChevron />
     </Section>
