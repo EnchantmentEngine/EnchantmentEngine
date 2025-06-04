@@ -26,19 +26,12 @@ Infinite Reality Engine. All Rights Reserved.
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  hasComponent,
-  removeComponent,
-  setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraMode, CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
-import { PoiUIComponent } from './PoiUIComponent'
 
 export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
@@ -117,15 +110,6 @@ export const CameraSettingsComponent = defineComponent({
         }
       }, [component[prop].value])
     }
-
-    useEffect(() => {
-      const hasPoiUI = hasComponent(entity, PoiUIComponent)
-      if (component.cameraMode.value === CameraMode.POI) {
-        if (!hasPoiUI) setComponent(entity, PoiUIComponent)
-      } else {
-        if (hasPoiUI) removeComponent(entity, PoiUIComponent)
-      }
-    }, [component.cameraMode])
 
     useEffect(() => {
       if (component.poiScrollTransitionType.value === PoiScrollTransition.Scrolling) {

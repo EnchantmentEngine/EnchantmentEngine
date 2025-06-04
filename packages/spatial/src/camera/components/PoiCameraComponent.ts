@@ -44,6 +44,9 @@ export const PoiCameraComponent = defineComponent({
     scrollAccumulator: S.Number({ default: 0 }),
 
     // Transition state for snapping mode
-    isTransitioning: S.Bool({ default: false })
+    isTransitioning: S.Bool({ default: false }),
+
+    // runtime props
+    xruiEntity: S.Entity({ serialized: false })
   })
 })
