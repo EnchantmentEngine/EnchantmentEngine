@@ -215,87 +215,27 @@ export async function addMediaNode(
       /**
        * Load the lookdev object and override or attach it to the current scene
        */
-      try {
-        const entity = await AssetState.loadAsync(
-          url,
-          false,
-          UUIDComponent.generateUUID(),
-          UndefinedEntity,
-          Layers.Authoring as LayerID
-        )
+      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+        (entity) => {
+          const firstChild = getComponent(entity, EntityTreeComponent).children[0]
+          const json = serializeEntity(firstChild)
 
-        if (!entity) {
-          console.warn('Failed to load lookdev entity')
-          return null
-        }
-
-        if (!hasComponent(entity, EntityTreeComponent)) {
-          console.warn('Lookdev entity has no EntityTreeComponent')
-          removeEntity(entity)
-          return null
-        }
-
-        const entityTree = getComponent(entity, EntityTreeComponent)
-        if (!entityTree || !entityTree.children || entityTree.children.length === 0) {
-          console.warn('Lookdev entity has no children')
-          removeEntity(entity)
-          return null
-        }
-
-        const firstChild = entityTree.children[0]
-        if (!firstChild) {
-          console.warn('First child of lookdev entity is undefined')
-          removeEntity(entity)
-          return null
-        }
-
-        const json = serializeEntity(firstChild)
-        if (!json || json.length === 0) {
-          console.warn('Failed to serialize lookdev entity')
-          removeEntity(entity)
-          return null
-        }
-
-        let entityUUID: EntityUUID | null = null
-        try {
-          const result = EditorControlFunctions.createObjectFromSceneElement(
+          const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
             [...json, ...extraComponentJson],
-            parent,
+            parent!,
             before,
             requestedName
           )
-          entityUUID = result.entityUUID
-        } catch (error) {
-          console.error('Error creating object from scene element:', error)
+
+          EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
           removeEntity(entity)
-          return null
-        }
-
-        try {
-          EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent, before)
-        } catch (error) {
-          console.warn('Error overwriting lookdev object:', error)
-        }
-
-        removeEntity(entity)
-
-        try {
           const rootEntity = getState(EditorState).rootEntity
-          if (rootEntity) {
-            const newSource = GLTFComponent.getSourceID(rootEntity)
-            if (newSource) {
-              AuthoringState.snapshot(newSource)
-            }
-          }
-        } catch (error) {
-          console.warn('Error getting root entity or source ID:', error)
-        }
+          const newSource = GLTFComponent.getSourceID(rootEntity)
+          AuthoringState.snapshot(newSource)
 
-        return entityUUID
-      } catch (error) {
-        console.error('Error in lookdev prefab handling:', error)
-        return null
-      }
+          return entityUUID
+        }
+      )
     } else if (contentType.startsWith('model/prefab')) {
       /**
        * Load all entities from the prefab and attach them to the current scene
