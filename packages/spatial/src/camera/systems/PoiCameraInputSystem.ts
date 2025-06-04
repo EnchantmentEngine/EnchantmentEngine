@@ -117,7 +117,7 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
 
       const result = calculatePoiState(
         normalizedScrollPosition,
-        false,
+        true,
         scrollDistancePerPoi,
         cameraSettingsState.poiEntities.value.length
       )
