@@ -219,28 +219,11 @@ export const AuthoringState = defineState({
   },
 
   snapshot: (sourceID: SourceID) => {
-    if (!sourceID) {
-      console.warn('AuthoringState.snapshot called with undefined sourceID')
-      return
-    }
-
-    try {
-      const sources = getState(AuthoringState).sources
-
-      if (!sources[sourceID]) {
-        console.warn(`Initializing missing source for sourceID ${sourceID}`)
-        dispatchAction(AuthoringActions.initialize({ sourceID, partialState: {} }))
-      }
-
-      const newData = getSourceSnapshot(sourceID)
-
-      const latestData = sources[sourceID]?.latest || ({} as SourceData)
-
-      const patch = createPatch(latestData, newData)
-
+    const newData = getSourceSnapshot(sourceID)
+    const source = getState(AuthoringState).sources[sourceID]
+    if (source) {
+      const patch = createPatch(source.latest, newData)
       dispatchAction(AuthoringActions.ops({ ops: { [sourceID]: patch } }))
-    } catch (error) {
-      console.error('Error in AuthoringState.snapshot:', error)
     }
   },
 
@@ -499,94 +482,42 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
 }
 
 export const getSourceSnapshot = (sourceID: SourceID) => {
-  if (!sourceID) {
-    console.warn('getSourceSnapshot called with undefined sourceID')
-    return {} as SourceData
-  }
+  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
+  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceID, Layers.Authoring)
 
-  try {
-    const sourceData = {} as SourceData
-    const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
+  const sourceData = {} as SourceData
 
-    if (!sourceEntity) {
-      console.warn(`getSourceSnapshot: sourceEntity not found for sourceID ${sourceID}`)
-      return sourceData
-    }
+  for (const entity of sourceEntities) {
+    const entityID = getComponent(entity, UUIDComponent).entityID
+    sourceData[entityID] = {}
 
-    const sourceEntities = UUIDComponent.getEntitiesBySource(sourceID, Layers.Authoring)
+    const components = getAllComponents(entity)
 
-    if (!sourceEntities || sourceEntities.length === 0) {
-      console.warn(`getSourceSnapshot: No entities found for sourceID ${sourceID}`)
-      return sourceData
-    }
+    for (const component of components) {
+      if (component === UUIDComponent) continue
+      const sceneComponentID = component.jsonID
+      if (!sceneComponentID) continue
+      // special case for entity tree since we need to serialize an EntityID
+      if (component === EntityTreeComponent) {
+        const entityTree = getComponent(entity, EntityTreeComponent)
+        // use an empty string to denote the root of the source
+        let parentEntityID = ''
+        if (entityTree.parentEntity !== sourceEntity && hasComponent(entityTree.parentEntity, UUIDComponent)) {
+          parentEntityID = getComponent(entityTree.parentEntity, UUIDComponent).entityID
+        }
 
-    for (const entity of sourceEntities) {
-      if (!entity || !hasComponent(entity, UUIDComponent)) {
+        sourceData[entityID][sceneComponentID] = {
+          parentEntity: parentEntityID,
+          childIndex: entityTree.childIndex
+        }
         continue
       }
-
-      try {
-        const uuidComponent = getComponent(entity, UUIDComponent)
-
-        if (!uuidComponent || !uuidComponent.entityID) {
-          continue
-        }
-
-        const entityID = uuidComponent.entityID
-        sourceData[entityID] = {}
-
-        const components = getAllComponents(entity)
-
-        for (const component of components) {
-          if (component === UUIDComponent) continue
-          const sceneComponentID = component.jsonID
-          if (!sceneComponentID) continue
-          if (component === EntityTreeComponent) {
-            try {
-              const entityTree = getComponent(entity, EntityTreeComponent)
-
-              if (!entityTree || !entityTree.parentEntity) {
-                continue
-              }
-
-              let parentEntityID = ''
-
-              if (entityTree.parentEntity === sourceEntity) {
-                parentEntityID = ''
-              } else if (hasComponent(entityTree.parentEntity, UUIDComponent)) {
-                const parentUUID = getComponent(entityTree.parentEntity, UUIDComponent)
-                if (parentUUID && parentUUID.entityID) {
-                  parentEntityID = parentUUID.entityID
-                }
-              }
-
-              sourceData[entityID][sceneComponentID] = {
-                parentEntity: parentEntityID,
-                childIndex: entityTree.childIndex || 0
-              }
-            } catch (err) {
-              console.error(`Error processing EntityTreeComponent for entity ${entityID}:`, err)
-            }
-            continue
-          }
-
-          try {
-            const data = serializeComponent(entity, component)
-            if (data) {
-              sourceData[entityID][sceneComponentID] = data
-            }
-          } catch (err) {
-            console.error(`Error serializing component ${sceneComponentID} for entity ${entityID}:`, err)
-          }
-        }
-      } catch (err) {
-        console.error(`Error processing entity in getSourceSnapshot:`, err)
+      const data = serializeComponent(entity, component)
+      if (data) {
+        sourceData[entityID][sceneComponentID] = data
       }
     }
-
-    return sourceData
-  } catch (err) {
-    console.error(`Error in getSourceSnapshot:`, err)
-    return {} as SourceData
   }
+
+  return sourceData
 }
