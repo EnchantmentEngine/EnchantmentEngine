@@ -93,7 +93,7 @@ export default function SignupScreen() {
       <GlassButton
         disabled={!agreedToAll || pending.value || sent.value || !isValid.value}
         onClick={onMagicLinkClick}
-        className={`text-md mx-auto flex w-1/2 gap-[1ch] ${enableCTA && !sent.value ? '' : 'opacity-50'}`}
+        className={`text-md mx-auto flex w-1/2 gap-[1ch]`}
       >
         {sent.value ? 'Sent!' : 'Send magic link'}
         <FaLink />

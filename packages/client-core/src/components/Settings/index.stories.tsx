@@ -59,7 +59,7 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   args: {
-    initScreen: 'main'
+    initScreen: 'displayName'
   },
 
   parameters: {

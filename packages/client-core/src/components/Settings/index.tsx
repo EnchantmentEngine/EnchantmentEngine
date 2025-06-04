@@ -48,7 +48,6 @@ import PermissionsScreen from './PermissionsScreen'
 import ShareSpaceScreen from './ShareSpaceScreen'
 import SignUpScreen from './SignUpScreen'
 import SSOScreen from './SSOScreen'
-import UsernamePasswordScreen from './UsernamePasswordScreen'
 
 // Define screen structure type
 interface ScreenDefinition {
@@ -83,9 +82,9 @@ export const screens: Record<string, ScreenDefinition> = {
     component: (props) => <PlaceholderScreen {...props} title="Controls" />,
     title: 'Controls'
   },
-  usernamePassword: {
-    component: UsernamePasswordScreen,
-    title: 'Username & Password'
+  displayName: {
+    component: DisplayNameScreen,
+    title: 'Display Name'
   },
   userId: {
     component: (props) => <PlaceholderScreen {...props} title="User ID" />,
@@ -102,10 +101,6 @@ export const screens: Record<string, ScreenDefinition> = {
   sso: {
     component: SSOScreen,
     title: 'Single Sign On'
-  },
-  displayName: {
-    component: DisplayNameScreen,
-    title: 'Display Name'
   },
   deleteAccount: {
     component: DeleteAccountScreen,
