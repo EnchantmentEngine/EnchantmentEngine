@@ -72,7 +72,7 @@ const UsernameScreen: React.FC<DisplayNameScreenProps> = () => {
   }, [saved.value])
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col justify-between gap-4">
       <Section>
         <FieldItem
           label="Display Name"
