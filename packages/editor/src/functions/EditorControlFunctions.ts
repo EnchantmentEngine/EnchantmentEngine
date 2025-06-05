@@ -246,6 +246,7 @@ const duplicateObject = (entities: Entity[]) => {
 
       // Store the UUID of new entity for selection
       newEntities.push(UUIDComponent.get(newEntity))
+      EditorControlFunctions.addToSelection([UUIDComponent.get(newEntity)])
 
       if (hasComponent(entity, GLTFComponent)) return
       const children = getComponent(entity, EntityTreeComponent).children as Entity[]
