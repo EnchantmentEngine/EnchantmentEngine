@@ -40,7 +40,15 @@ import {
 } from '@ir-engine/hyperflux'
 
 import { OpReturnType } from 'bitecs'
-import { Component, EntityContext, LayerComponents, LayerID, Layers, useOptionalComponent } from './ComponentFunctions'
+import {
+  Component,
+  EntityContext,
+  LayerComponents,
+  LayerID,
+  Layers,
+  useComponent,
+  useOptionalComponent
+} from './ComponentFunctions'
 import { Entity } from './Entity'
 
 export const $opType = Symbol.for('bitecs-opType')
@@ -183,22 +191,23 @@ export const EntityArrayBoundary = memo(
     return (
       <>
         {props.entities.map((entity) => (
-          <QuerySubReactor
-            key={entity}
-            entity={entity}
-            ChildEntityReactor={MemoChildEntityReactor}
-            props={props.props}
-          />
+          <QueryReactorErrorBoundary>
+            <Suspense fallback={<Suspended {...props} />}>
+              <EntityContext.Provider value={entity}>
+                <MemoChildEntityReactor key={entity} {...props.props} entity={entity} />
+              </EntityContext.Provider>
+            </Suspense>
+          </QueryReactorErrorBoundary>
         ))}
       </>
     )
   }
 )
 
-export const QuerySubReactor = memo(
-  (props: { entity: Entity; ChildEntityReactor: FC; Components?: bitECS.QueryTerm[]; props?: any }) => {
+const QuerySubReactor = memo(
+  (props: { entity: Entity; ChildEntityReactor: FC; Components: bitECS.QueryTerm[]; props?: any }) => {
     const components = [] as Component[]
-    for (const queryTerm of props.Components ?? []) {
+    for (const queryTerm of props.Components) {
       if (queryTerm.isComponent) {
         components.push(queryTerm)
       } else {
@@ -217,12 +226,18 @@ export const QuerySubReactor = memo(
     }
     const id = ids.join('_')
 
+    const MountFunc = () => {
+      // suspend to ensure components always exist in child react component
+      for (const component of props.Components) useComponent(props.entity, component)
+      return <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+    }
+
     return (
       <>
         <QueryReactorErrorBoundary>
           <Suspense fallback={<Suspended {...props} />}>
             <EntityContext.Provider value={props.entity}>
-              <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+              <MountFunc key={id} />
             </EntityContext.Provider>
           </Suspense>
         </QueryReactorErrorBoundary>

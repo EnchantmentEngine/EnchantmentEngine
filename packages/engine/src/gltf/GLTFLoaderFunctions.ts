@@ -515,7 +515,7 @@ const loadBuffer = async (options: GLTFParserOptions, bufferIndex: number): Prom
     throw new Error('THREE.GLTFLoader: ' + bufferDef.type + ' buffer type is not supported.')
   }
 
-  const cache = DependencyCache.get(options.url)
+  const cache = DependencyCache.get(`${options.entity}${options.url}`)
   if (bufferDef.uri && cache?.has(bufferDef.uri)) {
     return cache.get(bufferDef.uri) as Promise<ArrayBuffer>
   }
@@ -1547,8 +1547,8 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const layer = LayerComponent.get(rootEntity)
 
   // Create a new dependency cache for this URL if it doesn't exist
-  if (!DependencyCache.has(options.url)) {
-    DependencyCache.set(options.url, new Map<string, Promise<any>>())
+  if (!DependencyCache.has(`${options.entity}${options.url}`)) {
+    DependencyCache.set(`${options.entity}${options.url}`, new Map<string, Promise<any>>())
   }
 
   migrateSceneDeltas(options.entity, options.document)
@@ -1624,7 +1624,7 @@ const unloadScene = (url: string, entity: Entity) => {
   const resourceCacheState = getState(ResourceCacheState)
   if (!resourceCacheState[url]) {
     delete interleavedBufferCache[url]
-    DependencyCache.delete(url)
+    DependencyCache.delete(`${entity}${url}`)
   }
 }
 
@@ -1687,7 +1687,7 @@ export const getDependency = <
   ...args: Args
 ) => {
   const url = options.url
-  const cache = DependencyCache.get(url)
+  const cache = DependencyCache.get(`${options.entity}${url}`)
   if (!cache) throw new Error('GLTFLoader: No cache found for url ' + url)
 
   const cacheKey = type + ':' + JSON.stringify(args)
