@@ -40,15 +40,16 @@ export interface InputFieldProps extends Omit<React.InputHTMLAttributes<HTMLInpu
  * A reusable input field component with reset functionality
  */
 const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(
-  ({ label, value, isPassword = false, onChange, isDirty = false, onReset, className = '' }, ref) => (
-    <div className={`flex max-w-[20ch] flex-1 items-center gap-2 ${className}`}>
+  ({ label, value, isPassword = false, onChange, isDirty = false, onReset, className = '', ...props }, ref) => (
+    <div className={`flex max-w-[25ch] flex-1 items-center gap-2 ${className}`}>
       <input
         ref={ref}
         type={isPassword ? 'password' : 'text'}
-        className="w-full bg-transparent text-right focus-visible:outline-none"
+        className="w-full bg-transparent text-right placeholder:text-white/20 focus-visible:outline-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
+        {...props}
       />
 
       <button onClick={onReset} className={isDirty ? 'visible' : 'invisible'} aria-label={`Reset ${label}`}>

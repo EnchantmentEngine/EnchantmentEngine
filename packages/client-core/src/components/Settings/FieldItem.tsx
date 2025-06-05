@@ -31,7 +31,15 @@ interface FieldItemProps extends InputFieldProps {
   className?: string
 }
 
-const FieldItem: React.FC<FieldItemProps> = ({ label, className = '', value, onChange, isDirty, onReset }) => {
+const FieldItem: React.FC<FieldItemProps> = ({
+  label,
+  className = '',
+  value,
+  onChange,
+  isDirty,
+  onReset,
+  ...inputProps
+}) => {
   const ref = useRef<HTMLInputElement>(null)
   return (
     <div
@@ -51,6 +59,7 @@ const FieldItem: React.FC<FieldItemProps> = ({ label, className = '', value, onC
         onChange={onChange}
         isDirty={isDirty}
         onReset={onReset}
+        {...inputProps}
       />
     </div>
   )

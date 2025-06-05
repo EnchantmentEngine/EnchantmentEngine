@@ -25,6 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useHookstate } from '@hookstate/core'
 import { validateEmail } from '@ir-engine/common/src/config'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
 import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
 import { Divider, Link } from '@ir-engine/ui/viewer'
@@ -39,10 +41,11 @@ import { MenuItem } from './MenuItem'
 import { Section } from './Section'
 import { Socials } from './SSOScreen'
 import ToggleItem from './ToggleItem'
+
 export default function SignupScreen() {
   const [tosAgreed, setTosAgreed] = useState(false)
   const [ageAgreed, setAgeAgreed] = useState(false)
-  const username = useHookstate('Test')
+  const username = useHookstate('')
   const email = useHookstate('')
   const isValid = useHookstate(false)
 
@@ -66,6 +69,8 @@ export default function SignupScreen() {
     AuthService.loginUserByOAuth(client, location, true, location.href, username.value)
   }
 
+  const clientSetting = useEngineSetting<ClientEngineSettingType>('client')
+
   const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
 
   const disableMagicLink = !agreedToAll || pending.value || sent.value || !isValid.value
@@ -75,7 +80,12 @@ export default function SignupScreen() {
       <div className="font-dm-sans">By signing up, you agree to the following:</div>
       <Section className="font-figtree">
         <ToggleItem checked={tosAgreed} onClick={() => setTosAgreed(!tosAgreed)}>
-          I agree to the <Link>Infinite Reality Terms of Service</Link>
+          <span>
+            I agree to the{' '}
+            <Link target="_blank" href={clientSetting?.data?.termsOfService ?? ''}>
+              Infinite Reality Terms of Service
+            </Link>
+          </span>
         </ToggleItem>
         <ToggleItem
           checked={ageAgreed}
@@ -84,12 +94,12 @@ export default function SignupScreen() {
         />
       </Section>
       <Section disabled={!agreedToAll}>
-        <FieldItem label="Username" onChange={username.set} value={username.value} />
+        <FieldItem type="text" label="Username" placeholder="Username" onChange={username.set} value={username.value} />
       </Section>
 
       <div className="mt-2">
         <Section disabled={!agreedToAll}>
-          <FieldItem label="Email" onChange={email.set} value={email.value} />
+          <FieldItem type="email" label="Email" onChange={email.set} value={email.value} />
         </Section>
 
         <GlassButton
