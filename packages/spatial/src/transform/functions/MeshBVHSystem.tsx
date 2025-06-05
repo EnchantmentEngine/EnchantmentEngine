@@ -239,7 +239,7 @@ export const MeshBVHSystem = defineSystem({
 const originalUpdate = MeshBVHHelper.prototype.update
 
 MeshBVHHelper.prototype.update = function () {
-  if (!this.entity) return
+  if (!this.entity || !this.mesh) return
 
   originalUpdate.call(this)
 }
