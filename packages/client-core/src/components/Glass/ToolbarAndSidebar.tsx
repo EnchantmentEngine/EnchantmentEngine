@@ -193,7 +193,6 @@ const contentStyles = `
   lg:px-14
   lg:pt-12
 
-  w-full
 `
 
 const contentContainerStyles = `
