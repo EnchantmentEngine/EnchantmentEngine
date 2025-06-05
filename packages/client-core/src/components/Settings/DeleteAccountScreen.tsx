@@ -56,8 +56,8 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, n
         transition={{ duration: 0.3 }}
         className="flex h-full flex-1 flex-col items-center justify-center space-y-2"
       >
-        <p className="text-lg font-medium text-white/90">Are you sure you want to</p>
-        <p className="text-lg font-medium text-white/90">delete your account?</p>
+        <p className="text-lg font-medium text-white/90 md:text-2xl">Are you sure you want to</p>
+        <p className="text-lg font-medium text-white/90 md:text-2xl">delete your account?</p>
       </motion.div>
 
       {/* Action Buttons */}

@@ -28,11 +28,10 @@ import React from 'react'
 export interface SectionProps {
   children: React.ReactNode
   className?: string
-  withDivider?: boolean
   disabled?: boolean
 }
 
-export const Section: React.FC<SectionProps> = ({ children, className = '', withDivider = false, disabled }) => (
+export const Section: React.FC<SectionProps> = ({ children, className = '', disabled }) => (
   <div
     className={`overflow-hidden rounded-xl  font-dm-sans text-xs shadow-sm md:text-base ${
       disabled ? 'pointer-events-none opacity-50' : ''
@@ -43,6 +42,6 @@ export const Section: React.FC<SectionProps> = ({ children, className = '', with
       letterSpacing: '0.025em'
     }}
   >
-    {withDivider ? <div className="divide-y divide-white/10">{children}</div> : <div className="">{children}</div>}
+    {children}
   </div>
 )
