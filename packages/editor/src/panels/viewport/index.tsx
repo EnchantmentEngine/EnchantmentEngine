@@ -32,10 +32,10 @@ import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { engineSettingPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
 import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
-import { useComponent, useQuery } from '@ir-engine/ecs'
+import { useComponent } from '@ir-engine/ecs'
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { ResourcePendingComponent } from '@ir-engine/engine/src/gltf/ResourcePendingComponent'
+import { ResourceProgressComponent } from '@ir-engine/engine/src/gltf/ResourceProgressComponent'
 import { ErrorBoundary, getState, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
@@ -48,7 +48,7 @@ import { ChevronDownMd } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { TabData } from 'rc-dock'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { useDrop } from 'react-dnd'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
@@ -164,7 +164,7 @@ const SceneLoadingProgress = ({ rootEntity }) => {
   const { t } = useTranslation()
   const progress = useComponent(rootEntity, GLTFComponent).progress.value
   const loaded = GLTFComponent.useSceneLoaded(rootEntity)
-  const resourcePendingQuery = useQuery([ResourcePendingComponent])
+  const pendingResources = ResourceProgressComponent.useAllPendingResources()
 
   if (loaded) return null
 
@@ -173,7 +173,7 @@ const SceneLoadingProgress = ({ rootEntity }) => {
       fullSpace
       className="block h-12 w-12"
       containerClassName="absolute bg-black bg-opacity-70"
-      title={t('editor:loadingScenesWithProgress', { progress, assetsLeft: resourcePendingQuery.length })}
+      title={t('editor:loadingScenesWithProgress', { progress, assetsLeft: pendingResources })}
     />
   )
 }
@@ -195,6 +195,12 @@ export function ViewportContainer() {
   const ref = React.useRef<HTMLDivElement>(null)
   const toolbarRef = React.useRef<HTMLDivElement>(null)
   const itemsRef = React.useRef<HTMLDivElement>(null)
+  const canvasReactRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!canvasReactRef.current) return
+    canvasRef.set(canvasReactRef)
+  }, [canvasReactRef.current])
 
   const [transformPivotFeatureFlag] = useFeatureFlags([FeatureFlags.Studio.UI.TransformPivot])
 
@@ -235,7 +241,7 @@ export function ViewportContainer() {
         <div
           key={key + index}
           className={twMerge(visible ? 'visible' : 'collapse', 'inline-flex')}
-          data-targetId={index}
+          data-targetid={index}
           data-side={side}
         >
           {element}
@@ -255,7 +261,10 @@ export function ViewportContainer() {
 
       withDividers.push(item)
       withDividers.push(
-        <div className={twMerge('h-full w-px bg-text-inactive', isNextVisible ? 'opacity-1' : 'opacity-0')} />
+        <div
+          className={twMerge('h-full w-px bg-text-inactive', isNextVisible ? 'opacity-1' : 'opacity-0')}
+          key={index + 'divider'}
+        />
       )
     })
 
@@ -373,11 +382,7 @@ export function ViewportContainer() {
         {sceneName.value ? <SelectionBox viewportRef={ref} toolbarRef={toolbarRef} /> : null}
         {sceneName.value ? <TransformGizmoTool /> : null}
         {sceneName.value ? <CameraGizmoTool viewportRef={ref} toolbarRef={toolbarRef} /> : null}
-        <div
-          id="engine-renderer-canvas-container"
-          ref={(ref) => canvasRef.set({ current: ref })}
-          className="absolute z-10 h-full w-full"
-        />
+        <div id="engine-renderer-canvas-container" ref={canvasReactRef} className="absolute z-10 h-full w-full" />
         {sceneName.value ? (
           <>{rootEntity.value && <SceneLoadingProgress key={rootEntity.value} rootEntity={rootEntity.value} />}</>
         ) : (
