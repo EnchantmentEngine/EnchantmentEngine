@@ -145,10 +145,12 @@ export const ChatMenu = ({ navigateTo }: { navigateTo: (screenKey: string, histo
 
   if (isGuest) {
     return (
-      <div className="flex h-full max-w-screen-sm flex-col items-center justify-center gap-8 font-dm-sans">
+      <div className="flex h-full w-full max-w-screen-sm flex-col items-center justify-center gap-8 font-dm-sans">
         <HiChatBubbleLeftRight className="mx-auto h-[5.5rem] w-[5.5rem]" />
-        <div className="text-shadow-md text-2xl text-white">Want to chat with others?</div>
-        <GlassButton onClick={onCTAClicked}>Create an Account</GlassButton>
+        <div className="text-shadow font-manrope text-2xl text-white">Want to chat with others?</div>
+        <GlassButton className={'w-[90%]'} onClick={onCTAClicked}>
+          Create an Account
+        </GlassButton>
       </div>
     )
   }

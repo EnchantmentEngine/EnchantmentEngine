@@ -44,7 +44,7 @@ export default function SignupScreen() {
   const [tosAgreed, setTosAgreed] = useState(false)
   const [ageAgreed, setAgeAgreed] = useState(false)
   const username = useHookstate('Test')
-  const email = useHookstate('test@gmail.com')
+  const email = useHookstate('')
   const isValid = useHookstate(false)
 
   const { pending, handleMagicLink, sent } = useMagicLink()
@@ -71,7 +71,7 @@ export default function SignupScreen() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div>By signing up, you agree to the following:</div>
+      <div className="font-dm-sans">By signing up, you agree to the following:</div>
       <Section>
         <ToggleItem
           checked={tosAgreed}
@@ -86,17 +86,22 @@ export default function SignupScreen() {
       </Section>
       <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>
         <FieldItem label="Username" onChange={username.set} value={username.value} />
-        <FieldItem label="Email" onChange={email.set} value={email.value} />
       </Section>
 
-      <GlassButton
-        disabled={!agreedToAll || pending.value || sent.value || !isValid.value}
-        onClick={onMagicLinkClick}
-        className={`text-md mx-auto flex w-1/2 gap-[1ch]`}
-      >
-        {sent.value ? 'Sent!' : 'Send magic link'}
-        <FaLink />
-      </GlassButton>
+      <div>
+        <Section>
+          <FieldItem label="Email" onChange={email.set} value={email.value} />
+        </Section>
+
+        <GlassButton
+          disabled={!agreedToAll || pending.value || sent.value || !isValid.value}
+          onClick={onMagicLinkClick}
+          className={`text-md mx-auto flex w-full`}
+        >
+          {sent.value ? 'Sent!' : 'Send magic link'}
+          <FaLink />
+        </GlassButton>
+      </div>
 
       <div className={`mt-4 ${agreedToAll ? '' : 'opacity-50'}`}>Or Connect to:</div>
       <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>

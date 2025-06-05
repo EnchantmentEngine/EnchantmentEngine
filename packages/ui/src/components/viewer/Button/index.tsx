@@ -32,5 +32,5 @@ export const GlassButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>
   flex items-center justify-center mt-6 w-[80%] rounded-full border border-white/20 bg-white/15 px-6 py-4 text-lg font-bold text-white/90 shadow-lg drop-shadow-xl backdrop-blur-sm
   ${disabled ? 'cursor-not-allowed opacity-50' : ''}
   `
-  return <button {...props} className={twMerge(className, style)} />
+  return <button {...props} className={twMerge(style, className)} />
 }
