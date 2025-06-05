@@ -34,6 +34,7 @@ import {
   PresentationSystemGroup,
   QueryReactor,
   removeComponent,
+  setComponent,
   UndefinedEntity,
   useChildrenWithComponents,
   useComponent,
@@ -302,11 +303,24 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
     const entityPosition = transformComponent?.position.value.clone() || new Vector3(0, 0, 0)
     const cubeMapPos = entityPosition.clone().add(bakeComponent.bakePositionOffset.value)
+    const boxProjectionPlugin = getOptionalMutableComponent(entity, BoxProjectionPlugin)
 
-    return () => {
-      removeComponent(entity, BoxProjectionPlugin)
+    if (boxProjectionPlugin) {
+      boxProjectionPlugin.cubeMapPos.set(cubeMapPos)
+      boxProjectionPlugin.cubeMapSize.set(bakeComponent.bakeScale.value)
+    } else {
+      setComponent(entity, BoxProjectionPlugin, {
+        cubeMapPos: cubeMapPos,
+        cubeMapSize: bakeComponent.bakeScale.value
+      })
     }
-  }, [bakeComponent?.boxProjection, bakeComponent?.envMapOrigin])
+  }, [
+    bakeComponent?.boxProjection,
+    bakeComponent?.envMapOrigin,
+    bakeComponent?.bakePositionOffset,
+    bakeComponent?.bakeScale,
+    transformComponent?.position
+  ])
 
   useEffect(() => {
     if (!error) return
