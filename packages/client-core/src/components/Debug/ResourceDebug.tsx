@@ -107,7 +107,7 @@ export function ResourceDebug() {
   const entriesOnCPU = Object.entries(resourceState.resources.value).reduce(
     (acc, [key, val]) => {
       const res = val as Resource
-      if (val.metadata?.discarded || val.metadata?.onGPU || !val.metadata?.size) return acc
+      if (val.metadata?.discarded || !val.metadata?.size) return acc
       if (!acc[val.type]) acc[val.type] = {}
       const entity = val.entity
       const entityLabel = getEntityLabel(entity, res)

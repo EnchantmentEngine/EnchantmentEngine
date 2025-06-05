@@ -176,7 +176,7 @@ const getTotalUsedHeapMemoryMB = () => {
   const resourceState = getState(ResourceState)
 
   const heapMemory = Object.entries(resourceState.resources).reduce((acc, [key, val]) => {
-    if (val.metadata?.discarded || val.metadata?.onGPU || !val.metadata?.size) return acc
+    if (val.metadata?.discarded || !val.metadata?.size) return acc
     acc += val.metadata.size
     return acc
   }, 0)
