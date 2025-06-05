@@ -24,9 +24,9 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useHookstate } from '@hookstate/core'
-import { capitalize } from '@ir-engine/server-core/src/util/capitalize'
 import Divider from '@ir-engine/ui/src/components/viewer/Divider'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
+import { capitalize } from 'lodash'
 import React from 'react'
 import { FaApple, FaGithub, FaGoogle, FaMinusCircle } from 'react-icons/fa'
 import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'
