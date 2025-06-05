@@ -25,13 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { useHookstate } from '@hookstate/core'
 import { capitalize } from '@ir-engine/server-core/src/util/capitalize'
-import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import Divider from '@ir-engine/ui/src/components/viewer/Divider'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { FaApple, FaGithub, FaGoogle, FaMinusCircle } from 'react-icons/fa'
 import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'
 import { AuthService } from '../../user/services/AuthService'
+import ButtonGroup from './ButtonGroup'
 import { MenuItem } from './MenuItem'
 import { Section } from './Section'
 
@@ -77,10 +77,12 @@ const SSOScreen: React.FC<SSOScreenProps> = () => {
         <div className="text-dm-sans m-auto flex w-full flex-1 flex-col justify-center text-center text-2xl text-white">
           Are you sure you want to remove social login from {capitalize(deleteSSO.value)}?
         </div>
-        <div className="flex w-1/2 flex-col items-center gap-1">
-          <GlassButton onClick={() => AuthService.removeUserOAuth(deleteSSO.value)}>Remove</GlassButton>
-          <GlassButton onClick={() => deleteSSO.set('')}>Nevermind</GlassButton>
-        </div>
+        <ButtonGroup
+          options={[
+            { label: 'Remove', onClick: () => AuthService.removeUserOAuth(deleteSSO.value) },
+            { label: 'Nevermind', onClick: () => deleteSSO.set('') }
+          ]}
+        />
       </div>
     )
   }

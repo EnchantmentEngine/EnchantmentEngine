@@ -24,10 +24,10 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useMutableState } from '@ir-engine/hyperflux'
-import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import { motion } from 'motion/react'
 import React from 'react'
 import { AuthService, AuthState } from '../../user/services/AuthService'
+import ButtonGroup from './ButtonGroup'
 
 interface DeleteAccountScreenProps {
   navigateTo: (screenKey: string, historyKey: string) => void
@@ -61,28 +61,12 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, n
       </motion.div>
 
       {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="flex w-full max-w-xs flex-col items-center space-y-3"
-      >
-        {/* Stay Here Button */}
-        <GlassButton
-          onClick={handleStayHere}
-          className="w-full rounded-xl py-3.5 font-medium text-white transition-all hover:scale-105"
-        >
-          Stay Here
-        </GlassButton>
-
-        {/* Delete Button */}
-        <GlassButton
-          onClick={handleDelete}
-          className="w-full rounded-xl py-3.5 font-medium text-white transition-all hover:scale-105"
-        >
-          Delete
-        </GlassButton>
-      </motion.div>
+      <ButtonGroup
+        options={[
+          { label: 'Stay Here', onClick: handleStayHere },
+          { label: 'Delete', onClick: handleDelete }
+        ]}
+      />
     </div>
   )
 }
