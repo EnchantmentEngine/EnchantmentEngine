@@ -144,6 +144,54 @@ export type Resource = {
 }
 
 //#region budget checking functions
+
+const MB = 1 << 20
+
+const getTotalAvailableHeapMemoryMB = () => {
+  //@ts-ignore
+  const memory = performance.memory
+  if (memory) {
+    return Math.floor(memory.jsHeapSizeLimit / MB)
+  }
+
+  // 128MB chunk size
+  const stepSize = 128 * MB
+  const stepsArr = [] as Uint8Array[]
+
+  // Check up to 4GB
+  for (let i = 0; i < 32; i++) {
+    try {
+      const arr = new Uint8Array(stepSize)
+      arr.fill(255)
+      stepsArr.push(arr)
+    } catch (e) {
+      break
+    }
+  }
+
+  return Math.floor((stepsArr.length * stepSize) / MB)
+}
+
+const getTotalUsedHeapMemoryMB = () => {
+  const resourceState = getState(ResourceState)
+
+  const heapMemory = Object.entries(resourceState.resources).reduce((acc, [key, val]) => {
+    if (val.metadata?.discarded || val.metadata?.onGPU || !val.metadata?.size) return acc
+    acc += val.metadata.size
+    return acc
+  }, 0)
+
+  return heapMemory / MB
+}
+
+const getCurrentAvailableHeapMemoryMB = () => {
+  const resourceState = getState(ResourceState)
+
+  const used = getTotalUsedHeapMemoryMB()
+  const available = resourceState.totalAvailableHeapMemoryMB - used
+  return available
+}
+
 const getTotalSizeOfResources = () => {
   let size = 0
   const resources = getState(ResourceState).resources
@@ -714,6 +762,7 @@ export const ResourceState = defineState({
   name: 'ResourceState',
 
   initial: () => ({
+    totalAvailableHeapMemoryMB: getTotalAvailableHeapMemoryMB(),
     resources: {} as Record<string, Resource>,
     totalVertexCount: 0,
     totalBufferCount: 0,
@@ -736,6 +785,8 @@ export const ResourceState = defineState({
   getResourceID,
   checkBudgets,
   budgets: {
+    getTotalUsedHeapMemoryMB,
+    getCurrentAvailableHeapMemoryMB,
     getTotalSizeOfResources,
     getTotalBufferSize,
     getTotalVertexCount,
