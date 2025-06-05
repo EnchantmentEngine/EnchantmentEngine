@@ -24,8 +24,12 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import type { Meta, StoryObj } from '@storybook/react'
+import { ws } from 'msw'
 import React, { useState } from 'react'
 import SettingsMenu, { screens } from '.'
+
+// Create websocket connection for Primus
+const primusWs = ws.link(/primus/g)
 
 const meta = {
   title: 'UI/Settings Menu',

@@ -43,11 +43,11 @@ import WorldSettings from './WorldSettings'
 import { useNavigationProvider } from '../Glass/NavigationProvider'
 import AvatarScreen from './AvatarScreen'
 import DeleteAccountScreen from './DeleteAccountScreen'
-import DisplayNameScreen from './DisplayNameScreen'
 import PermissionsScreen from './PermissionsScreen'
 import ShareSpaceScreen from './ShareSpaceScreen'
 import SignUpScreen from './SignUpScreen'
 import SSOScreen from './SSOScreen'
+import UsernameScreen from './UsernameScreen'
 
 // Define screen structure type
 interface ScreenDefinition {
@@ -82,8 +82,8 @@ export const screens: Record<string, ScreenDefinition> = {
     component: (props) => <PlaceholderScreen {...props} title="Controls" />,
     title: 'Controls'
   },
-  displayName: {
-    component: DisplayNameScreen,
+  username: {
+    component: UsernameScreen,
     title: 'Display Name'
   },
   userId: {
@@ -139,7 +139,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ initScreen = 'main' }) => {
       data-testid="settings-menu-backdrop"
       id="settings-menu-backdrop"
       className={`
-        flex w-full items-start
+        flex h-full w-full items-start
         justify-center
       `}
     >
@@ -150,7 +150,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ initScreen = 'main' }) => {
         transition={{ duration: 0.2 }}
         className={`
           pointer-events-auto
-          flex w-full
+          flex h-full
+          w-full
           flex-col
           font-dm-sans
           text-white
@@ -171,8 +172,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ initScreen = 'main' }) => {
               }}
               className={`
                 scrollbar-hide
-                flex flex-col justify-center
-                gap-y-4
+                flex h-full flex-col
+                justify-center gap-y-4
               `}
             >
               <ActiveComponent navigateTo={navigateTo} navigateClose={navigateClose} />
