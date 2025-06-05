@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { XCloseMd } from '@ir-engine/ui/src/icons'
 import React from 'react'
 
-export interface InputFieldProps {
+export interface InputFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string
   value: string
   isPassword?: boolean

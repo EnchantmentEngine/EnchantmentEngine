@@ -29,11 +29,14 @@ export interface SectionProps {
   children: React.ReactNode
   className?: string
   withDivider?: boolean
+  disabled?: boolean
 }
 
-export const Section: React.FC<SectionProps> = ({ children, className = '', withDivider = false }) => (
+export const Section: React.FC<SectionProps> = ({ children, className = '', withDivider = false, disabled }) => (
   <div
-    className={`overflow-hidden rounded-xl font-figtree text-xs shadow-sm md:text-base ${className} `}
+    className={`overflow-hidden rounded-xl  font-figtree text-xs shadow-sm md:text-base ${
+      disabled ? 'pointer-events-none opacity-50' : ''
+    } ${className} `}
     style={{
       background: 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
       border: '1px solid rgba(255, 255, 255, 0.05)'

@@ -69,6 +69,8 @@ export default function SignupScreen() {
 
   const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
 
+  const disableMagicLink = !agreedToAll || pending.value || sent.value || !isValid.value
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="font-dm-sans">By signing up, you agree to the following:</div>
@@ -84,19 +86,19 @@ export default function SignupScreen() {
           label="I am 18 years of age or older"
         />
       </Section>
-      <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>
+      <Section disabled={!agreedToAll}>
         <FieldItem label="Username" onChange={username.set} value={username.value} />
       </Section>
 
-      <div>
-        <Section>
+      <div className="mt-2">
+        <Section disabled={!agreedToAll}>
           <FieldItem label="Email" onChange={email.set} value={email.value} />
         </Section>
 
         <GlassButton
-          disabled={!agreedToAll || pending.value || sent.value || !isValid.value}
+          disabled={disableMagicLink}
           onClick={onMagicLinkClick}
-          className={`text-md mx-auto flex w-full`}
+          className={`text-md mx-auto mt-4 flex w-full justify-center gap-2`}
         >
           {sent.value ? 'Sent!' : 'Send magic link'}
           <FaLink />
