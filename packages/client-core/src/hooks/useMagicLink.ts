@@ -40,7 +40,7 @@ export const useMagicLink = () => {
   const sent = useHookstate(false)
   const authSetting = useAuthSettings()
 
-  const handleMagicLink = async (email: string, isSignUp: boolean) => {
+  const handleMagicLink = async (email: string, isSignUp: boolean, username?: string) => {
     pending.set(true)
 
     if (!isSignUp) {
@@ -51,8 +51,12 @@ export const useMagicLink = () => {
       }
     }
 
+    const redirectURL = new URL(location.href)
+    if (username) {
+      redirectURL.searchParams.append('username', username)
+    }
     try {
-      await AuthService.createMagicLink(email, authSetting as AuthStrategiesType, 'email', getRedirectUrl())
+      await AuthService.createMagicLink(email, authSetting as AuthStrategiesType, 'email', redirectURL.toString())
     } finally {
       pending.set(false)
     }

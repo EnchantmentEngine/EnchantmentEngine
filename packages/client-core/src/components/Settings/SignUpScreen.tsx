@@ -51,7 +51,7 @@ export default function SignupScreen() {
 
   const onMagicLinkClick = async () => {
     sent.set(true)
-    await handleMagicLink(email.value, true)
+    await handleMagicLink(email.value, true, username.value)
     NotificationService.dispatchNotify('Check your email for a magic link', { variant: 'success' })
   }
 
