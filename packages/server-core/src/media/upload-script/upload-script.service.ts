@@ -116,7 +116,11 @@ const processScript = async (
   return uploadAsset(app, {
     path: 'public/processed-scripts/',
     name: outputFileName,
-    file: buffer as any as UploadFile,
+    file: {
+      buffer,
+      originalname: outputFileName,
+      mimetype: 'application/javascript'
+    } as UploadFile,
     project: uploadArgs.project
   })
 }

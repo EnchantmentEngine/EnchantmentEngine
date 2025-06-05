@@ -48,7 +48,7 @@ export const fetchCode = async (url) => {
 export const createNewScriptFile = async () => {
   const fileName = `New File.tsx`
   const resolvedFileName = await updateScriptFile(fileName)
-  return resolvedFileName.rawScript
+  return resolvedFileName.rawScript.url
 }
 
 export const ScriptNodeEditor: EditorComponentType = (props) => {
@@ -70,7 +70,9 @@ export const ScriptNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.script.lbl-scriptPath')}
       >
         {!scriptComponent.src.value && (
-          <Button onClick={createNewScriptFile}>{t('editor:properties.script.create')}</Button>
+          <Button onClick={() => createNewScriptFile().then(commitProperty(ScriptComponent, 'src'))}>
+            {t('editor:properties.script.create')}
+          </Button>
         )}
         <ScriptInput value={scriptComponent.src.value} onChange={commitProperty(ScriptComponent, 'src')} />
         {errors?.MISSING_FILE && (
