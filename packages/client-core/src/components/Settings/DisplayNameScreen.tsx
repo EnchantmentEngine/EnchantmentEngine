@@ -35,14 +35,13 @@ import { AuthState } from '../../user/services/AuthService'
 import { AvatarService } from '../../user/services/AvatarService'
 import { clientContextParams } from '../../util/ClientContextState'
 import FieldItem from './FieldItem'
-import { Section } from './Section'
 
-interface UsernamePasswordScreenProps {
-  navigateTo: (screen: string) => void
+interface DisplayNameScreenProps {
+  navigateTo: (screenKey: string, historyKey) => void
 }
 const logger = multiLogger.child({ component: 'engine:ecs:DisplayName', modifier: clientContextParams })
 
-const DisplayNameScreen: React.FC<UsernamePasswordScreenProps> = () => {
+const DisplayNameScreen: React.FC<DisplayNameScreenProps> = () => {
   const { name, id } = useMutableState(AuthState).user
   const displayName = useHookstate(name.value as string)
   const saved = useHookstate(false)
@@ -70,6 +69,18 @@ const DisplayNameScreen: React.FC<UsernamePasswordScreenProps> = () => {
       }, 2000)
     }
   }, [saved.value])
+
+  const Section: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+    <div
+      className={`overflow-hidden rounded-xl shadow-sm ${className}`}
+      style={{
+        background: 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+        border: '1px solid rgba(255, 255, 255, 0.05)'
+      }}
+    >
+      {children}
+    </div>
+  )
 
   return (
     <div className="flex h-full flex-col gap-4">

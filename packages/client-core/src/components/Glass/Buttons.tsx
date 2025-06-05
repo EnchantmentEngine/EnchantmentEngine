@@ -19,35 +19,47 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
+export const smallIconButtonStyles = `
+  rounded-full
+  text-white
+  text-3xl
+  font-bold
+  w-10
+  h-10
+  flex
+  items-center
+  justify-center
+  border-2
+  border-b-white/0
+  border-white/10
+  shadow-lg
+  
+  bg-white/10
+  
+  hover:bg-white/20
+`
 
-import Divider from '@ir-engine/ui/src/components/viewer/Divider'
-import { Section } from './Section'
-import SliderItem from './SliderItem'
-import ToggleItem from './ToggleItem'
-
-// Define types for screen components
-interface ScreenProps {
-  navigateTo: (screenKey: string, historyKey: string) => void
-  navigateClose?: () => void
-}
-
-const WorldSettings: React.FC<ScreenProps> = () => (
-  <div className="h-full space-y-4">
-    <Section>
-      <SliderItem label="Audio Volume" defaultValue={50} />
-      <Divider />
-      <ToggleItem label="Animation" checked />
-      <Divider />
-      <ToggleItem label="Vegetation" />
-      <Divider />
-      <ToggleItem label="Multiplayer" />
-    </Section>
-  </div>
-)
-
-export default WorldSettings
+export const largeIconButtonStyles = `
+  rounded-full
+  text-white
+  text-3xl
+  font-bold
+  w-14
+  h-14
+  flex
+  items-center
+  justify-center
+  border-2
+  border-b-white/0
+  border-white/10
+  shadow-xl
+  
+  bg-white/10
+  backdrop-blur-lg
+  
+  hover:bg-white/20
+`

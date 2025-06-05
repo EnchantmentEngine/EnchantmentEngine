@@ -30,11 +30,11 @@ import React from 'react'
 import { AuthService, AuthState } from '../../user/services/AuthService'
 
 interface DeleteAccountScreenProps {
-  navigateTo: (screen: string) => void
-  onClose?: () => void
+  navigateTo: (screenKey: string, historyKey: string) => void
+  navigateClose: () => void
 }
 
-const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, onClose }) => {
+const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, navigateClose }) => {
   const { id } = useMutableState(AuthState).user
 
   const handleDelete = () => {
@@ -44,7 +44,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, o
   }
 
   const handleStayHere = () => {
-    navigateTo('account')
+    navigateTo('Settings', 'account')
   }
 
   return (
