@@ -69,6 +69,8 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
     name: args.name,
     path: args.path
   })
+  console.log(args)
+
   const hash = createStaticResourceHash(args.file.buffer)
 
   const query = {
@@ -90,7 +92,7 @@ export const uploadAsset = async (app: Application, args: UploadAssetArgs) => {
     null,
     {
       project: args.project,
-      body: args.file,
+      body: args.file.buffer,
       path: relativePath
     },
     {

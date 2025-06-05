@@ -23,22 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { IoLogoJavascript } from 'react-icons/io5'
 
-import config from '@ir-engine/common/src/config'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { updateScriptFile } from '@ir-engine/editor/src/panels/script'
-import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { ScriptComponent } from '@ir-engine/engine'
 import { getEntityErrors } from '@ir-engine/engine/src/scene/components/ErrorComponent'
-import { getState } from '@ir-engine/hyperflux'
-import { uniqueId } from 'lodash'
+import Button from '../../../../primitives/tailwind/Button'
 import InputGroup from '../../input/Group'
 import ScriptInput from '../../input/Script'
 
@@ -49,10 +46,9 @@ export const fetchCode = async (url) => {
 }
 
 export const createNewScriptFile = async () => {
-  const fileName = `${uniqueId('RealityScript')}.tsx`
-  await updateScriptFile(fileName)
-  const relativePath = `projects/${getState(EditorState).projectName}/assets/scripts`
-  return `${config.client.fileServer}/${relativePath}/${fileName}`
+  const fileName = `New File.tsx`
+  const resolvedFileName = await updateScriptFile(fileName)
+  return resolvedFileName.rawScript
 }
 
 export const ScriptNodeEditor: EditorComponentType = (props) => {
@@ -61,15 +57,6 @@ export const ScriptNodeEditor: EditorComponentType = (props) => {
   const scriptComponent = useComponent(props.entity, ScriptComponent)
 
   const errors = getEntityErrors(props.entity, ScriptComponent)
-
-  useEffect(() => {
-    if (scriptComponent.src.value.length > 0) return // only set if there is no value already set
-    ;(async () => {
-      const fileURL = await createNewScriptFile()
-      scriptComponent.src.set(fileURL)
-      commitProperty(ScriptComponent, 'src')(scriptComponent.src.value)
-    })()
-  }, [])
 
   return (
     <NodeEditor
@@ -82,6 +69,9 @@ export const ScriptNodeEditor: EditorComponentType = (props) => {
         name={t('editor:properties.script.lbl-scriptPath')}
         label={t('editor:properties.script.lbl-scriptPath')}
       >
+        {!scriptComponent.src.value && (
+          <Button onClick={createNewScriptFile}>{t('editor:properties.script.create')}</Button>
+        )}
         <ScriptInput value={scriptComponent.src.value} onChange={commitProperty(ScriptComponent, 'src')} />
         {errors?.MISSING_FILE && (
           <div className="mt-0.5 text-red-700">{t('editor:properties.script.error.invalid-location')}</div>

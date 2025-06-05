@@ -37,6 +37,7 @@ import { Application, HookContext } from '../../../declarations'
 const validateFiles = (context: HookContext) => {
   const args = context.arguments
   const files = args?.[1]?.files as UploadFile[]
+  if (!files) throw new BadRequest('No files provided')
   files.forEach((file: UploadFile) => {
     if (!file.originalname.includes('.')) throw new BadRequest('File name must include a file extension')
     if (
@@ -68,13 +69,12 @@ const checkScriptingEnabled = async (context: HookContext) => {
   const app = context.app as Application
   const result = await app.service(featureFlagSettingPath).find({
     query: {
-      flagName: FeatureFlags.Studio.Panel.Script,
-      paginate: false
+      flagName: FeatureFlags.Studio.Panel.Script
     }
   })
 
   const data = result.data || result
-  if (Array.isArray(data) && data.length > 0 && data[0].flagValue === false) {
+  if (Array.isArray(data) && data.length > 0 && !data[0].flagValue) {
     throw new MethodNotAllowed('Scripting is disabled')
   }
 
@@ -82,15 +82,11 @@ const checkScriptingEnabled = async (context: HookContext) => {
 }
 
 export default {
-  around: {
-    all: [checkScriptingEnabled]
-  },
-
   before: {
     all: [logRequest()],
     find: [disallow()],
     get: [],
-    create: [setLoggedInUser('userId'), validateFiles],
+    create: [checkScriptingEnabled, setLoggedInUser('userId'), validateFiles],
     update: [disallow()],
     patch: [disallow()],
     remove: [disallow()]
