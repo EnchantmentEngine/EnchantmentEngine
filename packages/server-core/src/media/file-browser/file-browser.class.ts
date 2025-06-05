@@ -506,7 +506,6 @@ export class FileBrowserService
       const filePath = path.resolve(projectsRootFolder, key)
       const dirname = path.dirname(filePath)
       fs.mkdirSync(dirname, { recursive: true })
-      console.log('data.body', data.body)
       fs.writeFileSync(filePath, data.body)
     }
 
