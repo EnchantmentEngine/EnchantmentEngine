@@ -26,6 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 export { default as Divider } from './src/components/viewer/Divider'
 export { default as InputField } from './src/components/viewer/InputField'
 export type { InputFieldProps } from './src/components/viewer/InputField'
+export { default as Link } from './src/components/viewer/Link'
+export type { LinkProps } from './src/components/viewer/Link'
 export { default as Slider } from './src/components/viewer/Slider'
 export type { SliderProps } from './src/components/viewer/Slider'
 export { default as Toggle } from './src/components/viewer/Toggle'

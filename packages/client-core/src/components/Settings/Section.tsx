@@ -34,12 +34,13 @@ export interface SectionProps {
 
 export const Section: React.FC<SectionProps> = ({ children, className = '', withDivider = false, disabled }) => (
   <div
-    className={`overflow-hidden rounded-xl  font-figtree text-xs shadow-sm md:text-base ${
+    className={`overflow-hidden rounded-xl  font-dm-sans text-xs shadow-sm md:text-base ${
       disabled ? 'pointer-events-none opacity-50' : ''
     } ${className} `}
     style={{
       background: 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-      border: '1px solid rgba(255, 255, 255, 0.05)'
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      letterSpacing: '0.025em'
     }}
   >
     {withDivider ? <div className="divide-y divide-white/10">{children}</div> : <div className="">{children}</div>}

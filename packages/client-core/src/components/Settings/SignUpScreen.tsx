@@ -27,7 +27,7 @@ import { useHookstate } from '@hookstate/core'
 import { validateEmail } from '@ir-engine/common/src/config'
 import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
-import { Divider } from '@ir-engine/ui/viewer'
+import { Divider, Link } from '@ir-engine/ui/viewer'
 import React, { useEffect, useState } from 'react'
 import { FaLink } from 'react-icons/fa'
 import { NotificationService } from '../../common/services/NotificationService'
@@ -39,7 +39,6 @@ import { MenuItem } from './MenuItem'
 import { Section } from './Section'
 import { Socials } from './SSOScreen'
 import ToggleItem from './ToggleItem'
-
 export default function SignupScreen() {
   const [tosAgreed, setTosAgreed] = useState(false)
   const [ageAgreed, setAgeAgreed] = useState(false)
@@ -74,12 +73,10 @@ export default function SignupScreen() {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="font-dm-sans">By signing up, you agree to the following:</div>
-      <Section>
-        <ToggleItem
-          checked={tosAgreed}
-          onClick={() => setTosAgreed(!tosAgreed)}
-          label="I agree to the Infinite Reality Terms of Service"
-        />
+      <Section className="font-figtree">
+        <ToggleItem checked={tosAgreed} onClick={() => setTosAgreed(!tosAgreed)}>
+          I agree to the <Link>Infinite Reality Terms of Service</Link>
+        </ToggleItem>
         <ToggleItem
           checked={ageAgreed}
           onClick={() => setAgeAgreed(!ageAgreed)}
