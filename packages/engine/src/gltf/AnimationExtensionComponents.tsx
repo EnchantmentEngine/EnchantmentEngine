@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { GLTF } from '@gltf-transform/core'
 import { defineComponent, S } from '@ir-engine/ecs'
+import { BooleanKeyframeTrack, NumberKeyframeTrack, VectorKeyframeTrack } from 'three'
 
 /**
  * KHR_animation_pointer Extension Component
@@ -433,9 +434,6 @@ export function createPropertyAnimationTrack(
   outputArray: ArrayLike<number>,
   interpolation: number
 ): any {
-  // Import Three.js keyframe track types
-  const { NumberKeyframeTrack, VectorKeyframeTrack, BooleanKeyframeTrack } = require('three')
-
   const propertyDataType = getPropertyDataType(pointer)
 
   let TrackType: any
