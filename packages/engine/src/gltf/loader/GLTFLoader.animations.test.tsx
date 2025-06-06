@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -440,7 +440,41 @@ describe('glTF: AnimationChannelTarget Type', () => {
     })
 
     // Note: Extensions like KHR_animation_pointer allow "pointer"
-    it.todo('MAY allow "pointer" if KHR_animation_pointer extension is used', () => {})
+    it('MAY allow "pointer" if KHR_animation_pointer extension is used', async () => {
+      const options = mockGLTFOptions(mockGLTFMinimalAnimationChannelTarget())
+
+      // Add materials for the pointer target
+      options.document.materials = [
+        {
+          pbrMetallicRoughness: {
+            baseColorFactor: [1.0, 0.0, 0.0, 1.0]
+          }
+        }
+      ]
+
+      // Create a single channel animation with KHR_animation_pointer
+      options.document.animations![0].channels = [
+        {
+          sampler: 0,
+          target: {
+            path: 'pointer' as any,
+            extensions: {
+              KHR_animation_pointer: {
+                pointer: '/materials/0/pbrMetallicRoughness/baseColorFactor'
+              }
+            }
+          }
+        }
+      ]
+
+      // Update accessor to match VEC4 output for baseColorFactor
+      options.document.accessors![1].type = 'VEC4'
+
+      const animationClip = await GLTFLoaderFunctions.loadAnimation(options, 0)
+      expect(animationClip).toBeInstanceOf(AnimationClip)
+      expect(animationClip.tracks).toHaveLength(1)
+      expect(animationClip.tracks[0].name).toBe('/materials/0/pbrMetallicRoughness/baseColorFactor')
+    })
 
     /** @todo Are these requirements or recommendations? How do we test them if they are requirements? */
     it.todo(
@@ -472,7 +506,81 @@ describe('glTF: AnimationChannelTarget Type', () => {
     })
 
     // Example: KHR_animation_pointer specific properties
-    it.todo('MUST contain valid extension properties if defined (e.g., KHR_animation_pointer.pointer)', () => {})
+    it('MUST contain valid extension properties if defined (e.g., KHR_animation_pointer.pointer)', async () => {
+      const options = mockGLTFOptions(mockGLTFMinimalAnimationChannelTarget())
+
+      // Add materials for the pointer target
+      options.document.materials = [
+        {
+          pbrMetallicRoughness: {
+            baseColorFactor: [1.0, 0.0, 0.0, 1.0]
+          }
+        }
+      ]
+
+      // Test with valid KHR_animation_pointer extension - single channel
+      options.document.animations![0].channels = [
+        {
+          sampler: 0,
+          target: {
+            path: 'pointer' as any,
+            extensions: {
+              KHR_animation_pointer: {
+                pointer: '/materials/0/pbrMetallicRoughness/baseColorFactor'
+              }
+            }
+          }
+        }
+      ]
+
+      options.document.accessors![1].type = 'VEC4'
+
+      const animationClip = await GLTFLoaderFunctions.loadAnimation(options, 0)
+      expect(animationClip).toBeInstanceOf(AnimationClip)
+      expect(animationClip.tracks).toHaveLength(1)
+
+      // Test with invalid pointer (should skip the channel)
+      options.document.animations![0].channels[0].target.extensions!.KHR_animation_pointer.pointer = '/invalid/pointer'
+
+      const animationClipInvalid = await GLTFLoaderFunctions.loadAnimation(options, 0)
+      expect(animationClipInvalid.tracks).toHaveLength(0) // Should skip invalid channels
+    })
+
+    it('MUST support arbitrary extension properties', async () => {
+      const options = mockGLTFOptions(mockGLTFMinimalAnimationChannelTarget())
+
+      // Add materials with custom extension
+      options.document.materials = [
+        {
+          extensions: {
+            CUSTOM_material_extension: {
+              customFactor: 0.5,
+              customColor: [1.0, 0.0, 0.0]
+            }
+          }
+        }
+      ]
+
+      // Test with custom extension property
+      options.document.animations![0].channels = [
+        {
+          sampler: 0,
+          target: {
+            path: 'pointer' as any,
+            extensions: {
+              KHR_animation_pointer: {
+                pointer: '/materials/0/extensions/CUSTOM_material_extension/customFactor'
+              }
+            }
+          }
+        }
+      ]
+
+      const animationClip = await GLTFLoaderFunctions.loadAnimation(options, 0)
+      expect(animationClip).toBeInstanceOf(AnimationClip)
+      expect(animationClip.tracks).toHaveLength(1)
+      expect(animationClip.tracks[0].name).toBe('/materials/0/extensions/CUSTOM_material_extension/customFactor')
+    })
   }) //:: extensions
 
   describe('extras', () => {

@@ -19,7 +19,7 @@ The Original Code is Ethereal Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Ethereal Engine team.
 
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025 
+All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025
 Ethereal Engine. All Rights Reserved.
 */
 
@@ -113,6 +113,11 @@ import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { ResourceCacheState } from '../assets/state/ResourceCacheState'
 import { AuthoringActions } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
+import {
+  KHRAnimationPointerExtensionComponent,
+  createPropertyAnimationTrack,
+  validateJSONPointer
+} from './AnimationExtensionComponents'
 import { GLTFComponent } from './GLTFComponent'
 import {
   ALPHA_MODES,
@@ -1114,17 +1119,43 @@ const loadAnimation = async (options: GLTFParserOptions, animationIndex: number)
     const channel = animationDef.channels[i]
     const sampler = animationDef.samplers[channel.sampler]
     const target = channel.target
-    const name = target.node
     const input = animationDef.parameters !== undefined ? animationDef.parameters[sampler.input] : sampler.input
     const output = animationDef.parameters !== undefined ? animationDef.parameters[sampler.output] : sampler.output
 
-    if (name === undefined) continue
+    // Check if this is a KHR_animation_pointer channel
+    const isPointerChannel =
+      (target.path as any) === 'pointer' && target.extensions?.[KHRAnimationPointerExtensionComponent.jsonID]
 
-    pendingNodes.push(getDependency(options, 'node', name))
-    pendingInputAccessors.push(getDependency(options, 'accessor', input))
-    pendingOutputAccessors.push(getDependency(options, 'accessor', output))
-    samplers.push(sampler)
-    targets.push(target)
+    if (isPointerChannel) {
+      // Handle KHR_animation_pointer channels
+      const pointerExtension = target.extensions![KHRAnimationPointerExtensionComponent.jsonID] as { pointer: string }
+      const pointer = pointerExtension.pointer
+
+      // Validate the JSON pointer
+      try {
+        validateJSONPointer(json, pointer)
+      } catch (error) {
+        console.warn(`Invalid KHR_animation_pointer: ${error.message}`)
+        continue
+      }
+
+      // For pointer channels, we don't need a node dependency
+      pendingNodes.push(Promise.resolve(null as any))
+      pendingInputAccessors.push(getDependency(options, 'accessor', input))
+      pendingOutputAccessors.push(getDependency(options, 'accessor', output))
+      samplers.push(sampler)
+      targets.push(target)
+    } else {
+      // Handle standard animation channels
+      const name = target.node
+      if (name === undefined) continue
+
+      pendingNodes.push(getDependency(options, 'node', name))
+      pendingInputAccessors.push(getDependency(options, 'accessor', input))
+      pendingOutputAccessors.push(getDependency(options, 'accessor', output))
+      samplers.push(sampler)
+      targets.push(target)
+    }
   }
 
   const [nodes, inputAccessors, outputAccessors] = await Promise.all([
@@ -1136,23 +1167,58 @@ const loadAnimation = async (options: GLTFParserOptions, animationIndex: number)
   const tracks = [] as KeyframeTrack[]
   for (let i = 0, il = nodes.length; i < il; i++) {
     const entity = nodes[i]
-    const node = getComponent(entity, ObjectComponent) as Bone | SkinnedMesh | Mesh
     const inputAccessor = inputAccessors[i]
     const outputAccessor = outputAccessors[i]
     const sampler = samplers[i]
     const target = targets[i]
 
-    if (!node || !outputAccessor || !inputAccessor) continue
+    if (!outputAccessor || !inputAccessor) continue
 
-    if (node.updateMatrix) {
-      node.updateMatrix()
-    }
+    // Check if this is a KHR_animation_pointer channel
+    const isPointerChannel =
+      (target.path as any) === 'pointer' && target.extensions?.[KHRAnimationPointerExtensionComponent.jsonID]
 
-    const createdTracks = _createAnimationTracks(entity, inputAccessor, outputAccessor, sampler, target)
+    if (isPointerChannel) {
+      // Handle KHR_animation_pointer channels
+      const pointerExtension = target.extensions![KHRAnimationPointerExtensionComponent.jsonID] as { pointer: string }
+      const pointer = pointerExtension.pointer
 
-    if (createdTracks) {
-      for (const createdTrack of createdTracks) {
-        tracks.push(createdTrack)
+      // For KHR_animation_pointer, we'll validate compatibility at runtime
+      // since BufferAttribute doesn't have the same type information as the original accessor
+
+      // Create property animation track
+      const interpolation =
+        sampler.interpolation !== undefined ? INTERPOLATION[sampler.interpolation] : InterpolateLinear
+      const outputArray = _getArrayFromAccessor(outputAccessor)
+
+      const track = createPropertyAnimationTrack(
+        pointer,
+        inputAccessor.array,
+        outputArray,
+        interpolation || InterpolateLinear
+      )
+
+      // Override interpolation with custom factory method for CUBICSPLINE
+      if (sampler.interpolation === 'CUBICSPLINE') {
+        _createCubicSplineTrackInterpolant(track)
+      }
+
+      tracks.push(track)
+    } else {
+      // Handle standard animation channels
+      const node = getComponent(entity, ObjectComponent) as Bone | SkinnedMesh | Mesh
+      if (!node) continue
+
+      if (node.updateMatrix) {
+        node.updateMatrix()
+      }
+
+      const createdTracks = _createAnimationTracks(entity, inputAccessor, outputAccessor, sampler, target)
+
+      if (createdTracks) {
+        for (const createdTrack of createdTracks) {
+          tracks.push(createdTrack)
+        }
       }
     }
   }
