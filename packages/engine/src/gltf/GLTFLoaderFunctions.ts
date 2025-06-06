@@ -1547,11 +1547,11 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const layer = LayerComponent.get(rootEntity)
 
   // Create a new dependency cache for this URL if it doesn't exist
-  if (!DependencyCache.has(`${options.entity}${options.url}`)) {
-    DependencyCache.set(`${options.entity}${options.url}`, new Map<string, Promise<any>>())
+  if (!DependencyCache.has(`${rootEntity}${options.url}`)) {
+    DependencyCache.set(`${rootEntity}${options.url}`, new Map<string, Promise<any>>())
   }
 
-  migrateSceneDeltas(options.entity, options.document)
+  migrateSceneDeltas(rootEntity, options.document)
 
   const overrides = json.extensions?.[OVERRIDE_EXTENSION_NAME]
   if (overrides) {

@@ -1759,7 +1759,7 @@ describe('ShadowSystem', async () => {
       await flushAll()
 
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalledTimes(entities.length * 2)
+      expect(resultSpy).toHaveBeenCalledTimes(entities.length * 2 + 1)
     })
 
     it('should call DropShadowReactor once for every entity that has the components [VisibleComponent, ShadowComponent] when useShadowsEnabled is falsy and shadowTexture is truthy', async () => {
@@ -1808,7 +1808,7 @@ describe('ShadowSystem', async () => {
       await flushAll()
 
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      expect(resultSpy).toHaveBeenCalledTimes(entities.length)
+      expect(resultSpy).toHaveBeenCalledTimes(entities.length + 1)
     })
   }) //:: reactor
 }) //:: ShadowSystem

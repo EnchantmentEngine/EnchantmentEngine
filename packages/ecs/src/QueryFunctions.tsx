@@ -43,6 +43,7 @@ import { OpReturnType } from 'bitecs'
 import {
   Component,
   EntityContext,
+  LayerComponent,
   LayerComponents,
   LayerID,
   Layers,
@@ -190,15 +191,19 @@ export const EntityArrayBoundary = memo(
     const MemoChildEntityReactor = useMemo(() => memo(props.ChildEntityReactor), [props.ChildEntityReactor])
     return (
       <>
-        {props.entities.map((entity) => (
-          <QueryReactorErrorBoundary>
-            <Suspense fallback={<Suspended {...props} />}>
-              <EntityContext.Provider value={entity}>
-                <MemoChildEntityReactor key={entity} {...props.props} entity={entity} />
-              </EntityContext.Provider>
-            </Suspense>
-          </QueryReactorErrorBoundary>
-        ))}
+        {props.entities.map((entity) => {
+          const layer = LayerComponent.get(entity)
+          const id = LayerComponents[layer].stateMap[entity]?.identifier
+          return (
+            <QueryReactorErrorBoundary key={id}>
+              <Suspense fallback={<Suspended {...props} />}>
+                <EntityContext.Provider value={entity}>
+                  <MemoChildEntityReactor key={id} {...props.props} entity={entity} />
+                </EntityContext.Provider>
+              </Suspense>
+            </QueryReactorErrorBoundary>
+          )
+        })}
       </>
     )
   }
@@ -229,7 +234,7 @@ const QuerySubReactor = memo(
     const MountFunc = () => {
       // suspend to ensure components always exist in child react component
       for (const component of props.Components) useComponent(props.entity, component)
-      return <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+      return <props.ChildEntityReactor {...props.props} entity={props.entity} />
     }
 
     return (
