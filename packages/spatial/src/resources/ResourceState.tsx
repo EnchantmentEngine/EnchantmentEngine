@@ -43,8 +43,6 @@ import {
   Entity,
   QueryReactor,
   UUIDComponent,
-  getAncestorWithComponents,
-  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -59,7 +57,6 @@ import React, { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
 import iterateObject3D from '../common/functions/iterateObject3D'
-import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
@@ -215,7 +212,7 @@ const getRendererInfo = () => {
   if (!renderer) return {}
   return {
     memory: renderer.info.memory,
-    programCount: renderer.info.programs?.length
+    programCount: renderer.info.calls
   }
 }
 
@@ -291,10 +288,12 @@ const resourceCallbacks = {
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: false })
+        if (!discardUponUpload) return
+
         const viewer = getState(ReferenceSpaceState).viewerEntity
         const renderer = getComponent(viewer, RendererComponent)
-        const gl = renderer.renderContext as WebGL2RenderingContext
-        if (discardUponUpload && typeof gl.fenceSync === 'function') {
+        const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext | GPUCanvasContext | null
+        if (gl && 'fenceSync' in gl && typeof gl.fenceSync === 'function') {
           const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
           if (sync) {
             gl.flush()
@@ -317,6 +316,9 @@ const resourceCallbacks = {
             }
             setTimeout(checkSync)
           }
+        } else {
+          // webgpu path
+          resource.metadata.merge({ onGPU: true, discarded: true })
         }
       }
       //Compressed texture size
@@ -620,8 +622,8 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
-  const entityHasAuthoringUpstream =
-    getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
+  const entityHasAuthoringUpstream = false
+  // getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
 
   const callbacks = resourceCallbacks[resourceType]
   if (callbacks?.onLoad)

@@ -441,11 +441,12 @@ const buildPerformanceState = async (
   renderer: ComponentType<typeof RendererComponent>,
   override?: GetGPUTier['override']
 ) => {
-  const performanceState = getMutableState(PerformanceState)
-  const gl = renderer.renderContext as WebGL2RenderingContext
-
   // hack fix for nodejs
+  if (!(renderer.renderer?.backend as any)?.isWebGLBackend) return
   if (!renderer.canvas || !renderer.canvas!.getContext('webgl2')) return
+
+  const performanceState = getMutableState(PerformanceState)
+  const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext
 
   const gpuTier = await getGPUTier({
     glContext: gl,
