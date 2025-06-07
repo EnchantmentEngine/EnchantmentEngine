@@ -43,6 +43,7 @@ import {
   Entity,
   QueryReactor,
   UUIDComponent,
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -622,8 +623,7 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
-  const entityHasAuthoringUpstream = false
-  // getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
+  const entityHasAuthoringUpstream = getAuthoringCounterpart(entity)
 
   const callbacks = resourceCallbacks[resourceType]
   if (callbacks?.onLoad)
