@@ -23,25 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineState } from '@ir-engine/hyperflux'
-
-import { FollowCameraMode } from './types/FollowCameraMode'
-import { ProjectionType } from './types/ProjectionType'
-
-// TODO: don't mix camera settings and follow camera settings
-export const CameraSettingsState = defineState({
-  name: 'CameraSettingsState',
-  initial: {
-    fov: 60,
-    cameraNearClip: 0.1,
-    cameraFarClip: 1000,
-    projectionType: ProjectionType.Perspective,
-    minCameraDistance: 1.5,
-    maxCameraDistance: 50,
-    startCameraDistance: 3,
-    cameraMode: FollowCameraMode.Dynamic,
-    cameraModeDefault: FollowCameraMode.ThirdPerson,
-    minPhi: -70,
-    maxPhi: 85
-  }
-})
+export { default as Divider } from './src/components/viewer/Divider'
+export { default as Dropdown } from './src/components/viewer/Dropdown'
+export type { DropdownOption, DropdownProps } from './src/components/viewer/Dropdown'
+export { default as InputField } from './src/components/viewer/InputField'
+export type { InputFieldProps } from './src/components/viewer/InputField'
+export { default as Link } from './src/components/viewer/Link'
+export type { LinkProps } from './src/components/viewer/Link'
+export { default as Slider } from './src/components/viewer/Slider'
+export type { SliderProps } from './src/components/viewer/Slider'
+export { default as Toggle } from './src/components/viewer/Toggle'
+export type { ToggleProps } from './src/components/viewer/Toggle'
