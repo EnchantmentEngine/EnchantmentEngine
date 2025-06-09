@@ -119,6 +119,7 @@ export type ResourceAssetType =
 
 type BaseMetadata = {
   size?: number
+  willBeDiscarded?: boolean
   discarded?: boolean
   onGPU?: boolean
 }
@@ -190,6 +191,18 @@ const getCurrentAvailableHeapMemoryMB = () => {
   const used = getTotalUsedHeapMemoryMB()
   const available = resourceState.totalAvailableHeapMemoryMB - used
   return available
+}
+
+const getResourcesAwaitingDiscardCount = () => {
+  const resourceState = getState(ResourceState)
+
+  const count = Object.entries(resourceState.resources).reduce((acc, [key, val]) => {
+    if (val.metadata?.discarded || !val.metadata?.willBeDiscarded) return acc
+    acc += 1
+    return acc
+  }, 0)
+
+  return count
 }
 
 const getTotalSizeOfResources = () => {
@@ -336,13 +349,15 @@ const resourceCallbacks = {
     ) => {
       if (!asset.image) return
 
-      resource.metadata.merge({ onGPU: false, discarded: false })
+      const viewer = getState(ReferenceSpaceState).viewerEntity
+      const renderer = getComponent(viewer, RendererComponent)
+      const gl = renderer.renderContext as WebGL2RenderingContext
+      const shouldDiscard = discardUponUpload && typeof gl.fenceSync === 'function'
+
+      resource.metadata.merge({ onGPU: false, discarded: false, willBeDiscarded: shouldDiscard })
       asset.onUpdate = () => {
         resource.metadata.merge({ onGPU: true, discarded: false })
-        const viewer = getState(ReferenceSpaceState).viewerEntity
-        const renderer = getComponent(viewer, RendererComponent)
-        const gl = renderer.renderContext as WebGL2RenderingContext
-        if (discardUponUpload && typeof gl.fenceSync === 'function') {
+        if (shouldDiscard) {
           const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
           if (sync) {
             gl.flush()
@@ -787,6 +802,7 @@ export const ResourceState = defineState({
   budgets: {
     getTotalUsedHeapMemoryMB,
     getCurrentAvailableHeapMemoryMB,
+    getResourcesAwaitingDiscardCount,
     getTotalSizeOfResources,
     getTotalBufferSize,
     getTotalVertexCount,
