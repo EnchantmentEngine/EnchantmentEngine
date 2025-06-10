@@ -58,7 +58,7 @@
           "isThirdPersonFreeCamera": true,
           "isTopDownFreeCamera": false,
           "firstPersonCameraLimits": 360,
-          "thirdPersonCameraLimits": 180,
+          "thirdPersonCameraLimits": 360,
           "topDownCameraLimits": 180,
           "isFirstPersonCameraReset": true,
           "isThirdPersonCameraReset": true,
@@ -105,14 +105,14 @@
               "luminanceInfluence": 0.7,
               "bias": 0.025,
               "radius": 0.1825,
-              "intensity": 2.71,
-              "fade": 0.01,
+              "intensity": 4.45,
+              "fade": 0.02,
               "resolutionScale": 1,
               "resolutionX": -1,
               "resolutionY": -1,
               "width": -1,
               "height": -1,
-              "blur": false,
+              "blur": true,
               "kernelSize": 1
             },
             "DepthOfFieldEffect": {
@@ -225,7 +225,7 @@
         0,
         0,
         2,
-        5,
+        0,
         1
       ],
       "extensions": {
@@ -275,6 +275,24 @@
     },
     {
       "name": "Sponza",
+      "matrix": [
+        1.5,
+        0,
+        0,
+        0,
+        0,
+        1.5,
+        0,
+        0,
+        0,
+        0,
+        1.5,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
       "extensions": {
         "EE_uuid": {
           "entityID": "685c48da-e2a0-4a9a-af7c-c5a3c187c99b"
