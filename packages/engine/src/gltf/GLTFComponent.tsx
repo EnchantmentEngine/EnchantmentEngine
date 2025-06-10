@@ -174,7 +174,11 @@ type Dependencies = {
 }
 
 const dependenciesLoaded = (dependencies?: Dependencies) => {
-  return !!dependencies && Object.keys(dependencies.componentDependencies).length === 0
+  return (
+    !!dependencies &&
+    Object.keys(dependencies.componentDependencies).length === 0 &&
+    Object.keys(dependencies.deltaDependencies).length === 0
+  )
 }
 
 const checkCollider = (hasCollider: boolean, entity: Entity) => {
@@ -439,17 +443,21 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
     const scene = commands['scene'].get(NO_PROXY) as HistoryCommand[] | undefined
     if (!scene) return
 
-    const toResolve = new Map<string, number>()
-
     for (const command of scene) {
       for (const overrideUUID in command) {
         if (!deltaDependencies[overrideUUID]) continue
 
-        const currentOpsCount = toResolve.get(overrideUUID) ?? 0
-
-        toResolve.set(overrideUUID, currentOpsCount + command[overrideUUID].length)
+        const remainingOps = deltaDependencies[overrideUUID] - command[overrideUUID].length
+        if (remainingOps <= 0) {
+          delete deltaDependencies[overrideUUID]
+        } else {
+          deltaDependencies[overrideUUID] = remainingOps
+        }
       }
     }
+
+    const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
+    gltfComponent.dependencies.merge({ deltaDependencies })
   }, [commands])
 
   return (
