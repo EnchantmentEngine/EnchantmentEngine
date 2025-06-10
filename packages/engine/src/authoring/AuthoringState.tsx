@@ -36,6 +36,7 @@ import {
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
+  LayerID,
   Layers,
   QueryReactor,
   removeComponent,
@@ -177,14 +178,15 @@ export const AuthoringState = defineState({
 
   reactor: () => {
     const state = useMutableState(AuthoringState)
+    const layer = useMutableState(EngineState).isEditing.value ? Layers.Authoring : Layers.Simulation
 
     return (
       <>
-        <QueryReactor Components={[GLTFComponent]} ChildEntityReactor={SourceReactor} layer={Layers.Authoring} />
+        <QueryReactor Components={[GLTFComponent]} ChildEntityReactor={SourceReactor} layer={layer} props={{ layer }} />
         {state.sources.keys.map((sourceID: SourceID) => (
           <ErrorBoundary key={sourceID}>
             <Suspense>
-              <SourceHistoryReactor sourceID={sourceID} />
+              <SourceHistoryReactor sourceID={sourceID} layer={layer} />
             </Suspense>
           </ErrorBoundary>
         ))}
@@ -218,8 +220,8 @@ export const AuthoringState = defineState({
     return doneStack.length > 0
   },
 
-  snapshot: (sourceID: SourceID) => {
-    const newData = getSourceSnapshot(sourceID)
+  snapshot: (sourceID: SourceID, layer: LayerID = Layers.Authoring) => {
+    const newData = getSourceSnapshot(sourceID, layer)
     const source = getState(AuthoringState).sources[sourceID]
     if (source) {
       const patch = createPatch(source.latest, newData)
@@ -227,7 +229,7 @@ export const AuthoringState = defineState({
     }
   },
 
-  snapshotEntities: (entities: Entity[]) => {
+  snapshotEntities: (entities: Entity[], layer: LayerID = Layers.Authoring) => {
     const affectedSources = new Set<SourceID>(
       entities
         .filter((entity) => hasComponent(entity, UUIDComponent))
@@ -237,17 +239,18 @@ export const AuthoringState = defineState({
     AuthoringState.snapshotSources(affectedSources)
   },
 
-  snapshotSources: (sources: Set<SourceID>) => {
+  snapshotSources: (sources: Set<SourceID>, layer: LayerID = Layers.Authoring) => {
     const ops = {} as Record<SourceID, Operation[]>
     for (const sourceID of sources) {
       if (!sourceID) continue
       if (!getState(AuthoringState).sources[sourceID]) continue
-      const newData = getSourceSnapshot(sourceID)
+      const newData = getSourceSnapshot(sourceID, layer)
       const patch = createPatch(getState(AuthoringState).sources[sourceID].latest, newData)
       ops[sourceID] = patch
     }
     dispatchAction(AuthoringActions.ops({ ops }))
   },
+
   hasEdits: (sourceID: SourceID) => {
     if (!getState(AuthoringState).commands[getState(EngineState).userID]) return false
     return Object.values(getState(AuthoringState).commands[getState(EngineState).userID])
@@ -264,14 +267,14 @@ export const AuthoringState = defineState({
   }
 })
 
-const SourceReactor = (props: { entity: Entity }) => {
+const SourceReactor = (props: { entity: Entity; layer: LayerID }) => {
   const loaded = GLTFComponent.useSceneLoaded(props.entity)
 
   useEffect(() => {
     if (!loaded) return
 
     const sourceID = UUIDComponent.getAsSourceID(props.entity)
-    const sourceData = getSourceSnapshot(sourceID)
+    const sourceData = getSourceSnapshot(sourceID, props.layer)
 
     dispatchAction(AuthoringActions.initialize({ sourceID, partialState: sourceData }))
 
@@ -287,7 +290,7 @@ const SourceReactor = (props: { entity: Entity }) => {
  * Because our actions are an immutable event log, we can replay them to get the current state.
  * This component replays the history of a source to keep the current state in sync.
  */
-const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
+const SourceHistoryReactor = (props: { sourceID: SourceID; layer: LayerID }) => {
   const commands = useMutableState(AuthoringState).commands.get(NO_PROXY)
   const sourceCommands = Object.values(commands)
     .map((userCommands) => Object.values(userCommands))
@@ -342,7 +345,7 @@ const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
     }
 
     // update the state to the ECS
-    applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
+    applyCommandsToECS(props.sourceID, readonlyState.latest, finalState, props.layer)
 
     readonlyState.latest = finalState
   }, [commandLength])
@@ -393,16 +396,21 @@ export const computeCommands = (commands: HistoryCommand[], sourceID?: SourceID)
  * @param sourceID
  * @param finalState
  */
-export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData, finalState: SourceData) => {
-  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, Layers.Authoring)
+export const applyCommandsToECS = (
+  sourceID: SourceID,
+  currentState: SourceData,
+  finalState: SourceData,
+  layer: LayerID = Layers.Authoring
+) => {
+  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, layer)
   for (const nodeID of Object.keys(finalState) as EntityID[]) {
     if (finalState[nodeID]) {
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
-      if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)) {
+      if (!currentState[nodeID] && !UUIDComponent.getEntityByUUID(uuid, layer)) {
         // entity does not exist, add entity
-        UUIDComponent.create(sourceEntity, nodeID as any as EntityID, Layers.Authoring)
+        UUIDComponent.create(sourceEntity, nodeID as any as EntityID, layer)
       }
-      const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
+      const entity = UUIDComponent.getEntityByUUID(uuid, layer)
       for (const [componentJsonID, componentData] of Object.entries(finalState[nodeID])) {
         const Component = ComponentJSONIDMap.get(componentJsonID)
         if (!Component) continue
@@ -415,7 +423,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
                 ? sourceEntity
                 : UUIDComponent.getEntityByUUID(
                     UUIDComponent.join({ entitySourceID: sourceID, entityID: componentData.parentEntity }),
-                    Layers.Authoring
+                    layer
                   )
               : undefined
           setComponent(entity, EntityTreeComponent, {
@@ -472,7 +480,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
     if (!finalState[nodeID]) {
       // entity does not exist, remove entity
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
-      const entity = UUIDComponent.getEntityByUUID(uuid, Layers.Authoring)
+      const entity = UUIDComponent.getEntityByUUID(uuid, layer)
       // ensure the entity has actually been removed, and not moved to another source
       if (getOptionalComponent(entity, UUIDComponent)?.entitySourceID === sourceID) {
         removeEntity(entity)
@@ -481,9 +489,9 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
   }
 }
 
-export const getSourceSnapshot = (sourceID: SourceID) => {
-  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, Layers.Authoring)
-  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceID, Layers.Authoring)
+export const getSourceSnapshot = (sourceID: SourceID, layer: LayerID = Layers.Authoring) => {
+  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as string as EntityUUID, layer)
+  const sourceEntities = UUIDComponent.getEntitiesBySource(sourceID, layer)
 
   const sourceData = {} as SourceData
 
