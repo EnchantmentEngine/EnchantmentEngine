@@ -282,8 +282,8 @@
         "EE_model": {
           "src": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/refs/heads/main/Models/Sponza/glTF/Sponza.gltf",
           "cameraOcclusion": true,
-          "applyColliders": false,
-          "shape": "box"
+          "applyColliders": true,
+          "shape": "mesh"
         },
         "EE_visible": {},
         "EE_shadow": {
@@ -296,7 +296,19 @@
           "envMapSourceURL": "",
           "envMapCubemapURL": "",
           "envMapSourceEntityUUID": "",
-          "envMapIntensity": 1
+          "envMapIntensity": 0.24
+        },
+        "EE_rigidbody": {
+          "type": "fixed",
+          "ccd": false,
+          "allowRolling": true,
+          "enabledRotations": [
+            true,
+            true,
+            true
+          ],
+          "canSleep": true,
+          "gravityScale": 1
         }
       }
     }
@@ -329,6 +341,7 @@
     "EE_directional_light",
     "EE_model",
     "EE_shadow",
-    "EE_envmap"
+    "EE_envmap",
+    "EE_rigidbody"
   ]
 }
