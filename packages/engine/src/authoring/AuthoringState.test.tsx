@@ -936,6 +936,7 @@ describe('AuthoringState', () => {
       }
 
       // invoke state initially to make sure it's reactor starts
+      getMutableState(EngineState).isEditing.set(true)
       getState(AuthoringState)
 
       Cache.add('/test.gltf', sceneGLTF)
