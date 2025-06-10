@@ -195,6 +195,7 @@ const contentStyles = `
   
   lg:px-14
   lg:pt-12
+
 `
 
 const contentContainerStyles = `
@@ -250,7 +251,9 @@ export const ToolbarAndSidebar = ({
           <div className={`h-[2px] lg:bg-white/10`} />
           <div className={contentContainerStyles}>
             <div className={contentFakeSpacer} />
-            <div className={contentStyles}>{content}</div>
+            <div id="settings-menu-content" className={contentStyles}>
+              {content}
+            </div>
           </div>
         </div>
       </div>
