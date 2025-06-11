@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,22 +19,25 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { isClient } from '@ir-engine/hyperflux'
+import { PromiseQueue } from '@ir-engine/spatial/src/common/classes/PromiseQueue'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { LoadingManager, Texture } from 'three'
+import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ImageLoader, LoadingManager, Texture } from 'three'
 import { Loader } from '../base/Loader'
 import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
-// import resource state such that we have type override
-import '@ir-engine/spatial/src/resources/ResourceState'
+const loadQueue = new PromiseQueue(iOS ? 1 : 4)
 
+// Do we still need this check if we're now reliant on a browser that's new enough to have ArrayBuffer.resize?
 const iOSMaxResolution = 1024
 
 const getScaledBitmap = (img: ImageBitmap, maxResolution: number) => {
+  // Set width and height
   const originalWidth = img.width
   const originalHeight = img.height
 
@@ -59,6 +62,14 @@ const getScaledBitmap = (img: ImageBitmap, maxResolution: number) => {
   return canvas.transferToImageBitmap()
 }
 
+const minimumAvailableHeapMemoryMB = 100
+
+const shouldWaitForDiscarding = () => {
+  const assetsAwaitingDiscard = ResourceState.budgets.getResourcesAwaitingDiscardCount()
+  const availableHeap = ResourceState.budgets.getCurrentAvailableHeapMemoryMB()
+  return assetsAwaitingDiscard > 0 && availableHeap < minimumAvailableHeapMemoryMB
+}
+
 class TextureLoader extends Loader<Texture> {
   maxResolution: number | undefined
   flipped: boolean
@@ -70,36 +81,82 @@ class TextureLoader extends Loader<Texture> {
     this.flipped = flipped
   }
 
-  override async load(
+  loadImage(
+    url: string,
+    onLoad: (loadedTexture: ImageBitmap | HTMLImageElement) => void,
+    onProgress: ((event: ProgressEvent) => void) | undefined,
+    onError: ((err: unknown) => void) | undefined,
+    signal: AbortSignal | undefined,
+    fallback = false
+  ) {
+    loadQueue.enqueuePromise(() => {
+      return new Promise((resolve, reject) => {
+        const handleError = (err: Error) => {
+          if (!fallback) {
+            console.warn('TextureLoader: Using fallback image loader for', url, 'due to error', err)
+            this.loadImage(url, onLoad, onProgress, onError, signal, true)
+            return
+          }
+          onError?.(err)
+          reject(err)
+        }
+
+        const loadCallback = (img: ImageBitmap | HTMLImageElement) => {
+          resolve(img)
+          onLoad(img)
+        }
+
+        const load = () => {
+          let loader
+          if (fallback) {
+            loader = new ImageLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
+          } else {
+            loader = new ImageBitmapLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
+            if (this.flipped) loader.setOptions({ imageOrientation: 'flipY' })
+          }
+          loader.load(url, loadCallback, onProgress, handleError)
+        }
+
+        if (shouldWaitForDiscarding()) {
+          const listener = () => {
+            if (!shouldWaitForDiscarding()) {
+              ResourceState.deregisterAssetDiscardListener(listener)
+              load()
+            }
+          }
+          ResourceState.registerAssetDiscardListener(listener)
+        }
+
+        load()
+      })
+    })
+  }
+
+  override load(
     url: string,
     onLoad: (loadedTexture: Texture) => void,
     onProgress?: (event: ProgressEvent) => void,
     onError?: (err: unknown) => void,
     signal?: AbortSignal
   ) {
-    const texture = new Texture()
-
-    texture.userData = { url }
-
-    if (!isClient) {
-      onLoad(texture)
-      return
-    }
-
-    const loader = new ImageBitmapLoader(this.manager).setCrossOrigin(this.crossOrigin).setPath(this.path)
-
-    if (this.flipped) loader.setOptions({ imageOrientation: 'flipY' })
-
-    const onImage = (i: ImageBitmap) => {
+    const onImage = (i: ImageBitmap | HTMLImageElement) => {
       if (signal?.aborted) return
-      const image = this.maxResolution ? getScaledBitmap(i, this.maxResolution) : i
-      texture.source.data = image
-      texture.flipY = !this.flipped
+
+      const isBitmap = i instanceof ImageBitmap
+      const image = this.maxResolution && isBitmap ? getScaledBitmap(i, this.maxResolution) : i
+      const texture = new Texture(image)
+      if (!isBitmap) texture.flipY = this.flipped
+      texture.userData.url = url
       texture.needsUpdate = true
       onLoad(texture)
     }
 
-    loader.load(url, onImage, onProgress, onError)
+    if (!isClient) {
+      onLoad(new Texture())
+      return
+    }
+
+    this.loadImage(url, onImage, onProgress, onError, signal)
   }
 }
 

@@ -372,6 +372,7 @@ const resourceCallbacks = {
                   .offloadTextureData()
                   .then(() => {
                     resource.metadata.merge({ onGPU: true, discarded: true })
+                    assetDiscarded()
                   })
                   .catch((err) => {
                     console.error(err)
@@ -773,6 +774,13 @@ const getAllResourcesOfType = (type: ResourceType) => {
   return result
 }
 
+const assetDiscarded = () => {
+  const resourceState = getMutableState(ResourceState)
+  for (const listener of resourceState.onAssetDiscardListeners.get(NO_PROXY)) {
+    listener()
+  }
+}
+
 export const ResourceState = defineState({
   name: 'ResourceState',
 
@@ -781,6 +789,7 @@ export const ResourceState = defineState({
     resources: {} as Record<string, Resource>,
     totalVertexCount: 0,
     totalBufferCount: 0,
+    onAssetDiscardListeners: [] as (() => void)[],
     debug: false
   }),
 
@@ -792,6 +801,16 @@ export const ResourceState = defineState({
   },
 
   getAllResourcesOfType,
+
+  registerAssetDiscardListener: (listener: () => void) => {
+    const resourceState = getMutableState(ResourceState)
+    resourceState.onAssetDiscardListeners.merge([listener])
+  },
+
+  deregisterAssetDiscardListener: (listener: () => void) => {
+    const resourceState = getMutableState(ResourceState)
+    resourceState.onAssetDiscardListeners.set((prev) => prev.filter((l) => l !== listener))
+  },
 
   resourceCallbacks,
   useEntityResource,
