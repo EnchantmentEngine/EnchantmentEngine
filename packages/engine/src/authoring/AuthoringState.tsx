@@ -37,6 +37,7 @@ import {
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
+  LayerComponent,
   LayerID,
   Layers,
   NetworkObjectComponent,
@@ -185,7 +186,6 @@ export const AuthoringState = defineState({
 
   reactor: () => {
     const state = useMutableState(AuthoringState)
-    const layer = useMutableState(EngineState).isEditing.value ? Layers.Authoring : Layers.Simulation
 
     return (
       <>
@@ -193,7 +193,7 @@ export const AuthoringState = defineState({
         {state.sources.keys.map((sourceID: SourceID) => (
           <ErrorBoundary key={sourceID}>
             <Suspense>
-              <SourceHistoryReactor sourceID={sourceID} layer={layer} />
+              <SourceHistoryReactor sourceID={sourceID} />
             </Suspense>
           </ErrorBoundary>
         ))}
@@ -307,7 +307,7 @@ const SourceReactor = (props: { entity: Entity }) => {
  * Because our actions are an immutable event log, we can replay them to get the current state.
  * This component replays the history of a source to keep the current state in sync.
  */
-const SourceHistoryReactor = (props: { sourceID: SourceID; layer: LayerID }) => {
+const SourceHistoryReactor = (props: { sourceID: SourceID }) => {
   const commands = useMutableState(AuthoringState).commands.get(NO_PROXY)
   const sourceCommands = Object.values(commands)
     .map((userCommands) => Object.values(userCommands))
@@ -362,7 +362,7 @@ const SourceHistoryReactor = (props: { sourceID: SourceID; layer: LayerID }) => 
     }
 
     // update the state to the ECS
-    applyCommandsToECS(props.sourceID, readonlyState.latest, finalState, props.layer)
+    applyCommandsToECS(props.sourceID, readonlyState.latest, finalState)
 
     readonlyState.latest = finalState
   }, [commandLength])
@@ -413,13 +413,11 @@ export const computeCommands = (commands: HistoryCommand[], sourceID?: SourceID)
  * @param sourceID
  * @param finalState
  */
-export const applyCommandsToECS = (
-  sourceID: SourceID,
-  currentState: SourceData,
-  finalState: SourceData,
-  layer: LayerID = Layers.Authoring
-) => {
-  const sourceEntity = UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID, layer)
+export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData, finalState: SourceData) => {
+  const sourceSimulationEntity = UUIDComponent.getEntityByUUID(sourceID as any as EntityUUID)
+  const sourceEntity = getAuthoringCounterpart(sourceSimulationEntity) || sourceSimulationEntity
+  const layer = LayerComponent.get(sourceEntity)
+
   for (const nodeID of Object.keys(finalState) as EntityID[]) {
     if (finalState[nodeID]) {
       const uuid = UUIDComponent.join({ entitySourceID: sourceID, entityID: nodeID })
