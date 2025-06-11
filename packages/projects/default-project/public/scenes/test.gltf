@@ -2224,6 +2224,10 @@
           "path": "/material-1/IR_material/parameters/side"
         },
         {
+          "op": "remove",
+          "path": "/0/EE_visible"
+        },
+        {
           "op": "add",
           "path": "/material-1/IR_material_noise_offset",
           "value": {
@@ -2252,6 +2256,46 @@
           "op": "replace",
           "path": "/material-1/IR_material/parameters/roughness",
           "value": 1
+        },
+        {
+          "op": "replace",
+          "path": "/1/IR_transform/rotation/x",
+          "value": 0.05614253016764221
+        },
+        {
+          "op": "replace",
+          "path": "/1/IR_transform/rotation/y",
+          "value": -0.3023363755325846
+        },
+        {
+          "op": "replace",
+          "path": "/1/IR_transform/rotation/z",
+          "value": 0.207512232009737
+        },
+        {
+          "op": "replace",
+          "path": "/1/IR_transform/rotation/w",
+          "value": -0.9286438531011404
+        },
+        {
+          "op": "replace",
+          "path": "/0/IR_transform/rotation/x",
+          "value": -0.15409314446571126
+        },
+        {
+          "op": "replace",
+          "path": "/0/IR_transform/rotation/y",
+          "value": -0.45100717592245765
+        },
+        {
+          "op": "replace",
+          "path": "/0/IR_transform/rotation/z",
+          "value": 0.2967741045653167
+        },
+        {
+          "op": "replace",
+          "path": "/0/IR_transform/rotation/w",
+          "value": -0.8275100971919156
         }
       ]
     }
