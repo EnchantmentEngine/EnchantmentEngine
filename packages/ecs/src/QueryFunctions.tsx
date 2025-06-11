@@ -47,7 +47,6 @@ import {
   LayerComponents,
   LayerID,
   Layers,
-  useComponent,
   useOptionalComponent
 } from './ComponentFunctions'
 import { Entity } from './Entity'
@@ -231,18 +230,12 @@ const QuerySubReactor = memo(
     }
     const id = ids.join('_')
 
-    const MountFunc = () => {
-      // suspend to ensure components always exist in child react component
-      for (const component of props.Components) useComponent(props.entity, component)
-      return <props.ChildEntityReactor {...props.props} entity={props.entity} />
-    }
-
     return (
       <>
         <QueryReactorErrorBoundary>
           <Suspense fallback={<Suspended {...props} />}>
             <EntityContext.Provider value={props.entity}>
-              <MountFunc key={id} />
+              <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
             </EntityContext.Provider>
           </Suspense>
         </QueryReactorErrorBoundary>
