@@ -298,7 +298,7 @@ const SourceReactor = (props: { entity: Entity }) => {
     return () => {
       dispatchAction(AuthoringActions.uninitialize({ sourceID }))
     }
-  }, [loaded, valid])
+  }, [loaded && valid])
 
   return null
 }
