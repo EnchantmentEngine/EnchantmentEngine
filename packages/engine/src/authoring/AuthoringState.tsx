@@ -277,6 +277,10 @@ export const AuthoringState = defineState({
 const SourceReactor = (props: { entity: Entity }) => {
   const authoringEntity = getAuthoringCounterpart(props.entity)
 
+  /**
+   * Allow only entities that are part of a scene or are owned by a scene and are children of a scene
+   * - this eliminates things like detached models and avatars, which are not part of a scene thus not authorable
+   */
   const hasScene = useHasComponent(props.entity, SceneComponent)
   const isOwnedByScene = useOptionalComponent(props.entity, NetworkObjectComponent)?.ownerId.value == SceneUser
   const isChildOfScene = !!useAncestorWithComponents(props.entity, [SceneComponent])

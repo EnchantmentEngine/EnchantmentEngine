@@ -40,10 +40,12 @@ import {
   S,
   setComponent,
   SourceID,
+  SystemDefinitions,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { applyIncomingActions, getMutableState, getState, UserID } from '@ir-engine/hyperflux'
+import { applyIncomingActions, getMutableState, getState, startReactor, UserID } from '@ir-engine/hyperflux'
+import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -55,8 +57,10 @@ import { AddOperation } from 'rfc6902/diff'
 import { Cache, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { startEngineReactor } from '../../tests/startEngineReactor'
+import { SceneNetworkSystem } from '../EngineModule'
 import { GLTFComponent } from '../gltf/GLTFComponent'
 import { AssetState } from '../gltf/GLTFState'
+import { OVERRIDE_EXTENSION_NAME } from '../gltf/overrideExporterExtension'
 import {
   applyCommandsToECS,
   AuthoringActions,
@@ -959,6 +963,130 @@ describe('AuthoringState', () => {
       )!
 
       expect(getComponent(nestedEntity, TransformComponent).position.y).toBe(5)
+      expect(getComponent(materialEntity, MaterialCustomPlugin).customMap).toBe('/custom-map.png')
+    })
+  })
+
+  describe.only('should load overrides into scene loaded in the simulation layer', () => {
+    let physicsWorldEntity: Entity
+
+    beforeEach(async () => {
+      Cache.enabled = true
+      createEngine()
+      mockSpatialEngine()
+      await Physics.load()
+      physicsWorldEntity = createEntity()
+
+      setComponent(physicsWorldEntity, UUIDComponent, {
+        entityID: 'physicsWorld' as EntityID,
+        entitySourceID: 'source' as SourceID
+      })
+      setComponent(physicsWorldEntity, SceneComponent)
+      setComponent(physicsWorldEntity, TransformComponent)
+      setComponent(physicsWorldEntity, EntityTreeComponent)
+      const physicsWorld = Physics.createWorld(physicsWorldEntity)
+      physicsWorld.timestep = 1 / 60
+
+      createMockNetwork()
+
+      startEngineReactor()
+      const gltfLoadSystem = SystemDefinitions.get(SceneNetworkSystem)!
+      startReactor(gltfLoadSystem.reactor!)
+    })
+
+    afterEach(() => {
+      Cache.enabled = false
+      return destroyEngine()
+    })
+
+    it('should load overrides into scene loaded in the simulation layer', async () => {
+      const MaterialCustomPlugin = defineComponent({
+        name: 'MaterialCustomPlugin',
+        jsonID: 'IR_material_custom',
+        schema: S.Object({
+          customMap: S.String()
+        })
+      })
+
+      const sceneGLTF = {
+        asset: {
+          version: '2.0'
+        },
+        scenes: [{ nodes: [0] }],
+        scene: 0,
+        nodes: [
+          {
+            name: 'node',
+            extensions: {
+              [UUIDComponent.jsonID]: 'node' as any,
+              [GLTFComponent.jsonID]: {
+                src: 'https://fake.com/child.gltf'
+              },
+              [VisibleComponent.jsonID]: true
+            }
+          }
+        ],
+        extensions: {
+          [OVERRIDE_EXTENSION_NAME]: {
+            node: [
+              {
+                op: 'add',
+                path: '/material-0/IR_material_custom',
+                value: {
+                  customMap: '/custom-map.png'
+                }
+              }
+            ]
+          }
+        },
+        extensionsUsed: [UUIDComponent.jsonID, VisibleComponent.jsonID, GLTFComponent.jsonID, OVERRIDE_EXTENSION_NAME]
+      }
+
+      const childGLTF = {
+        asset: {
+          version: '2.0'
+        },
+        scenes: [{ nodes: [0] }],
+        scene: 0,
+        nodes: [
+          {
+            name: 'nested',
+            extensions: {
+              [UUIDComponent.jsonID]: 'nested'
+            }
+          }
+        ],
+        materials: [
+          {
+            name: 'material'
+          }
+        ],
+        extensionsUsed: [UUIDComponent.jsonID]
+      }
+
+      // invoke state initially to make sure it's reactor starts
+      getState(AuthoringState)
+
+      Cache.add('/test.gltf', sceneGLTF)
+      Cache.add('https://fake.com/child.gltf', childGLTF)
+      const rootEntity = AssetState.load('/test.gltf', 'test' as EntityID, physicsWorldEntity, Layers.Simulation)
+
+      await vi.waitUntil(() => GLTFComponent.isSceneLoaded(rootEntity), { timeout: 5000 })
+      await flushAll()
+      applyIncomingActions()
+      await vi.waitUntil(() => getState(AssetState)[GLTFComponent.getSourceID(rootEntity)])
+
+      await flushAll()
+      applyIncomingActions()
+
+      const nodeEntity = GLTFComponent.getEntityBySourceAndID(rootEntity, 'node' as EntityID, Layers.Simulation)!
+      const nestedEntity = GLTFComponent.getEntityBySourceAndID(nodeEntity, 'nested' as EntityID, Layers.Simulation)!
+      const materialEntity = GLTFComponent.getEntityBySourceAndID(
+        nodeEntity,
+        'material-0' as EntityID,
+        Layers.Simulation
+      )!
+
       expect(getComponent(materialEntity, MaterialCustomPlugin).customMap).toBe('/custom-map.png')
     })
   })
