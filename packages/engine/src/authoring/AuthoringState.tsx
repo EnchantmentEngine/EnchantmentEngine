@@ -32,18 +32,23 @@ import {
   EntityTreeComponent,
   EntityUUID,
   getAllComponents,
+  getAuthoringCounterpart,
   getComponent,
   getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerID,
   Layers,
+  NetworkObjectComponent,
   QueryReactor,
   removeComponent,
   removeEntity,
   serializeComponent,
   setComponent,
   SourceID,
+  useAncestorWithComponents,
+  useHasComponent,
+  useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -58,10 +63,12 @@ import {
   matches,
   NO_PROXY,
   none,
+  SceneUser,
   useMutableState,
   UserID,
   Validator
 } from '@ir-engine/hyperflux'
+import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import {
   MaterialPrototypeDefinitions,
   MaterialStateComponent
@@ -182,7 +189,7 @@ export const AuthoringState = defineState({
 
     return (
       <>
-        <QueryReactor Components={[GLTFComponent]} ChildEntityReactor={SourceReactor} layer={layer} props={{ layer }} />
+        <QueryReactor Components={[GLTFComponent]} ChildEntityReactor={SourceReactor} />
         {state.sources.keys.map((sourceID: SourceID) => (
           <ErrorBoundary key={sourceID}>
             <Suspense>
@@ -267,21 +274,31 @@ export const AuthoringState = defineState({
   }
 })
 
-const SourceReactor = (props: { entity: Entity; layer: LayerID }) => {
-  const loaded = GLTFComponent.useSceneLoaded(props.entity)
+const SourceReactor = (props: { entity: Entity }) => {
+  const authoringEntity = getAuthoringCounterpart(props.entity)
+
+  const hasScene = useHasComponent(props.entity, SceneComponent)
+  const isOwnedByScene = useOptionalComponent(props.entity, NetworkObjectComponent)?.ownerId.value == SceneUser
+  const isChildOfScene = !!useAncestorWithComponents(props.entity, [SceneComponent])
+
+  const valid = authoringEntity || hasScene || (isOwnedByScene && isChildOfScene)
+
+  const entity = authoringEntity || props.entity
+  const loaded = GLTFComponent.useSceneLoaded(entity)
 
   useEffect(() => {
-    if (!loaded) return
+    if (!loaded || !valid) return
 
-    const sourceID = UUIDComponent.getAsSourceID(props.entity)
-    const sourceData = getSourceSnapshot(sourceID, props.layer)
+    const layer = authoringEntity ? Layers.Authoring : Layers.Simulation
+    const sourceID = UUIDComponent.getAsSourceID(entity)
+    const sourceData = getSourceSnapshot(sourceID, layer)
 
     dispatchAction(AuthoringActions.initialize({ sourceID, partialState: sourceData }))
 
     return () => {
       dispatchAction(AuthoringActions.uninitialize({ sourceID }))
     }
-  }, [loaded])
+  }, [loaded, valid])
 
   return null
 }
