@@ -689,5 +689,14 @@
     ],
     "dependencies": [],
     "name": "noise-offset.material.gltf"
+  },
+  "public/scenes/sponza.gltf": {
+    "type": "scene",
+    "tags": [
+      "Model"
+    ],
+    "dependencies": [],
+    "name": "sponza.gltf",
+    "thumbnailKey": "projects/ir-engine/default-project/public/scenes/sponza.thumbnail.jpg"
   }
 }
