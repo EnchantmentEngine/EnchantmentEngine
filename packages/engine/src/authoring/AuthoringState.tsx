@@ -40,16 +40,15 @@ import {
   LayerComponent,
   LayerID,
   Layers,
-  NetworkObjectComponent,
   QueryReactor,
   removeComponent,
   removeEntity,
   serializeComponent,
   setComponent,
   SourceID,
+  UndefinedEntity,
   useAncestorWithComponents,
   useHasComponent,
-  useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -64,7 +63,6 @@ import {
   matches,
   NO_PROXY,
   none,
-  SceneUser,
   useMutableState,
   UserID,
   Validator
@@ -278,14 +276,15 @@ const SourceReactor = (props: { entity: Entity }) => {
   const authoringEntity = getAuthoringCounterpart(props.entity)
 
   /**
-   * Allow only entities that are part of a scene or are owned by a scene and are children of a scene
+   * Allow only entities that are part of a scene or are loaded by the scene and are children of a scene
    * - this eliminates things like detached models and avatars, which are not part of a scene thus not authorable
    */
   const hasScene = useHasComponent(props.entity, SceneComponent)
-  const isOwnedByScene = useOptionalComponent(props.entity, NetworkObjectComponent)?.ownerId.value == SceneUser
-  const isChildOfScene = !!useAncestorWithComponents(props.entity, [SceneComponent])
+  const isChildOfScene = useAncestorWithComponents(props.entity, [SceneComponent, GLTFComponent])
+  const isLoadedByScene =
+    UUIDComponent.getRootSource(props.entity) === isChildOfScene && isChildOfScene !== UndefinedEntity
 
-  const valid = authoringEntity || hasScene || (isOwnedByScene && isChildOfScene)
+  const valid = authoringEntity || hasScene || isLoadedByScene
 
   const entity = authoringEntity || props.entity
   const loaded = GLTFComponent.useSceneLoaded(entity)

@@ -62,6 +62,7 @@ import {
   NO_PROXY,
   NO_PROXY_STEALTH,
   none,
+  SceneUser,
   State,
   useHookstate,
   useMutableState
@@ -430,7 +431,7 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
   const componentDependencies = Object.entries(dependencies.componentDependencies)
   const deltaDependencies = dependencies.deltaDependencies
 
-  const commands = useMutableState(AuthoringState).commands
+  const commands = useMutableState(AuthoringState).commands[SceneUser].get(NO_PROXY) as HistoryCommand[] | undefined
 
   useEffect(() => {
     return () => {
@@ -440,10 +441,9 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
   }, [])
 
   useEffect(() => {
-    const scene = commands['scene'].get(NO_PROXY) as HistoryCommand[] | undefined
-    if (!scene) return
+    if (!commands) return
 
-    for (const command of scene) {
+    for (const command of commands) {
       for (const overrideUUID in command) {
         if (!deltaDependencies[overrideUUID]) continue
 
