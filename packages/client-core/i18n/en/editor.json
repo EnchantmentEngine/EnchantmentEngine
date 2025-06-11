@@ -764,7 +764,18 @@
       "start-size": "Start Size",
       "start-speed": "Start Speed",
       "start-rotation": "Start Rotation",
-      "start-color": "Start Color",
+      "startColor": {
+        "title": "Start Color",
+        "type": "Type",
+        "constant": "Constant",
+        "range": "Range",
+        "random": "Random",
+        "gradient": "Gradient",
+        "color": "Color",
+        "opacity": "Opacity",
+        "start": "Start",
+        "remove": "Remove"
+      },
       "emission-over-time": "Emission Over Time",
       "render-mode": "Render Mode",
       "render-mode-type": {
