@@ -33,11 +33,9 @@ import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
 const loadQueue = new PromiseQueue(iOS ? 1 : 4)
 
-// Do we still need this check if we're now reliant on a browser that's new enough to have ArrayBuffer.resize?
 const iOSMaxResolution = 1024
 
 const getScaledBitmap = (img: ImageBitmap, maxResolution: number) => {
-  // Set width and height
   const originalWidth = img.width
   const originalHeight = img.height
 
