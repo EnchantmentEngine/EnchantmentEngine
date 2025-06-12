@@ -490,6 +490,76 @@ describe('InputComponent', () => {
     })
   })
 
+  describe('button state caching', () => {
+    it('should find button states when InputSourceComponent has buttons assigned', () => {
+      // Create test entity and components
+      const testEntity = createEntity()
+      setComponent(testEntity, InputSourceComponent)
+      setComponent(testEntity, InputComponent, { inputSources: [testEntity] })
+      const inputSource = getMutableComponent(testEntity, InputSourceComponent)
+
+      // Test case 1: Initial state - no buttons
+      let result = InputComponent.getButtons(testEntity)
+      assert.ok(!result.PrimaryClick, 'Initially no PrimaryClick button should be present')
+
+      // Test case 2: Add button state to InputSourceComponent
+      inputSource.buttons.set({
+        [MouseButton.PrimaryClick]: createInitialButtonState(testEntity, {
+          down: true,
+          pressed: true
+        })
+      })
+
+      // Get buttons again - should see the new button state
+      result = InputComponent.getButtons(testEntity)
+      assert.ok(result.PrimaryClick, 'PrimaryClick button should now be present')
+      assert.ok(result.PrimaryClick?.down, 'PrimaryClick should be down')
+      assert.ok(result.PrimaryClick?.pressed, 'PrimaryClick should be pressed')
+
+      // Test case 3: Remove button state from InputSourceComponent
+      inputSource.buttons.set({})
+
+      // Get buttons again - should not see the button anymore
+      result = InputComponent.getButtons(testEntity)
+      assert.ok(!result.PrimaryClick, 'PrimaryClick button should no longer be present')
+    })
+
+    it('should handle multiple entities accessing the same button', () => {
+      // Create input source entity
+      const inputSourceEntity = createEntity()
+      setComponent(inputSourceEntity, InputSourceComponent)
+      const inputSource = getMutableComponent(inputSourceEntity, InputSourceComponent)
+
+      // Create two different entities that will access the same input source
+      const entity1 = createEntity()
+      const entity2 = createEntity()
+      setComponent(entity1, InputComponent, { inputSources: [inputSourceEntity] })
+      setComponent(entity2, InputComponent, { inputSources: [inputSourceEntity] })
+
+      // Add button state to InputSourceComponent
+      inputSource.buttons.set({
+        [MouseButton.PrimaryClick]: createInitialButtonState(inputSourceEntity, {
+          down: true,
+          pressed: true
+        })
+      })
+
+      // First entity accesses the button - should consume it
+      let result1 = InputComponent.getButtons(entity1)
+      assert.ok(result1.PrimaryClick, 'Entity1 should see the PrimaryClick button')
+      assert.ok(result1.PrimaryClick?.down, 'Entity1: PrimaryClick should be down')
+      assert.ok(result1.PrimaryClick?.pressed, 'Entity1: PrimaryClick should be pressed')
+
+      // Second entity tries to access the same button - should not see it (consumed by entity1)
+      let result2 = InputComponent.getButtons(entity2)
+      assert.ok(!result2.PrimaryClick, 'Entity2 should not see the PrimaryClick button (consumed by entity1)')
+
+      // First entity accesses again - should still see the consumed button
+      result1 = InputComponent.getButtons(entity1)
+      assert.ok(result1.PrimaryClick, 'Entity1 should still see the consumed PrimaryClick button')
+    })
+  })
+
   describe('useHasFocus', () => {
     it('should update its state to true whenever the ammount of entities returned by InputComponent.getInputSourceEntities is bigger than 0', async () => {
       const effectSpy = sinon.spy()
