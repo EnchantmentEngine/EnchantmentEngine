@@ -29,7 +29,6 @@ import {
   defineSystem,
   Entity,
   getOptionalMutableComponent,
-  hasComponent,
   haveCommonAncestor,
   PresentationSystemGroup,
   QueryReactor,
@@ -278,9 +277,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
         const material = materialComponent.value as MeshStandardMaterial
         material.envMap = null
       }
-      if (hasComponent(entity, BoxProjectionPlugin)) {
-        removeComponent(entity, BoxProjectionPlugin)
-      }
+      removeComponent(entity, BoxProjectionPlugin)
     }
   }, [])
 
@@ -298,9 +295,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     if (!bakeComponent) return
 
     if (!bakeComponent.boxProjection.value) {
-      if (hasComponent(entity, BoxProjectionPlugin)) {
-        removeComponent(entity, BoxProjectionPlugin)
-      }
+      removeComponent(entity, BoxProjectionPlugin)
       return
     }
 
