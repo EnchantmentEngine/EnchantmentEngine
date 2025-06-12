@@ -1,0 +1,365 @@
+import { useMutation } from '@ir-engine/common'
+import { ABUSE_REASONS } from '@ir-engine/common/src/constants/ModerationConstants'
+import {
+  moderationFileUploadPath,
+  moderationPath,
+  type AbuseReasonsType,
+  type ModerationTypeType
+} from '@ir-engine/common/src/schema.type.module'
+import { NetworkState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { CheckLg, ChevronLeftMd, XCloseLg } from '@ir-engine/ui/src/icons'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import TextArea from '@ir-engine/ui/src/primitives/tailwind/TextArea'
+import { Dropdown } from '@ir-engine/ui/viewer'
+import React, { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { twMerge } from 'tailwind-merge'
+import { NotificationService } from '../../common/services/NotificationService'
+import { LocationState } from '../../social/services/LocationService'
+import { ReportUserState } from '../../util/ReportUserState'
+import { uploadToFeathersService } from '../../util/upload'
+import { smallIconButtonStyles } from '../Glass/Buttons'
+import { MenuButton } from '../Glass/MenuButton'
+
+const containerStyles = `
+  pointer-events-auto
+  w-full
+  inline-grid
+  absolute z-20
+  bottom-0 right-0 top-0
+  transition-transform
+  md:w-[40%]
+`
+
+const sidebarContainerStyles = `
+  inline-grid
+  grid-rows-[min-content_min-content_1fr]
+  content-start
+  p-6 pt-20
+  gap-y-8
+  max-h-full
+  h-full
+  border-l-2
+  border-white/10
+  shadow-[0_0.1rem_2.3rem_-0.5rem_hsla(0,0%,0%,0.1)]
+  backdrop-blur-3xl
+`
+
+const headerContainerStyles = `
+  flex
+  items-start
+  px-6
+  text-white
+  lg:pb-0 lg:pr-8
+  lg:pt-8
+`
+
+const headerInnerStyles = `
+  relative
+  inline-grid
+  w-full
+`
+
+const buttonContainer_base = `
+  absolute z-10
+  inline-flex items-center
+  -translate-y-1/2
+  lg:bottom-auto
+  lg:translate-y-0
+`
+
+const closeButtonStyles = `
+  right-4
+  text-white
+`
+
+const backButtonStyles = `
+  left-4
+`
+
+const actionButtonStyles = `
+  flex h-10 px-4 py-1 justify-center 
+  items-center self-stretch
+  text-white
+  rounded-full
+  bg-[rgba(255,255,255,0.2)]
+  shadow-[inset_0px_1px_1px_rgba(255,255,255,0.25),inset_0px_-1px_1px_rgba(255,255,255,0.1),0px_8px_6px_rgba(0,0,0,0.05)]
+`
+
+const inputDivStyles = `
+  flex flex-col
+  text-white
+`
+
+type ReportMenuProps = { type: ModerationTypeType }
+
+const ReportUserMenu = (props: ReportMenuProps) => {
+  const { t } = useTranslation()
+  const { type } = props
+  const { reportedPeerId, reportingUser } = useMutableState(ReportUserState)
+  const reportedUserId = type === 'user' ? NetworkState.mediaNetwork?.peers?.[reportedPeerId.value!]?.userId : undefined
+  const typeReport = type === 'location' ? 'Location' : 'User'
+  const currentLocation = getState(LocationState).currentLocation.location
+  const reportedLocationId = currentLocation.id
+  const userReportsMutation = useMutation(moderationPath)
+
+  const [content, setContent] = useState<string>('reportProgress') // reportProgress | reportSuccess
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const formData = useHookstate({
+    abuseType: 'null' as AbuseReasonsType,
+    details: '',
+    files: [] as File[]
+  })
+
+  const errors = useHookstate({
+    abuseType: '',
+    details: '',
+    files: ''
+  })
+
+  const fieldOptions = {
+    abuseType: {
+      label: t('user:usermenu.profile.typeAbuse'),
+      validate: (input: string) => {
+        if (input === 'null') {
+          errors.abuseType.set(t('user:usermenu.profile.selectAbuseTypeRequired'))
+          return false
+        }
+        errors.abuseType.set('')
+        return true
+      }
+    },
+    details: {
+      label: t('user:usermenu.profile.reportDetails'),
+      placeholder: t('user:usermenu.profile.reportDetailsPlaceholder'),
+      validate: () => {
+        if (formData.details.value.trim().length === 0) {
+          errors.details.set(t('user:usermenu.profile.reportDetailsRequired'))
+          return false
+        }
+        errors.details.set('')
+        return true
+      }
+    },
+    files: {
+      buttonLabel: t('user:common.upload'),
+      label: t('user:usermenu.profile.reportFileLabel'),
+      validate: () => {
+        // this is optional
+        errors.files.set('')
+        return true
+      }
+    }
+  }
+
+  const abuseTypes = [
+    {
+      value: 'null',
+      label: t('user:usermenu.profile.selectOne') as string
+    },
+    ...ABUSE_REASONS.map((abuseReason) => ({
+      value: abuseReason,
+      label: t(`user:moderation.abuseReason.${abuseReason}`) as string
+    }))
+  ]
+  const handleChange = (newValue: string, name: string) => {
+    formData[name].set(newValue)
+    fieldOptions[name].validate(newValue)
+  }
+
+  const handleSubmit = async () => {
+    if (
+      !fieldOptions.abuseType.validate(formData.value.abuseType) ||
+      !fieldOptions.details.validate() ||
+      !fieldOptions.files.validate()
+    ) {
+      return
+    }
+    try {
+      const report = await userReportsMutation.create({
+        type,
+        abuseReason: formData.abuseType.value,
+        reportDetails: formData.details.value,
+        reportedUserId,
+        reportedLocationId: reportedLocationId!
+      })
+      const args = [
+        {
+          moderationId: report.id
+        }
+      ]
+      if (formData.files && formData.files.value.length > 0) {
+        await Promise.all(
+          formData.files.value.map(
+            (file) => uploadToFeathersService(moderationFileUploadPath, [file], { args }).promise
+          )
+        )
+      }
+      onClose()
+      setContent('reportSuccess')
+    } catch (error) {
+      onClose()
+      NotificationService.dispatchNotify(`Something went wrong Reporting a ${typeReport}`, {
+        variant: 'error'
+      })
+      console.error('Error uploading file', error.message)
+    }
+  }
+
+  const onClose = () => {
+    ReportUserState.resetPeerId()
+    ReportUserState.resetReportUser()
+  }
+  console.log('reportingUser', reportingUser)
+
+  const reportProgress = (
+    <div className={twMerge(inputDivStyles, 'gap-y-6')}>
+      <div className={twMerge(inputDivStyles, 'gap-y-2')}>
+        <Text fontSize="xs" className="text-white">
+          {fieldOptions.abuseType.label}
+        </Text>
+        <Dropdown
+          backgroundColor="black"
+          placeholder="Select one"
+          value={formData.abuseType.value}
+          options={abuseTypes}
+          onChange={(event) => handleChange(event.toString(), 'abuseType')}
+        />
+      </div>
+
+      <div className={twMerge(inputDivStyles, 'gap-y-2')}>
+        <Text fontSize="xs" className="text-white">
+          {fieldOptions.details.label}
+        </Text>
+        <TextArea
+          required
+          containerClassName="text-white"
+          labelClassname="text-xs text-white"
+          value={formData.details.value || ''}
+          onChange={(e) => handleChange(e.target.value, 'details')}
+          placeholder={fieldOptions.details.placeholder}
+          className={twMerge(
+            'transparent-1/2 min-h-[120px] w-full border-0 bg-black/20 backdrop-blur-xl',
+            errors.details.value && 'border-ui-error'
+          )}
+        />
+        {errors.details.value && <span className="text-xs text-ui-error">{errors.details.value}</span>}
+      </div>
+
+      <div className={twMerge(inputDivStyles, 'gap-y-2')}>
+        <Text fontSize="xs" className="text-white">
+          {fieldOptions.files.label}
+        </Text>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            required
+            type="file"
+            id="file-upload"
+            className="hidden"
+            multiple
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 2) {
+                NotificationService.dispatchNotify('Maximum 2 files allowed', { variant: 'warning' })
+              }
+              const files = Array.from(e.target.files || []).slice(0, 2) // Limit to first 2 files
+              formData.files.set(files)
+              fieldOptions.files.validate()
+            }}
+          />
+          <button className={actionButtonStyles} onClick={() => fileInputRef.current?.click()}>
+            {fieldOptions.files.buttonLabel}
+          </button>
+
+          {formData.files.length > 0 && (
+            <Text fontSize="sm" className="text-white">
+              {formData.files.length} file(s) selected
+            </Text>
+          )}
+          {errors.files.value && (
+            <Text fontSize="xs" className="text-ui-error">
+              {errors.files.value}
+            </Text>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-between gap-4 pt-4">
+        <button className={actionButtonStyles} onClick={onClose}>
+          {t('common:components.cancel')}
+        </button>
+        <button className={actionButtonStyles} onClick={handleSubmit}>
+          {t('common:components.submit')}
+        </button>
+      </div>
+    </div>
+  )
+
+  const reportSucess = (
+    <div className="relative flex h-screen w-full flex-col items-center justify-center gap-4 text-center text-white">
+      <div className="block">
+        <button className={twMerge(smallIconButtonStyles, backButtonStyles, `shadow`)}>
+          <CheckLg fontSize={'lg'} />
+        </button>
+      </div>
+      <div
+        className="text-center font-['DM_Sans'] text-[1.25rem] font-medium leading-[1.875rem] tracking-[-0.014rem] text-white"
+        style={{
+          textShadow: '0px 2px 2px rgba(0, 0, 0, 0.25)'
+        }}
+      >
+        {t('user:usermenu.profile.reportSuccessMessage')}
+      </div>
+      <div className="absolute bottom-20 left-0 z-50 flex w-full justify-center">
+        <button className={twMerge(actionButtonStyles, 'px-20')} onClick={onClose}>
+          {t('common:components.close')}
+        </button>
+      </div>
+    </div>
+  )
+
+  const showContents = () => {
+    switch (content) {
+      case 'reportProgress':
+        return reportProgress
+      case 'reportSuccess':
+        return reportSucess
+      default:
+        return reportProgress
+    }
+  }
+
+  if (!reportingUser) return null
+  if (!reportingUser.value) return null
+
+  return (
+    <div className={containerStyles}>
+      <div className={sidebarContainerStyles}>
+        <div className="absolute top-10 w-full md:top-5">
+          {content === 'reportProgress' && (
+            <button
+              className={twMerge(smallIconButtonStyles, buttonContainer_base, backButtonStyles, `shadow`)}
+              onClick={onClose}
+            >
+              <ChevronLeftMd />
+            </button>
+          )}
+          <div className="absolute w-full text-center">
+            <Text fontSize="lg" fontWeight="semibold" className="block flex-1 text-center text-white">
+              {t('user:usermenu.profile.report', { type: typeReport })}
+            </Text>
+          </div>
+          <div className={twMerge(buttonContainer_base, closeButtonStyles)}>
+            <MenuButton className={`text-3xl`} onClick={onClose}>
+              <XCloseLg />
+            </MenuButton>
+          </div>
+        </div>
+        {showContents()}
+      </div>
+    </div>
+  )
+}
+
+export default ReportUserMenu

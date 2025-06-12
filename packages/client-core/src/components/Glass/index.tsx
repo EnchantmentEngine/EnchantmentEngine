@@ -38,6 +38,7 @@ import { ToolbarAndSidebar } from './ToolbarAndSidebar'
 
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { useMediaWindows } from '../../user/VideoWindows'
+import ReportUserMenu from '../ReportUser'
 import Settings, { screens as settingsScreens } from '../Settings'
 import { ChatMenu } from './ChatMenu'
 import { ChatProvider } from './ChatProvider'
@@ -174,6 +175,7 @@ const Menu = () => {
 
       <TouchGamepad />
       <PopupMenu />
+      <ReportUserMenu type="user" />
     </div>
   )
 }

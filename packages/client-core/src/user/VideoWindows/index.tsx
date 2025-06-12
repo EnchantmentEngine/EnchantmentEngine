@@ -186,8 +186,16 @@ const ReportUserWindow = () => {
     })
   const ref = useRef<HTMLDivElement>(null)
 
-  useClickOutside(ref, () => ReportUserState.resetPeerId())
-  useTouchOutside(ref, () => ReportUserState.resetPeerId())
+  useClickOutside(ref, () => {
+    ReportUserState.resetPeerId()
+    ReportUserState.resetReportUser()
+  })
+  useTouchOutside(ref, () => () => {
+    ReportUserState.resetPeerId()
+    ReportUserState.resetReportUser()
+  })
+
+  const toggleReportUser = ReportUserState.toggleReportUser
 
   if (!reportedPeerId || !reportedUserId || !reportedUser) return null
 
@@ -237,9 +245,9 @@ const ReportUserWindow = () => {
           <button
             className="rounded-full bg-ui-error p-[15px]"
             title={t('user:videoWindows.reportUser')}
-            onClick={() =>
+            onClick={() => {
               ModalState.openModal(<ReportMenu type="user" userId={reportedUserId} locationId={currentLocation.id} />)
-            }
+            }}
           >
             <IoWarning className="h-5 w-5 text-text-primary-button" />
           </button>
