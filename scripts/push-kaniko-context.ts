@@ -46,11 +46,12 @@ cli.main(async () => {
     const storageProvider = getStorageProvider()
     storageProvider.bucket = process.env.KANIKO_CONTEXT_REPO
     const contextFile = fs.readFileSync(`/builder-context-${options.startTime}.tar.gz`)
-    let contentType = getContentType(contextFile)
+    const fileName = `builder-context-${options.startTime}.tar.gz`
+    let contentType = getContentType(fileName)
     let putData: any = {
       Body: contextFile,
       ContentType: contentType,
-      Key: `builder-context-${options.startTime}.tar.gz`,
+      Key: fileName,
       Metadata: {
         'Cache-Control': 'no-cache'
       }
