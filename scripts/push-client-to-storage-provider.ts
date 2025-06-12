@@ -85,6 +85,7 @@ cli.main(async () => {
     )
     console.log('Pushed client files to Storage Provider')
     let filesToPrune = JSON.parse(filesToPruneResponse.Body.toString('utf-8'))
+    console.log('filtering files to prune')
     filesToPrune = filesToPrune.filter((file) => filesToPush.indexOf(file) < 0)
     const putData = {
       Body: Buffer.from(JSON.stringify(filesToPrune)),
@@ -94,7 +95,9 @@ cli.main(async () => {
         'Cache-Control': 'no-cache'
       }
     }
+    console.log('Pushing files to prune')
     await storageProvider.putObject(putData, { isDirectory: false })
+    console.log('Invalidating client cache')
     await storageProvider.createInvalidation(['client/*'])
     console.log('Pushed filtered list of files to remove to Storage Provider')
     process.exit(0)
