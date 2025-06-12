@@ -35,16 +35,18 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
-import { overrideFileLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
+import { overrideFileLoaderLoad, overrideTextureLoaderLoad } from '../../../tests/util/loadGLTFAssetNode'
 
 import { createTestGLTFEntity, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { waitForScene } from '../../gltf/GLTFLoader.test'
 import { LoopAnimationComponent } from './LoopAnimationComponent'
 
 describe('LoopAnimationComponent', () => {
   describe('Animation is started/stopped', () => {
     overrideFileLoaderLoad()
+    overrideTextureLoaderLoad()
 
     beforeEach(() => {
       createEngine()
@@ -64,22 +66,19 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000, interval: 100 }
-      )
+      await waitForScene(entity)
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
       })
 
-      await vi.waitFor(() => {
+      await vi.waitUntil(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        assert(!!loopAnimationComponent._action)
-        assert(loopAnimationComponent._action.isRunning())
+        return !!loopAnimationComponent._action
       })
+
+      const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
+      assert(loopAnimationComponent._action?.isRunning())
     })
 
     it('Should stop animation when index is set to -1', async () => {
@@ -91,22 +90,19 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await waitForScene(entity)
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
       })
 
-      await vi.waitFor(() => {
+      await vi.waitUntil(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        assert(!!loopAnimationComponent._action)
-        assert(loopAnimationComponent._action.isRunning())
+        return !!loopAnimationComponent._action
       })
+
+      const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
+      assert(loopAnimationComponent._action?.isRunning())
     })
 
     it('Should stop animation when index is set to -1', async () => {
@@ -118,21 +114,15 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await waitForScene(entity)
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
       })
 
-      await vi.waitFor(() => {
+      await vi.waitUntil(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        assert(!!loopAnimationComponent._action)
-        assert(loopAnimationComponent._action.isRunning())
+        return !!loopAnimationComponent._action
       })
 
       const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
@@ -144,11 +134,12 @@ describe('LoopAnimationComponent', () => {
         activeClipIndex: -1
       })
 
-      await vi.waitFor(() => {
+      await vi.waitUntil(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        assert(loopAnimationComponent._action === null)
-        assert(action.isRunning() === false)
+        return loopAnimationComponent._action === null
       })
+
+      assert(action.isRunning() === false)
     })
 
     it('Should stop animation when the component is removed', async () => {
@@ -160,24 +151,20 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await waitForScene(entity)
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
       })
 
-      const action = await vi.waitFor(() => {
+      await vi.waitUntil(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        const action = loopAnimationComponent._action
-        assert(!!action)
-        assert(action.isRunning())
-        return action
+        return !!loopAnimationComponent._action
       })
+
+      const action = getComponent(entity, LoopAnimationComponent)._action
+      assert(!!action)
+      assert(action.isRunning())
 
       removeComponent(entity, LoopAnimationComponent)
 

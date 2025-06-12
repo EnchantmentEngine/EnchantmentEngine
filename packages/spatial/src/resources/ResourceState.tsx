@@ -52,7 +52,16 @@ import {
   useEntityContext
 } from '@ir-engine/ecs'
 
-import { NO_PROXY, State, defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
+import {
+  NO_PROXY,
+  State,
+  defineState,
+  getMutableState,
+  getState,
+  isClient,
+  none,
+  useMutableState
+} from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
 import React, { useEffect } from 'react'
@@ -149,6 +158,8 @@ export type Resource = {
 const MB = 1 << 20
 
 const getTotalAvailableHeapMemoryMB = () => {
+  if (!isClient) return 4096
+
   //@ts-ignore
   const memory = performance.memory
   if (memory) {
