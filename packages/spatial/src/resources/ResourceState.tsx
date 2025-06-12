@@ -45,7 +45,6 @@ import {
   UUIDComponent,
   getAncestorWithComponents,
   getAuthoringCounterpart,
-  getComponent,
   getOptionalComponent,
   hasComponent,
   useComponent,
@@ -361,9 +360,9 @@ const resourceCallbacks = {
       if (!asset.image) return
 
       const viewer = getState(ReferenceSpaceState).viewerEntity
-      const renderer = getComponent(viewer, RendererComponent)
-      const gl = renderer.renderContext as WebGL2RenderingContext
-      const shouldDiscard = discardUponUpload && typeof gl.fenceSync === 'function'
+      const renderer = getOptionalComponent(viewer, RendererComponent)
+      const gl = renderer?.renderContext as WebGL2RenderingContext | undefined
+      const shouldDiscard = discardUponUpload && typeof gl?.fenceSync === 'function'
 
       resource.metadata.merge({ onGPU: false, discarded: false, willBeDiscarded: shouldDiscard })
       asset.onUpdate = () => {
