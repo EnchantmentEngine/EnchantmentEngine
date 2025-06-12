@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { IUniform, Material, Shader } from 'three'
+import { FrontSide, IUniform, Material, NormalBlending, Shader } from 'three'
 
 import {
   ComponentType,
@@ -88,12 +88,41 @@ export const MaterialPrototypeDefinitions = defineState({
     }) as Record<string, MaterialPrototypeDefinition>
 })
 
+export const MaterialRenderSides = {
+  FrontSide: 0,
+  BackSide: 1,
+  DoubleSide: 2
+}
+
+export const BlendingModes = {
+  NoBlending: 0,
+  NormalBlending: 1,
+  AdditiveBlending: 2,
+  SubtractiveBlending: 3,
+  MultiplyBlending: 4,
+  CustomBlending: 5
+}
+
+export const MaterialComponent = defineComponent({
+  name: 'MaterialComponent',
+
+  jsonID: 'IR_material',
+
+  schema: S.Object({
+    depthTest: S.Bool({ default: true }),
+    depthWrite: S.Bool({ default: true }),
+    blending: S.Enum(BlendingModes, { default: NormalBlending }),
+    opacity: S.Number({ default: 1 }),
+    side: S.Enum(MaterialRenderSides, { default: FrontSide })
+  })
+})
+
 export const MaterialPluginComponents = {} as Record<string, ComponentType<any>>
 
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',
 
-  jsonID: 'IR_material',
+  jsonID: 'IR_material_legacy',
 
   schema: S.Object({
     material: S.Type<Material>(),
