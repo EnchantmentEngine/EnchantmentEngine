@@ -62,12 +62,6 @@ const getScaledBitmap = (img: ImageBitmap, maxResolution: number) => {
 
 const minimumAvailableHeapMemoryMB = 100
 
-const shouldWaitForDiscarding = () => {
-  const assetsAwaitingDiscard = ResourceState.budgets.getResourcesAwaitingDiscardCount()
-  const availableHeap = ResourceState.budgets.getCurrentAvailableHeapMemoryMB()
-  return assetsAwaitingDiscard > 0 && availableHeap < minimumAvailableHeapMemoryMB
-}
-
 class TextureLoader extends Loader<Texture> {
   maxResolution: number | undefined
   flipped: boolean
@@ -115,17 +109,9 @@ class TextureLoader extends Loader<Texture> {
           loader.load(url, loadCallback, onProgress, handleError)
         }
 
-        if (shouldWaitForDiscarding()) {
-          const listener = () => {
-            if (!shouldWaitForDiscarding()) {
-              ResourceState.deregisterAssetDiscardListener(listener)
-              load()
-            }
-          }
-          ResourceState.registerAssetDiscardListener(listener)
-        }
-
-        load()
+        ResourceState.budgets.waitForAvailableHeapMemory(minimumAvailableHeapMemoryMB).then(() => {
+          load()
+        })
       })
     })
   }

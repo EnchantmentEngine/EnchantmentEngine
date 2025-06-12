@@ -207,12 +207,38 @@ const getResourcesAwaitingDiscardCount = () => {
   const resourceState = getState(ResourceState)
 
   const count = Object.entries(resourceState.resources).reduce((acc, [key, val]) => {
-    if (val.metadata?.discarded || !val.metadata?.willBeDiscarded) return acc
-    acc += 1
+    if (val.metadata?.willBeDiscarded && !val.metadata?.discarded) acc += 1
     return acc
   }, 0)
 
   return count
+}
+
+const waitForAvailableHeapMemory = (minAvailableMB: number) => {
+  return new Promise((resolve, reject) => {
+    const shouldWait = () => {
+      const assetsAwaitingDiscard = ResourceState.budgets.getResourcesAwaitingDiscardCount()
+      const availableHeap = ResourceState.budgets.getCurrentAvailableHeapMemoryMB()
+      return assetsAwaitingDiscard > 0 && availableHeap < minAvailableMB
+    }
+
+    if (!shouldWait()) {
+      resolve(undefined)
+      return
+    }
+
+    ResourceState.debugLog('ResourceState:waitForAvailableHeapMemory waiting for asset disposal')
+    const listener = () => {
+      if (!shouldWait()) {
+        ResourceState.debugLog(
+          'ResourceState:waitForAvailableHeapMemory memory requirements met or nothing left to wait for'
+        )
+        ResourceState.deregisterAssetDiscardListener(listener)
+        resolve(undefined)
+      }
+    }
+    ResourceState.registerAssetDiscardListener(listener)
+  })
 }
 
 const getTotalSizeOfResources = () => {
@@ -381,7 +407,7 @@ const resourceCallbacks = {
                 asset
                   .offloadTextureData()
                   .then(() => {
-                    resource.metadata.merge({ onGPU: true, discarded: true })
+                    resource.metadata.merge({ discarded: true })
                     assetDiscarded()
                   })
                   .catch((err) => {
@@ -832,6 +858,7 @@ export const ResourceState = defineState({
     getTotalUsedHeapMemoryMB,
     getCurrentAvailableHeapMemoryMB,
     getResourcesAwaitingDiscardCount,
+    waitForAvailableHeapMemory,
     getTotalSizeOfResources,
     getTotalBufferSize,
     getTotalVertexCount,
