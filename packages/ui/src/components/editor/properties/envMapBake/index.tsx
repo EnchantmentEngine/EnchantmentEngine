@@ -29,6 +29,7 @@ import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
 import { EnvMapBakeTypes } from '@ir-engine/engine/src/scene/types/EnvMapBakeTypes'
 
+import DroppableImageInput from '@ir-engine/editor/src/components/assets/DroppableImageInput'
 import { commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { uploadBPCEMBakeToServer } from '@ir-engine/editor/src/functions/uploadEnvMapBake'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -192,6 +193,13 @@ export const EnvMapBakeNodeEditor = (props) => {
           key={props.entity}
           value={bakeComponent.resolution.value}
           onChange={commitProperty(EnvMapBakeComponent, 'resolution')}
+        />
+      </InputGroup>
+      <InputGroup name="EnvMap Origin" label="Environment Map Preview">
+        <DroppableImageInput
+          src={bakeComponent.envMapOrigin.value}
+          onChange={updateProperty(EnvMapBakeComponent, 'envMapOrigin')}
+          onBlur={commitProperty(EnvMapBakeComponent, 'envMapOrigin')}
         />
       </InputGroup>
       <Checkbox

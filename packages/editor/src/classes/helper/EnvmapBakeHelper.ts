@@ -36,7 +36,9 @@ import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvM
 import { TransformComponent } from '@ir-engine/spatial'
 import { useHelperEntity } from '@ir-engine/spatial/src/helper/functions/useHelperEntity'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { useEffect } from 'react'
 import { Box3, Box3Helper, Mesh, MeshPhysicalMaterial, SphereGeometry } from 'three'
 
@@ -62,6 +64,7 @@ export const EnvmapBakeHelperReactor: React.FC = (props: { parentEntity; iconEnt
     setComponent(boundsHelperEntity, TransformComponent)
     setComponent(boundsHelperEntity, EntityTreeComponent, { parentEntity: parentEntity })
     setComponent(boundsHelperEntity, VisibleComponent)
+    ObjectLayerMaskComponent.setLayer(boundsHelperEntity, ObjectLayers.NodeHelper)
 
     const helperTransform = getComponent(boundsHelperEntity, TransformComponent)
     helperTransform.position.copy(bakeComponent.bakePositionOffset.value)

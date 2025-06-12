@@ -23,13 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Object3D, Vector3 } from 'three'
+import { Scene, Vector3 } from 'three'
 
 import {
   getComponent,
+  getSimulationCounterpart,
   hasComponent,
-  LayerComponents,
-  Layers,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -46,7 +45,7 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { getNestedVisibleChildren, getSceneParameters } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { EditorState } from '../services/EditorServices'
 import { uploadProjectFiles } from './assetFunctions'
@@ -142,25 +141,22 @@ export const generateEnvmapBake = (
     : getScenePositionForBake()
 
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-  const rendererComponent = getComponent(viewerEntity, RendererComponent)
-  const renderer = rendererComponent.renderer!
-  const scene = rendererComponent.scene!
-  const cubemapCapturer = new CubemapCapturer(renderer, scene, resolution)
+  const renderer = getComponent(viewerEntity, RendererComponent).renderer!
 
-  // Match the visibility of the simulation layer to the authoring layer, since the cubemap capturer uses the simulation layer
-  const visibilityChanges = new Map<Object3D, boolean>()
-  const simulationQuery = defineQuery([ObjectComponent, LayerComponents[Layers.Simulation]])
-  for (const entity of simulationQuery()) {
-    const obj = getComponent(entity, ObjectComponent)
-    const originalVisible = obj.visible
-    const authoringEntity = LayerComponents[Layers.Simulation].refs[entity]
-    const shouldBeVisible = authoringEntity && hasComponent(authoringEntity, VisibleComponent)
-    if (obj.visible !== shouldBeVisible) {
-      visibilityChanges.set(obj, originalVisible)
-      obj.visible = shouldBeVisible
-    }
-  }
+  const rootEntity = getState(EditorState).rootEntity
+  const rootEntitySimulation = getSimulationCounterpart(rootEntity)
+  const entitiesToRender = getNestedVisibleChildren(rootEntitySimulation)
+  const sceneData = getSceneParameters(entitiesToRender, viewerEntity)
+  const scene = new Scene()
+  scene.children = sceneData.children
+  scene.background = sceneData.background
+  scene.fog = sceneData.fog
+  scene.environment = sceneData.environment
+
+  const cubemapCapturer = new CubemapCapturer(renderer, scene, resolution)
+  ObjectComponent.activeRender = true
   const renderTarget = cubemapCapturer.update(cubemapPosition)
+  ObjectComponent.activeRender = false
 
   const originalEnvironment = scene.environment
   scene.environment = renderTarget.texture
@@ -173,10 +169,6 @@ export const generateEnvmapBake = (
   ) as ImageData
 
   scene.environment = originalEnvironment
-
-  for (const [obj, originalVisibility] of visibilityChanges) {
-    obj.visible = originalVisibility
-  }
 
   return envmapImageData
 }
