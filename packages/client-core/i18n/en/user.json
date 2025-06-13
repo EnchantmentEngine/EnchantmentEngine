@@ -5,6 +5,7 @@
     "save": "Save",
     "saving": "Saving",
     "upload": "Upload",
+    "attach": "Attach",
     "discardChanges": "Discard Changes",
     "confirmDiscardChange": "Changes you made will not be saved.",
     "changesLostAlert": "If you proceed, all your changes will be lost.",

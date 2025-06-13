@@ -48,19 +48,19 @@ import { MenuButton } from '../Glass/MenuButton'
 
 const containerStyles = `
   pointer-events-auto
-  w-full
   inline-grid
   absolute z-20
+  w-full
+  md:w-auto md:min-w-[40rem]
   bottom-0 right-0 top-0
   transition-transform
-  md:w-[40%]
 `
 
 const sidebarContainerStyles = `
   inline-grid
   grid-rows-[min-content_min-content_1fr]
   content-start
-  p-6 pt-20
+  p-6
   gap-y-8
   max-h-full
   h-full
@@ -68,21 +68,6 @@ const sidebarContainerStyles = `
   border-white/10
   shadow-[0_0.1rem_2.3rem_-0.5rem_hsla(0,0%,0%,0.1)]
   backdrop-blur-3xl
-`
-
-const headerContainerStyles = `
-  flex
-  items-start
-  px-6
-  text-white
-  lg:pb-0 lg:pr-8
-  lg:pt-8
-`
-
-const headerInnerStyles = `
-  relative
-  inline-grid
-  w-full
 `
 
 const buttonContainer_base = `
@@ -103,7 +88,7 @@ const backButtonStyles = `
 `
 
 const actionButtonStyles = `
-  flex h-10 px-4 py-1 justify-center 
+  flex h-10 px-10 py-1 justify-center 
   items-center self-stretch
   text-white
   rounded-full
@@ -118,6 +103,9 @@ const inputDivStyles = `
 
 type ReportMenuProps = { type: ModerationTypeType }
 
+const REPORT_INPROGRESS = 'REPORT_INPROGRESS'
+const REPORT_SUCCESS = 'REPORT_SUCCESS'
+
 const ReportUserMenu = (props: ReportMenuProps) => {
   const { t } = useTranslation()
   const { type } = props
@@ -128,7 +116,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
   const reportedLocationId = currentLocation.id
   const userReportsMutation = useMutation(moderationPath)
 
-  const [content, setContent] = useState<string>('reportProgress') // reportProgress | reportSuccess
+  const [content, setContent] = useState<string>(REPORT_INPROGRESS) // REPORT_INPROGRESS | REPORT_SUCCESS
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const formData = useHookstate({
@@ -143,6 +131,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
     files: ''
   })
 
+  /** may need to move this to its own provider if used in more than several areas */
   const fieldOptions = {
     abuseType: {
       label: t('user:usermenu.profile.typeAbuse'),
@@ -168,7 +157,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
       }
     },
     files: {
-      buttonLabel: t('user:common.upload'),
+      buttonLabel: t('user:common.attach'),
       label: t('user:usermenu.profile.reportFileLabel'),
       validate: () => {
         // this is optional
@@ -177,7 +166,6 @@ const ReportUserMenu = (props: ReportMenuProps) => {
       }
     }
   }
-
   const abuseTypes = [
     {
       value: 'null',
@@ -221,10 +209,8 @@ const ReportUserMenu = (props: ReportMenuProps) => {
           )
         )
       }
-      onClose()
-      setContent('reportSuccess')
+      setContent(REPORT_SUCCESS)
     } catch (error) {
-      onClose()
       NotificationService.dispatchNotify(`Something went wrong Reporting a ${typeReport}`, {
         variant: 'error'
       })
@@ -235,17 +221,20 @@ const ReportUserMenu = (props: ReportMenuProps) => {
   const onClose = () => {
     ReportUserState.resetPeerId()
     ReportUserState.resetReportUser()
+    setContent('reportProgress')
+    handleChange('', 'abuseType')
+    handleChange('', 'details')
   }
-  console.log('reportingUser', reportingUser)
 
   const reportProgress = (
-    <div className={twMerge(inputDivStyles, 'gap-y-6')}>
+    <div className={twMerge(inputDivStyles, 'gap-y-6 pt-20')}>
       <div className={twMerge(inputDivStyles, 'gap-y-2')}>
         <Text fontSize="xs" className="text-white">
           {fieldOptions.abuseType.label}
         </Text>
         <Dropdown
           backgroundColor="black"
+          border={false}
           placeholder="Select one"
           value={formData.abuseType.value}
           options={abuseTypes}
@@ -310,7 +299,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
         </div>
       </div>
 
-      <div className="flex justify-between gap-4 pt-4">
+      <div className="flex flex-col-reverse justify-between gap-4 pt-4 md:flex-row">
         <button className={actionButtonStyles} onClick={onClose}>
           {t('common:components.cancel')}
         </button>
@@ -346,16 +335,15 @@ const ReportUserMenu = (props: ReportMenuProps) => {
 
   const showContents = () => {
     switch (content) {
-      case 'reportProgress':
+      case REPORT_INPROGRESS:
         return reportProgress
-      case 'reportSuccess':
+      case REPORT_SUCCESS:
         return reportSucess
       default:
         return reportProgress
     }
   }
 
-  if (!reportingUser) return null
   if (!reportingUser.value) return null
 
   return (

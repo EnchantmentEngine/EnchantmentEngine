@@ -34,6 +34,7 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { BsFillExclamationTriangleFill } from 'react-icons/bs'
 import { twMerge } from 'tailwind-merge'
+import ReportUserMenu from '../ReportUser'
 import { MultimediaStateProvider, useMultimediaStateProvider } from './MultimediaStateProvider'
 import {
   CamButton,
@@ -46,7 +47,9 @@ import {
 
 import { WindowType } from '../../user/VideoWindows'
 import { useUserMediaWindowHook } from '../../user/VideoWindows/hook'
+import { ReportUserState } from '../../util/ReportUserState'
 import { smallIconButtonStyles } from './Buttons'
+import { useNavigationProvider } from './NavigationProvider'
 
 const toolbarContainerStyles = `
   flex
@@ -142,6 +145,8 @@ const Video = ({ peerID, type }: WindowType) => {
     type
   })
 
+  const { navigateClose } = useNavigationProvider()
+
   const { isCamVideoEnabled, isCamAudioEnabled } = useMultimediaStateProvider()
 
   const ref = useRef<HTMLVideoElement>(null)
@@ -164,6 +169,12 @@ const Video = ({ peerID, type }: WindowType) => {
   const camVideoOn = isSelf ? isCamVideoEnabled : !videoStreamPaused
   const camAudioOn = isSelf ? isCamAudioEnabled : !audioStreamPaused
 
+  const reportUser = () => {
+    navigateClose()
+    ReportUserState.setReportedPeerId(peerID)
+    ReportUserState.toggleReportUser()
+  }
+
   return (
     <div style={{ textShadow: `0 0.03em 0.08em hsla(0, 0%, 0%, 0.4)` }} className={twMerge(videoContainer)}>
       {showVideo ? (
@@ -185,11 +196,12 @@ const Video = ({ peerID, type }: WindowType) => {
           <button onClick={toggleAudio} className={`cursor-pointer`}>
             {camAudioOn ? <Microphone01Md /> : <MicrophoneOff />}
           </button>
-          <button onClick={() => {}} className={`cursor-pointer`}>
+          <button onClick={reportUser} className={`cursor-pointer`}>
             <BsFillExclamationTriangleFill />
           </button>
         </div>
       </div>
+      <ReportUserMenu type="user" />
     </div>
   )
 }
