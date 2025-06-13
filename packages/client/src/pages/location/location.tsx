@@ -39,14 +39,15 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { createPortal } from 'react-dom'
 import '../styles.scss'
 
 const LocationRoutes = () => {
-  const ref = useRef<HTMLElement>(document.body)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const ready = useHookstate(getMutableState(LoadingUISystemState).ready).value
 
   useSpatialEngine()
-  useEngineCanvas(ref)
+  useEngineCanvas(canvasRef)
   useBrowserCheck()
 
   const projectsLoaded = useEngineInjection()
@@ -63,6 +64,7 @@ const LocationRoutes = () => {
           <LoadingView fullScreen animated title={t('common:loader.loadingApp')} titleClassname="text-black" />
         </div>
       )}
+      {createPortal(<canvas id="engine-renderer-canvas" tabIndex={1} ref={canvasRef}></canvas>, document.body)}
       <Debug />
     </Suspense>
   )
