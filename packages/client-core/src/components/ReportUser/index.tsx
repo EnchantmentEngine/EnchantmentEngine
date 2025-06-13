@@ -221,7 +221,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
   const onClose = () => {
     ReportUserState.resetPeerId()
     ReportUserState.resetReportUser()
-    setContent('reportProgress')
+    setContent(REPORT_INPROGRESS)
     handleChange('', 'abuseType')
     handleChange('', 'details')
   }
@@ -350,7 +350,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
     <div className={containerStyles}>
       <div className={sidebarContainerStyles}>
         <div className="absolute top-10 w-full md:top-5">
-          {content === 'reportProgress' && (
+          {content === REPORT_INPROGRESS && (
             <button
               className={twMerge(smallIconButtonStyles, buttonContainer_base, backButtonStyles, `shadow`)}
               onClick={onClose}
