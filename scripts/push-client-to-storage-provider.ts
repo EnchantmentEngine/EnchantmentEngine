@@ -97,8 +97,7 @@ cli.main(async () => {
     }
     console.log('Pushing files to prune')
     await storageProvider.putObject(putData, { isDirectory: false })
-    // console.log('Invalidating client cache')
-    // await storageProvider.createInvalidation(['client/*'])
+    await storageProvider.createInvalidation(['client/*'])
     console.log('Pushed filtered list of files to remove to Storage Provider')
     process.exit(0)
   } catch (err) {
