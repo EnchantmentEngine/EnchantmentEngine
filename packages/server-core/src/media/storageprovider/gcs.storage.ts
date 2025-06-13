@@ -226,6 +226,15 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
    * @param useMediaCDN Not used for AWS, but part of createInvalidation parameter signature
    */
   async createInvalidation(invalidationItems: string[], useMediaCDN: boolean) {
+    console.log('=== GCS createInvalidation Debug ===')
+    console.log('invalidationItems:', invalidationItems)
+    console.log('useMediaCDN:', useMediaCDN)
+    console.log('config.gcp.project:', config.gcp.project)
+    console.log('config.gcp.gcs.urlMap:', config.gcp.gcs.urlMap)
+    console.log('config.gcp.gcs.edgeCacheService:', config.gcp.gcs.edgeCacheService)
+    console.log('config.server.clientHost:', config.server.clientHost)
+    console.log('====================================')
+
     if (!invalidationItems || invalidationItems.length === 0) return
     invalidationItems = invalidationItems.map((item) => (item[0] !== '/' ? `/${item}` : item))
     if (useMediaCDN) {
@@ -262,14 +271,21 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
       // installing @google-cloud/compute, which takes up ~65 MB for just this one situation. But that required
       // installing the gcloud CLI in the client Dockerfiles, which takes a couple of minutes.
       // Overall, I think it's better to install the node_module. -Kyle
-      return await this.urlMaps.invalidateCache({
+
+      const invalidationParams = {
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
           path: '/*'
         },
         project: config.gcp.project as string,
         urlMap: config.gcp.gcs.urlMap as string
-      })
+      }
+
+      console.log('=== URL Maps Invalidation Parameters ===')
+      console.log('Calling urlMaps.invalidateCache with params:', JSON.stringify(invalidationParams, null, 2))
+      console.log('=======================================')
+
+      return await this.urlMaps.invalidateCache(invalidationParams)
     }
   }
 

@@ -43,6 +43,14 @@ cli.enable('status')
 
 cli.main(async () => {
   try {
+    // Debug: Log GCP configuration values
+    console.log('=== GCP Configuration Debug ===')
+    console.log('GCP_PROJECT:', process.env.GCP_PROJECT)
+    console.log('GCP_URL_MAP:', process.env.GCP_URL_MAP)
+    console.log('GCP_EDGE_CACHE_SERVICE:', process.env.GCP_EDGE_CACHE_SERVICE)
+    console.log('STORAGE_PROVIDER:', process.env.STORAGE_PROVIDER)
+    console.log('================================')
+
     await createDefaultStorageProvider()
     const storageProvider = getStorageProvider()
     const clientPath = path.resolve(appRootPath.path, `packages/client/dist`)
@@ -97,6 +105,14 @@ cli.main(async () => {
     }
     console.log('Pushing files to prune')
     await storageProvider.putObject(putData, { isDirectory: false })
+
+    console.log('=== Cache Invalidation Debug ===')
+    console.log('About to call createInvalidation with paths: ["client/*"]')
+    console.log('Storage provider type:', storageProvider.constructor.name)
+    console.log('GCP_PROJECT (at invalidation):', process.env.GCP_PROJECT)
+    console.log('GCP_URL_MAP (at invalidation):', process.env.GCP_URL_MAP)
+    console.log('================================')
+
     await storageProvider.createInvalidation(['client/*'])
     console.log('Pushed filtered list of files to remove to Storage Provider')
     process.exit(0)
