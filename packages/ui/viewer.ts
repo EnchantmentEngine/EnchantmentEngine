@@ -23,44 +23,14 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import {
-  defineComponent,
-  Entity,
-  getMutableComponent,
-  getOptionalMutableComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { none } from '@ir-engine/hyperflux'
-
-export const ResourcePendingComponent = defineComponent({
-  name: 'ResourcePendingComponent',
-
-  schema: S.Record(
-    S.String(),
-    S.Object({
-      progress: S.Number(),
-      total: S.Number()
-    })
-  ),
-
-  setResource(entity: Entity, url: string, progress: number, total: number) {
-    setComponent(entity, ResourcePendingComponent)
-
-    const component = getMutableComponent(entity, ResourcePendingComponent)
-    component[url].set({ progress, total })
-  },
-
-  removeResource(entity: Entity, url: string) {
-    const component = getOptionalMutableComponent(entity, ResourcePendingComponent)
-    if (!component) return
-    if (!component[url].value) return
-
-    component[url].set(none)
-
-    if (!component.keys.length) {
-      removeComponent(entity, ResourcePendingComponent)
-    }
-  }
-})
+export { default as Divider } from './src/components/viewer/Divider'
+export { default as Dropdown } from './src/components/viewer/Dropdown'
+export type { DropdownOption, DropdownProps } from './src/components/viewer/Dropdown'
+export { default as InputField } from './src/components/viewer/InputField'
+export type { InputFieldProps } from './src/components/viewer/InputField'
+export { default as Link } from './src/components/viewer/Link'
+export type { LinkProps } from './src/components/viewer/Link'
+export { default as Slider } from './src/components/viewer/Slider'
+export type { SliderProps } from './src/components/viewer/Slider'
+export { default as Toggle } from './src/components/viewer/Toggle'
+export type { ToggleProps } from './src/components/viewer/Toggle'
