@@ -92,14 +92,14 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
   }, [viewerEntity, localFloorEntity])
 }
 
-export const useRemoveEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
+export const useRemoveEngineCanvas = () => {
   useEffect(() => {
-    if (!ref) return
-    const canvas = ref.current as HTMLCanvasElement
-    canvas.hidden = true
+    const canvas = document.getElementById('engine-renderer-canvas')!
+    const parent = canvas.parentElement
+    parent?.removeChild(canvas)
 
     return () => {
-      canvas.hidden = false
+      parent?.appendChild(canvas)
     }
   }, [])
 
