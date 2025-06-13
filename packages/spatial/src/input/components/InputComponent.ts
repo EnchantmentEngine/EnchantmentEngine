@@ -175,7 +175,7 @@ export const InputComponent = defineComponent({
 
     buttons: S.SerializedClass(
       (entity) => {
-        // Helper function to find button state (including consumed ones if consumed by this entity)
+        // Helper function to find first unconsumed button state
         const findButtonState = (button: AnyButton): ButtonState | undefined => {
           const inputComponent = getComponent(entity, InputComponent)
           for (const sourceEntity of inputComponent.inputSources) {
@@ -188,8 +188,7 @@ export const InputComponent = defineComponent({
             //       state.consumed
             //     } - ${getComponent(state.consumed, NameComponent)}`
             //   )
-            // Return the state if it's not consumed, or if it was consumed by this entity
-            if (state && (!state.consumed || state.consumed === entity)) {
+            if (state && !state.consumed) {
               return state
             }
           }
@@ -204,11 +203,20 @@ export const InputComponent = defineComponent({
                 return target[prop]
               }
 
-              // Don't use cache for consumed buttons - always re-evaluate to ensure fresh state
+              // Check cache first
               const inputComponent = getComponent(entity, InputComponent)
               const cachedButtons = inputComponent.cachedButtons
+              if (Object.hasOwn(cachedButtons, prop)) {
+                if (!cachedButtons[prop]) return undefined
+                if (cachedButtons[prop] && cachedButtons[prop].consumed) {
+                  if (inputComponent.autoCapture && cachedButtons[prop].pressed) {
+                    InputState.setCapturingEntity(entity)
+                  }
+                  return cachedButtons[prop]
+                }
+              }
 
-              let result: ButtonState | undefined = undefined
+              let result = cachedButtons[prop]
 
               // First check mapped button states since they define the mapping from alias to actual buttons
               const buttonBindings = inputComponent.buttonBindings
@@ -224,8 +232,7 @@ export const InputComponent = defineComponent({
                     if (!result && isActive) {
                       // All buttons in combo are active and not consumed, consume them and set the result
                       states.forEach((s) => (s.consumed = entity))
-                      result = createInitialButtonState(states[0].inputSourceEntity)
-                      // Don't cache consumed buttons
+                      result = cachedButtons[prop] = createInitialButtonState(states[0].inputSourceEntity)
                     }
 
                     if (result && isActive) {
@@ -247,28 +254,21 @@ export const InputComponent = defineComponent({
                     }
                   } else {
                     // For single button bindings, just return that button
-                    result = findButtonState(b)
-                    if (result) {
-                      result.consumed = entity
-                      // Don't cache consumed buttons
-                    }
+                    result = cachedButtons[prop] = findButtonState(b)
+                    if (result) result.consumed = entity
                     if (inputComponent.autoCapture && result?.pressed) {
                       InputState.setCapturingEntity(entity)
                     }
-                    return result
+                    if (result !== undefined) return result
                   }
-
-                  // If we get here, the button in the binding is not available
-                  return undefined
                 }
+                // If we get here, the button in the binding is not available, so set the state to undefined
+                return (cachedButtons[prop] = undefined)
               }
 
               // Otherwise check if this exact button exists and is not consumed
-              const rawState = findButtonState(prop as AnyButton)
-              if (rawState) {
-                rawState.consumed = entity
-                // Don't cache consumed buttons
-              }
+              const rawState = (cachedButtons[prop] = findButtonState(prop as AnyButton))
+              if (rawState) rawState.consumed = entity
               if (rawState && inputComponent.autoCapture && rawState.pressed) {
                 InputState.setCapturingEntity(entity)
               }
