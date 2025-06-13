@@ -399,7 +399,7 @@ const fileTypeToMime = (fileType) => {
 const loaderIO = ModelTransformLoader().then(({ io }) => io)
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer, path?: string) => {
+const doUpload = async (projectName, fileName, buffer, path?: string, publishing = false) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
@@ -408,7 +408,7 @@ const doUpload = async (projectName, fileName, buffer, path?: string) => {
     resolver = resolve
   })
   uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver, path: path }])
-  if (fileName.includes('compressed-published')) {
+  if (fileName.includes('compressed-published') || publishing) {
     uploadRequestState.isOnPublishing.set(true)
   }
   await promise
@@ -701,12 +701,14 @@ const writeFiles = async (
     modelFormat,
     resourceUri,
     dst,
-    skipPartition
+    skipPartition,
+    publishing
   }: {
     modelFormat: ModelFormat
     resourceUri: string
     dst: string
     skipPartition?: boolean
+    publishing?: boolean
   }
 ): Promise<string> => {
   const srcBaseURL = LoaderUtils.extractUrlBase(srcURL)
@@ -728,7 +730,7 @@ const writeFiles = async (
   if (['glb', 'vrm'].includes(modelFormat)) {
     // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path, publishing)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -802,13 +804,14 @@ const writeFiles = async (
     await Promise.all(
       Object.entries(resources).map(async ([uri, data]) => {
         const blob = new Blob([data as BlobPart], { type: fileTypeToMime(uri.split('.').pop()!)! })
-        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path)
+        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path, publishing)
       })
     )
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
-      path
+      path,
+      publishing
     )
   }
 
@@ -1282,57 +1285,21 @@ export async function safeCompressGLTFWeb(
     await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
     await document.transform(
       simplify({
-        ratio: 0.95, // Higher = less simplification
-        error: 0.001,
+        ratio: params.simplifyRatio,
+        error: params.simplifyErrorThreshold,
         simplifier: MeshoptSimplifier
       })
     )
 
     document.createExtension(KHRMeshQuantization)?.setRequired(true)
     onProgress?.(0.8, Status.WritingFiles)
-    const eeMaterialExtension: EEMaterialExtension | undefined = document
-      .getRoot()
-      .listExtensionsUsed()
-      .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-    if (eeMaterialExtension) {
-      for (const texture of eeMaterialExtension.textures) {
-        document.createTexture().copy(texture)
-        // Find all materials that reference the old texture, and change their reference to the new texture
-      }
-      for (const material of document.getRoot().listMaterials()) {
-        const eeMaterial = material.getExtension<EEMaterial>('EE_material')
-        if (eeMaterial == null) continue
-        const matArgs = eeMaterial.args!
 
-        const newTextures = document.getRoot().listTextures()
-        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string) || []
-        materialArgsInfo.map((field) => {
-          let argEntry: EEArgEntry
-          try {
-            argEntry = matArgs.getPropRef(field) as EEArgEntry
-          } catch (e) {
-            argEntry = matArgs.getProp(field) as EEArgEntry
-          }
-
-          if (argEntry.type === 'texture') {
-            const oldTexture = argEntry.contents as Texture
-            if (oldTexture != null) {
-              const uuid: string = oldTexture.getExtras().uuid as string
-              const newTexture = newTextures.find((texture) => texture.getExtras().uuid === uuid)
-              if (newTexture == null) {
-                throw new Error('Transformed texture is not listed.')
-              }
-              argEntry.contents = newTexture
-            }
-          }
-        })
-      }
-    }
     await writeFiles(srcURL, document, {
       modelFormat: params.modelFormat,
       resourceUri: params.resourceUri,
       dst: destinationUrl,
-      skipPartition: true
+      skipPartition: true,
+      publishing: true
     })
 
     onProgress?.(1, Status.Complete)

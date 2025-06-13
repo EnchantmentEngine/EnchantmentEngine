@@ -39,7 +39,19 @@ import {
   LocationType,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { Entity, getComponent, hasComponent, iterateEntityNode, setComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  Entity,
+  EntityTreeComponent,
+  getComponent,
+  hasComponent,
+  iterateEntityNode,
+  Layers,
+  removeEntity,
+  removeEntityNodeRecursively,
+  setComponent,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { defaultLODs, LODVariantDescriptor } from '@ir-engine/editor/src/constants/GLTFPresets'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import exportGLTF from '@ir-engine/editor/src/functions/exportGLTF'
@@ -51,7 +63,9 @@ import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { Button, DropdownItem, Input, Select, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
@@ -61,6 +75,7 @@ import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 import React, { lazy, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
+import { Quaternion, Vector3 } from 'three/src/Three.Core'
 import { NotificationService } from '../../../common/services/NotificationService'
 import useFeatureFlags from '../../../hooks/useFeatureFlags'
 import { CompressedPublishConfirmation, ProgressState } from './CompressedPublishConfirmation'
@@ -253,7 +268,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           const gltfComponent = getComponent(gltfEntity, GLTFComponent)
           const srcURL = gltfComponent.src
           if (!srcURL) continue
-
+          const compressedEntity = createEntity(Layers.Authoring) //export entity need compress
           // Set up compression for this entity
           const fileName = srcURL.split('/').pop()!.split('.').shift()!
           try {
@@ -343,18 +358,36 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               })
               continue
             }
-            setComponent(gltfEntity, NameComponent, fileName + '-compressed-published')
+            const rootEntity = getState(EditorState).rootEntity
+            const newSource = UUIDComponent.getAsSourceID(rootEntity)
+            setComponent(compressedEntity, UUIDComponent, {
+              entityID: UUIDComponent.generate(),
+              entitySourceID: newSource
+            })
+            EditorControlFunctions.modifyProperty([compressedEntity], EntityTreeComponent, { parentEntity: rootEntity })
+            const transform = getComponent(gltfEntity, TransformComponent)
+            TransformComponent.computeTransformMatrix(gltfEntity)
+            const worldpos = new Vector3()
+            const worldrot = new Quaternion()
+            const getWorldScale = new Vector3()
+            transform.matrixWorld.decompose(worldpos, worldrot, getWorldScale)
+            EditorControlFunctions.modifyProperty([compressedEntity], TransformComponent, {
+              position: worldpos,
+              rotation: worldrot,
+              scale: getWorldScale
+            })
+            setComponent(compressedEntity, NameComponent, fileName + '-compressed')
             // Create a new entity with the compressed GLT
-            EditorControlFunctions.modifyProperty([gltfEntity], GLTFComponent, {
+            EditorControlFunctions.modifyProperty([compressedEntity], GLTFComponent, {
               src: pathJoin(config.client.fileServer, destPath)
             })
+            EditorControlFunctions.modifyProperty([compressedEntity], VisibleComponent, { visible: true })
+            // Remove the old entity
+            removeEntity(gltfEntity)
           } catch (error) {
-            console.log(error, 'Error compressing')
+            if (compressedEntity) removeEntityNodeRecursively(compressedEntity)
             if (fileName == scenename) continue
             setComponent(gltfEntity, NameComponent, fileName)
-            EditorControlFunctions.modifyProperty([gltfEntity], GLTFComponent, {
-              src: gltfComponent.src
-            })
           }
         }
         //save duplicated scene and publish that
