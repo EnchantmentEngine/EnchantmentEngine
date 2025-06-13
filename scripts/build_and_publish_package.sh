@@ -105,6 +105,15 @@ fi
 
 BUILD_START_TIME=$(date +"%d-%m-%yT%H-%M-%S")
 echo "Starting ${PACKAGE} build at ${BUILD_START_TIME}"
+
+# Debug: Check GCP environment variables
+echo "=== Build Script GCP Debug ==="
+echo "GCP_PROJECT: '$GCP_PROJECT'"
+echo "GCP_URL_MAP: '$GCP_URL_MAP'"
+echo "GCP_EDGE_CACHE_SERVICE: '$GCP_EDGE_CACHE_SERVICE'"
+echo "PACKAGE: '$PACKAGE'"
+echo "DOCKERFILE: '$DOCKERFILE'"
+echo "============================="
 if [ "$DOCKERFILE" != "client-serve-static" ]; then
   docker buildx build \
     --builder ir-engine-$PACKAGE \

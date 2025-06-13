@@ -26,6 +26,15 @@ START_TIMESTAMP=$(date +%s)
 
 log_info "Build process started at $START_TIME"
 
+# Debug: Check GCP environment variables at startup
+echo "=== Builder Pod GCP Environment Debug ==="
+echo "GCP_PROJECT: '$GCP_PROJECT'"
+echo "GCP_URL_MAP: '$GCP_URL_MAP'"
+echo "GCP_EDGE_CACHE_SERVICE: '$GCP_EDGE_CACHE_SERVICE'"
+echo "APP_HOST: '$APP_HOST'"
+echo "RELEASE_NAME: '$RELEASE_NAME'"
+echo "============================================"
+
 ###################
 # Validation
 ###################
