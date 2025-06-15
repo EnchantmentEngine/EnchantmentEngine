@@ -51,9 +51,9 @@ import { useTexture } from '../assets/functions/resourceLoaderHooks'
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } })
+  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } }) // @todo replace $isTexture with $id
 
-const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
 
 /**
  *
@@ -168,7 +168,7 @@ export const defineMaterialPlugin = <T extends Schema>({
         { before: PresentationSystemGroup, uuid: makeMaterialPluginUpdateSystemID(name, entity) }
       )
 
-      return Reactor ? <Reactor entity={entity} /> : null
+      return Reactor ? <Reactor entity={entity} uniforms={uniforms} /> : null
     }
   })
 

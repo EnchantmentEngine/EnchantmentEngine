@@ -31,7 +31,8 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { TriplanarMappingMaterialPlugin } from '@ir-engine/engine/src/material/plugins/TriplanarMappingMaterialPlugin'
+import { NO_PROXY } from '@ir-engine/hyperflux'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
@@ -40,21 +41,8 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { TriplanarMappingMaterialPlugin } from '@ir-engine/spatial/src/renderer/materials/plugins/TriplanarMappingMaterialPlugin'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
-import {
-  BufferAttribute,
-  BufferGeometry,
-  DoubleSide,
-  LinearMipmapLinearFilter,
-  Mesh,
-  MeshStandardMaterial,
-  PlaneGeometry,
-  RepeatWrapping,
-  Texture,
-  Vector2
-} from 'three'
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshStandardMaterial, PlaneGeometry, Texture } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 
 export const TerrainMeshComponent = defineComponent({
@@ -77,24 +65,6 @@ export const TerrainMeshComponent = defineComponent({
     // Physics
     enablePhysics: S.Bool({ default: true }),
 
-    // Materials
-    diffuseMap1: S.String({ default: '' }),
-    diffuseMap2: S.String({ default: '' }),
-    diffuseMap3: S.String({ default: '' }),
-    normalMap1: S.String({ default: '' }),
-    normalMap2: S.String({ default: '' }),
-    normalMap3: S.String({ default: '' }),
-
-    // Texture scaling
-    texScale1: T.Vec2(new Vector2(0.1, 0.1)),
-    texScale2: T.Vec2(new Vector2(0.1, 0.1)),
-    texScale3: T.Vec2(new Vector2(0.1, 0.1)),
-
-    // Material properties
-    blendSharpness: S.Number({ default: 2.0 }),
-    normalScale: S.Number({ default: 1.0 }),
-    peakHeight: S.Number({ default: 10.0 }),
-
     // Visibility
     visible: S.Bool({ default: true })
   }),
@@ -104,53 +74,15 @@ export const TerrainMeshComponent = defineComponent({
   reactor: function TerrainMeshReactor({ entity }) {
     const component = useComponent(entity, TerrainMeshComponent)
 
-    // Track loaded textures
-    const textureState = useHookstate({
-      heightmap: null as Texture | null,
-      diffuse1: null as Texture | null,
-      diffuse2: null as Texture | null,
-      diffuse3: null as Texture | null,
-      normal1: null as Texture | null,
-      normal2: null as Texture | null,
-      normal3: null as Texture | null
-    })
-
     // Load heightmap texture
     const [heightmapTexture] = useTexture(component.heightmapURL.value, entity)
 
-    // Load material textures
-    const [diffuse1] = useTexture(component.diffuseMap1.value, entity)
-    const [diffuse2] = useTexture(component.diffuseMap2.value, entity)
-    const [diffuse3] = useTexture(component.diffuseMap3.value, entity)
-    const [normal1] = useTexture(component.normalMap1.value, entity)
-    const [normal2] = useTexture(component.normalMap2.value, entity)
-    const [normal3] = useTexture(component.normalMap3.value, entity)
-
-    // Update texture state when textures load
-    useEffect(() => {
-      if (heightmapTexture) textureState.heightmap.set(heightmapTexture)
-      if (diffuse1) textureState.diffuse1.set(diffuse1)
-      if (diffuse2) textureState.diffuse2.set(diffuse2)
-      if (diffuse3) textureState.diffuse3.set(diffuse3)
-      if (normal1) textureState.normal1.set(normal1)
-      if (normal2) textureState.normal2.set(normal2)
-      if (normal3) textureState.normal3.set(normal3)
-    }, [heightmapTexture, diffuse1, diffuse2, diffuse3, normal1, normal2, normal3])
-
     // Create terrain mesh when heightmap is loaded
     useEffect(() => {
-      const heightmapTexture = textureState.heightmap.get(NO_PROXY)
       if (!heightmapTexture) return
 
       // Create terrain mesh
-      const terrainMesh = createTerrainMesh(component.get(NO_PROXY), heightmapTexture, {
-        diffuse1: textureState.diffuse1.get(NO_PROXY) || null,
-        diffuse2: textureState.diffuse2.get(NO_PROXY) || null,
-        diffuse3: textureState.diffuse3.get(NO_PROXY) || null,
-        normal1: textureState.normal1.get(NO_PROXY) || null,
-        normal2: textureState.normal2.get(NO_PROXY) || null,
-        normal3: textureState.normal3.get(NO_PROXY) || null
-      })
+      const terrainMesh = createTerrainMesh(component.get(NO_PROXY), heightmapTexture)
 
       // Set mesh component
       setComponent(entity, MeshComponent, terrainMesh)
@@ -174,22 +106,13 @@ export const TerrainMeshComponent = defineComponent({
         }
       }
     }, [
+      heightmapTexture,
       component.width.value,
       component.height.value,
       component.depth.value,
       component.widthSegments.value,
       component.depthSegments.value,
-      component.enablePhysics.value,
-      component.blendSharpness.value,
-      component.normalScale.value,
-      component.peakHeight.value,
-      textureState.heightmap.value,
-      textureState.diffuse1.value,
-      textureState.diffuse2.value,
-      textureState.diffuse3.value,
-      textureState.normal1.value,
-      textureState.normal2.value,
-      textureState.normal3.value
+      component.enablePhysics.value
     ])
 
     return null
@@ -197,18 +120,7 @@ export const TerrainMeshComponent = defineComponent({
 })
 
 // Helper function to create a terrain mesh from a heightmap
-function createTerrainMesh(
-  terrainConfig: any,
-  heightmapTexture: Texture | any,
-  textures: {
-    diffuse1: Texture | null | any
-    diffuse2: Texture | null | any
-    diffuse3: Texture | null | any
-    normal1: Texture | null | any
-    normal2: Texture | null | any
-    normal3: Texture | null | any
-  }
-): Mesh {
+function createTerrainMesh(terrainConfig: any, heightmapTexture: Texture | any): Mesh {
   // Create geometry
   const geometry = new PlaneGeometry(
     terrainConfig.width,
@@ -249,36 +161,8 @@ function createTerrainMesh(
   // Set the material state component
   setComponent(materialEntity, MaterialStateComponent, { material })
 
-  // Configure texture wrapping and filtering for all textures
-  if (textures.diffuse1) {
-    textures.diffuse1.wrapS = textures.diffuse1.wrapT = RepeatWrapping
-    textures.diffuse1.minFilter = LinearMipmapLinearFilter
-  }
-  if (textures.diffuse2) {
-    textures.diffuse2.wrapS = textures.diffuse2.wrapT = RepeatWrapping
-    textures.diffuse2.minFilter = LinearMipmapLinearFilter
-  }
-  if (textures.diffuse3) {
-    textures.diffuse3.wrapS = textures.diffuse3.wrapT = RepeatWrapping
-    textures.diffuse3.minFilter = LinearMipmapLinearFilter
-  }
-  // Do the same for normal maps if needed
-
   // Apply the triplanar mapping plugin
-  setComponent(materialEntity, TriplanarMappingMaterialPlugin, {
-    diffuseMap1: textures.diffuse1 || null,
-    diffuseMap2: textures.diffuse2 || null,
-    diffuseMap3: textures.diffuse3 || null,
-    normalMap1: textures.normal1 || null,
-    normalMap2: textures.normal2 || null,
-    normalMap3: textures.normal3 || null,
-    texScale1: terrainConfig.texScale1,
-    texScale2: terrainConfig.texScale2,
-    texScale3: terrainConfig.texScale3,
-    blendSharpness: terrainConfig.blendSharpness,
-    normalScale: terrainConfig.normalScale,
-    peakHeight: terrainConfig.peakHeight
-  })
+  setComponent(materialEntity, TriplanarMappingMaterialPlugin)
 
   return mesh
 }

@@ -25,8 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
-import { Texture, Vector2 } from 'three'
-import { defineMaterialPlugin } from '../defineMaterialPlugin'
+import { useEffect } from 'react'
+import { LinearMipmapLinearFilter, RepeatWrapping, Vector2 } from 'three'
+import { defineMaterialPlugin, TextureSchema } from '../defineMaterialPlugin'
 
 // Triplanar shader chunks
 const triplanarVertexPars = `
@@ -124,12 +125,12 @@ export const TriplanarMappingMaterialPlugin = defineMaterialPlugin({
   jsonID: 'IR_triplanar_mapping',
 
   uniforms: S.Object({
-    diffuseMap1: S.Type<Texture>(),
-    diffuseMap2: S.Type<Texture>(),
-    diffuseMap3: S.Type<Texture>(),
-    normalMap1: S.Type<Texture>(),
-    normalMap2: S.Type<Texture>(),
-    normalMap3: S.Type<Texture>(),
+    diffuseMap1: TextureSchema(),
+    diffuseMap2: TextureSchema(),
+    diffuseMap3: TextureSchema(),
+    normalMap1: TextureSchema(),
+    normalMap2: TextureSchema(),
+    normalMap3: TextureSchema(),
     texScale1: T.Vec2(new Vector2(0.1, 0.1)),
     texScale2: T.Vec2(new Vector2(0.1, 0.1)),
     texScale3: T.Vec2(new Vector2(0.1, 0.1)),
@@ -162,5 +163,23 @@ export const TriplanarMappingMaterialPlugin = defineMaterialPlugin({
 
   update: undefined,
 
-  reactor: undefined
+  reactor: ({ uniforms }) => {
+    useEffect(() => {
+      if (!uniforms.diffuse1?.value) return
+      uniforms.diffuse1.value.wrapS = uniforms.diffuse1.value.wrapT = RepeatWrapping
+      uniforms.diffuse1.value.minFilter = LinearMipmapLinearFilter
+    }, [uniforms.diffuse1?.value])
+
+    useEffect(() => {
+      if (!uniforms.diffuse2?.value) return
+      uniforms.diffuse2.value.wrapS = uniforms.diffuse2.value.wrapT = RepeatWrapping
+      uniforms.diffuse2.value.minFilter = LinearMipmapLinearFilter
+    }, [uniforms.diffuse2?.value])
+
+    useEffect(() => {
+      if (!uniforms.diffuse3?.value) return
+      uniforms.diffuse3.value.wrapS = uniforms.diffuse3.value.wrapT = RepeatWrapping
+      uniforms.diffuse3.value.minFilter = LinearMipmapLinearFilter
+    }, [uniforms.diffuse3?.value])
+  }
 })
