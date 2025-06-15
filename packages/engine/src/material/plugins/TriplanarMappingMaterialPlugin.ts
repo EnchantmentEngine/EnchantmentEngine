@@ -24,9 +24,10 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { NO_PROXY } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useEffect } from 'react'
-import { LinearMipmapLinearFilter, RepeatWrapping, Vector2 } from 'three'
+import { LinearMipmapLinearFilter, RepeatWrapping, Texture, Vector2 } from 'three'
 import { defineMaterialPlugin, TextureSchema } from '../defineMaterialPlugin'
 
 // Triplanar shader chunks
@@ -163,23 +164,31 @@ export const TriplanarMappingMaterialPlugin = defineMaterialPlugin({
 
   update: undefined,
 
-  reactor: ({ uniforms }) => {
-    useEffect(() => {
-      if (!uniforms.diffuse1?.value) return
-      uniforms.diffuse1.value.wrapS = uniforms.diffuse1.value.wrapT = RepeatWrapping
-      uniforms.diffuse1.value.minFilter = LinearMipmapLinearFilter
-    }, [uniforms.diffuse1?.value])
+  reactor: ({ textureState }) => {
+    const textures = textureState.get(NO_PROXY) as Record<string, Texture>
 
     useEffect(() => {
-      if (!uniforms.diffuse2?.value) return
-      uniforms.diffuse2.value.wrapS = uniforms.diffuse2.value.wrapT = RepeatWrapping
-      uniforms.diffuse2.value.minFilter = LinearMipmapLinearFilter
-    }, [uniforms.diffuse2?.value])
+      if (!textures.diffuseMap1) return
+      textures.diffuseMap1.wrapS = RepeatWrapping
+      textures.diffuseMap1.wrapT = RepeatWrapping
+      textures.diffuseMap1.minFilter = LinearMipmapLinearFilter
+      textures.diffuseMap1.needsUpdate = true
+    }, [textureState.diffuseMap1])
 
     useEffect(() => {
-      if (!uniforms.diffuse3?.value) return
-      uniforms.diffuse3.value.wrapS = uniforms.diffuse3.value.wrapT = RepeatWrapping
-      uniforms.diffuse3.value.minFilter = LinearMipmapLinearFilter
-    }, [uniforms.diffuse3?.value])
+      if (!textures.diffuseMap2) return
+      textures.diffuseMap2.wrapS = RepeatWrapping
+      textures.diffuseMap2.wrapT = RepeatWrapping
+      textures.diffuseMap2.minFilter = LinearMipmapLinearFilter
+      textures.diffuseMap2.needsUpdate = true
+    }, [textureState.diffuseMap2])
+
+    useEffect(() => {
+      if (!textures.diffuseMap3) return
+      textures.diffuseMap3.wrapS = RepeatWrapping
+      textures.diffuseMap3.wrapT = RepeatWrapping
+      textures.diffuseMap3.minFilter = LinearMipmapLinearFilter
+      textures.diffuseMap3.needsUpdate = true
+    }, [textureState.diffuseMap3])
   }
 })
