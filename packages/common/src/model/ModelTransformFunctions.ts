@@ -1269,42 +1269,42 @@ export async function safeCompressGLTFWeb(
 ) {
   onProgress?.(0, Status.TransformingModels)
 
-  try {
-    const io = await loaderIO
-    const document: Document = await io.read(srcURL)
+  const io = await loaderIO
+  const document: Document = await io.read(srcURL)
+  await document.transform(preserveVertexColors)
 
-    await document.transform(preserveVertexColors)
-
-    if (params.modelFormat === 'gltf') {
-      await safeImageCompress(document, params, onProgress)
-    }
-    await document.transform(unInstanceSingletons)
-    await document.transform(dedup())
-    await document.transform(weld())
-
-    await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
+  if (params.modelFormat === 'gltf') {
+    await safeImageCompress(document, params, onProgress)
+  } else {
     await document.transform(
-      simplify({
-        ratio: params.simplifyRatio,
-        error: params.simplifyErrorThreshold,
-        simplifier: MeshoptSimplifier
+      textureCompress({
+        resize: [params.maxTextureSize, params.maxTextureSize]
       })
     )
-
-    document.createExtension(KHRMeshQuantization)?.setRequired(true)
-    onProgress?.(0.8, Status.WritingFiles)
-
-    await writeFiles(srcURL, document, {
-      modelFormat: params.modelFormat,
-      resourceUri: params.resourceUri,
-      dst: destinationUrl,
-      skipPartition: true,
-      publishing: true
-    })
-
-    onProgress?.(1, Status.Complete)
-  } catch (error) {
-    console.log(`Error compressing ${srcURL}:`, error)
-    throw error
   }
+  await document.transform(unInstanceSingletons)
+  await document.transform(dedup())
+  await document.transform(weld())
+
+  await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
+  await document.transform(
+    simplify({
+      ratio: params.simplifyRatio,
+      error: params.simplifyErrorThreshold,
+      simplifier: MeshoptSimplifier
+    })
+  )
+
+  document.createExtension(KHRMeshQuantization)?.setRequired(true)
+  onProgress?.(0.8, Status.WritingFiles)
+
+  await writeFiles(srcURL, document, {
+    modelFormat: params.modelFormat,
+    resourceUri: params.resourceUri,
+    dst: destinationUrl,
+    skipPartition: true,
+    publishing: true
+  })
+
+  onProgress?.(1, Status.Complete)
 }

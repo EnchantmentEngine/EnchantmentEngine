@@ -39,13 +39,19 @@ import {
   KHRTextureBasisu,
   KHRTextureTransform
 } from '@gltf-transform/extensions'
+import { EEPROEcommerceProductExtension } from '@ir-engine/engine/src/assets/compression/extensions/EEPRO_EcommerceProductTransformer'
+import { EEColliderExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_ColliderTransformer'
 import { EEMaterialExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_MaterialTransformer'
 import { EEResourceIDExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
+import { EERigidbodyExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_RigidbodyTransformer'
+import { EEUuidExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_UUIDTransformer'
 import { VRMExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_VRMTransformer'
+import { EEVisibleExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_VisibleTransformer'
 import { MOZLightmapExtension } from '@ir-engine/engine/src/assets/compression/extensions/MOZ_LightmapTransformer'
 import draco3d from 'draco3dgltf'
 import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer'
 import { FileLoader } from 'three'
+
 const transformHistory: string[] = []
 export default async function ModelTransformLoader() {
   const io = new WebIO()
@@ -66,7 +72,12 @@ export default async function ModelTransformLoader() {
     MOZLightmapExtension,
     EEResourceIDExtension,
     EEMaterialExtension,
-    VRMExtension
+    VRMExtension,
+    EEPROEcommerceProductExtension,
+    EEVisibleExtension,
+    EEUuidExtension,
+    EEColliderExtension,
+    EERigidbodyExtension
   ])
   io.registerDependencies({
     'meshopt.decoder': MeshoptDecoder,

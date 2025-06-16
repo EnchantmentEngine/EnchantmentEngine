@@ -25,11 +25,7 @@ import { useFind, useMutation } from '@ir-engine/common'
 import { config } from '@ir-engine/common/src/config'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import {
-  ModelTransformStatus,
-  safeCompressGLTFWeb,
-  transformModel
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
+import { ModelTransformStatus, safeCompressGLTFWeb } from '@ir-engine/common/src/model/ModelTransformFunctions'
 import {
   engineSettingPath,
   LocationData,
@@ -54,7 +50,7 @@ import {
 } from '@ir-engine/ecs'
 import { defaultLODs, LODVariantDescriptor } from '@ir-engine/editor/src/constants/GLTFPresets'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
-import exportGLTF from '@ir-engine/editor/src/functions/exportGLTF'
+import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
 import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
@@ -275,10 +271,15 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             const extension = new URL(srcURL).pathname.split('.').pop()!
             const modelFormat = extension === 'gltf' ? 'gltf' : extension === 'vrm' ? 'vrm' : 'glb'
             const destPath = `${saveScenePath.value}/${scenename}/${fileName}-compressed-published.${extension}`
-            const copiedPath = pathJoin(config.client.fileServer, destPath).replace('compressed-published', `-copied`)
-
-            // Copy the original model to the publish folder
-            await exportGLTF(gltfEntity, copiedPath)
+            //export parent entities and combined mesh entity
+            if (modelFormat === 'gltf') {
+              await exportRelativeGLTF(
+                gltfEntity,
+                projectName,
+                'public/publish/' + scenename + '/' + fileName + '.gltf',
+                false
+              )
+            }
             // Apply model transformation/compression
             const transformMetadata: Record<string, any>[] = []
             const progressCaptions: Record<ModelTransformStatus, string> = {
@@ -294,53 +295,20 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               modelFormat: modelFormat,
               resourceUri: '',
               adaptiveSimplification: true,
-              flatten: false,
-              dedup: false,
-              combineMaterials: false,
-              maxTextureSize: 1024,
-              split: false,
-              prune: false,
-              join: {
-                enabled: false,
-                options: {
-                  keepMeshes: false,
-                  keepNamed: false
-                }
-              },
-              palette: {
-                enabled: true,
-                options: {
-                  blockSize: 4,
-                  min: 2
-                }
-              }
+              maxTextureSize: 1024
             }
 
             progressState.set({
               progress: progressState.value.progress,
               caption: `Compressing ${fileName}...`
             })
-            if (modelFormat === 'glb') {
-              await transformModel(
-                copiedPath,
-                [lodParams],
-                (i, key, data) => {
-                  if (!transformMetadata[i]) transformMetadata[i] = {}
-                  transformMetadata[i][key] = data
-                },
-                (progress, status, numerator, denominator) => {
-                  const caption = t(progressCaptions[status]!, {
-                    numerator: numerator! + 1,
-                    denominator
-                  })
-                  progressState.set({
-                    progress: progressState.value.progress + progress / entitiesToCompress.length,
-                    caption
-                  })
-                }
-              )
-            } else {
-              await safeCompressGLTFWeb(copiedPath, destPath, lodParams, (progress, status, numerator, denominator) => {
+            await safeCompressGLTFWeb(
+              modelFormat === 'gltf'
+                ? pathJoin(config.client.fileServer, destPath).replace('-compressed-published', '')
+                : gltfComponent.src,
+              destPath,
+              lodParams,
+              (progress, status, numerator, denominator) => {
                 const caption = t(progressCaptions[status]!, {
                   numerator: (numerator ?? 0) + 1,
                   denominator
@@ -349,8 +317,8 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                   progress: progressState.value.progress + progress / entitiesToCompress.length,
                   caption
                 })
-              })
-            }
+              }
+            )
             // continue if it is scene itself
             if (fileName == scenename) {
               EditorControlFunctions.modifyProperty([gltfEntity], GLTFComponent, {
@@ -402,7 +370,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         await handlePublish(true)
         //re-open the original scene
         const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`
-        window.open(studioUrl, '_blank')?.focus()
+        // window.open(studioUrl, '_blank')?.focus()
         ModalState.closeModal()
         progressState.set({ progress: 0, caption: '' })
       }
