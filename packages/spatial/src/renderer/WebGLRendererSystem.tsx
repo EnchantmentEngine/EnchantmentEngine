@@ -196,8 +196,6 @@ const execute = () => {
     const sessionMode = getState(XRState).sessionMode
     _scene.background =
       sessionMode === 'immersive-ar' ? null : renderMode === RenderModes.WIREFRAME ? new Color(0xffffff) : background
-    const b =
-      sessionMode === 'immersive-ar' ? null : renderMode === RenderModes.WIREFRAME ? new Color(0xffffff) : background
 
     _scene.environment = environment
 

@@ -191,10 +191,8 @@ describe('HemisphereLightComponent', () => {
     })
 
     it('should set a LightTagComponent on the entityContext when it is mounted', async () => {
-      // Sanity check before running
       assert.equal(hasComponent(testEntity, LightTagComponent), false)
 
-      // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent)
       await vi.waitFor(() => {
         assert.equal(hasComponent(testEntity, LightTagComponent), true)
@@ -202,7 +200,6 @@ describe('HemisphereLightComponent', () => {
     })
 
     it('should not create ObjectComponent for WebGPU renderer', async () => {
-      // Create a mock WebGPU renderer entity
       const rendererEntity = createEntity()
       const mockWebGPURenderer = {
         isWebGPURenderer: true,
@@ -214,21 +211,16 @@ describe('HemisphereLightComponent', () => {
         scenes: [testEntity]
       })
 
-      // Set the component
       setComponent(testEntity, HemisphereLightComponent)
 
-      // Should have LightTagComponent but not ObjectComponent for WebGPU
       await vi.waitFor(() => {
         assert.equal(hasComponent(testEntity, LightTagComponent), true)
-        // ObjectComponent should not be set for WebGPU
-        // Note: This test may need adjustment based on actual implementation
       })
 
       removeEntity(rendererEntity)
     })
 
     it('should create ObjectComponent for WebGL renderer', async () => {
-      // Create a mock WebGL renderer entity
       const rendererEntity = createEntity()
       const mockWebGLRenderer = {
         isWebGLRenderer: true,
@@ -240,14 +232,10 @@ describe('HemisphereLightComponent', () => {
         scenes: [testEntity]
       })
 
-      // Set the component
       setComponent(testEntity, HemisphereLightComponent)
 
-      // Should have both LightTagComponent and ObjectComponent for WebGL
       await vi.waitFor(() => {
         assert.equal(hasComponent(testEntity, LightTagComponent), true)
-        // ObjectComponent should be set for WebGL
-        // Note: This test may need adjustment based on actual implementation
       })
 
       removeEntity(rendererEntity)
