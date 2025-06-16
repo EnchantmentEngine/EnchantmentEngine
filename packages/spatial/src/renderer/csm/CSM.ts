@@ -53,7 +53,7 @@ import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { getMaxShadowCascades, isWebGPURenderer, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
+import { getMaxShadowCascades, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { CSMComponent } from './CSMComponent'
 import { CSMPluginComponent } from './CSMPluginComponent'
@@ -314,12 +314,6 @@ function updateCSM(rendererEntity: Entity): void {
     mutableCsm.needsUpdate.set(false)
   }
 
-  // Skip traditional CSM update logic for WebGPU when using CSMShadowNode
-  if (isWebGPURenderer(entity)) {
-    // CSMShadowNode handles the shadow mapping internally
-    //return
-  }
-
   const camera = getComponent(Engine.instance.cameraEntity, TransformComponent)
   const frustums = csm.frustums
 
@@ -366,7 +360,6 @@ function updateCSM(rendererEntity: Entity): void {
 function injectInclude(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
 
-  //Check if CSM is supported by the current renderer
   if (entity) {
     console.warn('CSM: Current renderer does not support Cascaded Shadow Maps')
     return
@@ -383,7 +376,6 @@ function injectInclude(rendererEntity?: Entity): void {
 function removeInclude(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
 
-  // Only remove shader chunks for WebGL renderer
   if (supportsShaderChunkInjection(entity)) {
     ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
     ShaderChunk.lights_pars_begin = originalLightsParsBegin
@@ -397,7 +389,6 @@ function updateUniforms(rendererEntity?: Entity): void {
   const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar.value)
 
-  // Create a new shaders object to update
   const updatedShaders = { ...csm.shaders.get(NO_PROXY) }
 
   for (const materialUuid in updatedShaders) {
@@ -517,7 +508,6 @@ function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParam
   const entity = rendererEntity || Engine.instance.viewerEntity
   const validatedParams = { ...params }
 
-  // Validate cascade count based on renderer capabilities
   if (validatedParams.cascades) {
     const maxCascades = getMaxShadowCascades(entity)
     if (validatedParams.cascades > maxCascades) {
@@ -534,16 +524,8 @@ function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParam
 function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
 
-  // Check if CSM is supported by the current renderer
-  // if (!supportsCSM(entity)) {
-  //   console.error('CSM: Current renderer does not support Cascaded Shadow Maps')
-  //   return
-  // }
-
-  // Validate parameters for the current renderer
   const validatedParams = validateCSMParams(params, entity)
 
-  // Ensure the entity has a CSMComponent
   if (!hasComponent(entity, CSMComponent)) {
     setComponent(entity, CSMComponent)
   }
