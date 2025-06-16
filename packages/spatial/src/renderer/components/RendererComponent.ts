@@ -165,8 +165,8 @@ export const RendererComponent = defineComponent({
     const renderSettings = useMutableState(RendererState)
     const effectComposerState = rendererComponent.effectComposer as State<EffectComposer>
     const webgpuFlag = globalThis.location.search.includes('webgpu')
-    // const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
-    const shouldUseWebGPU = true
+    const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
+    // const shouldUseWebGPU = true
     renderSettings.backend.set(shouldUseWebGPU ? RenderBackends.WEBGPU : RenderBackends.WEBGL)
 
     useEffect(() => {
