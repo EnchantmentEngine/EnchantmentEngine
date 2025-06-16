@@ -27,12 +27,13 @@ import { defineComponent, Entity, getComponent, hasComponent, S, useComponent, u
 import { getState, isDev, NO_PROXY, none, State, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
-import { ArrayCamera, Scene } from 'three'
+import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
 import { WebGPURendererParameters } from 'three/src/renderers/webgpu/WebGPURenderer.js'
 import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
-import { WebXRManager } from '../../xr/WebXRManager'
+import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
+import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
 import { HighlightState } from '../HighlightState'
 import { RendererState } from '../RendererState'
@@ -55,12 +56,13 @@ export const RendererComponent = defineComponent({
       passes: S.Record(S.String(), S.Type<Pass>()),
       passesFakeMap: S.Record(S.String(), S.Type<PassCount>()),
 
+      renderContext: S.Type<WebGLRenderingContext | null | WebGL2RenderingContext | GPUCanvasContext>(),
       effects: S.Record(S.String(), EffectSchema),
       effectInstances: S.Record(S.String(), S.Type<Effect>()),
 
       canvas: S.Type<HTMLCanvasElement | null>(),
 
-      renderer: S.Type<WebGPURenderer | null>(),
+      renderer: S.Type<WebGPURenderer | WebGLRenderer | null>(),
       effectComposer: S.Type<EffectComposer | null>(),
 
       scenes: S.Array(S.Entity()),
@@ -148,7 +150,8 @@ export const RendererComponent = defineComponent({
     } else {
       const effectComposerState = rendererComponent.effectComposer as EffectComposer
       const pass = RendererComponent.getPass(entity, passType)
-      effectComposerState.removePass(pass)
+      console.log(effectComposerState)
+      //effectComposerState.removePass(pass)
       rendererComponent.passesFakeMap[key] = none
       delete rendererComponent.passesFakeMap[key]
     }
@@ -162,94 +165,107 @@ export const RendererComponent = defineComponent({
     const renderSettings = useMutableState(RendererState)
     const effectComposerState = rendererComponent.effectComposer as State<EffectComposer>
     const webgpuFlag = globalThis.location.search.includes('webgpu')
-    const shouldUseWebGPU = webgpuFlag && !!navigator.gpu
+    // const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
+    const shouldUseWebGPU = true
+    renderSettings.backend.set(shouldUseWebGPU ? RenderBackends.WEBGPU : RenderBackends.WEBGL)
 
     useEffect(() => {
       const canvas = rendererComponent.canvas.value as HTMLCanvasElement
+      const context = shouldUseWebGPU
+        ? (canvas.getContext('webgpu') as GPUCanvasContext)
+        : (canvas.getContext('webgl2') as WebGL2RenderingContext)
+      rendererComponent.renderContext.set(context)
+    }, [])
 
-      const options: WebGPURendererParameters = {
-        powerPreference: 'high-performance',
-        stencil: false,
-        antialias: false,
-        depth: true,
-        logarithmicDepthBuffer: false,
-        canvas,
-        forceWebGL: !shouldUseWebGPU
-      }
+    useEffect(() => {
+      const context = rendererComponent.renderContext.get(NO_PROXY) as
+        | WebGLRenderingContext
+        | WebGL2RenderingContext
+        | GPUCanvasContext
+      if (!context) return
 
-      const renderer = new WebGPURenderer(options)
-      renderer
-        .init()
-        .then((r) => {
-          console.log('WebGPU renderer initialized', r)
-          rendererComponent.renderer.set(r)
-          document.body.appendChild(renderer.domElement)
+      const canvas = rendererComponent.canvas.get(NO_PROXY) as HTMLCanvasElement
+      const initializeRenderer = async (context, canvas) => {
+        if (shouldUseWebGPU) {
+          try {
+            const options: WebGPURendererParameters = {
+              powerPreference: 'high-performance',
+              stencil: false,
+              antialias: false,
+              depth: true,
+              logarithmicDepthBuffer: false,
+              canvas,
+              context: context,
+              forceWebGL: false
+            }
 
-          renderer.debug.checkShaderErrors = isDev
+            const renderer = new WebGPURenderer(options)
+            await renderer.init()
+            console.log('WebGPU renderer initialized')
+            rendererComponent.renderer.set(renderer)
+            document.body.appendChild(renderer.domElement)
 
-          renderer.autoClear = true
+            renderer.debug.checkShaderErrors = isDev
+            renderer.autoClear = true
 
-          // Set up resize handlers
-          const onResize = () => {
-            rendererComponent.needsResize.set(true)
+            return renderer
+          } catch (err) {
+            console.warn('WebGPU initialization failed, falling back to WebGL:', err)
           }
-          canvas.style.touchAction = 'none'
-          canvas.addEventListener('resize', onResize, false)
-          window.addEventListener('resize', onResize, false)
-        })
-        .catch((err) => {
-          console.error('WebGPU initialization failed:', err)
-          // Could add fallback to WebGL here
-        })
-      // } else {
-      //   // WebGL fallback logic
-      //   const context = rendererComponent.renderContext.get(NO_PROXY) as WebGLRenderingContext | WebGL2RenderingContext
-      //   if (!context) return
+        }
 
-      //   const options: WebGLRendererParameters = {
-      //     precision: 'highp',
-      //     powerPreference: 'high-performance',
-      //     stencil: false,
-      //     antialias: false,
-      //     depth: true,
-      //     logarithmicDepthBuffer: false,
-      //     canvas,
-      //     context,
-      //     preserveDrawingBuffer: false,
-      //     //@ts-ignore
-      //     multiviewStereo: true
-      //   }
+        const options: WebGLRendererParameters = {
+          precision: 'highp',
+          powerPreference: 'high-performance',
+          stencil: false,
+          antialias: false,
+          depth: true,
+          logarithmicDepthBuffer: false,
+          canvas,
+          context,
+          preserveDrawingBuffer: false,
+          //@ts-ignore
+          multiviewStereo: true
+        }
 
-      // const renderer = new WebGLRenderer(options)
-      // rendererComponent.renderer.set(renderer)
+        const renderer = new WebGLRenderer(options)
+        console.log('WebGL renderer initialized')
+        rendererComponent.renderer.set(renderer)
+        //document.body.appendChild(renderer.domElement)
 
-      // renderer.outputColorSpace = SRGBColorSpace
+        renderer.outputColorSpace = SRGBColorSpace
+        renderer.debug.checkShaderErrors = isDev
+        renderer.autoClear = true
 
-      // const composer = new EffectComposer(renderer)
-      // rendererComponent.effectComposer.set(composer)
-      // const renderPass = new RenderPass()
-      // composer.addPass(renderPass)
-      // rendererComponent.renderPass.set(renderPass)
+        const composer = new EffectComposer(renderer)
+        rendererComponent.effectComposer.set(composer)
+        const renderPass = new RenderPass()
+        composer.addPass(renderPass)
+        rendererComponent.renderPass.set(renderPass)
 
-      // // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
-      // renderer.debug.checkShaderErrors = isDev
+        const xrManager = createWebXRManager(renderer)
+        renderer.xr = xrManager as any
+        rendererComponent.merge({ xrManager })
+        xrManager.cameraAutoUpdate = false
+        xrManager.enabled = true
 
-      // const xrManager = createWebXRManager(renderer)
-      // renderer.xr = xrManager as any
-      // rendererComponent.merge({ xrManager })
-      // xrManager.cameraAutoUpdate = false
-      // xrManager.enabled = true
+        return renderer
+      }
 
       const onResize = () => {
         rendererComponent.needsResize.set(true)
       }
-
-      // https://stackoverflow.com/questions/48124372/pointermove-event-not-working-with-touch-why-not
       canvas.style.touchAction = 'none'
       canvas.addEventListener('resize', onResize, false)
       window.addEventListener('resize', onResize, false)
 
-      renderer.autoClear = true
+      initializeRenderer(context, canvas)
+        .then((renderer) => {
+          console.log('Renderer initialized successfully')
+        })
+        .catch((err) => {
+          console.error('Renderer initialization failed:', err)
+        })
 
       /**
        * This can be tested with document.getElementById('engine-renderer-canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
@@ -295,11 +311,10 @@ export const RendererComponent = defineComponent({
         // composer.dispose()
       }
       // }
-    }, [])
+    }, [rendererComponent.renderContext.value])
 
     useEffect(() => {
       if (!rendererComponent.effectComposer.value) return
-
       const scene = rendererComponent.scene.value as Scene
 
       const outlineEffect = new OutlineEffect(scene, camera, getState(HighlightState))
@@ -315,7 +330,6 @@ export const RendererComponent = defineComponent({
     useEffect(() => {
       const effectComposer = effectComposerState.get(NO_PROXY)
       if (!effectComposer) return
-
       const effectsVal = rendererComponent.effects.get(NO_PROXY) as Record<string, Effect>
 
       const enabled = renderSettings.usePostProcessing.get(NO_PROXY) as boolean

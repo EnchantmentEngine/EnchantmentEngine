@@ -44,6 +44,9 @@ import {
   SpriteMaterial
 } from 'three'
 
+import { Engine } from '@ir-engine/ecs/src/Engine'
+import { isWebGPURenderer } from '../../renderer/functions/RendererBackendUtils'
+
 // Converted to typescript from Fyrestar https://mevedia.com (https://github.com/Fyrestar/OnBeforeCompilePlugin)
 // Only implemented the OnBeforeCompile part because OnBeforeRender is not working well with the postprocessing.
 
@@ -175,6 +178,17 @@ export function overrideOnBeforeCompile() {
 
     Material.prototype._onBeforeCompile = function (shader, renderer) {
       if (!this.shader) this.shader = shader
+
+      const rendererEntity = Engine.instance.viewerEntity
+      if (rendererEntity && isWebGPURenderer(rendererEntity)) {
+        if (this.type === 'ShaderMaterial' || this.type === 'RawShaderMaterial') {
+          console.warn(
+            `OnBeforeCompile: Skipping plugin processing for ${this.type} with WebGPU renderer - material will be converted by MaterialCompatibilitySystem`
+          )
+          return
+        }
+      }
+
       if (!this.plugins) return
 
       for (let i = 0, l = this.plugins.length; i < l; i++) {

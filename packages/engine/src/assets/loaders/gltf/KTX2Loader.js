@@ -95,6 +95,8 @@ import { FileLoader } from '../base/FileLoader';
 import { Loader } from '../base/Loader';
 import { isClient } from '@ir-engine/hyperflux'
 import { CompressedTexture, CompressedArrayTexture } from 'three';
+import { isWebGPURenderer } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
+import { WebGPURenderer } from 'three/webgpu';
 
 import { DisplayP3ColorSpace, LinearDisplayP3ColorSpace } from '@ir-engine/spatial/src/threejsPatches'
 
@@ -148,9 +150,7 @@ class KTX2Loader extends Loader {
 	}
 
 	detectSupport( renderer ) {
-
-		if ( renderer.isWebGPURenderer === true ) {
-
+		if (renderer instanceof WebGPURenderer) {
 			this.workerConfig = {
 				astcSupported: renderer.hasFeature( 'texture-compression-astc' ),
 				etc1Supported: false,
@@ -159,9 +159,7 @@ class KTX2Loader extends Loader {
 				bptcSupported: false,
 				pvrtcSupported: false
 			};
-
 		} else {
-
 			this.workerConfig = {
 				astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
 				etc1Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc1' ),

@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Entity } from '@ir-engine/ecs'
 import { ShaderChunk } from 'three'
+import { isWebGLRenderer, isWebGPURenderer } from '../functions/RendererBackendUtils'
 
 const CSMShader = {
   lights_fragment_begin: /* glsl */ `
@@ -317,6 +319,12 @@ uniform float cameraNear;
 uniform float shadowFar;
 #endif
 	` + ShaderChunk.lights_pars_begin
+}
+
+export function isCSMPluginSupportedByRenderer(rendererEntity?: Entity): boolean {
+  if (!rendererEntity) return true // Default to supported
+
+  return isWebGLRenderer(rendererEntity) || isWebGPURenderer(rendererEntity)
 }
 
 export default CSMShader

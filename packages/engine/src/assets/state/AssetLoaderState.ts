@@ -23,9 +23,11 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
-
-import { DefaultLoadingManager, WebGLRenderer } from 'three'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'
 import { DRACOLoader } from '../loaders/gltf/DRACOLoader'
 import { KTX2Loader } from '../loaders/gltf/KTX2Loader'
@@ -53,9 +55,9 @@ export const AssetLoaderState = defineState({
     const ktx2Loader = new KTX2Loader()
     ktx2Loader.setTranscoderPath(getState(DomainConfigState).publicDomain + '/loader_decoders/basis/')
     if (isClient) {
-      const renderer = new WebGLRenderer()
-      ktx2Loader.detectSupport(renderer)
-      renderer.dispose()
+      const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+      const rendererComponent = getComponent(viewerEntity, RendererComponent)
+      ktx2Loader.detectSupport(rendererComponent.renderer)
     }
 
     return {

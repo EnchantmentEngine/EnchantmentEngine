@@ -30,6 +30,8 @@ import { S, defineComponent, removeComponent, setComponent, useComponent, useEnt
 import { NO_PROXY, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
+import { isWebGLRenderer, warnWebGPUIncompatibility } from '../../functions/RendererBackendUtils'
+import { useRendererEntity } from '../../functions/useRendererEntity'
 import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
 
@@ -45,24 +47,44 @@ export const HemisphereLightComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
+    const rendererEntity = useRendererEntity(entity)
     const hemisphereLightComponent = useComponent(entity, HemisphereLightComponent)
-    const light = useHookstate(() => new HemisphereLight()).get(NO_PROXY) as HemisphereLight
+
+    const isWebGL = isWebGLRenderer(rendererEntity)
+    //Hack
+    const light = useHookstate(() => {
+      if (!isWebGL) {
+        warnWebGPUIncompatibility('HemisphereLight', rendererEntity)
+        return null
+      }
+      return new HemisphereLight()
+    }).get(NO_PROXY) as HemisphereLight | null
 
     useImmediateEffect(() => {
       setComponent(entity, LightTagComponent)
-      setComponent(entity, ObjectComponent, light)
-      return () => {
-        removeComponent(entity, ObjectComponent)
+
+      if (light) {
+        setComponent(entity, ObjectComponent, light)
       }
-    }, [])
+
+      return () => {
+        if (light) {
+          removeComponent(entity, ObjectComponent)
+        }
+      }
+    }, [light])
 
     useEffect(() => {
-      light.groundColor.set(hemisphereLightComponent.groundColor.value)
-    }, [hemisphereLightComponent.groundColor])
+      if (light) {
+        light.groundColor.set(hemisphereLightComponent.groundColor.value)
+      }
+    }, [hemisphereLightComponent.groundColor, light])
 
     useEffect(() => {
-      light.intensity = hemisphereLightComponent.intensity.value
-    }, [hemisphereLightComponent.intensity])
+      if (light) {
+        light.intensity = hemisphereLightComponent.intensity.value
+      }
+    }, [hemisphereLightComponent.intensity, light])
 
     return null
   }

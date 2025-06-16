@@ -96,6 +96,7 @@ import { CSMPluginComponent } from '@ir-engine/spatial/src/renderer/csm/CSMPlugi
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { CSMShadowNode } from 'three/examples/jsm/csm/CSMShadowNode.js'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
@@ -138,6 +139,10 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   useEffect(() => {
     if (!directionalLightComponent || !directionalLight) return
     if (!directionalLightComponent.castShadow.value) return
+
+    const csm = new CSMShadowNode(directionalLight, { cascades: 4, maxFar: 1000, mode: 'practical' })
+    directionalLight.shadow.shadowNode = csm
+
     const params = {
       light: directionalLight as DirectionalLight,
       shadowMapSize: shadowMapResolution.value,
@@ -253,20 +258,6 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   const directionalLightComponent = useHasComponent(activeLightEntityState.value, DirectionalLightComponent)
 
   const primaryLightVisibleComponent = useHasComponent(activeLightEntity, VisibleComponent)
-
-  //const rendererState = useMutableState(RendererState)
-
-  // useEffect(() => {
-  //   if (!rendererComponent) return
-  //   if (!rendererComponent.csm.value || !rendererState.nodeHelperVisibility.value) return
-
-  //   const helper = new CSMHelper()
-  //   rendererComponent.csmHelper.set(helper)
-  //   return () => {
-  //     helper.remove()
-  //     rendererComponent.csmHelper.set(null)
-  //   }
-  // }, [rendererComponent, renderSettingsComponent.csm, rendererState.nodeHelperVisibility])
 
   useEffect(() => {
     if (rendererEntity === getState(ReferenceSpaceState).viewerEntity && xrLightProbeEntity.value) {
@@ -426,7 +417,8 @@ const RendererShadowReactor = () => {
   useEffect(() => {
     const renderer = getComponent(entity, RendererComponent).renderer
     if (!renderer) return
-    renderer.shadowMap.enabled = renderer.shadowMap.autoUpdate = useShadows
+    renderer.shadowMap.enabled = useShadows
+    ;(renderer.shadowMap as any).autoUpdate = useShadows
   }, [useShadows, rendererComponent.renderer])
 
   return null

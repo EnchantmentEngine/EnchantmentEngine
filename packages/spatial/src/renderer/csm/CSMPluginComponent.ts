@@ -29,11 +29,13 @@ import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useEffect } from 'react'
 import { Material, Vector2 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
+import { supportsOnBeforeCompile } from '../functions/RendererBackendUtils'
 import { getRendererEntity } from '../functions/useRendererEntity'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { removePlugin, setPlugin } from '../materials/materialFunctions'
 import { CSM } from './CSM'
 import { CSMComponent } from './CSMComponent'
+import { isCSMPluginSupportedByRenderer } from './Shader'
 
 export const CSMPluginComponent = defineComponent({
   name: 'CSMPluginComponent',
@@ -53,6 +55,12 @@ export const CSMPluginComponent = defineComponent({
       const csm = getOptionalComponent(rendererEntity, CSMComponent)
       if (!csm) return
 
+      // Check if CSM is supported by the current renderer
+      if (!isCSMPluginSupportedByRenderer(rendererEntity)) {
+        console.warn('CSM: Current renderer does not support Cascaded Shadow Maps')
+        return
+      }
+
       material.defines = material.defines || {}
       material.defines.USE_CSM = 1
       material.defines.CSM_CASCADES = csm.cascades
@@ -63,21 +71,30 @@ export const CSMPluginComponent = defineComponent({
 
       const breaksVec2: Vector2[] = []
 
-      const callback = (shader: any) => {
+      const createShaderCallback = (isWebGPU: boolean) => (shader: any) => {
         const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
         const far = Math.min(camera.far, csm.maxFar)
         const near = Math.min(csm.maxFar, camera.near)
         CSM.getExtendedBreaks(breaksVec2, rendererEntity)
 
+        // Set uniforms (same for both WebGL and WebGPU)
         shader.uniforms.CSM_cascades = { value: breaksVec2 }
         shader.uniforms.cameraNear = { value: near }
         shader.uniforms.shadowFar = { value: far }
       }
 
-      setPlugin(materialComponent.material as Material, callback)
+      // Apply the plugin based on renderer capabilities
+      if (supportsOnBeforeCompile(rendererEntity)) {
+        // WebGL: Use onBeforeCompile callback with GLSL
+        const callback = createShaderCallback(false)
+        setPlugin(materialComponent.material as Material, callback)
+      }
+
       material.needsUpdate = true
+
       return () => {
-        removePlugin(materialComponent.material as Material, callback)
+        const currentCallback = createShaderCallback(false)
+        removePlugin(materialComponent.material as Material, currentCallback)
 
         if (material.defines) {
           delete material.defines.USE_CSM

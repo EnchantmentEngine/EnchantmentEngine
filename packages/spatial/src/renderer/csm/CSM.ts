@@ -46,17 +46,19 @@ import {
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { NO_PROXY } from '@ir-engine/hyperflux'
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { getMaxShadowCascades, isWebGPURenderer, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { CSMComponent } from './CSMComponent'
 import { CSMPluginComponent } from './CSMPluginComponent'
 import Frustum from './Frustum'
-import Shader from './Shader'
+import CSMShader from './Shader'
 
 const originalLightsFragmentBegin = ShaderChunk.lights_fragment_begin
 const originalLightsParsBegin = ShaderChunk.lights_pars_begin
@@ -98,8 +100,8 @@ export type CSMParams = {
 function uniformSplit(amount: number, near: number, far: number, target: number[]): void {
   for (let i = 1; i < amount; i++) {
     target.push((near + ((far - near) * i) / amount) / far)
+    console.log((near + ((far - near) * i) / amount) / far)
   }
-
   target.push(1)
 }
 
@@ -124,7 +126,7 @@ function practicalSplit(amount: number, near: number, far: number, lambda: numbe
   target.push(1)
 }
 
-function createLight(i: number, rendererEntity: Entity): void {
+function createLight(i: number, rendererEntity: Entity, sourceLight?: DirectionalLight): void {
   const csm = getMutableComponent(rendererEntity, CSMComponent)
 
   const light = new DirectionalLight(csm.lightColor.value, csm.lightIntensity.value)
@@ -136,6 +138,9 @@ function createLight(i: number, rendererEntity: Entity): void {
 
   light.shadow.camera.near = 0
   light.shadow.camera.far = 1
+
+  const shadowNode = sourceLight?.shadow.shadowNode as CSMShadowNode
+  shadowNode.lights.push(light)
 
   const lightEntity = createEntity()
   setComponent(lightEntity, UUIDComponent, {
@@ -172,7 +177,8 @@ function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): 
     })
 
     for (let i = 0; i < csm.cascades.value; i++) {
-      createLight(i, entity)
+      console.log(sourceLight.shadow.shadowNode)
+      createLight(i, entity, sourceLight)
     }
     return
   }
@@ -296,8 +302,9 @@ function updateCSM(rendererEntity: Entity): void {
   }
 
   if (csm.needsUpdate) {
-    injectInclude()
+    injectInclude(entity)
     updateFrustums(entity)
+
     for (const light of csm.lights) {
       light.shadow.map?.dispose()
       light.shadow.map = null as any
@@ -305,6 +312,12 @@ function updateCSM(rendererEntity: Entity): void {
       light.shadow.needsUpdate = true
     }
     mutableCsm.needsUpdate.set(false)
+  }
+
+  // Skip traditional CSM update logic for WebGPU when using CSMShadowNode
+  if (isWebGPURenderer(entity)) {
+    // CSMShadowNode handles the shadow mapping internally
+    //return
   }
 
   const camera = getComponent(Engine.instance.cameraEntity, TransformComponent)
@@ -350,14 +363,31 @@ function updateCSM(rendererEntity: Entity): void {
   }
 }
 
-function injectInclude(): void {
-  ShaderChunk.lights_fragment_begin = Shader.lights_fragment_begin
-  ShaderChunk.lights_pars_begin = Shader.lights_pars_begin
+function injectInclude(rendererEntity?: Entity): void {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+
+  //Check if CSM is supported by the current renderer
+  if (entity) {
+    console.warn('CSM: Current renderer does not support Cascaded Shadow Maps')
+    return
+  }
+
+  if (supportsShaderChunkInjection(entity)) {
+    const csmShader = CSMShader
+    ShaderChunk.lights_fragment_begin = csmShader.lights_fragment_begin
+    ShaderChunk.lights_pars_begin = csmShader.lights_pars_begin
+    console.log('CSM: Injected GLSL shader chunks for WebGL renderer')
+  }
 }
 
-function removeInclude(): void {
-  ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
-  ShaderChunk.lights_pars_begin = originalLightsParsBegin
+function removeInclude(rendererEntity?: Entity): void {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+
+  // Only remove shader chunks for WebGL renderer
+  if (supportsShaderChunkInjection(entity)) {
+    ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
+    ShaderChunk.lights_pars_begin = originalLightsParsBegin
+  }
 }
 
 function updateUniforms(rendererEntity?: Entity): void {
@@ -455,6 +485,7 @@ function disposeCSM(rendererEntity: Entity): void {
     }
   }
   if (hasComponent(rendererEntity, CSMComponent)) removeCSMLights(rendererEntity)
+  removeInclude(rendererEntity)
   removeComponent(rendererEntity, CSMComponent)
 }
 
@@ -476,12 +507,41 @@ const CSMDefaults = Object.freeze({
   breaks: [],
   lights: [],
   lightEntities: [],
+  csmShadowNodes: [],
   shaders: {},
+  webgpuShaderCode: undefined,
   needsUpdate: true
 })
 
+function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParams {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+  const validatedParams = { ...params }
+
+  // Validate cascade count based on renderer capabilities
+  if (validatedParams.cascades) {
+    const maxCascades = getMaxShadowCascades(entity)
+    if (validatedParams.cascades > maxCascades) {
+      console.warn(
+        `CSM: Requested ${validatedParams.cascades} cascades, but renderer only supports ${maxCascades}. Clamping to ${maxCascades}.`
+      )
+      validatedParams.cascades = maxCascades
+    }
+  }
+
+  return validatedParams
+}
+
 function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
+
+  // Check if CSM is supported by the current renderer
+  // if (!supportsCSM(entity)) {
+  //   console.error('CSM: Current renderer does not support Cascaded Shadow Maps')
+  //   return
+  // }
+
+  // Validate parameters for the current renderer
+  const validatedParams = validateCSMParams(params, entity)
 
   // Ensure the entity has a CSMComponent
   if (!hasComponent(entity, CSMComponent)) {
@@ -491,18 +551,18 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
   const csm = getMutableComponent(entity, CSMComponent)
 
   csm.set({
-    cascades: params.cascades ?? CSMDefaults.cascades,
-    maxFar: params.maxFar ?? CSMDefaults.maxFar,
-    mode: params.mode ?? CSMDefaults.mode,
-    shadowMapSize: params.shadowMapSize ?? CSMDefaults.shadowMapSize,
-    shadowBias: params.shadowBias ?? CSMDefaults.shadowBias,
+    cascades: validatedParams.cascades ?? CSMDefaults.cascades,
+    maxFar: validatedParams.maxFar ?? CSMDefaults.maxFar,
+    mode: validatedParams.mode ?? CSMDefaults.mode,
+    shadowMapSize: validatedParams.shadowMapSize ?? CSMDefaults.shadowMapSize,
+    shadowBias: validatedParams.shadowBias ?? CSMDefaults.shadowBias,
     shadowNormalBias: CSMDefaults.shadowNormalBias,
-    lightDirection: params.lightDirection ?? CSMDefaults.lightDirection,
-    lightDirectionUp: params.lightDirectionUp ?? CSMDefaults.lightDirectionUp,
-    lightColor: params.lightColor ?? CSMDefaults.lightColor,
-    lightIntensity: params.lightIntensity ?? CSMDefaults.lightIntensity,
-    lightMargin: params.lightMargin ?? CSMDefaults.lightMargin,
-    fade: params.fade ?? CSMDefaults.fade,
+    lightDirection: validatedParams.lightDirection ?? CSMDefaults.lightDirection,
+    lightDirectionUp: validatedParams.lightDirectionUp ?? CSMDefaults.lightDirectionUp,
+    lightColor: validatedParams.lightColor ?? CSMDefaults.lightColor,
+    lightIntensity: validatedParams.lightIntensity ?? CSMDefaults.lightIntensity,
+    lightMargin: validatedParams.lightMargin ?? CSMDefaults.lightMargin,
+    fade: validatedParams.fade ?? CSMDefaults.fade,
     mainFrustum: CSMDefaults.mainFrustum,
     frustums: CSMDefaults.frustums,
     breaks: CSMDefaults.breaks,
@@ -512,9 +572,9 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
     needsUpdate: CSMDefaults.needsUpdate
   })
 
-  createLights(params.light, entity)
+  createLights(validatedParams.light, entity)
   updateFrustums(entity)
-  injectInclude()
+  injectInclude(entity)
 }
 
 function updateProperty(key: string, value: any, rendererEntity?: Entity): void {

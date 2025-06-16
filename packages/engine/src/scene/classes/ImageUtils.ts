@@ -49,6 +49,7 @@ import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
 
 import { defineState, getState } from '@ir-engine/hyperflux'
 import { KTX2EncodeOptions, KTX2Encoder, UASTCFlags } from '@ir-engine/xrui/core/textures/KTX2Encoder'
+import { MeshStandardNodeMaterial, WebGPURenderer } from 'three/webgpu'
 
 export const ImageProjection = {
   Flat: 'Flat',
@@ -188,22 +189,32 @@ export const blurAndScaleImageData = (
 
 //convert Cubemap To Equirectangular map
 export const convertCubemapToEquiImageData = (
-  renderer: WebGLRenderer,
+  renderer: WebGLRenderer | WebGPURenderer,
   source: CubeTexture,
   width: number,
   height: number,
   returnAsBlob = false
 ): Promise<Blob | null> | ImageData => {
   const scene = new Scene()
-  const material = new RawShaderMaterial({
-    uniforms: {
-      map: new Uniform(new CubeTexture())
-    },
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
-    side: DoubleSide,
-    transparent: true
-  })
+  let material
+  if (renderer instanceof WebGPURenderer) {
+    material = new MeshStandardNodeMaterial({
+      envMap: source,
+      roughness: 0.05,
+      metalness: 1
+    })
+  } else {
+    material = new RawShaderMaterial({
+      uniforms: {
+        map: new Uniform(new CubeTexture())
+      },
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+      side: DoubleSide,
+      transparent: true
+    })
+  }
+
   const quad = new Mesh(new PlaneGeometry(1, 1), material)
   scene.add(quad)
   const camera = new OrthographicCamera(1 / -2, 1 / 2, 1 / 2, 1 / -2, -10000, 10000)
@@ -227,9 +238,10 @@ export const convertCubemapToEquiImageData = (
   const originalColorSpace = renderer.outputColorSpace
   renderer.outputColorSpace = SRGBColorSpace
   renderer.setRenderTarget(renderTarget)
-  quad.material.uniforms.map.value = source
+  if (renderer instanceof WebGLRenderer) quad.material.uniforms.map.value = source
   renderer.render(scene, camera)
   const pixels = new Uint8Array(4 * width * height)
+  //*todo figure out how to read pixels from WebGPURenderer
   renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, pixels)
   renderer.setRenderTarget(null) // pass `null` to set canvas as render target
   renderer.outputColorSpace = originalColorSpace

@@ -196,12 +196,14 @@ const execute = () => {
     const sessionMode = getState(XRState).sessionMode
     _scene.background =
       sessionMode === 'immersive-ar' ? null : renderMode === RenderModes.WIREFRAME ? new Color(0xffffff) : background
+    const b =
+      sessionMode === 'immersive-ar' ? null : renderMode === RenderModes.WIREFRAME ? new Color(0xffffff) : background
 
     _scene.environment = environment
 
     _scene.fog = fog
 
-    render(renderer, _scene, camera, deltaSeconds, undefined, csm)
+    render(renderer, _scene, camera, deltaSeconds, csm)
   }
   onRenderEnd()
 }
@@ -239,10 +241,10 @@ const cameraReactor = () => {
   const camera = useComponent(entity, CameraComponent).value
   const engineRendererSettings = useMutableState(RendererState)
 
-  useEffect(() => {
-    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-    else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  }, [engineRendererSettings.physicsDebug])
+  // useEffect(() => {
+  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  // }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)
