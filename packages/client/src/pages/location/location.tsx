@@ -64,7 +64,24 @@ const LocationRoutes = () => {
           <LoadingView fullScreen animated title={t('common:loader.loadingApp')} titleClassname="text-black" />
         </div>
       )}
-      {createPortal(<canvas id="engine-renderer-canvas" tabIndex={1} ref={canvasRef}></canvas>, document.body)}
+      {createPortal(
+        <canvas
+          id="engine-renderer-canvas"
+          tabIndex={1}
+          style={{
+            outline: 'none',
+            zIndex: 0,
+            width: '100%',
+            height: '100%',
+            position: 'fixed',
+            WebkitUserSelect: 'none',
+            pointerEvents: 'auto',
+            userSelect: 'none'
+          }}
+          ref={canvasRef}
+        ></canvas>,
+        document.body
+      )}
       <Debug />
     </Suspense>
   )
