@@ -57,6 +57,8 @@ const getScaledBitmap = (img: ImageBitmap, maxResolution: number) => {
   const ctx = canvas.getContext('2d')!
   ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
 
+  img.close()
+
   return canvas.transferToImageBitmap()
 }
 
