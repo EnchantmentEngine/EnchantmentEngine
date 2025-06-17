@@ -35,15 +35,7 @@ import {
   LocationType,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import {
-  createEntity,
-  Entity,
-  getComponent,
-  hasComponent,
-  iterateEntityNode,
-  Layers,
-  setComponent
-} from '@ir-engine/ecs'
+import { Entity, getComponent, hasComponent, iterateEntityNode, setComponent } from '@ir-engine/ecs'
 import { defaultLODs, LODVariantDescriptor } from '@ir-engine/editor/src/constants/GLTFPresets'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
@@ -257,7 +249,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           const gltfComponent = getComponent(gltfEntity, GLTFComponent)
           const srcURL = gltfComponent.src
           if (!srcURL) continue
-          const compressedEntity = createEntity(Layers.Authoring) //export entity need compress
           // Set up compression for this entity
           const fileName = srcURL.split('/').pop()!.split('.').shift()!
           try {
