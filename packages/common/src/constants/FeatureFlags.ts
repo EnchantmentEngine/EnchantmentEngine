@@ -36,7 +36,8 @@ export const FeatureFlags = {
       MotionCapture: 'ir.client.location.menu.motionCapture',
       XR: 'ir.client.menu.xr',
       ShareToQuest: 'ir.client.menu.shareToQuest'
-    }
+    },
+    Glass: 'ir.client.glass'
   },
   Studio: {
     Model: {
@@ -60,7 +61,8 @@ export const FeatureFlags = {
       Hierarchy: {
         ShowGlbChildren: 'ir.editor.ui.hierarchy.showGlbChildren'
       },
-      PointClick: 'ir.editor.ui.pointClick'
+      PointClick: 'ir.editor.ui.pointClick',
+      CompressOnPublish: 'ir.editor.ui.compressOnPublish'
     }
   }
 }

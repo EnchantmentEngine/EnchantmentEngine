@@ -26,15 +26,19 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { useEffect } from 'react'
 import { BackSide, Color, Mesh, MeshBasicMaterial, SphereGeometry, Vector2 } from 'three'
 
-import { Entity, EntityTreeComponent, UndefinedEntity, createEntity, useChildrenWithComponents } from '@ir-engine/ecs'
 import {
+  Entity,
+  EntityTreeComponent,
+  UndefinedEntity,
+  createEntity,
   getComponent,
   getMutableComponent,
   hasComponent,
-  removeComponent,
+  removeEntity,
   setComponent,
+  useChildrenWithComponents,
   useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+} from '@ir-engine/ecs'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -134,18 +138,28 @@ export const LoadingUISystemState = defineState({
       ui,
       meshEntity
     })
+  },
+
+  removeLoadingUI: () => {
+    if (!getState(LoadingUISystemState).ui) return
+    removeEntity(getState(LoadingUISystemState).meshEntity)
+    removeEntity(getState(LoadingUISystemState).ui!.entity)
+    getMutableState(LoadingUISystemState).merge({
+      ui: null,
+      meshEntity: UndefinedEntity
+    })
   }
 })
 
 const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
-  const gltfComponent = useComponent(sceneEntity, GLTFComponent)
-  const loadingProgress = gltfComponent.progress.value
+  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress.value
+  const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
   const avatarEntity = AvatarComponent.useSelfAvatarEntity()
   const avatarLoaded = AvatarRigComponent.useAvatarLoaded(avatarEntity)
   const userID = useMutableState(EngineState).userID.value
   const spectatorLoaded = !!useMutableState(SpectateEntityState).value[userID]
-  const viewerReady = avatarLoaded || spectatorLoaded
+  const viewerReady = (avatarLoaded || spectatorLoaded) && sceneLoaded
   const locationState = useMutableState(LocationState)
   const state = useMutableState(LoadingUISystemState)
 
@@ -203,7 +217,7 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   return (
     <>
       {!state.ready.value && <HideCanvas />}
-      <SceneSettingsReactor sceneEntity={sceneEntity} key={sceneEntity} />
+      {state.ui.value && <SceneSettingsReactor sceneEntity={sceneEntity} key={sceneEntity} />}
     </>
   )
 }
@@ -234,19 +248,19 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
     mesh.material.map.needsUpdate = true
     getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.initTexture(loadingTexture)
 
-    getMutableState(LoadingUISystemState).ready.set(true)
+    state.ready.set(true)
   }, [loadingTexture])
 
   useEffect(() => {
     if (!error) return
 
     console.error(error)
-    getMutableState(LoadingUISystemState).ready.set(true)
+    state.ready.set(true)
   }, [error])
 
   /** Scene data changes */
   useEffect(() => {
-    const colors = getMutableState(LoadingUISystemState).colors
+    const colors = state.colors
     colors.main.set(sceneComponent.primaryColor.value)
     colors.background.set(sceneComponent.backgroundColor.value)
     colors.alternate.set(sceneComponent.alternativeColor.value)
@@ -276,7 +290,7 @@ const execute = () => {
   const ecsState = getState(ECSState)
 
   if (transition.state === 'OUT' && transition.alpha === 0) {
-    removeComponent(ui.entity, ComputedTransformComponent)
+    LoadingUISystemState.removeLoadingUI()
     return
   }
 
@@ -345,9 +359,8 @@ const execute = () => {
 const Reactor = () => {
   const locationSceneURL = useHookstate(getMutableState(LocationState).currentLocation.location.sceneURL).value
   const sceneEntity = useLoadedSceneEntity(locationSceneURL)
-  const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
 
-  if (!sceneEntity || !sceneLoaded) return null
+  if (!sceneEntity) return null
 
   return (
     <>
@@ -361,7 +374,9 @@ export const LoadingUISystem = defineSystem({
   insert: { before: TransformDirtyUpdateSystem },
   execute,
   reactor: () => {
-    if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
-    return <Reactor />
+    const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
+
+    if (!viewerEntity) return null
+    return <Reactor key={viewerEntity} />
   }
 })
