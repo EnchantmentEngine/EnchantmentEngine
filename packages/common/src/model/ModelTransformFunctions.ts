@@ -1253,7 +1253,8 @@ const safeImageCompress = async (
       texture.setMimeType(newMimeType)
 
       const ext = newMimeType.split('/')[1] || 'png'
-      const safeName = validTextureFileName(texture.getURI().replace(/\.[^.]+$/, `.${ext}`)).slice(6)
+      const fileName = texture.getURI().split('/').pop()!
+      const safeName = validTextureFileName(fileName.replace(/\.[^.]+$/, `.${ext}`))
       texture.setURI(safeName)
     } catch (e) {
       console.error(`Failed to resize texture: ${texture.getName()}`, e)

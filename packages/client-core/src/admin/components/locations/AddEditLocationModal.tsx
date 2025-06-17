@@ -281,7 +281,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               )
             }
             // Apply model transformation/compression
-            const transformMetadata: Record<string, any>[] = []
             const progressCaptions: Record<ModelTransformStatus, string> = {
               [ModelTransformStatus.TransformingModels]: 'editor:properties.model.transform.status.transformingmodels',
               [ModelTransformStatus.ProcessingTexture]: 'editor:properties.model.transform.status.processingtexture',
@@ -375,6 +374,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         progressState.set({ progress: 0, caption: '' })
       }
     } catch (error) {
+      console.log('error happened', error)
       progressState.set({ progress: 0, caption: '' })
       ModalState.closeModal()
       ModalState.openModal(
