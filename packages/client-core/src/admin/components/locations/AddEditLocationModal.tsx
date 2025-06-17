@@ -346,7 +346,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         progressState.set({ progress: 0, caption: '' })
       }
     } catch (error) {
-      console.log('error happened', error)
       progressState.set({ progress: 0, caption: '' })
       ModalState.closeModal()
       ModalState.openModal(
