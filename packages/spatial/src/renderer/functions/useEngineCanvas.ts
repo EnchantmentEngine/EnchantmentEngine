@@ -24,19 +24,32 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Engine, getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
-import { getState, none, useMutableState } from '@ir-engine/hyperflux'
+import { getState, none, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { destroySpatialViewer, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { useEffect } from 'react'
 import { RendererComponent } from '../components/RendererComponent'
 
 export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
-  useEffect(() => {
+  useImmediateEffect(() => {
     if (!ref) return
     const parent = ref.current as HTMLElement
     if (!parent) return
-    const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
-
+    let canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
+    if (!canvas) {
+      canvas = document.createElement('canvas')
+      canvas.id = 'engine-renderer-canvas'
+      canvas.style = `
+        outline: none;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        -webkit-user-select: none;
+        pointer-events: auto;
+        user-select: none;
+      `
+    }
     const originalParent = canvas.parentElement!
     canvas.hidden = false
 
