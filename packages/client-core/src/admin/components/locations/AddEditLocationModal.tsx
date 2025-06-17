@@ -117,7 +117,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
       action: props.action
     }
   }
-
   const locationQuery = useFind(locationPath, locationID.value ? params : undefined)
   const location = locationID.value ? locationQuery.data[0] : undefined
 
@@ -319,7 +318,12 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             setComponent(gltfEntity, NameComponent, fileName)
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 5000))
+        // Increase wait time to ensure files are fully processed
+        progressState.set({
+          progress: progressState.value.progress,
+          caption: `Waiting for files to be processed...`
+        })
+        await new Promise((resolve) => setTimeout(resolve, 10000)) // Increase from 5000 to 10000 ms
         //save duplicated scene and publish that
         await saveSceneGLTF(
           sceneAssetID!,
@@ -329,6 +333,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           true,
           saveScenePath.value + '/' + scenename
         )
+        await new Promise((resolve) => setTimeout(resolve, 10000))
         await handlePublish(true)
         //re-open the original scene
         const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`
@@ -337,6 +342,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         progressState.set({ progress: 0, caption: '' })
       }
     } catch (error) {
+      console.log('error1', error)
       progressState.set({ progress: 0, caption: '' })
       ModalState.closeModal()
       ModalState.openModal(
