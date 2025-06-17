@@ -408,7 +408,7 @@ const resourceCallbacks = {
                   asset
                     .offloadTextureData()
                     .then(() => {
-                      resource.metadata.merge({ discarded: true })
+                      resource?.metadata?.merge({ discarded: true })
                       assetDiscarded()
                     })
                     .catch((err) => {
