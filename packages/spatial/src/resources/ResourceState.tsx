@@ -392,6 +392,10 @@ const resourceCallbacks = {
 
       resource.metadata.merge({ onGPU: false, discarded: false, willBeDiscarded: shouldDiscard })
       asset.onUpdate = () => {
+        if (!resource.get(NO_PROXY)?.metadata) {
+          assetDiscarded()
+          return
+        }
         resource.metadata.merge({ onGPU: true, discarded: false })
         setTimeout(() => {
           if (shouldDiscard) {
