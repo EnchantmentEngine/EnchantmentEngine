@@ -131,6 +131,60 @@ async function createSpan<T>(
 }
 
 /**
+ * Create a span for file upload operations
+ * @param tracer - OpenTelemetry tracer
+ * @param fileName - Name of the uploaded file
+ * @param fileType - Type/category of file
+ * @param mimeType - MIME type of the file
+ * @param sizeBytes - Size of the file in bytes
+ * @param project - Project name (optional)
+ * @param fn - Function to execute within the span
+ */
+async function createFileUploadSpan<T>(
+  tracer: any,
+  fileName: string,
+  fileType: string,
+  mimeType: string,
+  sizeBytes: number,
+  project: string | undefined,
+  fn: (span: Span) => Promise<T>
+): Promise<T> {
+  if (!config.monitoring?.tracing?.enabled) return fn({} as Span)
+
+  const attributes = {
+    'file.name': fileName,
+    'file.type': fileType,
+    'file.mime_type': mimeType,
+    'file.size_bytes': sizeBytes,
+    'file.project': project || 'unknown',
+    'operation.type': 'file_upload'
+  }
+
+  return await tracer.startActiveSpan(`File Upload: ${fileName}`, { attributes }, async (span: Span) => {
+    try {
+      const result = await fn(span)
+      span.setStatus({ code: SpanStatusCode.OK })
+      span.setAttributes({
+        'upload.status': 'success'
+      })
+      return result
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error)
+      })
+      span.setAttributes({
+        'upload.status': 'failed',
+        'error.message': error instanceof Error ? error.message : String(error)
+      })
+      throw error
+    } finally {
+      span.end()
+    }
+  })
+}
+
+/**
  * Create tracing middleware for HTTP requests
  * @param tracer - OpenTelemetry tracer
  */
@@ -201,6 +255,17 @@ export default (options = {}) => {
     app.set('tracer', tracer)
     app.set('createSpan', (name: string, fn: (span: Span) => Promise<any>, attributes?: Record<string, any>) =>
       createSpan(tracer, name, fn, attributes)
+    )
+    app.set(
+      'createFileUploadSpan',
+      (
+        fileName: string,
+        fileType: string,
+        mimeType: string,
+        sizeBytes: number,
+        project: string | undefined,
+        fn: (span: Span) => Promise<any>
+      ) => createFileUploadSpan(tracer, fileName, fileType, mimeType, sizeBytes, project, fn)
     )
 
     // Handle shutdown

@@ -75,6 +75,18 @@ export class MetricsService {
   public buildStatusInProgress: promClient.Gauge<string>
   public buildStatusDuration: promClient.Histogram<string>
 
+  // File upload metrics
+  public fileUploadsTotal: promClient.Counter<string>
+  public fileUploadSizeBytes: promClient.Histogram<string>
+  public fileUploadDuration: promClient.Histogram<string>
+  public fileUploadsByType: promClient.Counter<string>
+
+  // File upload metrics
+  public fileUploadsTotal: promClient.Counter<string>
+  public fileUploadSizeBytes: promClient.Histogram<string>
+  public fileUploadDuration: promClient.Histogram<string>
+  public fileUploadsByType: promClient.Counter<string>
+
   /**
    * Constructor for MetricsService
    * @param app - Feathers application instance
@@ -247,6 +259,37 @@ export class MetricsService {
       registers: [this.registry]
     })
 
+    // Initialize file upload metrics
+    this.fileUploadsTotal = new promClient.Counter({
+      name: 'ir_engine_file_uploads_total',
+      help: 'Total number of file uploads',
+      labelNames: ['type', 'status', 'project'],
+      registers: [this.registry]
+    })
+
+    this.fileUploadSizeBytes = new promClient.Histogram({
+      name: 'ir_engine_file_upload_size_bytes',
+      help: 'Size of uploaded files in bytes',
+      labelNames: ['type', 'project'],
+      buckets: [1024, 10240, 102400, 1048576, 10485760, 104857600, 1073741824], // 1KB, 10KB, 100KB, 1MB, 10MB, 100MB, 1GB
+      registers: [this.registry]
+    })
+
+    this.fileUploadDuration = new promClient.Histogram({
+      name: 'ir_engine_file_upload_duration_seconds',
+      help: 'Duration of file uploads in seconds',
+      labelNames: ['type', 'project'],
+      buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60], // 100ms to 1 minute
+      registers: [this.registry]
+    })
+
+    this.fileUploadsByType = new promClient.Counter({
+      name: 'ir_engine_file_uploads_by_type_total',
+      help: 'Total number of file uploads by MIME type',
+      labelNames: ['mime_type', 'file_extension', 'project'],
+      registers: [this.registry]
+    })
+
     // Register HTTP and WebSocket metrics
     this.registry.registerMetric(this.httpRequestDurationMicroseconds)
     this.registry.registerMetric(this.httpRequestsTotal)
@@ -282,6 +325,12 @@ export class MetricsService {
     this.registry.registerMetric(this.buildStatusByStatus)
     this.registry.registerMetric(this.buildStatusInProgress)
     this.registry.registerMetric(this.buildStatusDuration)
+
+    // Register file upload metrics
+    this.registry.registerMetric(this.fileUploadsTotal)
+    this.registry.registerMetric(this.fileUploadSizeBytes)
+    this.registry.registerMetric(this.fileUploadDuration)
+    this.registry.registerMetric(this.fileUploadsByType)
 
     // Add environment labels to all metrics
     this.registry.setDefaultLabels({
@@ -392,6 +441,48 @@ export class MetricsService {
     if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
 
     this.instanceAttendanceTotal.inc({ instance_id: instanceId })
+  }
+
+  /**
+   * Track file upload
+   * @param fileType - The type/category of file (e.g., 'avatar', 'scene', 'asset')
+   * @param mimeType - The MIME type of the file
+   * @param fileExtension - The file extension
+   * @param sizeBytes - The size of the file in bytes
+   * @param durationSeconds - The upload duration in seconds
+   * @param project - The project name (optional)
+   * @param status - Upload status ('success' or 'failed')
+   */
+  public trackFileUpload(
+    fileType: string,
+    mimeType: string,
+    fileExtension: string,
+    sizeBytes: number,
+    durationSeconds: number,
+    project?: string,
+    status: 'success' | 'failed' = 'success'
+  ): void {
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'true') return
+
+    const projectLabel = project || 'unknown'
+
+    // Track total uploads
+    this.fileUploadsTotal.inc({ type: fileType, status, project: projectLabel })
+
+    // Track file size (only for successful uploads)
+    if (status === 'success') {
+      this.fileUploadSizeBytes.observe({ type: fileType, project: projectLabel }, sizeBytes)
+    }
+
+    // Track upload duration
+    this.fileUploadDuration.observe({ type: fileType, project: projectLabel }, durationSeconds)
+
+    // Track by MIME type and extension
+    this.fileUploadsByType.inc({
+      mime_type: mimeType,
+      file_extension: fileExtension,
+      project: projectLabel
+    })
   }
 
   /**
