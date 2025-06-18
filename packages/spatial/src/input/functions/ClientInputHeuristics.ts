@@ -183,7 +183,7 @@ export function boundingBoxHeuristic(
     if (!filterEntitiesByViewer(entity, viewerEntity)) continue
     const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
     if (!boundingBox) continue
-    const hit = ray.intersectBox(boundingBox.worldBox, hitTarget)
+    const hit = ray.intersectBox(boundingBox.box, hitTarget)
     if (hit) {
       intersectionData.add({ entity, distance: ray.origin.distanceTo(hitTarget) })
     }
