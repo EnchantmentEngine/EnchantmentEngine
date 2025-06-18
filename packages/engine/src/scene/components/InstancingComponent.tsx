@@ -65,9 +65,12 @@ export const InstancingPlacementComponent = defineComponent({
       /** Recalculate instance matrix */
       if (!heightmapTexture || !maskTexture) return
 
-      // Helper function to sample texture pixel data
-      const sampleTexture = (texture: Texture, x: number, y: number, width: number, height: number): number => {
-        // Create a canvas to read pixel data
+      // Sample resolution for texture lookups
+      const sampleWidth = Math.min(component.width.value, 256)
+      const sampleHeight = Math.min(component.length.value, 256)
+
+      // Helper function to extract pixel data from texture once
+      const extractTextureData = (texture: Texture, width: number, height: number): Uint8ClampedArray => {
         const canvas = document.createElement('canvas')
         canvas.width = width
         canvas.height = height
@@ -75,20 +78,25 @@ export const InstancingPlacementComponent = defineComponent({
 
         if (!context) {
           console.error('Could not get 2D context for texture sampling')
-          return 0
+          return new Uint8ClampedArray(width * height * 4)
         }
-
-        console.log(texture)
 
         // Draw the texture to the canvas
         context.drawImage(texture.image, 0, 0, width, height)
 
-        // Get the pixel data at the specified coordinates
-        const imageData = context.getImageData(x, y, 1, 1)
-        const pixels = imageData.data
+        // Get all pixel data at once
+        const imageData = context.getImageData(0, 0, width, height)
+        return imageData.data
+      }
 
-        // Return normalized red channel value (0-1)
-        return pixels[0] / 255
+      // Extract pixel data once for both textures
+      const maskPixelData = extractTextureData(maskTexture, sampleWidth, sampleHeight)
+      const heightmapPixelData = extractTextureData(heightmapTexture, sampleWidth, sampleHeight)
+
+      // Fast pixel sampling function using pre-extracted data
+      const samplePixelData = (pixelData: Uint8ClampedArray, x: number, y: number, width: number): number => {
+        const index = (y * width + x) * 4 // 4 bytes per pixel (RGBA)
+        return pixelData[index] / 255 // Return normalized red channel value (0-1)
       }
 
       // Generate instance matrices
@@ -96,17 +104,13 @@ export const InstancingPlacementComponent = defineComponent({
       const mat4 = new Matrix4()
       const position = new Vector3()
       const rotation = new Quaternion()
-      const scale = new Vector3(1, 1, 1)
+      const scale = new Vector3(10, 10, 10)
 
       const width = component.width.value
       const length = component.length.value
       const count = component.count.value
       const randomPositionWeight = component.randomPositionWeight.value
       const randomRotationWeight = component.randomRotationWeight.value
-
-      // Sample resolution for texture lookups
-      const sampleWidth = Math.min(width, 256)
-      const sampleHeight = Math.min(length, 256)
 
       let placedInstances = 0
       let attempts = 0
@@ -128,13 +132,13 @@ export const InstancingPlacementComponent = defineComponent({
         const clampedTexZ = Math.max(0, Math.min(sampleHeight - 1, texZ))
 
         // Sample mask texture to determine if placement is allowed
-        const maskValue = sampleTexture(maskTexture, clampedTexX, clampedTexZ, sampleWidth, sampleHeight)
+        const maskValue = samplePixelData(maskPixelData, clampedTexX, clampedTexZ, sampleWidth)
 
         // Skip if mask value is too low (black areas = no placement)
         if (maskValue < 0.1) continue
 
         // Sample heightmap for Y position
-        const heightValue = sampleTexture(heightmapTexture, clampedTexX, clampedTexZ, sampleWidth, sampleHeight)
+        const heightValue = samplePixelData(heightmapPixelData, clampedTexX, clampedTexZ, sampleWidth)
 
         // Apply random position offset
         const randomOffsetX = (Math.random() - 0.5) * randomPositionWeight
