@@ -303,6 +303,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               progress: progressState.value.progress,
               caption: `Compressing ${fileName}...`
             })
+            // continue if it is scene itself
+            if (fileName == scenename || fileName == 'platform') {
+              continue
+            }
             await safeCompressGLTFWeb(
               modelFormat === 'gltf'
                 ? pathJoin(config.client.fileServer, destPath).replace('-compressed-published', '')
@@ -320,10 +324,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
                 })
               }
             )
-            // continue if it is scene itself
-            if (fileName == scenename || fileName == 'platform') {
-              continue
-            }
             const rootEntity = getState(EditorState).rootEntity
             const newSource = UUIDComponent.getAsSourceID(rootEntity)
             setComponent(compressedEntity, UUIDComponent, {
