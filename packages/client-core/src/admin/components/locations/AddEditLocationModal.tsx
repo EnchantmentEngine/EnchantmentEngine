@@ -351,6 +351,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             // Remove the old entity
             removeEntity(gltfEntity)
           } catch (error) {
+            console.error('Error compressing model:', error)
             if (compressedEntity) removeEntityNodeRecursively(compressedEntity)
             if (fileName == scenename) continue
             setComponent(gltfEntity, NameComponent, fileName)
