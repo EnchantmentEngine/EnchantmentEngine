@@ -39,7 +39,6 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { createPortal } from 'react-dom'
 import '../styles.scss'
 
 const LocationRoutes = () => {
@@ -64,24 +63,21 @@ const LocationRoutes = () => {
           <LoadingView fullScreen animated title={t('common:loader.loadingApp')} titleClassname="text-black" />
         </div>
       )}
-      {createPortal(
-        <canvas
-          id="engine-renderer-canvas"
-          tabIndex={1}
-          style={{
-            outline: 'none',
-            zIndex: 0,
-            width: '100%',
-            height: '100%',
-            position: 'fixed',
-            WebkitUserSelect: 'none',
-            pointerEvents: 'auto',
-            userSelect: 'none'
-          }}
-          ref={canvasRef}
-        ></canvas>,
-        document.body
-      )}
+      <canvas
+        id="engine-renderer-canvas"
+        tabIndex={1}
+        style={{
+          outline: 'none',
+          zIndex: 0,
+          width: '100%',
+          height: '100%',
+          position: 'fixed',
+          WebkitUserSelect: 'none',
+          pointerEvents: 'auto',
+          userSelect: 'none'
+        }}
+        ref={canvasRef}
+      ></canvas>
       <Debug />
     </Suspense>
   )
