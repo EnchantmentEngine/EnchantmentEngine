@@ -23,13 +23,12 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useMutableState } from '@ir-engine/hyperflux'
+import { GlassButton } from '@ir-engine/ui/src/components/viewer/Button'
 import React from 'react'
 import { HiChatBubbleLeftRight } from 'react-icons/hi2'
 import { twMerge } from 'tailwind-merge'
-import { ModalState } from '../../common/services/ModalState'
-import SettingsMenu from '../Settings'
 
-import { useMutableState } from '@ir-engine/hyperflux'
 import { Send01Md } from '@ir-engine/ui/src/icons'
 import { AuthState } from '../../user/services/AuthService'
 import { useChatProvider } from './ChatProvider'
@@ -136,26 +135,22 @@ const inputOuterStyles = `
   pb-4 px-4 pt-4
 `
 
-export const ChatMenu = () => {
+export const ChatMenu = ({ navigateTo }: { navigateTo: (screenKey: string, historyKey: string) => void }) => {
   const user = useMutableState(AuthState).user
+
   const isGuest = user.isGuest.value
-  const onCTAClicked = () => {
-    ModalState.openModal(<SettingsMenu initScreen="signup" onClose={ModalState.closeModal} />)
-  }
+  const onCTAClicked = () => navigateTo('Settings', 'signup')
 
   const { messageGroupedBySender, inputRef, handleInputChange, sendMessage, composedMessage } = useChatProvider()
 
   if (isGuest) {
     return (
-      <div className="flex h-full max-w-screen-sm flex-col items-center justify-center gap-8 font-dm-sans">
+      <div className="flex h-full w-full max-w-screen-sm flex-col items-center justify-center gap-8 font-dm-sans">
         <HiChatBubbleLeftRight className="mx-auto h-[5.5rem] w-[5.5rem]" />
-        <div className="text-shadow-md text-2xl text-white">Want to chat with others?</div>
-        <button
-          onClick={onCTAClicked}
-          className="mt-6 w-[80%] rounded-full border border-white/20 bg-white/15 px-6 py-4 text-lg font-bold text-white/90 shadow-lg drop-shadow-xl backdrop-blur-sm"
-        >
+        <div className="text-shadow font-manrope text-2xl text-white">Want to chat with others?</div>
+        <GlassButton className={'w-[90%]'} onClick={onCTAClicked}>
           Create an Account
-        </button>
+        </GlassButton>
       </div>
     )
   }

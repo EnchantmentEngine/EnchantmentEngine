@@ -73,7 +73,7 @@ validate_required_vars() {
 
 wait_for_builds_finished() {
   sleep $BUILD_WAIT_INTERVAL
-  
+
   # Get pod information for all services
   API_SLICE=($(kubectl get pods | grep ir-engine-kaniko-api || echo "NOT_FOUND - - -"))
   API_STATUS=${API_SLICE[2]:-"NOT_FOUND"}
@@ -149,7 +149,7 @@ wait_for_builds_finished() {
         cp instanceserver-build-logs.txt instanceserver-build-error.txt
       fi
     fi
-    
+
     return 0
   else
     wait_for_builds_finished
@@ -281,10 +281,16 @@ setup_package_environment() {
     SUFFIX="-mt-int"
   elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
     SUFFIX="-mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-    SUFFIX="-mt"
   elif [[ "$APP_HOST" =~ "qat" ]]; then
     SUFFIX="-qat"
+  elif [[ "$APP_HOST" =~ "mt-nightly" ]]; then
+    SUFFIX="-mt-nightly"
+  elif [[ "$APP_HOST" =~ "mt-weekly" ]]; then
+    SUFFIX="-mt-weekly"
+  elif [[ "$APP_HOST" =~ "mt-prdmirr" ]]; then
+    SUFFIX="-mt-prdmirr"
+  elif [[ "$APP_HOST" =~ "mt" ]]; then
+    SUFFIX="-mt"
   else
     SUFFIX=""
   fi
@@ -421,8 +427,6 @@ determine_gcp_suffix() {
     suffix="mt-int"
   elif [[ "$app_host" =~ "mt-qat" ]]; then
     suffix="mt-qat"
-  elif [[ "$app_host" =~ "mt" ]]; then
-    suffix="mt"
   elif [[ "$app_host" =~ "qat" ]]; then
     suffix="qat"
   elif [[ "$app_host" =~ "mt-nightly" ]]; then
@@ -431,6 +435,8 @@ determine_gcp_suffix() {
     suffix="mt-weekly"
   elif [[ "$app_host" =~ "mt-prdmirr" ]]; then
     suffix="mt-prdmirr"
+  elif [[ "$app_host" =~ "mt" ]]; then
+    suffix="mt"
   else
     suffix=""
   fi
