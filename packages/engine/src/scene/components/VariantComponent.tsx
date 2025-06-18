@@ -273,10 +273,11 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
     const instancingComponent = getComponent(props.variantEntity, InstancingComponent)
 
     //convert to instanced mesh, using existing instance matrix
-    const instancedMesh =
-      mesh instanceof InstancedMesh
-        ? mesh
-        : new InstancedMesh(mesh.geometry.clone(), mesh.material, instancingComponent.instanceMatrix.count)
+    const instancedMesh = new InstancedMesh(
+      mesh.geometry.clone(),
+      mesh.material,
+      instancingComponent.instanceMatrix.count
+    )
     instancedMesh.instanceMatrix.copy(instancingComponent.instanceMatrix)
     instancedMesh.frustumCulled = false
 
@@ -311,10 +312,24 @@ uniform float minDistance;`
         }
       })
     }
+  }, [])
+
+  const instanceMatrix = useComponent(props.variantEntity, InstancingComponent).instanceMatrix.value
+  useEffect(() => {
+    const mesh = getComponent(props.meshEntity, MeshComponent)
+    const instancingComponent = getComponent(props.variantEntity, InstancingComponent)
+
+    const instancedMesh = new InstancedMesh(
+      mesh.geometry.clone(),
+      mesh.material,
+      instancingComponent.instanceMatrix.count
+    )
+    instancedMesh.instanceMatrix.copy(instancingComponent.instanceMatrix)
+    instancedMesh.frustumCulled = false
 
     removeComponent(props.meshEntity, MeshComponent)
     setComponent(props.meshEntity, MeshComponent, instancedMesh)
-  }, [])
+  }, [instanceMatrix])
 
   const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
 
