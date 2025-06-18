@@ -34,7 +34,8 @@ import {
   Node,
   Primitive,
   Texture,
-  Transform
+  Transform,
+  WebIO
 } from '@gltf-transform/core'
 import {
   EXTMeshGPUInstancing,
@@ -396,7 +397,12 @@ const fileTypeToMime = (fileType) => {
   }
 }
 
-const loaderIO = ModelTransformLoader().then(({ io }) => io)
+let loaderIO: WebIO | null = null
+const loadIO = async () => {
+  if (loaderIO) return loaderIO
+  loaderIO = await ModelTransformLoader().then(({ io }) => io)
+  return loaderIO!
+}
 let ktx2Encoder: KTX2Encoder | null = null
 
 const doUpload = async (projectName, fileName, buffer, path?: string, publishing = false) => {
@@ -713,7 +719,7 @@ const writeFiles = async (
 ): Promise<string> => {
   const srcBaseURL = LoaderUtils.extractUrlBase(srcURL)
   const root = document.getRoot()
-  const io = await loaderIO
+  const io = await loadIO()
 
   const resourceName = baseName(srcURL).slice(0, baseName(srcURL).lastIndexOf('.'))
   const resourcePath = pathJoin(srcBaseURL, resourceUri || resourceName + '_resources')
@@ -845,7 +851,7 @@ export const transformModel = async (
 ): Promise<string[]> => {
   onProgress?.(0, Status.TransformingModels)
 
-  const srcDocument = await (await loaderIO).read(srcURL)
+  const srcDocument = await (await loadIO()).read(srcURL)
   const documents: Document[] = []
   const textureOperations: TextureOperation[] = []
   const numDocOperations = modelOperations.length
@@ -1270,7 +1276,7 @@ export async function safeCompressGLTFWeb(
 ) {
   onProgress?.(0, Status.TransformingModels)
 
-  const io = await loaderIO
+  const io = await loadIO()
   const document: Document = await io.read(srcURL)
   await document.transform(preserveVertexColors)
 
