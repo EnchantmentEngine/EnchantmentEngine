@@ -133,7 +133,6 @@ class TextureLoader extends Loader<Texture> {
       const texture = new Texture(image)
       if (!isBitmap) texture.flipY = this.flipped
       texture.source.data = image
-      texture.flipY = !this.flipped
       texture.needsUpdate = true
       onLoad(texture)
     }
