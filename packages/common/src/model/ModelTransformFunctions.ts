@@ -809,7 +809,7 @@ const writeFiles = async (
       })
     )
     const sourceJson = await io.readAsJSON(srcURL)
-    updateAllNodeExtensionsInJSON(document, json, sourceJson.json)
+    updateAllNodeExtensionsAndMatricesInJSON(document, json, sourceJson.json)
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
@@ -1288,10 +1288,8 @@ export async function safeCompressGLTFWeb(
   }
   await document.transform(unInstanceSingletons)
   await document.transform(dedup())
-  await document.transform(weld())
-  // skipping that step for gltf because we use collider info inside extensions and they are mostly hardcoded
-  await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
   await document.transform(
+    weld({}),
     simplify({
       ratio: params.simplifyRatio,
       error: params.simplifyErrorThreshold,
@@ -1319,7 +1317,7 @@ export async function safeCompressGLTFWeb(
  * @param sourceJson The original JSON representation of the GLTF document
  * @param nodeName The index of the node in the JSON nodes array
  */
-const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: string, sourceJson: any): void => {
+const updateNodeExtensionAndMatrixInJSON = (document: Document, json: any, nodeName: string, sourceJson: any): void => {
   const node = document
     .getRoot()
     .listNodes()
@@ -1331,6 +1329,14 @@ const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: stri
   const jsonNode = json.nodes.find((n: any) => n.name === nodeName)
   const sourceJsonNode = sourceJson.nodes.find((n: any) => n.name === nodeName)
   if (sourceJsonNode) {
+    console.log('sourceJsonNode', sourceJsonNode, jsonNode)
+    // copy matrix from source
+    if (sourceJsonNode.matrix) {
+      jsonNode.matrix = sourceJsonNode.matrix.slice()
+      delete jsonNode.translation
+      delete jsonNode.rotation
+      delete jsonNode.scale
+    }
     // Copy extensions from source, but handle empty objects
     jsonNode.extensions = jsonNode.extensions || {}
 
@@ -1367,7 +1373,6 @@ const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: stri
   if (!nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME]) {
     return
   }
-  // nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME].matchMesh = false
 }
 
 /**
@@ -1375,10 +1380,9 @@ const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: stri
  * @param document The GLTF document
  * @param json The JSON representation of the GLTF document
  */
-const updateAllNodeExtensionsInJSON = (document: Document, json: any, sourceJson: any): void => {
+const updateAllNodeExtensionsAndMatricesInJSON = (document: Document, json: any, sourceJson: any): void => {
   const nodes = document.getRoot().listNodes()
   nodes.forEach((node) => {
-    updateNodeExtensionInJSON(document, json, node.getName(), sourceJson)
-    // temporary remove that extension causing errors
+    updateNodeExtensionAndMatrixInJSON(document, json, node.getName(), sourceJson)
   })
 }
