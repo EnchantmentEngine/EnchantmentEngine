@@ -480,7 +480,7 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
     logger.info('oldFilePath ' + oldFilePath)
     logger.info('newFilePath ' + newFilePath)
     const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
-    logger.info('listResponse ' + listResponse.Contents)
+    logger.info('listResponse ' + JSON.stringify(listResponse.Contents))
 
     if (listResponse.Contents.length > 0) {
       return await Promise.all([

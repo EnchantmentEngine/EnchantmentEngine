@@ -350,6 +350,7 @@ export class FileBrowserService
         path.join(newDirectory, fileName),
         !!data?.isCopy
       )
+      logger.info('[moveFolderRecursively] Moved folder ! ')
     } else {
       await storageProvider.moveObject(oldName, fileName, oldDirectory, newDirectory, data.isCopy)
     }
@@ -436,7 +437,9 @@ export class FileBrowserService
   ) {
     const items = await storageProvider.listFolderContent(oldPath + '/')
 
-    logger.info('[moveFolderRecursively] Moving folder: ' + oldPath + ' to ' + newPath + ' items ' + items.toString())
+    logger.info(
+      '[moveFolderRecursively] Moving folder: ' + oldPath + ' to ' + newPath + ' items ' + JSON.stringify(items)
+    )
 
     for (const item of items) {
       logger.info('[moveFolderRecursively] Moving item: ' + item.name)
