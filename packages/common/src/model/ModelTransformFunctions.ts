@@ -1367,7 +1367,7 @@ const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: stri
   if (!nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME]) {
     return
   }
-  nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME].matchMesh = false
+  // nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME].matchMesh = false
 }
 
 /**
