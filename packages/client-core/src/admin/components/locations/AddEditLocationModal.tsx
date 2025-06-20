@@ -21,7 +21,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { EmbedCodeField } from '@ir-engine/client-core/src/common/components/EmbedCodeField'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
-import { useFind, useMutation } from '@ir-engine/common'
+import { API, useFind, useMutation } from '@ir-engine/common'
 import { config } from '@ir-engine/common/src/config'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
@@ -35,6 +35,7 @@ import {
   LocationType,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
+import { fileBrowserPath } from '@ir-engine/common/src/schemas/media/file-browser.schema'
 import {
   createEntity,
   Entity,
@@ -127,6 +128,7 @@ type AddEditLocationModalProps = Readonly<{
 export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   const { t } = useTranslation()
   const locationID = useHookstate(props.location?.id || null)
+  const fileService = useMutation(fileBrowserPath)
   const params = {
     query: {
       id: locationID.value,
@@ -274,6 +276,10 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             const extension = new URL(srcURL).pathname.split('.').pop()!
             const modelFormat = extension === 'gltf' ? 'gltf' : extension === 'vrm' ? 'vrm' : 'glb'
             const destPath = `${saveScenePath.value}/${scenename}/${fileName}-compressed-published.${extension}`
+            // remove old compressed file and old exported if they exist
+            await fileService.remove(destPath.replace('-compressed-published', ''))
+            await fileService.remove(destPath)
+
             //export parent entities and combined mesh entity
             if (modelFormat === 'gltf') {
               await exportRelativeGLTF(
@@ -344,15 +350,19 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               scale: getWorldScale
             })
             setComponent(compressedEntity, NameComponent, fileName + '-compressed')
+            // find newly created file from static resources to get with hash
+            const newResource = await API.instance.service(staticResourcePath).find({
+              query: { key: destPath, $limit: 1 }
+            })
+
             // Create a new entity with the compressed GLT
             EditorControlFunctions.modifyProperty([compressedEntity], GLTFComponent, {
-              src: pathJoin(config.client.fileServer, destPath)
+              src: newResource?.data?.[0]?.url ? newResource.data[0].url : pathJoin(config.client.fileServer, destPath)
             })
             EditorControlFunctions.modifyProperty([compressedEntity], VisibleComponent, { visible: true })
             // Remove the old entity
             removeEntity(gltfEntity)
           } catch (error) {
-            console.error('Error compressing model:', error)
             if (compressedEntity) removeEntityNodeRecursively(compressedEntity)
             if (fileName == scenename) continue
             setComponent(gltfEntity, NameComponent, fileName)
@@ -382,7 +392,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         progressState.set({ progress: 0, caption: '' })
       }
     } catch (error) {
-      console.log('error1', error)
       progressState.set({ progress: 0, caption: '' })
       ModalState.closeModal()
       ModalState.openModal(

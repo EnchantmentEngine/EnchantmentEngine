@@ -1292,15 +1292,17 @@ export async function safeCompressGLTFWeb(
   await document.transform(unInstanceSingletons)
   await document.transform(dedup())
   await document.transform(weld())
-
-  await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
-  await document.transform(
-    simplify({
-      ratio: params.simplifyRatio,
-      error: params.simplifyErrorThreshold,
-      simplifier: MeshoptSimplifier
-    })
-  )
+  // skipping that step for gltf because we use collider info inside extensions and they are mostly hardcoded
+  if (params.modelFormat !== 'gltf') {
+    await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
+    await document.transform(
+      simplify({
+        ratio: params.simplifyRatio,
+        error: params.simplifyErrorThreshold,
+        simplifier: MeshoptSimplifier
+      })
+    )
+  }
 
   document.createExtension(KHRMeshQuantization)?.setRequired(true)
   onProgress?.(0.8, Status.WritingFiles)

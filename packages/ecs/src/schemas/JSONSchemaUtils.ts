@@ -313,6 +313,7 @@ export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
 }
 
 export const CreateSchemaValue = <T extends Schema>(schema: T): Static<T> => {
+  if (!schema) return {}
   if (schema.options && 'default' in schema.options) return CreateDefault(schema.options.default)
 
   switch (schema[Kind]) {
