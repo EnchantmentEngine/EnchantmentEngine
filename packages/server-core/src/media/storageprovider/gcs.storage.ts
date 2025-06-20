@@ -474,21 +474,15 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
     const isDirectory = await this.isDirectory(oldName, oldPath)
-    logger.info('isDirectory ' + isDirectory)
     const oldFilePath = path.join(oldPath, oldName)
     const newFilePath = path.join(newPath, newName)
-    logger.info('oldFilePath ' + oldFilePath)
-    logger.info('newFilePath ' + newFilePath)
     const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
-    logger.info('listResponse ' + JSON.stringify(listResponse.Contents))
 
     if (listResponse.Contents.length > 0) {
       return await Promise.all([
         ...listResponse.Contents.map(async (file) => {
           const relativePath = file.Key.replace(oldFilePath, '')
-          logger.info('relativePath ' + relativePath)
           const key = newFilePath + relativePath
-          logger.info('key ' + key + ' ' + isCopy)
 
           if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
           else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})

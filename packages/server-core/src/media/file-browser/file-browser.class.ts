@@ -52,7 +52,6 @@ import { copyFolderRecursiveSync } from '@ir-engine/common/src/utils/fsHelperFun
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import verifyProjectPermission from '../../hooks/verify-project-permission'
-import logger from '../../ServerLogger'
 import { getContentType } from '../../util/fileUtils'
 import { getIncrementalName, isValidFileType } from '../FileUtil'
 import { getStorageProvider } from '../storageprovider/storageprovider'
@@ -350,7 +349,6 @@ export class FileBrowserService
         path.join(newDirectory, fileName),
         !!data?.isCopy
       )
-      logger.info('[moveFolderRecursively] Moved folder ! ')
     } else {
       await storageProvider.moveObject(oldName, fileName, oldDirectory, newDirectory, data.isCopy)
     }
@@ -437,44 +435,28 @@ export class FileBrowserService
   ) {
     const items = await storageProvider.listFolderContent(oldPath + '/')
 
-    logger.info(
-      '[moveFolderRecursively] Moving folder: ' + oldPath + ' to ' + newPath + ' items ' + JSON.stringify(items)
-    )
-
     for (const item of items) {
-      logger.info('[moveFolderRecursively] Moving item: ' + item.name)
       const oldItemPath = path.join(oldPath, item.name)
       const newItemPath = path.join(newPath, item.name)
 
       if (item.type === 'directory' || item.type === 'folder') {
-        logger.info(
-          '[moveFolderRecursively] Moving folder: ' +
-            oldItemPath +
-            ' to ' +
-            newItemPath +
-            ' isCopy ' +
-            isCopy +
-            ' isDirectory ' +
-            item.type
-        )
         await this.moveFolderRecursively(storageProvider, oldItemPath, newItemPath, isCopy)
       } else {
-        logger.info('[moveFolderRecursively] Moving file: ' + oldItemPath + ' to ' + newItemPath + ' isCopy ' + isCopy)
         //The local storage provider requires the file extension because it interacts with the filesystem and needs the full path, including the extension.
         const fileName = config.server.storageProvider === 'local' ? `${item.name}.${item.type}` : item.name
         await storageProvider.moveObject(fileName, fileName, oldPath, newPath, isCopy)
       }
     }
 
-    // logger.info('[moveFolderRecursively] Moving folder itself: ' + oldPath + ' to ' + newPath + ' isCopy ' + isCopy)
-    // // move the folder itself
-    // await storageProvider.moveObject(
-    //   path.basename(oldPath),
-    //   path.basename(newPath),
-    //   path.dirname(oldPath),
-    //   path.dirname(newPath),
-    //   isCopy
-    // )
+    // move the folder itself
+    if (config.server.storageProvider !== 'gcs')
+      await storageProvider.moveObject(
+        path.basename(oldPath),
+        path.basename(newPath),
+        path.dirname(oldPath),
+        path.dirname(newPath),
+        isCopy
+      )
   }
 
   /**
