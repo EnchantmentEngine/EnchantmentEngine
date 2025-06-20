@@ -466,15 +466,15 @@ export class FileBrowserService
       }
     }
 
-    logger.info('[moveFolderRecursively] Moving folder itself: ' + oldPath + ' to ' + newPath + ' isCopy ' + isCopy)
-    // move the folder itself
-    await storageProvider.moveObject(
-      path.basename(oldPath),
-      path.basename(newPath),
-      path.dirname(oldPath),
-      path.dirname(newPath),
-      isCopy
-    )
+    // logger.info('[moveFolderRecursively] Moving folder itself: ' + oldPath + ' to ' + newPath + ' isCopy ' + isCopy)
+    // // move the folder itself
+    // await storageProvider.moveObject(
+    //   path.basename(oldPath),
+    //   path.basename(newPath),
+    //   path.dirname(oldPath),
+    //   path.dirname(newPath),
+    //   isCopy
+    // )
   }
 
   /**
