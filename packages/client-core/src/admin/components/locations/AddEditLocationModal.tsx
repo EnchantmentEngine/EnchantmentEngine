@@ -41,6 +41,7 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
+  getOptionalComponent,
   hasComponent,
   iterateEntityNode,
   Layers,
@@ -63,6 +64,8 @@ import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { Button, DropdownItem, Input, Select, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
@@ -338,6 +341,26 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               entitySourceID: newSource
             })
             EditorControlFunctions.modifyProperty([compressedEntity], EntityTreeComponent, { parentEntity: rootEntity })
+            const colliderRigidbodyEntity = createEntity(Layers.Authoring)
+            setComponent(colliderRigidbodyEntity, NameComponent, 'parent-collider-rigidbody')
+            EditorControlFunctions.modifyProperty([colliderRigidbodyEntity], EntityTreeComponent, {
+              parentEntity: compressedEntity
+            })
+            iterateEntityNode(gltfEntity, (entity) => {
+              if (hasComponent(entity, ColliderComponent) || hasComponent(entity, RigidBodyComponent)) {
+                const rigidbody = getOptionalComponent(entity, RigidBodyComponent)
+                const collider = getComponent(entity, ColliderComponent)
+                const childEntity = createEntity(Layers.Authoring)
+                setComponent(childEntity, NameComponent, 'child-collider-rigidbody')
+                if (rigidbody) {
+                  setComponent(childEntity, RigidBodyComponent, rigidbody)
+                }
+                if (collider) {
+                  setComponent(childEntity, ColliderComponent, collider)
+                }
+                setComponent(childEntity, EntityTreeComponent, { parentEntity: colliderRigidbodyEntity })
+              }
+            })
             const transform = getComponent(gltfEntity, TransformComponent)
             TransformComponent.computeTransformMatrix(gltfEntity)
             const worldpos = new Vector3()
@@ -349,6 +372,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               rotation: worldrot,
               scale: getWorldScale
             })
+
             setComponent(compressedEntity, NameComponent, fileName + '-compressed')
             // find newly created file from static resources to get with hash
             const newResource = await API.instance.service(staticResourcePath).find({
@@ -363,6 +387,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
             // Remove the old entity
             removeEntity(gltfEntity)
           } catch (error) {
+            console.error('Error compressing GLTF:', error)
             if (compressedEntity) removeEntityNodeRecursively(compressedEntity)
             if (fileName == scenename) continue
             setComponent(gltfEntity, NameComponent, fileName)

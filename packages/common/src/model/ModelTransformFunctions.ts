@@ -37,12 +37,7 @@ import {
   Transform,
   WebIO
 } from '@gltf-transform/core'
-import {
-  EXTMeshGPUInstancing,
-  EXTMeshoptCompression,
-  KHRMeshQuantization,
-  KHRTextureBasisu
-} from '@gltf-transform/extensions'
+import { EXTMeshGPUInstancing, EXTMeshoptCompression, KHRTextureBasisu } from '@gltf-transform/extensions'
 import {
   cloneDocument,
   dedup,
@@ -813,6 +808,8 @@ const writeFiles = async (
         await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path, publishing)
       })
     )
+    const sourceJson = await io.readAsJSON(srcURL)
+    updateAllNodeExtensionsInJSON(document, json, sourceJson.json)
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
@@ -1293,18 +1290,15 @@ export async function safeCompressGLTFWeb(
   await document.transform(dedup())
   await document.transform(weld())
   // skipping that step for gltf because we use collider info inside extensions and they are mostly hardcoded
-  if (params.modelFormat !== 'gltf') {
-    await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
-    await document.transform(
-      simplify({
-        ratio: params.simplifyRatio,
-        error: params.simplifyErrorThreshold,
-        simplifier: MeshoptSimplifier
-      })
-    )
-  }
+  await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
+  await document.transform(
+    simplify({
+      ratio: params.simplifyRatio,
+      error: params.simplifyErrorThreshold,
+      simplifier: MeshoptSimplifier
+    })
+  )
 
-  document.createExtension(KHRMeshQuantization)?.setRequired(true)
   onProgress?.(0.8, Status.WritingFiles)
 
   await writeFiles(srcURL, document, {
@@ -1316,4 +1310,75 @@ export async function safeCompressGLTFWeb(
   })
 
   onProgress?.(1, Status.Complete)
+}
+
+/**
+ * Calculates the bounding box size of a node and updates the EE_collider extension's boxSize property in the JSON
+ * @param document The GLTF document (used for accessing mesh data)
+ * @param json The JSON representation of the GLTF document
+ * @param sourceJson The original JSON representation of the GLTF document
+ * @param nodeName The index of the node in the JSON nodes array
+ */
+const updateNodeExtensionInJSON = (document: Document, json: any, nodeName: string, sourceJson: any): void => {
+  const node = document
+    .getRoot()
+    .listNodes()
+    .find((n) => n.getName() === nodeName)
+  if (!node) return
+
+  const EE_COLLIDER_EXTENSION_NAME = 'EE_collider'
+  // Find the corresponding node in JSON by name
+  const jsonNode = json.nodes.find((n: any) => n.name === nodeName)
+  const sourceJsonNode = sourceJson.nodes.find((n: any) => n.name === nodeName)
+  if (sourceJsonNode) {
+    // Copy extensions from source, but handle empty objects
+    jsonNode.extensions = jsonNode.extensions || {}
+
+    // Copy all extensions except EE_collider
+    if (sourceJsonNode.extensions) {
+      Object.entries(sourceJsonNode.extensions).forEach(([extName, extValue]) => {
+        // Skip EE_collider as we'll handle it separately
+        if (extName === EE_COLLIDER_EXTENSION_NAME) return
+
+        // If extension value is an empty object, set it to true
+        if (extValue && typeof extValue === 'object' && Object.keys(extValue).length === 0) {
+          jsonNode.extensions[extName] = true
+        } else {
+          jsonNode.extensions[extName] = extValue
+        }
+      })
+    }
+  }
+  if (!jsonNode) return
+
+  // Skip nodes without mesh
+  const mesh = node.getMesh()
+  if (!mesh) return
+
+  // Get the node definition from JSON
+  const nodeDef = jsonNode
+  if (!nodeDef) return
+
+  // Ensure extensions object exists
+  nodeDef.extensions = nodeDef.extensions || {}
+
+  // Update or create the EE_collider extension
+
+  if (!nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME]) {
+    return
+  }
+  nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME].matchMesh = false
+}
+
+/**
+ * Updates collider box sizes for all nodes in a document's JSON representation
+ * @param document The GLTF document
+ * @param json The JSON representation of the GLTF document
+ */
+const updateAllNodeExtensionsInJSON = (document: Document, json: any, sourceJson: any): void => {
+  const nodes = document.getRoot().listNodes()
+  nodes.forEach((node) => {
+    updateNodeExtensionInJSON(document, json, node.getName(), sourceJson)
+    // temporary remove that extension causing errors
+  })
 }
