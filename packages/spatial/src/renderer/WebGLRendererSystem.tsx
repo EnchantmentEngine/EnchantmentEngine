@@ -57,8 +57,10 @@ import { RenderModes } from './constants/RenderModes'
 import { CSM } from './csm/CSM'
 import { CSMComponent } from './csm/CSMComponent'
 import { changeRenderMode } from './functions/changeRenderMode'
+import { isWebGPURenderer } from './functions/RendererBackendUtils'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
+import { renderWebGPUPostProcessing } from './webgpu/WebGPUPostProcessing'
 
 declare module 'postprocessing' {
   interface EffectComposer {
@@ -80,7 +82,8 @@ export const render = (
   camera: ArrayCamera,
   delta: number,
   effectComposer = true,
-  csm?: ComponentType<typeof CSMComponent> | undefined
+  csm?: ComponentType<typeof CSMComponent> | undefined,
+  entity?: Entity
 ) => {
   if (!renderer.renderer) return
 
@@ -104,7 +107,6 @@ export const render = (
       camera.aspect = width / height
       camera.updateProjectionMatrix()
     }
-
     if (state.useShadows && csm) {
       // Call the CSM updateFrustums function
       CSM.updateFrustums()
@@ -121,10 +123,16 @@ export const render = (
 
   ObjectComponent.activeRender = true
 
-  /** Postprocessing does not support multipass yet, so just use basic renderer when in VR */
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (xrFrame || !effectComposer || !renderer.effectComposer) {
+  if (entity && isWebGPURenderer(entity)) {
+    const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer.renderer as any)
+
+    if (!webgpuRendered) {
+      renderer.renderer.clear()
+      renderer.renderer.render(scene, camera)
+    }
+  } else if (xrFrame || !effectComposer || !renderer.effectComposer) {
     renderer.renderer.clear()
     renderer.renderer.render(scene, camera)
   } else {
@@ -201,7 +209,7 @@ const execute = () => {
 
     _scene.fog = fog
 
-    render(renderer, _scene, camera, deltaSeconds, undefined, csm)
+    render(renderer, _scene, camera, deltaSeconds, undefined, csm, entity)
   }
   onRenderEnd()
 }

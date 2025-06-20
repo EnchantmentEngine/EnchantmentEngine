@@ -33,6 +33,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
+
 import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
 import { HighlightState } from '../HighlightState'
@@ -165,8 +166,8 @@ export const RendererComponent = defineComponent({
     const renderSettings = useMutableState(RendererState)
     const effectComposerState = rendererComponent.effectComposer as State<EffectComposer>
     const webgpuFlag = globalThis.location.search.includes('webgpu')
-    const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
-    // const shouldUseWebGPU = true
+    //const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
+    const shouldUseWebGPU = true
     renderSettings.backend.set(shouldUseWebGPU ? RenderBackends.WEBGPU : RenderBackends.WEBGL)
 
     useEffect(() => {
@@ -207,6 +208,8 @@ export const RendererComponent = defineComponent({
 
             renderer.debug.checkShaderErrors = isDev
             renderer.autoClear = true
+
+            rendererComponent.effectComposer.set(null)
 
             return renderer
           } catch (err) {

@@ -95,6 +95,7 @@ export type CSMParams = {
   lightFar?: number
   lightMargin?: number
   fade?: boolean
+  csmShadowNode?: any
 }
 
 function uniformSplit(amount: number, near: number, far: number, target: number[]): void {
@@ -138,6 +139,7 @@ function createLight(i: number, rendererEntity: Entity, sourceLight?: Directiona
 
   light.shadow.camera.near = 0
   light.shadow.camera.far = 1
+  light.shadow.camera.updateProjectionMatrix()
 
   const shadowNode = sourceLight?.shadow.shadowNode as CSMShadowNode
   shadowNode.lights.push(light)
@@ -198,6 +200,11 @@ function initCascades(rendererEntity?: Entity): void {
   const mainFrustum = new Frustum()
   mainFrustum.setFromProjectionMatrix(camera.projectionMatrix, csm.maxFar.value)
 
+  const csmShadowNode = (csm as any).csmShadowNode?.value
+  if (csmShadowNode) {
+    csmShadowNode.mainFrustum.camera = camera.cameras[0]
+  }
+
   const frustums: Frustum[] = []
 
   mainFrustum.split(csm.breaks.value as number[], frustums)
@@ -211,14 +218,25 @@ function initCascades(rendererEntity?: Entity): void {
 function updateShadowBounds(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
   const csm = getComponent(entity, CSMComponent)
-  const frustums = csm.frustums
+  const frustums = csm.csmShadowNode?.frustums
+  const c = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const csmShadowNode = (csm as any).csmShadowNode
+  try {
+    if (csmShadowNode) {
+      csmShadowNode.camera = c.cameras[0]
+      csmShadowNode.updateFrustums()
+      return
+    }
+    return
+  } catch (e) {
+    console.log('no csm shadow node', e)
+  }
 
-  for (let i = 0; i < frustums.length; i++) {
-    const light = csm.lights[i]
+  for (let i = 0; i < csm.csmShadowNode?.frustums.length; i++) {
+    const light = csm.csmShadowNode?.lights[i]
     if (!light) continue
-
     const shadowCam = light.shadow.camera
-    const frustum = csm.frustums[i]
+    const frustum = csm.csmShadowNode?.frustums[i]
 
     // Get the two points that represent that furthest points on the frustum assuming
     // that's either the diagonal across the far plane or the diagonal across the whole
@@ -311,7 +329,9 @@ function updateCSM(rendererEntity: Entity): void {
       light.shadow.camera.updateProjectionMatrix()
       light.shadow.needsUpdate = true
     }
+
     mutableCsm.needsUpdate.set(false)
+    return
   }
 
   const camera = getComponent(Engine.instance.cameraEntity, TransformComponent)
@@ -498,9 +518,12 @@ const CSMDefaults = Object.freeze({
   breaks: [],
   lights: [],
   lightEntities: [],
-  csmShadowNodes: [],
   shaders: {},
-  webgpuShaderCode: undefined,
+  csmShadowNode: undefined,
+  webgpuEnhanced: false,
+  shadowSoftness: 1.0,
+  ambientShadowColor: [0.1, 0.1, 0.2],
+  shadowColorTint: [0.8, 0.8, 1.0],
   needsUpdate: true
 })
 
@@ -551,6 +574,11 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
     lights: CSMDefaults.lights,
     lightEntities: CSMDefaults.lightEntities,
     shaders: CSMDefaults.shaders,
+    csmShadowNode: (validatedParams as any).csmShadowNode ?? CSMDefaults.csmShadowNode,
+    webgpuEnhanced: CSMDefaults.webgpuEnhanced,
+    shadowSoftness: CSMDefaults.shadowSoftness,
+    ambientShadowColor: CSMDefaults.ambientShadowColor,
+    shadowColorTint: CSMDefaults.shadowColorTint,
     needsUpdate: CSMDefaults.needsUpdate
   })
 

@@ -82,6 +82,7 @@ import { CSM, CSMParams } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { CSMComponent } from '@ir-engine/spatial/src/renderer/csm/CSMComponent'
 //import { CSMHelper } from '@ir-engine/spatial/src/renderer/csm/CSMHelper'
 import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/ecs'
+import { isWebGPURenderer } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import { getShadowsEnabled, useShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
@@ -90,13 +91,15 @@ import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
 import { CSMPluginComponent } from '@ir-engine/spatial/src/renderer/csm/CSMPluginComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { CSMShadowNode } from 'three/examples/jsm/csm/CSMShadowNode.js'
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
+import { CSMFrustum } from 'three/examples/jsm/csm/CSMFrustum.js'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
@@ -139,9 +142,26 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   useEffect(() => {
     if (!directionalLightComponent || !directionalLight) return
     if (!directionalLightComponent.castShadow.value) return
+    const useWebGPU = isWebGPURenderer(rendererEntity)
+    let csmShadowNode: CSMShadowNode | undefined
 
-    const csm = new CSMShadowNode(directionalLight, { cascades: 4, maxFar: 1000, mode: 'practical' })
-    directionalLight.shadow.shadowNode = csm
+    if (useWebGPU) {
+      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      //will update
+      csmShadowNode = new CSMShadowNode(directionalLight, {
+        cascades: 4,
+        maxFar: 200,
+        mode: 'practical'
+      })
+      directionalLight.shadow.shadowNode = csmShadowNode
+      directionalLight.castShadow = true
+
+      camera.cameras[0].updateProjectionMatrix()
+      csmShadowNode.camera = camera.cameras[0]
+      csmShadowNode.fade = true
+      csmShadowNode.mainFrustum = new CSMFrustum()
+      csmShadowNode.mainFrustum.setFromProjectionMatrix(camera.projectionMatrix, csmShadowNode.maxFar)
+    }
 
     const params = {
       light: directionalLight as DirectionalLight,
@@ -151,7 +171,8 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
       lightIntensity: directionalLightComponent.intensity.value,
       lightColor: directionalLightComponent.color.value,
       cascades: renderSettingsComponent.cascades.value,
-      lightMargin: directionalLightComponent.cameraFar.value
+      lightMargin: directionalLightComponent.cameraFar.value,
+      csmShadowNode: csmShadowNode
     } as CSMParams
 
     CSM.initCSM(params, rendererEntity)
@@ -219,6 +240,7 @@ const EntityChildCSMReactor = (props: { rendererEntity: Entity; entity: Entity }
   const { rendererEntity, entity } = props
   const material = useComponent(entity, MaterialStateComponent).material
   const csm = useComponent(rendererEntity, CSMComponent)
+
   useEffect(() => {
     if (!csm) return
     setComponent(entity, CSMPluginComponent)

@@ -53,6 +53,11 @@ export const CSMComponent = defineComponent({
       lights: S.Array(S.Type<DirectionalLight>({ serialized: false })),
       lightEntities: S.Array(S.Entity()),
       shaders: S.Record(S.String(), S.Type<ShaderType>()),
+      csmShadowNode: S.Type<any>({ default: undefined, serialized: false }),
+      webgpuEnhanced: S.Bool({ default: false }),
+      shadowSoftness: S.Number({ default: 1.0 }),
+      ambientShadowColor: S.Array(S.Number(), { default: [0.1, 0.1, 0.2] }),
+      shadowColorTint: S.Array(S.Number(), { default: [0.8, 0.8, 1.0] }),
       needsUpdate: S.Bool({ default: false })
     },
     { serialized: false }

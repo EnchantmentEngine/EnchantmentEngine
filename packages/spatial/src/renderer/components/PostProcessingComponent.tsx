@@ -30,7 +30,9 @@ import { EffectComposer } from 'postprocessing'
 import React, { Suspense } from 'react'
 import { Scene } from 'three'
 import { PostProcessingEffectState } from '../effects/EffectRegistry'
+import { isWebGPURenderer } from '../functions/RendererBackendUtils'
 import { useRendererEntity } from '../functions/useRendererEntity'
+import { WebGPUPostProcessingReactor } from '../webgpu/WebGPUPostProcessing'
 import { EffectSchema, RendererComponent } from './RendererComponent'
 
 export const PostProcessingComponent = defineComponent({
@@ -62,8 +64,13 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
   const passes = renderer.passes
   const composer = renderer.effectComposer.value as EffectComposer
   const scene = renderer.scene.value as Scene
+  const isWebGPU = isWebGPURenderer(rendererEntity)
 
   if (!postProcessingComponent.enabled.value) return null
+
+  if (isWebGPU) {
+    return <WebGPUPostProcessingReactor entity={entity} rendererEntity={rendererEntity} />
+  }
 
   // for each effect specified in our postProcessingComponent, we mount a sub-reactor based on the effect registry for that effect ID
   return (
