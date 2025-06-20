@@ -260,6 +260,11 @@ const cameraReactor = () => {
     else camera.layers.disable(ObjectLayers.NodeHelper)
   }, [engineRendererSettings.nodeHelperVisibility])
 
+  useEffect(() => {
+    if (engineRendererSettings.nodeIconVisibility.value) camera.layers.enable(ObjectLayers.NodeIcon)
+    else camera.layers.disable(ObjectLayers.NodeIcon)
+  }, [engineRendererSettings.nodeIconVisibility])
+
   return null
 }
 

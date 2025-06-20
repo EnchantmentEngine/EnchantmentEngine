@@ -30,7 +30,7 @@ import { getMutableState, useMutableState } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
-import { CubeOutlineLg, Cursor03Lg, GridDotsMd, RulerUnitsMd } from '@ir-engine/ui/src/icons'
+import { CubeOutlineLg, Cursor03Lg, GridDotsMd, RulerUnitsMd, SunMd } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -104,6 +104,18 @@ export default function SceneHelpersTool() {
           </Tooltip>
         </>
       )}
+      <Tooltip
+        title={t('editor:toolbar.helpersToggle.lbl-nodeIcons')}
+        content={t('editor:toolbar.helpersToggle.info-nodeHelpers')}
+        position="bottom"
+      >
+        <ViewportButton
+          lean={true}
+          onClick={() => rendererState.nodeIconVisibility.set(!rendererState.nodeIconVisibility.value)}
+          selected={rendererState.nodeIconVisibility.value}
+          icon={SunMd}
+        />
+      </Tooltip>
       <Tooltip
         title={t('editor:toolbar.helpersToggle.lbl-nodeVolume')}
         content={volumeVisbilityDescriptions[editorHelperState.volumeVisibility.value]}
