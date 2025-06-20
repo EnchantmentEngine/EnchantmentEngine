@@ -22,6 +22,8 @@ Original Code is the Infinite Reality Engine team.
 All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
+import { Schema } from '@ir-engine/ecs'
+import { isTextureUniform } from '@ir-engine/engine/src/material/defineMaterialPlugin'
 
 import { Color, Euler, Quaternion, Texture, Vector2, Vector3, Vector4 } from 'three'
 
@@ -44,7 +46,8 @@ export const ShaderArg = { default: '', type: 'shader' }
 
 export const ObjectArg = { default: {}, type: 'object' }
 
-export function getDefaultType(value) {
+export function getDefaultType(value, schema?: Schema) {
+  if (schema && isTextureUniform(schema)) return TextureArg.type
   switch (typeof value) {
     case 'boolean':
       return BoolArg.type
@@ -66,15 +69,15 @@ export function getDefaultType(value) {
   }
 }
 
-export function generateDefaults(value) {
+export function generateDefaults(value, schema?: Schema) {
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([k, v]) => getDefaultType(v))
+      .filter(([k, v]) => getDefaultType(v, schema?.properties?.[k]))
       .map(([k, v]) => {
         return [
           k,
           {
-            type: getDefaultType(v),
+            type: getDefaultType(v, schema?.properties?.[k]),
             default: v
           }
         ]
