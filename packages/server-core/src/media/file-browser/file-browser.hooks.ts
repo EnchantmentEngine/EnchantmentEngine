@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { discard, iff, isProvider } from 'feathers-hooks-common'
+import { iff, isProvider } from 'feathers-hooks-common'
 import { SYNC } from 'feathers-sync'
 
 import {
@@ -56,7 +56,7 @@ export default {
         return context
       }
     ],
-    update: [iff(isProvider('external'), discard('isProject')), schemaHooks.validateData(fileBrowserUpdateValidator)],
+    update: [schemaHooks.validateData(fileBrowserUpdateValidator)],
     patch: [
       (context) => {
         context[SYNC] = false

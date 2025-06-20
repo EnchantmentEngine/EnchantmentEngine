@@ -72,8 +72,7 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
   inputPath: string,
   projectName: string,
   app: Application,
-  params: FileBrowserParams,
-  isProject?: boolean
+  params: FileBrowserParams
 ) => {
   if (!PROJECT_REGEX.test(inputPath)) throw new BadRequest('Invalid path: ' + inputPath + '; not in a valid project')
   const pathSplit = inputPath.split('/')
@@ -109,21 +108,21 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
     app: app
   } as any)
 
-  if (!isProject) {
-    const resolvedPath = path.resolve(inputPath)
-    const resolvedProjectPath = path.resolve('projects', projectName)
-    const publicRegExp = new RegExp(`^${resolvedProjectPath}/public/`)
-    const assetsRegExp = new RegExp(`^${resolvedProjectPath}/assets/`)
+  if (params.isInternal) return
 
-    if (!publicRegExp.test(resolvedPath) && !assetsRegExp.test(resolvedPath))
-      throw new Error(
-        'Not allowed to access this directory or file: ' +
-          path.join(inputPath) +
-          ' as it does not match the specified project: ' +
-          projectName +
-          ' or it is not in the public or assets folder'
-      )
-  }
+  const resolvedPath = path.resolve(inputPath)
+  const resolvedProjectPath = path.resolve('projects', projectName)
+  const publicRegExp = new RegExp(`^${resolvedProjectPath}/public/`)
+  const assetsRegExp = new RegExp(`^${resolvedProjectPath}/assets/`)
+
+  if (!publicRegExp.test(resolvedPath) && !assetsRegExp.test(resolvedPath))
+    throw new Error(
+      'Not allowed to access this directory or file: ' +
+        path.join(inputPath) +
+        ' as it does not match the specified project: ' +
+        projectName +
+        ' or it is not in the public or assets folder'
+    )
 }
 
 /**
@@ -299,16 +298,14 @@ export class FileBrowserService
       path.join(data.oldPath, data.oldName),
       data.oldProject,
       this.app,
-      params!,
-      data.isProject
+      params!
     )
 
     await ensureProjectPermissionAndPublicOrAssetsDirectory(
       path.join(data.newPath, data.newName),
       data.newProject,
       this.app,
-      params!,
-      data.isProject
+      params!
     )
 
     /** @todo future proofing for when projects include orgname */
@@ -356,12 +353,10 @@ export class FileBrowserService
       await storageProvider.moveObject(oldName, fileName, oldDirectory, newDirectory, data.isCopy)
     }
 
-    const key = data.isProject ? `${path.join(oldDirectory, oldName)}/` : path.join(oldDirectory, oldName)
-
     const staticResources = (await this.app.service(staticResourcePath).find({
       query: {
         key: {
-          $like: `%${key}%`
+          $like: `%${path.join(oldDirectory, oldName)}%`
         },
         paginate: false
       } as any
@@ -370,6 +365,10 @@ export class FileBrowserService
     const results = [] as StaticResourceType[]
     for (const resource of staticResources) {
       const newKey = resource.key.replace(path.join(oldDirectory, oldName), path.join(newDirectory, fileName))
+      const newThumbnailKey = resource.thumbnailKey?.replace(
+        path.join(oldDirectory, oldName),
+        path.join(newDirectory, fileName)
+      )
 
       if (data.isCopy) {
         const result = await this.app.service(staticResourcePath).create(
@@ -385,7 +384,7 @@ export class FileBrowserService
             licensing: resource.licensing,
             description: resource.description,
             attribution: resource.attribution,
-            thumbnailKey: resource.thumbnailKey,
+            thumbnailKey: newThumbnailKey,
             thumbnailMode: resource.thumbnailMode
           },
           { isInternal: true }
