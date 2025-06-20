@@ -55,6 +55,13 @@ export const InstancingPlacementComponent = defineComponent({
     randomRotationWeight: S.Number({ default: 0 })
   }),
 
+  onSet(entity, component, json) {
+    /** @todo annoying necessity to stop VariantComponent from loading a non-instanced GLTF whilst our reactor runs */
+    setComponent(entity, InstancingComponent)
+    if (!json) return
+    component.merge(json)
+  },
+
   reactor: ({ entity }) => {
     const component = useComponent(entity, InstancingPlacementComponent)
 
@@ -104,7 +111,7 @@ export const InstancingPlacementComponent = defineComponent({
       const mat4 = new Matrix4()
       const position = new Vector3()
       const rotation = new Quaternion()
-      const scale = new Vector3(10, 10, 10)
+      const scale = new Vector3(1, 1, 1)
 
       const width = component.width.value
       const length = component.length.value

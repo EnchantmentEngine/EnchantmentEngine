@@ -32,7 +32,10 @@ import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
 import { GroundPlaneComponent } from '@ir-engine/engine/src/scene/components/GroundPlaneComponent'
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
-import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
+import {
+  InstancingComponent,
+  InstancingPlacementComponent
+} from '@ir-engine/engine/src/scene/components/InstancingComponent'
 import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/components/LegacyVolumetricComponent'
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
@@ -89,6 +92,7 @@ import GroundPlaneNodeEditor from '@ir-engine/ui/src/components/editor/propertie
 import ImageNodeEditor from '@ir-engine/ui/src/components/editor/properties/image'
 import InputComponentNodeEditor from '@ir-engine/ui/src/components/editor/properties/input'
 import InstancingNodeEditor from '@ir-engine/ui/src/components/editor/properties/instance'
+import InstancingPlacementNodeEditor from '@ir-engine/ui/src/components/editor/properties/instancePlacement'
 import InteractableComponentNodeEditor from '@ir-engine/ui/src/components/editor/properties/interact'
 import AmbientLightNodeEditor from '@ir-engine/ui/src/components/editor/properties/light/ambient'
 import DirectionalLightNodeEditor from '@ir-engine/ui/src/components/editor/properties/light/directional'
@@ -175,6 +179,7 @@ export const ComponentEditorsState = defineState({
       [EnvMapComponent.name]: EnvMapEditor,
       [EnvMapBakeComponent.name]: EnvMapBakeNodeEditor,
       [InstancingComponent.name]: InstancingNodeEditor,
+      [InstancingPlacementComponent.name]: InstancingPlacementNodeEditor,
       [PersistentAnchorComponent.name]: PersistentAnchorNodeEditor,
       [VariantComponent.name]: VariantNodeEditor,
       [SplineComponent.name]: SplineNodeEditor,
