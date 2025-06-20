@@ -1311,7 +1311,7 @@ export async function safeCompressGLTFWeb(
 }
 
 /**
- * Calculates the bounding box size of a node and updates the EE_collider extension's boxSize property in the JSON
+ *  Update extensions and matrices from json
  * @param document The GLTF document (used for accessing mesh data)
  * @param json The JSON representation of the GLTF document
  * @param sourceJson The original JSON representation of the GLTF document
@@ -1329,7 +1329,6 @@ const updateNodeExtensionAndMatrixInJSON = (document: Document, json: any, nodeN
   const jsonNode = json.nodes.find((n: any) => n.name === nodeName)
   const sourceJsonNode = sourceJson.nodes.find((n: any) => n.name === nodeName)
   if (sourceJsonNode) {
-    console.log('sourceJsonNode', sourceJsonNode, jsonNode)
     // copy matrix from source
     if (sourceJsonNode.matrix) {
       jsonNode.matrix = sourceJsonNode.matrix.slice()
@@ -1376,7 +1375,7 @@ const updateNodeExtensionAndMatrixInJSON = (document: Document, json: any, nodeN
 }
 
 /**
- * Updates collider box sizes for all nodes in a document's JSON representation
+ * Updates all node extensions and matrices in JSON
  * @param document The GLTF document
  * @param json The JSON representation of the GLTF document
  */
