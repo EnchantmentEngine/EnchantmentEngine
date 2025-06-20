@@ -51,12 +51,12 @@ import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/Obje
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayerMasks, ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import {
-  BOUNDING_BOX_COLORS,
   BoundingBoxComponent,
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import { Raycaster, Vector3 } from 'three'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
+import { BOUNDING_BOX_COLORS } from '../classes/helper/BoundingBoxHelper'
 import { ComponentHelperEntry, ComponentHelperState } from '../classes/helper/ComponentHelperState'
 import { iconGizmoArrow, iconGizmoYHelper, setupGizmo } from '../constants/GizmoPresets'
 import {

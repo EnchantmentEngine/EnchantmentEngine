@@ -44,7 +44,6 @@ export const RendererState = defineState({
     avatarDebug: false,
     renderMode: RenderModes.SHADOW as RenderModesType,
     nodeHelperVisibility: false,
-    nodeIconVisibility: true,
     gridVisibility: false,
     gridHeight: 0,
     forceBasicMaterials: false,
@@ -61,7 +60,6 @@ export const RendererState = defineState({
     'bvhDebug',
     'avatarDebug',
     'renderMode',
-    'nodeHelperVisibility',
-    'nodeIconVisibility'
+    'nodeHelperVisibility'
   ])
 })
