@@ -56,6 +56,7 @@ import {
   MeshStandardMaterial,
   RGBAFormat,
   SRGBColorSpace,
+  Texture,
   Vector3
 } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
@@ -163,7 +164,7 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     if (disallowedMaterials.has(materialState.type.value)) return
 
     const material = materialState.value as MeshStandardMaterial
-    material.envMap = backgroundComponent.value.clone() as any
+    material.envMap = backgroundComponent.value as Texture
     ResourceState.addEntityResource(entity, material.envMap!)
   }, [backgroundComponent?.value, materialState.value])
 

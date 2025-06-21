@@ -101,6 +101,7 @@ export const SkyboxComponent = defineComponent({
       if (skyboxState.backgroundType.value !== SkyTypeEnum.equirectangular || !texture) return
 
       texture.colorSpace = SRGBColorSpace
+      texture.generateMipmaps = false
       texture.mapping = EquirectangularReflectionMapping
       texture.minFilter = LinearFilter
       setComponent(entity, BackgroundComponent, texture)
@@ -124,6 +125,7 @@ export const SkyboxComponent = defineComponent({
       // ResourceState.addResource(texture, texture.uuid, entity)
       texture.needsUpdate = true
       texture.colorSpace = SRGBColorSpace
+      texture.generateMipmaps = false
       texture.mapping = EquirectangularReflectionMapping
       setComponent(entity, BackgroundComponent, texture)
 
@@ -138,6 +140,7 @@ export const SkyboxComponent = defineComponent({
       if (skyboxState.backgroundType.value !== SkyTypeEnum.cubemap) return
       const onLoad = (texture: CubeTexture) => {
         texture.colorSpace = SRGBColorSpace
+        texture.generateMipmaps = false
         texture.mapping = CubeReflectionMapping
         cubemapTexture.set(texture)
         setComponent(entity, BackgroundComponent, texture)
@@ -192,6 +195,7 @@ export const SkyboxComponent = defineComponent({
       const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
       const texture = sky.generateSkyboxTextureCube(renderer.renderer!)
       texture.mapping = CubeReflectionMapping
+      texture.generateMipmaps = false
 
       setComponent(entity, BackgroundComponent, texture)
       sky.dispose()
