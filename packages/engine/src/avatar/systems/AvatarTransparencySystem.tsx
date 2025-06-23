@@ -95,7 +95,7 @@ export const AvatarTransparencySystem = defineSystem({
   uuid: 'AvatarTransparencySystem',
   insert: { with: AnimationSystemGroup },
   execute,
-  reactor: () => <QueryReactor Components={[AvatarComponent]} ChildEntityReactor={AvatarReactor} />
+  Reactor: () => <QueryReactor Components={[AvatarComponent]} ChildEntityReactor={AvatarReactor} />
 })
 
 const AvatarReactor = (props: { entity: Entity }) => {

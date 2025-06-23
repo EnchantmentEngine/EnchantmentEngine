@@ -72,7 +72,7 @@ export const colorAverageAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ColorAverageEffectProcessReactor,
+      Reactor: ColorAverageEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL

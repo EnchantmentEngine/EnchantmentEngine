@@ -56,7 +56,7 @@ function calculateSceneComplexity(params: SceneComplexityParams): number {
 export const RenderMonitorSystem = defineSystem({
   uuid: 'ee.editor.RenderMonitorSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     const { t } = useTranslation()
 
     const renderInfoState = useHookstate(getMutableState(RenderInfoState))

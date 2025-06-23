@@ -61,7 +61,7 @@ export const TransformGizmoVisualComponent = defineComponent({
     helper: S.Entity()
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const gizmoVisualEntity = useEntityContext()
     const visualComponent = useComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
     const mode = useMutableState(EditorHelperState).transformMode.value

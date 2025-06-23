@@ -477,7 +477,7 @@ export const VolumetricComponent = defineComponent({
     VolumetricComponent.cleanupTrack(entity)
   },
 
-  reactor: VolumetricComponentReactor
+  Reactor: VolumetricComponentReactor
 })
 
 function VolumetricComponentReactor() {

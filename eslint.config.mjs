@@ -2,6 +2,7 @@ import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
+import * as reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,12 +17,19 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['packages/server/upload', 'packages/server/upload_test', '**/*.js', 'packages/projects/projects/**/*', 'packages/spatial/tests/webxr/emulator/**' ]
+    ignores: [
+      'packages/server/upload',
+      'packages/server/upload_test',
+      '**/*.js',
+      'packages/projects/projects/**/*',
+      'packages/spatial/tests/webxr/emulator/**'
+    ]
   },
   ...compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended'),
   {
     plugins: {
-      '@typescript-eslint': typescriptEslint
+      '@typescript-eslint': typescriptEslint,
+      'react-hooks': reactHooks
     },
 
     languageOptions: {
@@ -32,6 +40,10 @@ export default [
 
       parser: tsParser
     },
+
+    linterOptions: {
+			reportUnusedDisableDirectives: "error",
+		},
 
     rules: {
       '@typescript-eslint/no-empty-interface': 'off',
@@ -45,10 +57,11 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'warn',
-      '@typescript-eslint/naming-convention': ['error',
+      '@typescript-eslint/naming-convention': [
+        'error',
         {
-          selector: "typeLike",
-          format: ["PascalCase"]
+          selector: 'typeLike',
+          format: ['PascalCase']
         }
       ],
       'prefer-const': 'warn',
@@ -59,7 +72,9 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/ban-types': 'off',
       'no-fallthrough': 'off',
-      "no-unexpected-multiline": "off"
+      'no-unexpected-multiline': 'off',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn'
     }
   }
 ]

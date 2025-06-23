@@ -162,7 +162,7 @@ export const AvatarLoadingSystem = defineSystem({
   uuid: 'ee.engine.AvatarLoadingSystem',
   insert: { after: AvatarAnimationSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     if (!isClient) return null
 
     const loadingEffect = useHookstate(getMutableState(AnimationState).avatarLoadingEffect)

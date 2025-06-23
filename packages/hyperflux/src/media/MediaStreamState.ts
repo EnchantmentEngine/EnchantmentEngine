@@ -91,7 +91,7 @@ export const MediaStreamState = defineState({
     getMutableState(MediaStreamState).screenshareEnabled.set(false)
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(MediaStreamState)
 
     useEffect(() => {

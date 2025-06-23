@@ -98,7 +98,7 @@ export const LinkComponent = defineComponent({
 
   errors: ['INVALID_URL', 'WINDOW_BLOCKED'],
 
-  reactor: function () {
+  Reactor: function () {
     if (!isClient) return null
     const entity = useEntityContext()
     const link = useComponent(entity, LinkComponent)

@@ -288,7 +288,7 @@ export const FriendMenus = () => {
   return <UseFriendsListeners />
 }
 
-export const reactor = () => {
+export const Reactor = () => {
   const networkConfigState = useHookstate(getMutableState(NetworkState).config)
   const isAuthenticated = useHookstate(getMutableState(AuthState).isAuthenticated).value
 

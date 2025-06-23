@@ -68,7 +68,7 @@ export const PositionalAudioComponent = defineComponent({
     coneOuterGain: S.Number()
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const audio = useComponent(entity, PositionalAudioComponent)
     const mediaElement = useOptionalComponent(entity, MediaElementComponent)

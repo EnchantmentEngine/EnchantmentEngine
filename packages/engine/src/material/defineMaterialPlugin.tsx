@@ -98,7 +98,7 @@ export const defineMaterialPlugin = <T extends Schema>({
   uniforms: uniformSchema,
   onApply,
   update,
-  reactor: Reactor
+  Reactor: Reactor
 }: {
   name: string
   jsonID: string
@@ -114,7 +114,7 @@ export const defineMaterialPlugin = <T extends Schema>({
 
     schema: uniformSchema,
 
-    reactor: ({ entity }) => {
+    Reactor: ({ entity }) => {
       /** Suspend context until material exists */
       const material = useComponent(entity, MaterialStateComponent).material.value as Material
 

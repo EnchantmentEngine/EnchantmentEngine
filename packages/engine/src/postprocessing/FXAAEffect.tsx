@@ -72,7 +72,7 @@ export const fxaaAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: FXAAEffectProcessReactor,
+      Reactor: FXAAEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC

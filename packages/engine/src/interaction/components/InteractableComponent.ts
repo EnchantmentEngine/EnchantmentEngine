@@ -273,7 +273,7 @@ export const InteractableComponent = defineComponent({
     )
   }),
 
-  reactor: () => {
+  Reactor: () => {
     if (!isClient) return null
     const entity = useEntityContext()
     const interactableComponent = useComponent(entity, InteractableComponent)

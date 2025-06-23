@@ -39,7 +39,7 @@ import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { AvatarControllerComponent } from '../../avatar/components/AvatarControllerComponent'
 import { PortalComponent, PortalState } from '../components/PortalComponent'
 
-const reactor = () => {
+const Reactor = () => {
   const activePortalEntityState = useHookstate(getMutableState(PortalState).activePortalEntity)
 
   useEffect(() => {

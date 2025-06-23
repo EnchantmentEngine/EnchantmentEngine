@@ -56,7 +56,7 @@ export const DirectionalLightComponent = defineComponent({
     cameraFar: S.Number({ default: 200 })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
     const directionalLightComponent = useComponent(entity, DirectionalLightComponent)

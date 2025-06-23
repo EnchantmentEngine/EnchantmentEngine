@@ -54,7 +54,7 @@ export const AudioAnalysisComponent = defineComponent({
     trebleMultiplier: S.Number({ default: 1 })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const audioAnaylsisComponent = useComponent(entity, AudioAnalysisComponent)
     const posAudio = useOptionalComponent(entity, PositionalAudioComponent)

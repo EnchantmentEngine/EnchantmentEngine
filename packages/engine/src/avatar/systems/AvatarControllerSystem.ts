@@ -90,7 +90,7 @@ export const AvatarControllerSystem = defineSystem({
   uuid: 'ee.engine.AvatarControllerSystem',
   insert: { after: AvatarInputSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     // we actually have no reference to AvatarState anywhere, so we need to call it to ensure it exists
     useMutableState(AvatarState)
     return null

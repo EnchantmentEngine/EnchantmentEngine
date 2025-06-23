@@ -42,7 +42,7 @@ export const SceneDynamicLoadComponent = defineComponent({
     loaded: S.Bool({ default: false, serialized: false })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const component = useComponent(entity, SceneDynamicLoadComponent)
 

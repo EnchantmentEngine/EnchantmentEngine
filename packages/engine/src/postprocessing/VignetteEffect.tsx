@@ -77,7 +77,7 @@ export const vignetteAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: VignetteEffectProcessReactor,
+      Reactor: VignetteEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

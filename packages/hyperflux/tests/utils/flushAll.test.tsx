@@ -40,7 +40,7 @@ describe('flushAll', () => {
     let flushed = 0
 
     for (let i = 0; i < 1000; i++) {
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const x = [] as number[]
         // mock an expensive operation
         for (let j = 0; j < 10000; j++) {

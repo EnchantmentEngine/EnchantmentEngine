@@ -84,7 +84,7 @@ export const GrabbableState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const grabbableState = useMutableState(GrabbableState)
     return (
       <>

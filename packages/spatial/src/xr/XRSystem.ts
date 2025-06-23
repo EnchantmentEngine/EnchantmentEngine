@@ -47,7 +47,7 @@ const updateSessionSupport = () => {
   XRSystemFunctions.updateSessionSupportForMode('immersive-vr')
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     navigator.xr?.addEventListener('devicechange', XRSystemFunctions.updateSessionSupport)
     XRSystemFunctions.updateSessionSupport()

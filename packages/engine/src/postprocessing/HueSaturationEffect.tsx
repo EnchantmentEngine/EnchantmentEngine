@@ -72,7 +72,7 @@ export const hueSaturationAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: HueSaturationEffectProcessReactor,
+      Reactor: HueSaturationEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC,

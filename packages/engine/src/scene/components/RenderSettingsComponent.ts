@@ -65,7 +65,7 @@ export const RenderSettingsComponent = defineComponent({
     shadowMapType: ShadowMapSchema
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const rendererEntity = useRendererEntity(entity)
     const component = useComponent(entity, RenderSettingsComponent)

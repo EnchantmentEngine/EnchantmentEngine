@@ -78,7 +78,7 @@ export const XruiNameplateComponent = defineComponent({
 
   Transitions: new Map<Entity, ReturnType<typeof createTransitionState>>(),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const networkObject = useComponent(entity, NetworkObjectComponent)
     const user = useGet(userPath, networkObject.ownerId.value)

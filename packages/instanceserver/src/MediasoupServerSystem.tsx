@@ -134,7 +134,7 @@ const NetworkReactor = (props: { networkID: InstanceID }) => {
   )
 }
 
-export const reactor = () => {
+export const Reactor = () => {
   const networkIDs = Object.entries(useHookstate(getMutableState(NetworkState).networks).value)
     .filter(([networkID, network]) => network.topic === NetworkTopics.world)
     .map(([networkID, network]) => networkID)

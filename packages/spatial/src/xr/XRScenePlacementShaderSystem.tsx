@@ -98,7 +98,7 @@ function XRScenePlacementReactor() {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   return <QueryReactor ChildEntityReactor={XRScenePlacementReactor} Components={[VisibleComponent, MeshComponent]} />
 }
 

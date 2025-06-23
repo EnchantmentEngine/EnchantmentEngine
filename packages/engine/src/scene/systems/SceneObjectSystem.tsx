@@ -154,7 +154,7 @@ const ChildReactor = (props: { entity: Entity; parentEntity: Entity }) => {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   return (
     <>
       <QueryReactor Components={[GLTFComponent, UUIDComponent]} ChildEntityReactor={ModelEntityReactor} />

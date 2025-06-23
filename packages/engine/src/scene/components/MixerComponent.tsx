@@ -327,7 +327,7 @@ export const MixerComponent = defineComponent({
    *
    * Handles initialization of the component state and triggers mixing when relevant properties change
    */
-  reactor: ({ entity }: { entity: Entity }) => {
+  Reactor: ({ entity }: { entity: Entity }) => {
     const mixerComp = useComponent(entity, MixerComponent)
 
     // Initialize component state on first render

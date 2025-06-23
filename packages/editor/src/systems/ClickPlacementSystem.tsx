@@ -259,7 +259,7 @@ const clickListener = () => {
 export const ClickPlacementSystem = defineSystem({
   uuid: 'ee.studio.ClickPlacementSystem',
   insert: { after: TransformDirtyCleanupSystem },
-  reactor: () => {
+  Reactor: () => {
     const parentEntity = useHookstate(getMutableState(EditorState)).rootEntity
 
     return parentEntity.value ? (

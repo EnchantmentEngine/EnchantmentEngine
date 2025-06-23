@@ -79,7 +79,7 @@ export const PeerToPeerNetworkState = defineState({
     }
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(PeerToPeerNetworkState)
 
     return (

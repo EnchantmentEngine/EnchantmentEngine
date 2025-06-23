@@ -302,7 +302,7 @@ export const useEntityTransform = makeEventNodeDefinition({
           prevTransform[key] = cloneDeep(transform[key])
         })
       },
-      reactor: () => {
+      Reactor: () => {
         /*const transformState = useComponent(entity, TransformComponent)
         Object.entries(transformState.value).forEach(([key, value]) => {
           if (!Object.keys(useEntityTransform.out).includes(key)) return

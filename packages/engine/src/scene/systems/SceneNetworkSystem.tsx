@@ -104,7 +104,7 @@ const SceneReactor = () => {
   return <EntityArrayBoundary entities={sourcedEntities} ChildEntityReactor={SourcedSceneReactor} />
 }
 
-const reactor = () => {
+const Reactor = () => {
   const ready = useHookstate(NetworkState.worldNetworkState).value?.ready
 
   if (!ready) return null

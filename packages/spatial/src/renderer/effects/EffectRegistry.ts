@@ -44,7 +44,7 @@ export type EffectReactorProps = {
  * @param schema specifies a schema for the editor to generate UI for each effect. (@todo Eventually can generate from default values)
  * @example
  * {
-    reactor: ChromaticAberrationEffectProcessReactor,
+    Reactor: ChromaticAberrationEffectProcessReactor,
     defaultValues: {
       hue: 1,
       saturation: 1
@@ -56,7 +56,7 @@ export type EffectReactorProps = {
    }
  */
 export interface EffectRegistryEntry {
-  reactor: React.FC<EffectReactorProps>
+  Reactor: React.FC<EffectReactorProps>
   defaultValues: any
   schema: any
 }

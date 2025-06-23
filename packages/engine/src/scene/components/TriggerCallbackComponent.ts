@@ -51,7 +51,7 @@ export const TriggerCallbackComponent = defineComponent({
     )
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
 
     useEffect(() => {

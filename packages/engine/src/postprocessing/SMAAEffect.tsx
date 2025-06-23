@@ -66,7 +66,7 @@ export const smaaAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: SMAAEffectProcessReactor,
+      Reactor: SMAAEffectProcessReactor,
       defaultValues: {
         isActive: false,
         preset: SMAAPreset.MEDIUM,

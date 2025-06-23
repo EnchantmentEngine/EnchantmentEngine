@@ -173,7 +173,7 @@ export const PerformanceState = defineState({
     performanceSmoothingAccum: 0
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
     const renderer = useOptionalComponent(viewerEntity, RendererComponent)
 

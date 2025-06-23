@@ -82,62 +82,62 @@ export const ComponentHelperState = defineState({
     return {
       [DirectionalLightComponent.jsonID]: {
         icon: DirectionalLightIcon,
-        reactor: DirectionalLightHelperReactor,
+        Reactor: DirectionalLightHelperReactor,
         directional: true,
         priority: 3
       },
       [EnvMapBakeComponent.jsonID]: {
         icon: EnvMapBakeIcon,
-        reactor: EnvmapBakeHelperReactor,
+        Reactor: EnvmapBakeHelperReactor,
         priority: 2
       },
       [MediaComponent.jsonID]: {
         icon: MediaIcon,
-        reactor: MediaHelperReactor,
+        Reactor: MediaHelperReactor,
         priority: 1
       },
       [HemisphereLightComponent.jsonID]: {
         icon: HemisphereLightIcon,
-        reactor: HemiSphereLightHelperReactor,
+        Reactor: HemiSphereLightHelperReactor,
         priority: 3
       },
       [MountPointComponent.jsonID]: {
         icon: MountPointIcon,
-        reactor: MountPointHelperReactor,
+        Reactor: MountPointHelperReactor,
         volume: true,
         priority: 1
       },
       [PointLightComponent.jsonID]: {
         icon: PointLightIcon,
-        reactor: PointLightHelperReactor,
+        Reactor: PointLightHelperReactor,
         priority: 3
       },
       [PositionalAudioComponent.jsonID]: {
         icon: PositionalAudioIcon,
-        reactor: PositionalAudioHelperReactor,
+        Reactor: PositionalAudioHelperReactor,
         directional: true,
         priority: 2
       },
       [PortalComponent.jsonID]: {
         icon: PortalIcon,
-        reactor: PortalHelperReactor,
+        Reactor: PortalHelperReactor,
         priority: 2
       },
       [ScenePreviewCameraComponent.jsonID]: {
         icon: CameraIcon,
-        reactor: ScenePreviewCameraHelperReactor,
+        Reactor: ScenePreviewCameraHelperReactor,
         directional: true,
         priority: 2
       },
       [SpotLightComponent.jsonID]: {
         icon: SpotLightIcon,
-        reactor: SpotLightHelperReactor,
+        Reactor: SpotLightHelperReactor,
         directional: true,
         priority: 3
       },
       [SpawnPointComponent.jsonID]: {
         icon: SpawnPointIcon,
-        reactor: SpawnPointHelperReactor,
+        Reactor: SpawnPointHelperReactor,
         directional: true,
         volume: true,
         priority: 2
@@ -154,7 +154,7 @@ export const ComponentHelperState = defineState({
       },
       [ColliderComponent.jsonID]: {
         icon: BoxColliderIcon,
-        reactor: ColliderHelperReactor,
+        Reactor: ColliderHelperReactor,
         volume: true,
         priority: -1
       },

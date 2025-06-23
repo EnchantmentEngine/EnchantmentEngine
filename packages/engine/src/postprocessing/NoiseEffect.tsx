@@ -72,7 +72,7 @@ export const noiseAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: NoiseEffectProcessReactor,
+      Reactor: NoiseEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SCREEN,

@@ -193,7 +193,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     const networkState = getMutableState(NetworkSchemaState)
 

@@ -88,7 +88,7 @@ const PhysicsReactor = () => {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   const engineRendererSettings = useMutableState(RendererState)
   const originEntity = useMutableState(ReferenceSpaceState).originEntity.value
 

@@ -380,7 +380,7 @@ export const LoadingUISystem = defineSystem({
   uuid: 'ee.client.LoadingUISystem',
   insert: { before: TransformDirtyUpdateSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
 
     if (!viewerEntity) return null

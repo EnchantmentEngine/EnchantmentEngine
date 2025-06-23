@@ -66,7 +66,7 @@ export const outlineAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: OutlineEffectProcessReactor,
+      Reactor: OutlineEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SCREEN,

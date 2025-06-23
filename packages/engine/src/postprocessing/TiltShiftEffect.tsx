@@ -74,7 +74,7 @@ export const tiltShiftAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: TiltShiftEffectProcessReactor,
+      Reactor: TiltShiftEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

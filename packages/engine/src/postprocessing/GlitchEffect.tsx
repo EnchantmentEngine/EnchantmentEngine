@@ -73,7 +73,7 @@ export const glitchAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: GlitchEffectProcessReactor,
+      Reactor: GlitchEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

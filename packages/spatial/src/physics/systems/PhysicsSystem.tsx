@@ -159,7 +159,7 @@ export function spatialInputRaycastHeuristic(
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const physicsLoaded = useHookstate(false)
   const physicsLoadPending = useHookstate(false)
   const physicsQuery = useQuery([SceneComponent])

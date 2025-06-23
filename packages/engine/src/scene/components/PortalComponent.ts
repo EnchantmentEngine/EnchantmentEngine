@@ -81,7 +81,7 @@ export const PortalComponent = defineComponent({
     mesh: S.Type<Mesh<SphereGeometry, MeshBasicMaterial>>({ serialized: false })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
 
     useEffect(() => {

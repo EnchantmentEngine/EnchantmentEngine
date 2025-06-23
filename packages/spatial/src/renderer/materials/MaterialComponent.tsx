@@ -172,7 +172,7 @@ export const MaterialInstanceComponent = defineComponent({
     }
   },
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const materialComponent = useOptionalComponent(entity, MaterialInstanceComponent)
 

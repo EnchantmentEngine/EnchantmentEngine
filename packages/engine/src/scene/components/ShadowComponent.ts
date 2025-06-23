@@ -41,7 +41,7 @@ export const ShadowComponent = defineComponent({
     receive: S.Bool({ default: true })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const shadowComponent = useComponent(entity, ShadowComponent)
     const object = useComponent(entity, ObjectComponent).get(NO_PROXY) as Mesh

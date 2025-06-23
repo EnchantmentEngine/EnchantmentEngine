@@ -33,7 +33,7 @@ import { useEffect } from 'react'
 import { RouterState } from '../common/services/RouterService'
 import { LocationService, LocationState } from '../social/services/LocationService'
 
-export const reactor = () => {
+export const Reactor = () => {
   const locationState = useMutableState(LocationState)
   const portalState = useMutableState(PortalState)
 

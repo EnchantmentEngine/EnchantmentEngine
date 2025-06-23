@@ -72,7 +72,7 @@ export const scanlineAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ScanlineEffectProcessReactor,
+      Reactor: ScanlineEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.OVERLAY,

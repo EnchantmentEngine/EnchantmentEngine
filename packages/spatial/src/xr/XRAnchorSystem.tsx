@@ -381,7 +381,7 @@ export const XRAnchorSystem = defineSystem({
   uuid: 'ee.engine.XRAnchorSystem',
   insert: { after: XRCameraUpdateSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <Reactor />
   }

@@ -83,7 +83,7 @@ export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
     shader.fragmentShader = shader.fragmentShader.replace(/#include <alphatest_fragment>/, ditheringAlphatestChunk)
   },
 
-  reactor: ({ entity }) => {
+  Reactor: ({ entity }) => {
     useEffect(() => {
       getComponent(entity, MaterialStateComponent).material.side = FrontSide
     }, [])

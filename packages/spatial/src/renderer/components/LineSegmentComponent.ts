@@ -48,7 +48,7 @@ export const LineSegmentComponent = defineComponent({
     layerMask: S.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, LineSegmentComponent)
     const lineSegment = useHookstate(

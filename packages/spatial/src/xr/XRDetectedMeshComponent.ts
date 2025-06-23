@@ -69,7 +69,7 @@ export const XRDetectedMeshComponent = defineComponent({
     placementHelper: S.Type<Mesh>()
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, XRDetectedMeshComponent)
     // const scenePlacementMode = useHookstate(getMutableState(XRState).scenePlacementMode)

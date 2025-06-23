@@ -86,7 +86,7 @@ export const LoopAnimationComponent = defineComponent({
     _action: S.Type<AnimationAction | null>({ serialized: false, default: null })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
 
     const loopAnimationComponent = useComponent(entity, LoopAnimationComponent)

@@ -55,7 +55,7 @@ export const AvatarIKTargetState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const avatarIKTargetState = useMutableState(AvatarIKTargetState)
     return (
       <>

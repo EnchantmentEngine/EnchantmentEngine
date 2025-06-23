@@ -135,7 +135,7 @@ export const AssetState = defineState({
     return new Promise<Entity>((resolve) => {
       const assetEntity = AssetState.load(source, uuid, parentEntity, layer)
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const progress = useOptionalComponent(assetEntity, GLTFComponent)?.progress?.value
 
         useEffect(() => {
@@ -157,7 +157,7 @@ export const AssetState = defineState({
 export const GLTFLoadSystem = defineSystem({
   uuid: 'ee.engine.gltf.GLTFLoadSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     const gltfSimulationEntities = useQuery([GLTFComponent]).filter((e) => !LayerComponent.hasUpstreamEntity(e))
     const gltfAuthoringEntities = useQuery([GLTFComponent], Layers.Authoring)
     const gltfEntities = [...gltfSimulationEntities, ...gltfAuthoringEntities]

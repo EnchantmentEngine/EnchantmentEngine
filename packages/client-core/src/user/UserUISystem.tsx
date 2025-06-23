@@ -146,7 +146,7 @@ const UserSystemReactor = () => {
 export const UserUISystem = defineSystem({
   uuid: 'ee.client.UserUISystem2',
   insert: { after: PresentationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     const userID = useHookstate(getMutableState(EngineState)).userID.value
     const ready = useHookstate(getMutableState(LoadingUISystemState)).ready
 

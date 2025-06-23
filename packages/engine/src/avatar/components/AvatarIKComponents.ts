@@ -53,7 +53,7 @@ export const AvatarIKTargetComponent = defineComponent({
   name: 'AvatarIKTargetComponent',
   storage: { blendWeight: createResizableTypeArray(Float64Array) },
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).avatarDebug)
 

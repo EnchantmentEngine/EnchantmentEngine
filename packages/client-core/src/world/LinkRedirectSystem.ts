@@ -30,7 +30,7 @@ import { useEffect } from 'react'
 import { RouterState } from '../common/services/RouterService'
 import { LocationService } from '../social/services/LocationService'
 
-export const reactor = () => {
+export const Reactor = () => {
   const linkState = useMutableState(LinkState)
 
   useEffect(() => {

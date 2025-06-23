@@ -110,7 +110,7 @@ const FogReactor = () => {
   )
 }
 
-const reactor = () => {
+const Reactor = () => {
   // TODO support multiple fog entities via spatial queries
   return <QueryReactor ChildEntityReactor={FogReactor} Components={[FogSettingsComponent]} />
 }

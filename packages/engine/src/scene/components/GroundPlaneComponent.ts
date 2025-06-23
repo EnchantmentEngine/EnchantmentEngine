@@ -61,7 +61,7 @@ export const GroundPlaneComponent = defineComponent({
     visible: S.Bool({ default: true })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
 
     const component = useComponent(entity, GroundPlaneComponent)

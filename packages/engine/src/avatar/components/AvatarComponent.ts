@@ -105,7 +105,7 @@ export const AvatarComponent = defineComponent({
     return UUIDComponent.useEntityByUUID(AvatarComponent.getSelfAvatarUUID())
   },
 
-  reactor: ({ entity }) => {
+  Reactor: ({ entity }) => {
     const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const avatarComponent = useComponent(entity, AvatarComponent)
     const cameraSettingsState = useMutableState(CameraSettingsState)

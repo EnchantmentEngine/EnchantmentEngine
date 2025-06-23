@@ -75,7 +75,7 @@ export const depthOfFieldAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: DepthOfFieldEffectProcessReactor,
+      Reactor: DepthOfFieldEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

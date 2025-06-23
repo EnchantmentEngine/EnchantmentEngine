@@ -342,7 +342,7 @@ const execute = () => {
   getState(XRState).xrFrame = new XRFrameProxy() as any as XRFrame
 }
 
-const reactor = () => {
+const Reactor = () => {
   const hasPersistentAnchor = useQuery([PersistentAnchorComponent]).length
   const arSupported = useHookstate(getMutableState(XRState).supportedSessionModes['immersive-ar'])
   const using8thWall = isMobile && (!navigator.xr || !arSupported.value)

@@ -184,7 +184,7 @@ export const HyperspaceTagComponent = defineComponent({
     transition: TransitionStateSchema(createTransitionState(0.5, 'OUT'))
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const [galaxyTexture] = useTexture(
       `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/galaxyTexture.jpg`,

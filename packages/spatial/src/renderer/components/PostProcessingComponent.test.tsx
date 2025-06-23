@@ -93,7 +93,7 @@ export const MockEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
 const addMockEffectToRegistry = () => {
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: MockEffectProcessReactor,
+      Reactor: MockEffectProcessReactor,
       defaultValues: {
         isActive: false,
         effectParam: false

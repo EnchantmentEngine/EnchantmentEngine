@@ -57,7 +57,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const renderer = useMutableState(RendererState)
 
   useEffect(() => {

@@ -53,7 +53,7 @@ export const GrabbableComponent = defineComponent({
 
   grabbableCallbackName: 'grabCallback',
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const isGrabbed = useHasComponent(entity, GrabbedComponent)
     const interactableComponent = useComponent(entity, InteractableComponent)

@@ -72,7 +72,7 @@ export const brightnessContrastAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: BrightnessContrastEffectProcessReactor,
+      Reactor: BrightnessContrastEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC,

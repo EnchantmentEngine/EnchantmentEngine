@@ -261,7 +261,7 @@ const execute = () => {
   })
 }
 
-const reactor = () => {
+const Reactor = () => {
   const cameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
 
   useEffect(() => {

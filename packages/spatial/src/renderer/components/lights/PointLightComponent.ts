@@ -50,7 +50,7 @@ export const PointLightComponent = defineComponent({
     helperEntity: S.Entity({ serialized: false })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
 

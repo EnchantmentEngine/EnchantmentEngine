@@ -166,5 +166,5 @@ export const MediaControlSystem = defineSystem({
   uuid: 'ee.engine.MediaControlSystem',
   insert: { after: InputSystemGroup },
   execute,
-  reactor: () => <QueryReactor Components={[MediaComponent]} ChildEntityReactor={MediaXRUIReactor} />
+  Reactor: () => <QueryReactor Components={[MediaComponent]} ChildEntityReactor={MediaXRUIReactor} />
 })

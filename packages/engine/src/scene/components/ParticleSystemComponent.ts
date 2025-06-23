@@ -156,7 +156,7 @@ export const ParticleSystemComponent = defineComponent({
     behaviorParameters: JSON.parse(JSON.stringify(component.behaviorParameters))
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const componentState = useComponent(entity, ParticleSystemComponent)
     const metadata = useHookstate({ textures: {}, geometries: {}, materials: {} } as ParticleSystemMetadata)

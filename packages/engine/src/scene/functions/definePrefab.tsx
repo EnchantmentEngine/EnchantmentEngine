@@ -88,7 +88,7 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  *   schema: S.Object({
  *     name: S.String()
  *   }),
- *   reactor: ({ entity, prefab }) => {
+ *   Reactor: ({ entity, prefab }) => {
  *     useEffect(() => {
  *       setComponent(entity, NameComponent, name)
  *     }, [prefab.name])
@@ -137,7 +137,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
       })
     },
 
-    reactor: () => {
+    Reactor: () => {
       const prefabState = useMutableState($State)
       return (
         <>
@@ -221,7 +221,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
     action: $Actions.spawn,
 
-    reactor: ({ entity }) => {
+    Reactor: ({ entity }) => {
       const sourceEntity = UUIDComponent.useSourceEntity(entity)
       const isFromScene = useHasComponent(sourceEntity, GLTFComponent)
 

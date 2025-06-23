@@ -119,7 +119,7 @@ export const EntityNetworkState = defineState({
       })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(EntityNetworkState)
     return (
       <>

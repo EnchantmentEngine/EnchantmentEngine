@@ -123,7 +123,7 @@ export const LegacyVolumetricComponent = defineComponent({
     }
   },
 
-  reactor: VolumetricReactor
+  Reactor: VolumetricReactor
 })
 
 export function VolumetricReactor() {

@@ -45,7 +45,7 @@ export const CameraComponent = defineComponent({
   onInit: (entity, initial) =>
     new ArrayCamera([new PerspectiveCamera(initial.fov, initial.aspect, initial.near, initial.far)]),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const cameraComponent = useComponent(entity, CameraComponent)
 

@@ -195,7 +195,7 @@ export const MediasoupTransportState = defineState({
     return getState(MediasoupTransportObjectsState)[transport.transportID]
   },
 
-  reactor: () => {
+  Reactor: () => {
     const networkIDs = useMutableState(MediasoupTransportState)
     return (
       <>

@@ -73,7 +73,7 @@ export const chromaticAberrationAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ChromaticAberrationEffectProcessReactor,
+      Reactor: ChromaticAberrationEffectProcessReactor,
       defaultValues: {
         isActive: false,
         offset: new Vector2(1e-3, 5e-4),

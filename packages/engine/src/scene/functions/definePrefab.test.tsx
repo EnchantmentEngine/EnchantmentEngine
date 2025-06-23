@@ -97,7 +97,7 @@ describe('definePrefab', () => {
         name: S.String({ default: 'Default' }),
         isActive: S.Bool({ default: true })
       }),
-      reactor: () => null
+      Reactor: () => null
     })
 
     expect(TestPrefabComponent.name).toBe('TestPrefab')
@@ -130,7 +130,7 @@ describe('definePrefab', () => {
         health: S.Number({ default: 100 }),
         name: S.String({ default: 'Default' })
       }),
-      reactor: () => null
+      Reactor: () => null
     })
 
     expect(TestPrefabComponent.reactor).toBeDefined()
@@ -148,7 +148,7 @@ describe('definePrefab', () => {
         health: S.Number({ default: 100 }),
         name: S.String({ default: 'Default' })
       }),
-      reactor: () => null
+      Reactor: () => null
     })
 
     expect(TestPrefabComponent.spawn).toBeDefined()
@@ -198,7 +198,7 @@ describe('definePrefab', () => {
         health: S.Number({ default: 100 }),
         name: S.String({ default: 'Default' })
       }),
-      reactor: () => null
+      Reactor: () => null
     })
 
     const gltf: GLTF.IGLTF = {

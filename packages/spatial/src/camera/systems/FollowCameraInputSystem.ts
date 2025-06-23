@@ -170,7 +170,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const xrSession = useMutableState(XRState).session.value
 
   useEffect(() => {

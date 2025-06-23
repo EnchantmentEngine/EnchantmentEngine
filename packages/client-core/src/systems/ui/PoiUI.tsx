@@ -63,7 +63,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/Re
 export const PoiUiSystem = defineSystem({
   uuid: 'ee.engine.PoiUiSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => (
+  Reactor: () => (
     <QueryReactor Components={[PoiCameraComponent]} ChildEntityReactor={PoiReactor} layer={Layers.Simulation} />
   )
 })

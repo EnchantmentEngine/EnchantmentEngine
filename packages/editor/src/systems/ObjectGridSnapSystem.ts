@@ -261,7 +261,7 @@ const models = defineQuery([GLTFComponent, Not(SceneComponent), Not(AvatarRigCom
 export const ObjectGridSnapSystem = defineSystem({
   uuid: 'ee.engine.scene.ObjectGridSnapSystem',
   insert: { after: TransformSystem },
-  reactor: () => {
+  Reactor: () => {
     const snapState = useMutableState(ObjectGridSnapState)
     const selectionState = useMutableState(SelectionState)
 

@@ -72,7 +72,7 @@ export const InputPointerComponent = defineComponent({
     cameraEntity: S.Entity()
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const inputPointerComponent = useComponent(entity, InputPointerComponent)
 

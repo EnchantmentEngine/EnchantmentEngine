@@ -27,7 +27,6 @@ Infinite Reality Engine. All Rights Reserved.
 /// <reference types="vite-plugin-svgr/client" />
 
 
-/* eslint-disable no-unused-vars */
 declare module '*.jpg'
 declare module '*.png'
 declare module '*.svg'

@@ -136,7 +136,7 @@ export const VideoComponent = defineComponent({
 
   uniqueVideoEntities: [] as Entity[],
 
-  reactor: VideoReactor
+  Reactor: VideoReactor
 })
 
 function VideoReactor() {

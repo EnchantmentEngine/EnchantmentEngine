@@ -919,7 +919,7 @@ export const KHRMaterialsPBRSpecularGlossinessComponent = defineComponent({
     specularGlossinessTexture: S.Optional(TextureInfoSchema)
   })
 
-  // reactor: () => {
+  // Reactor: () => {
   //   const entity = useEntityContext()
   //   const component = useComponent(entity, KHRMaterialsPBRSpecularGlossinessComponent)
   //   const materialStateComponent = useComponent(entity, MaterialStateComponent)

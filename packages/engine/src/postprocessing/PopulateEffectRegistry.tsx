@@ -89,7 +89,7 @@ export const populateEffectRegistry = () => {
 export const PostProcessingRegisterSystem = defineSystem({
   uuid: 'ee.engine.PostProcessingRegisterSystem',
   insert: { before: PresentationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     useEffect(() => populateEffectRegistry(), [])
     return null
   }

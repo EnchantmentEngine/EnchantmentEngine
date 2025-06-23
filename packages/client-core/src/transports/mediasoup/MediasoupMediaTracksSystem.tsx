@@ -362,7 +362,7 @@ const ScreenshareReactor = () => {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   const mediaNetworkState = useMediaNetwork()
 
   /** @todo in future we will have a better way of determining whether we need to connect to a server or not */

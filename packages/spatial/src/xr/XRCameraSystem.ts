@@ -268,7 +268,7 @@ export const XRCameraInputSystem = defineSystem({
   uuid: 'ee.engine.XRCameraInputSystem',
   insert: { with: XRSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     const xrSession = useMutableState(XRState).session.value
 
     useEffect(() => {

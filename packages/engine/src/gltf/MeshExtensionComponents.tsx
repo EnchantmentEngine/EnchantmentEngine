@@ -67,7 +67,7 @@ export const KHRLightsPunctualComponent = defineComponent({
   }),
 
   /** @todo need to refactor this into whatever API three uses, as we clean up the buffers before it can be loaded */
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     useComponent(entity, EntityTreeComponent)
     const component = useComponent(entity, KHRLightsPunctualComponent)

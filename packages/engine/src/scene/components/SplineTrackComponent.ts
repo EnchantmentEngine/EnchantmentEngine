@@ -62,7 +62,7 @@ export const SplineTrackComponent = defineComponent({
     alpha: S.Number({ default: 0, serialized: false })
   }),
 
-  reactor: function (props) {
+  Reactor: function (props) {
     const entity = useEntityContext()
     const component = useComponent(entity, SplineTrackComponent)
 

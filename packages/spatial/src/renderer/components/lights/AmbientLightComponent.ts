@@ -43,7 +43,7 @@ export const AmbientLightComponent = defineComponent({
     intensity: S.Number({ default: 1 })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const ambientLightComponent = useComponent(entity, AmbientLightComponent)
     const light = useHookstate(() => new AmbientLight()).value as AmbientLight

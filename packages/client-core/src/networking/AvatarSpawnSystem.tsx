@@ -210,7 +210,7 @@ const CameraSettingsReactor = (props: {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   const userID = useMutableState(EngineState).userID.value
   const locationSceneURL = useHookstate(getMutableState(LocationState).currentLocation.location.sceneURL).value
   const sceneEntity = useLoadedSceneEntity(locationSceneURL)

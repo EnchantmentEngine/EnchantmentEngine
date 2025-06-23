@@ -78,7 +78,7 @@ export const XRDetectedPlaneComponent = defineComponent({
     placementHelper: S.Type<Mesh>({ serialized: false })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, XRDetectedPlaneComponent)
 

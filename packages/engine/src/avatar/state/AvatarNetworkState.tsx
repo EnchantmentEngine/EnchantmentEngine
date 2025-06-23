@@ -74,7 +74,7 @@ export const AvatarState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const avatarState = useMutableState(AvatarState)
     return (
       <>

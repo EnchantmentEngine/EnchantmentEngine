@@ -37,7 +37,7 @@ export const OverlayComponentState = defineState({
 export const OverlaySystem = defineSystem({
   uuid: 'ir.client.OverlaySystem',
   insert: {},
-  reactor: () => {
+  Reactor: () => {
     getMutableState(OverlayComponentState)
     return null
   }

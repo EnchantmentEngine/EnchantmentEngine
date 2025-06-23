@@ -78,7 +78,7 @@ export const lut1DAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: LUT1DEffectProcessReactor,
+      Reactor: LUT1DEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC,

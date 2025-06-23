@@ -476,7 +476,7 @@ const awaitMaterial = (materialEntity: Entity, context: GLTFSceneExportContext) 
   return new Promise<number>((resolve) => {
     if (typeof context.materialPromises.value[materialEntity] === 'number')
       return resolve(context.materialPromises.value[materialEntity])
-    const reactor = startReactor(() => {
+    const Reactor = startReactor(() => {
       const material = useHookstate(context.materialPromises[materialEntity])
       useEffect(() => {
         if (typeof material.value === 'number') {

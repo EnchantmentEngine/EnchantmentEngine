@@ -48,7 +48,7 @@ export const MediaSettingsComponent = defineComponent({
     coneOuterGain: S.Number()
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const component = useComponent(entity, MediaSettingsComponent)
 

@@ -98,7 +98,7 @@ export const FeathersState = defineState({
       >
     >,
 
-  reactor: () => {
+  Reactor: () => {
     const feathersState = useMutableState(FeathersState)
     return (
       <>

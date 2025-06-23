@@ -67,7 +67,7 @@ export const setInitialState = (def: StateDefinition<any, any, any, any>) => {
   } else {
     HyperFlux.store.stateMap[def.name] = hookstate(initial, extend(identifiable(def.name), def.extension))
     if (def.reactor) {
-      const reactor = startReactor(def.reactor)
+      const Reactor = startReactor(def.reactor)
       HyperFlux.store.stateReactors[def.name] = reactor
     }
   }

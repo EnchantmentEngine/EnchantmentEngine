@@ -65,7 +65,7 @@ export const AnimationSystem = defineSystem({
   /**
    * Kind of a hack to to track animations in the resource manager, because they arent reactively set on the ObjectComponent
    */
-  reactor: () => {
+  Reactor: () => {
     return (
       <>
         <QueryReactor Components={[AnimationComponent]} ChildEntityReactor={AnimationReactor} />

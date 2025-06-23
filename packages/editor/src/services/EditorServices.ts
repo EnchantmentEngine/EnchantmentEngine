@@ -90,7 +90,7 @@ export const EditorState = defineState({
     const sourceEntity = UUIDComponent.getSourceEntity(entity)
     return sourceEntity === rootEntity
   },
-  reactor: () => {
+  Reactor: () => {
     const linkState = useMutableState(LinkState)
 
     useEffect(() => {

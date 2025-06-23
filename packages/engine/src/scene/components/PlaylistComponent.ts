@@ -87,7 +87,7 @@ export const PlaylistComponent = defineComponent({
       component.currentTrackUUID.set(component.tracks[randomIndex].uuid.value)
     }
   },
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const component = useComponent(entity, PlaylistComponent)
 

@@ -53,7 +53,7 @@ export const SplineHelperComponent = defineComponent({
   name: 'SplineHelperComponent',
   schema: S.Object({ layerMask: S.Number({ default: ObjectLayerMasks.NodeHelper }) }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, SplineHelperComponent)
     const spline = useComponent(entity, SplineComponent)

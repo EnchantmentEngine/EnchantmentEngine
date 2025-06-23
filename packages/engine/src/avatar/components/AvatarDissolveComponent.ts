@@ -68,7 +68,7 @@ export const AvatarDissolveComponent = defineComponent({
     )
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
 
     useEffect(() => {

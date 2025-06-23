@@ -199,7 +199,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     addDataChannelHandler(mocapDataChannelType, handleMocapData)
     return () => {

@@ -79,7 +79,7 @@ export const SkyboxComponent = defineComponent({
     })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     // if (!isClient) return null
 

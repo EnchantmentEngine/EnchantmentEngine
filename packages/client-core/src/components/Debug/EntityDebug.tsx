@@ -168,7 +168,7 @@ export const EntityDebug = () => {
   const erroredComponents = useHookstate([] as any[])
   const suspendedEntities = useMutableState(SuspendedQueryChildState)
     .get(NO_PROXY)
-    .map((c) => [c.entity, { props: c.props, reactor: c.ChildEntityReactor }] as [Entity, any])
+    .map((c) => [c.entity, { props: c.props, Reactor: c.ChildEntityReactor }] as [Entity, any])
     .reduce(
       (acc, v) => {
         const [entity, vals] = v

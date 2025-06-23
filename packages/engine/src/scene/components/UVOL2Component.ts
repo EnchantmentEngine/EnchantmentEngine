@@ -347,7 +347,7 @@ export const UVOL2Component = defineComponent({
     return true
   },
 
-  reactor: UVOL2Reactor
+  Reactor: UVOL2Reactor
 })
 
 const loadDraco = (url: string) => {

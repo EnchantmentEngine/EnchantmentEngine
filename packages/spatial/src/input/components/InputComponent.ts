@@ -383,7 +383,7 @@ export const InputComponent = defineComponent({
     return hasFocus
   },
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const input = useComponent(entity, InputComponent)
 

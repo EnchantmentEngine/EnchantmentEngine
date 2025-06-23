@@ -117,7 +117,7 @@ export const ComponentShelfCategoriesState = defineState({
       Camera: [PoiComponent] //PoiHotspotComponent
     } as Record<string, Component[]>
   },
-  reactor: () => {
+  Reactor: () => {
     const [portalEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Portal])
     const [grabbleEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Grabble])
     const [splineEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.Spline])

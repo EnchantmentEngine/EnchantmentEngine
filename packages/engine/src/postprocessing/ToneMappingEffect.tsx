@@ -74,7 +74,7 @@ export const toneMappingAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ToneMappingEffectProcessReactor,
+      Reactor: ToneMappingEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC,

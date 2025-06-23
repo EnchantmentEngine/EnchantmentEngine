@@ -220,7 +220,7 @@ export const XRHitTestComponent = defineComponent({
     results: S.Array(S.Type<XRHitTestResult>())
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
 
     const hitTest = useOptionalComponent(entity, XRHitTestComponent)
@@ -271,7 +271,7 @@ export const XRAnchorComponent = defineComponent({
     anchor: S.Type<XRAnchor>()
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const xrAnchorComponent = useComponent(entity, XRAnchorComponent)
 
@@ -294,7 +294,7 @@ export const XRSpaceComponent = defineComponent({
     baseSpace: S.Type<XRSpace>()
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const xrSpaceComponent = useComponent(entity, XRSpaceComponent)
 

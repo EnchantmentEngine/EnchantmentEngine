@@ -242,7 +242,7 @@ export const WidgetUISystem = defineSystem({
   uuid: 'ee.client.WidgetUISystem',
   insert: { before: TransformSystem }
   // execute,
-  // reactor: () => {
+  // Reactor: () => {
   //   if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
   //   return <Reactor />
   // }

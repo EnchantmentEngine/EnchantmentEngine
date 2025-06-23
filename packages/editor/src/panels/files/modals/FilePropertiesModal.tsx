@@ -114,7 +114,7 @@ export default function FilePropertiesModal() {
           project: resource.project
         })
       }
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const updatedResources = useFind(staticResourcePath, {
           query: {
             key: {

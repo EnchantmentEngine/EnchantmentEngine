@@ -79,7 +79,7 @@ export const textureAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: TextureEffectProcessReactor,
+      Reactor: TextureEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

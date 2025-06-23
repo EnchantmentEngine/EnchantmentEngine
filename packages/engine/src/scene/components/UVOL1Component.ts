@@ -119,7 +119,7 @@ export const UVOL1Component = defineComponent({
     loadingEffectEnded: S.Bool({ default: false })
   }),
 
-  reactor: UVOL1Reactor
+  Reactor: UVOL1Reactor
 })
 
 function UVOL1Reactor() {

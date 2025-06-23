@@ -747,7 +747,7 @@ export const ResourceState = defineState({
   /** Removes a resource even if it is still being referenced, needed for updating assets in the studio */
   __unsafeRemoveResource: removeResource,
 
-  reactor: () => {
+  Reactor: () => {
     return (
       <>
         <QueryReactor Components={[ObjectComponent]} ChildEntityReactor={ObjectReactor} />

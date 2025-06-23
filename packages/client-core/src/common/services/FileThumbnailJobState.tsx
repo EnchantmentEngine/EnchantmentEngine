@@ -388,7 +388,7 @@ export const FileThumbnailJobState = defineState({
     },
     jobs: [] as ThumbnailJob[]
   },
-  reactor: () => <ThumbnailJobReactor />,
+  Reactor: () => <ThumbnailJobReactor />,
   removeCurrentJob: () => {
     const jobState = getMutableState(FileThumbnailJobState)
     jobState.jobs.set((prev) => {

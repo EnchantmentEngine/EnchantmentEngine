@@ -209,7 +209,7 @@ export const EngineVariableUse = makeEventNodeDefinition({
         write('value', value)
         commit('valueChange')
       },
-      reactor: () => {
+      Reactor: () => {
         useEffect(() => {
           variables[variableId].onChanged.addListener(changeVariable)
           return () => {

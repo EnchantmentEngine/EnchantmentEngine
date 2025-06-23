@@ -17,7 +17,7 @@
       "",
       "\tonRemove: (entity, component) => {},",
       "",
-      "\treactor: function () {",
+      "\tReactor: function () {",
       "\t\treturn null",
       "\t},",
       "",

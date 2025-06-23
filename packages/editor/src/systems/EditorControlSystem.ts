@@ -466,7 +466,7 @@ const updateSelection = (clickedEntity: Entity, control: boolean, shift: boolean
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const editorHelperState = useMutableState(EditorHelperState)
   const rendererState = useMutableState(RendererState)
   const selectionBoxState = useMutableState(SelectionBoxState)

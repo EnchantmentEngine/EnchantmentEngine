@@ -168,7 +168,7 @@ const useTransformGizmoControl = (entities: Entity[]) => {
   }, [gizmoEntity, editorHelperState.scaleSnap])
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     InputHeuristicState.addHeuristic(1, editorInputHeuristic)
   }, [])

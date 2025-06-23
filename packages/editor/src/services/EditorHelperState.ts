@@ -75,7 +75,7 @@ export const EditorHelperState = defineState({
     'gridVisibility',
     'gridHeight'
   ]),
-  reactor: () => {
+  Reactor: () => {
     const [showGlbChildrenFlag] = useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.ShowGlbChildren])
 
     useEffect(() => {

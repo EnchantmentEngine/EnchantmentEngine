@@ -432,7 +432,7 @@ const RendererShadowReactor = () => {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(

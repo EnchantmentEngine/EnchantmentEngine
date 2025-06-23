@@ -68,7 +68,7 @@ export const PersistentAnchorComponent = defineComponent({
     active: S.Bool({ default: false })
   }),
 
-  reactor: PersistentAnchorReactor
+  Reactor: PersistentAnchorReactor
 })
 
 /**

@@ -134,7 +134,7 @@ export const CameraFadeBlackEffectSystem = defineSystem({
   uuid: 'ee.engine.CameraFadeBlackEffectSystem',
   insert: { with: CameraSystem },
   execute,
-  reactor: () => {
+  Reactor: () => {
     if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <Reactor />
   }

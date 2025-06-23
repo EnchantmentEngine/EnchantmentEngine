@@ -70,7 +70,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     return () => {
       executionPromises.clear()

@@ -322,7 +322,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
   )
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     InputHeuristicState.addHeuristic(1, studioIconGizmoInputHeuristic)
   }, [])
@@ -357,5 +357,5 @@ export const ActiveHelperSystem = defineSystem({
   uuid: 'ee.engine.ActiveHelperSystem',
   insert: { with: PresentationSystemGroup },
   execute: () => {},
-  reactor
+  Reactor
 })

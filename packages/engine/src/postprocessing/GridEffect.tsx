@@ -72,7 +72,7 @@ export const gridAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: GridEffectProcessReactor,
+      Reactor: GridEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.OVERLAY,

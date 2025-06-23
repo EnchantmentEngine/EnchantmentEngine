@@ -50,7 +50,7 @@ export const ScenePreviewCameraComponent = defineComponent({
     camera: S.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000), { serialized: false })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     if (!isClient) return null
     const entity = useEntityContext()
     const previewCamera = useComponent(entity, ScenePreviewCameraComponent)

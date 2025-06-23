@@ -193,7 +193,7 @@ export const PrefabShelfState = defineState({
         detail: 'Defines a viewpoint from which the scene is rendered.'
       }
     ] as PrefabShelfItem[],
-  reactor: () => {
+  Reactor: () => {
     const shelfState = useHookstate(getMutableState(PrefabShelfState))
     return shelfState.value.map((shelfItem) => <ShelfItemReactor key={shelfItem.url} url={shelfItem.url} />)
   }

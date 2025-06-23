@@ -63,7 +63,7 @@ export const ColliderComponent = defineComponent({
     height: S.Number({ default: 2 })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     return <ColliderReactor />
   }
 })

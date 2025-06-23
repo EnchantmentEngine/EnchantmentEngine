@@ -37,7 +37,7 @@ import { ImportSettingsState } from '../services/ImportSettingsState'
 export const UploadRequestSystem = defineSystem({
   uuid: 'ee.editor.UploadRequestSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     const uploadRequestState = useState(getMutableState(UploadRequestState))
     useEffect(() => {
       const uploadRequests = uploadRequestState.queue.get(NO_PROXY)

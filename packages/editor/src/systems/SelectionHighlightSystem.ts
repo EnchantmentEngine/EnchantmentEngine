@@ -32,7 +32,7 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { useEffect } from 'react'
 import { SelectionState } from '../services/SelectionServices'
 
-const reactor = () => {
+const Reactor = () => {
   const selectedEntities = SelectionState.useSelectedEntities()
 
   useEffect(() => {

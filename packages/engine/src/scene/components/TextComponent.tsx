@@ -241,7 +241,8 @@ export const TextComponent = defineComponent({
     glyphDetail: S.Number({ default: 1 }) // Maps to troika.Text.glyphGeometryDetail
   }),
 
-  reactor: function () {
+  /* eslint-disable react-hooks/rules-of-hooks */
+  Reactor: function () {
     if (!isClient) return null
     const entity = useEntityContext()
     const text = useComponent(entity, TextComponent)

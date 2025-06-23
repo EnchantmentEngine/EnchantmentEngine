@@ -79,7 +79,7 @@ export const NetworkObjectComponent = defineComponent({
     return initial
   },
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const networkObject = useComponent(entity, NetworkObjectComponent)
 

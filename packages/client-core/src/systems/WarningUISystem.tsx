@@ -245,7 +245,7 @@ export const WarningUISystem = defineSystem({
   uuid: 'ee.client.WarningUISystem',
   insert: { after: PresentationSystemGroup }
   // execute,
-  // reactor: () => {
+  // Reactor: () => {
   //   if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
   //   return <Reactor />
   // }

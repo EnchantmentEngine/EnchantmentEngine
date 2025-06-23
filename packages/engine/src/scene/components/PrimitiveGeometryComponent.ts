@@ -59,7 +59,7 @@ export const PrimitiveGeometryComponent = defineComponent({
     geometryParams: S.Record(S.String(), S.Any())
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const geometryComponent = useComponent(entity, PrimitiveGeometryComponent)
     useEffect(() => {

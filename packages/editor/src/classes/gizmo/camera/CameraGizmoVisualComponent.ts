@@ -54,7 +54,7 @@ export const CameraGizmoVisualComponent = defineComponent({
     picker: S.Entity()
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const cameraGizmoVisualEntity = useEntityContext()
     const visualComponent = useComponent(cameraGizmoVisualEntity, CameraGizmoVisualComponent)
 

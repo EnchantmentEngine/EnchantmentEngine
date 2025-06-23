@@ -80,7 +80,7 @@ describe.skip('GLTFState', () => {
   //   Cache.add('/test.gltf', gltf)
   //   const gltfEntity = AssetState.load('/test.gltf', undefined, physicsWorldEntity)
   //   const system = SystemDefinitions.get(GLTFLoadSystem)!
-  //   const reactor = startReactor(system.reactor!)
+  //   const Reactor = startReactor(system.reactor!)
   //   await vi.waitUntil(() => UUIDComponent.getEntityByUUID(nodeUUID), { timeout: 10000 })
   //   const nodeEntity = UUIDComponent.getEntityByUUID(nodeUUID)
   //   const nodeEntityTree = getComponent(nodeEntity, EntityTreeComponent)

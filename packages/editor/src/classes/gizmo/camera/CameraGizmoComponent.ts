@@ -68,7 +68,7 @@ export const CameraGizmoComponent = defineComponent({
     showZ: S.Bool({ default: true })
   }),
 
-  reactor: function (props) {
+  Reactor: function (props) {
     const entity = useEntityContext()
     const cameraGizmoComponent = useComponent(entity, CameraGizmoComponent)
     const inputPointerEntities = InputPointerComponent.usePointersForCamera(cameraGizmoComponent.cameraEntity.value)

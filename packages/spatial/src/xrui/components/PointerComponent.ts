@@ -71,7 +71,7 @@ export const PointerComponent = defineComponent({
     cursor: S.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const pointerComponentState = useComponent(entity, PointerComponent)
 

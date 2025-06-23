@@ -101,7 +101,7 @@ export const ImageComponent = defineComponent({
 
   errors: ['MISSING_TEXTURE_SOURCE', 'UNSUPPORTED_ASSET_CLASS', 'LOADING_ERROR', 'INVALID_URL'],
 
-  reactor: ImageReactor
+  Reactor: ImageReactor
 })
 
 const _size = new Vector2()

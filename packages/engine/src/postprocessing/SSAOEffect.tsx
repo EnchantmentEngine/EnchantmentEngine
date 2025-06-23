@@ -103,7 +103,7 @@ export const ssaoAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: SSAOEffectProcessReactor,
+      Reactor: SSAOEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.MULTIPLY,

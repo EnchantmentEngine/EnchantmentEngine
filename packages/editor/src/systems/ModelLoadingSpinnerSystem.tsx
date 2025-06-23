@@ -61,7 +61,7 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
 export const ModelLoadingSpinnerSystem = defineSystem({
   uuid: 'ee.editor.ModelLoadingSpinnerSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => (
+  Reactor: () => (
     <QueryReactor ChildEntityReactor={LoadingSpinnerReactor} Components={[GLTFComponent]} layer={Layers.Authoring} />
   )
 })

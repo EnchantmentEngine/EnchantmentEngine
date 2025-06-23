@@ -92,7 +92,7 @@ export function createAvatarModeWidget() {
 
   const id = Widgets.registerWidget(ui.entity, widget)
 
-  const reactor = startReactor(() => {
+  const Reactor = startReactor(() => {
     const xrState = useHookstate(getMutableState(XRState))
     const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
     const widgetEnabled =

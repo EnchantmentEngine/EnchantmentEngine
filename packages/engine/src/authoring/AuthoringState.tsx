@@ -182,7 +182,7 @@ export const AuthoringState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(AuthoringState)
 
     return (

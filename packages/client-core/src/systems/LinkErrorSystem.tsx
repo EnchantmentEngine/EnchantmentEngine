@@ -54,5 +54,5 @@ const LinkErrorReactor = () => {
 export const LinkErrorSystem = defineSystem({
   uuid: 'ee.client.LinkErrorSystem',
   insert: { before: TransformDirtyUpdateSystem },
-  reactor: () => <QueryReactor Components={[ErrorComponent, LinkComponent]} ChildEntityReactor={LinkErrorReactor} />
+  Reactor: () => <QueryReactor Components={[ErrorComponent, LinkComponent]} ChildEntityReactor={LinkErrorReactor} />
 })

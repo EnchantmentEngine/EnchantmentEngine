@@ -286,7 +286,7 @@ export const AvatarAnimationSystem = defineSystem({
   uuid: 'ee.engine.AvatarAnimationSystem',
   insert: { after: AnimationSystem },
   execute,
-  reactor: AvatarAnimationSystemReactor
+  Reactor: AvatarAnimationSystemReactor
 })
 
 const skinnedMeshQuery = defineQuery([SkinnedMeshComponent])

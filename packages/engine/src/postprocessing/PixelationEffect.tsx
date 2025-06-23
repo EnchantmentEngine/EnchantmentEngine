@@ -72,7 +72,7 @@ export const pixelationAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: PixelationEffectProcessReactor,
+      Reactor: PixelationEffectProcessReactor,
       defaultValues: {
         isActive: false,
         granularity: 30

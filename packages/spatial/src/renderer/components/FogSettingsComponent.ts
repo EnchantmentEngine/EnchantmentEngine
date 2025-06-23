@@ -70,7 +70,7 @@ export const FogSettingsComponent = defineComponent({
     height: S.Number({ default: 0.05 })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const fog = useComponent(entity, FogSettingsComponent)
     const isVisible = useHasComponent(entity, VisibleComponent)

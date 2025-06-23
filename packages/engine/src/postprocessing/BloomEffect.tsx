@@ -72,7 +72,7 @@ export const bloomAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: BloomEffectProcessReactor,
+      Reactor: BloomEffectProcessReactor,
       defaultValues: {
         isActive: true,
         blendFunction: BlendFunction.SCREEN,

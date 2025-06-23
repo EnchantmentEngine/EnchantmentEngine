@@ -130,7 +130,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   if (!isClient) return null
 
   useEffect(() => {

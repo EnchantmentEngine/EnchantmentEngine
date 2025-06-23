@@ -95,7 +95,7 @@ export const CameraSettingsComponent = defineComponent({
     enableTransitionButtons: S.Bool({ default: false })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const component = useComponent(entity, CameraSettingsComponent)
 

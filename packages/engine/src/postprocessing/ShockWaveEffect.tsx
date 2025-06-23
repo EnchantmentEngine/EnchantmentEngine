@@ -79,7 +79,7 @@ export const shockWaveAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ShockWaveEffectProcessReactor,
+      Reactor: ShockWaveEffectProcessReactor,
       defaultValues: {
         isActive: false,
         position: new Vector3(0, 0, 0),

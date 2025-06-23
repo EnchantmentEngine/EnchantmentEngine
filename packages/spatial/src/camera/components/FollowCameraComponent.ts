@@ -147,7 +147,7 @@ export const FollowCameraComponent = defineComponent({
     lastCycleTheta: S.Number({ default: 0 })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const follow = useComponent(entity, FollowCameraComponent)
     const cameraSettingsState = useMutableState(CameraSettingsState)

@@ -370,6 +370,6 @@ export const AvatarIkReactor = () => {
 export const AvatarIKSystem = defineSystem({
   uuid: 'ir.engine.AvatarIKSystem',
   insert: { before: AvatarAnimationSystem },
-  reactor: AvatarIkReactor,
+  Reactor: AvatarIkReactor,
   execute
 })

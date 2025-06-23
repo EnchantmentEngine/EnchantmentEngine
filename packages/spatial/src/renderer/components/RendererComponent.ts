@@ -153,7 +153,7 @@ export const RendererComponent = defineComponent({
     }
   },
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const rendererComponent = useComponent(entity, RendererComponent)
     const camera = useComponent(entity, CameraComponent).value as ArrayCamera

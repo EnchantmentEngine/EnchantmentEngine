@@ -67,7 +67,7 @@ export const BoundingBoxComponent = defineComponent({
     color: T.Color('white')
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const boundingBox = useComponent(entity, BoundingBoxComponent)
 

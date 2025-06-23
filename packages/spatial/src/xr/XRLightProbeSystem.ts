@@ -149,7 +149,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const xrState = useMutableState(XRState)
   const xrLightProbeState = useMutableState(XRLightProbeState)
 

@@ -74,7 +74,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   const mediaNetwork = useMediaNetwork()
 
   useEffect(() => {

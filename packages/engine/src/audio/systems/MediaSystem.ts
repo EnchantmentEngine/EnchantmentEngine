@@ -171,10 +171,11 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   if (!isClient) return null
 
   useEffect(() => {
+    /* eslint-disable-line react-hooks/rules-of-hooks */
     const enableAudioContext = () => {
       const audioContext = getState(AudioState).audioContext
       if (audioContext.state === 'suspended') audioContext.resume()
@@ -202,7 +203,7 @@ const reactor = () => {
     }
   }, [])
 
-  useAudioState()
+  useAudioState() /* eslint-disable-line react-hooks/rules-of-hooks */
 
   return null
 }
@@ -211,5 +212,5 @@ export const MediaSystem = defineSystem({
   uuid: 'ee.engine.MediaSystem',
   insert: { before: PresentationSystemGroup },
   execute,
-  reactor
+  Reactor
 })

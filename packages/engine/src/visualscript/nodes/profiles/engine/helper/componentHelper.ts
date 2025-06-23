@@ -221,7 +221,7 @@ export function registerComponentListeners() {
           uuid: `visual-script-use-${componentName}` + uniqueId(),
           insert: { with: InputSystemGroup },
           execute: () => {},
-          reactor: () => {
+          Reactor: () => {
             const componentValue = useComponent(entity, component)
             if (typeof componentValue !== 'object') {
               useEffect(() => {

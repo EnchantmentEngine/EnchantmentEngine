@@ -67,8 +67,10 @@ const LocationPage = ({ online }: Props) => {
   useNetwork({ online })
 
   if (params.locationName) {
+    /* eslint-disable-next-line react-hooks/rules-of-hooks */ //params won't change
     useLoadLocation({ locationName: params.locationName })
   } else {
+    /* eslint-disable-next-line react-hooks/rules-of-hooks */
     useLoadScene({ projectName: params.projectName!, sceneName: params.sceneName! })
   }
 

@@ -117,7 +117,7 @@ export const BoundingBoxHelperComponent = defineComponent({
     helperEntity: S.Entity()
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, BoundingBoxHelperComponent)
 
@@ -172,7 +172,7 @@ export const ObjectGridSnapComponent = defineComponent({
     bbox: S.Class(() => new Box3())
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const engineState = useState(getMutableState(EngineState))
     const gltfLoaded = GLTFComponent.useSceneLoaded(entity)

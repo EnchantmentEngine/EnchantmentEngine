@@ -1256,7 +1256,7 @@ describe.skip('ClientInputHooks', () => {
       assert.equal(before.has(testEntity), false)
 
       // Setup the reactor
-      const reactor = startReactor(() =>
+      const Reactor = startReactor(() =>
         React.createElement(
           EntityContext.Provider,
           { value: testEntity },

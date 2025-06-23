@@ -43,7 +43,7 @@ export const HemisphereLightComponent = defineComponent({
     intensity: S.Number({ default: 1 })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const hemisphereLightComponent = useComponent(entity, HemisphereLightComponent)
     const light = useHookstate(() => new HemisphereLight()).get(NO_PROXY) as HemisphereLight

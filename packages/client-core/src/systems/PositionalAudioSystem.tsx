@@ -240,7 +240,7 @@ function PositionalAudioPannerReactor() {
   return null
 }
 
-const reactor = () => {
+const Reactor = () => {
   const mediaStreamVolume = useHookstate(getMutableState(AudioState).mediaStreamVolume)
 
   /**

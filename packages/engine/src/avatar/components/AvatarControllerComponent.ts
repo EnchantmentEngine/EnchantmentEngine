@@ -87,7 +87,7 @@ export const AvatarControllerComponent = defineComponent({
     if (index !== -1) component.movementCaptured.splice(index, 1)
   },
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const avatarComponent = useOptionalComponent(entity, AvatarComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
@@ -160,7 +160,7 @@ export const AvatarColliderComponent = defineComponent({
   name: 'AvatarColliderComponent',
   schema: S.Object({ colliderEntity: S.Entity() }),
 
-  reactor({ entity }) {
+  Reactor({ entity }) {
     useEffect(() => {
       const avatarColliderComponent = getOptionalComponent(entity, AvatarColliderComponent)
       return () => {

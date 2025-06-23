@@ -372,5 +372,5 @@ const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 export const EnvironmentSystem = defineSystem({
   uuid: 'ee.engine.EnvironmentSystem',
   insert: { after: PresentationSystemGroup },
-  reactor: () => <QueryReactor Components={[EnvMapComponent]} ChildEntityReactor={EnvMapReactor} />
+  Reactor: () => <QueryReactor Components={[EnvMapComponent]} ChildEntityReactor={EnvMapReactor} />
 })

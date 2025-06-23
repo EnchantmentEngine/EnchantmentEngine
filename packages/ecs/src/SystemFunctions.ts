@@ -45,12 +45,12 @@ export interface SystemArgs {
   uuid: string
   insert: InsertSystem
   execute?: () => void
-  reactor?: FC
+  Reactor?: FC
 }
 
 export interface System {
   uuid: SystemUUID
-  reactor?: FC
+  Reactor?: FC
   insert?: InsertSystem
   preSystems: SystemUUID[]
   /** runs after preSystems, and before subSystems */
@@ -102,11 +102,11 @@ export function executeSystem(systemUUID: SystemUUID) {
     executeSystem(system.preSystems[i])
   }
 
-  /** @todo when we fully remove deprecated system reactors in favour of state reactors, we can just wrap system.execute with flushSync */
-  if (system.reactor && !getState(SystemState).activeSystemReactors.has(system.uuid)) {
-    system.reactor['__name'] = system.uuid
-    const reactor = startReactor(system.reactor)
-    getState(SystemState).activeSystemReactors.set(system.uuid, reactor)
+  /** @todo when we fully remove deprecated system Reactors in favour of state Reactors, we can just wrap system.execute with flushSync */
+  if (system.Reactor && !getState(SystemState).activeSystemReactors.has(system.uuid)) {
+    system.Reactor['__name'] = system.uuid
+    const Reactor = startReactor(system.Reactor)
+    getState(SystemState).activeSystemReactors.set(system.uuid, Reactor)
   }
 
   const startTime = nowMilliseconds()
@@ -231,10 +231,10 @@ export const destroySystem = (systemUUID: SystemUUID) => {
     destroySystem(subSystem)
   }
 
-  const reactor = getState(SystemState).activeSystemReactors.get(system.uuid as SystemUUID)!
-  if (reactor) {
+  const Reactor = getState(SystemState).activeSystemReactors.get(system.uuid as SystemUUID)!
+  if (Reactor) {
     getState(SystemState).activeSystemReactors.delete(system.uuid as SystemUUID)
-    reactor.stop()
+    Reactor.stop()
   }
 
   for (const postSystem of system.postSystems) {

@@ -53,7 +53,7 @@ export const SelectionState = defineState({
   }
 })
 
-const reactor = () => {
+const Reactor = () => {
   const selectedEntities = useHookstate(getMutableState(SelectionState).selectedEntities)
 
   useEffect(() => {

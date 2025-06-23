@@ -139,7 +139,7 @@ export const RigidBodyComponent = defineComponent({
     return initial
   },
 
-  reactor: () => {
+  Reactor: () => {
     return <RigidBodyReactor />
   }
 })

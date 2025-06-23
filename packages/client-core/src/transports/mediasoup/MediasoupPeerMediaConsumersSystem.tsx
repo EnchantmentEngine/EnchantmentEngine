@@ -243,7 +243,7 @@ export const PeerMediaChannels = () => {
   )
 }
 
-export const reactor = () => {
+export const Reactor = () => {
   const networkIDs = useMutableState(MediasoupMediaProducerConsumerState)
   const networks = useHookstate(getMutableState(NetworkState).networks)
 

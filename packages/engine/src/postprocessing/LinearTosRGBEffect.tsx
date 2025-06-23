@@ -71,7 +71,7 @@ export const linearTosRGBAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: LinearTosRGBEffectProcessReactor,
+      Reactor: LinearTosRGBEffectProcessReactor,
       defaultValues: {
         isActive: false,
         skew: 0

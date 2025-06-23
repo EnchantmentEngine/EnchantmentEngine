@@ -58,7 +58,7 @@ export const OverlayComponent = defineComponent({
 
   errors: ['INVALID_URL'],
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const overlayComponent = useComponent(entity, OverlayComponent)
 

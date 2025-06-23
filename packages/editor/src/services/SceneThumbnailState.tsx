@@ -174,7 +174,7 @@ export const SceneThumbnailState = defineState({
       uploadingLoadingScreen: false
     })
   },
-  reactor: () => {
+  Reactor: () => {
     const editorState = useHookstate(getMutableState(EditorState))
     useEffect(() => {
       getMutableState(SceneThumbnailState).merge({

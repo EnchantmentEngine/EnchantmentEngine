@@ -70,7 +70,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     /** @todo currently this creates an instance of each component, which can lead to a lot of unnecessary extra memory */
     // VisualScriptState.registerProfile(registerEngineProfile, VisualScriptDomain.ECS)

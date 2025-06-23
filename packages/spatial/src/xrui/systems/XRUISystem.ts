@@ -190,7 +190,7 @@ const execute = () => {
   // xrui.layoutSystem.update(world.delta, world.elapsedTime)
 }
 
-const reactor = () => {
+const Reactor = () => {
   if (!isClient) return null
 
   useEffect(() => {
@@ -266,7 +266,7 @@ export const XRUIInputSystem = defineSystem({
       getComponent(xrui, XRUIComponent).interactionRays = interactionRays
     }
   },
-  reactor: () => {
+  Reactor: () => {
     useEffect(() => {
       InputHeuristicState.addHeuristic(0, xruiInputHeuristic)
     }, [])

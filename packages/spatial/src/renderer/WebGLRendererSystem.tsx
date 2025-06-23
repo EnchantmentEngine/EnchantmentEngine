@@ -206,7 +206,7 @@ const execute = () => {
   onRenderEnd()
 }
 
-const rendererReactor = () => {
+const RendererReactor = () => {
   const entity = useEntityContext()
   const renderer = useComponent(entity, RendererComponent)
   const engineRendererSettings = useMutableState(RendererState)
@@ -234,7 +234,7 @@ const rendererReactor = () => {
   return null
 }
 
-const cameraReactor = () => {
+const CameraReactor = () => {
   const entity = useEntityContext()
   const camera = useComponent(entity, CameraComponent).value
   const engineRendererSettings = useMutableState(RendererState)
@@ -277,11 +277,11 @@ export const WebGLRendererSystem = defineSystem({
   uuid: 'ee.engine.WebGLRendererSystem',
   insert: { with: PresentationSystemGroup },
   execute,
-  reactor: () => {
+  Reactor: () => {
     return (
       <>
-        <QueryReactor Components={[RendererComponent]} ChildEntityReactor={rendererReactor} />
-        <QueryReactor Components={[CameraComponent]} ChildEntityReactor={cameraReactor} />
+        <QueryReactor Components={[RendererComponent]} ChildEntityReactor={RendererReactor} />
+        <QueryReactor Components={[CameraComponent]} ChildEntityReactor={CameraReactor} />
       </>
     )
   }

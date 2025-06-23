@@ -104,7 +104,7 @@ export function createAnchorWidget() {
 
   const id = Widgets.registerWidget(ui.entity, widget)
 
-  const reactor = startReactor(() => {
+  const Reactor = startReactor(() => {
     const sessionMode = useHookstate(getMutableState(XRState).sessionMode)
 
     useEffect(() => {

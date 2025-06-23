@@ -142,7 +142,7 @@ export const InfiniteGridComponent = defineComponent({
     distance: S.Number({ default: 200 })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
 
     const component = useComponent(entity, InfiniteGridComponent)

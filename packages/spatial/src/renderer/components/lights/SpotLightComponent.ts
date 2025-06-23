@@ -59,7 +59,7 @@ export const SpotLightComponent = defineComponent({
     shadowRadius: S.Number({ default: 1 })
   }),
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
 

@@ -116,7 +116,7 @@ const execute = () => {
   renderer.info.autoReset = !state.visible
 }
 
-const reactor = () => {
+const Reactor = () => {
   const resourceState = useHookstate(getMutableState(ResourceState))
 
   useEffect(() => {

@@ -78,7 +78,7 @@ export const lut3DAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: LUT3DEffectProcessReactor,
+      Reactor: LUT3DEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.SRC,

@@ -73,7 +73,7 @@ export const lensDistortionAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: LensDistortionEffectProcessReactor,
+      Reactor: LensDistortionEffectProcessReactor,
       defaultValues: {
         isActive: false,
         distortion: new Vector2(0, 0),

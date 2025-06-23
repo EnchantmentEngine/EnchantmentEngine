@@ -176,7 +176,7 @@ describe('QueryFunctions Hooks', async () => {
       let counter = 0
       let entities = [] as Entity[]
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const query = useQuery([ComponentA, ComponentB])
 
         useEffect(() => {
@@ -207,7 +207,7 @@ describe('QueryFunctions Hooks', async () => {
       let counter = 0
       let entities = [] as Entity[]
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const query = useQuery([ComponentA, ComponentB])
 
         useEffect(() => {
@@ -255,7 +255,7 @@ describe('QueryFunctions Hooks', async () => {
       let effectCounter = 0
       let entities = [] as Entity[]
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const query = useQuery([ComponentA, ComponentB])
 
         renderCounter++
@@ -304,7 +304,7 @@ describe('QueryFunctions Hooks', async () => {
       let renderCounter = 0
       let entities = [] as Entity[]
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const query = useQuery([ComponentA, ComponentB])
         renderCounter++
 
@@ -359,7 +359,7 @@ describe('QueryFunctions Hooks', async () => {
       let renderCounter = 0
       let entities = [] as Entity[]
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const query = useQuery([ComponentA, ComponentB])
         renderCounter++
 
@@ -401,7 +401,7 @@ describe('QueryFunctions Hooks', async () => {
       const ExpectedValue: ResultType = []
       let counter = 0
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const data = useQuery([component])
         useEffect(() => {
           result = data as ResultType
@@ -428,7 +428,7 @@ describe('QueryFunctions Hooks', async () => {
       setComponent(entity2, component)
       assert.equal(counter, 0, "The reactor shouldn't have run before rendering")
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const data = useQuery([component])
         useEffect(() => {
           result = data as ResultType
@@ -454,7 +454,7 @@ describe('QueryFunctions Hooks', async () => {
       setComponent(entity1, component)
       assert.equal(counter, 0, "The reactor shouldn't have run before rendering")
 
-      const reactor = startReactor(() => {
+      const Reactor = startReactor(() => {
         const data = useQuery([component])
         useEffect(() => {
           result = data as ResultType

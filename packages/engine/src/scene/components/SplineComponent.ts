@@ -75,7 +75,7 @@ export const SplineComponent = defineComponent({
     curve: S.Class(() => new CatmullRomCurve3([], true), { serialized: false })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const component = useComponent(entity, SplineComponent)
     const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)

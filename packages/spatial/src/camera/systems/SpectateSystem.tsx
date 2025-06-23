@@ -95,7 +95,7 @@ export const SpectateEntityState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(SpectateEntityState)
 
     if (!state.value[Engine.instance.userID]) return null

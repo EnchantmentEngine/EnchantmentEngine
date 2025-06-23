@@ -160,7 +160,7 @@ export interface ComponentPartial<
    * `@todo` Explain what reactive is in this context
    * `@todo` Explain this function
    */
-  reactor?: any // previously <React.FC> breaks types
+  Reactor?: any // previously <React.FC> breaks types
 
   storage?: StorageType
   /**
@@ -193,8 +193,8 @@ export interface Component<
   toJSON: (component: ComponentType) => JSON
   onSet: (entity: Entity, component: State<ComponentType>, json?: SetJSON) => void
   onRemove: (entity: Entity, component: State<ComponentType>) => void
-  reactor?: any
-  reactorRoot?: ReactorRoot
+  Reactor?: any
+  ReactorRoot?: ReactorRoot
   storage?: StorageType
   stateMap: Record<Entity, State<ComponentType, Identifiable>>
   valueMap: Record<Entity, ComponentType>
@@ -356,7 +356,7 @@ export const defineComponent = <
     Object.assign(Component, def.storage)
   }
 
-  if (Component.reactor) Object.defineProperty(Component.reactor, 'name', { value: `Internal${Component.name}Reactor` })
+  if (Component.Reactor) Object.defineProperty(Component.Reactor, 'name', { value: `Internal${Component.name}Reactor` })
   // We have to create an stateful existence map in order to reactively track which entities have a given component.
   // Unfortunately, we can't simply use a single shared state because hookstate will (incorrectly) invalidate other nested states when a single component
   // instance is added/removed, so each component instance has to be isolated from the others.
@@ -560,18 +560,18 @@ export const setComponent = <C extends Component>(
 
   LayerFunctions.propagateLayer(entity, component)
 
-  if (component.reactor && !component.reactorRoot) {
+  if (component.Reactor && !component.ReactorRoot) {
     const root = startReactor(() => {
       return React.createElement(QueryReactor, {
         Components: [component],
-        ChildEntityReactor: component.reactor as any
+        ChildEntityReactor: component.Reactor as any
       })
     }) as ReactorRoot
     root.cleanupFunctions.add(() => {
-      component.reactorRoot = undefined
+      component.ReactorRoot = undefined
     })
     root['component'] = component.name
-    component.reactorRoot = root
+    component.ReactorRoot = root
   }
 }
 
@@ -599,7 +599,7 @@ export function hasComponents<C extends Component>(entity: Entity, components: C
 export function useHasComponents<C extends Component>(entity: Entity, components: C[]): boolean {
   let hasAllComponents = true
   for (const component of components) {
-    useOptionalComponent(entity, component)?.value
+    useOptionalComponent(entity, component)?.value /* eslint-disable-line react-hooks/rules-of-hooks */ // Not exactly correct react usage but usable
     if (!hasComponent(entity, component)) hasAllComponents = false
   }
 
@@ -620,7 +620,7 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
 
   bitECS.removeComponent(HyperFlux.store, entity, component)
   component.onRemove(entity, component.stateMap[entity]!)
-  /** clear state data after reactor stops, to ensure hookstate is still referenceable */
+  /** clear state data after Reactor stops, to ensure hookstate is still referenceable */
   component.stateMap[entity]?.set(none)
   destroy(component.stateMap[entity])
   delete component.stateMap[entity]
@@ -683,7 +683,7 @@ export const deserializeComponent = <C extends Component>(
     if (!valid) throw new Error(`${Component.name}:deserializeComponent Missing required value for key ${key}`)
   }
 
-  /** @todo this can be replaced with setComponent rather than just some of the initializers once reactors are not forced to run synchronously */
+  /** @todo this can be replaced with setComponent rather than just some of the initializers once Reactors are not forced to run synchronously */
   if (!hasComponent(entity, Component)) {
     if (!entity) throw new Error('[deserializeComponent]: entity is undefined')
     if (!entityExists(entity)) throw new Error('[deserializeComponent]: entity does not exist')
@@ -1484,14 +1484,14 @@ export const $RemovedComponent = defineComponent({
 // precalc initial few unnecessary resizes
 resizeComponent($RemovedComponent, Math.pow(2, 8))
 
-// add a delay such that we ensure any deletions never happen on the same animation frame to ensure reactors have enough time to run effects
+// add a delay such that we ensure any deletions never happen on the same animation frame to ensure Reactors have enough time to run effects
 let lastMarkedForRemoval = 0
 const delay = 100 // 100ms - usually enough for a few frames on low end devices
 
 const _markEntityForRemoval = (eid: Entity): void => {
   bitECS.addComponent(HyperFlux.store, eid, $RemovedComponent)
   $RemovedComponent.exists[eid] = 0
-  // updating to now ensures we are at least <delay> time from the last mark, which ensures reactors always have enough time to run
+  // updating to now ensures we are at least <delay> time from the last mark, which ensures Reactors always have enough time to run
   lastMarkedForRemoval = Date.now()
 }
 
@@ -1554,7 +1554,7 @@ export const entityExists = (entity: Entity) => {
 
 export const EntityContext = React.createContext(UndefinedEntity)
 
-/** @deprecated entity is now passed in as a prop 'entity' to query and array child reactors */
+/** @deprecated entity is now passed in as a prop 'entity' to query and array child Reactors */
 export const useEntityContext = () => {
   return React.useContext(EntityContext)
 }

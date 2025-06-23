@@ -465,6 +465,7 @@ const _useHasAnyComponents = (entity: Entity, components: ComponentType<any>[]) 
   let result = false
   for (const component of components) {
     if (useOptionalComponent(entity, component)) {
+      /* eslint-disable-line react-hooks/rules-of-hooks */
       result = true
     }
   }

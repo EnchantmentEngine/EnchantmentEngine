@@ -43,7 +43,7 @@ export const PostProcessingComponent = defineComponent({
   }),
 
   /** @todo this will be replaced with spatial queries or distance checks */
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const rendererEntity = useRendererEntity(entity)
 

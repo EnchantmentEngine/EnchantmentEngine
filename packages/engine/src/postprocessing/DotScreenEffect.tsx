@@ -72,7 +72,7 @@ export const dotScreenAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: DotScreenEffectProcessReactor,
+      Reactor: DotScreenEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

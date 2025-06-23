@@ -176,7 +176,7 @@ export function registerStateListeners() {
           uuid: getUseStateSystemUUID(stateName),
           insert: { with: InputSystemGroup },
           execute: () => {},
-          reactor: () => {
+          Reactor: () => {
             const stateValue = useHookstate(state)
             if (typeof stateValue.value !== 'object') {
               useEffect(() => {

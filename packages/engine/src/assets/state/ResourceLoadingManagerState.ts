@@ -89,7 +89,7 @@ const onError = (url: string) => {}
 export const ResourceLoadingManagerState = defineState({
   name: 'ResourceLoadingManagerState',
   initial: () => new ResourceLoadingManager(onItemStart, onStart, onLoad, onProgress, onError),
-  reactor: () => {
+  Reactor: () => {
     const resourceLoadingManager = useMutableState(ResourceLoadingManagerState)
 
     useEffect(() => {

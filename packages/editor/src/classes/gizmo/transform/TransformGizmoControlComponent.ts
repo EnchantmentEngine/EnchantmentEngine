@@ -180,7 +180,7 @@ export const TransformGizmoControlComponent = defineComponent({
     return gizmoEntity.value
   },
 
-  reactor: () => {
+  Reactor: () => {
     const gizmoControlEntity = useEntityContext()
 
     InputComponent.useExecuteWithInput(

@@ -54,7 +54,7 @@ import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import React from 'react'
 import { FrontSide, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial } from 'three'
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     // default material according to GLTF spec. see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#default-material
     const fallbackMaterial = new MeshStandardMaterial({

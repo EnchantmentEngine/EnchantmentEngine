@@ -29,7 +29,6 @@ import { Service, SocketService } from '@feathersjs/transport-commons/client'
 export type { SocketService }
 
 declare module '@feathersjs/feathers/lib/declarations' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FeathersApplication<Services, Settings> {
     /**
      * The Primus client instance. Usually does not need

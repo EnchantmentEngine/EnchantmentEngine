@@ -68,7 +68,7 @@ export const CameraEntityState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(CameraEntityState)
     return (
       <>
@@ -162,7 +162,7 @@ const OwnedCameraReactor = () => {
 export const CameraSystem = defineSystem({
   uuid: 'ee.engine.CameraSystem',
   insert: { with: AnimationSystemGroup },
-  reactor: () => {
+  Reactor: () => {
     if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <CameraReactor />
   }

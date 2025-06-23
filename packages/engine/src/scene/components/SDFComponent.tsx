@@ -75,7 +75,7 @@ export const SDFComponent = defineComponent({
     })
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const sdfComponent = useComponent(entity, SDFComponent)
     const rendererEntity = useRendererEntity(entity)

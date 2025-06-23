@@ -41,7 +41,7 @@ export default function ErrorPage({ name }: ErrorPageProps) {
   const initialState = { error: '', token: '', email: '', promptForConnection: 'false', loginToken: '', loginId: '' }
   const [state, setState] = useState(initialState)
   const search = new URLSearchParams(useLocation().search)
-  const showError = useHookstate(false)
+  const user = useHookstate(getMutableState(AuthState)).user
 
   useEffect(() => {
     const error = search.get('error') as string
@@ -56,7 +56,6 @@ export default function ErrorPage({ name }: ErrorPageProps) {
 
     if (!error) {
       if (type === 'connection') {
-        const user = useHookstate(getMutableState(AuthState)).user
         AuthService.refreshConnections(user.id.value!)
       } else if (type === 'login') {
         let redirectSuccess = `${path}`

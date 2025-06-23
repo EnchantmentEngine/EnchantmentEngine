@@ -61,7 +61,7 @@ export const SpawnPoseState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const state = useMutableState(SpawnPoseState)
     return (
       <>

@@ -72,7 +72,7 @@ export const colorDepthAddToEffectRegistry = () => {
 
   getMutableState(PostProcessingEffectState).merge({
     [effectKey]: {
-      reactor: ColorDepthEffectProcessReactor,
+      Reactor: ColorDepthEffectProcessReactor,
       defaultValues: {
         isActive: false,
         blendFunction: BlendFunction.NORMAL,

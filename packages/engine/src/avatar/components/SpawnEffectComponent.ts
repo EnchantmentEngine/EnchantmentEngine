@@ -58,7 +58,7 @@ export const SpawnEffectComponent = defineComponent({
     lightEntities: S.Array(S.Entity())
   }),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
 
     useEffect(() => {

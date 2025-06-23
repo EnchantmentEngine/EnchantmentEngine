@@ -164,7 +164,7 @@ const NetworkReactor = (props: { networkID: InstanceID }) => {
   )
 }
 
-const reactor = () => {
+const Reactor = () => {
   const mediaProducerConsumerState = useMutableState(MediasoupMediaProducerConsumerState)
   const mediaNetworkState = useMediaNetwork()
 

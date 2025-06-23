@@ -175,7 +175,7 @@ export default function CreatePrefabPanel({ entity, isExportLookDev }: { entity?
       parentEntity
     )
     getMutableState(SelectionState).selectedEntities.set([entityUUID])
-    const reactor = startReactor(() => {
+    const Reactor = startReactor(() => {
       const entity = UUIDComponent.useEntityByUUID(entityUUID)
       const gltfComponent = useOptionalComponent(entity, GLTFComponent)
 

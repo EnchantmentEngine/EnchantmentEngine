@@ -151,7 +151,7 @@ export const MountPointComponent = defineComponent({
   mountCallbackName,
   mountPointInteractMessages,
 
-  reactor: function () {
+  Reactor: function () {
     const entity = useEntityContext()
     const mountedEntities = useMutableState(MountPointState)
 

@@ -111,7 +111,7 @@ const execute = () => {
   }
 }
 
-const reactor = () => {
+const Reactor = () => {
   useEffect(() => {
     addDataChannelHandler(ecsDataChannelType, handleNetworkdata)
     return () => {

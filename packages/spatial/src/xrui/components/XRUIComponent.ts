@@ -33,7 +33,7 @@ export const XRUIComponent = defineComponent({
   name: 'XRUIComponent',
   schema: S.Type<WebContainer3D>(),
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const xruiComponent = useComponent(entity, XRUIComponent)
 

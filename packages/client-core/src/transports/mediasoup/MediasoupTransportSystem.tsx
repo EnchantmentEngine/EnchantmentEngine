@@ -79,7 +79,7 @@ const NetworkConnectionReactor = (props: { networkID: InstanceID }) => {
   )
 }
 
-const reactor = () => {
+const Reactor = () => {
   const networkConfig = useHookstate(getMutableState(NetworkState).config)
   const isOnline = networkConfig.world.value || networkConfig.media.value
   const networkIDs = Object.keys(useHookstate(getMutableState(NetworkState).networks).value)

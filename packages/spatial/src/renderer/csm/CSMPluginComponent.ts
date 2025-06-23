@@ -40,7 +40,7 @@ export const CSMPluginComponent = defineComponent({
 
   schema: S.Object({}),
 
-  reactor: (props: { entity: Entity }) => {
+  Reactor: (props: { entity: Entity }) => {
     const entity = props.entity
     useEffect(() => {
       const materialComponent = getOptionalComponent(entity, MaterialStateComponent)

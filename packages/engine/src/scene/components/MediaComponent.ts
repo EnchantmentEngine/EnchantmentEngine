@@ -99,7 +99,7 @@ export const MediaElementComponent = defineComponent({
     }
   },
 
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const mediaElementComponent = useComponent(entity, MediaElementComponent)
 
@@ -166,7 +166,7 @@ export const MediaComponent = defineComponent({
     // autoStartTime: -1
   }),
 
-  reactor: MediaReactor,
+  Reactor: MediaReactor,
 
   errors: ['LOADING_ERROR', 'UNSUPPORTED_ASSET_CLASS', 'INVALID_URL']
 })

@@ -276,7 +276,7 @@ const execute = () => {
   XRDepthOcclusion.updateDepthMaterials(xrFrame as any, ReferenceSpace.origin!, depthTexture)
 }
 
-const reactor = () => {
+const Reactor = () => {
   const xrState = useMutableState(XRState)
 
   useEffect(() => {

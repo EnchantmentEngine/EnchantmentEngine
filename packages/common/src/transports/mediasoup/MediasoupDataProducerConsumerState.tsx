@@ -290,7 +290,7 @@ export const MediasoupDataProducerConsumerState = defineState({
     })
   },
 
-  reactor: () => {
+  Reactor: () => {
     const networkIDs = useMutableState(MediasoupDataProducerConsumerState)
     return (
       <>

@@ -60,7 +60,7 @@ export const VisualScriptComponent = defineComponent({
   }),
 
   // we make reactor for each component handle the engine
-  reactor: () => {
+  Reactor: () => {
     const entity = useEntityContext()
     const visualScript = useComponent(entity, VisualScriptComponent)
     const visualScriptState = useMutableState(VisualScriptState)
