@@ -374,7 +374,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           progress: progressState.value.progress,
           caption: `Waiting for files to be processed...`
         })
-        await new Promise((resolve) => setTimeout(resolve, 12000)) // Increase from 5000 to 10000 ms
         //save duplicated scene and publish that
         await saveSceneGLTF(
           sceneAssetID!,
@@ -384,7 +383,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
           true,
           saveScenePath.value + '/' + scenename
         )
-        await new Promise((resolve) => setTimeout(resolve, 12000))
         await handlePublish(true)
         //re-open the original scene
         const studioUrl = `${window.location.origin}/studio?project=${projectName}&scenePath=${scenePath}`

@@ -808,8 +808,6 @@ const writeFiles = async (
         await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path, publishing)
       })
     )
-    const sourceJson = await io.readAsJSON(srcURL)
-    updateAllNodeExtensionsAndMatricesInJSON(document, json, sourceJson.json)
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
@@ -1308,80 +1306,4 @@ export async function safeCompressGLTFWeb(
   })
 
   onProgress?.(1, Status.Complete)
-}
-
-/**
- *  Update extensions and matrices from json
- * @param document The GLTF document (used for accessing mesh data)
- * @param json The JSON representation of the GLTF document
- * @param sourceJson The original JSON representation of the GLTF document
- * @param nodeName The index of the node in the JSON nodes array
- */
-const updateNodeExtensionAndMatrixInJSON = (document: Document, json: any, nodeName: string, sourceJson: any): void => {
-  const node = document
-    .getRoot()
-    .listNodes()
-    .find((n) => n.getName() === nodeName)
-  if (!node) return
-
-  const EE_COLLIDER_EXTENSION_NAME = 'EE_collider'
-  // Find the corresponding node in JSON by name
-  const jsonNode = json.nodes.find((n: any) => n.name === nodeName)
-  const sourceJsonNode = sourceJson.nodes.find((n: any) => n.name === nodeName)
-  if (sourceJsonNode) {
-    // copy matrix from source
-    if (sourceJsonNode.matrix) {
-      jsonNode.matrix = sourceJsonNode.matrix.slice()
-      delete jsonNode.translation
-      delete jsonNode.rotation
-      delete jsonNode.scale
-    }
-    // Copy extensions from source, but handle empty objects
-    jsonNode.extensions = jsonNode.extensions || {}
-
-    // Copy all extensions except EE_collider
-    if (sourceJsonNode.extensions) {
-      Object.entries(sourceJsonNode.extensions).forEach(([extName, extValue]) => {
-        // Skip EE_collider as we'll handle it separately
-        if (extName === EE_COLLIDER_EXTENSION_NAME) return
-
-        // If extension value is an empty object, set it to true
-        if (extValue && typeof extValue === 'object' && Object.keys(extValue).length === 0) {
-          jsonNode.extensions[extName] = true
-        } else {
-          jsonNode.extensions[extName] = extValue
-        }
-      })
-    }
-  }
-  if (!jsonNode) return
-
-  // Skip nodes without mesh
-  const mesh = node.getMesh()
-  if (!mesh) return
-
-  // Get the node definition from JSON
-  const nodeDef = jsonNode
-  if (!nodeDef) return
-
-  // Ensure extensions object exists
-  nodeDef.extensions = nodeDef.extensions || {}
-
-  // Update or create the EE_collider extension
-
-  if (!nodeDef.extensions[EE_COLLIDER_EXTENSION_NAME]) {
-    return
-  }
-}
-
-/**
- * Updates all node extensions and matrices in JSON
- * @param document The GLTF document
- * @param json The JSON representation of the GLTF document
- */
-const updateAllNodeExtensionsAndMatricesInJSON = (document: Document, json: any, sourceJson: any): void => {
-  const nodes = document.getRoot().listNodes()
-  nodes.forEach((node) => {
-    updateNodeExtensionAndMatrixInJSON(document, json, node.getName(), sourceJson)
-  })
 }
