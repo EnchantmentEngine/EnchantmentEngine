@@ -295,8 +295,10 @@ export const InteractableComponent = defineComponent({
 
     InputComponent.useExecuteWithInput(
       () => {
+        if (!interactableComponent.canInteract.value) return
         const buttons = InputComponent.getButtons(entity)
-        if (buttons.Interact?.up && !buttons.Interact.dragging) {
+
+        if (buttons.Interact?.up && !buttons.Interact?.dragging) {
           callInteractCallbacks(entity)
         }
       },
