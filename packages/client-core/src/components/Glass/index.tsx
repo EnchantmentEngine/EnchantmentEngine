@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { TouchGamepad } from '@ir-engine/client-core/src/common/components/TouchGamepad'
 import { EngineState } from '@ir-engine/ecs'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import _ from 'lodash'
 import React, { useLayoutEffect, useRef } from 'react'
 import { LoadingSystemState } from '../../systems/state/LoadingState'
@@ -35,8 +35,11 @@ import { XRLoading } from '../XRLoading'
 import { ToolbarAndSidebar } from './ToolbarAndSidebar'
 
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
+import { ModalState } from '../../common/services/ModalState'
+import LocationIconButton from '../../user/components/LocationIconButton'
 import { useMediaWindows } from '../../user/VideoWindows'
 import { useUserMediaWindowsHook } from '../../user/VideoWindows/hook'
+import { ViewerMenuState } from '../../util/ViewerMenuState'
 import ReportUserMenu from '../ReportUser'
 import Settings from '../Settings'
 import { ChatMenu } from './ChatMenu'
@@ -93,9 +96,12 @@ NavigationService.addRoutes([
 const Menu = () => {
   const isPortrait = useIsPortrait()
   const loadingScreenVisible = useHookstate(getMutableState(LoadingSystemState).loadingScreenVisible).value
+  const externalInjectedMenus = useMutableState(ViewerMenuState).externalInjectedMenus.get(NO_PROXY)
 
   const locationContainer = useRef<HTMLDivElement>(null)
   const windows = useMediaWindows()
+
+  console.log('==> external injected menus', externalInjectedMenus)
 
   const {
     current,
@@ -168,6 +174,16 @@ const Menu = () => {
 
   return (
     <div id="location-container" ref={locationContainer} className="fixed h-dvh w-full">
+      <div className="pointer-events-auto absolute right-0 top-0 pb-[inherit] pr-[inherit] pt-[inherit]">
+        {Object.entries(externalInjectedMenus).map(([menuName, props]) => (
+          <LocationIconButton
+            key={menuName}
+            title={props.title}
+            icon={props.icon}
+            onClick={() => ModalState.openModal(props.component as JSX.Element)}
+          />
+        ))}
+      </div>
       <VideoCarousel
         handleSidebarOpen={onFullscreenVideosClick}
         videoElements={videoElements}
