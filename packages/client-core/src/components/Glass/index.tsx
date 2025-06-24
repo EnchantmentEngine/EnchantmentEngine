@@ -101,8 +101,6 @@ const Menu = () => {
   const locationContainer = useRef<HTMLDivElement>(null)
   const windows = useMediaWindows()
 
-  console.log('==> external injected menus', externalInjectedMenus)
-
   const {
     current,
     routes,
@@ -174,7 +172,7 @@ const Menu = () => {
 
   return (
     <div id="location-container" ref={locationContainer} className="fixed h-dvh w-full">
-      <div className="pointer-events-auto absolute right-0 top-0 pb-[inherit] pr-[inherit] pt-[inherit]">
+      <div className="pointer-events-auto absolute right-6 top-6 flex items-center gap-4">
         {Object.entries(externalInjectedMenus).map(([menuName, props]) => (
           <LocationIconButton
             key={menuName}
