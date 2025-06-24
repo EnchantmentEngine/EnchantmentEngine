@@ -198,6 +198,7 @@ export interface Component<
   storage?: StorageType
   counterMap: Record<Entity, State<number, Identifiable>>
   valueMap: Record<Entity, ComponentType>
+  proxyMap: Record<Entity, typeof Proxy>
   errors: ErrorTypes[]
   storageSize: number
   __ComponentType: ComponentType
@@ -366,6 +367,7 @@ export const defineComponent = <
   // instance is added/removed, so each component instance has to be isolated from the others.
   Component.valueMap = {}
   Component.counterMap = {}
+  Component.proxyMap = {}
   if (Component.jsonID) {
     ComponentJSONIDMap.set(Component.jsonID, Component)
     // console.log(`Registered component ${Component.name} with jsonID ${Component.jsonID}`)
@@ -414,18 +416,21 @@ export const defineComponent = <
  */
 const _createComponentProxy = <C extends Component>(entity: Entity, component: C): DeepReadonly<ComponentType<C>> => {
   if (typeof component.valueMap[entity] === 'object') {
-    return new Proxy(component.valueMap[entity], {
-      set: (obj, prop, value) => {
-        // Ensure that the entity has the component before updating the counter
-        if (!bitECS.hasComponent(HyperFlux.store, entity, component)) return Reflect.set(obj, prop, value)
-        // Update the counter
-        component.counterMap[entity].set(_incrementCounter)
-        // Propagate the layer
-        LayerFunctions.propagateLayer(entity, component)
-        // set the value
-        return Reflect.set(obj, prop, value)
-      }
-    })
+    if (!component.proxyMap[entity]) {
+      component.proxyMap[entity] = new Proxy(component.valueMap[entity], {
+        set: (obj, prop, value) => {
+          // Ensure that the entity has the component before updating the counter
+          if (!bitECS.hasComponent(HyperFlux.store, entity, component)) return Reflect.set(obj, prop, value)
+          // Update the counter
+          component.counterMap[entity].set(_incrementCounter)
+          // Propagate the layer
+          LayerFunctions.propagateLayer(entity, component)
+          // set the value
+          return Reflect.set(obj, prop, value)
+        }
+      })
+    }
+    return component.proxyMap[entity] as DeepReadonly<ComponentType<C>>
   } else {
     return component.valueMap[entity]
   }
@@ -645,6 +650,7 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
   destroy(component.counterMap[entity])
   delete component.counterMap[entity]
   delete component.valueMap[entity]
+  delete component.proxyMap[entity]
 }
 
 /**
