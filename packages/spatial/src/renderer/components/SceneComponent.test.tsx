@@ -32,9 +32,8 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { ImmutableObject } from '@ir-engine/hyperflux'
 import assert from 'assert'
-import { Color, CubeTexture, FogBase, Texture } from 'three'
+import { Color, CubeTexture, Fog, FogExp2, Texture } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { BackgroundComponent, EnvironmentMapComponent, FogComponent, SceneComponent } from './SceneComponents'
 
@@ -46,7 +45,7 @@ describe('SceneComponent', () => {
   }) //:: IDs
 })
 
-type BackgroundComponentData = ImmutableObject<Color> | ImmutableObject<Texture> | ImmutableObject<CubeTexture>
+type BackgroundComponentData = Color | Texture | CubeTexture
 const BackgroundComponentDefaults = undefined! as BackgroundComponentData
 
 function assertBackgroundComponentEq(A: BackgroundComponentData, B: BackgroundComponentData) {
@@ -168,7 +167,7 @@ describe('EnvironmentMapComponent', () => {
   }) //:: onSet
 }) //:: EnvironmentMapComponent
 
-type FogData = FogBase
+type FogData = Fog | FogExp2
 const FogComponentDefaults = undefined! as FogData
 
 function assertFogComponentEq(A: FogData, B: FogData) {

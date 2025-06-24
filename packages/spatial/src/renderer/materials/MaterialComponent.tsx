@@ -116,7 +116,7 @@ export const MaterialStateComponent = defineComponent({
   onSet(entity, component, json) {
     if (!json) return
     if (json.material && json.material.isMaterial) {
-      component.material.set(json.material)
+      component.material = json.material
       Object.assign(json.material, {
         get uuid() {
           return UUIDComponent.get(entity)
@@ -136,7 +136,7 @@ export const MaterialStateComponent = defineComponent({
       })
     }
     if (json.parameters) {
-      component.parameters.set(json.parameters)
+      component.parameters = json.parameters
     }
   },
 
@@ -176,12 +176,12 @@ export const MaterialInstanceComponent = defineComponent({
     const entity = useEntityContext()
     const materialComponent = useOptionalComponent(entity, MaterialInstanceComponent)
 
-    if (!materialComponent || materialComponent.entities.value.length === 0) return null
+    if (!materialComponent || materialComponent.entities.length === 0) return null
 
-    if (materialComponent.entities.value.length > 1)
+    if (materialComponent.entities.length > 1)
       return (
         <>
-          {materialComponent.entities.value.map((materialEntity, index) => (
+          {materialComponent.entities.map((materialEntity, index) => (
             <MaterialInstanceSubReactor
               array={true}
               key={`${materialEntity}-${index}`}
@@ -196,9 +196,9 @@ export const MaterialInstanceComponent = defineComponent({
     return (
       <MaterialInstanceSubReactor
         array={false}
-        key={`${materialComponent.entities.value[0]}`}
+        key={`${materialComponent.entities[0]}`}
         index={0}
-        materialEntity={materialComponent.entities.value[0]}
+        materialEntity={materialComponent.entities[0]}
         entity={entity}
       />
     )
@@ -220,10 +220,10 @@ const MaterialInstanceSubReactor = (props: {
     if (!meshComponent || !materialStateComponent) return
     const material = getComponent(materialEntity, MaterialStateComponent).material
     if (props.array) {
-      if (!Array.isArray(meshComponent.material.value)) meshComponent.material.set([])
-      meshComponent.material[index].set(material)
+      if (!Array.isArray(meshComponent.material)) meshComponent.material = []
+      meshComponent.material[index] = material
     } else {
-      meshComponent.material.set(material)
+      meshComponent.material = material
     }
 
     const references = getMutableState(MaterialReferenceState)[materialEntity]

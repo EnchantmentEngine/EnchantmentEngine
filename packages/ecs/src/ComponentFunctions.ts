@@ -620,7 +620,7 @@ export function hasComponents<C extends Component>(entity: Entity, components: C
 export function useHasComponents<C extends Component>(entity: Entity, components: C[]): boolean {
   let hasAllComponents = true
   for (const component of components) {
-    useOptionalComponent(entity, component)?.value
+    useOptionalComponent(entity, component)
     if (!hasComponent(entity, component)) hasAllComponents = false
   }
 
@@ -785,7 +785,7 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
     ;(React.use ?? _use)(state.promise)
   }
 
-  return component.valueMap[entity] as ComponentType<C>
+  return _createComponentProxy(entity, component)
 }
 
 export function useHasComponent<C extends Component>(entity: Entity, component: C): boolean {
@@ -798,7 +798,7 @@ export function useHasComponent<C extends Component>(entity: Entity, component: 
  */
 export function useOptionalComponent<C extends Component>(entity: Entity, component: C): ComponentType<C> | undefined {
   const promised = useHookstate(_getComponentCounter(entity, component)).promised
-  return promised ? undefined : component.valueMap[entity]
+  return promised ? undefined : _createComponentProxy(entity, component)
 }
 
 export const getComponentCountOfType = <C extends Component>(component: C): number => {

@@ -40,7 +40,7 @@ export const AssetPreviewCameraComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const previewCameraComponent = useComponent(entity, AssetPreviewCameraComponent)
-    const childMeshEntities = useChildrenWithComponents(previewCameraComponent.targetModelEntity.value, [MeshComponent])
+    const childMeshEntities = useChildrenWithComponents(previewCameraComponent.targetModelEntity, [MeshComponent])
     const cameraOrbitComponent = useComponent(entity, CameraOrbitComponent)
 
     useEffect(() => {

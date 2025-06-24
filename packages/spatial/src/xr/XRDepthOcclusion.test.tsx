@@ -69,6 +69,7 @@ describe('XRDepthOcclusion', () => {
       const Initial = undefined
       // Set the data as expected
       const material = new MeshBasicMaterial()
+      // @ts-expect-error
       material.userData = Initial
       // Sanity check before running
       expect(material.userData).toBeFalsy()
@@ -92,6 +93,7 @@ describe('XRDepthOcclusion', () => {
     it('should exit early if `@param material`.userData.DepthOcclusionPlugin is truthy', () => {
       const Initial = 'InitialID-ShouldNotChange'
       // Set the data as expected
+      // @ts-expect-error
       const material = { userData: { DepthOcclusionPlugin: { id: Initial } } } as Material
       // Sanity check before running
       expect(material).toBeTruthy()

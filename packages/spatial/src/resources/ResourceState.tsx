@@ -690,16 +690,14 @@ const removeEntityResource = (resource: Resource) => {
   dispose(asset)
 }
 
-const useEntityResource = (entity: Entity, state: State<ResourceAssetType>) => {
+const useEntityResource = (entity: Entity, asset: ResourceAssetType) => {
   useEffect(() => {
-    const asset = state.get(NO_PROXY) as ResourceAssetType
-
     const resources = addEntityResource(entity, asset)
 
     return () => {
       for (const resource of resources) removeEntityResource(resource)
     }
-  }, [state])
+  }, [asset])
 }
 
 const getAllResourcesOfType = (type: ResourceType) => {
@@ -758,6 +756,6 @@ export const ResourceState = defineState({
 
 const ObjectReactor = () => {
   const entity = useEntityContext()
-  ResourceState.useEntityResource(entity, useComponent(entity, ObjectComponent) as any as State<ResourceAssetType>)
+  ResourceState.useEntityResource(entity, useComponent(entity, ObjectComponent) as any as ResourceAssetType)
   return null
 }
