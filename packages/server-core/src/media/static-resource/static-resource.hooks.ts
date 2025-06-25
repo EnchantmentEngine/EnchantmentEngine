@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { BadRequest, Forbidden, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { projectHistoryPath, projectPath } from '@ir-engine/common/src/schema.type.module'
+import { staticResourceVectorPath } from '@ir-engine/common/src/schemas/media/static-resource-vector.schema'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
@@ -363,6 +364,38 @@ const addLog = async (context: HookContext<StaticResourceService>, actionType: '
   }
 }
 
+/**
+ * Sync static resource to vector database after create/update
+ */
+const syncToVectorDatabase = async (context: HookContext<StaticResourceService>) => {
+  try {
+    const vectorService = context.app.service(staticResourceVectorPath)
+    if (vectorService && typeof vectorService.syncStaticResource === 'function') {
+      const staticResource = context.result
+      await vectorService.syncStaticResource(staticResource)
+    }
+  } catch (error) {
+    console.error('Error syncing to vector database:', error)
+    // Don't throw error to avoid breaking the main operation
+  }
+}
+
+/**
+ * Remove static resource from vector database after delete
+ */
+const removeFromVectorDatabase = async (context: HookContext<StaticResourceService>) => {
+  try {
+    const vectorService = context.app.service(staticResourceVectorPath)
+    if (vectorService && typeof vectorService.deleteByStaticResourceId === 'function') {
+      const staticResourceId = context.id as string
+      await vectorService.deleteByStaticResourceId(staticResourceId)
+    }
+  } catch (error) {
+    console.error('Error removing from vector database:', error)
+    // Don't throw error to avoid breaking the main operation
+  }
+}
+
 export default {
   around: {
     all: [schemaHooks.resolveResult(staticResourceResolver)]
@@ -473,10 +506,10 @@ export default {
         )
       )
     ],
-    create: [updateResourcesJson],
-    update: [updateResourcesJson],
-    patch: [updateResourcesJson, (context) => addLog(context, 'patch')],
-    remove: [removeResourcesJson, (context) => addLog(context, 'delete')]
+    create: [updateResourcesJson, syncToVectorDatabase],
+    update: [updateResourcesJson, syncToVectorDatabase],
+    patch: [updateResourcesJson, syncToVectorDatabase, (context) => addLog(context, 'patch')],
+    remove: [removeResourcesJson, removeFromVectorDatabase, (context) => addLog(context, 'delete')]
   },
 
   error: {

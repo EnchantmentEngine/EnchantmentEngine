@@ -54,8 +54,10 @@ import { default as appConfig } from './appconfig'
 import authenticate from './hooks/authenticate'
 import { logError } from './hooks/log-error'
 import persistHeaders from './hooks/persist-headers'
+import { runVectorDbMigrations } from './media/static-resource-vector/vector-db-migrations'
 import { createDefaultStorageProvider } from './media/storageprovider/storageprovider'
 import mysql from './mysql'
+import postgres from './postgres'
 import services from './services'
 import authentication from './user/authentication'
 import primus from './util/primus'
@@ -221,6 +223,7 @@ export const createFeathersKoaApp = async (
   // Doesn't appear anything else uses it.
   app.set('env', 'production')
   app.configure(mysql)
+  app.configure(postgres)
 
   // Enable security, CORS, compression, favicon and body parsing
   app.use(errorHandler()) // in koa no option to pass logger object its a async function instead and must be set first
@@ -260,6 +263,14 @@ export const createFeathersKoaApp = async (
   // Set up our services (see `services/index.js`)
   await services(app)
 
+  // Run vector database migrations after services are set up
+  try {
+    await runVectorDbMigrations(app)
+  } catch (error) {
+    logger.error('Failed to run vector database migrations:', error)
+    // Don't throw error to avoid breaking app startup
+  }
+
   // Store headers across internal service calls
   app.hooks({
     around: {
@@ -278,5 +289,8 @@ export const tearDownAPI = async () => {
 
     const knex = (API.instance as any).get?.('knexClient')
     if (knex) await knex.destroy()
+
+    const vectorDb = (API.instance as any).get?.('vectorDbClient')
+    if (vectorDb) await vectorDb.destroy()
   }
 }
