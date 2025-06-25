@@ -147,7 +147,7 @@ export function useQuery(components: bitECS.QueryTerm[], layer: LayerID = Layers
         }, [])
 
         return null
-      })
+      }, 'useQuery ' + key)
 
       UseQuerySubreactorCache[key] = subreactor
     }
