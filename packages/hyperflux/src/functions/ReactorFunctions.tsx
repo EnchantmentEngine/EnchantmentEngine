@@ -272,7 +272,7 @@ export function startReactor(Reactor: React.FC, label?: string): ReactorRoot {
     HyperFlux.store.activeReactors.delete(reactorRoot.uuid)
     reactorRoot.cleanupFunctions.forEach((fn) => fn())
     reactorRoot.cleanupFunctions.clear()
-    ReactorRenderCounterState[reactorRoot.uuid].ended.set(true)
+    ReactorRenderCounterState[reactorRoot.uuid]?.ended?.set(true)
     destroy(reactorRoot.isRunning)
     destroy(reactorRoot.errors)
     destroy(reactorRoot.suspended)

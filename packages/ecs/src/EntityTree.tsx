@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { NO_PROXY, none, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import * as bitECS from 'bitecs'
-import React, { useLayoutEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import {
   Component,
   ComponentType,
@@ -482,20 +482,19 @@ export function useQueryBySource(
  */
 export function useAncestorTree(entity: Entity) {
   const ancestors = useHookstate([] as Entity[])
-  const forceUpdate = useForceUpdate()
 
   useImmediateEffect(() => {
     let unmounted = false
     const ParentSubReactor = React.memo((props: { entity: Entity }) => {
       const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      useImmediateEffect(() => {
+      useEffect(() => {
         if (!tree) return
-        if (!unmounted) forceUpdate()
         ancestors.set((prev) => {
           if (prev.indexOf(tree.parentEntity.value) < 0) prev.push(tree.parentEntity.value)
           return prev
         })
         return () => {
+          if (unmounted) return
           ancestors.set((prev) => prev.filter((e) => e !== tree.parentEntity.value))
         }
       }, [tree?.parentEntity?.value])
@@ -534,9 +533,10 @@ export function useChildrenWithComponents(
     let unmounted = false
     const ChildSubReactor = (props: { entity: Entity }) => {
       const ancestorTree = useAncestorTree(props.entity)
-      const includesRootEntity = useMemo(() => ancestorTree.includes(rootEntity), ancestorTree)
+      /** @todo somehow wrapping this in a useMemo doesn't work */
+      const includesRootEntity = ancestorTree.includes(rootEntity)
 
-      useLayoutEffect(() => {
+      useEffect(() => {
         if (!includesRootEntity) return
         children.set((prev) => {
           if (prev.indexOf(props.entity) < 0) prev.push(props.entity)
@@ -551,7 +551,7 @@ export function useChildrenWithComponents(
             })
           }
         }
-      }, [ancestorTree])
+      }, [includesRootEntity])
       return null
     }
 
