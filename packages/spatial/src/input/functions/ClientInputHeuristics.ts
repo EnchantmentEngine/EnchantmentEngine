@@ -32,6 +32,7 @@ import {
   EngineState,
   Entity,
   EntityUUID,
+  getAncestorWithComponents,
   getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
@@ -249,16 +250,16 @@ export function filterEntitiesByViewer(entity: Entity, viewerEntity: Entity) {
   return isRendered
 }
 
+const inputComponentArray = [InputComponent]
+
+/**
+ * Filters entities by input
+ * - return all meshes when authoring
+ * - iterate parent hierarchy until we find one with an input component
+ * @param entity
+ * @returns
+ */
 export function filterEntitiesByInput(entity: Entity) {
-  // return all meshes when authoring
   if (getAuthoringCounterpart(entity)) return true
-  let isInput = false
-  // iterate parent hierarchy until we find one with an input component
-  traverseEntityNodeParent(entity, (eid) => {
-    if (hasComponent(eid, InputComponent)) {
-      isInput = true
-      return true
-    }
-  })
-  return isInput
+  return !!getAncestorWithComponents(entity, inputComponentArray)
 }
