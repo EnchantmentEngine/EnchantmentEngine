@@ -192,7 +192,7 @@ const execute = () => {
     const { background, environment, fog, children } = getSceneParameters(entitiesToRender, entity)
     _scene.children = children
 
-    const renderMode = rendererState.renderMode
+    const renderMode = getState(RendererState).renderMode
 
     const sessionMode = getState(XRState).sessionMode
     _scene.background =
@@ -202,7 +202,7 @@ const execute = () => {
 
     _scene.fog = fog
 
-    render(renderer, _scene, camera, deltaSeconds, rendererState.usePostProcessing, csm)
+    render(renderer, _scene, camera, deltaSeconds, undefined, csm)
   }
   onRenderEnd()
 }
