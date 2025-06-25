@@ -179,7 +179,6 @@ export const getSceneParameters = (entities: Entity[], cameraEntity: Entity) => 
 
 const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
-  const rendererState = getState(RendererState)
 
   const onRenderEnd = PerformanceManager.profileGPURender()
   for (const entity of rendererQuery()) {
