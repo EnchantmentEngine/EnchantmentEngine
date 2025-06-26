@@ -361,8 +361,13 @@ export const defineComponent = <
   Component.defineObserver = (observer: Observer<Component>, layer: LayerID = Layers.Simulation) => {
     const handle = i++
 
+    // store the last value to not observe data that haven't actually changed
+    const lastValueMap = new Map<Entity, ComponentType>()
+
     const _observer = (entity: Entity, data: ComponentType) => {
       if (LayerComponent.get(entity) !== layer) return
+      if (lastValueMap.has(entity) && lastValueMap.get(entity) === data) return
+      lastValueMap.set(entity, data)
       if (!Component.pendingUnobservers.has(entity))
         Component.pendingUnobservers.set(entity, new Map<number, Unobserver>())
       if (Component.pendingUnobservers.has(entity) && Component.pendingUnobservers.get(entity)?.has(handle)) {
