@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEffect } from 'react'
+import { use, useEffect } from 'react'
 import { DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
 import {
@@ -113,7 +113,6 @@ const createTransformGizmoPivotEntity = (originEntity) => {
   setComponent(pivotEntity, TransformComponent)
   setComponent(pivotEntity, VisibleComponent)
   setComponent(pivotEntity, TransformGizmoTagComponent)
-
   return pivotEntity
 }
 
