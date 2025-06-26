@@ -1,0 +1,26 @@
+name: On Release, Sync to Dev
+on:
+  push:
+    branches: [release*]
+permissions: 
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config user.name ${{ github.event.pusher.name }}
+          git config user.email "${{ github.event.pusher.email }}"
+
+      - name: Update Test Branch
+        run: |
+          git fetch origin
+          git switch dev
+          git cherry-pick ${{ github.event.after }}
+          git push origin dev
