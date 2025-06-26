@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useEffect } from 'react'
+import { use, useEffect } from 'react'
 import { DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
 import {
@@ -68,6 +68,59 @@ import {
 import { EditorHelperState } from '../../../services/EditorHelperState'
 import { TransformGizmoVisualComponent } from './TransformGizmoVisualComponent'
 
+const gizmoPlane = new Mesh(
+    new PlaneGeometry(100000, 100000, 2, 2),
+    new MeshBasicMaterial({
+      visible: true,
+      wireframe: false,
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0.1,
+      toneMapped: false
+  })
+)
+
+
+const createTransformGizmoVisualEntity = (originEntity) => {
+    const gizmoVisualEntity = createEntity()
+    setComponent(gizmoVisualEntity, EntityTreeComponent, { parentEntity: originEntity })
+    setComponent(gizmoVisualEntity, NameComponent, 'transformGizmoVisualEntity')
+    setComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
+    setComponent(gizmoVisualEntity, TransformGizmoTagComponent)
+    setComponent(gizmoVisualEntity, VisibleComponent)
+    setComponent(gizmoVisualEntity, TransformComponent)
+    setComponent(gizmoVisualEntity, InputComponent)
+    ObjectLayerMaskComponent.setLayer(gizmoVisualEntity, ObjectLayers.TransformGizmo)
+
+    return gizmoVisualEntity
+}
+
+const createTransformGizmoPlaneEntity = (originEntity) => {
+  const gizmoPlaneEntity = createEntity()
+  setComponent(gizmoPlaneEntity, EntityTreeComponent, { parentEntity: originEntity })
+  setComponent(gizmoPlaneEntity, NameComponent, 'transformGizmoPlaneEntity')
+  setComponent(gizmoPlaneEntity, TransformComponent)
+  setComponent(gizmoPlaneEntity, VisibleComponent)
+  setComponent(gizmoPlaneEntity, MeshComponent, gizmoPlane)
+  //setComponent(gizmoPlaneEntity, TransformGizmoTagComponent) remove the gizmo plane from being considered in theheuristic , we use TransformGizmoTagComponent query to collect gizmo entities for heuristic
+  ObjectLayerMaskComponent.setLayer(gizmoPlaneEntity, ObjectLayers.TransformGizmo)
+
+  return gizmoPlaneEntity
+}
+
+
+const createTransformGizmoPivotEntity = (originEntity) => {
+  const pivotEntity = createEntity()
+
+  setComponent(pivotEntity, EntityTreeComponent, { parentEntity: originEntity })
+  setComponent(pivotEntity, NameComponent, 'transformGizmoPivotEntity')
+  setComponent(pivotEntity, TransformComponent)
+  setComponent(pivotEntity, VisibleComponent)
+  setComponent(pivotEntity, TransformGizmoTagComponent)
+  
+  return pivotEntity
+}
+
 export const TransformGizmoControlComponent = defineComponent({
   name: 'TransformGizmoControlComponent',
 
@@ -105,67 +158,24 @@ export const TransformGizmoControlComponent = defineComponent({
 
     useEffect(() => {
       if (!originEntity) return
-      if (!controlledEntity) return
 
-      // we dont want a transform gizmo on non spatial entities, like materials
-      if (!hasComponent(controlledEntity, TransformComponent)) return
+      // create the entities once
+      const gizmoVisualEntity = createTransformGizmoVisualEntity(originEntity)
+      const gizmoPlaneEntity = createTransformGizmoPlaneEntity(originEntity)
+      const pivotEntity = createTransformGizmoPivotEntity(originEntity)
+    
 
-      const gizmoVisualEntity = createEntity()
-      setComponent(gizmoVisualEntity, EntityTreeComponent, { parentEntity: originEntity })
-      setComponent(gizmoVisualEntity, NameComponent, 'transformGizmoVisualEntity')
-      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
-      setComponent(gizmoVisualEntity, TransformGizmoTagComponent)
-      setComponent(gizmoVisualEntity, VisibleComponent)
-      setComponent(gizmoVisualEntity, TransformComponent)
-      setComponent(gizmoVisualEntity, InputComponent)
-      ObjectLayerMaskComponent.setLayer(gizmoVisualEntity, ObjectLayers.TransformGizmo)
-
-      const gizmoPlaneEntity = createEntity()
-      setComponent(gizmoPlaneEntity, EntityTreeComponent, { parentEntity: originEntity })
-      setComponent(gizmoPlaneEntity, NameComponent, 'transformGizmoPlaneEntity')
-      setComponent(gizmoPlaneEntity, TransformComponent)
-      setComponent(gizmoPlaneEntity, VisibleComponent)
-
-      const gizmoPlane = new Mesh(
-        new PlaneGeometry(100000, 100000, 2, 2),
-        new MeshBasicMaterial({
-          visible: false,
-          wireframe: true,
-          side: DoubleSide,
-          transparent: true,
-          opacity: 0.1,
-          toneMapped: false
-        })
-      )
-
-      setComponent(gizmoPlaneEntity, MeshComponent, gizmoPlane)
-      //setComponent(gizmoPlaneEntity, TransformGizmoTagComponent) remove the gizmo plane from being considered in theheuristic , we use TransformGizmoTagComponent query to collect gizmo entities for heuristic
-      ObjectLayerMaskComponent.setLayer(gizmoPlaneEntity, ObjectLayers.TransformGizmo)
-
-      const pivotEntity = createEntity()
-      setComponent(pivotEntity, NameComponent, 'transformGizmoPivotEntity')
-      setComponent(pivotEntity, TransformComponent)
-      setComponent(pivotEntity, VisibleComponent)
-      setComponent(pivotEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-      setComponent(pivotEntity, TransformGizmoTagComponent)
-
-      const editorHelperState = getState(EditorHelperState)
       const gizmoControlEntity = createEntity()
       setComponent(gizmoControlEntity, EntityTreeComponent, { parentEntity: originEntity })
       setComponent(gizmoControlEntity, NameComponent, 'gizmoControlEntity')
       setComponent(gizmoControlEntity, TransformGizmoControlComponent, {
-        controlledEntities: controlledEntities,
         visualEntity: gizmoVisualEntity,
         planeEntity: gizmoPlaneEntity,
         pivotEntity: pivotEntity,
-        mode: editorHelperState.transformMode,
-        space: editorHelperState.transformSpace,
-        transformPivot: editorHelperState.transformPivot
       })
       setComponent(gizmoControlEntity, TransformGizmoTagComponent)
       setComponent(gizmoControlEntity, VisibleComponent)
       setComponent(gizmoControlEntity, TransformComponent)
-
       gizmoEntity.set(gizmoControlEntity)
 
       return () => {
@@ -175,7 +185,20 @@ export const TransformGizmoControlComponent = defineComponent({
         removeEntity(pivotEntity)
         gizmoEntity.set(UndefinedEntity)
       }
-    }, [originEntity, JSON.stringify(controlledEntities)])
+    }, [originEntity])
+
+
+    useEffect(() => {
+      if(!gizmoEntity.value || !controlledEntity) return
+      if (!hasComponent(controlledEntity, TransformComponent)) return
+
+      setComponent(gizmoEntity.value, TransformGizmoControlComponent, {
+        controlledEntities: controlledEntities,
+      }) 
+
+    },[gizmoEntity, JSON.stringify(controlledEntities)])
+
+
 
     return gizmoEntity.value
   },
