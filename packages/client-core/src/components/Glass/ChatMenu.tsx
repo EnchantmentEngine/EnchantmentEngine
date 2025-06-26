@@ -39,7 +39,6 @@ import { Inner } from './ToolbarAndSidebar'
 
 const messageBaseStyles = `
   inline-grid
-  max-w-full
   px-4 py-1
 
   border-2
@@ -48,9 +47,8 @@ const messageBaseStyles = `
   shadow-lg
 
   break-words
+  max-w-[80%]
   text-center
-  
-  sm:max-w-md
 `
 
 const blueGradientStyles = `
@@ -92,7 +90,7 @@ const OtherName = ({ senderId }: { senderId: string }) => {
 const OtherChat = ({ children }) => (
   <div
     className={`
-      flex flex-col gap-y-1
+      mb-6 flex flex-col items-start
     `}
   >
     {children}
@@ -179,7 +177,7 @@ export const ChatMenu = () => {
   const hasInputText = !!composedMessage.value
 
   return (
-    <Inner className={`mb-20`}>
+    <Inner className={`mb-20 w-full`}>
       {messageGroupedBySender.map((group, groupIndex) => {
         const [firstMessage] = group
         const isOwnGroup = firstMessage.senderId === user.id.value
@@ -192,7 +190,12 @@ export const ChatMenu = () => {
         })
 
         return isOwnGroup || isNotification ? (
-          groupedMessage
+          <div
+            key={groupIndex}
+            className={twMerge('mb-6 flex w-full flex-col gap-y-2', isNotification ? 'items-center' : 'items-end')}
+          >
+            {groupedMessage}
+          </div>
         ) : (
           <OtherChat key={groupIndex}>
             <OtherName senderId={firstMessage.senderId} />
