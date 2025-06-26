@@ -236,12 +236,13 @@ const MaterialInstanceSubReactor = (props: {
 
   useEffect(() => {
     if (!meshComponent || !materialStateComponent) return
+    const mesh = getComponent(entity, MeshComponent)
     const material = getComponent(materialEntity, MaterialStateComponent).material
     if (props.array) {
-      if (!Array.isArray(meshComponent.material.value)) meshComponent.material.set([])
-      meshComponent.material[index].set(material)
+      if (!Array.isArray(mesh.material)) mesh.material = []
+      mesh.material[index] = material
     } else {
-      meshComponent.material.set(material)
+      mesh.material = material
     }
 
     const references = getMutableState(MaterialReferenceState)[materialEntity]

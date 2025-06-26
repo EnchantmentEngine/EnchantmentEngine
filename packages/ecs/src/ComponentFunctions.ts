@@ -198,6 +198,10 @@ export interface Component<
   storage?: StorageType
   stateMap: Record<Entity, State<ComponentType, Identifiable>>
   valueMap: Record<Entity, ComponentType>
+  observers: Map<number, Observer<Component>>
+  pendingUnobservers: Map<Entity, Map<number, Unobserver>>
+  defineObserver: (observer: Observer<Component>, layer?: LayerID) => number
+  removeObserver: (handle: number) => void
   errors: ErrorTypes[]
   storageSize: number
   __ComponentType: ComponentType
@@ -347,6 +351,39 @@ export const defineComponent = <
   Component.onRemove = () => {}
   Component.toJSON = (component: ComponentType) => {
     return validateComponentSchema(def as any, component) as JSON
+  }
+
+  Component.observers = new Map<number, Observer<Component>>()
+  Component.pendingUnobservers = new Map<Entity, Map<number, Unobserver>>()
+
+  let i = 0
+
+  Component.defineObserver = (observer: Observer<Component>, layer: LayerID = Layers.Simulation) => {
+    const handle = i++
+
+    const _observer = (entity: Entity, data: ComponentType) => {
+      if (LayerComponent.get(entity) !== layer) return
+      if (!Component.pendingUnobservers.has(entity))
+        Component.pendingUnobservers.set(entity, new Map<number, Unobserver>())
+      if (Component.pendingUnobservers.has(entity) && Component.pendingUnobservers.get(entity)?.has(handle)) {
+        Component.pendingUnobservers.get(entity)?.get(handle)!()
+        Component.pendingUnobservers.get(entity)?.delete(handle)
+      }
+      const unobserver = observer(entity, data)
+      if (typeof unobserver == 'function') Component.pendingUnobservers.get(entity)?.set(handle, unobserver)
+    }
+    Component.observers.set(handle, _observer)
+    return handle
+  }
+
+  Component.removeObserver = (handle: number) => {
+    if (!Component.observers.has(handle)) return
+    for (const unobservers of Component.pendingUnobservers.values()) {
+      const unobserver = unobservers.get(handle)
+      unobserver?.()
+      unobservers.delete(handle)
+    }
+    Component.observers.delete(handle)
   }
 
   Component.errors = []
@@ -506,7 +543,10 @@ const _getComponentState = <C extends Component>(entity: Entity, component: C) =
         onSet: (s, d) => {
           const rootState = component.stateMap[entity]
           component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
+          /** @todo this condition can be removed with the ECS hookstate refactor */
+          if (!bitECS.hasComponent(HyperFlux.store, entity, component)) return
           LayerFunctions.propagateLayer(entity, component)
+          for (const observer of component.observers.values()) observer(entity, component.valueMap[entity])
         }
       }))
     ) as State<ComponentType<C>, Identifiable>
@@ -616,6 +656,12 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
       if (!LayerFunctions.shouldPropagate(entityLayer, layer)) continue
       removeComponent(linkedEntity, component)
     }
+  }
+
+  const unobservers = component.pendingUnobservers.get(entity)
+  if (unobservers) {
+    for (const [handle, unobserver] of unobservers) unobserver()
+    component.pendingUnobservers.delete(entity)
   }
 
   bitECS.removeComponent(HyperFlux.store, entity, component)
@@ -1557,3 +1603,7 @@ export const EntityContext = React.createContext(UndefinedEntity)
 export const useEntityContext = () => {
   return React.useContext(EntityContext)
 }
+
+export type Observer<C extends Component> = (entity: Entity, data: ComponentType<C>) => Unobserver | void
+export type Unobserver = () => void
+export type Cleanup = () => void
