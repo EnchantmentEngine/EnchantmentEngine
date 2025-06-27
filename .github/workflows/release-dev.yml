@@ -1,0 +1,37 @@
+name: On Release, Sync to Dev
+on:
+  pull_request:
+    branches: [release*]
+    types: [closed]
+permissions: 
+  contents: write
+jobs:
+  sync:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.IR_REPO_AUTH_APP_ID }}
+          private-key: ${{ secrets.IR_REPO_AUTH_PRIVATE_KEY }}
+          owner: ir-engine
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+
+      - name: Update Test Branch
+        env:
+          token: ${{ steps.app-token.outputs.token }}
+        run: |
+          git fetch origin
+          git switch dev
+          git cherry-pick ${{ github.event.pull_request.merge_commit_sha }} && git push origin dev

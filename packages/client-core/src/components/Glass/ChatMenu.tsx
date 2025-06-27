@@ -31,6 +31,7 @@ import { twMerge } from 'tailwind-merge'
 import { useGet } from '@ir-engine/common'
 import { userPath } from '@ir-engine/common/src/schema.type.module'
 import { Send01Md } from '@ir-engine/ui/src/icons'
+import { cva } from 'class-variance-authority'
 import { AuthState } from '../../user/services/AuthService'
 import ButtonGroup from '../Settings/ButtonGroup'
 import { useChatProvider } from './ChatProvider'
@@ -117,19 +118,38 @@ const inputStyles = `
   w-full
 `
 
-const sendButtonStyles = `
+const sendButtonStyles = cva(
+  `
   flex items-center
   
   p-2
-  
+
   rounded-full
-  text-white
   text-xl
-  bg-blue-500
   border
   border-white/10
-  shadow
-`
+`,
+  {
+    variants: {
+      disabled: {
+        true: `
+        bg-gray-400
+        text-gray-300
+        cursor-text
+      `,
+        false: `
+        ${blueGradientStyles}
+        text-white
+        shadow
+      `
+      },
+      show: {
+        true: ``,
+        false: `invisible`
+      }
+    }
+  }
+)
 
 const inputOuterStyles = `
   fixed
@@ -147,7 +167,8 @@ export const ChatMenu = () => {
   const onSignUpClicked = () => navigateTo('settings/signup')
   const onSignInClicked = () => navigateTo('settings/login')
 
-  const { messageGroupedBySender, inputRef, handleInputChange, sendMessage, composedMessage } = useChatProvider()
+  const { messageGroupedBySender, inputRef, handleInputChange, sendMessage, canSendMessage, composedMessage } =
+    useChatProvider()
   const { navigateTo } = useNavigationProvider()
 
   if (isGuest) {
@@ -177,7 +198,7 @@ export const ChatMenu = () => {
   const hasInputText = !!composedMessage.value
 
   return (
-    <Inner className={`mb-20`}>
+    <Inner className={`mb-20 w-full`}>
       {messageGroupedBySender.map((group, groupIndex) => {
         const [firstMessage] = group
         const isOwnGroup = firstMessage.senderId === user.id.value
@@ -192,7 +213,7 @@ export const ChatMenu = () => {
         return isOwnGroup || isNotification ? (
           <div
             key={groupIndex}
-            className={twMerge('mb-6 flex w-full flex-col gap-y-2', isOwnGroup ? 'items-end' : 'items-center')}
+            className={twMerge('mb-6 flex w-full flex-col gap-y-2', isNotification ? 'items-center' : 'items-end')}
           >
             {groupedMessage}
           </div>
@@ -209,7 +230,10 @@ export const ChatMenu = () => {
           <div className={inputContainerStyles}>
             <input className={inputStyles} onChange={handleInputChange} ref={inputRef} value={composedMessage.value} />
             <button
-              className={twMerge(blueGradientStyles, sendButtonStyles, hasInputText ? `` : `invisible`)}
+              className={sendButtonStyles({
+                show: hasInputText,
+                disabled: !canSendMessage
+              })}
               type={'submit'}
             >
               <Send01Md />
