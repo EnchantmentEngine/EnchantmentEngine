@@ -80,7 +80,7 @@ export default function LoginScreen() {
   const authSettings = useAuthSettings()
 
   const handleProviderClick = (client: string) => {
-    AuthService.loginUserByOAuth(client, location, false, location.href) // false for login, not signup
+    AuthService.loginUserByOAuth(client, location, false) // false for login, not signup
   }
 
   const availableProviders = LoginSocials.filter((p) => authSettings[p.client])
