@@ -363,6 +363,10 @@ export const defineComponent = <
 
   let i = 0
 
+  /**
+   * @todo @warning currently observers are not feature complete, they do not handle nested paths correctly
+   *  (nested paths will not update when the parent is updated - this will be addressed in the future)
+   */
   Component.defineObserver = <P extends ComponentPropertyPath<ComponentType>>(
     observer: Observer<Component>,
     path: P = '' as P,
@@ -377,15 +381,16 @@ export const defineComponent = <
       if (LayerComponent.get(entity) !== layer) return
       const lastValue = lastValueMap.get(entity)
       if (lastValue && lastValue === data) return
-      lastValueMap.set(entity, data)
-      if (!Component.pendingUnobservers.has(entity))
-        Component.pendingUnobservers.set(entity, new Map<number, Unobserver>())
       if (Component.pendingUnobservers.has(entity) && Component.pendingUnobservers.get(entity)?.has(handle)) {
         Component.pendingUnobservers.get(entity)?.get(handle)!()
         Component.pendingUnobservers.get(entity)?.delete(handle)
       }
       const unobserver = observer(entity, data)
-      if (typeof unobserver == 'function') Component.pendingUnobservers.get(entity)?.set(handle, unobserver)
+      if (typeof unobserver == 'function') {
+        if (!Component.pendingUnobservers.has(entity))
+          Component.pendingUnobservers.set(entity, new Map<number, Unobserver>())
+        Component.pendingUnobservers.get(entity)?.set(handle, unobserver)
+      }
     }
     if (!Component.observers.has(path)) Component.observers.set(path, new Map<number, Observer<Component>>())
     Component.observers.get(path)!.set(handle, _observer)
@@ -611,7 +616,7 @@ export const setComponent = <C extends Component>(
   const exists = hasComponent(entity, component)
 
   if (!exists) {
-    // we must call onSet before setting the component in the ECS, such that the propagation
+    // we must initalize state before setting the component in the ECS, such that the propagation
     // callback does not propagate data that may be required but not set yet
     state.set(createInitialComponentValue(entity, component))
     bitECS.addComponent(HyperFlux.store, entity, component)
@@ -682,10 +687,9 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
 
   const unobservers = component.pendingUnobservers.get(entity)
   if (unobservers) {
-    for (const [handle, unobserver] of unobservers) unobserver()
+    for (const unobserver of unobservers.values()) unobserver()
     component.pendingUnobservers.delete(entity)
   }
-
   bitECS.removeComponent(HyperFlux.store, entity, component)
   component.onRemove(entity, component.stateMap[entity]!)
   component.stateMap[entity]?.set(none)

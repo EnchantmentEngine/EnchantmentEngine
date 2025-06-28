@@ -23,38 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-/**
- * Comprehensive unit tests for the Observables API (defineObserver/removeObserver functions).
- *
- * This test suite provides complete coverage of the expected Observer functionality and serves
- * as both documentation and regression testing for the observer system.
- *
- * TEST RESULTS (23 tests total):
- * ✅ PASSING (5 tests):
- * - Basic observer creation and handle management
- * - Observer data structure validation
- * - Layer configuration defaults
- * - Type safety validation for observer callbacks
- * - Observer removal from internal maps
- *
- * ❌ FAILING (18 tests):
- * - Observer callbacks not being triggered on component set/update
- * - Layer filtering not working (observers should only react to correct layers)
- * - Unobserver callback storage and management broken
- * - Observer cleanup and removal not working properly
- * - Error handling for invalid handles causing crashes
- * - Complex component schemas not supported
- * - Multiple observers on same component not working
- * - Entity/component removal not triggering cleanup
- *
- * IMPLEMENTATION ISSUES IDENTIFIED:
- * 1. Observer callbacks are never called when components are set
- * 2. __observers.get(handle) returns undefined instead of expected tuple
- * 3. removeObserver crashes on non-existent handles
- * 4. bitECS integration in setComponent is not working correctly
- * 5. Layer filtering logic is not functioning
- */
-
 import assert from 'assert'
 import sinon from 'sinon'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -64,6 +32,7 @@ import {
   createEntity,
   defineComponent,
   getComponent,
+  getMutableComponent,
   Layers,
   Observer,
   removeComponent,
@@ -84,6 +53,22 @@ describe('Observables API', () => {
     return destroyEngine()
   })
 
+  // Helper function to check if a handle exists in any path
+  const hasObserverHandle = (component: any, handle: number): boolean => {
+    for (const pathObservers of component.observers.values()) {
+      if (pathObservers.has(handle)) return true
+    }
+    return false
+  }
+
+  // Helper function to get observer by handle from any path
+  const getObserverByHandle = (component: any, handle: number): any => {
+    for (const pathObservers of component.observers.values()) {
+      if (pathObservers.has(handle)) return pathObservers.get(handle)
+    }
+    return undefined
+  }
+
   describe('defineObserver', () => {
     it('should create an observer and return a handle', () => {
       const TestComponent = defineComponent({
@@ -95,20 +80,7 @@ describe('Observables API', () => {
       const handle = TestComponent.defineObserver(observer)
 
       assert(typeof handle === 'number')
-      assert(TestComponent.observers.has(handle))
-    })
-
-    it('should default to Simulation layer when no layer specified', () => {
-      const TestComponent = defineComponent({
-        name: 'TestComponent',
-        schema: S.Object({ value: S.Number({ default: 0 }) })
-      })
-
-      const _observer = sinon.spy()
-      const handle = TestComponent.defineObserver(_observer)
-
-      const observer = TestComponent.observers.get(handle)!
-      assert(observer)
+      assert(hasObserverHandle(TestComponent, handle))
     })
 
     it('should call observer when component is set on entity in same layer', () => {
@@ -118,7 +90,7 @@ describe('Observables API', () => {
       })
 
       const observer = sinon.spy()
-      TestComponent.defineObserver(observer, Layers.Simulation)
+      TestComponent.defineObserver(observer, undefined, Layers.Simulation)
 
       const entity = createEntity(Layers.Simulation)
       const componentData = { value: 42 }
@@ -135,12 +107,13 @@ describe('Observables API', () => {
       })
 
       const observer = sinon.spy()
-      TestComponent.defineObserver(observer, Layers.Simulation)
+      TestComponent.defineObserver(observer, undefined, Layers.Simulation)
 
       const entity = createEntity(Layers.Authoring)
       setComponent(entity, TestComponent, { value: 42 })
 
-      assert(observer.calledTwice)
+      // 2 calls, one for onSet propagation and one for explicit propagate call inside setComponent
+      assert.equal(observer.callCount, 2)
     })
 
     it('should not call observer when component is set on entity in different layer', () => {
@@ -150,7 +123,7 @@ describe('Observables API', () => {
       })
 
       const observer = sinon.spy()
-      TestComponent.defineObserver(observer, Layers.Authoring)
+      TestComponent.defineObserver(observer, undefined, Layers.Authoring)
 
       const entity = createEntity(Layers.Simulation)
       setComponent(entity, TestComponent, { value: 42 })
@@ -176,7 +149,7 @@ describe('Observables API', () => {
       setComponent(entity, TestComponent, { value: 42 })
       setComponent(entity, TestComponent, { value: 84 })
 
-      assert(firstUnobserver.calledOnce)
+      assert.equal(firstUnobserver.callCount, 1)
       assert(secondUnobserver.notCalled)
     })
 
@@ -209,8 +182,8 @@ describe('Observables API', () => {
 
       const simulationObserver = sinon.spy()
       const authoringObserver = sinon.spy()
-      TestComponent.defineObserver(simulationObserver, Layers.Simulation)
-      TestComponent.defineObserver(authoringObserver, Layers.Authoring)
+      TestComponent.defineObserver(simulationObserver, undefined, Layers.Simulation)
+      TestComponent.defineObserver(authoringObserver, undefined, Layers.Authoring)
 
       const simEntity = createEntity(Layers.Simulation)
       const authEntity = createEntity(Layers.Authoring)
@@ -235,9 +208,9 @@ describe('Observables API', () => {
       const observer = sinon.spy()
       const handle = TestComponent.defineObserver(observer)
 
-      assert(TestComponent.observers.has(handle))
+      assert(hasObserverHandle(TestComponent, handle))
       TestComponent.removeObserver(handle)
-      assert(!TestComponent.observers.has(handle))
+      assert(!hasObserverHandle(TestComponent, handle))
     })
 
     it('should call all pending unobserver functions', () => {
@@ -299,7 +272,7 @@ describe('Observables API', () => {
       const entity = createEntity()
       setComponent(entity, TestComponent, { value: 42 })
 
-      const unobserver = TestComponent.observers.get(handle)!
+      const unobserver = getObserverByHandle(TestComponent, handle)!
       assert(!unobserver(entity, getComponent(entity, TestComponent)))
     })
 
@@ -314,9 +287,17 @@ describe('Observables API', () => {
 
       const entity = createEntity()
       setComponent(entity, TestComponent, { value: 42 })
+
+      assert.equal(observer.callCount, 1)
+      assert(observer.calledWith(entity, { value: 42 }))
+
+      /** @todo proper path support - should not add count here if the observer looks for 'value' path */
+      setComponent(entity, TestComponent, { value: 42 })
+      assert.equal(observer.callCount, 2)
+
       setComponent(entity, TestComponent, { value: 84 })
 
-      assert.equal(observer.callCount, 2)
+      assert.equal(observer.callCount, 3)
     })
 
     it('should handle entity removal properly', () => {
@@ -332,16 +313,13 @@ describe('Observables API', () => {
       const entity = createEntity()
       setComponent(entity, TestComponent, { value: 42 })
 
-      // Verify unobserver was stored
-      const unobserver = TestComponent.observers.get(handle)!
+      const unobserver = getObserverByHandle(TestComponent, handle)!
       assert(unobserver)
 
-      // Remove entity should trigger cleanup
       removeEntity(entity)
 
-      // Unobserver should be called and entity removed from pending map
       assert(_unobserver.calledOnce)
-      const unobserver2 = TestComponent.observers.get(handle)!
+      const unobserver2 = getObserverByHandle(TestComponent, handle)!
       assert(!unobserver2(entity, getComponent(entity, TestComponent)))
     })
 
@@ -480,26 +458,167 @@ describe('Observables API', () => {
       const entity = createEntity()
       setComponent(entity, TestComponent, { value: 42 })
 
-      const unobserver = TestComponent.observers.get(handle)!
+      const unobserver = getObserverByHandle(TestComponent, handle)!
       assert(typeof unobserver === 'function')
     })
   })
-})
 
-/**
- * SUMMARY OF TEST RESULTS:
- *
- * This comprehensive test suite reveals that the Observer system has significant implementation
- * issues that need to be addressed. The core functionality of observing component changes is
- * not working, which means the observer system is currently non-functional.
- *
- * Key areas requiring fixes:
- * 1. Integration between defineObserver and setComponent
- * 2. Proper bitECS observer setup and triggering
- * 3. Error handling for edge cases
- * 4. Layer filtering implementation
- * 5. Cleanup and memory management
- *
- * Once these issues are resolved, this test suite will serve as comprehensive regression
- * testing to ensure the observer system works as expected.
- */
+  describe('Path-specific observers', () => {
+    it('should support observing specific property paths', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({
+          value: S.Number({ default: 0 }),
+          name: S.String({ default: '' })
+        })
+      })
+
+      const rootObserver = sinon.spy()
+      const valueObserver = sinon.spy()
+      const nameObserver = sinon.spy()
+      TestComponent.defineObserver(rootObserver) // observes entire component
+      TestComponent.defineObserver(valueObserver, 'value')
+      TestComponent.defineObserver(nameObserver, 'name')
+
+      const entity = createEntity()
+      setComponent(entity, TestComponent, { value: 42, name: 'test' })
+
+      /** @todo should it trigger all of them? */
+      // Only root observer should be called for initial component set
+      assert(rootObserver.calledOnce)
+      assert(valueObserver.notCalled)
+      assert(nameObserver.notCalled)
+      assert(rootObserver.calledWith(entity, { value: 42, name: 'test' }))
+    })
+
+    it('should organize observers by path in nested map structure', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({
+          value: S.Number({ default: 0 }),
+          name: S.String({ default: '' })
+        })
+      })
+
+      const rootObserver = sinon.spy()
+      const valueObserver = sinon.spy()
+      const rootHandle = TestComponent.defineObserver(rootObserver)
+      const valueHandle = TestComponent.defineObserver(valueObserver, 'value')
+
+      assert(TestComponent.observers.has(''))
+      assert(TestComponent.observers.has('value'))
+      assert(TestComponent.observers.get('')!.has(rootHandle))
+      assert(TestComponent.observers.get('value')!.has(valueHandle))
+    })
+
+    it('should clean up empty path maps when all observers are removed', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({ value: S.Number({ default: 0 }) })
+      })
+
+      const observer = sinon.spy()
+      const handle = TestComponent.defineObserver(observer, 'value')
+
+      assert(TestComponent.observers.has('value'))
+      TestComponent.removeObserver(handle)
+      assert(!TestComponent.observers.has('value'))
+    })
+
+    it('should support multiple observers on the same path', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({ value: S.Number({ default: 0 }) })
+      })
+
+      const observer1 = sinon.spy()
+      const observer2 = sinon.spy()
+      const handle1 = TestComponent.defineObserver(observer1)
+      const handle2 = TestComponent.defineObserver(observer2)
+
+      const entity = createEntity()
+      setComponent(entity, TestComponent, { value: 42 })
+
+      assert(observer1.calledOnce)
+      assert(observer2.calledOnce)
+      assert(observer1.calledWith(entity, { value: 42 }))
+      assert(observer2.calledWith(entity, { value: 42 }))
+
+      assert(TestComponent.observers.get('')!.has(handle1))
+      assert(TestComponent.observers.get('')!.has(handle2))
+    })
+
+    it('should handle removeObserver correctly with path-based structure', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({
+          value: S.Number({ default: 0 }),
+          name: S.String({ default: '' })
+        })
+      })
+
+      const valueObserver1 = sinon.spy()
+      const valueObserver2 = sinon.spy()
+      const nameObserver = sinon.spy()
+
+      const handle1 = TestComponent.defineObserver(valueObserver1, 'value')
+      const handle2 = TestComponent.defineObserver(valueObserver2, 'value')
+      const handle3 = TestComponent.defineObserver(nameObserver, 'name')
+
+      TestComponent.removeObserver(handle1)
+
+      assert(TestComponent.observers.has('value'))
+      assert(!TestComponent.observers.get('value')!.has(handle1))
+      assert(TestComponent.observers.get('value')!.has(handle2))
+
+      assert(TestComponent.observers.has('name'))
+      assert(TestComponent.observers.get('name')!.has(handle3))
+
+      TestComponent.removeObserver(handle2)
+
+      assert(!TestComponent.observers.has('value'))
+
+      assert(TestComponent.observers.has('name'))
+    })
+
+    it('should call path-specific observers when individual properties are updated', () => {
+      const TestComponent = defineComponent({
+        name: 'TestComponent',
+        schema: S.Object({
+          value: S.Number({ default: 0 }),
+          name: S.String({ default: '' })
+        })
+      })
+
+      const rootObserver = sinon.spy()
+      const valueObserver = sinon.spy()
+      const nameObserver = sinon.spy()
+      TestComponent.defineObserver(rootObserver)
+      TestComponent.defineObserver(valueObserver, 'value')
+      TestComponent.defineObserver(nameObserver, 'name')
+
+      const entity = createEntity()
+      setComponent(entity, TestComponent, { value: 42, name: 'test' })
+
+      rootObserver.resetHistory()
+      valueObserver.resetHistory()
+      nameObserver.resetHistory()
+
+      const componentState = getMutableComponent(entity, TestComponent)
+      componentState.nested('value').set(84)
+
+      assert(valueObserver.calledOnce)
+      assert(rootObserver.notCalled)
+      assert(nameObserver.notCalled)
+      assert(valueObserver.calledWith(entity, 84))
+
+      valueObserver.resetHistory()
+      componentState.name.set('updated')
+
+      assert(nameObserver.calledOnce)
+      assert(rootObserver.notCalled)
+      assert(valueObserver.notCalled)
+      assert(nameObserver.calledWith(entity, 'updated'))
+    })
+  })
+})
