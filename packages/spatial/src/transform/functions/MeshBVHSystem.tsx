@@ -204,18 +204,23 @@ export const MeshBVHSystem = defineSystem({
   insert: { after: PresentationSystemGroup },
   reactor: () => {
     useEffect(() => {
-      const handle = MeshComponent.defineObserver((entity) => {
-        const mesh = getComponent(entity, MeshComponent)
-        if (!ValidMeshForBVH(mesh)) return
-        const abortController = new AbortController()
-        generateMeshBVH(mesh, abortController.signal).then((bvh) => {
-          if (!bvh) return
-          setComponent(entity, MeshBVHComponent, bvh)
-        })
-        return () => {
-          abortController.abort()
-        }
-      }, Layers.Simulation)
+      // @ts-ignore - @todo Mesh recursively nested property types causes issues here
+      const handle = MeshComponent.defineObserver(
+        (entity) => {
+          const mesh = getComponent(entity, MeshComponent)
+          if (!ValidMeshForBVH(mesh)) return
+          const abortController = new AbortController()
+          generateMeshBVH(mesh, abortController.signal).then((bvh) => {
+            if (!bvh) return
+            setComponent(entity, MeshBVHComponent, bvh)
+          })
+          return () => {
+            abortController.abort()
+          }
+        },
+        '',
+        Layers.Simulation
+      )
 
       return () => {
         MeshComponent.removeObserver(handle)

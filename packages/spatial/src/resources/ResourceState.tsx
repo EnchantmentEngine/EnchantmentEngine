@@ -743,14 +743,19 @@ export const ResourceStateSystem = defineSystem({
   insert: { after: PresentationSystemGroup },
   reactor: () => {
     useEffect(() => {
-      const handle = ObjectComponent.defineObserver((entity) => {
-        const asset = getComponent(entity, ObjectComponent)
-        const resources = addEntityResource(entity, asset)
-        if (!resources.length) return
-        return () => {
-          for (const resource of resources) removeEntityResource(resource)
-        }
-      }, Layers.Simulation)
+      // @ts-ignore - @todo Object3D recursively nested property types causes issues here
+      const handle = ObjectComponent.defineObserver(
+        (entity) => {
+          const asset = getComponent(entity, ObjectComponent)
+          const resources = addEntityResource(entity, asset)
+          if (!resources.length) return
+          return () => {
+            for (const resource of resources) removeEntityResource(resource)
+          }
+        },
+        '',
+        Layers.Simulation
+      )
       return () => {
         ObjectComponent.removeObserver(handle)
       }
