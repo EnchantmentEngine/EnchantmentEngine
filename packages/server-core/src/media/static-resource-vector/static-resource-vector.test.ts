@@ -33,7 +33,7 @@ describe('static-resource-vector service', () => {
   let app: Application
 
   beforeAll(async () => {
-    app = createFeathersKoaApp()
+    app = await createFeathersKoaApp()
     await app.setup()
   })
 
