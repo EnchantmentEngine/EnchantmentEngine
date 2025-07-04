@@ -27,18 +27,13 @@ import path from 'path'
 import { Application } from '../../../declarations'
 import multiLogger from '../../ServerLogger'
 
-import { isDev } from '@ir-engine/common/src/config'
 import appConfig from '@ir-engine/server-core/src/appconfig'
 
 const logger = multiLogger.child({ component: 'server-core:vector-db-migrations' })
 
 import { Client } from 'pg'
 
-const { forceRefresh } = appConfig.vectordb
-
-const testEnabled = process.env.TEST === 'true'
-
-async function createDatabase(dbName: string) {
+export async function createDatabase(dbName: string) {
   const client = new Client({
     user: appConfig.vectordb.username,
     password: appConfig.vectordb.password,
@@ -67,19 +62,20 @@ async function createDatabase(dbName: string) {
   }
 }
 
+// Get the migrations directory
+const migrationsDir = path.join(__dirname, 'migrations')
+
+// Configure knex migrations for vector database
+export const migrationConfig = {
+  directory: migrationsDir,
+  tableName: 'knex_migrations_vector',
+  extension: 'ts'
+}
+
 /**
  * Run vector database migrations
  */
 export const runVectorDbMigrations = async (app: Application): Promise<void> => {
-  // Create vector database if it does not exist
-  if (forceRefresh || isDev || testEnabled) {
-    try {
-      await createDatabase(appConfig.vectordb.database)
-    } catch (error) {
-      logger.error('Error creating vector database: %s', error)
-    }
-  }
-
   try {
     const vectorDb = app.get('vectorDbClient')
     if (!vectorDb) {
@@ -88,16 +84,6 @@ export const runVectorDbMigrations = async (app: Application): Promise<void> => 
     }
 
     logger.info('Running vector database migrations...')
-
-    // Get the migrations directory
-    const migrationsDir = path.join(__dirname, 'migrations')
-
-    // Configure knex migrations for vector database
-    const migrationConfig = {
-      directory: migrationsDir,
-      tableName: 'knex_migrations_vector',
-      extension: 'ts'
-    }
 
     // Run migrations
     const [batchNo, log] = await vectorDb.migrate.latest(migrationConfig)

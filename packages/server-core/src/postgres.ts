@@ -23,14 +23,50 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import knex from 'knex'
+import knex, { Knex } from 'knex'
 
 import appConfig from '@ir-engine/server-core/src/appconfig'
 
 import { Application } from '../declarations'
 import multiLogger from './ServerLogger'
 
+import {
+  createDatabase,
+  migrationConfig,
+  rollbackVectorDbMigrations,
+  runVectorDbMigrations
+} from './media/static-resource-vector/vector-db-migrations'
+
 const logger = multiLogger.child({ component: 'server-core:postgres' })
+
+const checkLock = async (vectorDb: Knex, delayInMs: number) => {
+  const trx = await vectorDb.transaction()
+  await trx.raw("SET session_replication_role = 'replica'")
+
+  const lockTableExists = await trx.schema.hasTable('knex_migrations_lock')
+  if (lockTableExists) {
+    const existingData = await trx('knex_migrations_lock').select()
+
+    if (existingData.length > 0 && existingData[0].is_locked === 1) {
+      logger.info(`Knex migrations are locked. Waiting for ${delayInMs / 1000} seconds to check again.`)
+
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve()
+        }, delayInMs)
+      })
+
+      const existingData = await trx('knex_migrations_lock').select()
+
+      if (existingData.length > 0 && existingData[0].is_locked === 1) {
+        await vectorDb.migrate.forceFreeMigrationsLock(migrationConfig)
+      }
+    }
+  }
+
+  await trx.raw("SET session_replication_role = 'origin'")
+  await trx.commit()
+}
 
 export default (app: Application): void => {
   const { forceRefresh } = appConfig.vectordb
@@ -39,7 +75,7 @@ export default (app: Application): void => {
     logger.info('Setting up PostgreSQL vector database connection.')
     const oldSetup = app.setup
 
-    const vectorDb = knex({
+    const vectorDb: Knex = knex({
       log: forceRefresh
         ? {
             debug: logger.info.bind(logger),
@@ -62,7 +98,39 @@ export default (app: Application): void => {
       }
     })
 
+    const oldTeardown = app.teardown
+
+    let promiseResolve, promiseReject
+    app.isSetup = new Promise((resolve, reject) => {
+      promiseResolve = resolve
+      promiseReject = reject
+    })
+
+    app.teardown = async function (...args) {
+      try {
+        await vectorDb.destroy()
+        console.log('Knex connection closed')
+      } catch (err) {
+        logger.error('Knex teardown error')
+        logger.error(err)
+        promiseReject()
+        throw err
+      }
+      return oldTeardown.apply(this, args)
+    }
+
     app.setup = async function (...args) {
+      const prepareDb = process.env.PREPARE_DATABASE === 'true'
+
+      // Create vector database if it does not exist
+      if (forceRefresh || appConfig.testEnabled || prepareDb) {
+        try {
+          await createDatabase(appConfig.vectordb.database)
+        } catch (error) {
+          logger.error('Error creating vector database: %s', error)
+        }
+      }
+
       const promise = new Promise<void>((resolve, reject) => {
         const promiseResolve = () => {
           resolve()
@@ -83,6 +151,42 @@ export default (app: Application): void => {
             promiseReject()
           })
       })
+
+      await promise
+
+      try {
+        const vectorDb = app.get('vectorDbClient')
+
+        if (forceRefresh || appConfig.testEnabled) {
+          // We are running our migration:rollback here, so that tables in vector db are dropped 1st using knex.
+          await checkLock(vectorDb, 0)
+
+          logger.info('Knex migration rollback started')
+
+          await rollbackVectorDbMigrations(app)
+
+          // await vectorDb.migrate.rollback(config.migrations, true)
+          logger.info('Knex migration rollback ended')
+        }
+
+        if (forceRefresh || appConfig.testEnabled || prepareDb) {
+          // We are running our migrations here, so that tables above in vector db tree are create 1st using sequelize.
+          // And then knex migrations can be executed. This is because knex migrations will have foreign key dependency
+          // on the tables that are created using sequelize.
+          await checkLock(vectorDb, prepareDb ? 25000 : 0)
+
+          logger.info('Knex migration started')
+          await runVectorDbMigrations(app)
+          logger.info('Knex migration ended')
+
+          await checkLock(vectorDb, prepareDb ? 25000 : 0)
+        }
+      } catch (err) {
+        logger.error('Knex setup error')
+        logger.error(err)
+        promiseReject()
+        throw err
+      }
 
       return oldSetup.apply(this, args)
     }
