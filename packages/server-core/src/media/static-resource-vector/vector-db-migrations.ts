@@ -36,6 +36,8 @@ import { Client } from 'pg'
 
 const { forceRefresh } = appConfig.vectordb
 
+const testEnabled = process.env.TEST === 'true'
+
 async function createDatabase(dbName: string) {
   const client = new Client({
     user: appConfig.vectordb.username,
@@ -70,7 +72,7 @@ async function createDatabase(dbName: string) {
  */
 export const runVectorDbMigrations = async (app: Application): Promise<void> => {
   // Create vector database if it does not exist
-  if (forceRefresh || isDev) {
+  if (forceRefresh || isDev || testEnabled) {
     try {
       await createDatabase(appConfig.vectordb.database)
     } catch (error) {
