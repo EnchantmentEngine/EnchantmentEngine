@@ -69,7 +69,9 @@ const migrationsDir = path.join(__dirname, 'migrations')
 export const migrationConfig = {
   directory: migrationsDir,
   tableName: 'knex_migrations_vector',
-  extension: 'ts'
+  stub: 'migration_vector.stub',
+  extension: 'ts',
+  disableMigrationsListValidation: true
 }
 
 /**
@@ -115,16 +117,6 @@ export const rollbackVectorDbMigrations = async (app: Application): Promise<void
 
     logger.info('Rolling back vector database migrations...')
 
-    // Get the migrations directory
-    const migrationsDir = path.join(__dirname, 'migrations')
-
-    // Configure knex migrations for vector database
-    const migrationConfig = {
-      directory: migrationsDir,
-      tableName: 'knex_migrations_vector',
-      extension: 'ts'
-    }
-
     // Rollback migrations
     const [batchNo, log] = await vectorDb.migrate.rollback(migrationConfig)
 
@@ -153,16 +145,6 @@ export const getVectorDbMigrationStatus = async (app: Application): Promise<any>
     if (!vectorDb) {
       logger.warn('Vector database client not available')
       return { status: 'unavailable' }
-    }
-
-    // Get the migrations directory
-    const migrationsDir = path.join(__dirname, 'migrations')
-
-    // Configure knex migrations for vector database
-    const migrationConfig = {
-      directory: migrationsDir,
-      tableName: 'knex_migrations_vector',
-      extension: 'ts'
     }
 
     // Get current version

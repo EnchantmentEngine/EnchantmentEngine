@@ -33,7 +33,6 @@ import multiLogger from './ServerLogger'
 import {
   createDatabase,
   migrationConfig,
-  rollbackVectorDbMigrations,
   runVectorDbMigrations
 } from './media/static-resource-vector/vector-db-migrations'
 
@@ -163,7 +162,23 @@ export default (app: Application): void => {
 
           logger.info('Knex migration rollback started')
 
-          await rollbackVectorDbMigrations(app)
+          const allTables = (
+            await vectorDb.raw(
+              `select table_name from information_schema.tables where table_schema = '${appConfig.db.database}'`
+            )
+          )[0]?.map((table) => table.table_name)
+
+          if (allTables) {
+            const trx = await vectorDb.transaction()
+            await trx.raw("SET session_replication_role = 'replica'")
+
+            for (const table of allTables) {
+              await trx.schema.dropTableIfExists(table)
+            }
+
+            await trx.raw("SET session_replication_role = 'origin'")
+            await trx.commit()
+          }
 
           // await vectorDb.migrate.rollback(config.migrations, true)
           logger.info('Knex migration rollback ended')
