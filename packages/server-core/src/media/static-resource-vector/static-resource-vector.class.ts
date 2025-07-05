@@ -24,7 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Params } from '@feathersjs/feathers'
-import { KnexAdapterParams, KnexService } from '@feathersjs/knex'
+import { KnexAdapterOptions, KnexAdapterParams, KnexService } from '@feathersjs/knex'
 import {
   StaticResourceVectorData,
   StaticResourceVectorPatch,
@@ -55,7 +55,7 @@ export class StaticResourceVectorService<
   app: Application
   textEmbeddingModel: Ollama
 
-  constructor(options: any, app: Application) {
+  constructor(options: KnexAdapterOptions, app: Application) {
     super(options)
     this.app = app
 

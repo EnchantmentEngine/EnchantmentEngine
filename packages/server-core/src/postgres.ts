@@ -30,11 +30,7 @@ import appConfig from '@ir-engine/server-core/src/appconfig'
 import { Application } from '../declarations'
 import multiLogger from './ServerLogger'
 
-import {
-  createDatabase,
-  migrationConfig,
-  runVectorDbMigrations
-} from './media/static-resource-vector/vector-db-migrations'
+import { createDatabase, migrationConfig } from './media/static-resource-vector/vector-db-migrations'
 
 const logger = multiLogger.child({ component: 'server-core:postgres' })
 
@@ -180,18 +176,18 @@ export default (app: Application): void => {
             await trx.commit()
           }
 
-          // await vectorDb.migrate.rollback(config.migrations, true)
+          // await vectorDb.migrate.rollback(migrationConfig, true)
           logger.info('Knex migration rollback ended')
         }
 
         if (forceRefresh || appConfig.testEnabled || prepareDb) {
-          // We are running our migrations here, so that tables above in vector db tree are create 1st using sequelize.
+          // We are running our migrations here, so that tables above in vector db tree are created 1st using sequelize.
           // And then knex migrations can be executed. This is because knex migrations will have foreign key dependency
           // on the tables that are created using sequelize.
           await checkLock(vectorDb, prepareDb ? 25000 : 0)
 
-          logger.info('Knex migration started')
-          await runVectorDbMigrations(app)
+          logger.info('Knex migration started: %s', migrationConfig.directory)
+          await vectorDb.migrate.latest(migrationConfig)
           logger.info('Knex migration ended')
 
           await checkLock(vectorDb, prepareDb ? 25000 : 0)
