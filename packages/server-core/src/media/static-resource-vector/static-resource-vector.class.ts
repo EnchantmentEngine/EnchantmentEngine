@@ -91,10 +91,13 @@ export class StaticResourceVectorService<
 
     const embeddingField = `${field}Embedding`
 
+    // Convert query embedding to PostgreSQL vector format
+    const queryVector = `[${queryEmbedding.join(',')}]`
+
     // Perform vector similarity search using cosine distance
     const results = await this.Model.raw(
       `
-      SELECT *, 
+      SELECT *,
              1 - ("${embeddingField}" <=> ?) as similarity
       FROM "static-resource-vector"
       WHERE "${embeddingField}" IS NOT NULL
@@ -102,7 +105,7 @@ export class StaticResourceVectorService<
       ORDER BY "${embeddingField}" <=> ?
       LIMIT ?
     `,
-      [queryEmbedding, queryEmbedding, threshold, queryEmbedding, limit]
+      [queryVector, queryVector, threshold, queryVector, limit]
     )
 
     return results.rows || []
