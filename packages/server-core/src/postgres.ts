@@ -30,7 +30,7 @@ import appConfig from '@ir-engine/server-core/src/appconfig'
 import { Application } from '../declarations'
 import multiLogger from './ServerLogger'
 
-import { createDatabase, migrationConfig } from './media/static-resource-vector/vector-db-migrations'
+import { createDatabase, runVectorDbMigrations } from './media/static-resource-vector/vector-db-migrations'
 
 const logger = multiLogger.child({ component: 'server-core:postgres' })
 
@@ -54,7 +54,8 @@ const checkLock = async (vectorDb: Knex, delayInMs: number) => {
       const existingData = await trx('knex_migrations_lock').select()
 
       if (existingData.length > 0 && existingData[0].is_locked === 1) {
-        await vectorDb.migrate.forceFreeMigrationsLock(migrationConfig)
+        // Force unlock migrations - we handle migrations manually now
+        await trx('knex_migrations_lock').update({ is_locked: 0 })
       }
     }
   }
@@ -186,9 +187,9 @@ export default (app: Application): void => {
           // on the tables that are created using sequelize.
           await checkLock(vectorDb, prepareDb ? 25000 : 0)
 
-          logger.info('Knex migration started: %s', migrationConfig.directory)
-          await vectorDb.migrate.latest(migrationConfig)
-          logger.info('Knex migration ended')
+          logger.info('Vector database migration started')
+          await runVectorDbMigrations(app)
+          logger.info('Vector database migration ended')
 
           await checkLock(vectorDb, prepareDb ? 25000 : 0)
         }
