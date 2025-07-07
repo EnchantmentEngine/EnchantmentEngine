@@ -259,8 +259,9 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
 
 const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; meshEntity: Entity; level: number }) => {
   useEffect(() => {
-    const level = getComponent(props.variantEntity, VariantComponent).levels[props.level]
-
+    const variantComponent = getComponent(props.variantEntity, VariantComponent)
+    const level = variantComponent.levels[props.level]
+    const heuristic = variantComponent.heuristic
     const minDistance = level.metadata['minDistance']
     const maxDistance = level.metadata['maxDistance']
     const mesh = getComponent(props.meshEntity, MeshComponent)
@@ -284,32 +285,35 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
     const materials: Material[] = Array.isArray(instancedMesh.material)
       ? instancedMesh.material
       : [instancedMesh.material]
-    for (const material of materials) {
-      addOBCPlugin(material, {
-        id: 'lod-culling',
-        priority: 1,
-        compile: (shader, renderer) => {
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'uniform float opacity;',
-            `uniform float opacity;
+
+    if (heuristic === Heuristic.DISTANCE) {
+      for (const material of materials) {
+        addOBCPlugin(material, {
+          id: 'lod-culling',
+          priority: 1,
+          compile: (shader, renderer) => {
+            shader.fragmentShader = shader.fragmentShader.replace(
+              'uniform float opacity;',
+              `uniform float opacity;
 uniform float maxDistance;
 uniform float minDistance;`
-          )
+            )
 
-          // Calculate the camera distance from the geometry
-          // Discard fragments outside the minDistance and maxDistance range
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'void main() {',
-            `void main() {
+            // Calculate the camera distance from the geometry
+            // Discard fragments outside the minDistance and maxDistance range
+            shader.fragmentShader = shader.fragmentShader.replace(
+              'void main() {',
+              `void main() {
   float cameraDistance = length(vViewPosition);
   if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
     discard;
   }`
-          )
-          material.shader.uniforms.minDistance = { value: minDistance }
-          material.shader.uniforms.maxDistance = { value: maxDistance }
-        }
-      })
+            )
+            material.shader.uniforms.minDistance = { value: minDistance }
+            material.shader.uniforms.maxDistance = { value: maxDistance }
+          }
+        })
+      }
     }
 
     removeComponent(props.meshEntity, MeshComponent)

@@ -29,9 +29,11 @@ import { MdScatterPlot } from 'react-icons/md'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
+import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
+import Checkbox from '../../../../primitives/tailwind/Checkbox'
+import InputGroup from '../../input/Group'
 
 export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entity }) => {
   const { t } = useTranslation()
@@ -45,7 +47,11 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
       description={t('editor:properties.instancing.description')}
       Icon={InstancingNodeEditor.iconComponent}
       {...props}
-    ></NodeEditor>
+    >
+      <InputGroup name="Auto" label={'Auto'}>
+        <Checkbox checked={instancingComponent.auto.value} onChange={commitProperty(InstancingComponent, 'auto')} />
+      </InputGroup>
+    </NodeEditor>
   )
 }
 

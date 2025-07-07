@@ -23,16 +23,58 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { InstancedBufferAttribute } from 'three'
+import { InstancedBufferAttribute, Matrix4 } from 'three'
 
-import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  hasComponents,
+  setComponent,
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { useEffect } from 'react'
+import { Quaternion } from 'three'
 
 export const InstancingComponent = defineComponent({
   name: 'InstancingComponent',
   jsonID: 'EE_instancing',
 
   schema: S.Object({
-    instanceMatrix: S.Class(() => new InstancedBufferAttribute(new Float32Array(16), 16))
-  })
+    instanceMatrix: S.Class(() => new InstancedBufferAttribute(new Float32Array(16), 16)),
+    auto: S.Bool({ default: false })
+  }),
+
+  reactor: () => {
+    const entity = useEntityContext()
+    const instancingComponent = useComponent(entity, InstancingComponent)
+    const auto = instancingComponent.auto
+
+    useEffect(() => {
+      if (!auto.value) return
+      if (!hasComponents(entity, [VisibleComponent])) {
+        setComponent(entity, VisibleComponent)
+      }
+
+      // create random instance matrix
+      const matrices = [] as number[]
+      const mat4 = new Matrix4()
+
+      for (let i = 0; i < 10; i++) {
+        const rot = new Quaternion().multiply(new Quaternion().setFromAxisAngle(Vector3_Up, Math.random() * Math.PI))
+        mat4.makeRotationFromQuaternion(rot)
+        mat4.elements[12] = (Math.random() - 0.5) * 6
+        mat4.elements[13] = 0
+        mat4.elements[14] = (Math.random() - 0.5) * 6
+        matrices.push(...mat4.elements)
+      }
+
+      const matrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
+      instancingComponent.instanceMatrix.set(matrix)
+    }, [auto.value])
+
+    return null
+  }
 })
