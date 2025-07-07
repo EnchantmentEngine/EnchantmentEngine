@@ -29,7 +29,7 @@ import { useHookstate } from '@hookstate/core'
 import { useFind, useMutation } from '@ir-engine/common'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { AvatarID, avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
-import { hasComponent, useOptionalComponent } from '@ir-engine/ecs'
+import { hasComponent } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { SpawnEffectComponent } from '@ir-engine/engine/src/avatar/components/SpawnEffectComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -42,6 +42,7 @@ import AvatarCreatorMenu, { SupportedSdks } from '../../user/menus/avatar/Avatar
 import AvatarModifyMenu from '../../user/menus/avatar/AvatarModifyMenu'
 import { AuthService, AuthState } from '../../user/services/AuthService'
 import { AVATAR_PAGE_LIMIT } from '../../user/services/AvatarService'
+import { TextButton } from '../Glass/buttons/TextButton'
 import { NavigateFuncProps } from '../Glass/NavigationProvider'
 import { Inner } from '../Glass/ToolbarAndSidebar'
 import { MenuItem } from './MenuItem'
@@ -49,7 +50,7 @@ import { Section } from './Section'
 
 type AvatarScreenProps = NavigateFuncProps & {}
 
-const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo }) => {
+const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo, navigateClose }) => {
   const search = useHookstate('')
   const page = useHookstate(0)
 
@@ -64,8 +65,10 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo }) => {
     }
   })
 
-  const initialAvatar = useFind(avatarPath, { query: { userId } }).data?.at(0)
-  const selectedAvatarId = useHookstate(initialAvatar?.id || ('' as AvatarID))
+  const avatar = useFind(userAvatarPath, { query: { userId } }).data[0]
+  const userAvatarId = avatar?.avatarId
+
+  const selectedAvatarId = useHookstate('' as AvatarID)
   const selectedAvatar = avatars.find((avatar) => avatar.id === selectedAvatarId.value)
 
   const [createAvatarEnabled, uploadAvatarEnabled] = useFeatureFlags([
@@ -74,25 +77,27 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo }) => {
   ])
 
   useEffect(() => {
-    if (initialAvatar) {
-      selectedAvatarId.set(initialAvatar.id)
-    }
-  }, [initialAvatar])
+    if (!userAvatarId) return
+    if (!selectedAvatarId.value) selectedAvatarId.set(userAvatarId)
+  }, [userAvatarId, selectedAvatarId])
 
   AuthService.useAPIListeners()
 
   const userAvatarMutation = useMutation(userAvatarPath)
   const avatarEntity = AvatarComponent.useSelfAvatarEntity()
-  const selfAvatarLoaded = useOptionalComponent(avatarEntity, GLTFComponent)?.progress?.value === 100
+  const selfAvatarLoaded = GLTFComponent.useSceneLoaded(avatarEntity)
 
-  const onAvatarThumbnailClicked = async (id: AvatarID) => {
-    if (selectedAvatarId.value === id) return
+  function setUserAvatar(id: AvatarID) {
+    if (id == userAvatarId) return
 
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     if (!selfAvatarEntity || !hasComponent(selfAvatarEntity, SpawnEffectComponent)) {
-      await userAvatarMutation.patch(null, { avatarId: selectedAvatarId.value }, { query: { userId } })
+      userAvatarMutation.patch(null, { avatarId: id }, { query: { userId } })
     }
+  }
 
+  const onAvatarThumbnailClicked = async (id: AvatarID) => {
+    if (selectedAvatarId.value === id) return
     selectedAvatarId.set(id)
   }
 
@@ -145,6 +150,14 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo }) => {
           ))}
         </div>
       </div>
+      <TextButton
+        onClick={() => setUserAvatar(selectedAvatarId.value)}
+        className="w-full"
+        fade={`dark`}
+        disabled={selectedAvatarId.value === userAvatarId}
+      >
+        Confirm
+      </TextButton>
     </Inner>
   )
 }

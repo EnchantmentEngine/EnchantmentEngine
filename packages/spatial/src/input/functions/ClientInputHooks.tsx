@@ -40,19 +40,18 @@ import {
   setComponent,
   SourceID,
   UndefinedEntity,
-  useAncestorWithComponents,
   useComponent,
   useEntityContext,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Vector2 } from 'three'
 import { NameComponent } from '../../common/NameComponent'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { XRState } from '../../xr/XRState'
-import { DefaultButtonBindings, InputComponent } from '../components/InputComponent'
+import { DefaultButtonBindings } from '../components/InputComponent'
 import { InputPointerComponent } from '../components/InputPointerComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
 import {
@@ -64,7 +63,6 @@ import {
   MouseScroll,
   XRStandardGamepadAxes
 } from '../state/ButtonState'
-import { InputState } from '../state/InputState'
 import ClientInputFunctions from './ClientInputFunctions'
 import normalizeWheel from './normalizeWheel'
 
@@ -261,10 +259,54 @@ export const CanvasInputReactor = () => {
       return pointerIdMap.get(browserPointerId)!
     }
 
-    const onPointerEnter = (event: PointerEvent) => {
-      const mappedPointerId = getMappedPointerId(event.pointerId)
+    const clonePointerEventWithNewId = (originalEvent: PointerEvent, newPointerId: number): PointerEvent => {
+      const eventType = originalEvent.type
 
-      const existingPointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
+      const newEventInit = {
+        bubbles: originalEvent.bubbles,
+        cancelable: originalEvent.cancelable,
+        composed: originalEvent.composed,
+
+        pointerId: newPointerId,
+        pointerType: originalEvent.pointerType,
+        width: originalEvent.width,
+        height: originalEvent.height,
+        pressure: originalEvent.pressure,
+        tangentialPressure: originalEvent.tangentialPressure,
+        tiltX: originalEvent.tiltX,
+        tiltY: originalEvent.tiltY,
+        twist: originalEvent.twist,
+        isPrimary: originalEvent.isPrimary,
+
+        clientX: originalEvent.clientX,
+        clientY: originalEvent.clientY,
+        screenX: originalEvent.screenX,
+        screenY: originalEvent.screenY,
+        pageX: originalEvent.pageX,
+        pageY: originalEvent.pageY,
+        offsetX: originalEvent.offsetX,
+        offsetY: originalEvent.offsetY,
+        movementX: originalEvent.movementX,
+        movementY: originalEvent.movementY,
+
+        button: originalEvent.button,
+        buttons: originalEvent.buttons,
+        ctrlKey: originalEvent.ctrlKey,
+        shiftKey: originalEvent.shiftKey,
+        altKey: originalEvent.altKey,
+        metaKey: originalEvent.metaKey,
+
+        view: originalEvent.view,
+        relatedTarget: originalEvent.relatedTarget
+      }
+
+      return new PointerEvent(eventType, newEventInit)
+    }
+
+    const onPointerEnter = (event: PointerEvent) => {
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+
+      const existingPointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointEvent.pointerId)
       const pointerEntity =
         existingPointerEntity !== UndefinedEntity
           ? existingPointerEntity
@@ -274,27 +316,29 @@ export const CanvasInputReactor = () => {
               setComponent(entity, TransformComponent)
               setComponent(entity, InputSourceComponent, { sourceEntity: cameraEntity })
               setComponent(entity, InputPointerComponent, {
-                pointerId: mappedPointerId,
+                pointerId: mappedPointEvent.pointerId,
                 cameraEntity
               })
               return entity
             })()
 
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onPointerOver = (event: PointerEvent) => {
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onPointerOut = (event: PointerEvent) => {
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onPointerLeave = (event: PointerEvent) => {
-      const mappedPointerId = getMappedPointerId(event.pointerId)
-      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointEvent.pointerId)
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
       clearPointerState(pointerEntity)
 
       // Clean up the mapping when pointer leaves
@@ -307,23 +351,23 @@ export const CanvasInputReactor = () => {
     }
 
     const onPointerClick = (event: PointerEvent) => {
-      const mappedPointerId = getMappedPointerId(event.pointerId)
-      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointEvent.pointerId)
       const inputSourceComponent = getOptionalComponent(pointerEntity, InputSourceComponent)
       if (!inputSourceComponent) return
 
-      const down = event.type === 'pointerdown'
+      const down = mappedPointEvent.type === 'pointerdown'
 
       try {
-        if (down) canvas.setPointerCapture(event.pointerId)
-        else canvas.releasePointerCapture(event.pointerId)
+        if (down) canvas.setPointerCapture(mappedPointEvent.pointerId)
+        else canvas.releasePointerCapture(mappedPointEvent.pointerId)
       } catch (e) {
         //
       }
 
       let button: MouseButton = MouseButton.PrimaryClick
-      if (event.button === 1) button = MouseButton.AuxiliaryClick
-      else if (event.button === 2) button = MouseButton.SecondaryClick
+      if (mappedPointEvent.button === 1) button = MouseButton.AuxiliaryClick
+      else if (mappedPointEvent.button === 2) button = MouseButton.SecondaryClick
 
       const state = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
       if (down) {
@@ -333,36 +377,36 @@ export const CanvasInputReactor = () => {
         if (pointer && document.pointerLockElement !== canvas) {
           state[button]!.downPointerPosition = new Vector2(pointer.position.x, pointer.position.y)
           pointer.position.set(
-            ((event.clientX - canvas.getBoundingClientRect().x) / canvas.clientWidth) * 2 - 1,
-            ((event.clientY - canvas.getBoundingClientRect().y) / canvas.clientHeight) * -2 + 1
+            ((mappedPointEvent.clientX - canvas.getBoundingClientRect().x) / canvas.clientWidth) * 2 - 1,
+            ((mappedPointEvent.clientY - canvas.getBoundingClientRect().y) / canvas.clientHeight) * -2 + 1
           )
         }
       } else if (state[button]) {
         state[button]!.up = true
       }
 
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onPointerMove = (event: PointerEvent) => {
-      const mappedPointerId = getMappedPointerId(event.pointerId)
-      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointEvent.pointerId)
       const pointerComponent = getOptionalComponent(pointerEntity, InputPointerComponent)
       if (!pointerComponent) return
 
       if (document.pointerLockElement === canvas) {
         pointerComponent.position.set(
-          pointerComponent.position.x + event.movementX / canvas.clientWidth,
-          pointerComponent.position.y - event.movementY / canvas.clientHeight
+          pointerComponent.position.x + mappedPointEvent.movementX / canvas.clientWidth,
+          pointerComponent.position.y - mappedPointEvent.movementY / canvas.clientHeight
         )
       } else {
         pointerComponent.position.set(
-          ((event.clientX - canvas.getBoundingClientRect().x) / canvas.clientWidth) * 2 - 1,
-          ((event.clientY - canvas.getBoundingClientRect().y) / canvas.clientHeight) * -2 + 1
+          ((mappedPointEvent.clientX - canvas.getBoundingClientRect().x) / canvas.clientWidth) * 2 - 1,
+          ((mappedPointEvent.clientY - canvas.getBoundingClientRect().y) / canvas.clientHeight) * -2 + 1
         )
       }
-      ClientInputFunctions.updatePointerDragging(pointerEntity, event)
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      ClientInputFunctions.updatePointerDragging(pointerEntity, mappedPointEvent)
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onVisibilityChange = (event: Event) => {
@@ -379,8 +423,9 @@ export const CanvasInputReactor = () => {
       }
     }
 
-    const onClick = (evt: PointerEvent) => {
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, evt)
+    const onClick = (event: PointerEvent) => {
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onWheelEvent = (event: WheelEvent) => {
@@ -429,35 +474,10 @@ export const CanvasInputReactor = () => {
   return null
 }
 
-export const MeshInputReactor = () => {
-  const entity = useEntityContext()
-  const shouldReceiveInput = useAncestorWithComponents(entity, [InputComponent])
-
-  useImmediateEffect(() => {
-    const inputState = getState(InputState)
-    if (shouldReceiveInput) inputState.inputMeshes.add(entity)
-    else inputState.inputMeshes.delete(entity)
-  }, [shouldReceiveInput])
-  return null
-}
-
-export const BoundingBoxInputReactor = () => {
-  const entity = useEntityContext()
-  const shouldReceiveInput = useAncestorWithComponents(entity, [InputComponent])
-  useImmediateEffect(() => {
-    const inputState = getState(InputState)
-    if (shouldReceiveInput) inputState.inputBoundingBoxes.add(entity)
-    else inputState.inputBoundingBoxes.delete(entity)
-  }, [shouldReceiveInput])
-  return null
-}
-
 export const ClientInputHooks = {
   useNonSpatialInputSources,
   useGamepadInputSources,
   useXRInputSources,
-  CanvasInputReactor,
-  MeshInputReactor,
-  BoundingBoxInputReactor
+  CanvasInputReactor
 }
 export default ClientInputHooks

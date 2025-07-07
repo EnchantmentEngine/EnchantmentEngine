@@ -36,7 +36,7 @@ import {
   Layers,
   traverseEntityNode,
   UndefinedEntity,
-  useComponent,
+  useOptionalComponent,
   useQuery,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -148,24 +148,23 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   const ChildEntityReactor = (props: { entity: Entity }) => {
     const entity = props.entity
-    const entityTreeComponent = useComponent(entity, EntityTreeComponent)
-    const [parentEntity, setParentEntity] = useState(entityTreeComponent.value.parentEntity)
-    const [childIndex, setChildIndex] = useState(entityTreeComponent.value.childIndex)
+    const entityTreeComponent = useOptionalComponent(entity, EntityTreeComponent)
+    const parentEntity = useHookstate(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
+    const childIndex = useHookstate(entityTreeComponent?.childIndex.value ?? undefined)
 
     useEffect(() => {
-      if (entityTreeComponent.value.parentEntity !== parentEntity) {
-        setParentEntity(entityTreeComponent.value.parentEntity)
+      if (entityTreeComponent?.parentEntity.value !== parentEntity.value) {
+        parentEntity.set(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
         reparentRefresh.set((reparentRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent.parentEntity.value])
+    }, [entityTreeComponent?.parentEntity.value])
 
     useEffect(() => {
-      if (entityTreeComponent.value.childIndex !== childIndex) {
-        setChildIndex(entityTreeComponent.value.childIndex)
+      if (entityTreeComponent?.childIndex.value !== childIndex.value) {
+        childIndex.set(entityTreeComponent?.childIndex.value)
         childIndexRefresh.set((childIndexRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent.value.childIndex])
-
+    }, [entityTreeComponent?.childIndex.value])
     return null
   }
 
@@ -178,7 +177,8 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
       entities,
       childEntities,
       reparentRefresh,
-      childIndexRefresh
+      childIndexRefresh,
+      rootEntity
     ]
   )
 
@@ -198,7 +198,7 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   useEffect(() => {
     hierarchyTreeState.expandedNodes.set({ [sourceID]: { [rootEntity]: true } })
-  }, [sourceID])
+  }, [sourceID, rootEntity])
 
   useEffect(() => {
     if (!selectionState.selectedEntities.value.length) {
