@@ -40,9 +40,7 @@ export const useEntity = ({ setup, cleanup }: EntityOptions = {}) => {
   })
 
   useEffect(() => {
-    console.log('mounted')
     return () => {
-      console.log('cleaning up', entityRef.value)
       cleanup?.(entityRef.value)
       removeEntity(entityRef.value)
       entityRef.set(UndefinedEntity)

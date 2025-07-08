@@ -27,7 +27,7 @@ import { InstancedBufferAttribute, Matrix4 } from 'three'
 
 import {
   defineComponent,
-  hasComponents,
+  getComponent,
   setComponent,
   useComponent,
   useEntityContext
@@ -55,7 +55,7 @@ export const InstancingComponent = defineComponent({
 
     useEffect(() => {
       if (!auto.value) return
-      if (!hasComponents(entity, [VisibleComponent])) {
+      if (!getComponent(entity, VisibleComponent)) {
         setComponent(entity, VisibleComponent)
       }
 
