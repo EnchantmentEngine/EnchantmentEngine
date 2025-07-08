@@ -23,14 +23,30 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
-import { twMerge } from 'tailwind-merge'
+import { ws } from 'msw'
 
-export const GlassButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => {
-  const { className, disabled } = props
-  const style = `
-  flex items-center justify-center rounded-full border border-white/20 bg-white/15 px-6 py-4 text-lg font-bold text-white/90 shadow-lg drop-shadow-xl backdrop-blur-sm
-  ${disabled ? 'cursor-not-allowed opacity-50' : ''}
-  `
-  return <button {...props} className={twMerge(style, className)} />
+const primus = ws.link(/primus/g)
+
+// Keys should be shaped like `scope.find`, etc..
+type MockCollection = Record<string, (input: object) => object>
+
+export const handleMocks = (handlers: MockCollection) => {
+  return [
+    primus.addEventListener('connection', ({ client }) => {
+      client.addEventListener('message', (message) => {
+        const messageData = JSON.parse(message.data.toString())
+        const { id, data } = messageData
+        const [method, path, input] = data
+        const handler = handlers[`${path}.${method}`]
+        if (!handler) return
+        const responseData = handler(input)
+        const response = {
+          id,
+          type: 1,
+          data: [null, responseData]
+        }
+        client.send(JSON.stringify(response))
+      })
+    })
+  ]
 }

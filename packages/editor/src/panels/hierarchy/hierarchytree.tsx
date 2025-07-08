@@ -93,7 +93,7 @@ export function Contents() {
   /**an explicit callback is required to rerender changed nodes inside FixedSizeList */
   const MemoTreeNode = useCallback(
     (props: ListChildComponentProps<undefined>) => <HierarchyTreeNode {...props} />,
-    [nodes]
+    [allNodes]
   )
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function Contents() {
     return result
   }
 
-  const visibleNodes = getVisibleNodes([...allNodes])
+  const visibleNodes = getVisibleNodes([...nodes])
 
   /**
    * for the entity click function to expand + scroll to the item (scrollToItem) on

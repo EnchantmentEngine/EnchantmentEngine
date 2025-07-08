@@ -27,28 +27,28 @@ import { useMutableState } from '@ir-engine/hyperflux'
 import { motion } from 'motion/react'
 import React from 'react'
 import { AuthService, AuthState } from '../../user/services/AuthService'
+import { NavigateFuncProps } from '../Glass/NavigationProvider'
+import { Inner } from '../Glass/ToolbarAndSidebar'
 import ButtonGroup from './ButtonGroup'
 
-interface DeleteAccountScreenProps {
-  navigateTo: (screenKey: string, historyKey: string) => void
-  navigateClose: () => void
-}
+type DeleteAccountScreenProps = NavigateFuncProps & {}
 
 const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, navigateClose }) => {
   const { id } = useMutableState(AuthState).user
 
   const handleDelete = () => {
-    AuthService.removeUser(id.value)
+    // TODO: This is no longer supported
+    // AuthService.removeUser(id.value)
     // This will force a full page reload
     AuthService.logoutUser()
   }
 
   const handleStayHere = () => {
-    navigateTo('Settings', 'account')
+    navigateTo('settings/account')
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-between space-y-8 pb-4 text-center">
+    <Inner className="flex min-h-full flex-col items-center justify-between space-y-8 text-center">
       {/* Confirmation Message */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -67,7 +67,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigateTo, n
           { label: 'Delete', onClick: handleDelete }
         ]}
       />
-    </div>
+    </Inner>
   )
 }
 

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -23,43 +23,32 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export const smallIconButtonStyles = `
-  rounded-full
-  text-white
-  text-3xl
-  font-bold
-  w-10
-  h-10
-  flex
-  items-center
-  justify-center
-  border-2
-  border-b-white/0
-  border-white/10
-  shadow-lg
-  
-  bg-white/10
-  
-  hover:bg-white/20
-`
+import { Decorator } from '@storybook/react'
+import React from 'react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-export const largeIconButtonStyles = `
-  rounded-full
-  text-white
-  text-3xl
-  font-bold
-  w-14
-  h-14
-  flex
-  items-center
-  justify-center
-  border-2
-  border-b-white/0
-  border-white/10
-  shadow-xl
-  
-  bg-white/10
-  backdrop-blur-lg
-  
-  hover:bg-white/20
-`
+/**
+ * Simple Router Decorator for Storybook
+ * Provides basic routing functionality using MemoryRouter
+ */
+export const SimpleRouterDecorator: Decorator = (Story, context) => {
+  const routerConfig = context.parameters?.router as
+    | {
+        initialEntries?: string[]
+        initialIndex?: number
+      }
+    | undefined
+
+  const initialEntries = routerConfig?.initialEntries || ['/']
+  const initialIndex = routerConfig?.initialIndex || 0
+
+  return (
+    <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
+      <Routes>
+        <Route path="*" element={<Story />} />
+      </Routes>
+    </MemoryRouter>
+  )
+}
+
+export default SimpleRouterDecorator
