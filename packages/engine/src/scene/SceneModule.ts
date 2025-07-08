@@ -61,6 +61,7 @@ import { VariantComponent } from './components/VariantComponent'
 import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
+import { InstancingSystem } from './systems/InstancingSystem'
 import { LookAtSystem } from './systems/LookAtSystem'
 import { ParticleSystem } from './systems/ParticleSystemSystem'
 import { PortalSystem } from './systems/PortalSystem'
@@ -70,7 +71,6 @@ import { SceneObjectDynamicLoadSystem } from './systems/SceneObjectDynamicLoadSy
 import { SceneObjectSystem } from './systems/SceneObjectSystem'
 import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
 import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
-import { VariantSystem } from './systems/VariantSystem'
 
 import './functions/definePrefab'
 
@@ -121,6 +121,8 @@ export {
   DropShadowSystem,
   EnvironmentSystem,
   FogSystem,
+  // VariantSystem,
+  InstancingSystem,
   LookAtSystem,
   MaterialLibrarySystem,
   MountPointSystem,
@@ -131,6 +133,5 @@ export {
   SceneObjectDynamicLoadSystem,
   SceneObjectSystem,
   ShadowSystem,
-  TriggerCallbackSystem,
-  VariantSystem
+  TriggerCallbackSystem
 }

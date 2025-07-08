@@ -63,7 +63,9 @@ export const InstancingComponent = defineComponent({
       const mat4 = new Matrix4()
 
       for (let i = 0; i < 10; i++) {
-        const rot = new Quaternion().multiply(new Quaternion().setFromAxisAngle(Vector3_Up, Math.random() * Math.PI))
+        const rot = new Quaternion().multiply(
+          new Quaternion().setFromAxisAngle(Vector3_Up, Math.random() * Math.PI * 2)
+        )
         mat4.makeRotationFromQuaternion(rot)
         mat4.elements[12] = (Math.random() - 0.5) * 6
         mat4.elements[13] = 0
