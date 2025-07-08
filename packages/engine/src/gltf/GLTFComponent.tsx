@@ -57,16 +57,7 @@ import {
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
-import {
-  getMutableState,
-  getState,
-  NO_PROXY,
-  NO_PROXY_STEALTH,
-  none,
-  SceneUser,
-  State,
-  useMutableState
-} from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY_STEALTH, none, State } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -80,7 +71,6 @@ import { LoaderUtils } from 'three'
 import { loadResource } from '../assets/functions/resourceLoaderFunctions'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
-import { AuthoringState, HistoryCommand } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { ErrorComponent } from '../scene/components/ErrorComponent'
 import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadComponent'
@@ -171,14 +161,14 @@ type DependencyEval = {
 
 type Dependencies = {
   componentDependencies: Record<EntityUUID, Component[]>
-  deltaDependencies: Record<EntityUUID, number>
+  /**@todo fix delta dependencies race condition ASAP */
+  // deltaDependencies: Record<EntityUUID, number>
 }
 
 const dependenciesLoaded = (dependencies?: Dependencies) => {
   return (
-    !!dependencies &&
-    Object.keys(dependencies.componentDependencies).length === 0 &&
-    Object.keys(dependencies.deltaDependencies).length === 0
+    !!dependencies && Object.keys(dependencies.componentDependencies).length === 0 // &&
+    // Object.keys(dependencies.deltaDependencies).length === 0
   )
 }
 
@@ -205,17 +195,17 @@ const loadDependencies = {
 
 const buildDependencies = (entity: Entity, json: GLTF.IGLTF) => {
   const dependencies = {
-    componentDependencies: {},
-    deltaDependencies: {}
+    componentDependencies: {}
+    // deltaDependencies: {}
   } as Dependencies
 
   const overrides = json.extensions?.[OVERRIDE_EXTENSION_NAME]
   if (overrides) {
     for (const [id, ops] of Object.entries(overrides)) {
       if (!ops.length) continue
-      const overrideUUID = GLTFComponent.getOverrideUUID(entity, id as EntityID)
-      if (!(overrideUUID in dependencies.deltaDependencies)) dependencies.deltaDependencies[overrideUUID] = 0
-      dependencies.deltaDependencies[overrideUUID] += ops.length
+      // const overrideUUID = GLTFComponent.getOverrideUUID(entity, id as EntityID)
+      // if (!(overrideUUID in dependencies.deltaDependencies)) dependencies.deltaDependencies[overrideUUID] = 0
+      // dependencies.deltaDependencies[overrideUUID] += ops.length
     }
   }
 
@@ -411,9 +401,9 @@ const DependencyEntryReactor = (props: { gltfComponentEntity: Entity; uuid: Enti
 const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: Dependencies }) => {
   const { gltfComponentEntity, dependencies } = props
   const componentDependencies = Object.entries(dependencies.componentDependencies)
-  const deltaDependencies = dependencies.deltaDependencies
+  // const deltaDependencies = dependencies.deltaDependencies
 
-  const commands = useMutableState(AuthoringState).commands[SceneUser].get(NO_PROXY) as HistoryCommand[] | undefined
+  // const commands = useMutableState(AuthoringState).commands[SceneUser].get(NO_PROXY) as HistoryCommand[] | undefined
 
   useEffect(() => {
     return () => {
@@ -422,25 +412,25 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
     }
   }, [])
 
-  useEffect(() => {
-    if (!commands) return
+  // useEffect(() => {
+  //   if (!commands) return
 
-    for (const command of commands) {
-      for (const overrideUUID in command) {
-        if (!deltaDependencies[overrideUUID]) continue
+  //   for (const command of commands) {
+  //     for (const overrideUUID in command) {
+  //       if (!deltaDependencies[overrideUUID]) continue
 
-        const remainingOps = deltaDependencies[overrideUUID] - command[overrideUUID].length
-        if (remainingOps <= 0) {
-          delete deltaDependencies[overrideUUID]
-        } else {
-          deltaDependencies[overrideUUID] = remainingOps
-        }
-      }
-    }
+  //       const remainingOps = deltaDependencies[overrideUUID] - command[overrideUUID].length
+  //       if (remainingOps <= 0) {
+  //         delete deltaDependencies[overrideUUID]
+  //       } else {
+  //         deltaDependencies[overrideUUID] = remainingOps
+  //       }
+  //     }
+  //   }
 
-    const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    gltfComponent.dependencies.merge({ deltaDependencies })
-  }, [commands])
+  //   const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
+  //   gltfComponent.dependencies.merge({ deltaDependencies })
+  // }, [commands])
 
   return (
     <>
@@ -535,7 +525,6 @@ const useGLTFDocument = (entity: Entity) => {
       entity,
       (response) => {
         if (signal.aborted) return
-
         const [gltf, body] = parseGLTFFile(response, onError)
 
         if (gltf) {
