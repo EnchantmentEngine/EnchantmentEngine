@@ -34,6 +34,7 @@ import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEdito
 import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import InputGroup from '../../input/Group'
+import NumericInput from '../../input/Numeric'
 
 export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entity }) => {
   const { t } = useTranslation()
@@ -50,6 +51,7 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
     >
       <InputGroup name="Auto" label={'Auto'}>
         <Checkbox checked={instancingComponent.auto.value} onChange={commitProperty(InstancingComponent, 'auto')} />
+        <NumericInput value={instancingComponent.count.value} onChange={commitProperty(InstancingComponent, 'count')} />
       </InputGroup>
     </NodeEditor>
   )

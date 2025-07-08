@@ -60,6 +60,7 @@ import { TriggerCallbackComponent } from './components/TriggerCallbackComponent'
 import { VariantComponent } from './components/VariantComponent'
 import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
+import './functions/definePrefab'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
 import { InstancingSystem } from './systems/InstancingSystem'
 import { LookAtSystem } from './systems/LookAtSystem'
@@ -71,8 +72,7 @@ import { SceneObjectDynamicLoadSystem } from './systems/SceneObjectDynamicLoadSy
 import { SceneObjectSystem } from './systems/SceneObjectSystem'
 import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
 import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
-
-import './functions/definePrefab'
+import { VariantSystem } from './systems/VariantSystem'
 
 /** This const MUST be kept here, to ensure all components definitions are loaded by the time the scene loading occurs */
 export const SceneComponents = [
@@ -121,7 +121,6 @@ export {
   DropShadowSystem,
   EnvironmentSystem,
   FogSystem,
-  // VariantSystem,
   InstancingSystem,
   LookAtSystem,
   MaterialLibrarySystem,
@@ -133,5 +132,6 @@ export {
   SceneObjectDynamicLoadSystem,
   SceneObjectSystem,
   ShadowSystem,
-  TriggerCallbackSystem
+  TriggerCallbackSystem,
+  VariantSystem
 }

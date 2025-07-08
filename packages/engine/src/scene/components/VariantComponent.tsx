@@ -174,14 +174,14 @@ export const VariantComponent = defineComponent({
       }
     }, [variantComponent.heuristic.value, variantComponent.levels])
 
-    useEffect(() => {
-      if (!variantComponent.levels.length || !childEntity.value) return
+    // useEffect(() => {
+    //   if (!variantComponent.levels.length || !childEntity.value) return
 
-      const currentLevel = variantComponent.currentLevel.value
-      const src = variantComponent.levels[currentLevel].src.value
-      if (!src) return
-      setComponent(childEntity.value, GLTFComponent, { src: src })
-    }, [childEntity, variantComponent.currentLevel, variantComponent.levels])
+    //   const currentLevel = variantComponent.currentLevel.value
+    //   const src = variantComponent.levels[currentLevel].src.value
+    //   if (!src) return
+    //   setComponent(childEntity.value, GLTFComponent, { src: src })
+    // }, [childEntity, variantComponent.currentLevel, variantComponent.levels])
 
     useEffect(() => {
       const levels = variantComponent.levels.length
@@ -196,6 +196,8 @@ export const VariantComponent = defineComponent({
         }
       }
     }, [variantComponent.levels.length])
+
+    return null
 
     if (!instancingComponent) return null
 

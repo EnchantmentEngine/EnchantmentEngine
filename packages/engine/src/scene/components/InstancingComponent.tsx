@@ -44,13 +44,14 @@ export const InstancingComponent = defineComponent({
 
   schema: S.Object({
     instanceMatrix: S.Class(() => new InstancedBufferAttribute(new Float32Array(16), 16)),
-    auto: S.Bool({ default: false })
+    auto: S.Bool({ default: false }),
+    count: S.Number({ default: 10 })
   }),
 
   reactor: () => {
     const entity = useEntityContext()
     const instancingComponent = useComponent(entity, InstancingComponent)
-    const auto = instancingComponent.auto
+    const { auto, count } = instancingComponent
 
     useEffect(() => {
       if (!auto.value) return
@@ -62,7 +63,7 @@ export const InstancingComponent = defineComponent({
       const matrices = [] as number[]
       const mat4 = new Matrix4()
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < count.value; i++) {
         const rot = new Quaternion().multiply(
           new Quaternion().setFromAxisAngle(Vector3_Up, Math.random() * Math.PI * 2)
         )
@@ -75,7 +76,7 @@ export const InstancingComponent = defineComponent({
 
       const matrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
       instancingComponent.instanceMatrix.set(matrix)
-    }, [auto.value])
+    }, [auto.value, count.value])
 
     return null
   }
