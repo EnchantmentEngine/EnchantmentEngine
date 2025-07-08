@@ -25,16 +25,9 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { InstancedBufferAttribute, Matrix4 } from 'three'
 
-import {
-  defineComponent,
-  getComponent,
-  setComponent,
-  useComponent,
-  useEntityContext
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useEffect } from 'react'
 import { Quaternion } from 'three'
 
@@ -55,11 +48,7 @@ export const InstancingComponent = defineComponent({
 
     useEffect(() => {
       if (!auto.value) return
-      if (!getComponent(entity, VisibleComponent)) {
-        setComponent(entity, VisibleComponent)
-      }
 
-      // create random instance matrix
       const matrices = [] as number[]
       const mat4 = new Matrix4()
 
