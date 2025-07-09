@@ -176,7 +176,6 @@ export const ComponentEditorsState = defineState({
       [InstancingComponent.name]: InstancingNodeEditor,
       [PersistentAnchorComponent.name]: PersistentAnchorNodeEditor,
       [VariantComponent.name]: VariantNodeEditor,
-      [InstancingComponent.name]: InstancingNodeEditor,
       [SplineComponent.name]: SplineNodeEditor,
       [SplineTrackComponent.name]: SplineTrackNodeEditor,
       [VisualScriptComponent.name]: VisualScriptNodeEditor,

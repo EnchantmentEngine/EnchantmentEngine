@@ -201,60 +201,55 @@ export function FileBrowserInput({
 
   return (
     <div className={twMerge('w-full', isOver ? 'border-4 border-dashed border-ui-outline' : '')}>
-      <ControlledStringInput ref={dropRef} value={value} onRelease={onRelease} {...rest} />
+      <div className="mt-2 flex items-center gap-2">
+        {thumbnailLoading ? (
+          <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-100">
+            <span className="text-xs text-gray-500">Loading...</span>
+          </div>
+        ) : thumbnailURL ? (
+          <img
+            src={thumbnailURL}
+            alt="File thumbnail"
+            className="h-16 w-16 rounded border object-cover"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              target.nextElementSibling?.classList.remove('hidden')
+            }}
+          />
+        ) : null}
 
-      {/* Display thumbnail with fallback */}
-      {value && (
-        <div className="mt-2 flex items-center gap-2">
-          {thumbnailLoading ? (
-            <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-100">
-              <span className="text-xs text-gray-500">Loading...</span>
-            </div>
-          ) : thumbnailURL ? (
-            <img
-              src={thumbnailURL}
-              alt="File thumbnail"
-              className="h-16 w-16 rounded border object-cover"
-              onError={(e) => {
-                // Fallback to placeholder if image fails to load
-                const target = e.target as HTMLImageElement
-                target.style.display = 'none'
-                target.nextElementSibling?.classList.remove('hidden')
-              }}
-            />
-          ) : null}
-
-          {/* Fallback placeholder */}
-          {!thumbnailLoading && !thumbnailURL && (
-            <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-50">
-              <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          )}
-
-          {/* Hidden fallback for image load errors */}
-          <div className="hidden h-16 w-16 items-center justify-center rounded border bg-gray-50">
+        {/* Fallback placeholder */}
+        {!thumbnailLoading && !thumbnailURL && (
+          <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-50">
             <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
               />
             </svg>
           </div>
+        )}
 
-          <div className="flex flex-col">
-            {value && <span className="max-w-48 truncate text-xs text-gray-400">{value.split('/').pop()}</span>}
-          </div>
+        {/* Hidden fallback for image load errors */}
+        <div className="hidden h-16 w-16 items-center justify-center rounded border bg-gray-50">
+          <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
+          </svg>
         </div>
-      )}
+
+        <div className="flex flex-col">
+          <ControlledStringInput ref={dropRef} value={value} onRelease={onRelease} {...rest} />
+        </div>
+      </div>
     </div>
   )
 }

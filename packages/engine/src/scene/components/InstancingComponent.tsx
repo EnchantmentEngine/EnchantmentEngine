@@ -36,7 +36,9 @@ export const InstancingComponent = defineComponent({
   jsonID: 'EE_instancing',
 
   schema: S.Object({
-    instanceMatrix: S.Class(() => new InstancedBufferAttribute(new Float32Array(16), 16)),
+    instanceMatrix: S.Type<InstancedBufferAttribute>({
+      default: () => new InstancedBufferAttribute(new Float32Array(16), 16)
+    }),
     auto: S.Bool({ default: false }),
     count: S.Number({ default: 10 })
   }),
@@ -44,10 +46,11 @@ export const InstancingComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const instancingComponent = useComponent(entity, InstancingComponent)
-    const { auto, count } = instancingComponent
+    const { auto, count, instanceMatrix } = instancingComponent
 
     useEffect(() => {
       if (!auto.value) return
+      if (instanceMatrix.count.value === count.value) return
 
       const matrices = [] as number[]
       const mat4 = new Matrix4()
@@ -65,7 +68,8 @@ export const InstancingComponent = defineComponent({
 
       const matrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
       instancingComponent.instanceMatrix.set(matrix)
-    }, [auto.value, count.value])
+      instancingComponent.instanceMatrix.count.set(count.value)
+    }, [auto.value, count.value, instanceMatrix.value])
 
     return null
   }

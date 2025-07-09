@@ -131,6 +131,7 @@ export const VariantComponent = defineComponent({
   },
 
   reactor: () => {
+    return null
     const entity = useEntityContext()
     const variantComponent = useComponent(entity, VariantComponent)
     const instancingComponent = useOptionalComponent(entity, InstancingComponent)
