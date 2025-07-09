@@ -19,28 +19,33 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025 
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineConfig } from 'vitest/config'
+import {
+  staticResourceSearchMethods,
+  staticResourceSearchPath
+} from '@ir-engine/common/src/schemas/media/static-resource-search.schema'
+import { Application } from '../../../declarations'
+import { StaticResourceSearchService } from './static-resource-search.class'
+import hooks from './static-resource-search.hooks'
 
-process.env.TEST = 'true'
-
-export default defineConfig({
-  test: {
-    environment: 'node',
-    passWithNoTests: true,
-    isolate: true,
-    fileParallelism: false,
-    hookTimeout: 15 * 60 * 1000,
-    testTimeout: 15 * 60 * 1000,
-    maxConcurrency: 1,
-    coverage: {
-      enabled: true,
-      reporter: ['lcov'],
-      provider: 'istanbul',
-      include: ['src/**']
-    }
+declare module '@ir-engine/common/declarations' {
+  interface ServiceTypes {
+    [staticResourceSearchPath]: StaticResourceSearchService
   }
-})
+}
+
+export default (app: Application): void => {
+  // Initialize our service
+  app.use(staticResourceSearchPath, new StaticResourceSearchService(app), {
+    // Only expose the find method
+    methods: staticResourceSearchMethods,
+    // Custom events for search analytics
+    events: ['search-performed']
+  })
+
+  // Initialize hooks
+  app.service(staticResourceSearchPath).hooks(hooks)
+}
