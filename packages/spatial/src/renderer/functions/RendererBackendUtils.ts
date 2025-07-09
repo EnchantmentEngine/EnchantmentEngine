@@ -35,10 +35,8 @@ export function isWebGPURenderer(rendererEntity: Entity): boolean {
   const rendererComponent = getOptionalComponent(rendererEntity, RendererComponent)
   if (!rendererComponent?.renderer) return false
 
-  // Check if the renderer is using WebGPU backend
   const renderer = rendererComponent.renderer as any
 
-  // WebGPU renderer has a backend property and isWebGPURenderer property
   if (renderer.isWebGPURenderer) return true
   if (renderer.backend && !renderer.backend.isWebGLBackend) return true
 
@@ -49,13 +47,11 @@ export function isWebGLRenderer(rendererEntity: Entity): boolean {
   const rendererComponent = getOptionalComponent(rendererEntity, RendererComponent)
   if (!rendererComponent?.renderer) return false
 
-  // Check if the renderer is using WebGL backend
   const renderer = rendererComponent.renderer as any
 
-  // WebGL renderer has isWebGLRenderer property or backend.isWebGLBackend
   if (renderer.isWebGLRenderer) return true
   if (renderer.backend?.isWebGLBackend) return true
-  if (renderer.getContext && !renderer.backend) return true // Legacy WebGL detection
+  if (renderer.getContext && !renderer.backend) return true
 
   return false
 }
@@ -74,6 +70,17 @@ export function warnWebGPUIncompatibility(feature: string, rendererEntity: Entit
       `${feature}: This feature is not currently compatible with WebGPU renderer. Consider using WebGL for full compatibility.`
     )
   }
+}
+
+export function getMaxCubeMapSize(renderer: SupportedRenderer): number {
+  if (!renderer) return 2048
+  if (renderer instanceof WebGLRenderer) {
+    const gl = renderer.getContext()
+    return gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE)
+  } else if (renderer instanceof WebGPURenderer) {
+    return renderer.backend['device'].limits.maxTextureDimension2D
+  }
+  return 2048
 }
 
 export function getMaxShadowCascades(rendererEntity: Entity): number {

@@ -29,10 +29,11 @@ import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, Re
 import { useEffect } from 'react'
 import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
 import { WebGPURendererParameters } from 'three/src/renderers/webgpu/WebGPURenderer.js'
-import { WebGPURenderer } from 'three/webgpu'
+import { PostProcessing, WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
+import { WebGPUPostProcessingPipeline } from '../webgpu/WebGPUPostProcessingPipeline'
 
 import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
@@ -65,6 +66,8 @@ export const RendererComponent = defineComponent({
 
       renderer: S.Type<WebGPURenderer | WebGLRenderer | null>(),
       effectComposer: S.Type<EffectComposer | null>(),
+      postProcessing: S.Type<PostProcessing | null>(),
+      webgpuPostProcessingPipeline: S.Type<WebGPUPostProcessingPipeline | null>(),
 
       scenes: S.Array(S.Entity()),
       scene: S.Class(() => new Scene()),
@@ -208,6 +211,11 @@ export const RendererComponent = defineComponent({
 
             renderer.debug.checkShaderErrors = isDev
             renderer.autoClear = true
+
+            const scene = rendererComponent.scene.value as Scene
+            const webgpuPipeline = new WebGPUPostProcessingPipeline(renderer, scene, camera)
+            rendererComponent.webgpuPostProcessingPipeline.set(webgpuPipeline)
+            rendererComponent.postProcessing.set(webgpuPipeline.getPostProcessing())
 
             rendererComponent.effectComposer.set(null)
 
@@ -381,6 +389,24 @@ export const RendererComponent = defineComponent({
       rendererComponent.effects,
       rendererComponent.effectComposer.value,
       rendererComponent?.effectInstances?.OutlineEffect.value,
+      renderSettings.usePostProcessing.value
+    ])
+
+    useEffect(() => {
+      const webgpuPipeline = rendererComponent.webgpuPostProcessingPipeline.value
+      if (!webgpuPipeline) return
+
+      const enabled = renderSettings.usePostProcessing.value
+      const effectsVal = rendererComponent.effects.value
+
+      if (enabled && effectsVal) {
+        webgpuPipeline.updateEffects(effectsVal)
+      } else {
+        webgpuPipeline.updateEffects({})
+      }
+    }, [
+      rendererComponent.effects,
+      rendererComponent.webgpuPostProcessingPipeline.value,
       renderSettings.usePostProcessing.value
     ])
 

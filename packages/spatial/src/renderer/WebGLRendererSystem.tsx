@@ -60,7 +60,37 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { isWebGPURenderer } from './functions/RendererBackendUtils'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
-import { renderWebGPUPostProcessing } from './webgpu/WebGPUPostProcessing'
+
+function renderWebGPUPostProcessing(
+  entity: Entity,
+  scene: Scene,
+  camera: ArrayCamera,
+  renderer: ComponentType<typeof RendererComponent>
+): boolean {
+  if (!isWebGPURenderer(entity)) return false
+
+  const webgpuPipeline = renderer.webgpuPostProcessingPipeline
+  if (webgpuPipeline) {
+    try {
+      webgpuPipeline.render()
+      return true
+    } catch (error) {
+      console.warn('WebGPU post processing pipeline render failed:', error)
+    }
+  }
+
+  const postProcessing = renderer.postProcessing
+  if (postProcessing) {
+    try {
+      postProcessing.render()
+      return true
+    } catch (error) {
+      console.warn('WebGPU PostProcessing render failed:', error)
+    }
+  }
+
+  return false
+}
 
 declare module 'postprocessing' {
   interface EffectComposer {
@@ -126,8 +156,8 @@ export const render = (
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
   if (entity && isWebGPURenderer(entity)) {
-    const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer.renderer as any)
-
+    // const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer)
+    const webgpuRendered = false
     if (!webgpuRendered) {
       renderer.renderer.clear()
       renderer.renderer.render(scene, camera)

@@ -1,0 +1,381 @@
+/*
+CPAL-1.0 License
+
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0. (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
+The License is based on the Mozilla Public License Version 1.1, but Sections 14
+and 15 have been added to cover use of software over a computer network and 
+provide for limited attribution for the Original Developer. In addition, 
+Exhibit A has been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
+specific language governing rights and limitations under the License.
+
+The Original Code is Infinite Reality Engine.
+
+The Original Developer is the Initial Developer. The Initial Developer of the
+Original Code is the Infinite Reality Engine team.
+
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
+Infinite Reality Engine. All Rights Reserved.
+*/
+
+import { ArrayCamera, Scene } from 'three'
+import { bloom } from 'three/addons/tsl/display/BloomNode.js'
+import { pass } from 'three/tsl'
+import { PostProcessing, WebGPURenderer } from 'three/webgpu'
+import { createWebGPUEffectNodes, createWebGPUScenePass, WebGPUEffectNode } from './WebGPUEffectNodes'
+
+export class WebGPUPostProcessingPipeline {
+  private postProcessing: PostProcessing
+  private renderer: WebGPURenderer
+  private scene: Scene
+  private camera: ArrayCamera
+  private effectNodes: WebGPUEffectNode[] = []
+  private outputNode: any = null
+
+  constructor(renderer: WebGPURenderer, scene: Scene, camera: ArrayCamera) {
+    this.renderer = renderer
+    this.scene = scene
+    this.camera = camera
+    this.postProcessing = new PostProcessing(renderer)
+  }
+
+  updateEffects(effects: Record<string, any>): void {
+    try {
+      this.effectNodes = createWebGPUEffectNodes(effects)
+
+      if (this.effectNodes.length === 0) {
+        this.outputNode = null
+        return
+      }
+
+      this.buildEffectChain()
+
+      console.log(
+        'WebGPU post processing pipeline updated with effects:',
+        this.effectNodes.map((node) => node.type)
+      )
+    } catch (error) {
+      console.warn('Failed to update WebGPU post processing pipeline:', error)
+    }
+  }
+
+  private buildEffectChain(): void {
+    let currentNode = createWebGPUScenePass(this.scene, this.camera)
+
+    for (const effectNode of this.effectNodes) {
+      currentNode = this.applyEffectNode(currentNode, effectNode)
+    }
+
+    this.outputNode = currentNode
+
+    this.updatePostProcessingInstance()
+  }
+
+  private applyEffectNode(inputNode: WebGPUEffectNode, effectNode: WebGPUEffectNode): WebGPUEffectNode {
+    effectNode.input = inputNode
+
+    this.createTSLNode(effectNode)
+
+    return effectNode
+  }
+
+  private async createTSLNode(effectNode: WebGPUEffectNode): Promise<void> {
+    try {
+      const tsl = await import('three/tsl')
+
+      switch (effectNode.type) {
+        case 'scenePass':
+          effectNode.tslNode = tsl.pass(effectNode.config.scene, effectNode.config.camera)
+          break
+
+        case 'BloomEffect':
+          effectNode.tslNode = await this.createBloomTSLNode(tsl, effectNode)
+          break
+
+        // case 'FXAAEffect':
+        //   effectNode.tslNode = await this.createFXAATSLNode(tsl, effectNode)
+        //   break
+
+        // case 'ToneMappingEffect':
+        //   effectNode.tslNode = await this.createToneMappingTSLNode(tsl, effectNode)
+        //   break
+
+        // case 'SMAAEffect':
+        //   effectNode.tslNode = await this.createSMAATSLNode(tsl, effectNode)
+        //   break
+
+        default:
+          console.warn(`TSL node creation for ${effectNode.type} not implemented yet`)
+          break
+      }
+    } catch (error) {
+      console.warn(`Failed to create TSL node for ${effectNode.type}:`, error)
+    }
+  }
+
+  private async createBloomTSLNode(tsl: any, effectNode: WebGPUEffectNode): Promise<any> {
+    const config = effectNode.config
+
+    const inputNode = effectNode.input?.tslNode || effectNode.input
+
+    const luminance = tsl.luminance ? tsl.luminance(inputNode) : inputNode
+    const threshold = tsl.threshold ? tsl.threshold(luminance, config.luminanceThreshold) : luminance
+
+    return tsl.bloom
+      ? tsl.bloom(threshold, {
+          intensity: config.intensity,
+          radius: config.radius,
+          levels: config.levels
+        })
+      : threshold
+  }
+
+  private async createFXAATSLNode(tsl: any, effectNode: WebGPUEffectNode): Promise<any> {
+    const inputNode = effectNode.input?.tslNode || effectNode.input
+    return tsl.fxaa ? tsl.fxaa(inputNode) : inputNode
+  }
+
+  private async createToneMappingTSLNode(tsl: any, effectNode: WebGPUEffectNode): Promise<any> {
+    const config = effectNode.config
+    const inputNode = effectNode.input?.tslNode || effectNode.input
+
+    return tsl.toneMapping
+      ? tsl.toneMapping(inputNode, {
+          mode: config.mode,
+          exposure: config.maxLuminance,
+          whitePoint: config.whitePoint
+        })
+      : inputNode
+  }
+
+  private async createSMAATSLNode(tsl: any, effectNode: WebGPUEffectNode): Promise<any> {
+    const config = effectNode.config
+    const inputNode = effectNode.input?.tslNode || effectNode.input
+
+    return tsl.smaa
+      ? tsl.smaa(inputNode, {
+          preset: config.preset,
+          edgeDetectionMode: config.edgeDetectionMode
+        })
+      : inputNode
+  }
+
+  private updatePostProcessingInstance(): void {
+    console.log(this.outputNode)
+    if (!this.outputNode) {
+      ;(this.postProcessing as any).outputNode = null
+      return
+    }
+
+    try {
+      // (this.postProcessing as any)._effectChain = {
+      //   nodes: this.effectNodes,
+      //   outputNode: this.outputNode
+      // }
+
+      this.buildTSLChain()
+    } catch (error) {
+      console.warn('Failed to update PostProcessing instance:', error)
+    }
+  }
+
+  private async buildTSLChain(): Promise<void> {
+    try {
+      let currentTSLNode = pass(this.scene, this.camera)
+      const scenePassColor = currentTSLNode.getTextureNode('output')
+
+      // for (const effectNode of this.effectNodes) {
+      //   currentTSLNode = await this.applyTSLEffect(currentTSLNode, scenePassColor, effectNode)
+      // }
+      const bloomPass = bloom(scenePassColor)
+      bloomPass.strength.value = 0.1
+
+      this.postProcessing.outputNode = scenePassColor.add(bloomPass)
+
+      console.log('TSL effect chain built successfully with', this.effectNodes.length, 'effects')
+    } catch (error) {
+      console.warn('Failed to build TSL effect chain:', error)
+      try {
+        const tsl = await import('three/tsl')
+        const scenePass = tsl.pass(this.scene, this.camera)
+        ;(this.postProcessing as any).outputNode = scenePass
+      } catch (fallbackError) {
+        console.warn('Failed to set fallback scene pass:', fallbackError)
+      }
+    }
+  }
+
+  private async applyTSLEffect(currentNode: any, scenePassColor: any, effectNode: WebGPUEffectNode): Promise<any> {
+    const config = effectNode.config
+
+    switch (effectNode.type) {
+      case 'BloomEffect':
+        return this.applyBloomTSL(currentNode, config)
+
+      // case 'FXAAEffect':
+      //   return this.applyFXAATSL(tsl, scenePassColor, config)
+
+      // case 'ToneMappingEffect':
+      //   return this.applyToneMappingTSL(tsl, scenePassColor, config)
+
+      // case 'NoiseEffect':
+      //   return this.applyNoiseTSL(tsl, scenePassColor, config)
+
+      // case 'VignetteEffect':
+      //   return this.applyVignetteTSL(tsl, scenePassColor, config)
+
+      // case 'ChromaticAberrationEffect':
+      //   return this.applyChromaticAberrationTSL(tsl, scenePassColor, config)
+
+      // case 'DotScreenEffect':
+      //   return this.applyDotScreenTSL(tsl, scenePassColor, config)
+
+      default:
+        console.warn(`TSL effect ${effectNode.type} not implemented, skipping`)
+        return currentNode
+    }
+  }
+
+  private async applyBloomTSL(inputNode: any, config: any): Promise<any> {
+    try {
+      console.log(config)
+      const bloomPass = bloom(inputNode)
+      bloomPass.strength.value = 1.0
+      // bloomPass.radius.value = config.radius || 0.85
+      // bloomPass.threshold.value = config.luminanceThreshold || 0.9
+
+      return bloomPass
+    } catch (error) {
+      console.warn('Failed to apply bloom TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyFXAATSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      if (tsl.fxaa) {
+        return tsl.fxaa(inputNode)
+      }
+      return inputNode
+    } catch (error) {
+      console.warn('Failed to apply FXAA TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyToneMappingTSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      if (tsl.toneMapping) {
+        return tsl.toneMapping(inputNode, {
+          mode: config.mode || 'AGX',
+          exposure: config.maxLuminance || 4.0
+        })
+      }
+      return inputNode
+    } catch (error) {
+      console.warn('Failed to apply tone mapping TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyNoiseTSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      if (tsl.noise) {
+        return tsl.noise(inputNode, {
+          strength: config.strength || 0.1
+        })
+      }
+      return inputNode
+    } catch (error) {
+      console.warn('Failed to apply noise TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyVignetteTSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      if (tsl.vignette) {
+        return tsl.vignette(inputNode, {
+          offset: config.offset || 0.5,
+          darkness: config.darkness || 0.5
+        })
+      }
+      return inputNode
+    } catch (error) {
+      console.warn('Failed to apply vignette TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyChromaticAberrationTSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      if (tsl.chromaticAberration) {
+        return tsl.chromaticAberration(inputNode, {
+          offset: config.offset || [0.001, 0.0005]
+        })
+      }
+      return inputNode
+    } catch (error) {
+      console.warn('Failed to apply chromatic aberration TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  private async applyDotScreenTSL(tsl: any, inputNode: any, config: any): Promise<any> {
+    try {
+      const { dotScreen } = await import('three/addons/tsl/display/DotScreenNode.js')
+
+      const dotScreenPass = dotScreen(inputNode)
+      dotScreenPass.scale.value = config.scale || 1.0
+
+      return dotScreenPass
+    } catch (error) {
+      console.warn('Failed to apply dot screen TSL effect:', error)
+      return inputNode
+    }
+  }
+
+  render(): void {
+    if (this.outputNode && this.postProcessing) {
+      try {
+        this.postProcessing.render()
+      } catch (error) {
+        console.warn('WebGPU post processing render failed:', error)
+      }
+    }
+  }
+
+  getPostProcessing(): PostProcessing {
+    return this.postProcessing
+  }
+
+  getEffectNodes(): WebGPUEffectNode[] {
+    return this.effectNodes
+  }
+
+  getOutputNode(): WebGPUEffectNode | null {
+    return this.outputNode
+  }
+
+  dispose(): void {
+    this.effectNodes = []
+    this.outputNode = null
+
+    if (this.postProcessing && typeof (this.postProcessing as any).dispose === 'function') {
+      ;(this.postProcessing as any).dispose()
+    }
+  }
+}
+
+export function createWebGPUPostProcessingPipeline(
+  renderer: WebGPURenderer,
+  scene: Scene,
+  camera: ArrayCamera
+): WebGPUPostProcessingPipeline {
+  return new WebGPUPostProcessingPipeline(renderer, scene, camera)
+}

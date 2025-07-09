@@ -32,7 +32,7 @@ import { Scene } from 'three'
 import { PostProcessingEffectState } from '../effects/EffectRegistry'
 import { isWebGPURenderer } from '../functions/RendererBackendUtils'
 import { useRendererEntity } from '../functions/useRendererEntity'
-import { WebGPUPostProcessingReactor } from '../webgpu/WebGPUPostProcessing'
+
 import { EffectSchema, RendererComponent } from './RendererComponent'
 
 export const PostProcessingComponent = defineComponent({
@@ -43,6 +43,13 @@ export const PostProcessingComponent = defineComponent({
     enabled: S.Bool(),
     effects: S.Record(S.String(), EffectSchema)
   }),
+
+  onInit: () => {
+    return {
+      enabled: false,
+      effects: {} as Record<string, any>
+    }
+  },
 
   /** @todo this will be replaced with spatial queries or distance checks */
   reactor: () => {
@@ -96,4 +103,25 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
       })}
     </>
   )
+}
+
+const WebGPUPostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }) => {
+  const { entity, rendererEntity } = props
+  const postProcessingComponent = useComponent(entity, PostProcessingComponent)
+  const renderer = useComponent(rendererEntity, RendererComponent)
+
+  React.useEffect(() => {
+    const webgpuPipeline = renderer.webgpuPostProcessingPipeline.value
+    if (!webgpuPipeline || !postProcessingComponent.enabled.value) return
+
+    webgpuPipeline.updateEffects(postProcessingComponent.effects.value)
+
+    console.log('WebGPU post processing pipeline updated')
+  }, [
+    postProcessingComponent.effects,
+    postProcessingComponent.enabled.value,
+    renderer.webgpuPostProcessingPipeline.value
+  ])
+
+  return null
 }
