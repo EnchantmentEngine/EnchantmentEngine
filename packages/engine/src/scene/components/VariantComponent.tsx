@@ -131,7 +131,7 @@ export const VariantComponent = defineComponent({
   },
 
   reactor: () => {
-    return null
+    // return null
     const entity = useEntityContext()
     const variantComponent = useComponent(entity, VariantComponent)
     const instancingComponent = useOptionalComponent(entity, InstancingComponent)
@@ -158,6 +158,7 @@ export const VariantComponent = defineComponent({
     }, [instancingComponent])
 
     useEffect(() => {
+      // return null
       if (!variantComponent.levels.length) return
 
       const heuristic = variantComponent.heuristic.value

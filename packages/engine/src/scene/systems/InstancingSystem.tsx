@@ -39,21 +39,17 @@ import {
 } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
 import { stringHash } from '@ir-engine/spatial/src/common/functions/MathFunctions'
+import { addOBCPlugin, removeOBCPlugin } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import React, { useEffect } from 'react'
 import { InstancedMesh, Material } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { InstancingComponent } from '../components/InstancingComponent'
-import { VariantComponent } from '../components/VariantComponent'
+import { Heuristic, VariantComponent } from '../components/VariantComponent'
 import { useEntity } from '../functions/useEntity'
-
-interface Level {
-  src: string
-  metadata: Record<string, any>
-}
 
 export const InstancingSystem = defineSystem({
   uuid: 'ee.engine.InstancingSystem',
@@ -63,40 +59,28 @@ export const InstancingSystem = defineSystem({
       (e) => getComponent(e, InstancingComponent).auto
     )
 
+    const variants = entities.flatMap((entity) => {
+      const levels = getComponent(entity, VariantComponent).levels
+      return levels.map((level, index) => ({ entity, index, key: stringHash(`${entity}-${index}-${level.src}`) }))
+    })
+
     return (
       <>
-        {entities.map((entity) => (
-          <LODVariantReactor entity={entity} key={entity} />
+        {variants.map(({ entity, index, key }) => (
+          <InstanceGenerator generator={entity} index={index} key={key} />
         ))}
       </>
     )
   }
 })
 
-const LODVariantReactor = ({ entity }) => {
-  const levels = useComponent(entity, VariantComponent).levels.value.filter((level) => !!level.src)
-
-  const getHash = (level: Level, index: number) => {
-    return stringHash(level.src + entity.toString() + index.toString())
-  }
-
-  return (
-    <>
-      {levels.map((level, index) => (
-        <InstanceGenerator generator={entity} level={level} index={index} key={getHash(level, index)} />
-      ))}
-    </>
-  )
-}
-
 interface InstanceGeneratorProps {
   generator: Entity
-  level: Level
   index: number
 }
 
-export const InstanceGenerator = ({ generator, index, level }: InstanceGeneratorProps) => {
-  const { src } = level
+export const InstanceGenerator = ({ generator, index }: InstanceGeneratorProps) => {
+  const { src } = useComponent(generator, VariantComponent).levels[index].value
 
   const setup = (entity: Entity) => {
     const entitySourceID = getComponent(generator, UUIDComponent).entitySourceID
@@ -118,7 +102,7 @@ export const InstanceGenerator = ({ generator, index, level }: InstanceGenerator
   return (
     <>
       {meshEntities.map((entity) => (
-        <InstancedMeshReactor entity={entity} generator={generator} key={entity} />
+        <InstancedMeshReactor entity={entity} generator={generator} key={entity} index={index} />
       ))}
     </>
   )
@@ -127,29 +111,94 @@ export const InstanceGenerator = ({ generator, index, level }: InstanceGenerator
 interface InstancedMeshReactorProps {
   entity: Entity
   generator: Entity
+  index: number
 }
 
-const InstancedMeshReactor = ({ entity, generator }: InstancedMeshReactorProps) => {
+const InstancedMeshReactor = ({ entity, generator, index }: InstancedMeshReactorProps) => {
   const { instanceMatrix } = useComponent(generator, InstancingComponent).value
+  const mesh = useComponent(entity, MeshComponent).value as InstancedMesh
+  const { heuristic } = useComponent(generator, VariantComponent).value
 
   const generateInstancedMesh = () => {
-    const mesh = getComponent(entity, MeshComponent) as InstancedMesh
     const instancedMesh = new InstancedMesh(mesh.geometry.clone(), mesh.material as Material, instanceMatrix.count)
     instancedMesh.count = instanceMatrix.count
     instancedMesh.instanceMatrix.copy(instanceMatrix as any)
     instancedMesh.frustumCulled = false
 
-    if (!mesh.isInstancedMesh) {
-      removeComponent(entity, RigidBodyComponent)
-      removeComponent(entity, MeshComponent)
-    }
-
-    setComponent(entity, MeshComponent, instancedMesh as InstancedMesh)
+    removeComponent(entity, MeshComponent)
+    setComponent(entity, MeshComponent, instancedMesh)
+    return instancedMesh
   }
 
   useEffect(() => {
     generateInstancedMesh()
   }, [instanceMatrix])
+
+  switch (heuristic) {
+    case Heuristic.DISTANCE:
+      return <DistanceReactor entity={entity} generator={generator} index={index} />
+    default:
+      return null
+  }
+}
+
+const DistanceReactor = ({ entity, generator, index }) => {
+  const mesh = useComponent(entity, MeshComponent).value as InstancedMesh
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+  const { minDistance, maxDistance } = useComponent(generator, VariantComponent).levels[index].metadata.value as {
+    minDistance: number
+    maxDistance: number
+  }
+
+  useEffect(() => {
+    const plugin = {
+      id: 'lod-culling',
+      priority: 1,
+      compile: (shader, renderer) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          'uniform float opacity;',
+          `uniform float opacity;
+uniform float maxDistance;
+uniform float minDistance;`
+        )
+
+        // Calculate the camera distance from the geometry
+        // Discard fragments outside the minDistance and maxDistance range
+        shader.fragmentShader = shader.fragmentShader.replace(
+          'void main() {',
+          `void main() {
+float cameraDistance = length(vViewPosition);
+if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
+  discard;
+}`
+        )
+        shader.uniforms.minDistance = { value: minDistance }
+        shader.uniforms.maxDistance = { value: maxDistance }
+      }
+    }
+
+    setComponent(entity, DistanceFromCameraComponent)
+    VariantComponent.setDistanceLevel(entity)
+
+    for (const material of materials) {
+      addOBCPlugin(material, plugin)
+    }
+
+    return () => {
+      removeComponent(entity, DistanceFromCameraComponent)
+      for (const material of materials) {
+        removeOBCPlugin(material, plugin)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    for (const material of materials) {
+      if (!material.shader?.uniforms?.minDistance) continue
+      material.shader.uniforms.minDistance.value = minDistance
+      material.shader.uniforms.maxDistance.value = maxDistance
+    }
+  }, [minDistance, maxDistance])
 
   return null
 }
