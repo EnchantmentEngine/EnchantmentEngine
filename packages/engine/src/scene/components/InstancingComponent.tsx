@@ -31,14 +31,15 @@ import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstant
 import { useEffect } from 'react'
 import { Quaternion } from 'three'
 
+const identityMatrix = new Matrix4().identity()
+const buffer = new InstancedBufferAttribute(new Float32Array([...identityMatrix.elements]), 16)
+
 export const InstancingComponent = defineComponent({
   name: 'InstancingComponent',
   jsonID: 'EE_instancing',
 
   schema: S.Object({
-    instanceMatrix: S.Type<InstancedBufferAttribute>({
-      default: () => new InstancedBufferAttribute(new Float32Array(16), 16)
-    }),
+    instanceMatrix: S.Type<InstancedBufferAttribute>({ default: buffer }),
     auto: S.Bool({ default: false }),
     count: S.Number({ default: 10 })
   }),

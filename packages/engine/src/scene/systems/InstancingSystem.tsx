@@ -28,22 +28,23 @@ import {
   Entity,
   EntityTreeComponent,
   EntityUUIDPair,
-  getChildrenWithComponents,
   getComponent,
   PresentationSystemGroup,
   removeComponent,
   setComponent,
   useComponent,
   useQuery,
+  useQueryBySource,
   UUIDComponent
 } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
+import { stringHash } from '@ir-engine/spatial/src/common/functions/MathFunctions'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import React, { useCallback, useEffect } from 'react'
-import { InstancedMesh, Material, Mesh } from 'three'
+import React, { useEffect } from 'react'
+import { InstancedMesh, Material } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { InstancingComponent } from '../components/InstancingComponent'
 import { VariantComponent } from '../components/VariantComponent'
@@ -65,79 +66,90 @@ export const InstancingSystem = defineSystem({
     return (
       <>
         {entities.map((entity) => (
-          <VariantReactor entity={entity} key={entity} />
+          <LODVariantReactor entity={entity} key={entity} />
         ))}
       </>
     )
   }
 })
 
-const VariantReactor = ({ entity }) => {
-  const levels = useComponent(entity, VariantComponent).levels.value
+const LODVariantReactor = ({ entity }) => {
+  const levels = useComponent(entity, VariantComponent).levels.value.filter((level) => !!level.src)
+
+  const getHash = (level: Level, index: number) => {
+    return stringHash(level.src + entity.toString() + index.toString())
+  }
 
   return (
     <>
       {levels.map((level, index) => (
-        <InstanceGenerator
-          entity={entity}
-          level={level}
-          index={index}
-          key={`${entity.toString()}-${level.src}-${index}`}
-        />
+        <InstanceGenerator generator={entity} level={level} index={index} key={getHash(level, index)} />
       ))}
     </>
   )
 }
 
 interface InstanceGeneratorProps {
-  entity: Entity
+  generator: Entity
   level: Level
   index: number
 }
 
-export const InstanceGenerator = ({ entity: parentEntity, index, level }: InstanceGeneratorProps) => {
+export const InstanceGenerator = ({ generator, index, level }: InstanceGeneratorProps) => {
   const { src } = level
+
   const setup = (entity: Entity) => {
-    const entitySourceID = getComponent(parentEntity, UUIDComponent).entitySourceID
+    const entitySourceID = getComponent(generator, UUIDComponent).entitySourceID
     const entityID = UUIDComponent.generate()
     setComponent(entity, UUIDComponent, {
       entitySourceID,
       entityID
     } as EntityUUIDPair)
-    setComponent(entity, NameComponent, getComponent(parentEntity, NameComponent) + ' LOD ' + index)
+    setComponent(entity, NameComponent, getComponent(generator, NameComponent) + ' LOD ' + index)
     setComponent(entity, TransformComponent)
-    setComponent(entity, EntityTreeComponent, { parentEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: generator })
     setComponent(entity, VisibleComponent)
     setComponent(entity, GLTFComponent, { src })
   }
 
   const gltfEntity = useEntity({ setup })
-  const loaded = useComponent(gltfEntity, GLTFComponent).loaded.value
-  const { instanceMatrix } = useComponent(parentEntity, InstancingComponent).value
+  const meshEntities = useQueryBySource(gltfEntity, [MeshComponent])
 
-  const generateInstancedMesh = useCallback(
-    (mesh: Mesh) => {
-      const instancedMesh = new InstancedMesh(mesh.geometry.clone(), mesh.material as Material, instanceMatrix.count)
-      instancedMesh.count = instanceMatrix.count
-      instancedMesh.instanceMatrix.copy(instanceMatrix as any)
-      instancedMesh.frustumCulled = false
-      return instancedMesh
-    },
-    [instanceMatrix]
+  return (
+    <>
+      {meshEntities.map((entity) => (
+        <InstancedMeshReactor entity={entity} generator={generator} key={entity} />
+      ))}
+    </>
   )
+}
 
-  useEffect(() => {
-    if (!loaded) return
-    const meshes = getChildrenWithComponents(gltfEntity, [MeshComponent])
+interface InstancedMeshReactorProps {
+  entity: Entity
+  generator: Entity
+}
 
-    for (const entity of meshes) {
-      const mesh = getComponent(entity, MeshComponent) as Mesh
-      const instancedMesh = generateInstancedMesh(mesh)
+const InstancedMeshReactor = ({ entity, generator }: InstancedMeshReactorProps) => {
+  const { instanceMatrix } = useComponent(generator, InstancingComponent).value
+
+  const generateInstancedMesh = () => {
+    const mesh = getComponent(entity, MeshComponent) as InstancedMesh
+    const instancedMesh = new InstancedMesh(mesh.geometry.clone(), mesh.material as Material, instanceMatrix.count)
+    instancedMesh.count = instanceMatrix.count
+    instancedMesh.instanceMatrix.copy(instanceMatrix as any)
+    instancedMesh.frustumCulled = false
+
+    if (!mesh.isInstancedMesh) {
       removeComponent(entity, RigidBodyComponent)
       removeComponent(entity, MeshComponent)
-      setComponent(entity, MeshComponent, instancedMesh)
     }
-  }, [instanceMatrix, loaded])
+
+    setComponent(entity, MeshComponent, instancedMesh as InstancedMesh)
+  }
+
+  useEffect(() => {
+    generateInstancedMesh()
+  }, [instanceMatrix])
 
   return null
 }
