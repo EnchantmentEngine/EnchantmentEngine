@@ -110,6 +110,15 @@ export const SkyboxComponent = defineComponent({
     }, [])
 
     useEffect(() => {
+      if (!texture) return
+      console.log('texture update', texture)
+      return () => {
+        console.log('texture dispose', texture)
+        texture.dispose()
+      }
+    }, [texture])
+
+    useEffect(() => {
       if (skyboxState.backgroundType.value !== SkyTypeEnum.equirectangular || !texture) return
 
       texture.colorSpace = SRGBColorSpace
@@ -117,9 +126,6 @@ export const SkyboxComponent = defineComponent({
       texture.minFilter = LinearFilter
       texture.generateMipmaps = false
       setComponent(entity, BackgroundComponent, texture)
-      return () => {
-        texture.dispose()
-      }
     }, [texture, skyboxState.backgroundType])
 
     useEffect(() => {
