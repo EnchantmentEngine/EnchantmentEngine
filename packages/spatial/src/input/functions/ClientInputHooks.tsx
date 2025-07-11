@@ -247,8 +247,8 @@ export const CanvasInputReactor = () => {
     }
 
     const getMappedPointerId = (browserPointerId: number): number => {
-      // For single-touch scenarios, use consistent base ID to maintain compatibility
       if (!pointerIdMap.has(browserPointerId)) {
+        // For single-touch scenarios, use consistent base ID to maintain compatibility
         if (pointerIdMap.size === 0) {
           pointerIdMap.set(browserPointerId, EMULATED_POINTER_ID_BASE)
         } else {
