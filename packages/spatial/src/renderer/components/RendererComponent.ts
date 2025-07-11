@@ -207,7 +207,7 @@ export const RendererComponent = defineComponent({
             await renderer.init()
             console.log('WebGPU renderer initialized')
             rendererComponent.renderer.set(renderer)
-            document.body.appendChild(renderer.domElement)
+            //document.body.appendChild(renderer.domElement)
 
             renderer.debug.checkShaderErrors = isDev
             renderer.autoClear = true

@@ -23,6 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { getMaxCubeMapSize } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import {
   CubeCamera,
   LinearFilter,
@@ -49,8 +50,10 @@ export default class CubemapCapturer {
     this.sceneToRender = sceneToRender
     this.renderer = renderer
     this.cubeCamera = null!
-    const gl = this.renderer.getContext()
-    const cubeMapSize = gl instanceof WebGLRenderingContext ? gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE) : 2048
+
+    const minCubeMapSize = getMaxCubeMapSize(renderer)
+
+    const cubeMapSize = Math.min(resolution, minCubeMapSize)
     this.cubeRenderTarget = new WebGLCubeRenderTarget(cubeMapSize, {
       format: RGBAFormat,
       colorSpace: SRGBColorSpace,

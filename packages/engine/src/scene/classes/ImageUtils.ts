@@ -36,6 +36,7 @@ import {
   OrthographicCamera,
   PlaneGeometry,
   RawShaderMaterial,
+  RenderTarget,
   RGBAFormat,
   Scene,
   SRGBColorSpace,
@@ -43,12 +44,13 @@ import {
   Uniform,
   UnsignedByteType,
   WebGLCubeRenderTarget,
+  WebGLRenderer,
   WebGLRenderTarget
 } from 'three'
-import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
 
 import { defineState, getState } from '@ir-engine/hyperflux'
 import { KTX2EncodeOptions, KTX2Encoder, UASTCFlags } from '@ir-engine/xrui/core/textures/KTX2Encoder'
+import { cubeTexture, texture, uv, wgslFn } from 'three/tsl'
 import { MeshStandardNodeMaterial, WebGPURenderer } from 'three/webgpu'
 
 export const ImageProjection = {
@@ -110,6 +112,20 @@ const fragmentShader = `
 
 	}
 `
+
+const equirectNode = wgslFn(`
+  fn sampleEquirect(tex: texture_cube<f32>, smp: sampler, uv: vec2<f32>) -> vec4<f32> {
+    let phi = -uv.x * 6.28318530718; // 2π
+    let theta = uv.y * 3.14159265359; // π
+    let strength = 50.0;
+    let dir = vec3<f32>(
+      sin(theta) * sin(phi),
+      cos(theta),
+      sin(theta) * cos(phi)
+    );
+    return vec4<f32>(textureSample( tex, smp, dir ) * strength);
+  }
+`)
 
 //#endregion
 
@@ -187,33 +203,37 @@ export const blurAndScaleImageData = (
   }
 }
 
-//convert Cubemap To Equirectangular map
-export const convertCubemapToEquiImageData = (
+export const convertCubemapToEquiImageData = async (
   renderer: WebGLRenderer | WebGPURenderer,
   source: CubeTexture,
   width: number,
   height: number,
   returnAsBlob = false
-): Promise<Blob | null> | ImageData => {
-  const scene = new Scene()
-  let material
+): Promise<Blob | null | ImageData> => {
   if (renderer instanceof WebGPURenderer) {
-    material = new MeshStandardNodeMaterial({
-      envMap: source,
-      roughness: 0.05,
-      metalness: 1
-    })
+    return await convertCubemapToEquiWebGPU(renderer, source, width, height, returnAsBlob)
   } else {
-    material = new RawShaderMaterial({
-      uniforms: {
-        map: new Uniform(new CubeTexture())
-      },
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      side: DoubleSide,
-      transparent: true
-    })
+    return await convertCubemapToEquiWebGL(renderer, source, width, height, returnAsBlob)
   }
+}
+
+const convertCubemapToEquiWebGL = async (
+  renderer: WebGLRenderer,
+  source: CubeTexture,
+  width: number,
+  height: number,
+  returnAsBlob: boolean
+): Promise<Blob | null | ImageData> => {
+  const scene = new Scene()
+  const material = new RawShaderMaterial({
+    uniforms: {
+      map: new Uniform(source)
+    },
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    side: DoubleSide,
+    transparent: true
+  })
 
   const quad = new Mesh(new PlaneGeometry(1, 1), material)
   scene.add(quad)
@@ -225,6 +245,7 @@ export const convertCubemapToEquiImageData = (
   camera.top = height / -2
   camera.bottom = height / 2
   camera.updateProjectionMatrix()
+
   const renderTarget = new WebGLRenderTarget(width, height, {
     minFilter: LinearFilter,
     magFilter: LinearFilter,
@@ -237,19 +258,78 @@ export const convertCubemapToEquiImageData = (
 
   const originalColorSpace = renderer.outputColorSpace
   renderer.outputColorSpace = SRGBColorSpace
+
   renderer.setRenderTarget(renderTarget)
-  if (renderer instanceof WebGLRenderer) quad.material.uniforms.map.value = source
   renderer.render(scene, camera)
+
   const pixels = new Uint8Array(4 * width * height)
-  //*todo figure out how to read pixels from WebGPURenderer
   renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, pixels)
-  renderer.setRenderTarget(null) // pass `null` to set canvas as render target
+
+  renderer.setRenderTarget(null)
   renderer.outputColorSpace = originalColorSpace
 
   const imageData = new ImageData(new Uint8ClampedArray(pixels), width, height)
 
   if (returnAsBlob) return imageDataToBlob(imageData)
+  return imageData
+}
 
+const convertCubemapToEquiWebGPU = async (
+  renderer: WebGPURenderer,
+  source: CubeTexture,
+  width: number,
+  height: number,
+  returnAsBlob: boolean
+): Promise<Blob | null | ImageData> => {
+  const scene = new Scene()
+  const material = new MeshStandardNodeMaterial({
+    envMap: source,
+    side: DoubleSide,
+    transparent: true
+  })
+
+  const mapNode = cubeTexture(source)
+  const sampler = texture(source)
+  const colorNode = equirectNode({ tex: mapNode, smp: sampler, uv: uv() })
+  material.colorNode = colorNode
+
+  const quad = new Mesh(new PlaneGeometry(1, 1), material)
+
+  const camera = new OrthographicCamera(1 / -2, 1 / 2, 1 / 2, 1 / -2, -10000, 10000)
+
+  quad.scale.set(width, height, 1)
+  camera.left = width / 2
+  camera.right = width / -2
+  camera.top = height / -2
+  camera.bottom = height / 2
+  camera.updateProjectionMatrix()
+  scene.add(quad)
+
+  const renderTarget = new RenderTarget(width, height, {
+    minFilter: LinearFilter,
+    magFilter: LinearFilter,
+    wrapS: ClampToEdgeWrapping,
+    wrapT: ClampToEdgeWrapping,
+    format: RGBAFormat,
+    type: UnsignedByteType
+  })
+
+  const originalColorSpace = renderer.outputColorSpace
+  renderer.outputColorSpace = SRGBColorSpace
+
+  renderer.setRenderTarget(renderTarget)
+  renderer.render(scene, camera)
+
+  const pixels = await renderer.readRenderTargetPixelsAsync(renderTarget, 0, 0, width, height, 0)
+
+  renderer.setRenderTarget(null)
+  renderer.outputColorSpace = originalColorSpace
+
+  console.log(pixels)
+
+  const imageData = new ImageData(new Uint8ClampedArray(pixels), width, height)
+
+  if (returnAsBlob) return imageDataToBlob(imageData)
   return imageData
 }
 
@@ -285,7 +365,7 @@ export const convertEquiToCubemap = (renderer: WebGLRenderer, source: Texture, s
   return cubeRenderTarget
 }
 
-export const imageDataToImage = (imagedata) => {
+export const imageDataToImage = (imagedata: ImageData) => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
   canvas.width = imagedata.width

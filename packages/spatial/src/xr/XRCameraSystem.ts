@@ -34,7 +34,9 @@ import { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { Vector3_One } from '../common/constants/MathConstants'
+import { RendererState } from '../renderer/RendererState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
+import { RenderBackends } from '../renderer/constants/RenderModes'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { XRRendererState } from './WebXRManager'
 import { ReferenceSpace, XRState } from './XRState'
@@ -219,7 +221,10 @@ export function updateXRCamera() {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
 
-  const renderer = getOptionalComponent(viewerEntity, RendererComponent)?.renderer
+  const rendererComp = getOptionalComponent(viewerEntity, RendererComponent)
+  const renderer = rendererComp?.renderer
+  const renderState = getState(RendererState)
+
   if (!renderer) return
 
   const camera = getComponent(viewerEntity, CameraComponent)
@@ -229,11 +234,16 @@ export function updateXRCamera() {
   if (session === null) {
     camera.cameras = [cameraL]
     cameraL.copy(camera, false)
+
+    // NOTE: Webgpu internally applies pixel ratio scaling. Use client width/height to not have it apply twice
     const size = renderer.getDrawingBufferSize(_vec)
+    const canvasParent = rendererComp?.canvas?.parentElement
     cameraL.viewport.x = 0
     cameraL.viewport.y = 0
-    cameraL.viewport.z = size.width
-    cameraL.viewport.w = size.height
+    cameraL.viewport.z =
+      renderState.backend === RenderBackends.WEBGPU ? canvasParent?.clientWidth ?? size.width : size.width
+    cameraL.viewport.w =
+      renderState.backend === RenderBackends.WEBGPU ? canvasParent?.clientHeight ?? size.height : size.height
     return
   }
 

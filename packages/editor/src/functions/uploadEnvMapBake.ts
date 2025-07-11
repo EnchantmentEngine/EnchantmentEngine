@@ -87,7 +87,7 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
   const bakePosition = getScenePositionForBake(entity)
   const isSceneRootEntity = entity === getState(EditorState).rootEntity
 
-  const envmapImageData = generateEnvmapBake({
+  const envmapImageData = await generateEnvmapBake({
     entity,
     position: bakePosition,
     resolution: bakeComponent.resolution
@@ -120,7 +120,7 @@ export const uploadBPCEMBakeToServer = async (entity: Entity) => {
  * @param options Configuration options for the environment map generation
  * @returns ImageData of the generated environment map
  */
-export const generateEnvmapBake = (
+export const generateEnvmapBake = async (
   options: {
     entity?: Entity
     position?: Vector3
@@ -153,19 +153,16 @@ export const generateEnvmapBake = (
   const originalEnvironment = scene.environment
   scene.environment = renderTarget.texture
 
-  const envmapImageData = convertCubemapToEquiImageData(
-    renderer,
-    renderTarget.texture,
-    resolution,
-    resolution
-  ) as ImageData
+  const envmapImageData = await convertCubemapToEquiImageData(renderer, renderTarget.texture, resolution, resolution)
 
   scene.environment = originalEnvironment
 
+  if (!envmapImageData || envmapImageData instanceof Blob) {
+    throw new Error('Failed to generate environment map image data')
+  }
+
   return envmapImageData
 }
-
-const resolution = 1024
 
 /**
  * Generates and uploads a high res cubemap at a specific position in the world for saving and export.
