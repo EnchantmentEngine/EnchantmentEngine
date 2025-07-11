@@ -24,7 +24,7 @@ PGUSER="postgres"
 PGPASSWORD="postgres"
 
 # PostgreSQL port
-PGPORT="5432"
+PGPORT="5431"
 
 # Database name to drop
 PGDB="vector-db"
