@@ -154,7 +154,7 @@ const DistanceReactor = ({ entity, generator, index }) => {
     const plugin = {
       id: 'lod-culling',
       priority: 1,
-      compile: (shader, renderer) => {
+      compile: (shader) => {
         shader.fragmentShader = shader.fragmentShader.replace(
           'uniform float opacity;',
           `uniform float opacity;
@@ -177,18 +177,18 @@ if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
       }
     }
 
-    setComponent(entity, DistanceFromCameraComponent)
-    VariantComponent.setDistanceLevel(entity)
-
     for (const material of materials) {
       addOBCPlugin(material, plugin)
     }
 
+    setComponent(generator, DistanceFromCameraComponent)
+    VariantComponent.setDistanceLevel(generator)
+
     return () => {
-      removeComponent(entity, DistanceFromCameraComponent)
       for (const material of materials) {
         removeOBCPlugin(material, plugin)
       }
+      removeComponent(generator, DistanceFromCameraComponent)
     }
   }, [])
 
