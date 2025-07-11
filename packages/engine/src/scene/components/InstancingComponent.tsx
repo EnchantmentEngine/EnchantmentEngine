@@ -25,33 +25,32 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { InstancedBufferAttribute, Matrix4 } from 'three'
 
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { useEffect } from 'react'
 import { Quaternion } from 'three'
-
-const identityMatrix = new Matrix4().identity()
-const buffer = new InstancedBufferAttribute(new Float32Array([...identityMatrix.elements]), 16)
 
 export const InstancingComponent = defineComponent({
   name: 'InstancingComponent',
   jsonID: 'EE_instancing',
 
   schema: S.Object({
-    instanceMatrix: S.Type<InstancedBufferAttribute>({ default: buffer }),
     auto: S.Bool({ default: false }),
-    count: S.Number({ default: 10 })
+    count: S.Number({ default: 10 }),
+    instanceArray: S.Array(S.Number()),
+    //internal
+    instanceMatrix: S.Class(() => new InstancedBufferAttribute(new Float32Array(16), 16))
   }),
 
   reactor: () => {
     const entity = useEntityContext()
     const instancingComponent = useComponent(entity, InstancingComponent)
-    const { auto, count, instanceMatrix } = instancingComponent
+    const { auto, count, instanceArray } = instancingComponent
 
     useEffect(() => {
       if (!auto.value) return
-      if (instanceMatrix.count.value === count.value) return
+      if (instanceArray.value.length === count.value) return
 
       const matrices = [] as number[]
       const mat4 = new Matrix4()
@@ -67,10 +66,13 @@ export const InstancingComponent = defineComponent({
         matrices.push(...mat4.elements)
       }
 
-      const matrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
+      setComponent(entity, InstancingComponent, { instanceArray: matrices, count: matrices.length })
+    }, [auto.value, count.value, instanceArray])
+
+    useEffect(() => {
+      const matrix = new InstancedBufferAttribute(new Float32Array(instanceArray.value), 16)
       instancingComponent.instanceMatrix.set(matrix)
-      instancingComponent.instanceMatrix.count.set(count.value)
-    }, [auto.value, count.value, instanceMatrix.value])
+    }, [instanceArray])
 
     return null
   }

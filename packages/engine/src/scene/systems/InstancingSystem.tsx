@@ -55,24 +55,38 @@ export const InstancingSystem = defineSystem({
   uuid: 'ee.engine.InstancingSystem',
   insert: { after: PresentationSystemGroup },
   reactor: () => {
-    const entities = useQuery([InstancingComponent, VariantComponent]).filter(
-      (e) => getComponent(e, InstancingComponent).auto
-    )
-
-    const variants = entities.flatMap((entity) => {
-      const levels = getComponent(entity, VariantComponent).levels
-      return levels.map((level, index) => ({ entity, index, key: stringHash(`${entity}-${index}-${level.src}`) }))
-    })
+    const entities = useQuery([InstancingComponent, VariantComponent])
 
     return (
       <>
-        {variants.map(({ entity, index, key }) => (
-          <InstanceGenerator generator={entity} index={index} key={key} />
+        {entities.map((entity) => (
+          <InstanceEntityReactor entity={entity} key={entity} />
         ))}
       </>
     )
   }
 })
+
+const InstanceEntityReactor = ({ entity }: { entity: Entity }) => {
+  const instancingComponent = useComponent(entity, InstancingComponent)
+  const variantComponent = useComponent(entity, VariantComponent)
+
+  if (!instancingComponent.auto.value) return null
+
+  const variants = variantComponent.levels.value.map((level, index) => ({
+    entity,
+    index,
+    key: stringHash(`${entity}-${index}-${level.src}`)
+  }))
+
+  return (
+    <>
+      {variants.map(({ entity, index, key }) => (
+        <InstanceGenerator generator={entity} index={index} key={key} />
+      ))}
+    </>
+  )
+}
 
 interface InstanceGeneratorProps {
   generator: Entity
