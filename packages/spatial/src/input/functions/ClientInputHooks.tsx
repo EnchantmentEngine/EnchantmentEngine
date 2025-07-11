@@ -247,19 +247,13 @@ export const CanvasInputReactor = () => {
     }
 
     const getMappedPointerId = (browserPointerId: number): number => {
+      // For single-touch scenarios, use consistent base ID to maintain compatibility
       if (!pointerIdMap.has(browserPointerId)) {
         if (pointerIdMap.size === 0) {
-          // First touch always gets base ID
           pointerIdMap.set(browserPointerId, EMULATED_POINTER_ID_BASE)
         } else {
           // For multi-touch, assign unique IDs to track each touch independently
-          // (find the lowest available ID starting from base + 1)
-          let availableId = EMULATED_POINTER_ID_BASE + 1
-          const usedIds = new Set(Array.from(pointerIdMap.values()))
-          while (usedIds.has(availableId)) {
-            availableId++
-          }
-          pointerIdMap.set(browserPointerId, availableId)
+          pointerIdMap.set(browserPointerId, nextEmulatedPointerId++)
         }
       }
       return pointerIdMap.get(browserPointerId)!
@@ -430,8 +424,7 @@ export const CanvasInputReactor = () => {
     }
 
     const onClick = (event: PointerEvent) => {
-      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
     }
 
     const onWheelEvent = (event: WheelEvent) => {
