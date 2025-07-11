@@ -136,7 +136,7 @@ const InstancedMeshReactor = ({ entity, generator, index }: InstancedMeshReactor
 
   switch (heuristic) {
     case Heuristic.DISTANCE:
-      return <DistanceReactor entity={entity} generator={generator} index={index} />
+      return <DistanceReactor entity={entity} generator={generator} index={index} key={entity} />
     default:
       return null
   }
@@ -178,7 +178,32 @@ if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
     }
 
     for (const material of materials) {
-      addOBCPlugin(material, plugin)
+      addOBCPlugin(material, {
+        id: 'lod-culling',
+        priority: 1,
+        compile: (shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            'uniform float opacity;',
+            `uniform float opacity;
+  uniform float maxDistance;
+  uniform float minDistance;`
+          )
+
+          // Calculate the camera distance from the geometry
+          // Discard fragments outside the minDistance and maxDistance range
+          shader.fragmentShader = shader.fragmentShader.replace(
+            'void main() {',
+            `void main() {
+  float cameraDistance = length(vViewPosition);
+  if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
+    discard;
+  }`
+          )
+          shader.uniforms.minDistance = { value: minDistance }
+          shader.uniforms.maxDistance = { value: maxDistance }
+          material.shader = shader
+        }
+      })
     }
 
     setComponent(generator, DistanceFromCameraComponent)
@@ -197,6 +222,7 @@ if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
       if (!material.shader?.uniforms?.minDistance) continue
       material.shader.uniforms.minDistance.value = minDistance
       material.shader.uniforms.maxDistance.value = maxDistance
+      material.needsUpdate = true
     }
   }, [minDistance, maxDistance])
 
