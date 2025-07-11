@@ -424,7 +424,8 @@ export const CanvasInputReactor = () => {
     }
 
     const onClick = (event: PointerEvent) => {
-      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, event)
+      const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
+      ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
     const onWheelEvent = (event: WheelEvent) => {
