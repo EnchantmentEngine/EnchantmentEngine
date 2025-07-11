@@ -59,20 +59,27 @@ export const InstancingSystem = defineSystem({
       (e) => getComponent(e, InstancingComponent).auto
     )
 
-    const variants = entities.flatMap((entity) => {
-      const levels = getComponent(entity, VariantComponent).levels
-      return levels.map((level, index) => ({ entity, index, key: stringHash(`${entity}-${index}-${level.src}`) }))
-    })
-
     return (
       <>
-        {variants.map(({ entity, index, key }) => (
-          <InstanceGenerator generator={entity} index={index} key={key} />
+        {entities.map((entity) => (
+          <VariantGenerator entity={entity} key={entity} />
         ))}
       </>
     )
   }
 })
+
+export const VariantGenerator = ({ entity }) => {
+  const component = useComponent(entity, VariantComponent).value
+
+  return (
+    <>
+      {component.levels.map((level, index) => (
+        <InstanceGenerator generator={entity} index={index} key={stringHash(`${entity}-${index}-${level.src}`)} />
+      ))}
+    </>
+  )
+}
 
 interface InstanceGeneratorProps {
   generator: Entity
@@ -151,58 +158,34 @@ const DistanceReactor = ({ entity, generator, index }) => {
   }
 
   useEffect(() => {
-    const plugin = {
-      id: 'lod-culling',
-      priority: 1,
-      compile: (shader) => {
-        shader.fragmentShader = shader.fragmentShader.replace(
-          'uniform float opacity;',
-          `uniform float opacity;
+    const compileMaterial = (material: Material) => (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        'uniform float opacity;',
+        `uniform float opacity;
 uniform float maxDistance;
 uniform float minDistance;`
-        )
+      )
 
-        // Calculate the camera distance from the geometry
-        // Discard fragments outside the minDistance and maxDistance range
-        shader.fragmentShader = shader.fragmentShader.replace(
-          'void main() {',
-          `void main() {
+      // Calculate the camera distance from the geometry
+      // Discard fragments outside the minDistance and maxDistance range
+      shader.fragmentShader = shader.fragmentShader.replace(
+        'void main() {',
+        `void main() {
 float cameraDistance = length(vViewPosition);
 if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
-  discard;
+discard;
 }`
-        )
-        shader.uniforms.minDistance = { value: minDistance }
-        shader.uniforms.maxDistance = { value: maxDistance }
-      }
+      )
+      shader.uniforms.minDistance = { value: minDistance }
+      shader.uniforms.maxDistance = { value: maxDistance }
+      material.shader = shader
     }
 
     for (const material of materials) {
       addOBCPlugin(material, {
         id: 'lod-culling',
         priority: 1,
-        compile: (shader) => {
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'uniform float opacity;',
-            `uniform float opacity;
-  uniform float maxDistance;
-  uniform float minDistance;`
-          )
-
-          // Calculate the camera distance from the geometry
-          // Discard fragments outside the minDistance and maxDistance range
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'void main() {',
-            `void main() {
-  float cameraDistance = length(vViewPosition);
-  if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
-    discard;
-  }`
-          )
-          shader.uniforms.minDistance = { value: minDistance }
-          shader.uniforms.maxDistance = { value: maxDistance }
-          material.shader = shader
-        }
+        compile: compileMaterial(material)
       })
     }
 
@@ -211,7 +194,11 @@ if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
 
     return () => {
       for (const material of materials) {
-        removeOBCPlugin(material, plugin)
+        removeOBCPlugin(material, {
+          id: 'lod-culling',
+          priority: 1,
+          compile: compileMaterial(material)
+        })
       }
       removeComponent(generator, DistanceFromCameraComponent)
     }
