@@ -252,7 +252,8 @@ export const CanvasInputReactor = () => {
           // First touch always gets base ID
           pointerIdMap.set(browserPointerId, EMULATED_POINTER_ID_BASE)
         } else {
-          // Find the lowest available ID starting from base + 1
+          // For multi-touch, assign unique IDs to track each touch independently
+          // (find the lowest available ID starting from base + 1)
           let availableId = EMULATED_POINTER_ID_BASE + 1
           const usedIds = new Set(Array.from(pointerIdMap.values()))
           while (usedIds.has(availableId)) {
