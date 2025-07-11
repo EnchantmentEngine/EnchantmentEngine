@@ -182,7 +182,7 @@ export const useXRInputSources = () => {
       for (const inputSource of session.inputSources) addInputSource(inputSource)
     }
 
-    const onInputSourcesChanged = (event: XRInputSourceChangeEvent) => {
+    const onInputSourcesChanged = (event: XRInputSourcesChangeEvent) => {
       event.added.map(addInputSource)
       event.removed.map(removeInputSource)
     }
