@@ -25,7 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 import { Ray } from '@dimforge/rapier3d-compat'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import {
-  Engine,
   Entity,
   EntityTreeComponent,
   UUIDComponent,
@@ -37,25 +36,32 @@ import {
   removeComponent,
   setComponent
 } from '@ir-engine/ecs'
-import { AssetExt, FileToAssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { defineMaterialPlugin } from '@ir-engine/engine/src/material/defineMaterialPlugin'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { NO_PROXY, defineState, getMutableState, getState, useHookstate, useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
+import { ReferenceSpaceState } from '@ir-engine/spatial/src/ReferenceSpaceState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { MouseScroll } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+
+import { iterateEntityNode } from '@ir-engine/ecs'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ObjectLayerComponents } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformDirtyCleanupSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import React, { useEffect } from 'react'
-import { Euler, Material, Mesh, Object3D, Quaternion, Raycaster, Vector3 } from 'three'
+import { Euler, Object3D, Quaternion, Raycaster, Vector3 } from 'three'
 import { EditorControlFunctions } from '../functions/EditorControlFunctions'
+import { addMediaNode } from '../functions/addMediaNode'
 import { EditorHelperState, PlacementMode } from '../services/EditorHelperState'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -65,21 +71,49 @@ let placedCount = 0
 
 type AssetTag = string
 
-export interface AssetMetadataType {
-  thumbnail: string
-  name: string
-  type: string
-  author: string
-  dateCreated: string
-  fileSize: string
-  dimensions: {
-    height: number
-    width: number
-    depth: number
+// Define the placement preview material plugin
+export const PlacementPreviewMaterialPlugin = defineMaterialPlugin({
+  name: 'PlacementPreviewMaterialPlugin',
+
+  jsonID: 'IR_material_placement_preview',
+
+  uniforms: S.Object({
+    enabled: S.Bool({ default: false }),
+    opacity: S.Number({ default: 0.5 })
+  }),
+
+  onApply: (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      /* glsl */ `
+        #include <dithering_fragment>
+
+        uniform bool enabled;
+        uniform float opacity;
+
+        if (enabled) {
+          gl_FragColor.a *= opacity;
+        }
+      `
+    )
   }
-  mesh: string
-  resources: string
-  tags: AssetTag[]
+})
+
+export interface AssetMetadataType {
+  thumbnail?: string
+  name?: string
+  type: string
+  author?: string
+  dateCreated?: string
+  fileSize?: string
+  dimensions?: {
+    height?: number | null
+    width?: number | null
+    depth?: number | null
+  }
+  mesh?: string
+  resources?: string
+  tags?: AssetTag[]
 }
 export const ClickPlacementState = defineState({
   name: 'ClickPlacementState',
@@ -90,21 +124,19 @@ export const ClickPlacementState = defineState({
     pitchOffset: 0,
     rollOffset: 0,
     maxDistance: 25,
-    materialCache: [] as [Mesh, Material][],
     metadata: {} as AssetMetadataType
   },
   setSelectedAsset: (src: string) => {
-    const assetExt = FileToAssetExt(src)
-    if (assetExt && (assetExt === AssetExt.GLTF || assetExt === AssetExt.GLB))
+    if (ClickPlacementState.isPlaceableAsset(src)) {
       getMutableState(ClickPlacementState).selectedAsset.set(src)
-    else {
+    } else {
       // If in click placement mode and non-placeable asset was selected, show warning
       if (getState(EditorHelperState).placementMode === PlacementMode.CLICK) {
         ClickPlacementState.assetError()
       } else ClickPlacementState.resetSelectedAsset()
     }
   },
-  setSelectedAssetData: (resource) => {
+  setSelectedAssetData: (resource: AssetMetadataType) => {
     getMutableState(ClickPlacementState).metadata.set(resource)
   },
   resetSelectedAsset: () => {
@@ -113,6 +145,21 @@ export const ClickPlacementState = defineState({
   assetError: () => {
     NotificationService.dispatchNotify('Selected asset is not valid for click placement', { variant: 'warning' })
     ClickPlacementState.resetSelectedAsset()
+  },
+  isPlaceableAsset: (src: string): boolean => {
+    if (!src) return false
+
+    const assetType = FileToAssetType(src)
+
+    // Support models, images, videos, audio, and volumetric assets
+    return (
+      assetType === AssetType.Model ||
+      assetType === AssetType.Image ||
+      assetType === AssetType.Video ||
+      assetType === AssetType.Audio ||
+      assetType === AssetType.Volumetric ||
+      src.includes('.uvol')
+    ) // Special case for volumetric files
   }
 })
 
@@ -134,7 +181,7 @@ const ClickPlacementReactor = (props: { parentEntity: Entity }) => {
       const selectedEntities = getState(SelectionState).selectedEntities.filter(
         (uuid) => uuid !== UUIDComponent.get(clickState.placementEntity.value)
       )
-      EditorControlFunctions.removeObject([clickState.placementEntity.value])
+      cleanupPlacementEntity(clickState.placementEntity.value)
       clickState.placementEntity.set(UndefinedEntity)
       SelectionState.updateSelection(selectedEntities)
     }
@@ -145,7 +192,7 @@ const ClickPlacementReactor = (props: { parentEntity: Entity }) => {
     const assetURL = clickState.selectedAsset.get(NO_PROXY)
     const placementEntity = clickState.placementEntity.value
     if (getComponent(placementEntity, GLTFComponent)?.src === assetURL) return
-    updatePlacementEntitySnapshot(placementEntity)
+    updatePlacementEntity(placementEntity, assetURL)
   }, [clickState.selectedAsset.value, clickState.placementEntity.value])
 
   useEffect(() => {
@@ -166,22 +213,37 @@ const ClickPlacementReactor = (props: { parentEntity: Entity }) => {
 }
 
 const PlacementModelReactor = (props: { placementEntity: Entity }) => {
-  // const clickState = useState(getMutableState(ClickPlacementState))
-  // const sceneState = useHookstate(getMutableState(GLTFDocumentState))
-  // const placementModel = useOptionalComponent(props.placementEntity, GLTFComponent)
+  const { placementEntity } = props
+  const gltfComponent = GLTFComponent.useSceneLoaded(placementEntity)
 
-  // useEffect(() => {
-  //   if (placementModel?.progress?.value !== 100) return
-  //   const sceneID = GLTFComponent.getInstanceID(props.placementEntity)
-  //   if (!sceneState.scenes[sceneID]) return
-  //   iterateEntityNode(props.placementEntity, (entity) => {
-  //     const mesh = getOptionalComponent(entity, MeshComponent)
-  //     if (!mesh) return
-  //     const material = mesh.material as Material
-  //     clickState.materialCache.set((prev) => [...prev, [mesh, material]])
-  //     mesh.material = new HolographicMaterial({})
-  //   })
-  // }, [placementModel?.progress?.value === 100, sceneState.scenes.keys])
+  useEffect(() => {
+    if (!gltfComponent || !placementEntity) return
+
+    // Apply placement preview material plugin to all meshes in the placement entity
+    const applyPlacementPreview = () => {
+      iterateEntityNode(placementEntity, (entity) => {
+        const meshComponent = getOptionalComponent(entity, MeshComponent)
+        if (!meshComponent) return
+
+        // Add the placement preview material plugin component
+        setComponent(entity, PlacementPreviewMaterialPlugin, {
+          enabled: true,
+          opacity: 0.5
+        })
+      })
+    }
+
+    applyPlacementPreview()
+
+    return () => {
+      // Cleanup: Remove placement preview components
+      iterateEntityNode(placementEntity, (entity) => {
+        if (getOptionalComponent(entity, PlacementPreviewMaterialPlugin)) {
+          removeComponent(entity, PlacementPreviewMaterialPlugin)
+        }
+      })
+    }
+  }, [gltfComponent, placementEntity])
 
   return null
 }
@@ -192,50 +254,42 @@ const getParentEntity = () => {
   return getState(EditorState).rootEntity
 }
 
-const updatePlacementEntitySnapshot = (placementEntity: Entity) => {
-  const selectedAsset = getState(ClickPlacementState).selectedAsset
-  if (selectedAsset) setComponent(placementEntity, GLTFComponent, { src: selectedAsset })
-  else removeComponent(placementEntity, GLTFComponent)
-
-  // const sceneID = getComponent(placementEntity, SourceComponent)
-  // const snapshot = GLTFSnapshotState.cloneCurrentSnapshot(sceneID)
-  // const uuid = getComponent(placementEntity, UUIDComponent)
-  // const nodeIndex = snapshot.data.nodes!.findIndex(
-  //   (value) => value.extensions && value.extensions[UUIDComponent.jsonID] === uuid
-  // )
-  // const entityJson = toEntityJson(placementEntity)
-  // const entityGLTFNode = entityJSONToGLTFNode(entityJson, uuid)
-  // delete entityGLTFNode.matrix
-  // snapshot.data.nodes![nodeIndex] = entityGLTFNode
-  // dispatchAction(GLTFSnapshotAction.createSnapshot(snapshot))
+const updatePlacementEntity = (placementEntity: Entity, assetURL: string) => {
+  if (assetURL) {
+    setComponent(placementEntity, GLTFComponent, { src: assetURL })
+  } else {
+    removeComponent(placementEntity, GLTFComponent)
+  }
 }
 
-const createPlacementEntitySnapshot = (placementEntity: Entity) => {
-  setComponent(placementEntity, GLTFComponent, { src: getState(ClickPlacementState).selectedAsset })
-  // const sceneID = getComponent(placementEntity, SourceComponent)
-  // const snapshot = GLTFSnapshotState.cloneCurrentSnapshot(sceneID)
-  // const uuid = getComponent(placementEntity, UUIDComponent)
-  // const entityJson = toEntityJson(placementEntity)
-  // const entityGLTFNode = entityJSONToGLTFNode(entityJson, uuid)
-  // delete entityGLTFNode.matrix
-  // const nodeIndex = snapshot.data.nodes!.length
-  // snapshot.data.nodes!.push(entityGLTFNode)
-  // snapshot.data.scenes![0].nodes.push(nodeIndex)
-  // dispatchAction(GLTFSnapshotAction.createSnapshot(snapshot))
+const cleanupPlacementEntity = (placementEntity: Entity) => {
+  if (!placementEntity) return
+
+  // Remove placement preview components from all child entities
+  iterateEntityNode(placementEntity, (entity) => {
+    if (getOptionalComponent(entity, PlacementPreviewMaterialPlugin)) {
+      removeComponent(entity, PlacementPreviewMaterialPlugin)
+    }
+  })
+
+  // Remove the placement entity
+  EditorControlFunctions.removeObject([placementEntity])
 }
 
 const createPlacementEntity = (parentEntity: Entity) => {
   const placementEntity = createSceneEntity('Placement-' + placedCount, parentEntity)
-
-  // const sceneID = getComponent(parentEntity, SourceComponent)
-  // setComponent(placementEntity, SourceComponent, sceneID)
   setComponent(placementEntity, EntityTreeComponent, { parentEntity })
-  createPlacementEntitySnapshot(placementEntity)
+
+  // Load the selected asset if one is available
+  const selectedAsset = getState(ClickPlacementState).selectedAsset
+  if (selectedAsset) {
+    setComponent(placementEntity, GLTFComponent, { src: selectedAsset })
+  }
 
   return placementEntity
 }
 
-const clickListener = () => {
+const clickListener = async () => {
   const clickState = getMutableState(ClickPlacementState)
   if (!clickState.selectedAsset.value) return
   const parentEntity = getParentEntity()
@@ -243,17 +297,43 @@ const clickListener = () => {
   const placementEntity = clickState.placementEntity.value
   if (!placementEntity) return
 
+  // Get the current transform of the placement entity
+  const transform = getComponent(placementEntity, TransformComponent)
+  if (!transform) return
+
+  // Apply grid snap if enabled
   if (getState(ObjectGridSnapState).enabled) {
     ObjectGridSnapState.apply()
   } else {
     TransformComponent.updateFromWorldMatrix(placementEntity)
   }
-  placedCount += 1
-  clickState.placementEntity.set(createPlacementEntity(parentEntity))
-  for (const [mesh, material] of clickState.materialCache.value as [Mesh, Material][]) {
-    mesh.material = material
+
+  // Use addMediaNode for proper asset handling based on type
+  const assetURL = clickState.selectedAsset.value
+  const extraComponents = [
+    {
+      name: TransformComponent.jsonID,
+      props: {
+        position: [transform.position.x, transform.position.y, transform.position.z],
+        rotation: [transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w],
+        scale: [transform.scale.x, transform.scale.y, transform.scale.z]
+      }
+    }
+  ]
+
+  try {
+    // Use addMediaNode which handles different asset types properly
+    const entityUUID = await addMediaNode(assetURL, parentEntity, UndefinedEntity, extraComponents)
+
+    if (entityUUID) {
+      // Create new placement entity for next placement
+      placedCount += 1
+      clickState.placementEntity.set(createPlacementEntity(parentEntity))
+    }
+  } catch (error) {
+    console.error('Failed to place asset:', error)
+    NotificationService.dispatchNotify('Failed to place asset', { variant: 'error' })
   }
-  clickState.materialCache.set([])
 }
 
 export const ClickPlacementSystem = defineSystem({
@@ -283,14 +363,15 @@ export const ClickPlacementSystem = defineSystem({
       const obj = getOptionalComponent(entity, ObjectComponent)
       !!obj && sceneObjects.push(obj)
     }
-    //const sceneObjects = Array.from(Engine.instance.objectLayerList[ObjectLayers.Scene] || [])
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
-    const pointerScreenRaycaster = new Raycaster()
 
-    let intersectEntity: Entity = UndefinedEntity
+    // Get camera from the current viewer entity
+    const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+    const camera = getComponent(viewerEntity, CameraComponent)
+    if (!camera) return
+
+    const pointerScreenRaycaster = new Raycaster()
     let targetIntersection: { point: Vector3; normal: Vector3 } | null = null
 
-    const viewerEntity = Engine.instance.viewerEntity
     const mouseEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
     if (!mouseEntity) return
 
@@ -325,7 +406,6 @@ export const ClickPlacementSystem = defineSystem({
       const intersectPosition = cameraPosition
         .clone()
         .add(cameraDirection.clone().multiplyScalar(physicsIntersection.toi))
-      intersectEntity = physicsIntersection.collider.parent()!.entity
       const intersectNormal = new Vector3(
         physicsIntersection.normal.x,
         physicsIntersection.normal.y,
