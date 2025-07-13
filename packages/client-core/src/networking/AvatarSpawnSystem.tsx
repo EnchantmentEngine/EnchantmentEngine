@@ -34,8 +34,9 @@ import {
   PresentationSystemGroup,
   removeComponent,
   setComponent,
-  useComponent,
+  UndefinedEntity,
   useHasComponent,
+  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -47,6 +48,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NetworkPeerState,
   NetworkState,
   useHookstate,
   useImmediateEffect,
@@ -127,15 +129,16 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     })
 
     return () => {
-      const network = NetworkState.worldNetwork
+      const selfAvatarUUID = AvatarComponent.getSelfAvatarUUID()
 
-      const peersCountForUser = network?.users?.[userID]?.length
+      const currentNetwork = NetworkState.worldNetwork
+      const networkPeerState = getState(NetworkPeerState)[currentNetwork?.id]
+      const peersCountForUser = networkPeerState?.users?.[userID]?.length || 0
 
-      // if we are the last peer in the world for this user, destroy the object
-      if (!peersCountForUser || peersCountForUser === 1) {
+      if (peersCountForUser <= 1) {
         dispatchAction(
           WorldNetworkAction.destroyEntity({
-            entityUUID: AvatarComponent.getSelfAvatarUUID()
+            entityUUID: selfAvatarUUID
           })
         )
       }
@@ -180,16 +183,12 @@ const CameraSettingsReactor = (props: {
 }) => {
   const { cameraSettingsEntity, onCameraModeChange } = props
 
-  if (!cameraSettingsEntity) {
-    onCameraModeChange?.(CameraMode.FOLLOW)
-    return null
-  }
-
-  const cameraSettingsComponent = useComponent(cameraSettingsEntity, CameraSettingsComponent)
   const engineState = useMutableState(EngineState)
   const referenceSpaceState = useMutableState(ReferenceSpaceState)
 
-  const cameraMode = cameraSettingsComponent.cameraMode.value
+  const cameraSettingsComponent = useOptionalComponent(cameraSettingsEntity ?? UndefinedEntity, CameraSettingsComponent)
+
+  const cameraMode = cameraSettingsComponent?.cameraMode.value ?? CameraMode.FOLLOW
 
   useEffect(() => {
     onCameraModeChange?.(cameraMode)

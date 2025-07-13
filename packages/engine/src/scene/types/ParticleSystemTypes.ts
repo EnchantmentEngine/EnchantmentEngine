@@ -574,8 +574,13 @@ export type ParticleSystemRendererInstance = {
 }
 
 export type RendererSettingsJSON = {
-  startLength: ValueGeneratorJSON
-  followLocalOrigin: boolean
+  // Trail mode settings
+  startLength?: ValueGeneratorJSON
+  followLocalOrigin?: boolean
+
+  // StretchedBillBoard mode settings
+  speedFactor?: number
+  lengthFactor?: number
 }
 
 export type ExtraSystemJSON = {
@@ -617,6 +622,8 @@ const BlendingSchema = S.LiteralUnion(
   [NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending],
   { default: AdditiveBlending }
 )
+
+export const DEFAULT_EMISSION_OVER_TIME = 400
 
 export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
   version: S.String({ default: '1.0' }),
@@ -683,7 +690,7 @@ export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
   }),
   emissionOverTime: S.Object({
     type: S.String({ default: 'ConstantValue' }),
-    value: S.Number({ default: 400 }),
+    value: S.Number({ default: DEFAULT_EMISSION_OVER_TIME }),
     a: S.Number({ default: 0 }),
     b: S.Number({ default: 1 }),
     functions: S.Array(S.Type<BezierFunctionJSON>())
@@ -705,16 +712,15 @@ export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
     })
   ),
   onlyUsedByOther: S.Bool({ default: false }),
-  rendererEmitterSettings: S.Object({
-    startLength: S.Object({
-      type: S.String({ default: 'ConstantValue' }),
-      value: S.Number({ default: 1 }),
-      a: S.Number({ default: 0 }),
-      b: S.Number({ default: 1 }),
-      functions: S.Array(S.Type<BezierFunctionJSON>())
-    }),
-    followLocalOrigin: S.Bool({ default: true })
-  }),
+  rendererEmitterSettings: S.Optional(
+    S.Object({
+      startLength: S.Optional(S.Type<ValueGeneratorJSON>()),
+      followLocalOrigin: S.Optional(S.Bool({ default: false })),
+
+      speedFactor: S.Optional(S.Number({ default: 1 })),
+      lengthFactor: S.Optional(S.Number({ default: 1 }))
+    })
+  ),
   renderMode: S.LiteralUnion(Object.values(RenderMode), {
     $comment:
       "A number enum, where: 0 represents 'BillBoard', 1 represents 'StretchedBillBoard', 2 represents 'Mesh', 3 represents 'Trail'",
