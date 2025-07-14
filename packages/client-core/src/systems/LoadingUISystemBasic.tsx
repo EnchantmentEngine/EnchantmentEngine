@@ -25,7 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useEffect } from 'react'
 
-import { Entity, useChildrenWithComponents, useOptionalComponent } from '@ir-engine/ecs'
+import { Entity, useChildrenWithComponents, useComponent, useOptionalComponent } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { defineState, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -46,12 +46,14 @@ import { LoadingSystemState } from './state/LoadingState'
 export const LoadingUISystemState = defineState({
   name: 'LoadingUISystemState',
   initial: () => ({
-    ready: false
+    ready: false,
+    progress: 0
   })
 })
 
 const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
+  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress.value
   const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
   const avatarEntity = AvatarComponent.useSelfAvatarEntity()
   const avatarLoaded = AvatarRigComponent.useAvatarLoaded(avatarEntity)
@@ -66,7 +68,23 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const state = useMutableState(LoadingUISystemState)
 
   useEffect(() => {
+    if (!state.ready.value) {
+      const sceneProgress = loadingProgress * 0.8
+      const avatarProgress = followMode ? (avatarLoaded ? 20 : 0) : 20
+      const totalProgress = Math.min(sceneProgress + avatarProgress, 100)
+
+      // Ensure progress never goes backwards
+      const currentProgress = state.progress.value
+      const newProgress = Math.max(currentProgress, Math.round(totalProgress))
+
+      state.progress.set(newProgress)
+    }
+  }, [loadingProgress, avatarLoaded, followMode, state.ready.value])
+
+  useEffect(() => {
     if (viewerReady && !state.ready.value) {
+      state.progress.set(100)
+
       setTimeout(() => {
         state.ready.set(true)
         getMutableState(LoadingSystemState).loadingScreenVisible.set(false)
