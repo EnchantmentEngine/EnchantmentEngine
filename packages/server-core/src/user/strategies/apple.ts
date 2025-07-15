@@ -227,6 +227,7 @@ export class AppleStrategy extends CustomOAuthStrategy {
 
   async authenticate(authentication: AuthenticationRequest, originalParams: Params) {
     if (authentication.error) {
+      console.log(authentication)
       if (authentication.error === 'user_cancelled_authorize')
         throw new Error('You canceled the Apple OAuth login flow')
       else
