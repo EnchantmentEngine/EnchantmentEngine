@@ -151,13 +151,14 @@ export const render = (
     renderer.needsResize = false
   }
 
+  renderer.renderer.shadowMap.enabled = true
+
   ObjectComponent.activeRender = true
 
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
   if (entity && isWebGPURenderer(entity)) {
-    // const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer)
-    const webgpuRendered = false
+    const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer)
     if (!webgpuRendered) {
       renderer.renderer.clear()
       renderer.renderer.render(scene, camera)

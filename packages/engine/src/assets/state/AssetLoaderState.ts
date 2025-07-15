@@ -26,7 +26,9 @@ Infinite Reality Engine. All Rights Reserved.
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { RenderBackends } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
 import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'
 import { DRACOLoader } from '../loaders/gltf/DRACOLoader'
@@ -55,9 +57,13 @@ export const AssetLoaderState = defineState({
     const ktx2Loader = new KTX2Loader()
     ktx2Loader.setTranscoderPath(getState(DomainConfigState).publicDomain + '/loader_decoders/basis/')
     if (isClient) {
+      const renderer = getState(RendererState)
+
       const viewerEntity = getState(ReferenceSpaceState).viewerEntity
       const rendererComponent = getComponent(viewerEntity, RendererComponent)
-      ktx2Loader.detectSupport(rendererComponent.renderer)
+
+      if (renderer.backend === RenderBackends.WEBGPU) ktx2Loader.detectWebGPUSupport(rendererComponent.renderer)
+      else ktx2Loader.detectWebGLSupport(rendererComponent.renderer)
     }
 
     return {

@@ -97,6 +97,8 @@ import { isClient } from '@ir-engine/hyperflux'
 import { CompressedTexture, CompressedArrayTexture } from 'three';
 import { isWebGPURenderer } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import { WebGPURenderer } from 'three/webgpu';
+import { RenderBackends } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
+
 
 import { DisplayP3ColorSpace, LinearDisplayP3ColorSpace } from '@ir-engine/spatial/src/threejsPatches'
 
@@ -149,38 +151,38 @@ class KTX2Loader extends Loader {
 
 	}
 
-	detectSupport( renderer ) {
-		if (renderer instanceof WebGPURenderer) {
-			this.workerConfig = {
-				astcSupported: renderer.hasFeature( 'texture-compression-astc' ),
-				etc1Supported: false,
-				etc2Supported: renderer.hasFeature( 'texture-compression-etc2' ),
-				dxtSupported: renderer.hasFeature( 'texture-compression-bc' ),
-				bptcSupported: false,
-				pvrtcSupported: false
-			};
-		} else {
-			this.workerConfig = {
-				astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
-				etc1Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc1' ),
-				etc2Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc' ),
-				dxtSupported: renderer.extensions.has( 'WEBGL_compressed_texture_s3tc' ),
-				bptcSupported: renderer.extensions.has( 'EXT_texture_compression_bptc' ),
-				pvrtcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_pvrtc' )
-					|| renderer.extensions.has( 'WEBKIT_WEBGL_compressed_texture_pvrtc' )
-			};
+	detectWebGLSupport( renderer ) {
+		this.workerConfig = {
+			astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
+			etc1Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc1' ),
+			etc2Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc' ),
+			dxtSupported: renderer.extensions.has( 'WEBGL_compressed_texture_s3tc' ),
+			bptcSupported: renderer.extensions.has( 'EXT_texture_compression_bptc' ),
+			pvrtcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_pvrtc' )
+				|| renderer.extensions.has( 'WEBKIT_WEBGL_compressed_texture_pvrtc' )
+		};
 
-			if ( renderer.capabilities.isWebGL2 ) {
+		if ( renderer.capabilities.isWebGL2 ) {
 
-				// https://github.com/mrdoob/three.js/pull/22928
-				this.workerConfig.etc1Supported = false;
-
-			}
+			// https://github.com/mrdoob/three.js/pull/22928
+			this.workerConfig.etc1Supported = false;
 
 		}
 
 		return this;
+	}
 
+	detectWebGPUSupport( renderer ) {
+		this.workerConfig = {
+			astcSupported: renderer.hasFeature( 'texture-compression-astc' ),
+			etc1Supported: false,
+			etc2Supported: renderer.hasFeature( 'texture-compression-etc2' ),
+			dxtSupported: renderer.hasFeature( 'texture-compression-bc' ),
+			bptcSupported: false,
+			pvrtcSupported: false
+		};
+
+		return this;
 	}
 
 	init() {

@@ -30,8 +30,6 @@ import { S, defineComponent, removeComponent, setComponent, useComponent, useEnt
 import { NO_PROXY, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
-import { isWebGLRenderer, warnWebGPUIncompatibility } from '../../functions/RendererBackendUtils'
-import { useRendererEntity } from '../../functions/useRendererEntity'
 import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
 
@@ -47,44 +45,28 @@ export const HemisphereLightComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-    const rendererEntity = useRendererEntity(entity)
     const hemisphereLightComponent = useComponent(entity, HemisphereLightComponent)
-
-    const isWebGL = isWebGLRenderer(rendererEntity)
-    //Hack
-    const light = useHookstate(() => {
-      if (!isWebGL) {
-        warnWebGPUIncompatibility('HemisphereLight', rendererEntity)
-        return null
-      }
-      return new HemisphereLight()
-    }).get(NO_PROXY) as HemisphereLight | null
+    const light = useHookstate(() => new HemisphereLight()).get(NO_PROXY) as HemisphereLight
 
     useImmediateEffect(() => {
       setComponent(entity, LightTagComponent)
-
-      if (light) {
-        setComponent(entity, ObjectComponent, light)
-      }
-
+      setComponent(entity, ObjectComponent, light)
       return () => {
-        if (light) {
-          removeComponent(entity, ObjectComponent)
-        }
+        removeComponent(entity, ObjectComponent)
       }
-    }, [light])
+    }, [])
 
     useEffect(() => {
-      if (light) {
-        light.groundColor.set(hemisphereLightComponent.groundColor.value)
-      }
-    }, [hemisphereLightComponent.groundColor, light])
+      light.groundColor.set(hemisphereLightComponent.groundColor.value)
+    }, [hemisphereLightComponent.groundColor])
 
     useEffect(() => {
-      if (light) {
-        light.intensity = hemisphereLightComponent.intensity.value
-      }
-    }, [hemisphereLightComponent.intensity, light])
+      light.intensity = hemisphereLightComponent.intensity.value
+    }, [hemisphereLightComponent.intensity])
+
+    useEffect(() => {
+      light.color.set(hemisphereLightComponent.skyColor.value)
+    }, [hemisphereLightComponent.skyColor])
 
     return null
   }

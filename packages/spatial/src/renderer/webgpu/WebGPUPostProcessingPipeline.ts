@@ -25,7 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { ArrayCamera, Scene } from 'three'
 import { bloom } from 'three/addons/tsl/display/BloomNode.js'
-import { pass } from 'three/tsl'
+import { ao } from 'three/addons/tsl/display/GTAONode.js'
+import { mrt, normalView, output, pass } from 'three/tsl'
 import { PostProcessing, WebGPURenderer } from 'three/webgpu'
 import { createWebGPUEffectNodes, createWebGPUScenePass, WebGPUEffectNode } from './WebGPUEffectNodes'
 
@@ -186,16 +187,29 @@ export class WebGPUPostProcessingPipeline {
 
   private async buildTSLChain(): Promise<void> {
     try {
-      let currentTSLNode = pass(this.scene, this.camera)
-      const scenePassColor = currentTSLNode.getTextureNode('output')
+      const currentTSLNode = pass(this.scene, this.camera)
 
-      // for (const effectNode of this.effectNodes) {
-      //   currentTSLNode = await this.applyTSLEffect(currentTSLNode, scenePassColor, effectNode)
-      // }
-      const bloomPass = bloom(scenePassColor)
-      bloomPass.strength.value = 0.1
+      currentTSLNode.setMRT(
+        mrt({
+          output: output,
+          normal: normalView
+        })
+      )
 
-      this.postProcessing.outputNode = scenePassColor.add(bloomPass)
+      const passInfo = {
+        color: currentTSLNode.getTextureNode('output'),
+        normal: currentTSLNode.getTextureNode('normal'),
+        depth: currentTSLNode.getTextureNode('depth')
+      }
+
+      let currentColorNode = passInfo.color
+
+      for (const effectNode of this.effectNodes) {
+        currentColorNode = await this.applyTSLEffect(passInfo, this.camera, effectNode, currentColorNode)
+      }
+
+      this.postProcessing.outputNode = currentColorNode
+      this.postProcessing.needsUpdate = true
 
       console.log('TSL effect chain built successfully with', this.effectNodes.length, 'effects')
     } catch (error) {
@@ -210,49 +224,69 @@ export class WebGPUPostProcessingPipeline {
     }
   }
 
-  private async applyTSLEffect(currentNode: any, scenePassColor: any, effectNode: WebGPUEffectNode): Promise<any> {
+  private async applyTSLEffect(
+    passInfo: any,
+    camera: any,
+    effectNode: WebGPUEffectNode,
+    currentColorNode: any
+  ): Promise<any> {
     const config = effectNode.config
 
     switch (effectNode.type) {
       case 'BloomEffect':
-        return this.applyBloomTSL(currentNode, config)
+        return this.applyBloomTSL(currentColorNode, config)
+
+      case 'SSAOEffect':
+        return this.applySSAOEffect(passInfo, camera, currentColorNode)
 
       // case 'FXAAEffect':
-      //   return this.applyFXAATSL(tsl, scenePassColor, config)
+      //   return this.applyFXAATSL(tsl, currentColorNode, config)
 
       // case 'ToneMappingEffect':
-      //   return this.applyToneMappingTSL(tsl, scenePassColor, config)
+      //   return this.applyToneMappingTSL(tsl, currentColorNode, config)
 
       // case 'NoiseEffect':
-      //   return this.applyNoiseTSL(tsl, scenePassColor, config)
+      //   return this.applyNoiseTSL(tsl, currentColorNode, config)
 
       // case 'VignetteEffect':
-      //   return this.applyVignetteTSL(tsl, scenePassColor, config)
+      //   return this.applyVignetteTSL(tsl, currentColorNode, config)
 
       // case 'ChromaticAberrationEffect':
-      //   return this.applyChromaticAberrationTSL(tsl, scenePassColor, config)
+      //   return this.applyChromaticAberrationTSL(tsl, currentColorNode, config)
 
       // case 'DotScreenEffect':
-      //   return this.applyDotScreenTSL(tsl, scenePassColor, config)
+      //   return this.applyDotScreenTSL(tsl, currentColorNode, config)
 
       default:
         console.warn(`TSL effect ${effectNode.type} not implemented, skipping`)
-        return currentNode
+        return currentColorNode
     }
   }
+  applySSAOEffect(passInfo: any, camera: any, currentColorNode: any): any {
+    const aoPass = ao(passInfo.depth, passInfo.normal, camera)
+    // aoPass.resolutionScale = 0.5;
+    aoPass.distanceExponent.value = 1.0
+    aoPass.distanceFallOff.value = 1.0
+    aoPass.radius.value = 0.1
 
-  private async applyBloomTSL(inputNode: any, config: any): Promise<any> {
+    const blendPassAO = aoPass.getTextureNode().mul(currentColorNode)
+
+    // const denoisePass = denoise( aoPass.getTextureNode(), passInfo.depth, passInfo.normal, camera );
+    // const blendPassDenoise = denoisePass.mul( currentColorNode );
+
+    return blendPassAO
+  }
+
+  private async applyBloomTSL(currentColorNode: any, config: any): Promise<any> {
     try {
-      console.log(config)
-      const bloomPass = bloom(inputNode)
-      bloomPass.strength.value = 1.0
-      // bloomPass.radius.value = config.radius || 0.85
-      // bloomPass.threshold.value = config.luminanceThreshold || 0.9
+      const bloomPass = bloom(currentColorNode)
+      bloomPass.strength.value = 0.1
+      const finalBloom = currentColorNode.add(bloomPass)
 
-      return bloomPass
+      return finalBloom
     } catch (error) {
       console.warn('Failed to apply bloom TSL effect:', error)
-      return inputNode
+      return currentColorNode
     }
   }
 
