@@ -45,6 +45,7 @@ import { defineState, getMutableState, getState, useMutableState } from '@ir-eng
 
 import { getNestedChildren } from '@ir-engine/ecs'
 import { EffectPass, OutlineEffect } from 'postprocessing'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
 import { ObjectComponent } from './components/ObjectComponent'
@@ -57,18 +58,14 @@ import { RenderModes } from './constants/RenderModes'
 import { CSM } from './csm/CSM'
 import { CSMComponent } from './csm/CSMComponent'
 import { changeRenderMode } from './functions/changeRenderMode'
-import { isWebGPURenderer } from './functions/RendererBackendUtils'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
 
 function renderWebGPUPostProcessing(
-  entity: Entity,
   scene: Scene,
   camera: ArrayCamera,
   renderer: ComponentType<typeof RendererComponent>
 ): boolean {
-  if (!isWebGPURenderer(entity)) return false
-
   const webgpuPipeline = renderer.webgpuPostProcessingPipeline
   if (webgpuPipeline) {
     try {
@@ -157,8 +154,8 @@ export const render = (
 
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (entity && isWebGPURenderer(entity)) {
-    const webgpuRendered = renderWebGPUPostProcessing(entity, scene, camera, renderer)
+  if (renderer.renderer instanceof WebGPURenderer) {
+    const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
     if (!webgpuRendered) {
       renderer.renderer.clear()
       renderer.renderer.render(scene, camera)
