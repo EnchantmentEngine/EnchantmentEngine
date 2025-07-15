@@ -218,6 +218,7 @@ export const getSceneParameters = (entities: Entity[], cameraEntity: Entity) => 
 
 const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
+  const rendererState = getState(RendererState)
 
   const onRenderEnd = PerformanceManager.profileGPURender()
   for (const entity of rendererQuery()) {
@@ -230,7 +231,7 @@ const execute = () => {
     const { background, environment, fog, children } = getSceneParameters(entitiesToRender, entity)
     _scene.children = children
 
-    const renderMode = getState(RendererState).renderMode
+    const renderMode = rendererState.renderMode
 
     const sessionMode = getState(XRState).sessionMode
     _scene.background =
@@ -240,7 +241,7 @@ const execute = () => {
 
     _scene.fog = fog
 
-    render(renderer, _scene, camera, deltaSeconds, undefined, csm, entity)
+    render(renderer, _scene, camera, deltaSeconds, rendererState.usePostProcessing, csm)
   }
   onRenderEnd()
 }
@@ -268,7 +269,7 @@ const rendererReactor = () => {
 
   useEffect(() => {
     changeRenderMode(entity)
-  }, [engineRendererSettings.renderMode])
+  }, [engineRendererSettings.renderMode, renderer.effectComposer.value])
 
   return null
 }

@@ -288,6 +288,7 @@ const resourceCallbacks = {
 
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
+        if (!resource?.value?.metadata) return
         resource.metadata.merge({ onGPU: true, discarded: false })
         if (!discardUponUpload) return
 
@@ -314,8 +315,8 @@ const resourceCallbacks = {
                     console.error(err)
                   })
               }
+              setTimeout(checkSync)
             }
-            setTimeout(checkSync)
           }
         } else {
           // webgpu path
@@ -372,7 +373,7 @@ const resourceCallbacks = {
 
       const checkUploaded = () => {
         if (!resource.get(NO_PROXY)?.metadata) return
-        resource.metadata.merge({ onGPU: needsUploaded === 0, discarded: needsUploaded === 0 && discardUponUpload })
+        resource.metadata.merge({ onGPU: needsUploaded === 0, discarded: false }) //needsUploaded === 0 && discardUponUpload })
       }
 
       asset.index?.onUpload(function () {
@@ -490,8 +491,9 @@ const disposeMesh = (asset: Mesh) => {
 const disposeMaterial = (asset: Material | Material[]) => {
   const dispose = (material: Material) => {
     if ((material as DisposableObject).disposed) return
-    for (const [_, val] of Object.entries(material) as [string, Texture][]) {
-      if (isTexture(val)) {
+    for (const [key, val] of Object.entries(material) as [string, Texture][]) {
+      // Ignore envmaps until resource reference counting is reimplemented
+      if (isTexture(val) && key !== 'envMap') {
         // Dispose texture if it was added to material after the material added
         val.dispose?.()
       }
@@ -646,7 +648,7 @@ const addEntityResource = (
     case ResourceType.Material: {
       const material = asset as Material
       for (const [key, val] of Object.entries(material) as [string, any][]) {
-        if (isTexture(val)) {
+        if (isTexture(val) && key !== 'envMap') {
           addEntityResource(entity, val, returnedResources)
         }
       }
@@ -693,8 +695,8 @@ const removeEntityResource = (resource: Resource) => {
 const useEntityResource = (entity: Entity, state: State<ResourceAssetType>) => {
   useEffect(() => {
     const asset = state.get(NO_PROXY) as ResourceAssetType
-
     const resources = addEntityResource(entity, asset)
+    if (!resources.length) return
 
     return () => {
       for (const resource of resources) removeEntityResource(resource)

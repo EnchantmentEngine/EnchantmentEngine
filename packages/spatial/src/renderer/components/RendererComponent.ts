@@ -81,7 +81,7 @@ export const RendererComponent = defineComponent({
     { serialized: false }
   ),
 
-  onInit(initial) {
+  onInit(entity, initial) {
     initial.scene.matrixAutoUpdate = false
     initial.scene.matrixWorldAutoUpdate = false
     initial.scene.layers.set(ObjectLayers.Scene)
@@ -248,11 +248,16 @@ export const RendererComponent = defineComponent({
         renderer.debug.checkShaderErrors = isDev
         renderer.autoClear = true
 
+
         const composer = new EffectComposer(renderer)
         rendererComponent.effectComposer.set(composer)
         const renderPass = new RenderPass()
         composer.addPass(renderPass)
         rendererComponent.renderPass.set(renderPass)
+
+        // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
+        renderer.debug.checkShaderErrors = false //isDev
+
 
         const xrManager = createWebXRManager(renderer)
         renderer.xr = xrManager as any

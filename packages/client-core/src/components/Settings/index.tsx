@@ -26,27 +26,25 @@ Infinite Reality Engine. All Rights Reserved.
 import { AnimatePresence, motion, Variant } from 'motion/react'
 import React from 'react'
 
-// Import icons from the icons module
-// Define types for screen components
-interface ScreenProps {
-  navigateTo: (screenKey: string, historyKey: string) => void
-  navigateClose?: () => void
-}
-
 // Import main screen components
 import AccountSettings from './AccountSettings'
 import GraphicsSettings from './GraphicsSettings'
 import MainMenu from './MainMenu'
 
 // Import other screen components
-import { useNavigationProvider } from '../Glass/NavigationProvider'
+import { NavigateFuncProps, useNavigationProvider } from '../Glass/NavigationProvider'
+import AudioScreen from './AudioScreen'
 import AvatarScreen from './AvatarScreen'
-import DeleteAccountScreen from './DeleteAccountScreen'
+import ControlsScreen from './ControlsScreen'
 import DisplayNameScreen from './DisplayNameScreen'
-import PermissionsScreen from './PermissionsScreen'
+import LoginScreen from './LoginScreen'
 import ShareSpaceScreen from './ShareSpaceScreen'
 import SignUpScreen from './SignUpScreen'
 import SSOScreen from './SSOScreen'
+
+// Import icons from the icons module
+// Define types for screen components
+type ScreenProps = NavigateFuncProps
 
 // Define screen structure type
 interface ScreenDefinition {
@@ -54,21 +52,21 @@ interface ScreenDefinition {
   title: string
 }
 
-// Define placeholder screen component
-const PlaceholderScreen: React.FC<ScreenProps & { title: string }> = ({ title }) => (
-  <div className="p-2">{title} Settings</div>
-)
-
 // Define all screens
 export const screens: Record<string, ScreenDefinition> = {
   main: { component: MainMenu, title: 'Settings' },
   account: { component: AccountSettings, title: 'Account' },
   graphics: { component: GraphicsSettings, title: 'Graphics' },
+  audio: { component: AudioScreen, title: 'Audio' },
+  login: {
+    title: 'Sign In',
+    component: LoginScreen
+  },
   signup: {
     title: 'Sign Up',
     component: SignUpScreen
   },
-  shareSpace: {
+  share: {
     component: ShareSpaceScreen,
     title: 'Share Space'
   },
@@ -77,32 +75,16 @@ export const screens: Record<string, ScreenDefinition> = {
     title: 'Avatar'
   },
   controls: {
-    component: (props) => <PlaceholderScreen {...props} title="Controls" />,
+    component: ControlsScreen,
     title: 'Controls'
   },
-  displayName: {
+  display: {
     component: DisplayNameScreen,
     title: 'Display Name'
-  },
-  userId: {
-    component: (props) => <PlaceholderScreen {...props} title="User ID" />,
-    title: 'User ID'
-  },
-  permissions: {
-    component: PermissionsScreen,
-    title: 'Permissions'
-  },
-  shadowMapResolution: {
-    component: (props) => <PlaceholderScreen {...props} title="Shadow Map Resolution" />,
-    title: 'Shadow Map Resolution'
   },
   sso: {
     component: SSOScreen,
     title: 'Single Sign On'
-  },
-  deleteAccount: {
-    component: DeleteAccountScreen,
-    title: 'Delete My Account'
   }
 }
 
@@ -111,10 +93,10 @@ interface SettingsMenuProps {
   initScreen?: string
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ initScreen = 'main' }) => {
-  const { activeHistoryKey, direction, navigateBack, navigateTo, navigateClose } = useNavigationProvider()
+const SettingsMenu = ({ initScreen = 'main' }: SettingsMenuProps) => {
+  const { current, direction, second, navigateTo, navigateClose } = useNavigationProvider()
 
-  const ActiveComponent = screens[activeHistoryKey || initScreen].component
+  const ActiveComponent = screens[second || initScreen].component
 
   // Animation variants for slide transitions
   const variants: Record<string, Variant> = {
@@ -136,7 +118,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ initScreen = 'main' }) => {
     <div data-testid="settings-menu-backdrop" id="settings-menu-backdrop" className="h-full w-full">
       <AnimatePresence initial={false} mode="popLayout" custom={direction}>
         <motion.div
-          key={activeHistoryKey}
+          key={current}
           custom={direction}
           variants={variants}
           initial="enter"

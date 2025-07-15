@@ -23,11 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Camera01Md, ChevronLeftMd, ChevronRightMd, Microphone01Md } from '@ir-engine/ui/src/icons'
-import React, { useState } from 'react'
-import { BsFillExclamationTriangleFill } from 'react-icons/bs'
+import { ChevronLeftMd as ArrowLeftIcon, ChevronRightMd as ArrowRightIcon } from '@ir-engine/ui/src/icons'
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  BsEyeSlashFill as CameraOffIcon,
+  BsEyeFill as CameraOnIcon,
+  BsMicMuteFill as MicrophoneOffIcon,
+  BsMicFill as MicrophoneOnIcon,
+  BsFillExclamationTriangleFill as ReportIcon
+} from 'react-icons/bs'
 import { twMerge } from 'tailwind-merge'
-import { MultimediaStateProvider } from './MultimediaStateProvider'
+import { MultimediaStateProvider, useMultimediaStateProvider } from './MultimediaStateProvider'
 import {
   CamButton,
   containerStyles as containerStyles_base,
@@ -37,7 +43,19 @@ import {
   sectionStyles_base
 } from './ToolbarMenu'
 
-import { smallIconButtonStyles } from './Buttons'
+import { useMediaWindows, WindowType } from '../../user/VideoWindows'
+import {
+  SoundIndicatorsType,
+  useUserMediaWindowHook,
+  useUserMediaWindowsHook,
+  WindowStateType
+} from '../../user/VideoWindows/hook'
+import { ReportUserState } from '../../util/ReportUserState'
+
+import { useGet } from '@ir-engine/common'
+import { userPath } from '@ir-engine/common/src/schema.type.module'
+import { IconButton } from './buttons/IconButton'
+import { useNavigationProvider } from './NavigationProvider'
 
 const toolbarContainerStyles = `
   flex
@@ -69,27 +87,41 @@ const sectionStyles = `
 const videoContainer = `
   relative
   z-10
-  
-  flex
+  inline-flex
+
+  before:content-[' ']
+  before:absolute
+  before:-inset-[0.46rem]
+  before:border-4
+  before:border-white/80
+  before:rounded-[1.5rem]
+  sm:before:rounded-[1.7rem]
+`
+
+const videoInner = `
+  relative
+  inline-flex
   justify-center
   items-center
   overflow-hidden
-
-  h-[9.33rem]
-  w-[14rem]
-
-  rounded-3xl
-  border-4
-  border-white/80
   
-  bg-white/40
+  w-[41vw]
+  aspect-[3/2]
+  
+  rounded-[1rem]
+  bg-white/20
   text-2xl
   font-bold
 
   sm:h-[12rem]
   sm:w-[18rem]
+  sm:rounded-[1.2rem]
 `
 
+const videoStyles = `
+  h-full
+  max-w-[unset]
+`
 const videoButtonsContainer = `
   absolute
   inset-0
@@ -115,110 +147,277 @@ const videoButtonsInner = `
   group-hover:visible
 `
 
-const DesktopVideo = ({ children }) => (
-  <div style={{ textShadow: `0 0.03em 0.08em hsla(0, 0%, 0%, 0.4)` }} className={twMerge(videoContainer)}>
-    <div className={twMerge(videoButtonsContainer)}>
-      <div className={twMerge(videoButtonsInner)}>
-        <button onClick={() => {}} className={`cursor-pointer`}>
-          <Camera01Md />
-        </button>
-        <button onClick={() => {}} className={`cursor-pointer`}>
-          <Microphone01Md />
-        </button>
-        <button onClick={() => {}} className={`cursor-pointer`}>
-          <BsFillExclamationTriangleFill />
-        </button>
+export const useVideoStream = (videoElement, videoMediaStream) => {
+  useEffect(() => {
+    if (!videoElement) return
+
+    if (videoMediaStream && !videoElement.srcObject) {
+      videoElement.autoplay = true
+      videoElement.muted = true
+      videoElement.setAttribute('playsinline', 'true')
+
+      const newVideoTrack = videoMediaStream.getVideoTracks()[0].clone()
+      videoElement.srcObject = new MediaStream([newVideoTrack])
+      videoElement.play()
+    }
+
+    return () => {
+      if (videoElement.srcObject instanceof MediaStream) {
+        const tracks = videoElement.srcObject.getTracks()
+        tracks.forEach((track) => {
+          try {
+            track.stop()
+          } catch (error) {
+            console.debug('Track already stopped:', error)
+          }
+        })
+        videoElement.pause?.()
+        videoElement.srcObject = null
+      }
+    }
+  }, [videoElement, videoMediaStream])
+}
+
+type VideoType = WindowType & {
+  isSpeaking: boolean
+}
+
+const Video = ({ peerID, type, userID, isSpeaking }: VideoType) => {
+  const {
+    isSelf,
+    isPiP,
+    isScreen,
+    videoMediaStream,
+    audioMediaStream,
+    avatarThumbnail,
+    videoStreamPaused,
+    audioStreamPaused,
+    togglePiP,
+    toggleAudio,
+    toggleVideo
+  } = useUserMediaWindowHook({
+    peerID,
+    type
+  })
+
+  const { isCamVideoEnabled, isCamAudioEnabled } = useMultimediaStateProvider()
+
+  const { navigateTo } = useNavigationProvider()
+
+  const ref = useRef<HTMLVideoElement>(null)
+
+  useVideoStream(ref.current, videoMediaStream)
+
+  const showVideoIfSelf = isSelf ? isCamVideoEnabled : true
+  const showVideo = showVideoIfSelf && !videoStreamPaused
+
+  const camVideoOn = isSelf ? isCamVideoEnabled : !videoStreamPaused
+  const camAudioOn = isSelf ? isCamAudioEnabled : !audioStreamPaused
+
+  const user = useGet(userPath, userID)
+
+  const reportUser = () => {
+    ReportUserState.setReportedPeerId(peerID)
+    navigateTo('report')
+  }
+
+  return (
+    <div className={twMerge(videoContainer, isSpeaking ? `` : `before:hidden`)}>
+      <div className={twMerge(videoInner)}>
+        {showVideo ? <video className={videoStyles} ref={ref} /> : <img className={``} src={avatarThumbnail} />}
+        <span
+          className={`absolute left-2 top-1 text-[1rem] font-light`}
+          style={{ textShadow: `0px 2px 2px rgba(0, 0, 0, 0.25)` }}
+        >
+          {user?.data?.name}
+        </span>
+        <div className={twMerge(videoButtonsContainer)}>
+          <div className={twMerge(videoButtonsInner)}>
+            <button onClick={toggleVideo} className={`cursor-pointer`}>
+              {camVideoOn ? <CameraOnIcon /> : <CameraOffIcon />}
+            </button>
+            <button onClick={toggleAudio} className={`cursor-pointer`}>
+              {camAudioOn ? <MicrophoneOnIcon /> : <MicrophoneOffIcon />}
+            </button>
+            <button onClick={reportUser} className={`cursor-pointer`}>
+              <ReportIcon />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    {children}
-  </div>
-)
+  )
+}
 
 const videoMenuContainer = `
   inline-grid
   grid-cols-[min-content]
   justify-center
-  gap-y-4
+  gap-y-8
+
+  py-8
+  px-[6vw]
+  sm:px-4
 `
 
 const videosContainer = `
   inline-grid
   grid-cols-[auto_auto]
   justify-center
-  
-  gap-4
-  sm:gap-6
+
+  gap-[6vw]
+  sm:gap-8
 `
 
 const arrowsContainer = `
-  flex
-  
-  items-center
-  justify-end
-  gap-x-4
-  tracking-wide
+  flex items-center
+  justify-between
 `
+const numVideosPerPage = 6
+
+const VideosProviderContext = createContext(
+  {} as {
+    soundIndicators: SoundIndicatorsType
+    videos: WindowStateType[]
+  }
+)
+
+export const VideosProvider = ({ children }) => {
+  const windows = useMediaWindows()
+
+  const { _windows: videos, soundIndicators } = useUserMediaWindowsHook(windows)
+
+  return (
+    <VideosProviderContext.Provider
+      value={{
+        videos,
+        soundIndicators
+      }}
+    >
+      {children}
+    </VideosProviderContext.Provider>
+  )
+}
+
+export const useVideosProvider = () => useContext(VideosProviderContext)
 
 export const VideoMenu = () => {
-  const numVideos = 20
-
-  const [videoProps, setVideoProps] = useState([...Array(numVideos)])
-
   const [pageIndex, setPageIndex] = useState(0)
 
-  const videoPages: number[][] = []
-  let _page: number[] = []
+  const { videos, soundIndicators } = useVideosProvider()
 
-  const maxPageLength = 6
+  const videosByPage = useMemo(() => {
+    const videoPages: WindowType[][] = []
+    let page: WindowType[] = []
 
-  videoProps.map((__, i: number) => {
-    if (_page.length === maxPageLength) {
-      videoPages.push(_page)
-      _page = []
+    videos.map((videoProps, i: number) => {
+      page.push(videoProps)
+
+      const isPageFull = page.length === numVideosPerPage
+      const isLastVideo = i === videos.length - 1
+
+      if (isPageFull || isLastVideo) {
+        videoPages.push(page)
+        page = []
+      }
+    })
+
+    const videosByPage = videoPages.map((page, i) => {
+      return page.map(({ peerID, type, userID }, j) => {
+        const isSpeaking = soundIndicators.value[peerID]
+
+        return <Video key={`${peerID}-${type}`} userID={userID} peerID={peerID} type={type} isSpeaking={isSpeaking} />
+      })
+    })
+
+    return videosByPage
+  }, [videos, soundIndicators])
+
+  const numPages = videosByPage.length
+  const currentPageVideos = videosByPage[pageIndex] || []
+
+  const isLastPage = pageIndex >= numPages - 1
+  const isFirstPage = pageIndex <= 0
+
+  const needsFillers = isLastPage && videos.length % numVideosPerPage !== 0
+  const minNumPages = Math.ceil(videos.length / numVideosPerPage)
+  const totalNumVideosWithFiller = minNumPages * numVideosPerPage
+  const numFiller = totalNumVideosWithFiller - videos.length
+
+  const videoEls = !needsFillers
+    ? currentPageVideos
+    : [
+        ...currentPageVideos,
+        ...[...Array(numFiller)].map((__, i) => {
+          return <div key={i} className={twMerge(videoInner)} />
+        })
+      ]
+
+  useEffect(() => {
+    const lastPageIndex = videosByPage.length - 1
+
+    if (pageIndex > lastPageIndex) {
+      setPageIndex(lastPageIndex)
     }
 
-    _page.push(i)
-  })
+    if (pageIndex <= 0) {
+      setPageIndex(0)
+    }
+  }, [pageIndex, videosByPage.length])
 
-  const videos = videoPages[pageIndex].map((num, i) => {
-    return <DesktopVideo>{num}</DesktopVideo>
-  })
-
-  const numPages = videoPages.length
+  const pageLabel = `${pageIndex + 1}/${numPages}`
 
   return (
     <div className={videoMenuContainer}>
-      <div className={videosContainer}>{videos}</div>
+      <div className={videosContainer}>{videoEls}</div>
 
-      <div className={arrowsContainer}>
-        <button
-          onClick={() => setPageIndex(pageIndex - 1)}
-          className={twMerge(smallIconButtonStyles, pageIndex === 0 ? `hidden` : ``)}
-        >
-          <ChevronLeftMd />
-        </button>
-        {`${pageIndex + 1}/${numPages}`}
-        <button
-          onClick={() => setPageIndex(pageIndex + 1)}
-          className={twMerge(smallIconButtonStyles, pageIndex === numPages - 1 ? `hidden` : ``)}
-        >
-          <ChevronRightMd />
-        </button>
-      </div>
+      {videosByPage.length ? (
+        <div className={arrowsContainer}>
+          <IconButton
+            size={'small'}
+            onClick={isFirstPage ? () => {} : () => setPageIndex(pageIndex - 1)}
+            className={isFirstPage ? `collapse` : ``}
+          >
+            <ArrowLeftIcon />
+          </IconButton>
+          <div
+            className={`
+              flex items-center
+              gap-x-4
+              tracking-wide
+            `}
+          >
+            {pageLabel}
+            <IconButton
+              size={'small'}
+              onClick={() => setPageIndex(pageIndex + 1)}
+              className={isLastPage ? `hidden` : ``}
+            >
+              <ArrowRightIcon />
+            </IconButton>
+          </div>
+        </div>
+      ) : (
+        <></>
+      )}
 
-      <div className={toolbarContainerStyles}>
-        <div className={containerStyles}>
-          <div className={gridStyles}>
-            <div className={sectionStyles}>
-              <MultimediaStateProvider>
-                <ScreenshareButton />
-                <CamButton />
-                <MicButton />
-              </MultimediaStateProvider>
+      {videosByPage.length ? (
+        <div className={toolbarContainerStyles}>
+          <div className={containerStyles}>
+            <div className={gridStyles}>
+              <div className={sectionStyles}>
+                <MultimediaStateProvider>
+                  <ScreenshareButton />
+                  <CamButton />
+                  <MicButton />
+                </MultimediaStateProvider>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <></>
+      )}
     </div>
   )
 }

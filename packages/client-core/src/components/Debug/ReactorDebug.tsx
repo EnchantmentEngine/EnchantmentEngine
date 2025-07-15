@@ -24,8 +24,8 @@ import { JSONTree } from 'react-json-tree'
 
 import { defineSystem, ECSState, PresentationSystemGroup } from '@ir-engine/ecs'
 import { getState, NO_PROXY, ReactorRenderCounterState, useHookstate } from '@ir-engine/hyperflux'
-import { Checkbox } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { Dropdown } from '@ir-engine/ui/viewer'
 import { useFrameUpdate } from './useFrameUpdate'
 
 let open = false
@@ -45,7 +45,16 @@ const execute = () => {
   if (accumulator > updatePeriod) {
     const state = ReactorRenderCounterState.get(NO_PROXY) as Record<
       string,
-      { count: number; name: string; stack: string[]; time: number; lastRender: number }
+      {
+        count: number
+        name: string
+        stack: string[]
+        time: number
+        lastRender: number
+        fiberCount: number
+        peakFiberCount: number
+        ended: boolean
+      }
     >
     for (const [key, value] of Object.entries(state)) {
       if (value.count > 0) {
@@ -70,11 +79,36 @@ const execute = () => {
   }
 }
 
+const labelRenderer = (data: Record<string | number, any>) => {
+  return (keyPath: (string | number)[], ...args) => {
+    const key = keyPath[0]
+    if (keyPath.length === 2) {
+      return data[key].name
+    }
+    return key
+  }
+}
+
 const ReactorFrequencySystem = defineSystem({
   uuid: 'ir.client.debug.ReactorFrequencySystem',
   insert: { after: PresentationSystemGroup },
   execute
 })
+
+const sortOptions = [
+  {
+    label: 'Fiber Count',
+    value: 'fibers'
+  },
+  {
+    label: 'Render Count',
+    value: 'renders'
+  },
+  {
+    label: 'Average Render Time',
+    value: 'time'
+  }
+]
 
 const shouldExpandNodeInitially = (keyPath: any, data: any, level: number) => level < 2
 
@@ -83,7 +117,7 @@ export function ReactorDebug() {
 
   useFrameUpdate()
 
-  const averageEnabled = useHookstate(false)
+  const sortBy = useHookstate<'fibers' | 'renders' | 'time'>('fibers')
 
   useEffect(() => {
     open = true
@@ -94,56 +128,94 @@ export function ReactorDebug() {
 
   const reactorProfileState = useHookstate(ReactorRenderCounterState)
 
+  const averageEnabled = sortBy.value === 'time'
+
   // sort by most frequently rendered
   const state = Object.entries(reactorProfileState.get(NO_PROXY))
-    .filter(([key, val]) => (averageEnabled.value ? RenderFrequencyAverage.has(key) : true))
+    .filter(([key, val]) => (averageEnabled ? RenderFrequencyAverage.has(key) : true))
     .sort(([keyA, valA], [keyB, valB]) =>
-      averageEnabled.value
+      sortBy.value === 'time'
         ? RenderFrequencyAverage.get(keyB)!.average - RenderFrequencyAverage.get(keyA)!.average
+        : sortBy.value === 'fibers'
+        ? valB.peakFiberCount - valA.peakFiberCount
         : valB.count - valA.count
     )
-    .filter((val, i) => i < 20)
     .map(([key, val]) => {
       return [
-        val.name,
+        key,
         {
+          name: val.name,
           uuid: key,
-          count: val.count,
-          time: val.time,
+          fiberCount: val.fiberCount,
+          renderCount: val.count,
+          renderTime: val.time,
+          peakFiberCount: val.peakFiberCount,
           average: RenderFrequencyAverage.get(key)?.average ?? 0,
-          stack: val.stack
+          stack: val.stack as string[],
+          ended: val.ended
         }
       ] as const
     })
-    .reduce((acc, [key, val]) => {
-      acc[key] = val
-      return acc
-    }, {})
+    .reduce(
+      (acc, [key, val]) => {
+        acc[key] = val
+        return acc
+      },
+      {} as Record<
+        string,
+        {
+          name: string
+          uuid: string
+          fiberCount: number
+          renderCount: number
+          renderTime: number
+          peakFiberCount: number
+          average: number
+          stack: string[]
+          ended: boolean
+        }
+      >
+    )
+
+  const totalFiberCount = Object.values(state).reduce((acc, val) => acc + val.fiberCount, 0)
+  const totalRenderCount = Object.values(state).reduce((acc, val) => acc + val.renderCount, 0)
+  const totalRenderTime = Object.values(state).reduce((acc, val) => acc + val.renderTime, 0)
 
   return (
     <div className="mx-1 my-0.5 bg-neutral-600 p-1">
       <Text className="text-text-primary-button">{t('common:debug.state')}</Text>
       <div className="flex w-full justify-start gap-x-2">
-        <Checkbox checked={averageEnabled.value} onChange={() => averageEnabled.set((val) => !val)} />
-        <Text
-          className="cursor-pointer text-gray-400 hover:text-white"
-          onClick={() => averageEnabled.set((val) => !val)}
-        >
-          Average
-        </Text>
+        <div className="text-text-primary-button">Sort</div>
+        <Dropdown onChange={(val: any) => sortBy.set(val)} value={sortBy.value} options={sortOptions} />
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total fiber count: {totalFiberCount}</Text>
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total render count: {totalRenderCount}</Text>
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total render time: {totalRenderTime} (inaccurate)</Text>
       </div>
       <JSONTree
         data={state}
+        labelRenderer={labelRenderer(state)}
         shouldExpandNodeInitially={shouldExpandNodeInitially}
         sortObjectKeys={(a: string, b: string) => {
-          const valA = state[a as keyof typeof state] as { average?: number; count?: number } | undefined
-          const valB = state[b as keyof typeof state] as { average?: number; count?: number } | undefined
+          const valA = state[a as keyof typeof state] as
+            | { average?: number; renderCount?: number; peakFiberCount?: number }
+            | undefined
+          const valB = state[b as keyof typeof state] as
+            | { average?: number; renderCount?: number; peakFiberCount?: number }
+            | undefined
 
-          if (!valA || !valB) return a.localeCompare(b)
+          if (!valA || !valB) return 0
 
-          return averageEnabled.value
+          return sortBy.value === 'time'
             ? (valB.average || 0) - (valA.average || 0)
-            : (valB.count || 0) - (valA.count || 0)
+            : sortBy.value === 'fibers'
+            ? (valB.peakFiberCount || 0) - (valA.peakFiberCount || 0)
+            : (valB.renderCount || 0) - (valA.renderCount || 0)
         }}
       />
     </div>
