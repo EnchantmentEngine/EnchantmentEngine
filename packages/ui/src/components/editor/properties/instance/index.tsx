@@ -42,6 +42,10 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
 
   const instancingComponent = useComponent(entity, InstancingComponent)
 
+  const randomize = () => {
+    commitProperty(InstancingComponent, 'seed')(Math.round(Math.random() * 10 ** 5))
+  }
+
   return (
     <NodeEditor
       name={t('editor:properties.instancing.name')}
@@ -52,6 +56,8 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
       <InputGroup name="Auto" label={'Auto'}>
         <Checkbox checked={instancingComponent.auto.value} onChange={commitProperty(InstancingComponent, 'auto')} />
         <NumericInput value={instancingComponent.count.value} onChange={commitProperty(InstancingComponent, 'count')} />
+        <NumericInput value={instancingComponent.seed.value} onChange={commitProperty(InstancingComponent, 'seed')} />
+        <button onClick={randomize}>Randomize</button>
       </InputGroup>
     </NodeEditor>
   )
