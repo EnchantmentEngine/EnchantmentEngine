@@ -34,6 +34,7 @@ import {
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
+import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { NO_PROXY, State, getMutableState, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
@@ -63,6 +64,7 @@ export default function FilePropertiesModal() {
   const editedField = useHookstate<string | null>(null)
   const tagInput = useHookstate<string>('')
   const sharedTags = useHookstate<string[]>([])
+  const totalSize = useHookstate<string>('')
 
   let title: string
   let filename: string
@@ -114,38 +116,41 @@ export default function FilePropertiesModal() {
           project: resource.project
         })
       }
-      const reactor = startReactor(() => {
-        const updatedResources = useFind(staticResourcePath, {
-          query: {
-            key: {
-              $like: undefined,
-              $or: files.map(({ key }) => ({
-                key
-              }))
-            },
-            $limit: 10000
+      const reactor = startReactor(
+        () => {
+          const updatedResources = useFind(staticResourcePath, {
+            query: {
+              key: {
+                $like: undefined,
+                $or: files.map(({ key }) => ({
+                  key
+                }))
+              },
+              $limit: 10000
+            }
+          })
+          for (const resource of updatedResources.data) {
+            const oldTags = resource.tags ?? []
+            const newTags = Array.from(new Set([...addedTags, ...oldTags.filter((tag) => !removedTags.includes(tag))]))
+            if (
+              resource.tags?.length === newTags.length &&
+              resource.tags.every((val, index) => val === newTags[index]) &&
+              resource.name === resourceDigest.name.value &&
+              resource.licensing === resourceDigest.licensing.value &&
+              resource.attribution === resourceDigest.attribution.value &&
+              resource.description === resourceDigest.description.value
+            ) {
+              console.log('All properties successfully updated')
+              modifiedFields.set([])
+              ModalState.closeModal()
+              ModalState.closeModal()
+              reactor.stop()
+            }
           }
-        })
-        for (const resource of updatedResources.data) {
-          const oldTags = resource.tags ?? []
-          const newTags = Array.from(new Set([...addedTags, ...oldTags.filter((tag) => !removedTags.includes(tag))]))
-          if (
-            resource.tags?.length === newTags.length &&
-            resource.tags.every((val, index) => val === newTags[index]) &&
-            resource.name === resourceDigest.name.value &&
-            resource.licensing === resourceDigest.licensing.value &&
-            resource.attribution === resourceDigest.attribution.value &&
-            resource.description === resourceDigest.description.value
-          ) {
-            console.log('All properties successfully updated')
-            modifiedFields.set([])
-            ModalState.closeModal()
-            ModalState.closeModal()
-            reactor.stop()
-          }
-        }
-        return null
-      })
+          return null
+        },
+        `FilePropertiesModal - ${files.map((f) => f.key).join(', ')}`
+      )
     } else {
       ModalState.closeModal()
       ModalState.closeModal()
@@ -229,6 +234,32 @@ export default function FilePropertiesModal() {
       }
     }
   }
+
+  useEffect(() => {
+    const getTotalSize = () => {
+      return bytesToSize(
+        files
+          .map((file) => {
+            const sizeStr = file.size || '0'
+            const regex = /^([\d.]+)\s*([A-Za-z]+)$/
+            const matches = sizeStr.match(regex)
+
+            if (!matches) return 0
+
+            const value = parseFloat(matches[1])
+            const unit = matches[2]
+
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+            const unitIndex = sizes.findIndex((size) => size.toLowerCase() === unit.toLowerCase())
+            if (unitIndex === -1) return 0
+
+            return value * Math.pow(1024, unitIndex)
+          })
+          .reduce((total, value) => total + value, 0)
+      )
+    }
+    totalSize.set(getTotalSize())
+  }, [files])
 
   return (
     <Modal
@@ -323,7 +354,7 @@ export default function FilePropertiesModal() {
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.size')}</Text>
           <Text className="" data-testid="files-panel-file-item-properties-file-size">
-            {files.map((file) => file.size).reduce((total, value) => total + parseInt(value ?? '0'), 0)}
+            {totalSize.value}
           </Text>
         </div>
         {fileStaticResources.length > 0 && (

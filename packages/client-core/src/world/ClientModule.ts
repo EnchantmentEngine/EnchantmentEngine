@@ -27,6 +27,7 @@ import { WidgetAppServiceReceptorSystem } from '../systems/WidgetAppService'
 
 import { OverlaySystem } from '@ir-engine/client-core/src/systems/OverlaySystem'
 import { AvatarSpawnSystem } from '../networking/AvatarSpawnSystem'
+import { AudioDuckingSystem } from '../systems/AudioDuckingSystem'
 import { AvatarUISystem } from '../systems/AvatarUISystem'
 import { LinkErrorSystem } from '../systems/LinkErrorSystem'
 import { LoadingUISystem } from '../systems/LoadingUISystem'
@@ -43,6 +44,7 @@ import './ClientNetworkModule'
 import './ScriptNamespaceModule'
 
 export {
+  AudioDuckingSystem,
   AvatarSpawnSystem,
   AvatarUISystem,
   LinkErrorSystem,

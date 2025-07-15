@@ -39,8 +39,8 @@ import {
   getComponent,
   removeEntity,
   setComponent,
-  useChildrenWithComponents,
-  useOptionalComponent
+  useOptionalComponent,
+  useQueryBySource
 } from '@ir-engine/ecs'
 import {
   ErrorBoundary,
@@ -66,7 +66,7 @@ import {
   BoundingBoxComponent,
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, useRef } from 'react'
 import { Color, Euler, Material, Mesh, Quaternion, SphereGeometry } from 'three'
 
 import { useFind } from '@ir-engine/common'
@@ -148,6 +148,7 @@ export const uploadDimension = async (modelEntity: Entity, src: string, projectN
     fileURL.search = ''
     fileURL.hash = ''
     const fileKeyKey = fileURL.href.replace(config.client.fileServer + '/', '')
+
     await API.instance
       .service(staticResourcePath)
       .find({
@@ -285,8 +286,8 @@ const uploadThumbnail = async (src: string, projectName: string, blob: Blob | nu
         }
       })
       .catch((e) => console.error(e))
-  } catch {
-    ;(e) => console.error(e)
+  } catch (e) {
+    console.error(e)
   }
 }
 const useGenerateHelper = (
@@ -460,14 +461,6 @@ export const extensionCanHaveDimension = (ext: string): boolean => {
   const fileType = extensionThumbnailTypeMap.get(ext)
   // Only model files can have dimensions, but exclude material and lookdev assets
   return fileType === 'model' && ext !== 'material.gltf' && ext !== 'lookdev.gltf'
-}
-
-const tryCatch = (fn: (...args: any[]) => void, onError: (err) => void) => {
-  try {
-    fn()
-  } catch (e) {
-    onError(e)
-  }
 }
 
 const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
@@ -712,7 +705,7 @@ const renderThumbnail = (
 ) => {
   const { src, project, onError } = props
 
-  tryCatch(() => {
+  try {
     setCameraFocusOnBox(entity, cameraEntity)
     const camera = getComponent(cameraEntity, CameraComponent)
     camera.layers.set(ObjectLayers.Scene)
@@ -732,17 +725,15 @@ const renderThumbnail = (
     render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent), 0, false)
 
     canvas!.toBlob((blob: Blob) => {
-      tryCatch(
-        () =>
-          uploadThumbnail(src, project, blob).then(() => {
-            FileThumbnailJobState.removeCurrentJob()
-          }),
-        (err) => {
+      uploadThumbnail(src, project, blob)
+        .then(() => FileThumbnailJobState.removeCurrentJob())
+        .catch((err) => {
           onError(err)
-        }
-      )
+        })
     })
-  }, onError)
+  } catch (e) {
+    onError(e)
+  }
 }
 
 const RenderVideoThumbnail = (props: RenderThumbnailProps) => {
@@ -751,17 +742,25 @@ const RenderVideoThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!src) return
 
-    tryCatch(() => {
+    try {
       const video = document.createElement('video')
       video.src = src
       video.crossOrigin = 'anonymous'
       seekVideo(video, 1)
         .then(() => drawToCanvas(video))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
-        .then(() => video.remove())
-        .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .then((blob) => uploadThumbnail(src, project, blob))
+        .then(() => {
+          video.remove()
+          FileThumbnailJobState.removeCurrentJob()
+        })
+        .catch((err) => {
+          video.remove()
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [src])
   return null
 }
@@ -772,7 +771,7 @@ const RenderImageThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!src) return
 
-    tryCatch(() => {
+    try {
       const image = new Image()
       image.crossOrigin = 'anonymous'
       image.src = src
@@ -780,9 +779,14 @@ const RenderImageThumbnail = (props: RenderThumbnailProps) => {
         .decode()
         .then(() => drawToCanvas(image))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
+        .then((blob) => uploadThumbnail(src, project, blob))
         .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .catch((err) => {
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [src])
   return null
 }
@@ -792,6 +796,24 @@ const RenderModelThumbnail = (props: RenderThumbnailProps) => {
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
   const loaded = GLTFComponent.useSceneLoaded(entity)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    // Set a 10 second timeout
+    timeoutRef.current = setTimeout(() => {
+      if (!loaded && !errors) {
+        console.warn(`Thumbnail generation timed out after 10 seconds for ${src}`)
+        FileThumbnailJobState.removeCurrentJob()
+      }
+    }, 10000) // 10 seconds
+
+    // Clear timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [src])
 
   useEffect(() => {
     if (!entity || !lightEntity || !skyboxEntity || !cameraEntity) return
@@ -799,16 +821,26 @@ const RenderModelThumbnail = (props: RenderThumbnailProps) => {
   }, [entity, lightEntity, skyboxEntity, cameraEntity])
 
   useEffect(() => {
+    if (loaded || errors) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+
     if (!loaded) return
     if (jobType === 'dimension') {
-      tryCatch(
-        () => {
-          uploadDimension(entity, src, props.project).then(() => {
+      try {
+        uploadDimension(entity, src, props.project)
+          .then(() => {
             FileThumbnailJobState.removeCurrentJob()
           })
-        },
-        (err) => onError(err)
-      )
+          .catch((err) => {
+            onError(err)
+          })
+      } catch (e) {
+        onError(e)
+      }
     } else if (jobType === 'thumbnail') {
       console.log('upload thumbnail')
       renderThumbnail(entity, lightEntity, skyboxEntity, cameraEntity, props)
@@ -833,7 +865,7 @@ const RenderTextureThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!texture) return
 
-    tryCatch(() => {
+    try {
       const image = new Image()
       image.crossOrigin = 'anonymous'
 
@@ -844,10 +876,18 @@ const RenderTextureThumbnail = (props: RenderThumbnailProps) => {
         })
         .then(() => drawToCanvas(image))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
-        .then(() => image.remove())
-        .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .then((blob) => uploadThumbnail(src, project, blob))
+        .then(() => {
+          image.remove()
+          FileThumbnailJobState.removeCurrentJob()
+        })
+        .catch((err) => {
+          image.remove()
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [texture])
 
   useEffect(() => {
@@ -900,7 +940,7 @@ const RenderLookDevThumbnail = (props: RenderThumbnailProps) => {
   const { src, onError } = props
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
-  const [lookdevSkybox] = useChildrenWithComponents(entity, [SkyboxComponent])
+  const [lookdevSkybox] = useQueryBySource(entity, [SkyboxComponent])
   const backgroundComponent = useOptionalComponent(lookdevSkybox, BackgroundComponent)
 
   useEffect(() => {

@@ -23,53 +23,116 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import '@ir-engine/spatial'
+import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
+import { FogSystem } from '@ir-engine/spatial/src/renderer/FogSystem'
+import { PositionalAudioComponent } from '../audio/components/PositionalAudioComponent'
+import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
+import { GrabbableComponent } from '../grabbable/GrabbableComponent'
+import { MountPointSystem } from '../interaction/systems/MountPointSystem'
+import { MaterialLibrarySystem } from '../scene/materials/systems/MaterialLibrarySystem'
+import { CameraSettingsComponent } from './components/CameraSettingsComponent'
+import { EnvMapBakeComponent } from './components/EnvMapBakeComponent'
+import { EnvMapComponent } from './components/EnvmapComponent'
+import { GroundPlaneComponent } from './components/GroundPlaneComponent'
+import { HyperspaceTagComponent } from './components/HyperspaceTagComponent'
+import { ImageComponent } from './components/ImageComponent'
+import { LegacyVolumetricComponent } from './components/LegacyVolumetricComponent'
+import { LinkComponent } from './components/LinkComponent'
+import { LookAtComponent } from './components/LookAtComponent'
+import { MediaComponent } from './components/MediaComponent'
+import { MountPointComponent } from './components/MountPointComponent'
+import { ParticleSystemComponent } from './components/ParticleSystemComponent'
+import { PoiComponent } from './components/PoiComponent'
+import { PoiHotspotComponent } from './components/PoiHotspotComponent'
+import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
+import { RenderSettingsComponent } from './components/RenderSettingsComponent'
+import { SceneDynamicLoadComponent } from './components/SceneDynamicLoadComponent'
+import { ScenePreviewCameraComponent } from './components/ScenePreviewCamera'
+import { SceneSettingsComponent } from './components/SceneSettingsComponent'
+import { ScreenshareTargetComponent } from './components/ScreenshareTargetComponent'
+import { ShadowComponent } from './components/ShadowComponent'
+import { SkyboxComponent } from './components/SkyboxComponent'
+import { SpawnPointComponent } from './components/SpawnPointComponent'
+import { SplineComponent } from './components/SplineComponent'
+import { SplineTrackComponent } from './components/SplineTrackComponent'
+import { TextComponent } from './components/TextComponent'
+import { TriggerCallbackComponent } from './components/TriggerCallbackComponent'
+import { VariantComponent } from './components/VariantComponent'
+import { VideoComponent } from './components/VideoComponent'
+import { VolumetricComponent } from './components/VolumetricComponent'
+import { EnvironmentSystem } from './systems/EnvironmentSystem'
+import { LookAtSystem } from './systems/LookAtSystem'
+import { OrientedBoundingBoxSystem } from './systems/OrientedBoundingBoxSystem'
+import { ParticleSystem } from './systems/ParticleSystemSystem'
+import { PortalSystem } from './systems/PortalSystem'
+import { SceneKillHeightSystem } from './systems/SceneKillHeightSystem'
+import { SceneNetworkSystem } from './systems/SceneNetworkSystem'
+import { SceneObjectDynamicLoadSystem } from './systems/SceneObjectDynamicLoadSystem'
+import { SceneObjectSystem } from './systems/SceneObjectSystem'
+import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
+import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
+import { VariantSystem } from './systems/VariantSystem'
 
-export * from '../audio/components/PositionalAudioComponent'
-export * from '../avatar/components/LoopAnimationComponent'
-export * from '../grabbable/GrabbableComponent'
-export * from '../interaction/systems/MountPointSystem'
-export * from '../scene/materials/systems/MaterialLibrarySystem'
-export * from './components/CameraSettingsComponent'
-export * from './components/EnvMapBakeComponent'
-export * from './components/EnvmapComponent'
-export * from './components/GroundPlaneComponent'
-export * from './components/HyperspaceTagComponent'
-export * from './components/ImageComponent'
-export * from './components/LegacyVolumetricComponent'
-export * from './components/LinkComponent'
-export * from './components/LookAtComponent'
-export * from './components/MediaComponent'
-export * from './components/MountPointComponent'
-export * from './components/ParticleSystemComponent'
-export * from './components/PoiComponent'
-export * from './components/PoiHotspotComponent'
-export * from './components/PrimitiveGeometryComponent'
-export * from './components/RenderSettingsComponent'
-export * from './components/SceneDynamicLoadComponent'
-export * from './components/ScenePreviewCamera'
-export * from './components/SceneSettingsComponent'
-export * from './components/ScreenshareTargetComponent'
-export * from './components/ShadowComponent'
-export * from './components/SkyboxComponent'
-export * from './components/SpawnPointComponent'
-export * from './components/SplineComponent'
-export * from './components/SplineTrackComponent'
-export * from './components/TextComponent'
-export * from './components/TriggerCallbackComponent'
-export * from './components/VariantComponent'
-export * from './components/VideoComponent'
-export * from './components/VolumetricComponent'
-export * from './systems/EnvironmentSystem'
-export * from './systems/LookAtSystem'
-export * from './systems/ParticleSystemSystem'
-export * from './systems/PortalSystem'
-export * from './systems/SceneKillHeightSystem'
-export * from './systems/SceneNetworkSystem'
-export * from './systems/SceneObjectDynamicLoadSystem'
-export * from './systems/SceneObjectSystem'
-export * from './systems/ShadowSystem'
-export * from './systems/TriggerCallbackSystem'
-export * from './systems/VariantSystem'
+import './functions/definePrefab'
 
-export * from './functions/definePrefab'
+/** This const MUST be kept here, to ensure all components definitions are loaded by the time the scene loading occurs */
+export const SceneComponents = [
+  PositionalAudioComponent,
+  LoopAnimationComponent,
+  GrabbableComponent,
+  CameraSettingsComponent,
+  // CloudComponent,
+  EnvMapBakeComponent,
+  EnvMapComponent,
+  GroundPlaneComponent,
+  HyperspaceTagComponent,
+  ImageComponent,
+  // InteriorComponent,
+  PoiComponent,
+  PoiHotspotComponent,
+  LookAtComponent,
+  MediaComponent,
+  // MediaSettingsComponent,
+  MountPointComponent,
+  // OceanComponent,
+  ParticleSystemComponent,
+  PostProcessingComponent,
+  PrimitiveGeometryComponent,
+  RenderSettingsComponent,
+  SceneDynamicLoadComponent,
+  ScenePreviewCameraComponent,
+  SceneSettingsComponent,
+  ScreenshareTargetComponent,
+  ShadowComponent,
+  SkyboxComponent,
+  SpawnPointComponent,
+  SplineComponent,
+  SplineTrackComponent,
+  TriggerCallbackComponent,
+  VariantComponent,
+  VideoComponent,
+  LegacyVolumetricComponent,
+  VolumetricComponent,
+  // WaterComponent,
+  LinkComponent,
+  TextComponent
+]
+
+export {
+  DropShadowSystem,
+  EnvironmentSystem,
+  FogSystem,
+  LookAtSystem,
+  MaterialLibrarySystem,
+  MountPointSystem,
+  OrientedBoundingBoxSystem,
+  ParticleSystem,
+  PortalSystem,
+  SceneKillHeightSystem,
+  SceneNetworkSystem,
+  SceneObjectDynamicLoadSystem,
+  SceneObjectSystem,
+  ShadowSystem,
+  TriggerCallbackSystem,
+  VariantSystem
+}

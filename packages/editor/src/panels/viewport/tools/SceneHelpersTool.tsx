@@ -25,12 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { EngineState } from '@ir-engine/ecs'
 import { EditorHelperState, PlacementMode } from '@ir-engine/editor/src/services/EditorHelperState'
 import { getMutableState, useMutableState } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
-import { CubeOutlineLg, Cursor03Lg, Edit01Md, GridDotsMd, RulerUnitsMd, SunMd } from '@ir-engine/ui/src/icons'
+import { CubeOutlineLg, Cursor03Lg, GridDotsMd, RulerUnitsMd, SunMd } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -45,9 +46,19 @@ const volumeVisbilityDescriptions = {
 
 export default function SceneHelpersTool() {
   const { t } = useTranslation()
+  const engineState = useMutableState(EngineState)
   const editorHelperState = useMutableState(EditorHelperState)
   const rendererState = useMutableState(RendererState)
   const [pointClickEnabled] = useFeatureFlags([FeatureFlags.Studio.UI.PointClick])
+
+  useEffect(() => {
+    if (engineState.isEditing.value) {
+      rendererState.gridVisibility.set(editorHelperState.gridVisibility.value)
+      rendererState.gridHeight.set(editorHelperState.gridHeight.value)
+    } else {
+      rendererState.gridVisibility.set(false)
+    }
+  }, [editorHelperState.gridVisibility, editorHelperState.gridHeight, engineState.isEditing])
 
   useEffect(() => {
     getMutableState(RendererState).nodeHelperVisibility.set(
@@ -140,12 +151,22 @@ export default function SceneHelpersTool() {
           selected={editorHelperState.gridVisibility.value}
         />
       </Tooltip>
-      <Tooltip content={t('editor:toolbar.helpersToggle.lbl-axisHelpers')} position="bottom">
-        <ViewportButton lean={true} onClick={() => {}} disabled={true} selected={false} icon={RulerUnitsMd} />
+      <Tooltip
+        title={t('editor:toolbar.helpersToggle.lbl-colliderHelpers')}
+        content={t('editor:toolbar.helpersToggle.info-helpers')}
+        position="bottom"
+      >
+        <ViewportButton
+          lean={true}
+          onClick={() => rendererState.physicsDebug.set(!rendererState.physicsDebug.value)}
+          disabled={false}
+          selected={rendererState.physicsDebug.value}
+          icon={RulerUnitsMd}
+        />
       </Tooltip>
-      <Tooltip content={t('editor:toolbar.helpersToggle.lbl-directManipulation')} position="bottom">
+      {/* <Tooltip content={t('editor:toolbar.helpersToggle.lbl-directManipulation')} position="bottom">
         <ViewportButton lean={true} onClick={() => {}} disabled={true} selected={false} icon={Edit01Md} />
-      </Tooltip>
+      </Tooltip> */}
     </div>
   )
 }
