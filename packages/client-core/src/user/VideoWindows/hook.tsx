@@ -43,6 +43,7 @@ import {
   PeerID,
   screenshareAudioMediaChannelType,
   screenshareVideoMediaChannelType,
+  State,
   useHookstate,
   useMutableState,
   webcamAudioMediaChannelType,
@@ -75,7 +76,26 @@ export function addValue<T>(obj: Readonly<Record<string, T>>, key: string, value
   }
 }
 
-export const useUserMediaWindowsHook = (windows: WindowType[]) => {
+export type WindowStateType = WindowType & {
+  volume: number
+  adjustVolume: (e: any, value: any) => void
+  toggleVideo: () => void
+  toggleAudio: () => void
+  handleScreenshareTexture: () => void
+  handleAudioPause: () => void
+  videoMediaStream: MediaStreamInterface['stream']
+  audioMediaStream: MediaStreamInterface['stream']
+  audioStreamPaused: MediaStreamInterface['paused']
+  audioElement: MediaStreamInterface['element']
+  videoElement: MediaStreamInterface['element']
+  isSelf: boolean
+}
+
+export type SoundIndicatorsType = State<Record<string, boolean>, {}>
+
+export const useUserMediaWindowsHook = (
+  windows: WindowType[]
+): { soundIndicators: SoundIndicatorsType; _windows: WindowStateType[] } => {
   const mediaChannelState = useHookstate(getMutableState(MediaChannelState))
   const mediaStreamState = useMutableState(MediaStreamState)
   const mediaSettingState = useMutableState(MediaSettingsState)
@@ -262,18 +282,14 @@ export const useUserMediaWindowsHook = (windows: WindowType[]) => {
         handleScreenshareTexture
       }
     })
-    .filter(({ audioMediaStream, videoMediaStream }) => {
-      return audioMediaStream || videoMediaStream
+    .filter(({ audioMediaStream, videoMediaStream, isSelf }) => {
+      return isSelf || audioMediaStream || videoMediaStream
     })
 
   const togglePiP = () => isPiP.set(!isPiP.value)
 
   useEffect(() => {
-    mediaStreamState.microphoneGainNode.value?.gain.setTargetAtTime(
-      audioState.microphoneGain.value,
-      audioState.audioContext.currentTime.value,
-      0.01
-    )
+    mediaStreamState.microphoneGainValue.set(audioState.microphoneGain.value)
   }, [audioState.microphoneGain.value])
 
   return { _windows, soundIndicators }

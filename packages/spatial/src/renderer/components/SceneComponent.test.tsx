@@ -79,7 +79,7 @@ describe('BackgroundComponent', () => {
     })
 
     it('should initialize the component with the expected default values', () => {
-      const data = getComponent(testEntity, BackgroundComponent)
+      const data = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       assertBackgroundComponentEq(data, BackgroundComponentDefaults)
     })
   }) //:: onInit
@@ -99,9 +99,9 @@ describe('BackgroundComponent', () => {
     })
 
     it('should change the values of an initialized BackgroundComponent', () => {
-      const before = getComponent(testEntity, BackgroundComponent)
+      const before = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       setComponent(testEntity, BackgroundComponent, new Color('#123456'))
-      const after = getComponent(testEntity, BackgroundComponent)
+      const after = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       assertBackgroundComponentNotEq(before, after)
     })
   }) //:: onSet
