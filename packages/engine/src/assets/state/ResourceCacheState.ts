@@ -24,9 +24,9 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { Entity } from '@ir-engine/ecs'
+import { applyTexturePatch } from '@ir-engine/engine/src/assets/loaders/texture/TexturePatch'
 import { defineState } from '@ir-engine/hyperflux'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
-import { applyTexturePatch } from '@ir-engine/engine/src/assets/loaders/texture/TexturePatch'
 
 try {
   // Apply the texture patch directly - simpler and more direct

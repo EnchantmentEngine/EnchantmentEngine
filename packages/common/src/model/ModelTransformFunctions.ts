@@ -402,7 +402,13 @@ const loadIO = async () => {
 }
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName: string, fileName: string, buffer: ArrayBuffer | Blob, path?: string, publishing = false) => {
+const doUpload = async (
+  projectName: string,
+  fileName: string,
+  buffer: ArrayBuffer | Blob,
+  path?: string,
+  publishing = false
+) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
