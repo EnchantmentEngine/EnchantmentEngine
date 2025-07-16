@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -48,6 +48,9 @@ import {
   TorusGeometry,
   Vector3
 } from 'three'
+
+const iconGizmoTransitionTimeout = 1000 // ms
+const iconGizmoGrowInterpolationFactor = 0.3 // ms
 
 const gizmoMaterial = new MeshBasicMaterial({
   depthTest: false,
@@ -104,6 +107,15 @@ matInvisible.visible = false
 
 const matHelper = gizmoLineMaterial.clone()
 matHelper.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
+matHelper.transparent = true
+
+const matHelperRed = gizmoLineMaterial.clone()
+matHelperRed.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED].color)
+matHelperRed.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
+
+const matHelperBlue = gizmoLineMaterial.clone()
+matHelperBlue.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE].color)
+matHelperBlue.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
 
 const matRed = gizmoMaterial.clone()
 matRed.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED].color)
@@ -117,22 +129,26 @@ matBlue.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE].color)
 const matRedTransparent = gizmoMaterial.clone()
 matRedTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED_TRANSPARENT].color)
 matRedTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.RED_TRANSPARENT].opacity
+matRedTransparent.transparent = true
 
 const matGreenTransparent = gizmoMaterial.clone()
 matGreenTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.GREEN_TRANSPARENT].color)
 matGreenTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.GREEN_TRANSPARENT].opacity
+matGreenTransparent.transparent = true
 
 const matBlueTransparent = gizmoMaterial.clone()
 matBlueTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE_TRANSPARENT].color)
 matBlueTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.BLUE_TRANSPARENT].opacity
+matBlueTransparent.transparent = true
 
 const matWhiteTransparent = gizmoMaterial.clone()
 matWhiteTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.WHITE_TRANSPARENT].opacity
+matWhiteTransparent.transparent = true
 
 const matYellowTransparent = gizmoMaterial.clone()
 matYellowTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.YELLOW_TRANSPARENT].color)
 matYellowTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.YELLOW_TRANSPARENT].opacity
-
+matYellowTransparent.transparent = true
 // const matYellow = gizmoMaterial.clone()
 //matYellow.color.setHex(materialProperties[GizmoMaterial.YELLOW].color)
 
@@ -233,6 +249,7 @@ const scaleHandleGeometry = new BoxGeometry(0.08, 0.08, 0.08).translate(0, 0.04,
 const lineGeometry = new BufferGeometry().setAttribute('position', new Float32BufferAttribute([0, 0, 0, 1, 0, 0], 3))
 const lineGeometry2 = new CylinderGeometry(0.0075, 0.0075, 0.5, 4).translate(0, 0.25, 0)
 const lineGeometry3 = new CylinderGeometry(0.02, 0.02, 0.5, 4).translate(0, 0.25, 0)
+const lineGeometry4 = new CylinderGeometry(0.02, 0.02, 0.2, 4).translate(0, 0.25, 0)
 
 function CircleGeometry(radius: number, arc: number) {
   const geometry = new TorusGeometry(radius, 0.0075, 3, 64, arc * Math.PI * 2)
@@ -258,6 +275,25 @@ interface GizmoDefinition {
 }
 
 // Gizmo definitions - custom hierarchy definitions for setupGizmo() function
+const iconGizmoArrow: GizmoDefinition = {
+  ARROW: [
+    [new Mesh(arrowGeometry, matGray.clone()), [0, 0, 0.5], [Math.PI / 2, 0, 0]],
+    [new Mesh(lineGeometry4, matGray.clone()), [0, 0, 0.2], [Math.PI / 2, 0, 0]]
+  ]
+}
+
+const iconGizmoYHelper: GizmoDefinition = {
+  DELTAY: [
+    [new Line(TranslateHelperGeometry(), matHelper), null, null, null],
+    [new Mesh(CircleGeometry(0.1, 1), matHelper), null, [0, 0, -Math.PI / 2]]
+  ]
+}
+
+const iconGizmoHelper: GizmoDefinition = {
+  DELTAX: [[new Line(TranslateHelperGeometry(), matHelperRed), null, null, null]],
+  ...iconGizmoYHelper,
+  DELTAZ: [[new Line(TranslateHelperGeometry(), matHelperBlue), null, null, null]]
+}
 
 const cameraGizmo: GizmoDefinition = {
   X: [
@@ -406,6 +442,7 @@ const _scale = new Vector3()
 const matrix4 = new Matrix4()
 
 function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer: number = ObjectLayers.Gizmos) {
+  const gizmoEntiies: Entity[] = []
   for (const name in gizmoMap) {
     for (let i = 0; i < gizmoMap[name].length; i++) {
       const object = gizmoMap[name][i][0].clone() as Mesh
@@ -433,8 +470,11 @@ function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer:
       setComponent(entity, VisibleComponent)
       object.renderOrder = Infinity
       ObjectLayerMaskComponent.setLayer(entity, gizmoLayer)
+      gizmoEntiies.push(entity)
     }
   }
+
+  return gizmoEntiies
 }
 
 const gizmo = {
@@ -468,6 +508,11 @@ export {
   helperRotate,
   helperScale,
   helperTranslate,
+  iconGizmoArrow,
+  iconGizmoGrowInterpolationFactor,
+  iconGizmoHelper,
+  iconGizmoTransitionTimeout,
+  iconGizmoYHelper,
   matBlue,
   matBlueTransparent,
   matGray,

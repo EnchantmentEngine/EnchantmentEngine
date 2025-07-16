@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -38,10 +38,10 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 
 import { UndefinedEntity } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { TransformAxis } from '@ir-engine/engine/src/scene/constants/transformConstants'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { TransformAxis } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import {
@@ -50,7 +50,7 @@ import {
   onPointerHover,
   onPointerLost,
   onPointerUp
-} from '../../../functions/cameraGizmoHelper'
+} from '../../../functions/gizmos/cameraGizmoHelper'
 import { CameraGizmoVisualComponent } from './CameraGizmoVisualComponent'
 
 // camera synced to the visual entity
@@ -61,11 +61,11 @@ export const CameraGizmoComponent = defineComponent({
     sceneEntity: S.Entity(),
     cameraEntity: S.Entity(),
     visualEntity: S.Entity(),
-    enabled: S.Bool(true),
-    axis: S.Nullable(S.LiteralUnion(Object.values(TransformAxis)), null),
-    showX: S.Bool(true),
-    showY: S.Bool(true),
-    showZ: S.Bool(true)
+    enabled: S.Bool({ default: true }),
+    axis: S.Union([S.Null(), S.LiteralUnion(Object.values(TransformAxis))]),
+    showX: S.Bool({ default: true }),
+    showY: S.Bool({ default: true }),
+    showZ: S.Bool({ default: true })
   }),
 
   reactor: function (props) {
@@ -89,6 +89,7 @@ export const CameraGizmoComponent = defineComponent({
       })
       setComponent(gizmoVisualEntity, CameraGizmoTagComponent)
       setComponent(gizmoVisualEntity, VisibleComponent)
+
       cameraGizmoComponent.visualEntity.set(gizmoVisualEntity)
       return () => {
         removeComponent(gizmoVisualEntity, CameraGizmoVisualComponent)
@@ -110,13 +111,15 @@ export const CameraGizmoComponent = defineComponent({
 
     InputComponent.useExecuteWithInput(
       () => {
-        if (!cameraGizmoComponent.enabled.value || !cameraGizmoComponent.visualEntity.value) return
-        if (!cameraGizmoComponent.cameraEntity.value || !getState(ReferenceSpaceState).viewerEntity) return
+        const cameraGizmoComponent = getComponent(entity, CameraGizmoComponent)
+        if (!cameraGizmoComponent) return
+        if (!cameraGizmoComponent.enabled || !cameraGizmoComponent.visualEntity) return
+        if (!cameraGizmoComponent.cameraEntity || !getState(ReferenceSpaceState).viewerEntity) return
 
         onPointerHover(entity)
 
-        const pickerButtons = InputComponent.getMergedButtons(
-          getComponent(cameraGizmoComponent.visualEntity.value, CameraGizmoVisualComponent).picker
+        const pickerButtons = InputComponent.getButtons(
+          getComponent(cameraGizmoComponent.visualEntity, CameraGizmoVisualComponent).picker
         )
 
         //pointer down
@@ -129,8 +132,8 @@ export const CameraGizmoComponent = defineComponent({
           onPointerLost(entity)
         }
       },
-      true,
-      InputExecutionOrder.Before
+      InputExecutionOrder.Before,
+      true
     )
 
     return null

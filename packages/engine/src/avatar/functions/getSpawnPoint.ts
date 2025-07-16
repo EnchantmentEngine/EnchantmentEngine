@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -40,18 +40,23 @@ export function getSpawnPoint(spawnPointNodeId: string, userId: UserID): { posit
     const spawnComponent = getComponent(entity, SpawnPointComponent)
     if (!spawnComponent.permissionedUsers.length || spawnComponent.permissionedUsers.includes(userId)) {
       return {
-        position: spawnTransform.position
-          .clone()
-          .add(randomPositionCentered(new Vector3(spawnTransform.scale.x, 0, spawnTransform.scale.z))),
+        position: randomPositionCentered(spawnTransform.position, spawnTransform.scale),
         rotation: spawnTransform.rotation.clone()
       }
     }
   }
   return getRandomSpawnPoint(userId)
 }
-
-const randomPositionCentered = (area: Vector3) => {
-  return new Vector3((Math.random() - 0.5) * area.x, (Math.random() - 0.5) * area.y, (Math.random() - 0.5) * area.z)
+/**
+ * Takes an origin point and scale to return a random point, within a retanglar area the size of the scale, with the origin in the center
+ * @param origin
+ * @param scale
+ * @returns
+ */
+const randomPositionCentered = (origin: Vector3, scale: Vector3) => {
+  const x = (Math.random() - 0.5) * scale.x + origin.x
+  const z = (Math.random() - 0.5) * scale.z + origin.z
+  return new Vector3(x, origin.y, z)
 }
 
 const spawnPointQuery = defineQuery([SpawnPointComponent, TransformComponent])
@@ -64,10 +69,9 @@ export function getRandomSpawnPoint(userId: UserID): { position: Vector3; rotati
   const entity = spawnPointForUser ?? spawnPoints[Math.round(Math.random() * (spawnPoints.length - 1))]
   if (entity) {
     const spawnTransform = getComponent(entity, TransformComponent)
+    const worldPosition = TransformComponent.getWorldPosition(entity, new Vector3())
     return {
-      position: spawnTransform.position
-        .clone()
-        .add(randomPositionCentered(new Vector3(spawnTransform.scale.x, 0, spawnTransform.scale.z))),
+      position: randomPositionCentered(worldPosition, spawnTransform.scale),
       rotation: spawnTransform.rotation.clone()
     }
   }
@@ -75,7 +79,7 @@ export function getRandomSpawnPoint(userId: UserID): { position: Vector3; rotati
   console.warn("Couldn't spawn entity at spawn point, no spawn points available")
 
   return {
-    position: randomPositionCentered(new Vector3(2, 0, 2)),
+    position: randomPositionCentered(new Vector3(2, 0, 2), new Vector3(1, 1, 1)),
     rotation: new Quaternion()
   }
 }

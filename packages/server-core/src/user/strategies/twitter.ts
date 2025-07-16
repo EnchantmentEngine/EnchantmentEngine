@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -77,7 +77,8 @@ export class TwitterStrategy extends CustomOAuthStrategy {
         const newUser = await this.app.service(userPath).create({
           name: '' as UserName,
           isGuest: false,
-          inviteCode: code
+          inviteCode: code,
+          ageVerified: true
         })
         entity.userId = newUser.id
         await this.app.service(identityProviderPath).patch(entity.id, {
@@ -94,7 +95,8 @@ export class TwitterStrategy extends CustomOAuthStrategy {
     await makeInitialAdmin(this.app, user.id)
     if (user.isGuest)
       await this.app.service(userPath).patch(entity.userId, {
-        isGuest: false
+        isGuest: false,
+        ageVerified: true
       })
     const apiKey = (await this.app.service(userApiKeyPath).find({
       query: {
@@ -140,17 +142,22 @@ export class TwitterStrategy extends CustomOAuthStrategy {
             }
           })
           if (existingIdentityProviders.total > 0) {
-            const loginToken = await this.app.service(loginTokenPath).create({
-              identityProviderId: newIP.id,
-              associateUserId: existingIdentityProviders.data[0].userId,
-              expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
-            })
-            return {
-              ...entity,
-              associateEmail: profileEmail,
-              loginId: loginToken.id,
-              loginToken: loginToken.token,
-              promptForConnection: true
+            // Filter out identity providers associated with deactivated users
+            const activeIdentityProviders = await this.filterActiveIdentityProviders(existingIdentityProviders.data)
+
+            if (activeIdentityProviders.length > 0) {
+              const loginToken = await this.app.service(loginTokenPath).create({
+                identityProviderId: newIP.id,
+                associateUserId: activeIdentityProviders[0].userId,
+                expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
+              })
+              return {
+                ...entity,
+                associateEmail: profileEmail,
+                loginId: loginToken.id,
+                loginToken: loginToken.token,
+                promptForConnection: true
+              }
             }
           }
         }

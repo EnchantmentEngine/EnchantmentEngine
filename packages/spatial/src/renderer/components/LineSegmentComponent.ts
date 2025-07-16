@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -32,20 +32,22 @@ import { NO_PROXY, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '../../common/NameComponent'
 import { T } from '../../schema/schemaFunctions'
-import { ObjectLayers } from '../constants/ObjectLayers'
+import { ObjectLayerMask, ObjectLayerMasks } from '../constants/ObjectLayers'
 import { ObjectComponent } from './ObjectComponent'
 import { ObjectLayerMaskComponent } from './ObjectLayerComponent'
 import { setVisibleComponent } from './VisibleComponent'
 
 export const LineSegmentComponent = defineComponent({
   name: 'LineSegmentComponent',
+  jsonID: 'EE_line_segment',
 
   schema: S.Object({
-    name: S.String('line-segment'),
-    geometry: S.Required(S.Type<BufferGeometry>()),
+    name: S.String({ default: 'line-segment' }),
+    geometry: S.Type<BufferGeometry>({ required: true }),
     material: S.Class(() => new LineBasicMaterial() as Material),
     color: S.Optional(T.Color()),
-    layerMask: S.Number(ObjectLayers.NodeHelper)
+    opacity: S.Optional(S.Number({ default: 1 })),
+    layerMask: S.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper })
   }),
 
   reactor: function () {
@@ -84,6 +86,19 @@ export const LineSegmentComponent = defineComponent({
         mat.needsUpdate = true
       }
     }, [component.color.value])
+
+    useEffect(() => {
+      const opacity = component.opacity.value
+      if (opacity === undefined) return
+      const mat = component.material.get(NO_PROXY) as Material & {
+        opacity?: number
+        transparent?: boolean
+      }
+
+      mat.transparent = opacity < 1
+      mat.opacity = opacity
+      mat.needsUpdate = true
+    }, [component.opacity.value])
 
     useEffect(() => {
       const geo = component.geometry.get(NO_PROXY) as BufferGeometry<NormalBufferAttributes>

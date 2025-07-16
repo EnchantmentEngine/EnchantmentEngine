@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -245,7 +245,8 @@ async function addIdentityProviderType(context: HookContext<IdentityProviderServ
 async function createNewUser(context: HookContext<IdentityProviderService>) {
   const isGuest = (context.actualData as IdentityProviderType).type === 'guest'
   context.existingUser = await context.app.service(userPath).create({
-    isGuest
+    isGuest,
+    ageVerified: isGuest ? false : true
   })
 }
 
@@ -264,7 +265,7 @@ async function addScopes(context: HookContext<IdentityProviderService>) {
 
     await context.app.service(scopePath).create(data)
 
-    await context.app.service(userPath).patch(context.existingUser!.id, { isGuest: false })
+    await context.app.service(userPath).patch(context.existingUser!.id, { isGuest: false, ageVerified: true })
   }
 }
 

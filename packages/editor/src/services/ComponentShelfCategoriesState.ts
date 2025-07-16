@@ -19,13 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { Component } from '@ir-engine/ecs'
+import { VisualScriptComponent } from '@ir-engine/engine'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GrabbableComponent } from '@ir-engine/engine/src/grabbable/GrabbableComponent'
@@ -40,12 +41,13 @@ import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/component
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { MixerComponent } from '@ir-engine/engine/src/scene/components/MixerComponent'
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { ParticleSystemComponent } from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
 import { PortalComponent } from '@ir-engine/engine/src/scene/components/PortalComponent'
 import { PrimitiveGeometryComponent } from '@ir-engine/engine/src/scene/components/PrimitiveGeometryComponent'
-import { ReflectionProbeComponent } from '@ir-engine/engine/src/scene/components/ReflectionProbeComponent.tsx'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { ScenePreviewCameraComponent } from '@ir-engine/engine/src/scene/components/ScenePreviewCamera'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
@@ -53,6 +55,7 @@ import { ScreenshareTargetComponent } from '@ir-engine/engine/src/scene/componen
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
 import { SpawnPointComponent } from '@ir-engine/engine/src/scene/components/SpawnPointComponent'
+import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
 import { TextComponent } from '@ir-engine/engine/src/scene/components/TextComponent'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
@@ -96,7 +99,14 @@ export const ComponentShelfCategoriesState = defineState({
         DirectionalLightComponent,
         HemisphereLightComponent
       ],
-      FX: [LoopAnimationComponent, ShadowComponent, ParticleSystemComponent, EnvMapComponent, PostProcessingComponent],
+      FX: [
+        LoopAnimationComponent,
+        ShadowComponent,
+        ParticleSystemComponent,
+        EnvMapComponent,
+        PostProcessingComponent,
+        MixerComponent
+      ],
       Scripting: [],
       Settings: [
         SceneSettingsComponent,
@@ -110,14 +120,16 @@ export const ComponentShelfCategoriesState = defineState({
         SkyboxComponent,
         TextComponent,
         LookAtComponent,
-        FogSettingsComponent,
-        ReflectionProbeComponent
-      ]
+        FogSettingsComponent
+      ],
+      Camera: [PoiComponent] //PoiHotspotComponent
     } as Record<string, Component[]>
   },
   reactor: () => {
     const [portalEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Portal])
     const [grabbleEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Grabble])
+    const [splineEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.Spline])
+    const [visualScriptEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.VisualScript])
 
     const [legacyVolumetricEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.LegacyVolumetric])
     const [volumetricEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.Volumetric])
@@ -125,6 +137,17 @@ export const ComponentShelfCategoriesState = defineState({
     const [screenshareTargetEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.ScreenshareTarget])
 
     const cShelfState = getMutableState(ComponentShelfCategoriesState)
+
+    useEffect(() => {
+      if (splineEnabled) {
+        cShelfState.Interaction.merge([SplineComponent])
+        return () => {
+          cShelfState.Interaction.set((curr) => {
+            return curr.splice(curr.findIndex((item) => item.name == SplineComponent.name))
+          })
+        }
+      }
+    }, [splineEnabled])
 
     useEffect(() => {
       if (portalEnabled) {
@@ -147,6 +170,17 @@ export const ComponentShelfCategoriesState = defineState({
         }
       }
     }, [grabbleEnabled])
+
+    useEffect(() => {
+      if (visualScriptEnabled) {
+        cShelfState.Scripting.merge([VisualScriptComponent])
+        return () => {
+          cShelfState.Scripting.set((curr) => {
+            return curr.splice(curr.findIndex((item) => item.name == VisualScriptComponent.name))
+          })
+        }
+      }
+    }, [visualScriptEnabled])
 
     useEffect(() => {
       if (legacyVolumetricEnabled) {
@@ -191,5 +225,7 @@ export const ComponentShelfCategoriesState = defineState({
         }
       }
     }, [screenshareTargetEnabled])
+
+    return null
   }
 })

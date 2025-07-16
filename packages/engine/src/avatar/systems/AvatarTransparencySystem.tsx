@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,39 +19,40 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
-  Engine,
+  AnimationSystemGroup,
   Entity,
   EntityArrayBoundary,
-  PresentationSystemGroup,
   QueryReactor,
-  UUIDComponent,
   defineQuery,
   defineSystem,
   getComponent,
+  getMutableComponent,
   getOptionalComponent,
+  hasComponent,
+  removeComponent,
   setComponent,
-  useOptionalComponent
+  useComponent,
+  useOptionalComponent,
+  useQueryBySource
 } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, none } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import {
-  TransparencyDitheringPluginComponent,
-  TransparencyDitheringRootComponent,
-  ditherCalculationType
-} from '@ir-engine/spatial/src/renderer/materials/constants/plugins/TransparencyDitheringComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import React, { useEffect } from 'react'
-import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { SourceComponent } from '../../scene/components/SourceComponent'
+import {
+  DitherCalculationType,
+  TransparencyDitheringPluginComponent,
+  TransparencyDitheringRootComponent
+} from '../../material/plugins/TransparencyDitheringComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
@@ -64,54 +65,52 @@ const execute = () => {
 
   const cameraAttached = XRState.isCameraAttachedToAvatar
 
-  for (const entity of avatarQuery()) {
-    const transparencyDitheringRoot = getOptionalComponent(entity, TransparencyDitheringRootComponent)
+  for (const avatarEntity of avatarQuery()) {
+    const transparencyDitheringRoot = getOptionalComponent(avatarEntity, TransparencyDitheringRootComponent)
     const materials = transparencyDitheringRoot?.materials
-    if (!materials) setComponent(entity, TransparencyDitheringRootComponent, { materials: [] })
+    if (!materials) setComponent(avatarEntity, TransparencyDitheringRootComponent, { materials: [] })
 
-    const avatarComponent = getComponent(entity, AvatarComponent)
+    const avatarComponent = getComponent(avatarEntity, AvatarComponent)
     const cameraComponent = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
 
-    if (!materials?.length) return
-    for (const materialUUID of materials) {
-      const pluginComponent = getOptionalComponent(
-        UUIDComponent.getEntityByUUID(materialUUID),
-        TransparencyDitheringPluginComponent
-      )
+    if (!materials?.length) continue
+    for (const materialEntity of materials) {
+      const pluginComponent = getOptionalComponent(materialEntity, TransparencyDitheringPluginComponent)
       if (!pluginComponent) continue
-      const viewerPosition = getComponent(Engine.instance.viewerEntity, TransformComponent).position
-      pluginComponent.centers.value[cameraDithering].set(viewerPosition.x, viewerPosition.y, viewerPosition.z)
-      pluginComponent.distances.value[cameraDithering] = cameraAttached ? 8 : 3
-      pluginComponent.exponents.value[cameraDithering] = cameraAttached ? 10 : 6
-      pluginComponent.useWorldCalculation.value[cameraDithering] = ditherCalculationType.worldTransformed
-      if (entity !== selfEntity) {
-        pluginComponent.distances.value[headDithering] = 10
+      const viewerPosition = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
+      pluginComponent.centers[cameraDithering].set(viewerPosition.x, viewerPosition.y, viewerPosition.z)
+      pluginComponent.distances[cameraDithering] = cameraAttached ? 8 : 3
+      pluginComponent.exponents[cameraDithering] = cameraAttached ? 10 : 6
+      pluginComponent.useWorldCalculation[cameraDithering] = DitherCalculationType.worldTransformed
+      if (avatarEntity !== selfEntity) {
+        pluginComponent.distances[headDithering] = 10
         continue
       }
-      pluginComponent.centers.value[headDithering].setY(avatarComponent.eyeHeight)
-      pluginComponent.distances.value[headDithering] =
+      pluginComponent.centers[headDithering].setY(avatarComponent.eyeHeight)
+      pluginComponent.distances[headDithering] =
         cameraComponent && !cameraAttached ? Math.max(Math.pow(cameraComponent.distance * 5, 2.5), 3) : 3.5
-      pluginComponent.exponents.value[headDithering] = cameraAttached ? 12 : 8
-      pluginComponent.useWorldCalculation.value[headDithering] = ditherCalculationType.localPosition
+      pluginComponent.exponents[headDithering] = cameraAttached ? 12 : 8
+      pluginComponent.useWorldCalculation[headDithering] = DitherCalculationType.localPosition
     }
   }
 }
 
 export const AvatarTransparencySystem = defineSystem({
   uuid: 'AvatarTransparencySystem',
-  insert: { with: PresentationSystemGroup },
+  insert: { with: AnimationSystemGroup },
   execute,
   reactor: () => <QueryReactor Components={[AvatarComponent]} ChildEntityReactor={AvatarReactor} />
 })
 
 const AvatarReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const sceneInstanceID = GLTFComponent.useInstanceID(entity)
-  const childEntities = SourceComponent.useEntitiesBySource(sceneInstanceID)
+  const materialChildren = useQueryBySource(entity, [MaterialStateComponent])
+  const rootDitheringComponent = useOptionalComponent(entity, TransparencyDitheringRootComponent)
+  if (!rootDitheringComponent) return null
 
   return (
     <EntityArrayBoundary
-      entities={childEntities}
+      entities={materialChildren}
       ChildEntityReactor={DitherChildReactor}
       props={{ rootEntity: entity }}
     />
@@ -120,19 +119,20 @@ const AvatarReactor = (props: { entity: Entity }) => {
 
 const DitherChildReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const entity = props.entity
-  const materialComponentUUID = useOptionalComponent(entity, MaterialInstanceComponent)?.uuid
-  const rootDitheringComponent = useOptionalComponent(props.rootEntity, TransparencyDitheringRootComponent)
+  const material = useComponent(entity, MaterialStateComponent)
 
   useEffect(() => {
-    if (!materialComponentUUID?.value || !rootDitheringComponent) return
-    for (const materialUUID of materialComponentUUID.value) {
-      const material = UUIDComponent.getEntityByUUID(materialUUID)
-      if (!material) continue
-      if (!rootDitheringComponent.materials.value.includes(materialUUID))
-        rootDitheringComponent.materials.set([...rootDitheringComponent.materials.value, materialUUID])
-      setComponent(material, TransparencyDitheringPluginComponent)
+    getMutableComponent(props.rootEntity, TransparencyDitheringRootComponent).materials.merge([props.entity])
+    setComponent(entity, TransparencyDitheringPluginComponent)
+    return () => {
+      if (hasComponent(props.rootEntity, TransparencyDitheringRootComponent)) {
+        const ditherRootMaterials = getMutableComponent(props.rootEntity, TransparencyDitheringRootComponent).materials
+        const index = ditherRootMaterials.value.indexOf(props.entity)
+        if (index >= 0) ditherRootMaterials[index].set(none)
+      }
+      removeComponent(entity, TransparencyDitheringPluginComponent)
     }
-  }, [materialComponentUUID, !!rootDitheringComponent])
+  }, [material.value])
 
   return null
 }

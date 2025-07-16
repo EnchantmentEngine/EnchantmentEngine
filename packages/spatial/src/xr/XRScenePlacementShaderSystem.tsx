@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -78,27 +78,28 @@ const removeShaderFromObject = (obj: Mesh<any, Material & ScenePlacementMaterial
  */
 
 function XRScenePlacementReactor() {
-  const xrState = getMutableState(XRState)
-  const scenePlacementMode = useHookstate(xrState.scenePlacementMode).value
-  const sessionActive = useHookstate(xrState.sessionActive).value
   const entity = useEntityContext()
   const meshComponent = useComponent(entity, MeshComponent)
 
   useEffect(() => {
-    if (scenePlacementMode !== 'placing' || !sessionActive) return
-
     const mesh = getComponent(entity, MeshComponent) as Mesh<any, Material & ScenePlacementMaterialType>
 
     addShaderToObject(mesh)
     return () => {
       removeShaderFromObject(mesh)
     }
-  }, [meshComponent, scenePlacementMode, sessionActive])
+  }, [meshComponent])
 
   return null
 }
 
 const reactor = () => {
+  const xrState = getMutableState(XRState)
+  const scenePlacementMode = useHookstate(xrState.scenePlacementMode).value
+  const sessionActive = useHookstate(xrState.sessionActive).value
+
+  if (scenePlacementMode !== 'placing' || !sessionActive) return null
+
   return <QueryReactor ChildEntityReactor={XRScenePlacementReactor} Components={[VisibleComponent, MeshComponent]} />
 }
 

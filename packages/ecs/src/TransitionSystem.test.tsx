@@ -19,20 +19,19 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { TransitionComponent, defineComponent, getComponent, setComponent } from './ComponentFunctions'
+import { TransitionComponent, createEntity, defineComponent, getComponent, setComponent } from './ComponentFunctions'
 import { ECSState } from './ECSState'
 import { Easing } from './EasingFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { executeSystems } from './EngineFunctions'
 import { Entity } from './Entity'
-import { createEntity } from './EntityFunctions'
 import './TransitionSystem'
 import { S } from './schemas/JSONSchemas'
 
@@ -42,7 +41,6 @@ describe('TransitionSystem', () => {
     jsonID: 'EE_test',
     schema: S.Object({
       position: S.SerializedClass(
-        () => new Vector3(),
         {
           x: S.Number(),
           y: S.Number(),
@@ -50,6 +48,7 @@ describe('TransitionSystem', () => {
         },
         {
           deserialize: (curr, value) => curr.copy(value),
+          default: () => new Vector3(),
           id: 'Vec3'
         }
       ),
@@ -142,8 +141,8 @@ describe('TransitionSystem', () => {
     })
 
     // For quadratic.inOut:
-    // t < 0.5: fn(t * 2) / 2 where fn(t) = t^2
-    // t >= 0.5: 1 - fn((1-t) * 2) / 2 where fn(t) = t^2
+    // t < 0.5: fn(t * 2) / 2 where fn(x) = x^2
+    // t >= 0.5: 1 - fn((1-t) * 2) / 2 where fn(x) = x^2
 
     // At 250ms (t=0.25): (0.5)^2 / 2 = 0.125
     executeSystems(250)
@@ -152,6 +151,7 @@ describe('TransitionSystem', () => {
 
     // At 500ms (t=0.5): (1)^2 / 2 = 0.5
     executeSystems(500)
+    console.log(getState(ECSState).deltaSeconds)
     const secondComponent = getComponent(entity, TestComponent)
     expect(secondComponent.number).toBeCloseTo(0.5, 2)
 

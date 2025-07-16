@@ -19,13 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import type * as V0VRM from '@pixiv/types-vrm-0.0'
 
-import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
+import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion } from 'three'
 
 import { EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
 import {
@@ -37,7 +37,7 @@ import {
   setComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -56,10 +56,10 @@ export const AvatarAnimationComponent = defineComponent({
 
   schema: S.Object({
     animationGraph: S.Object({
-      blendAnimation: S.Optional(S.Type<AnimationAction>()),
-      fadingOut: S.Bool(false),
-      blendStrength: S.Number(0),
-      layer: S.Number(0)
+      blendAnimation: S.Type<AnimationAction | undefined>(),
+      fadingOut: S.Bool(),
+      blendStrength: S.Number(),
+      layer: S.Number()
     }),
     /** The input vector for 2D locomotion blending space */
     locomotion: T.Vec3()
@@ -90,13 +90,17 @@ export const AvatarRigComponent = defineComponent({
   },
 
   setPose: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
+    const entityTreeComponent = getComponent(boneEntity, EntityTreeComponent)
+    const transformComponent = getComponent(boneEntity, TransformComponent)
+
+    const parent = entityTreeComponent.parentEntity
+
     const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    const parent = getComponent(boneEntity, EntityTreeComponent).parentEntity
     rigComponent.parentWorldRotationInverses[boneName].set(
       TransformComponent.getWorldRotation(parent, new Quaternion()).invert()
     )
     rigComponent.parentWorldRotations[boneName].set(TransformComponent.getWorldRotation(parent, new Quaternion()))
-    rigComponent.rotations[boneName].set(getComponent(boneEntity, TransformComponent).rotation.clone())
+    rigComponent.rotations[boneName].set(transformComponent.rotation.clone())
   },
 
   useAvatarLoaded: (entity: Entity) => {
@@ -106,13 +110,12 @@ export const AvatarRigComponent = defineComponent({
   errors: ['UNSUPPORTED_AVATAR']
 })
 
-const _rightHandPos = new Vector3(),
-  _rightUpperArmPos = new Vector3()
 const yFlip = new Quaternion().setFromEuler(new Euler(0, Math.PI, 0))
 
 export function createVRM(rootEntity: Entity) {
-  const documentID = GLTFComponent.getInstanceID(rootEntity)
-  const gltf = getComponent(rootEntity, GLTFComponent).document!
+  const gltfComponent = getComponent(rootEntity, GLTFComponent)
+
+  const gltf = gltfComponent.document!
 
   if (!hasComponent(rootEntity, ObjectComponent)) {
     const obj3d = new Group()
@@ -154,8 +157,11 @@ export function createVRM(rootEntity: Entity) {
   })
 
   for (const bone of humanBonesArray) {
-    const nodeID = `${documentID}-${bone.node}` as EntityUUID
-    const entity = UUIDComponent.getEntityByUUID(nodeID)
+    const uuid = UUIDComponent.join({
+      entitySourceID: UUIDComponent.join(getComponent(rootEntity, UUIDComponent)) as string as SourceID,
+      entityID: bone.node!.toString() as EntityID
+    })
+    const entity = UUIDComponent.getEntityByUUID(uuid)
     AvatarRigComponent.setBone(rootEntity, entity, bone.bone as VRMHumanBoneName)
     AvatarRigComponent.setPose(rootEntity, entity, bone.bone as VRMHumanBoneName)
   }
@@ -182,8 +188,11 @@ export const createVRMFromGLTF = (rootEntity: Entity) => {
   })
 
   const hipsName = getComponent(hipsEntity, NameComponent)
+
   const hipsParent = getOptionalComponent(hipsEntity, EntityTreeComponent)?.parentEntity
-  if (!hasComponent(hipsParent!, ObjectComponent)) setComponent(hipsParent!, ObjectComponent, new Object3D())
+  if (!hasComponent(hipsParent!, ObjectComponent)) {
+    setComponent(hipsParent!, ObjectComponent, new Object3D())
+  }
   const bones = {} as VRMHumanBones
   const mixamoPrefix = hipsName.includes('mixamorig') ? '' : 'mixamorig'
   // /**
@@ -235,20 +244,25 @@ const toesAngle = new Euler(Math.PI / 6, 0, 0)
 
 /**Rewrites avatar's bone quaternions and matrices to create a T-Pose, assuming all bones are the identity quaternion */
 export const enforceTPose = (entity: Entity) => {
-  const bones = getComponent(entity, AvatarRigComponent).bonesToEntities
+  const rigComponent = getComponent(entity, AvatarRigComponent)
+
+  const bones = rigComponent.bonesToEntities
 
   for (const bone in bones) {
-    getOptionalComponent(bones[bone], TransformComponent)?.rotation.set(0, 0, 0, 1)
-    getOptionalComponent(bones[bone], TransformComponent)?.matrixWorld.identity()
+    const boneEntity = bones[bone]
+    getOptionalComponent(boneEntity, TransformComponent)?.rotation.set(0, 0, 0, 1)
+    getOptionalComponent(boneEntity, TransformComponent)?.matrixWorld.identity()
   }
 
   const poseArm = (side: 'left' | 'right') => {
     const shoulder = bones[`${side}Shoulder`]
-    const angle = shoulderAngle[`${side}ShoulderAngle`]
     const shoulderTransform = getComponent(shoulder, TransformComponent)
+
+    const angle = shoulderAngle[`${side}ShoulderAngle`]
     shoulderTransform.rotation.setFromEuler(angle)
     iterateEntityNode(shoulder, (entity) => {
-      getComponent(entity, BoneComponent).matrixWorld.makeRotationFromEuler(angle)
+      const boneComponent = getComponent(entity, BoneComponent)
+      boneComponent.matrixWorld.makeRotationFromEuler(angle)
     })
   }
 

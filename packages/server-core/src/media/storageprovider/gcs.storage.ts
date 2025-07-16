@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -44,12 +44,15 @@ import { NetworkServicesClient } from '@google-cloud/networkservices'
 import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
 
 import logger from '../../ServerLogger'
+import { BaseStorageProvider } from './base.storage'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
  */
-export class GCSStorage implements StorageProviderInterface {
-  constructor() {}
+export class GCSStorage extends BaseStorageProvider implements StorageProviderInterface {
+  constructor() {
+    super()
+  }
   /**
    * Name of GCS bucket.
    */
@@ -170,7 +173,8 @@ export class GCSStorage implements StorageProviderInterface {
       Contents: files.map((file) => {
         return {
           Key: file.key!,
-          Size: file.size!
+          Size: file.size!,
+          Type: file.type!
         }
       })
     }
@@ -254,6 +258,10 @@ export class GCSStorage implements StorageProviderInterface {
         logger.error(err)
       }
     } else {
+      // I attempted to replace this with a call to gcloud CLI to invalidate the cache, so as to not require
+      // installing @google-cloud/compute, which takes up ~65 MB for just this one situation. But that required
+      // installing the gcloud CLI in the client Dockerfiles, which takes a couple of minutes.
+      // Overall, I think it's better to install the node_module. -Kyle
       return await this.urlMaps.invalidateCache({
         cacheInvalidationRuleResource: {
           host: config.server.clientHost as string,
@@ -341,9 +349,14 @@ export class GCSStorage implements StorageProviderInterface {
     isDirectory = true
   ): Promise<FileBrowserContentType[]> {
     const prefix = folderName.endsWith('/') || !isDirectory ? folderName : folderName + '/'
+
+    // Check if prefix is blacklisted
+    this.checkBlacklistedPrefix(prefix)
+
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
-      delimiter: recursive ? undefined : '/'
+      delimiter: recursive ? undefined : '/',
+      includeFoldersAsPrefixes: !recursive
     })
 
     const promises: Promise<FileBrowserContentType>[] = []
@@ -355,22 +368,44 @@ export class GCSStorage implements StorageProviderInterface {
     if (!files.items) files.items = []
     if (!files.prefixes) files.prefixes = []
 
-    // Folders
-    for (let i = 0; i < files.prefixes!.length; i++) {
-      promises.push(
-        new Promise(async (resolve) => {
-          const key = files.prefixes![i].slice(0, -1)
-          const size = await this.getFolderSize(key)
-          const cont: FileBrowserContentType = {
-            key,
-            url: `${this.bucketAssetURL}/${key}`,
-            name: key.split('/').pop()!,
-            type: 'folder',
-            size
-          }
-          resolve(cont)
-        })
-      )
+    if (!recursive) {
+      // Folders
+      for (let i = 0; i < files.prefixes!.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = files.prefixes![i].slice(0, -1)
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
+    }
+
+    if (recursive) {
+      const folders = this.getUniqueFolderPathsFromFiles(files.items, prefix)
+      for (let i = 0; i < folders.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = folders[i].endsWith('/') ? folders[i].slice(0, -1) : folders[i]
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
     }
 
     // Files
@@ -397,6 +432,33 @@ export class GCSStorage implements StorageProviderInterface {
     return await Promise.all(promises)
   }
 
+  private getUniqueFolderPathsFromFiles(folderObjects: { name: string }[], prefix: string): string[] {
+    prefix = prefix.startsWith('/') ? prefix.substring(1) : prefix
+
+    if (!prefix.endsWith('/')) {
+      prefix = prefix + '/'
+    }
+
+    const folders = new Set<string>()
+
+    folderObjects.forEach((item) => {
+      const key = item.name
+      if (key.startsWith(prefix)) {
+        const relativePath = key.substring(prefix.length)
+
+        const parts = relativePath.split('/')
+        let currentPath = prefix
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          currentPath += parts[i] + '/'
+          folders.add(currentPath)
+        }
+      }
+    })
+
+    return Array.from(folders).sort()
+  }
+
   async getFolderSize(folderName: string): Promise<number> {
     const folderContent = await this.listFolderContent(folderName)
     return folderContent.reduce((accumulator, { size }) => accumulator + size!, 0)
@@ -411,26 +473,31 @@ export class GCSStorage implements StorageProviderInterface {
    * @param isCopy If true it will create a copy of object.
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
-    const isDirectory = await this.isDirectory(oldName, oldPath)
     const oldFilePath = path.join(oldPath, oldName)
     const newFilePath = path.join(newPath, newName)
-    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
+    const listResponse = await this.listObjects(oldFilePath, false, undefined, false)
 
-    if (listResponse.Contents.length > 0)
+    if (listResponse.Contents.length > 0) {
       return await Promise.all([
         ...listResponse.Contents.map(async (file) => {
           const relativePath = file.Key.replace(oldFilePath, '')
           const key = newFilePath + relativePath
 
+          if (file.Type === 'folder' && isCopy) {
+            return await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+          } else if (file.Type === 'folder' && !isCopy) {
+            await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+            return await this.deleteResources([file.Key])
+          }
+
           if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
           else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
         })
       ])
-    else {
-      const oldPath = path.join(oldFilePath, '/')
-      const newPath = path.join(newFilePath, '/')
-      if (isCopy) return await this.provider.bucket(this.bucket).file(oldPath).copy(newPath, {})
-      else return await this.provider.bucket(this.bucket).file(oldPath).move(newPath, {})
     }
   }
 }

@@ -19,15 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { ProjectService, ProjectState } from '@ir-engine/client-core/src/common/services/ProjectService'
 import config from '@ir-engine/common/src/config'
 import { camelCaseToSpacedString } from '@ir-engine/common/src/utils/camelCaseToSpacedString'
-import { hasComponent, useAncestorWithComponents, useChildrenWithComponents, useComponent } from '@ir-engine/ecs'
-import ErrorPopUp from '@ir-engine/editor/src/components/popup/ErrorPopUp'
+import { useAncestorWithComponents, useComponent } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
@@ -39,7 +38,6 @@ import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComp
 import { getState, useHookstate, useMutableState, useState } from '@ir-engine/hyperflux'
 import { supportedColliderShapes } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { Checkbox, Input } from '@ir-engine/ui'
 import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -53,8 +51,8 @@ import ModelInput from '../../../input/Model'
 import SelectInput from '../../../input/Select'
 
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
-import { EditorHistoryFunctions } from '@ir-engine/editor/src/services/EditorHistoryState'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { HiPlus } from 'react-icons/hi2'
 import { OptionType } from '../../../../../primitives/tailwind/Select'
@@ -74,13 +72,6 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
   const projectState = useMutableState(ProjectState)
   const loadedProjects = useState([] as OptionType[])
   const hasRigidBody = useAncestorWithComponents(props.entity, [RigidBodyComponent])
-
-  const childMeshEntities = useChildrenWithComponents(props.entity, [MeshComponent])
-  const isMeshOrConvexHull =
-    gltfComponent.shape.value === Shapes.Mesh || gltfComponent.shape.value === Shapes.ConvexHull
-  const validRootMesh = hasComponent(props.entity, MeshComponent)
-  const validChildMeshes = childMeshEntities.length !== 0
-  const showMeshError = isMeshOrConvexHull && !(validChildMeshes || validRootMesh)
 
   const errors = ErrorComponent.useComponentErrors(props.entity, GLTFComponent)?.value
   const srcProject = useHookstate(() => {
@@ -147,15 +138,18 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
       Icon={GLTFNodeEditor.iconComponent}
       {...props}
     >
-      <InputGroup name="Model Url" label={t('editor:properties.model.lbl-modelurl')}>
+      <InputGroup name="Model Url" className="flex flex-col gap-y-2" label={t('editor:properties.model.lbl-modelurl')}>
         <ModelInput
           value={gltfComponent.src.value}
           onRelease={(src) => {
             commitProperty(GLTFComponent, 'src')(src)
           }}
         />
-        {errors?.LOADING_ERROR ||
-          (errors?.INVALID_SOURCE && ErrorPopUp({ message: t('editor:properties.model.error-url') }))}
+        {!errors?.INVALID_SOURCE && !!errors?.LOADING_ERROR && (
+          <Text fontSize="xs" className="text-ui-error">
+            {errors?.LOADING_ERROR}
+          </Text>
+        )}
       </InputGroup>
 
       <InputGroup name="Camera Occlusion" label={t('editor:properties.model.lbl-cameraOcclusion')}>
@@ -179,7 +173,7 @@ const GLTFNodeEditor: EditorComponentType = (props) => {
             onClick={() => {
               const nodes = SelectionState.getSelectedEntities()
               EditorControlFunctions.addOrRemoveComponent(nodes, RigidBodyComponent, true, { type: 'fixed' })
-              EditorHistoryFunctions.snapshot()
+              AuthoringState.snapshotEntities(nodes)
             }}
           >
             <HiPlus />

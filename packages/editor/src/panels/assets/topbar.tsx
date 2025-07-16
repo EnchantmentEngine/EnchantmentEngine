@@ -19,25 +19,28 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { getState } from '@ir-engine/hyperflux'
-import { Button } from '@ir-engine/ui'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { Button, Tooltip } from '@ir-engine/ui'
+import { ViewportButton } from '@ir-engine/ui/editor'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
-import { FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
+import { Download01Sm, FolderSm, PlusCircleSm, SearchSmSm } from '@ir-engine/ui/src/icons'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { validateImportFolderPath } from '../../components/dialogs/ImportSettingsPanelDialog'
 import { inputFileWithAddToScene } from '../../functions/assetFunctions'
 import { EditorState } from '../../services/EditorServices'
+import { FilesState } from '../../services/FilesState'
 import { ImportSettingsState } from '../../services/ImportSettingsState'
+import { handleDownloadProject, ProjectDownloadProgress } from '../files/loaders'
 import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
 import { AssetCategoryNode } from './categories'
 import { findCategoryByPath } from './helpers'
-import { assetCategories, useAssetsCategory, useAssetsQuery } from './hooks'
+import { assetCategories, AssetsRefreshState, useAssetsCategory, useAssetsQuery } from './hooks'
 
 export const uploadFiles = (): Promise<null> =>
   new Promise((resolve, reject) => {
@@ -66,7 +69,6 @@ export const uploadFiles = (): Promise<null> =>
 
 export function AssetsBreadcrumbs() {
   const { currentCategoryPath } = useAssetsCategory()
-  const { refetchResources } = useAssetsQuery()
   const currentCategory = currentCategoryPath.get({ noproxy: true }) as AssetCategoryNode
 
   const breadcrumbTrail = currentCategory?.path
@@ -80,24 +82,26 @@ export function AssetsBreadcrumbs() {
     const selectedPath = breadcrumbTrail[index].path
     const newParent = findCategoryByPath(assetCategories as AssetCategoryNode[], selectedPath)
     currentCategoryPath.set(newParent || undefined)
-    refetchResources()
+    AssetsRefreshState.triggerRefresh()
   }
 
   return (
-    <div className="flex items-center gap-2" data-testid="assets-panel-breadcrumbs">
+    <div className="grid grid-cols-[auto_auto] items-center gap-2" data-testid="assets-panel-breadcrumbs">
       <FolderSm onClick={() => handleSelectParentCategory(0)} className="text-base text-text-secondary" />
-      {breadcrumbTrail.map((category, idx) => (
-        <div key={category.path} className="flex items-center">
-          <span
-            className="cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap text-base text-text-secondary"
-            data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
-            onClick={() => handleSelectParentCategory(idx)}
-          >
-            {category.name}
-          </span>
-          {idx < breadcrumbTrail.length - 1 && <BreadCrumbSlash />}
-        </div>
-      ))}
+      <div className="flex w-full items-center gap-2 overflow-x-auto">
+        {breadcrumbTrail.map((category, idx) => (
+          <div key={category.path} className="flex items-center">
+            <span
+              className="cursor-pointer whitespace-nowrap text-base text-text-secondary"
+              data-testid={`assets-panel-breadcrumb-nested-level-${idx}`}
+              onClick={() => handleSelectParentCategory(idx)}
+            >
+              {category.name}
+            </span>
+            {idx < breadcrumbTrail.length - 1 && <BreadCrumbSlash />}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -106,7 +110,8 @@ export default function Topbar() {
   const { t } = useTranslation()
   const { search } = useAssetsQuery()
   const { currentCategoryPath } = useAssetsCategory()
-  const { refetchResources, staticResourcesPagination } = useAssetsQuery()
+  const filesState = useMutableState(FilesState)
+  const { staticResourcesPagination } = useAssetsQuery()
 
   const handleBack = () => {
     const path = currentCategoryPath.value?.path.split('/') ?? []
@@ -117,16 +122,16 @@ export default function Topbar() {
     const selectedPath = path.slice(0, path.length - 1).join('/')
     const foundCategory = findCategoryByPath(assetCategories as AssetCategoryNode[], selectedPath)
     currentCategoryPath.set(foundCategory || undefined)
-    refetchResources()
+    AssetsRefreshState.triggerRefresh()
   }
 
   const handleRefresh = () => {
-    refetchResources()
+    AssetsRefreshState.triggerRefresh()
   }
 
   useEffect(() => {
     staticResourcesPagination.skip.set(0)
-    refetchResources()
+    AssetsRefreshState.triggerRefresh()
   }, [search.query])
 
   return (
@@ -144,8 +149,26 @@ export default function Topbar() {
           search={search}
         />
       }
+      utilsComponent={
+        <>
+          <Tooltip content={t('editor:layout.filebrowser.downloadProject')}>
+            <ViewportButton
+              onClick={() => handleDownloadProject(filesState.projectName.value, filesState.selectedDirectory.value)}
+              data-testid="files-panel-download-project-button"
+              icon={Download01Sm}
+              id="downloadProject"
+            />
+          </Tooltip>
+          <ProjectDownloadProgress />
+        </>
+      }
       uploadButton={
-        <Button size="l" data-testid="assets-panel-upload-button" onClick={() => uploadFiles().then(handleRefresh)}>
+        <Button
+          variant="tertiary"
+          size="l"
+          data-testid="assets-panel-upload-button"
+          onClick={() => uploadFiles().then(handleRefresh)}
+        >
           <PlusCircleSm />
           <span className="text-nowrap">{t('editor:layout.filebrowser.uploadAssets')}</span>
         </Button>

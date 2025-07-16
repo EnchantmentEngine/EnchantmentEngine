@@ -11,6 +11,8 @@ yarn.lock
 yarn-error.log
 .yarn/
 pnpm-lock.yaml
+bun.lock
+bun.lockb
 
 #IDEA project
 *.iml
@@ -165,6 +167,8 @@ packages/server/upload_test/
 project-package-jsons/*
 
 feathers/*
+packages/ui/build/*
+packages/ui/storybook-static*
 /packages/ui/tests/jest-test-results.json
 packages/ui/tests/jest-test-results.json
 
@@ -175,3 +179,4 @@ certs/tailscale
 
 **/credentials
 .aider*
+bun.lock

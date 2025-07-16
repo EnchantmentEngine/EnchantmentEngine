@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -53,6 +53,7 @@ export default function UserMenus() {
               position: 'top'
             }}
             icon={isMobile ? User01Md : User01Lg}
+            data-testid="open-profile-menu"
             onClick={() => ModalState.openModal(<ProfileMenu />)}
           />
         )}
@@ -63,6 +64,7 @@ export default function UserMenus() {
               position: 'top'
             }}
             icon={isMobile ? Send01Md : Send01Lg}
+            data-testid="send-location-button"
             onClick={() => ModalState.openModal(<ShareMenu />)}
           />
         )}
@@ -73,6 +75,7 @@ export default function UserMenus() {
               position: 'top'
             }}
             icon={isMobile ? EmoteLg : EmoteM}
+            data-testid="open-emote-menu"
             onClick={() => ModalState.openModal(<EmoteMenu />, undefined, 'transparent')}
           />
         )}
@@ -83,6 +86,7 @@ export default function UserMenus() {
               position: 'top'
             }}
             icon={FaUserFriends}
+            data-testid="open-friends-menu"
             onClick={() => ModalState.openModal(<FriendsMenu />)}
           />
         )}

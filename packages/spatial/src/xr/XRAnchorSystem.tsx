@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -216,7 +216,14 @@ const execute = () => {
 }
 
 const Reactor = () => {
+  const { scenePlacementMode, session: xrSession } = useMutableState(XRState).value
+
+  /** Lazily create scene placement entity only once xr session starts, but persist indefinitely */
   useEffect(() => {
+    if (!xrSession) return
+
+    if (getState(XRAnchorSystemState).scenePlacementEntity) return
+
     const scenePlacementEntity = createEntity()
     setComponent(scenePlacementEntity, NameComponent, 'xr-scene-placement')
     setComponent(scenePlacementEntity, XRScenePlacementComponent)
@@ -248,9 +255,8 @@ const Reactor = () => {
     setComponent(originAnchorEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
 
     getMutableState(XRAnchorSystemState).set({ scenePlacementEntity, originAnchorEntity })
-  }, [])
+  }, [xrSession])
 
-  const { scenePlacementMode, session: xrSession } = useMutableState(XRState).value
   const { scenePlacementEntity, originAnchorEntity } = useMutableState(XRAnchorSystemState).value
   const hitTest = useOptionalComponent(scenePlacementEntity, XRHitTestComponent)
 

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -55,6 +55,7 @@ const SidebarNavigation = ({
             'flex items-center justify-start gap-x-1 border-text-secondary pb-4 font-medium text-text-secondary hover:border-b-2',
             index === currentTabIndex ? 'border-b-2 border-ui-select-primary text-ui-select-primary' : ''
           )}
+          data-testid="sidebar-navigation-button"
           onClick={() => onChange(index)}
         >
           {label}

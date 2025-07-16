@@ -19,15 +19,18 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { Matrix3, Matrix4, Quaternion, Vector2, Vector3 } from 'three'
+import { Matrix3, Matrix4, Quaternion, Vector2, Vector3, Vector4 } from 'three'
 
 export const PI = Math.PI
 export const HALF_PI = PI / 2
 export const TAU = Math.PI * 2
+
+/** const Vector4(0,0,0,0) */
+export const Vector4_Zero = Object.freeze(new Vector4(0, 0, 0, 0))
 
 /** const Vector3(0,0,0) */
 export const Vector3_Zero = Object.freeze(new Vector3(0, 0, 0))

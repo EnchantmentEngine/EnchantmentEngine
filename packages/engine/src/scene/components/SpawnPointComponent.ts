@@ -19,84 +19,18 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { useLayoutEffect } from 'react'
+import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { createEntity, entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  setComponent,
-  useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { useMutableState } from '@ir-engine/hyperflux'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-
-import { EntityTreeComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { TransformComponent } from '@ir-engine/spatial'
-import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
-import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments } from 'three'
-import { useGLTFComponent } from '../../assets/functions/resourceLoaderHooks'
-
-const GLTF_PATH = '/static/editor/spawn-point.glb'
 
 export const SpawnPointComponent = defineComponent({
   name: 'SpawnPointComponent',
   jsonID: 'EE_spawn_point',
-
   schema: S.Object({
     permissionedUsers: S.Array(S.UserID())
-  }),
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const renderState = useMutableState(RendererState)
-    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
-
-    const debugEnabled = renderState.nodeHelperVisibility.value || activeHelperComponent !== undefined
-
-    const debugGLTF = useGLTFComponent(debugEnabled ? GLTF_PATH : '', entity)
-
-    useLayoutEffect(() => {
-      if (!debugGLTF || !debugEnabled) return
-
-      const boundsHelperEntity = createEntity()
-      setComponent(boundsHelperEntity, TransformComponent)
-      setComponent(boundsHelperEntity, EntityTreeComponent, { parentEntity: entity })
-      setComponent(boundsHelperEntity, VisibleComponent)
-      const buffer = new BufferGeometry()
-      const positions = new Float32Array([-0.5, 0, -0.5, 0.5, 0, -0.5, 0.5, 0, 0.5, -0.5, 0, 0.5])
-      const indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0])
-      buffer.setIndex(new BufferAttribute(indices, 1))
-      buffer.setAttribute('position', new BufferAttribute(positions, 3))
-      setComponent(
-        boundsHelperEntity,
-        ObjectComponent,
-        new LineSegments(buffer, new LineBasicMaterial({ color: 'white' }))
-      )
-
-      setVisibleComponent(debugGLTF, true)
-      setComponent(debugGLTF, ComputedTransformComponent, {
-        referenceEntities: [entity],
-        computeFunction: () => {
-          const scale = getComponent(entity, TransformComponent).scale
-          getComponent(debugGLTF, TransformComponent).scale.set(1 / scale.x, 1 / scale.y, 1 / scale.z)
-        }
-      })
-
-      return () => {
-        removeEntity(boundsHelperEntity)
-        if (entityExists(debugGLTF)) setVisibleComponent(debugGLTF, false)
-      }
-    }, [debugGLTF, debugEnabled])
-
-    return null
-  }
+  })
 })

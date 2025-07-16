@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -31,13 +31,13 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { setTargetCameraRotation } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
-import { DefaultAxisAlias, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { DefaultAxisBindings, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
@@ -47,14 +47,12 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { useEffect } from 'react'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { Q_Y_180 } from '../../common/constants/MathConstants'
-import { RendererComponent } from '../../renderer/WebGLRendererSystem'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-
-// const throttleHandleCameraZoom = throttle(handleFollowCameraZoom, 30, { leading: true, trailing: false })
+import { CameraSettingsState } from '../CameraSettingsState'
 
 const pointerPositionDelta = new Vector2()
-const rendererQuery = defineQuery([RendererComponent])
-const epsilon = 0.001
+const followCameraQuery = defineQuery([RendererComponent, FollowCameraComponent])
 
 const followCameraModeCycle = [
   FollowCameraMode.FirstPerson,
@@ -83,25 +81,27 @@ const onFollowCameraShoulderCam = (cameraEntity: Entity) => {
 }
 
 /**
- * Change camera distance.
+ * Change camera distance for follow camera mode.
  * @param cameraEntity Entity holding camera and input component.
+ * @param axes Input axes values.
+ * @param deltaTime Delta time for smooth transitions.
  */
 export const handleFollowCameraScroll = (
   cameraEntity: Entity,
-  axes: AxisValueMap<typeof DefaultAxisAlias>,
+  axes: AxisValueMap<typeof DefaultAxisBindings>,
   deltaTime: number
 ): void => {
   const follow = getComponent(cameraEntity, FollowCameraComponent)
-
   const zoomDelta = axes.FollowCameraZoomScroll ?? 0
   const shoulderDelta = axes.FollowCameraShoulderCamScroll ?? 0
 
-  follow.targetDistance = Math.max(follow.targetDistance + zoomDelta, 0)
+  const cameraSettingsState = getMutableState(CameraSettingsState)
 
-  // Math.min(
-  //   Math.max(follow.targetDistance + zoomDelta, follow.effectiveMinDistance * 0.8),
-  //   follow.effectiveMaxDistance * 1.2
-  // )
+  // Standard camera zoom behavior for follow mode
+  follow.targetDistance = Math.max(
+    follow.targetDistance + zoomDelta * cameraSettingsState.followCameraScrollSensitivity.value,
+    0
+  )
 
   const outsideMinMaxRange =
     follow.targetDistance < follow.effectiveMinDistance || follow.targetDistance > follow.effectiveMaxDistance
@@ -122,33 +122,24 @@ const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
   const cameraSettings = getState(CameraSettings)
 
-  for (const cameraEntity of rendererQuery()) {
-    const buttons = InputComponent.getMergedButtons(cameraEntity)
-    const axes = InputComponent.getMergedAxes(cameraEntity)
+  // Get the viewer entity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+
+  for (const cameraEntity of followCameraQuery()) {
+    const buttons = InputComponent.getButtons(cameraEntity)
+    const axes = InputComponent.getAxes(cameraEntity)
 
     const inputPointerEntities = InputPointerComponent.getPointersForCamera(cameraEntity)
     const inputState = getState(InputState)
-
-    const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
-    if (!follow) continue
+    const follow = getComponent(cameraEntity, FollowCameraComponent)
 
     let { theta, phi } = getOptionalComponent(cameraEntity, TargetCameraRotationComponent) ?? follow
     let time = 0.3
 
     const canvas = getComponent(cameraEntity, RendererComponent).canvas
-    if (follow.pointerLock && buttons?.PrimaryClick?.pressed && document.pointerLockElement !== canvas) {
-      /**
-       * @todo - add support for unadjustedMovement API
-       *  - https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API#handling_promise_and_non-promise_versions_of_requestpointerlock
-       */
-      canvas?.requestPointerLock()
-    }
 
     const hasPointerLock = follow.pointerLock && document.pointerLockElement === canvas
 
-    if ((buttons?.PrimaryClick?.pressed && buttons?.PrimaryClick?.dragging) || hasPointerLock) {
-      InputState.setCapturingEntity(cameraEntity)
-    }
     if (buttons?.FollowCameraModeCycle?.down) onFollowCameraModeCycle(cameraEntity)
     if (buttons?.FollowCameraFirstPerson?.down) onFollowCameraFirstPerson(cameraEntity)
     if (buttons?.FollowCameraShoulderCam?.down) onFollowCameraShoulderCam(cameraEntity)
@@ -163,6 +154,7 @@ const execute = () => {
       phi += y * 2
       const pointerDragging = inputSource.buttons?.PrimaryClick?.dragging
       if (pointerDragging || hasPointerLock) {
+        InputState.setCapturingEntity(cameraEntity)
         const inputPointer = getComponent(inputPointerEid, InputPointerComponent)
         pointerPositionDelta.copy(inputPointer.movement)
         phi -= pointerPositionDelta.y * cameraSettings.cameraRotationSpeed

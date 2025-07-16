@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -38,6 +38,7 @@ import {
   inviteCodeLookupPath,
   locationPath,
   messagePath,
+  moderationBanPath,
   UserID,
   userKickPath,
   userPath,
@@ -49,8 +50,15 @@ import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
-import { Action, dispatchAction, getMutableState, getState, PeerID } from '@ir-engine/hyperflux'
-import { NetworkActions, NetworkState } from '@ir-engine/network'
+import {
+  Action,
+  dispatchAction,
+  getMutableState,
+  getState,
+  NetworkActions,
+  NetworkState,
+  PeerID
+} from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 import config from '@ir-engine/server-core/src/appconfig'
 import { config as mediaConfig } from '@ir-engine/server-core/src/config'
@@ -152,6 +160,17 @@ export const authorizeUserToJoinServer = async (app: Application, instance: Inst
   const userId = user.id
   // disallow users from joining media servers if they are not age verified
   if (instance.channelId && !user.ageVerified) return false
+  const thisUserBanned = (await app.service(moderationBanPath).find({
+    query: {
+      banUserId: userId,
+      banned: true,
+      $limit: 0
+    }
+  })) as any
+  if (thisUserBanned.total > 0) {
+    logger.info(`User "${userId}" is banned.`)
+    return false
+  }
 
   const authorizedUsers = (await app.service(instanceAuthorizedUserPath).find({
     query: {

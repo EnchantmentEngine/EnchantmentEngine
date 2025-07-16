@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -81,7 +81,13 @@ export default function RenameSceneModal({ sceneName, onRenameScene, scene, refe
         state={inputError.value ? 'error' : undefined}
         helperText={inputError.value}
         data-testid="scene-panel-scene-rename-input"
+        fullWidth
       />
+
+      <p className="mt-2 text-xs text-text-secondary">
+        Scene name must be 4–64 characters, start and end with a letter or number, and may include letters, numbers,
+        spaces, underscores, hyphens, and periods.
+      </p>
     </Modal>
   )
 }

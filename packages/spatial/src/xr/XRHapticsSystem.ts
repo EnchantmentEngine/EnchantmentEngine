@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -37,7 +37,7 @@ import { XRAction } from './XRState'
 declare global {
   interface GamepadHapticActuator {
     /**
-     * @deprecated - old meta quest API
+     * @deprecated old meta quest API
      * @param value A double representing the intensity of the pulse. This can vary depending on the hardware type, but generally takes a value between 0.0 (no intensity) and 1.0 (full intensity).
      * @param duration A double representing the duration of the pulse, in milliseconds.
      */

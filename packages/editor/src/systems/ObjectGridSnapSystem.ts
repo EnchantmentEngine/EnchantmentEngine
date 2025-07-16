@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -52,7 +52,11 @@ import { EngineState } from '@ir-engine/ecs'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import {
+  getLayerMaskFromLayer,
+  ObjectLayer,
+  ObjectLayers
+} from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
 
@@ -191,10 +195,11 @@ function calculateTranslation(bbox1: Box3, bbox2: Box3): Vector3 {
   return translation
 }
 
-function setHelperLayer(entity: Entity, layer: number) {
+function setHelperLayer(entity: Entity, layer: ObjectLayer) {
   const helper = getOptionalMutableComponent(entity, BoundingBoxHelperComponent)
   if (helper) {
-    const layerMask = 1 << layer
+    const layerMask = getLayerMaskFromLayer(layer)
+    if (!layerMask) return
     helper.layerMask.set(layerMask)
   }
 }

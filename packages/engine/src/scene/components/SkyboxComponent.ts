@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -44,11 +44,12 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { isClient, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { Sky } from '../classes/Sky'
@@ -56,7 +57,7 @@ import { SkyTypeEnum } from '../constants/SkyTypeEnum'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
 
-const tempColor = new Color()
+const tempColor = new Color(0.65, 0.8, 1)
 
 export const SkyboxComponent = defineComponent({
   name: 'SkyboxComponent',
@@ -64,29 +65,31 @@ export const SkyboxComponent = defineComponent({
 
   schema: S.Object({
     backgroundColor: T.Color(0x000000),
-    equirectangularPath: S.String(''),
-    cubemapPath: S.String(''),
-    backgroundType: S.Number(1),
-    sky: S.NonSerialized(S.Nullable(S.Type<Sky>())),
+    equirectangularPath: S.String({ default: '' }),
+    cubemapPath: S.String({ default: '' }),
+    backgroundType: S.Number({ default: 1 }),
+    sky: S.Type<Sky | null>({ serialized: false }),
     skyboxProps: S.Object({
-      turbidity: S.Number(10),
-      rayleigh: S.Number(1),
-      luminance: S.Number(1),
-      mieCoefficient: S.Number(0.004999999999999893),
-      mieDirectionalG: S.Number(0.99),
-      inclination: S.Number(0.10471975511965978),
-      azimuth: S.Number(0.16666666666666666)
+      turbidity: S.Number({ default: 10 }),
+      rayleigh: S.Number({ default: 1 }),
+      luminance: S.Number({ default: 1 }),
+      mieCoefficient: S.Number({ default: 0.004999999999999893 }),
+      mieDirectionalG: S.Number({ default: 0.99 }),
+      inclination: S.Number({ default: 0.10471975511965978 }),
+      azimuth: S.Number({ default: 0.16666666666666666 })
     })
   }),
 
   reactor: function () {
     const entity = useEntityContext()
-    if (!isClient) return null
+    // if (!isClient) return null
 
     const skyboxState = useComponent(entity, SkyboxComponent)
     const cubemapTexture = useHookstate<undefined | CubeTexture>(undefined)
     const [texture, error] = useTexture(
-      skyboxState.backgroundType.value === SkyTypeEnum.equirectangular ? skyboxState.equirectangularPath.value : '',
+      skyboxState.backgroundType.value === SkyTypeEnum.equirectangular && !iOS
+        ? skyboxState.equirectangularPath.value
+        : '',
       entity
     )
 
@@ -97,12 +100,29 @@ export const SkyboxComponent = defineComponent({
       }
     }, [])
 
+    const forceColorFallback = useHookstate(false)
+    useEffect(() => {
+      // temporary logic to force solid color on iOS. We use a separate variable to keep track of this
+      // so we can fall back to a sensical default value (in spite of bad serialized color data)
+      // in the event the user did not set up a color themselves
+      /**@todo implement smart asset LOD system to load lower resolution skybox textures on iOS */
+      if (iOS) forceColorFallback.set(true)
+    }, [])
+
+    useEffect(() => {
+      if (!texture) return
+      return () => {
+        texture.dispose()
+      }
+    }, [texture])
+
     useEffect(() => {
       if (skyboxState.backgroundType.value !== SkyTypeEnum.equirectangular || !texture) return
 
       texture.colorSpace = SRGBColorSpace
       texture.mapping = EquirectangularReflectionMapping
       texture.minFilter = LinearFilter
+      texture.generateMipmaps = false
       setComponent(entity, BackgroundComponent, texture)
     }, [texture, skyboxState.backgroundType])
 
@@ -115,32 +135,37 @@ export const SkyboxComponent = defineComponent({
     }, [error])
 
     useEffect(() => {
-      if (skyboxState.backgroundType.value !== SkyTypeEnum.color) return
+      if (skyboxState.backgroundType.value !== SkyTypeEnum.color && !forceColorFallback.value) return
 
-      const col = skyboxState.backgroundColor.value ?? tempColor
+      const col =
+        forceColorFallback.value && skyboxState.backgroundType.value !== SkyTypeEnum.color
+          ? tempColor
+          : skyboxState.backgroundColor.value
       const resolution = 64 // Min value required
       /** @todo track this in resource manager */
-      const texture = new DataTexture(getRGBArray(new Color(col)), resolution, resolution, RGBAFormat)
+      const colorTexture = new DataTexture(getRGBArray(new Color(col)), resolution, resolution, RGBAFormat)
       // ResourceState.addResource(texture, texture.uuid, entity)
-      texture.needsUpdate = true
-      texture.colorSpace = SRGBColorSpace
-      texture.mapping = EquirectangularReflectionMapping
-      setComponent(entity, BackgroundComponent, texture)
+      colorTexture.needsUpdate = true
+      colorTexture.colorSpace = SRGBColorSpace
+      colorTexture.mapping = EquirectangularReflectionMapping
+      colorTexture.generateMipmaps = false
+      setComponent(entity, BackgroundComponent, colorTexture)
 
       return () => {
         // ResourceState.unload(texture.uuid, entity)
-        texture.dispose()
+        colorTexture.dispose()
         removeComponent(entity, BackgroundComponent)
       }
-    }, [skyboxState.backgroundType, skyboxState.backgroundColor])
+    }, [skyboxState.backgroundType, skyboxState.backgroundColor, forceColorFallback])
 
     useEffect(() => {
       if (skyboxState.backgroundType.value !== SkyTypeEnum.cubemap) return
-      const onLoad = (texture: CubeTexture) => {
-        texture.colorSpace = SRGBColorSpace
-        texture.mapping = CubeReflectionMapping
-        cubemapTexture.set(texture)
-        setComponent(entity, BackgroundComponent, texture)
+      const onLoad = (cubeTexture: CubeTexture) => {
+        cubeTexture.colorSpace = SRGBColorSpace
+        cubeTexture.mapping = CubeReflectionMapping
+        cubeTexture.generateMipmaps = false
+        cubemapTexture.set(cubeTexture)
+        setComponent(entity, BackgroundComponent, cubeTexture)
         removeError(entity, SkyboxComponent, 'FILE_ERROR')
       }
       const loadArgs: [
@@ -190,11 +215,11 @@ export const SkyboxComponent = defineComponent({
       sky.luminance = skyboxState.skyboxProps.value.luminance
 
       const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
+      const generatedTexture = sky.generateSkyboxTextureCube(renderer.renderer!)
+      generatedTexture.mapping = CubeReflectionMapping
+      generatedTexture.generateMipmaps = false
 
-      const texture = sky.generateSkyboxTextureCube(renderer.renderer!)
-      texture.mapping = CubeReflectionMapping
-
-      setComponent(entity, BackgroundComponent, texture)
+      setComponent(entity, BackgroundComponent, generatedTexture)
       sky.dispose()
     }, [
       skyboxState.backgroundType,

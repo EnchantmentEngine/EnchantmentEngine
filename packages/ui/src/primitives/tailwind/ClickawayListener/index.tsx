@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -28,7 +28,6 @@ import React from 'react'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 
 import { getState } from '@ir-engine/hyperflux'
-import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile.ts'
 import { useEffect, useRef } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -38,6 +37,8 @@ const ClickawayListener = (props: { children: React.ReactNode; onClickOutside: V
   const backdropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!backdropRef.current) return
+
     const handler = (e: Event) => {
       const element = backdropRef.current
       if (!element) {
@@ -58,13 +59,12 @@ const ClickawayListener = (props: { children: React.ReactNode; onClickOutside: V
       }
     }
 
-    const eventName = isMobile ? 'pointerup' : 'mousedown'
-    document.addEventListener(eventName, handler)
+    backdropRef.current.addEventListener('pointerup', handler)
 
     return () => {
-      document.removeEventListener(eventName, handler)
+      backdropRef.current?.removeEventListener('pointerup', handler)
     }
-  }, [])
+  }, [backdropRef.current])
 
   useEffect(() => {
     callbackRef.current = props.onClickOutside || null

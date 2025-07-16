@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -30,7 +30,6 @@ import InviteType from './invite-type/invite-type'
 import Invite from './invite/invite'
 import LocationAdmin from './location-admin/location-admin'
 import LocationAuthorizedUser from './location-authorized-user/location-authorized-user'
-import LocationBan from './location-ban/location-ban'
 import LocationSetting from './location-setting/location-setting'
 import LocationType from './location-type/location-type'
 import Location from './location/location'
@@ -46,7 +45,6 @@ export default [
   Message,
   LocationType,
   LocationSetting,
-  LocationBan,
   LocationAdmin,
   LocationAuthorizedUser
 ]

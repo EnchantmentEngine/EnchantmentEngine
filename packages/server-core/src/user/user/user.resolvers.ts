@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -40,12 +40,14 @@ export const userResolver = resolve<UserType, HookContext>({
     return !!user.ageVerified
   }),
   createdAt: virtual(async (user) => fromDateTimeSql(user.createdAt)),
-  updatedAt: virtual(async (user) => fromDateTimeSql(user.updatedAt))
+  updatedAt: virtual(async (user) => fromDateTimeSql(user.updatedAt)),
+  deactivatedAt: virtual(async (user) => (user.deactivatedAt ? fromDateTimeSql(user.deactivatedAt) : undefined))
 })
 
 export const userExternalResolver = resolve<UserType, HookContext>({
   // https://stackoverflow.com/a/56523892/2077741
-  isGuest: async (value, user) => !!user.isGuest
+  isGuest: async (value, user) => !!user.isGuest,
+  isDeactivated: async (value, user) => !!user.isDeactivated
 })
 
 export const userDataResolver = resolve<UserType, HookContext>({
@@ -63,7 +65,13 @@ export const userDataResolver = resolve<UserType, HookContext>({
 })
 
 export const userPatchResolver = resolve<UserType, HookContext>({
-  updatedAt: getDateTimeSql
+  updatedAt: getDateTimeSql,
+  deactivatedAt: async (_, userData) => {
+    if (userData.isDeactivated) {
+      return getDateTimeSql()
+    }
+    return undefined
+  }
 })
 
 export const userQueryResolver = resolve<UserQuery, HookContext>({})

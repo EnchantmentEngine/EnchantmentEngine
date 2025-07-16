@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -28,12 +28,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEntity, removeEntity } from '../ComponentFunctions'
 import { createEngine, destroyEngine } from '../Engine'
 import { Entity, UndefinedEntity } from '../Entity'
-import { Kind, NonSerializable, Schema, TArraySchema, TEnumSchema } from './JSONSchemaTypes'
+import { Kind, NonSerializable, Schema, TArraySchema } from './JSONSchemaTypes'
 import {
   CheckSchemaValue,
   CloneSerializable,
   CreateSchemaValue,
   DeserializeSchemaValue,
+  GenerateJSONSchema,
   HasRequiredSchema,
   HasRequiredSchemaValues,
   HasSchemaDeserializers,
@@ -44,6 +45,7 @@ import {
   requiresDeserialization,
   SerializeSchema
 } from './JSONSchemaUtils'
+import { S } from './JSONSchemas'
 
 /**
  * @description Returns an object nested to `@param depth` levels of depth.
@@ -85,7 +87,7 @@ describe('DeserializeSchemaValue', () => {
     const curr = {}
     const value = {}
 
-    const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+    const result = DeserializeSchemaValue(schema, curr, value)
 
     expect(result).toBe(Expected)
   })
@@ -96,11 +98,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -108,11 +110,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -120,11 +122,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'number'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = false
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -132,11 +134,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when its typeof is 'number'", () => {
       const Expected = 42
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Number({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -149,11 +151,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -161,11 +163,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -173,11 +175,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'boolean'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = 'IncorrectValue'
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -185,11 +187,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when its typeof is 'boolean'", () => {
       const Expected = false
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.Bool({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -203,11 +205,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is null', () => {
       const Expected = null
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -215,11 +217,11 @@ describe('DeserializeSchemaValue', () => {
     it('should return `@param value` when it is undefined', () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -227,11 +229,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when typeof `@param value` is not 'string'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = false
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -239,11 +241,11 @@ describe('DeserializeSchemaValue', () => {
     it("should return undefined when `@param value` is '__proto__'", () => {
       const Expected = undefined
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = '__proto__'
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -251,52 +253,26 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when it is not null/undefined, its typeof is 'string' and its value is not '__proto__'", () => {
       const Expected = 'SomeTestString'
 
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
+      const schema = S.String({ deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
   }) //:: Kind.String
 
-  describe('case: Kind.Enum', () => {
-    const TestSchemaKind = 'Enum'
-
-    it('should return `@param value` when it is null', () => {
-      const Expected = null
-
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
-      const curr = {}
-      const value = Expected
-
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
-
-      expect(result).toBe(Expected)
-    })
-
-    it('should return `@param value` when it is undefined', () => {
-      const Expected = undefined
-
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined } } as Schema
-      const curr = {}
-      const value = Expected
-
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
-
-      expect(result).toBe(Expected)
-    })
-
+  describe('case: S.Enum', () => {
     it("should return undefined when `@param value` is not contained in the enum's schema", () => {
       const Expected = undefined
 
-      const properties = {} as TEnumSchema<Record<string, string | number>>['properties']
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const properties = {}
+      const schema = S.Enum(properties, { deserialize: undefined })
       const curr = {}
       const value = 42
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -304,12 +280,12 @@ describe('DeserializeSchemaValue', () => {
     it("should return `@param value` when its value is contained in the enum's schema", () => {
       const Expected = 42
 
-      const properties = { one: 1, two: Expected } as TEnumSchema<Record<string, string | number>>['properties']
-      const schema = { [Kind]: TestSchemaKind, options: { deserialize: undefined }, properties: properties } as Schema
+      const properties = { one: 1, two: Expected }
+      const schema = S.Enum(properties, { deserialize: undefined })
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -325,7 +301,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -337,7 +313,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -350,7 +326,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = 42
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -363,7 +339,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = properties
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -379,7 +355,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -391,7 +367,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -403,7 +379,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = 42
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -426,7 +402,7 @@ describe('DeserializeSchemaValue', () => {
       ]
       const value = [40, 41, 42, 43, 44]
 
-      DeserializeSchemaValue(testEntity, schema, curr, value)
+      DeserializeSchemaValue(schema, curr, value)
       const result = curr
 
       expect(result.length).toEqual(Expected.length)
@@ -442,7 +418,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = [1, 2, 3, 4, 5]
       const value = [...Expected, undefined, null]
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)!
+      const result = DeserializeSchemaValue(schema, curr, value)!
 
       expect(result.length).toEqual(Expected.length)
       expect(result).toEqual(Expected)
@@ -457,7 +433,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = Expected
       const value = [0, 1, 2, 3, 4]
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)!
+      const result = DeserializeSchemaValue(schema, curr, value)!
 
       expect(result).toBe(Expected)
     })
@@ -473,7 +449,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -485,7 +461,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -497,7 +473,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = 42
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -516,7 +492,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = [0, Expected[1], 2, Expected[3], true]
       const value = [Expected[0], undefined, Expected[2], null, Expected[4]]
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toEqual(Expected)
     })
@@ -533,7 +509,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -545,7 +521,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -557,7 +533,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = 'IncorrectValue'
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -574,7 +550,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = { valid1: 1, valid2: true, valid3: 'String', ignore: 'IgnoredField' }
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toEqual(Expected)
     })
@@ -598,7 +574,7 @@ describe('DeserializeSchemaValue', () => {
         ignore: 'IgnoredField'
       } as any
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toEqual(Expected)
     })
@@ -621,7 +597,7 @@ describe('DeserializeSchemaValue', () => {
         invalid2: null
       }
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toEqual(Expected)
     })
@@ -639,7 +615,7 @@ describe('DeserializeSchemaValue', () => {
       const invalid = 42
       const value = { valid1: Expected.valid1, valid2: Expected.valid2, valid3: invalid }
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toEqual(Expected)
     })
@@ -655,7 +631,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -667,7 +643,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -689,7 +665,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = { test: { one: 21, two: 22 } }
       const value = { test: { one: 4 as unknown, two: 5 as unknown } }
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(value)
       expect(result).toEqual(Expected)
@@ -705,7 +681,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = { test: Expected.test }
       const value = { test: undefined } as any
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(value)
       expect(result).toEqual(Expected)
@@ -721,13 +697,13 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
   }) //:: Kind.Class
 
-  describe.each(['Required', 'Proxy', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should call DeserializeSchemaValue by passing the same arguments and `@param schema`.properties as the schema parameter value', () => {
@@ -738,11 +714,11 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
-  }) //:: [Kind.Required, Kind.Proxy, Kind.NonSerialized, Kind.Partial]
+  }) //:: [Kind.Proxy, Kind.Partial]
 
   describe('case: Kind -> default', () => {
     const TestSchemaKind = 'UnknownKind'
@@ -755,7 +731,7 @@ describe('DeserializeSchemaValue', () => {
       const curr = {}
       const value = Expected
 
-      const result = DeserializeSchemaValue(testEntity, schema, curr, value)
+      const result = DeserializeSchemaValue(schema, curr, value)
 
       expect(result).toBe(Expected)
     })
@@ -890,7 +866,7 @@ describe('HasRequiredSchema', () => {
   it('should return true if `@param schema` has a Kind.Required field', () => {
     const Expected = true
 
-    const schema = { [Kind]: 'Required', properties: undefined } as Schema
+    const schema = S.Number({ required: true })
 
     const result = HasRequiredSchema(schema)
 
@@ -902,13 +878,15 @@ describe('HasRequiredSchema', () => {
     const Expected = true
 
     const child = { [Kind]: 'Any', properties: undefined } as Schema
-    const required = { [Kind]: 'Required', properties: child } as Schema
+    const required = S.Object({
+      child: S.Number({ required: true })
+    })
     const children = {
       child1: child,
       child2: required,
       child3: child
     }
-    const schema = { [Kind]: 'Object', properties: children } as Schema
+    const schema = S.Object(children)
 
     const result = HasRequiredSchema(schema)
 
@@ -920,7 +898,7 @@ describe('HasSchemaValidators', () => {
   it('should return false if `@param schema` has no children and does not have an .options.validate field', () => {
     const Expected = false
 
-    const schema = { [Kind]: 'Number', properties: undefined } as Schema
+    const schema = S.Number()
 
     const result = HasSchemaValidators(schema)
 
@@ -1054,7 +1032,6 @@ describe('IsSingleValueSchema', () => {
     'Number',
     'Bool',
     'String',
-    'Enum',
     'Literal',
     'Class',
     'Array',
@@ -1121,7 +1098,7 @@ describe('IsSingleValueSchema', () => {
     })
   }) //:: Kind.Union
 
-  describe.each(['NonSerialized', 'Required', 'Proxy'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy'])('case: Kind.%s', (kind) => {
     it('should return the result of IsSingleValueSchema( `@param schema`.properties )', () => {
       const properties = { [Kind]: kind } as Schema
       const schema = { [Kind]: kind, properties: properties } as Schema
@@ -1158,7 +1135,7 @@ describe('HasRequiredSchemaValues', () => {
         container: {
           [Kind]: 'Object',
           properties: {
-            wrongKey: { [Kind]: 'Required' } as Schema
+            wrongKey: S.Number({ required: true })
           }
         } as Schema
       }
@@ -1188,7 +1165,7 @@ describe('HasRequiredSchemaValues', () => {
     })
   }) //:: [Kind.Object, Kind.Class]
 
-  describe.each(['Proxy', 'Partial', 'NonSerialized'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return the result of calling HasRequiredSchemaValues with (`@param schema`.properties, `@param value`) as arguments', () => {
@@ -1198,7 +1175,7 @@ describe('HasRequiredSchemaValues', () => {
         properties: {
           one: { [Kind]: 'Number' } as Schema,
           two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
+          [OtherKey]: S.Number({ required: true })
         }
       }
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
@@ -1211,92 +1188,20 @@ describe('HasRequiredSchemaValues', () => {
       expect(result).toEqual(Expected)
       expect(result[1]).toBe(OtherKey)
     })
-  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized]
-
-  describe('case: Kind.Required', () => {
-    const TestSchemaKind = 'Required'
-
-    it('should return [false, `@param current`] when `@param value` is null', () => {
-      const Expected = [false, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = null
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-
-    it('should return [false, `@param current`] when `@param value` is undefined', () => {
-      const Expected = [false, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = undefined
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-
-    it('should return [true, `@param current`] when `@param value` is not null or undefined', () => {
-      const Expected = [true, 'CurrentKey'] as [boolean, string]
-
-      const OtherKey = Expected[1]
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          [OtherKey]: { [Kind]: 'Required' } as Schema
-        }
-      }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-      const value = { one: 1, two: 'TWO' }
-      const currentKey = Expected[1]
-
-      const result = HasRequiredSchemaValues(schema, value, currentKey)
-
-      expect(result).toEqual(Expected)
-      expect(result[1]).toBe(OtherKey)
-    })
-  }) //:: Kind.Required
+  }) //:: [Kind.Proxy, Kind.Partial]
 
   describe('case: default', () => {
     const TestSchemaKind = 'UnknownKind' as any
 
-    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]", () => {
+    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial]", () => {
       const Expected = [true, ''] as [boolean, string]
 
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          otherKey: { [Kind]: 'Required' } as Schema
-        }
-      }
+      const properties = S.Object({
+        one: S.Number(),
+        two: S.String(),
+        otherKey: S.Number({ required: true })
+      })
+
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
       const value = { one: 1, two: 'TWO' }
       const currentKey = 'TestKey'
@@ -1361,25 +1266,19 @@ describe('HasValidSchemaValues', () => {
     })
   }) //:: [Kind.Object, Kind.Class]
 
-  describe.each(['Proxy', 'Partial', 'NonSerialized', 'Partial'])('case: Kind.%s', (kind) => {
+  describe.each(['Proxy', 'Partial', 'Partial'])('case: Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return the result of calling HasValidSchemaValues with (`@param schema`.properties, `@param value`, `@param prev`, `@param entity`) as arguments', () => {
       const Expected = [false, 'wrongKey'] as [boolean, string]
 
-      const properties = {
-        [Kind]: 'Object',
-        properties: {
-          one: { [Kind]: 'Number' } as Schema,
-          two: { [Kind]: 'String' } as Schema,
-          container: {
-            [Kind]: 'Object',
-            properties: {
-              [Expected[1]]: { [Kind]: 'Number', options: { validate: (_, __, ___) => false } } as Schema
-            }
-          } as Schema
-        }
-      }
+      const properties = S.Object({
+        one: S.Number(),
+        two: S.String(),
+        container: S.Object({
+          [Expected[1]]: S.Number({ validate: (_, __, ___) => false })
+        })
+      })
       const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
       const value = { one: 1, two: 'TWO', container: { [Expected[1]]: 'InvalidNumber' } }
       const prev = { one: 61, two: 'prev_TWO', container: { [Expected[1]]: 'prev_InvalidNumber' } }
@@ -1390,12 +1289,12 @@ describe('HasValidSchemaValues', () => {
 
       expect(result).toEqual(Expected)
     })
-  }) //:: [Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Partial]
+  }) //:: [Kind.Proxy, Kind.Partial, Kind.Partial]
 
   describe('case: default', () => {
     const TestSchemaKind = 'UnknownKind' as any
 
-    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial, Kind.NonSerialized, Kind.Required]", () => {
+    it("should return [true, ''] when `@param schema`[Kind] is not one of [Kind.Object, Kind.Class, Kind.Proxy, Kind.Partial]", () => {
       const Expected = [true, ''] as [boolean, string]
 
       const properties = {
@@ -1430,9 +1329,8 @@ describe('CreateSchemaValue', () => {
 
     const defaultField = structuredClone(Expected)
     const schema = { options: { default: defaultField } } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).not.toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1442,9 +1340,8 @@ describe('CreateSchemaValue', () => {
     const Expected = { one: 41, two: 42 }
 
     const schema = { options: { default: () => Expected } } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1459,23 +1356,20 @@ describe('CreateSchemaValue', () => {
     ['', 'String']
   ])('should return %s when `@param schema`[Kind] is %s', (Expected, kind) => {
     const schema = { [Kind]: kind } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
   })
 
-  it("should return the first value that can be represented by the `@param schema`.properties enum when schema[Kind] is 'Enum'", () => {
+  it("should return the first value that can be represented by the `@param schema`.properties enum when schema[Kind] is 'Const'", () => {
     const Expected = 42
 
-    const kind = 'Enum'
     const properties = { expectedValue: Expected, One: 1, Two: 2 }
-    const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
+    const schema = S.Enum(properties)
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1487,9 +1381,8 @@ describe('CreateSchemaValue', () => {
     const kind = 'Literal'
     const properties = Expected
     const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1506,7 +1399,7 @@ describe('CreateSchemaValue', () => {
           one: {
             [Kind]: 'Proxy',
             options: {
-              create: () => {
+              default: () => {
                 return Expected.one
               }
             },
@@ -1515,7 +1408,7 @@ describe('CreateSchemaValue', () => {
           two: {
             [Kind]: 'Proxy',
             options: {
-              create: () => {
+              default: () => {
                 return Expected.two
               }
             },
@@ -1523,9 +1416,8 @@ describe('CreateSchemaValue', () => {
           } as unknown as Schema
         }
       } as Schema
-      const testEntity = 12345 as Entity
 
-      const result = CreateSchemaValue(testEntity, schema)
+      const result = CreateSchemaValue(schema)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -1538,9 +1430,8 @@ describe('CreateSchemaValue', () => {
       const Expected = {}
 
       const schema = { [Kind]: kind } as Schema
-      const testEntity = 12345 as Entity
 
-      const result = CreateSchemaValue(testEntity, schema)
+      const result = CreateSchemaValue(schema)
 
       expect(typeof result).toBe(typeof Expected)
       expect(result).toEqual(Expected)
@@ -1551,9 +1442,8 @@ describe('CreateSchemaValue', () => {
     const Expected = []
 
     const schema = { [Kind]: kind } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(Array.isArray(result)).toBeTruthy()
     expect(result).toEqual(Expected)
@@ -1565,9 +1455,8 @@ describe('CreateSchemaValue', () => {
     const kind = 'Union'
     const properties = []
     const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1579,9 +1468,8 @@ describe('CreateSchemaValue', () => {
     const kind = 'Union'
     const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
     const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1595,43 +1483,21 @@ describe('CreateSchemaValue', () => {
     const returnSchema = { [Kind]: 'Number' } as Schema
     const properties = { params: [], return: returnSchema }
     const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
 
-    const result = (CreateSchemaValue(testEntity, schema) as any)()
+    const result = (CreateSchemaValue(schema) as any)()
 
     expect(result).toBe(Expected)
     expect(result).not.toEqual('')
   })
-
-  it.each(['Required', 'NonSerialized'])(
-    'should call CreateSchemaValue to create a schema value from (`@param entity`, `@param schema`.properties) when schema[Kind] is %s',
-    (kind) => {
-      const Expected = 0
-
-      const properties = {
-        [Kind]: 'Union',
-        properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-      }
-      const schema = { [Kind]: kind, properties: properties } as Schema
-      const testEntity = 12345 as Entity
-
-      const result = CreateSchemaValue(testEntity, schema)
-
-      expect(result).toBe(Expected)
-      expect(result).toEqual(Expected)
-      expect(result).not.toEqual('')
-    }
-  )
 
   it('should return undefined for every other `@param schema`[Kind] (case: default)', () => {
     const Expected = undefined
 
     const kind = 'UnknownKind' as any
     const properties = { [Kind]: 'Union', properties: [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema] }
-    const schema = { [Kind]: kind, properties: properties } as Schema
-    const testEntity = 12345 as Entity
+    const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
-    const result = CreateSchemaValue(testEntity, schema)
+    const result = CreateSchemaValue(schema)
 
     expect(result).toBe(Expected)
     expect(result).toEqual(Expected)
@@ -1692,14 +1558,12 @@ describe('CheckSchemaValue', () => {
   }) //:: Kind.Number
 
   describe('case Kind.Enum', () => {
-    const TestSchemaKind = 'Enum'
-
     it('should return true if `@param schema`.properties includes `@param value`', () => {
       const Expected = true
 
       const value = 42
       const properties = { expectedValue: value, One: 1, Two: 2 }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Enum(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1711,7 +1575,7 @@ describe('CheckSchemaValue', () => {
 
       const value = 42
       const properties = { One: 1, Two: 2 }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Enum(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1753,17 +1617,14 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 41, two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema,
-        ignored1: { [Kind]: 'NonSerialized' } as Schema,
-        ignored2: {
-          [Kind]: 'Object',
-          properties: {
-            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
-          }
-        } as Schema
+        one: S.Number(),
+        two: S.String(),
+        ignored1: S.Number({ serialized: false }),
+        ignored2: S.Object({
+          ignoredChild1: S.Number({ serialized: false })
+        })
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1775,17 +1636,14 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 'ShouldBeNumber', two: 'SomeString', ignored1: null, ignored2: { ignoredChild1: null } }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema,
-        ignored1: { [Kind]: 'NonSerialized' } as Schema,
-        ignored2: {
-          [Kind]: 'Object',
-          properties: {
-            ignoredChild1: { [Kind]: 'NonSerialized' } as Schema
-          }
-        } as Schema
+        one: S.Number(),
+        two: S.String(),
+        ignored1: S.Number({ serialized: false }),
+        ignored2: S.Object({
+          ignoredChild1: S.Number({ serialized: false })
+        })
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1797,10 +1655,10 @@ describe('CheckSchemaValue', () => {
 
       const value = { one: 41, two: 'SomeString' }
       const properties = {
-        one: { [Kind]: 'Number' } as Schema,
-        two: { [Kind]: 'String' } as Schema
+        one: S.Number(),
+        two: S.String()
       }
-      const schema = { [Kind]: kind, properties: properties } as Schema
+      const schema = { [Kind]: kind, properties: properties, options: { serialized: true } } as Schema
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1827,8 +1685,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = null
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number({ serialized: false }))
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1839,8 +1696,7 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = { One: 1, Two: 2, 3: 'test' } as Record<number, string>
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1851,8 +1707,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = { One: 1, Two: 2 } as Record<string, number>
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'NonSerialized' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number({ serialized: false }))
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1863,8 +1718,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = null
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1875,8 +1729,7 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = { key: { [Kind]: 'String' } as Schema, value: { [Kind]: 'Number' } as Schema }
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Record(S.String(), S.Number())
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1891,8 +1744,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = { [Kind]: 'NonSerialized' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number({ serialized: false })
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1903,8 +1756,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1915,8 +1768,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = []
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1927,8 +1780,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = [42, 'invalid']
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1939,8 +1792,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Number' } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Number()
+      const schema = S.Array(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -1989,14 +1842,12 @@ describe('CheckSchemaValue', () => {
   }) //:: Kind.Tuple
 
   describe('case Kind.Union', () => {
-    const TestSchemaKind = 'Union'
-
     it('should return false if `@param schema`.properties.length is 0', () => {
       const Expected = false
 
       const value = 42
       const properties = []
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -2007,8 +1858,8 @@ describe('CheckSchemaValue', () => {
       const Expected = true
 
       const value = 42
-      const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Number(), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -2019,11 +1870,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = [
-        { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema,
-        { [Kind]: 'String' } as Schema
-      ]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Number({ serialized: false }), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -2034,8 +1882,8 @@ describe('CheckSchemaValue', () => {
       const Expected = false
 
       const value = 42
-      const properties = [{ [Kind]: 'Bool' } as Schema, { [Kind]: 'String' } as Schema]
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = [S.Bool(), S.String()]
+      const schema = S.Union(properties)
 
       const result = CheckSchemaValue(schema, value)
 
@@ -2043,7 +1891,7 @@ describe('CheckSchemaValue', () => {
     })
   }) //:: Kind.Union
 
-  describe.each(['Required', 'Proxy'])('case Kind.%s', (kind) => {
+  describe.each(['Proxy'])('case Kind.%s', (kind) => {
     const TestSchemaKind = kind
 
     it('should return true if `@param value` is a schema value of any of the `@param schema`.properties fields', () => {
@@ -2069,9 +1917,9 @@ describe('CheckSchemaValue', () => {
 
       expect(result).toBe(Expected)
     })
-  }) //:: [Kind.Required, Kind.Proxy]
+  }) //:: [Kind.Proxy]
 
-  it.each(['Partial', 'Func', 'NonSerialized'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
+  it.each(['Partial', 'Func'])('should return true if `@param schema`[Kind] is Kind.%s', (kind) => {
     const Expected = true
 
     const TestSchemaKind = kind
@@ -2220,7 +2068,7 @@ describe('ConvertToSchema', () => {
 
       const resultSpy = vi.fn((_: any): any => Expected)
       const value = 21
-      const schema = { options: { serialize: resultSpy as any } } as Schema
+      const schema = { options: { serialize: resultSpy as any, serialized: true } } as Schema
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2231,7 +2079,7 @@ describe('ConvertToSchema', () => {
   })
 
   describe('when `@param schema`.options.serialize is falsy ..', () => {
-    it.todo.each(['Null', 'Undefined', 'Void', 'Number', 'Bool', 'String', 'Enum', 'Literal', 'Any'])(
+    it.todo.each(['Null', 'Undefined', 'Void', 'Number', 'Bool', 'String', 'Literal', 'Any'])(
       "should return `@param value` when `@param schema`[Kind] is '%s'",
       (kind) => {
         const Expected = { one: 42 }
@@ -2255,10 +2103,10 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {
-            one: { [Kind]: 'Number' } as Schema,
-            two: { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
+            one: S.Number(),
+            two: S.Number({ serialized: false })
           }
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2274,7 +2122,7 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {}
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2287,7 +2135,7 @@ describe('ConvertToSchema', () => {
           const TestSchemaKind = kind
           const value = { one: 42, two: undefined }
           const properties = {}
-          const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+          const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
           const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2304,7 +2152,7 @@ describe('ConvertToSchema', () => {
 
         const value = { one: 42, two: undefined }
         const properties = {}
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2317,12 +2165,7 @@ describe('ConvertToSchema', () => {
         const Expected = { one: one, two: two }
 
         const value = structuredClone(Expected)
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
-
+        const schema = S.Record(S.String(), S.Number())
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
         expect(result).toEqual(Expected)
@@ -2332,11 +2175,7 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = Expected
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Record(S.String(), S.Number())
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2348,11 +2187,7 @@ describe('ConvertToSchema', () => {
         const Expected = 42
 
         const value = Expected
-        const properties = {
-          key: { [Kind]: 'String' } as Schema,
-          value: { [Kind]: 'Number' } as Schema
-        }
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Record(S.String(), S.Number())
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2362,14 +2197,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Record'
 
     describe("case 'Array'", () => {
-      const TestSchemaKind = 'Array'
-
       it('should return null if `@param schema`.properties is not serializable', () => {
         const Expected = null
 
         const value = 42
-        const properties = { [Kind]: 'NonSerialized' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Number({ serialized: false })
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2380,8 +2213,8 @@ describe('ConvertToSchema', () => {
         const Expected = [41, 42]
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Number()
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2393,8 +2226,8 @@ describe('ConvertToSchema', () => {
         const Expected = { one: 42 }
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Number()
+        const schema = S.Array(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2404,14 +2237,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Array'
 
     describe("case 'Tuple'", () => {
-      const TestSchemaKind = 'Tuple'
-
       it('should return a new tuple/array with the values of `@param schema`.properties used to convert `@param value` to schema values if value is an array', () => {
         const Expected = [42, 'SomeString']
 
         const value = Expected
-        const properties = [{ [Kind]: 'Number' } as Schema, { [Kind]: 'String' } as Schema]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.Number(), S.String()]
+        const schema = S.Tuple(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2423,8 +2254,8 @@ describe('ConvertToSchema', () => {
         const Expected = { one: 42 }
 
         const value = Expected
-        const properties = { [Kind]: 'Number' } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.Number()]
+        const schema = S.Tuple(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2434,14 +2265,12 @@ describe('ConvertToSchema', () => {
     }) //:: case 'Tuple'
 
     describe("case 'Union'", () => {
-      const TestSchemaKind = 'Union'
-
       it('should return null if `@param schema`.properties has no values', () => {
         const Expected = null
 
         const value = 42
         const properties = []
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2452,12 +2281,8 @@ describe('ConvertToSchema', () => {
         const Expected = 42
 
         const value = Expected
-        const properties = [
-          { [Kind]: 'String' } as Schema,
-          { [Kind]: 'Void' } as Schema,
-          { [Kind]: 'Number' } as Schema
-        ]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void(), S.Number()]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2468,8 +2293,8 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = 42
-        const properties = [{ [Kind]: 'String' } as Schema, { [Kind]: 'Void' } as Schema]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void()]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2480,12 +2305,8 @@ describe('ConvertToSchema', () => {
         const Expected = null
 
         const value = 42
-        const properties = [
-          { [Kind]: 'String' } as Schema,
-          { [Kind]: 'Void' } as Schema,
-          { [Kind]: 'NonSerialized', properties: { [Kind]: 'Number' } as Schema } as Schema
-        ]
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = [S.String(), S.Void(), S.Number({ serialized: false })]
+        const schema = S.Union(properties)
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2493,30 +2314,31 @@ describe('ConvertToSchema', () => {
       })
     }) //:: case 'Union'
 
-    it.each(['Partial', 'Required', 'Proxy'])(
+    it.each(['Partial', 'Proxy'])(
       'should flatten the schema and return `@param value` converted to the schema defined by `@param schema`.properties when schema[Kind] is "%s"',
       (kind) => {
         const Expected = [41, 42]
         const TestSchemaKind = kind
 
         const value = Expected
-        const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-        const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+        const properties = S.Array(S.Number())
+        const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
         const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
         expect(result).not.toBe(Expected)
         expect(result).toEqual(Expected)
       }
-    ) //:: case: ['Partial', 'Required', 'Proxy']
+    ) //:: case: ['Partial', 'Proxy']
 
     it("should return undefined when `@param schema`[Kind] is 'NonSerialized'", () => {
       const Expected = undefined
-      const TestSchemaKind = 'NonSerialized'
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const schema = S.Array(S.Number(), {
+        default: value,
+        serialized: false
+      })
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2529,8 +2351,8 @@ describe('ConvertToSchema', () => {
       const TestSchemaKind = 'UnknownSchemaKind' as any
 
       const value = [41, 42]
-      const properties = { [Kind]: 'Array', properties: { [Kind]: 'Number' } as Schema } as Schema
-      const schema = { [Kind]: TestSchemaKind, properties: properties } as Schema
+      const properties = S.Array(S.Number())
+      const schema = { [Kind]: TestSchemaKind, properties: properties, options: { serialized: true } } as Schema
 
       const result = JSONSchemaUtilsFunctions.ConvertToSchema(schema, value)
 
@@ -2546,10 +2368,10 @@ describe('SerializeSchema', () => {
 
     const value = { one: Expected.one, two: Expected.two, three: undefined, four: null }
     const properties = {
-      one: { [Kind]: 'Number' } as Schema,
-      two: { [Kind]: 'String' } as Schema
+      one: S.Number(),
+      two: S.String()
     }
-    const schema = { [Kind]: 'Object', properties: properties } as Schema
+    const schema = S.Object(properties)
 
     const result = SerializeSchema(schema, value)
 
@@ -2557,3 +2379,253 @@ describe('SerializeSchema', () => {
     expect(result).toEqual(Expected)
   })
 }) //:: SerializeSchema
+
+describe('GenerateJSONSchema', () => {
+  it('should generate schema for Null type', () => {
+    const schema = S.Null()
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should generate schema for Undefined type', () => {
+    const schema = S.Undefined()
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should generate schema for Void type', () => {
+    const schema = S.Void()
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should generate schema for Number type', () => {
+    const schema = S.Number({ maximum: 100, minimum: 0 })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'number',
+      maximum: 100,
+      minimum: 0
+    })
+  })
+
+  it('should generate schema for Bool type', () => {
+    const schema = S.Bool()
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({ type: 'boolean' })
+  })
+
+  it('should generate schema for String type', () => {
+    const schema = S.String({ default: 'test' })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({ type: 'string' })
+  })
+
+  it('should generate schema for Const type', () => {
+    const schema = S.Enum({ A: 'a', B: 'b' })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      enum: ['a', 'b'],
+      metadata: {
+        enumKeys: ['A', 'B']
+      }
+    })
+  })
+
+  it('should generate schema for Literal type', () => {
+    const schema = S.Literal('test')
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      const: 'test'
+    })
+  })
+
+  it('should generate schema for Object type', () => {
+    const schema = S.Object({
+      name: S.String(),
+      age: S.Number(),
+      active: S.Bool()
+    })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        age: { type: 'number' },
+        active: { type: 'boolean' }
+      },
+      required: []
+    })
+  })
+
+  it('should generate schema for Object type with required fields', () => {
+    const schema = S.Object({
+      name: S.String({ required: true }),
+      age: S.Number(),
+      active: S.Bool()
+    })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        age: { type: 'number' },
+        active: { type: 'boolean' }
+      },
+      required: ['name']
+    })
+  })
+
+  it('should generate schema for Record type', () => {
+    const schema = S.Record(S.String(), S.Number())
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      additionalProperties: { type: 'number' }
+    })
+  })
+
+  it('should generate schema for Partial type', () => {
+    const schema = S.Partial(
+      S.Object({
+        name: S.String(),
+        age: S.Number()
+      })
+    )
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      required: [],
+      properties: {
+        name: { type: 'string' },
+        age: { type: 'number' }
+      }
+    })
+  })
+
+  it('should generate schema for Array type', () => {
+    const schema = S.Array(S.Number(), { minItems: 1, maxItems: 10 })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'array',
+      items: { type: 'number' },
+      minItems: 1,
+      maxItems: 10
+    })
+  })
+
+  it('should generate schema for Tuple type', () => {
+    const schema = S.Tuple([S.String(), S.Number(), S.Bool()])
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'array',
+      items: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }],
+      minItems: 3,
+      maxItems: 3
+    })
+  })
+
+  it('should generate schema for Union type', () => {
+    const schema = S.Union([S.String(), S.Number()])
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      oneOf: [{ type: 'string' }, { type: 'number' }]
+    })
+  })
+
+  it('should not generate schema for Func type', () => {
+    const schema = S.Func([S.String()], S.Number())
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should generate schema for NonSerialized type', () => {
+    const schema = S.String({ serialized: false })
+
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should not add to record non Func type', () => {
+    const schema = S.Object({ prop: S.Func([S.String()], S.Number()) })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({ type: 'object', required: [] })
+  })
+
+  it('should not add to record non Func type', () => {
+    const schema = S.Object({ prop: S.String({ serialized: false }) })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({ type: 'object', required: [] })
+  })
+
+  it('should generate schema for Class type', () => {
+    const MyClass = class {
+      name: string
+      age: number
+    }
+    const schema = S.Class(() => new MyClass())
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should generate schema for Proxy type', () => {
+    const schema = S.Proxy(S.String())
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({ type: 'string' })
+  })
+
+  it('should generate schema for Any type', () => {
+    const schema = S.Any()
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toBeUndefined()
+  })
+
+  it('should include $id when provided in options', () => {
+    const schema = S.String({ id: 'test-id', default: 'test' })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'string',
+      $id: 'test-id'
+    })
+  })
+
+  it('should handle nested schemas correctly', () => {
+    const schema = S.Object({
+      user: S.Object({
+        name: S.String(),
+        age: S.Number(),
+        tags: S.Array(S.String())
+      }),
+      active: S.Bool()
+    })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            age: { type: 'number' },
+            tags: {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          },
+          required: []
+        },
+        active: { type: 'boolean' }
+      },
+      required: []
+    })
+  })
+
+  it('should include $comment when provided in options', () => {
+    const schema = S.String({ default: 'test', $comment: 'test-comment' })
+    const jsonSchema = GenerateJSONSchema(schema)
+    expect(jsonSchema).toEqual({
+      type: 'string',
+      $comment: 'test-comment'
+    })
+  })
+}) //:: GenerateJSONSchema

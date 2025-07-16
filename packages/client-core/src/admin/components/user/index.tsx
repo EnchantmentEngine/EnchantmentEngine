@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -35,7 +35,7 @@ import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 import { ModalState } from '../../../common/services/ModalState'
-import UserTable, { removeUsers } from './UserTable'
+import UserTable, { deactivateUsers } from './UserTable'
 
 export default function Users() {
   const { t } = useTranslation()
@@ -47,7 +47,7 @@ export default function Users() {
 
   useEffect(() => clearTimeout(debouncedSearchQueryRef.current), [])
 
-  const adminUserRemove = useMutation(userPath).remove
+  const adminUserRemove = useMutation(userPath).patch
   const modalProcessing = useHookstate(false)
 
   return (
@@ -82,7 +82,7 @@ export default function Users() {
                   <ConfirmDialog
                     text={t('admin:components.user.confirmMultiUserDelete')}
                     onSubmit={async () => {
-                      removeUsers(modalProcessing, adminUserRemove, selectedUsers.value as UserType[])
+                      deactivateUsers(modalProcessing, adminUserRemove, selectedUsers.value as UserType[])
                     }}
                   />
                 )

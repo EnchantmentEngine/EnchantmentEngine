@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -38,9 +38,11 @@ export function isNumber(value: string | number): boolean {
   return value != null && value !== '' && !isNaN(Number(value.toString()))
 }
 
-export function toPrecision(value, precision) {
-  const p = 1 / precision
-  return Math.round(value * p) / p
+export function toPrecision(value: number, precision: number): number {
+  const p = precision > 0 ? precision : 1
+  const f = 1 / p
+  const n = Math.round(value * f) / f
+  return parseFloat(n.toFixed(Math.max(0, Math.ceil(-Math.log10(p)))))
 }
 
 export function combine(first, second, third) {

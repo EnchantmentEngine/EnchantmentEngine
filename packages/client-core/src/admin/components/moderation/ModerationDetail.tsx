@@ -19,11 +19,12 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useFind, useMutation } from '@ir-engine/common'
+import config from '@ir-engine/common/src/config'
 import {
   locationAdminPath,
   moderationAttachmentPath,
@@ -40,9 +41,11 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoArrowBack } from 'react-icons/io5'
+import { ModalState } from '../../../common/services/ModalState'
 import { NotificationService } from '../../../common/services/NotificationService'
 import { LocationLabel } from './common/LocationLabel'
 import { UserInfo } from './common/UserInfo'
+import { UserLoginHistoryModal } from './UserLoginHistoryModal'
 
 export const ModerationDetail = ({
   report: moderation,
@@ -148,6 +151,12 @@ export const ModerationDetail = ({
       moderationId: moderation.id
     }
   })
+
+  const getFullUrl = (path: string) => {
+    const baseUrl = config.client.clientUrl
+    return `${baseUrl}${path}`
+  }
+
   const handleExport = () => {
     const headers = [
       t('admin:components.moderation.type'),
@@ -160,21 +169,27 @@ export const ModerationDetail = ({
       t('admin:components.moderation.details')
     ]
     const rows = [
-      [
-        moderation.type,
-        usersQuery.data.find((user) => user.id == moderation.reportedUserId)?.name,
-        moderation.reportedUserId,
-        usersQuery.data.find((user) => user.id == moderation.createdBy)?.name,
-        moderation.abuseReason,
-        moderation.status,
-        `"${toDisplayDateTime(moderation.createdAt)}"`,
-        moderation.reportDetails
-      ]
+      moderation.type,
+      usersQuery.data.find((user) => user.id == moderation.reportedUserId)?.name,
+      moderation.reportedUserId,
+      usersQuery.data.find((user) => user.id == moderation.createdBy)?.name,
+      moderation.abuseReason,
+      moderation.status,
+      `"${toDisplayDateTime(moderation.createdAt)}"`,
+      `"${moderation.reportDetails}"`
     ]
 
+    // Attachments section
+    const attachmentHeader = [t('admin:components.moderation.uploadedFiles')]
+    const attachmentRows = reportAttachments.data.map((attachment) => [`"${getFullUrl(attachment.filePath)}"`])
+
+    // Combine all rows with empty row separators
     const csvContent = [
       headers.join(','), // Add headers
-      ...rows.map((row) => row.join(',')) // Add rows
+      rows.join(','),
+      '', // Empty row as separator
+      attachmentHeader.join(','),
+      ...attachmentRows.map((row) => row.join(',')) // Add rows
     ].join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -203,7 +218,7 @@ export const ModerationDetail = ({
       <div className="mb-4 rounded-lg p-4 shadow">
         <div className="grid grid-cols-[30%_70%] gap-4">
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.id')}</Text>
-          <Text className="mb-4">{moderation.id}</Text>
+          <Text className="mb-4">{moderation.referenceNumber}</Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.type')}</Text>
           <Text className="mb-4">
             {moderation.type == 'location' ? t('admin:components.moderation.space') : moderation.type}
@@ -211,7 +226,12 @@ export const ModerationDetail = ({
           {isUserModeration && (
             <>
               <Text className="mb-4 text-text-primary">{t('admin:components.moderation.usernameBeingReported')}</Text>
-              <UserInfo userId={moderation.reportedUserId} usersQuery={usersQuery} />
+              <UserInfo
+                country={moderation.reportedUserCountry}
+                userId={moderation.reportedUserId}
+                userEmail={moderation.reportedUserEmail}
+                usersQuery={usersQuery}
+              />
               <Text className="mb-4 text-text-primary">{t('admin:components.moderation.accountType')}</Text>
               <Text className="mb-4">
                 {locationAdminQuery && locationAdminQuery.status == 'success' && locationAdminQuery.data.length > 0
@@ -225,7 +245,12 @@ export const ModerationDetail = ({
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.dateReported')}</Text>
           <Text className="mb-4">{toDisplayDateTimeUtc(moderation?.reportedAt)} UTC</Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.reporter')}</Text>
-          <UserInfo userId={moderation.createdBy} usersQuery={usersQuery} />
+          <UserInfo
+            country={moderation.reportingUserCountry}
+            userId={moderation.createdBy}
+            userEmail={moderation.createdByEmail}
+            usersQuery={usersQuery}
+          />
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.space')}</Text>
           <Text className="mb-4">
             {moderation.reportedLocationId && (
@@ -234,12 +259,27 @@ export const ModerationDetail = ({
           </Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.ipAddress')}</Text>
           <Text className="mb-4">{moderation.ipAddress}</Text>
+          <Text className="mb-4 text-text-primary">{t('admin:components.moderation.reportedUserIp')}</Text>
+          <div className="mb-4 flex items-center">
+            <Text>{moderation.reportedUserIpAddress}</Text>
+            {moderation.reportedUserIpAddress && (
+              <Button
+                variant="secondary"
+                className="ml-2 text-sm"
+                onClick={() => {
+                  ModalState.openModal(<UserLoginHistoryModal ipAddress={moderation.reportedUserIpAddress!} />)
+                }}
+              >
+                {t('admin:components.moderation.viewLoginHistory')}
+              </Button>
+            )}
+          </div>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.reportDetails')}</Text>
           <Text className="mb-4 mr-4 rounded-lg bg-[#f0f0f0] p-4 font-medium text-[#4a5568] dark:bg-surface-1 dark:text-text-primary">
             {moderation?.reportDetails}
           </Text>
           <Text className="mb-4 text-text-primary">{t('admin:components.moderation.uploadedFiles')}</Text>
-          <div className="mb-4">
+          <div className="mb-4 flex flex-col space-y-2">
             {reportAttachments.data.map((attachment) => (
               <Text key={attachment.id}>
                 <a

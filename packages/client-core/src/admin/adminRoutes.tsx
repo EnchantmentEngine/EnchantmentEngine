@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -64,8 +64,15 @@ const AdminTopBar = () => {
   }
 
   return (
-    <div className="flex h-16 w-full items-center justify-between  px-8 py-4">
-      <img src="static/ir.svg" alt="iR Engine Logo" className={`h-7 w-7${theme.value === 'light' ? ' invert' : ''}`} />
+    <div className="pointer-events-auto flex h-16 w-full items-center justify-between px-8 py-4">
+      <a href="/">
+        <img
+          src="static/app_logo.svg"
+          alt="Napster Engine Logo"
+          className={`h-7 w-7${theme.value === 'light' ? ' invert' : ''}`}
+        />
+      </a>
+
       <div className="pointer-events-auto flex gap-4">
         <ActionButton onClick={toggleTheme} icon={theme.value === 'light' ? HiMiniMoon : HiMiniSun} />
         <Tooltip content={tooltip}>

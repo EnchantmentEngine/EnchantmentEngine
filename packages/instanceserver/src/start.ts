@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -102,13 +102,14 @@ export const start = async (): Promise<Application> => {
     const processList = await (
       await psList()
     ).filter((e) => {
-      const regexp = /docker-compose up|docker-proxy|mysql/gi
+      const regexp = /docker-compose up|docker-proxy|mysql|postgres/gi
       return e[key]?.match(regexp)
     })
     const dockerProcess = processList.find((c) => c[key]?.match(/docker-compose/))
     const dockerProxy = processList.find((c) => c[key]?.match(/docker-proxy/))
     const processMysql = processList.find((c) => c[key]?.match(/mysql/))
-    const databaseService = (dockerProcess && dockerProxy) || processMysql
+    const processPostgres = processList.find((c) => c[key]?.match(/postgres/))
+    const databaseService = (dockerProcess && dockerProxy) || processMysql || processPostgres
 
     if (!databaseService) {
       // // Check for child process with mac OSX

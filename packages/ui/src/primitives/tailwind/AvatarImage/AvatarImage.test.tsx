@@ -19,20 +19,25 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { describe, expect, it } from '@jest/globals'
-import { shallow } from 'enzyme'
+import { render, screen } from '@testing-library/react'
 import React from 'react'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import AvatarImage from './index'
 import { Default as story } from './index.stories'
 
-describe('AvatarImage', () => {
-  it('- should render', () => {
-    const wrapper = shallow(<AvatarImage {...story?.args} />)
-    expect(wrapper).toMatchSnapshot()
+describe('AvatarImage component', () => {
+  beforeEach(() => {
+    render(<AvatarImage {...story?.args} />)
+  })
+
+  it('should render an image element with the data-testid attribute "avatar-image"', () => {
+    const avatarImage = screen.getByTestId('avatar-image')
+    // @ts-expect-error
+    expect(avatarImage).toBeInTheDocument()
   })
 })

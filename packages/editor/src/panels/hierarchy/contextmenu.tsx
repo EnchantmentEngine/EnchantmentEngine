@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -33,7 +33,7 @@ import { useTranslation } from 'react-i18next'
 import CreatePrefabPanel from '../../components/dialogs/CreatePrefabPanelDialog'
 import SavePrefabPanel from '../../components/dialogs/SavePrefabDialog'
 import { cmdOrCtrlString } from '../../functions/utils'
-import { copyNodes, deleteNode, duplicateNode, groupNodes, pasteNodes } from './helpers'
+import { copyNodes, deleteNode, duplicateNode, groupNodes, pasteNodes, ungroupNodes } from './helpers'
 import { useHierarchyNodes, useHierarchyTreeContextMenu, useNodeCollapseExpand, useRenamingNode } from './hooks'
 
 export default function HierarchyTreeContextMenu() {
@@ -52,6 +52,11 @@ export default function HierarchyTreeContextMenu() {
   const onGroupNodes = () => {
     setMenu()
     groupNodes(entity)
+  }
+
+  const onUngroupNodes = () => {
+    setMenu()
+    ungroupNodes(entity)
   }
 
   const onCopyNode = () => {
@@ -92,6 +97,12 @@ export default function HierarchyTreeContextMenu() {
           onClick={onGroupNodes}
           secondaryText={cmdOrCtrlString + ' + g'}
           label={t('editor:hierarchy.lbl-group')}
+        />
+        <DropdownItem
+          data-testid="hierarchy-panel-scene-item-context-menu-group-button"
+          onClick={onUngroupNodes}
+          secondaryText={cmdOrCtrlString + ' + u'}
+          label={t('editor:hierarchy.lbl-ungroup')}
         />
         <DropdownItem
           data-testid="hierarchy-panel-scene-item-context-menu-copy-button"

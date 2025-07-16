@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -45,14 +45,14 @@ import { XRHandComponent, XRSpaceComponent } from '../../xr/XRComponents'
 import { XRState } from '../../xr/XRState'
 import { ButtonStateMap } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
-import { DefaultButtonAlias } from './InputComponent'
+import { DefaultButtonBindings } from './InputComponent'
 import { InputSourceComponent } from './InputSourceComponent'
 
 /** @note Intersection types used, but not exported or declared, by InputSourceComponent */
 type Intersection = { entity: Entity; distance: number }
 type IntersectionList = Array<Intersection>
 /** @note ButtonStateMap, aliased to its required type for ergonomics */
-type ButtonStateMapAlias = Readonly<ButtonStateMap<typeof DefaultButtonAlias>>
+type ButtonStateMapAlias = Readonly<ButtonStateMap<typeof DefaultButtonBindings>>
 
 describe.skip('InputSourceComponent', () => {
   // beforeEach(() => {
@@ -189,7 +189,7 @@ const InputSourceComponentReliableDefaults = {
       hapticActuators: [],
       // id: 'emulated-gamepad-1',  // @note The attached number is unreliable on tests. Requires the entity number
       index: 0,
-      mapping: '' as GamepadMappingType,
+      mapping: 'xr-standard' as GamepadMappingType,
       // timestamp: performance.now(),  // @note Unreliable on tests
       vibrationActuator: null
     },

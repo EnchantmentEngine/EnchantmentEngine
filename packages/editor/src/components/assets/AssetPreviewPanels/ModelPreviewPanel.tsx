@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -80,7 +80,11 @@ export const ModelPreviewPanel = (props) => {
         </div>
       )}
       <div id="modelPreview" style={{ width: '100%', height: '100%' }}>
-        <canvas ref={panelRef} style={{ width: '100%', height: '100%', pointerEvents: 'all' }} />
+        <canvas
+          id="model-preview-canvas"
+          ref={panelRef}
+          style={{ width: '100%', height: '100%', pointerEvents: 'all' }}
+        />
       </div>
     </>
   )

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -35,24 +35,31 @@ interface IInfiniteScrollProps {
 
 export default function InfiniteScroll({
   onScrollBottom,
-  threshold = 1,
+  threshold = 0.1, // Lower default threshold
   disableEvent,
-  children
+  children,
+  className
 }: IInfiniteScrollProps) {
-  const observerRef = useRef<HTMLElement>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval>>()
+  const observerRef = useRef<HTMLDivElement>(null)
+  const hasTriggered = useRef(false)
 
   useEffect(() => {
+    // Reset trigger state when dependencies change
+    hasTriggered.current = false
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !disableEvent) {
+        if (entries[0].isIntersecting && !disableEvent && !hasTriggered.current) {
           onScrollBottom()
-          intervalRef.current = setInterval(() => onScrollBottom(), 1000)
-        } else {
-          clearInterval(intervalRef.current)
+          hasTriggered.current = true
+
+          // Reset the trigger after a short delay to prevent multiple triggers
+          setTimeout(() => {
+            hasTriggered.current = false
+          }, 500)
         }
       },
-      { threshold }
+      { threshold, rootMargin: '100px' } // Add rootMargin to trigger earlier
     )
 
     if (observerRef.current) {
@@ -62,12 +69,12 @@ export default function InfiniteScroll({
     return () => {
       observer.disconnect()
     }
-  }, [disableEvent])
+  }, [disableEvent, onScrollBottom, threshold])
 
   return (
-    <div style={{ all: 'unset' }}>
+    <div className={className}>
       {children}
-      <span ref={observerRef} style={{ all: 'unset' }} />
+      <div ref={observerRef} style={{ height: '20px', width: '100%' }} data-testid="infinite-scroll-observer" />
     </div>
   )
 }

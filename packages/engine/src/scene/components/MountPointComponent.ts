@@ -19,12 +19,12 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { ArrowHelper, Vector3 } from 'three'
+import { Vector3 } from 'three'
 
 import { UndefinedEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
@@ -36,13 +36,11 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { dispatchAction, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, useMutableState } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useHelperEntity } from '@ir-engine/spatial/src/common/debug/useHelperEntity'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { emoteAnimations, preloadedAnimations } from '../../avatar/animation/Util'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
@@ -59,7 +57,7 @@ export const MountPoint = {
 
 export type MountPointTypes = (typeof MountPoint)[keyof typeof MountPoint]
 
-const MountPointTypesSchema = S.LiteralUnion(Object.values(MountPoint), 'seat')
+const MountPointTypesSchema = S.LiteralUnion(Object.values(MountPoint), { default: 'seat' })
 
 /** Mapping of mount point types to interact messages using translation keys from i18n. */
 const mountPointInteractMessages = {
@@ -69,14 +67,14 @@ const mountPointInteractMessages = {
 const mountCallbackName = 'mountEntity'
 
 const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
-  if (avatarEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
+  if (avatarEntity === UndefinedEntity || mountEntity === UndefinedEntity) return //No avatar found, likely in edit mode for now
   const mountedEntities = getState(MountPointState)
-  if (getComponent(mountEntity, UUIDComponent) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
+  if (UUIDComponent.get(mountEntity) in mountedEntities.mountsToMountedEntities) return //already sitting, exiting
 
-  const avatarUUID = getComponent(avatarEntity, UUIDComponent)
+  const avatarUUID = UUIDComponent.get(avatarEntity)
   const mountPoint = getOptionalComponent(mountEntity, MountPointComponent)
   if (!mountPoint || mountPoint.type !== MountPoint.seat) return
-  const mountPointUUID = getComponent(mountEntity, UUIDComponent)
+  const mountPointUUID = UUIDComponent.get(mountEntity)
 
   //check if we're already sitting or if the seat is occupied
   if (
@@ -102,8 +100,8 @@ const mountEntity = (avatarEntity: Entity, mountEntity: Entity) => {
   dispatchAction(
     MountPointActions.mountInteraction({
       mounted: true,
-      mountedEntity: getComponent(avatarEntity, UUIDComponent),
-      targetMount: getComponent(mountEntity, UUIDComponent)
+      mountedEntity: UUIDComponent.get(avatarEntity),
+      targetMount: UUIDComponent.get(mountEntity)
     })
   )
 }
@@ -116,7 +114,7 @@ const unmountEntity = (entity: Entity) => {
       animationAsset: preloadedAnimations.emotes,
       clipName: emoteAnimations.seated,
       needsSkip: true,
-      entityUUID: getComponent(entity, UUIDComponent)
+      entityUUID: UUIDComponent.get(entity)
     })
   )
 
@@ -126,8 +124,8 @@ const unmountEntity = (entity: Entity) => {
   dispatchAction(
     MountPointActions.mountInteraction({
       mounted: false,
-      mountedEntity: getComponent(entity, UUIDComponent),
-      targetMount: getComponent(sittingComponent.mountPointEntity, UUIDComponent)
+      mountedEntity: UUIDComponent.get(entity),
+      targetMount: UUIDComponent.get(sittingComponent.mountPointEntity)
     })
   )
   const mountTransform = getComponent(sittingComponent.mountPointEntity, TransformComponent)
@@ -145,7 +143,7 @@ export const MountPointComponent = defineComponent({
   schema: S.Object({
     type: MountPointTypesSchema,
     dismountOffset: T.Vec3(new Vector3(0, 0, 0.75)),
-    forceDismountPosition: S.Bool(false)
+    forceDismountPosition: S.Bool()
   }),
 
   mountEntity,
@@ -155,7 +153,6 @@ export const MountPointComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-    const debugEnabled = useHookstate(getMutableState(RendererState).nodeHelperVisibility)
     const mountedEntities = useMutableState(MountPointState)
 
     useEffect(() => {
@@ -164,16 +161,14 @@ export const MountPointComponent = defineComponent({
 
     useEffect(() => {
       // manually hide interactable's XRUI when mounted through visibleComponent - (as interactable uses opacity to toggle visibility)
-      const interactableComponent = getComponent(entity, InteractableComponent)
+      const interactableComponent = getOptionalComponent(entity, InteractableComponent)
       if (interactableComponent) {
         interactableComponent.uiVisibilityOverride =
-          getComponent(entity, UUIDComponent) in mountedEntities.mountsToMountedEntities.value
+          UUIDComponent.get(entity) in mountedEntities.mountsToMountedEntities.value
             ? XRUIVisibilityOverride.off
             : XRUIVisibilityOverride.none
       }
     }, [mountedEntities.mountsToMountedEntities])
-
-    useHelperEntity(entity, () => new ArrowHelper(), debugEnabled.value)
 
     return null
   }

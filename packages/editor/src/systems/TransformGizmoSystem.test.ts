@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,11 +19,19 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { EngineState, SystemDefinitions, createEngine, createEntity, destroyEngine, setComponent } from '@ir-engine/ecs'
+import {
+  EngineState,
+  EntityTreeComponent,
+  SystemDefinitions,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  setComponent
+} from '@ir-engine/ecs'
 import { getMutableState, startReactor } from '@ir-engine/hyperflux'
 import { MeshBVHSystem, TransformComponent } from '@ir-engine/spatial'
 import { destroySpatialEngine, destroySpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
@@ -31,6 +39,7 @@ import { InputComponent } from '@ir-engine/spatial/src/input/components/InputCom
 import { IntersectionData } from '@ir-engine/spatial/src/input/functions/ClientInputHeuristics'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformGizmoTagComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -86,6 +95,12 @@ describe('TransformGizmoSystem', () => {
         setComponent(three, InputComponent)
         ObjectLayerMaskComponent.setLayer(three, ObjectLayers.TransformGizmo)
 
+        const viewerEntity = createEntity()
+        setComponent(viewerEntity, RendererComponent, { scenes: [viewerEntity] })
+        setComponent(one, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(two, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(three, EntityTreeComponent, { parentEntity: viewerEntity })
+
         const KnownEntities = [one, two]
 
         const rayOrigin = new Vector3(0, 0, 0)
@@ -97,7 +112,7 @@ describe('TransformGizmoSystem', () => {
 
         await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree), { timeout: 10000 })
 
-        editorInputHeuristic(data, rayOrigin, rayDirection)
+        editorInputHeuristic(viewerEntity, data, rayOrigin, rayDirection)
 
         assert.notEqual(data.size, 0)
         const result = [...data]
@@ -135,6 +150,12 @@ describe('TransformGizmoSystem', () => {
         setComponent(three, MeshComponent, box3)
         // setComponent(three, InputComponent)  // Do not add the InputComponent, so that it is not part of inputObjectsQuery
 
+        const viewerEntity = createEntity()
+        setComponent(viewerEntity, RendererComponent, { scenes: [viewerEntity] })
+        setComponent(one, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(two, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(three, EntityTreeComponent, { parentEntity: viewerEntity })
+
         const KnownEntities = [one, two]
 
         const rayOrigin = new Vector3(0, 0, 0)
@@ -146,7 +167,7 @@ describe('TransformGizmoSystem', () => {
 
         await vi.waitUntil(() => [box1, box2, box3].every((box) => box.geometry.boundsTree), { timeout: 10000 })
 
-        editorInputHeuristic(data, rayOrigin, rayDirection)
+        editorInputHeuristic(viewerEntity, data, rayOrigin, rayDirection)
 
         assert.notEqual(data.size, 0)
         const result = [...data]

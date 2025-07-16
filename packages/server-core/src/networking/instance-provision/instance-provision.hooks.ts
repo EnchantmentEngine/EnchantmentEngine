@@ -19,16 +19,37 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { Forbidden } from '@feathersjs/errors'
+import { moderationBanPath } from '@ir-engine/common/src/schema.type.module'
 import { disallow } from 'feathers-hooks-common'
+
+const isThisUserBanned = async (context: any) => {
+  const { app, params } = context
+  const { user } = params
+
+  if (user) {
+    const thisUserBanned = await app.service(moderationBanPath).find({
+      query: {
+        banUserId: user.id,
+        banned: true,
+        $limit: 0
+      }
+    })
+    if (thisUserBanned.total > 0) {
+      return new Forbidden('You are banned')
+    }
+  }
+  return context
+}
 
 export default {
   before: {
     all: [],
-    find: [],
+    find: [isThisUserBanned],
     get: [disallow() /*iff(isProvider('external'), verifyScope('admin', 'admin') as any)*/],
     create: [disallow() /*iff(isProvider('external'), verifyScope('admin', 'admin') as any)*/],
     update: [disallow() /*iff(isProvider('external'), verifyScope('admin', 'admin') as any)*/],

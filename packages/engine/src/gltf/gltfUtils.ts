@@ -19,13 +19,13 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { GLTF } from '@gltf-transform/core'
-import { EntityUUID } from '@ir-engine/ecs'
-import { NodeIDComponent } from './NodeIDComponent'
+import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
+import { isClient } from '@ir-engine/hyperflux'
 
 export function nodeIsChild(index: number, nodes: GLTF.INode[]) {
   for (const node of nodes) {
@@ -50,7 +50,7 @@ export function gltfReplaceUUIDReferences(gltf: GLTF.IGLTF, prevUUID: EntityUUID
     if (!node.extensions) continue
 
     for (const extKey in node.extensions) {
-      if (extKey === NodeIDComponent.jsonID) continue
+      if (extKey === UUIDComponent.jsonID) continue
 
       const ext = node.extensions[extKey]
       // If a component is just a reference to a uuid
@@ -85,7 +85,6 @@ type GLTFElementKey =
   | 'images'
   | 'materials'
   | 'meshes'
-  | 'nodes'
   | 'samplers'
   | 'skins'
   | 'textures'
@@ -287,8 +286,20 @@ const appendAnimation = (animationIndex: number, src: GLTF.IGLTF, dst: GLTF.IGLT
   dst.animations.push(animation)
 }
 
-export const appendGLTF = (src: GLTF.IGLTF, dst: GLTF.IGLTF) => {
+type GLTFAppendOptions = {
+  mergeScenes?: boolean
+  assetsOnly?: boolean
+}
+
+const defaultOptions: GLTFAppendOptions = {
+  mergeScenes: false,
+  assetsOnly: false
+}
+
+export const appendGLTF = (src: GLTF.IGLTF, dst: GLTF.IGLTF, options: GLTFAppendOptions = {}) => {
   if (src.scene === undefined || src.scenes === undefined || src.nodes === undefined) return
+
+  const { mergeScenes, assetsOnly } = { ...defaultOptions, ...options }
 
   const context = {
     nodeTable: {},
@@ -304,11 +315,44 @@ export const appendGLTF = (src: GLTF.IGLTF, dst: GLTF.IGLTF) => {
     skinTable: {}
   } as GLTFAppendContext
 
-  const nodesToAppend = src.scenes[0].nodes
-  for (let i = 0, len = nodesToAppend.length; i < len; i++) {
-    const nodeIndex = nodesToAppend[i]
-    const newIndex = appendNode(nodeIndex, src, dst, context)
-    dst.scenes![0].nodes.push(newIndex)
+  if (!dst.scenes) dst.scenes = []
+
+  if (!assetsOnly) {
+    if (!mergeScenes) {
+      // Append src GLTF scenes as new scenes on dst GLTF
+      for (const scene of src.scenes) {
+        for (const nodeIndex of scene.nodes) {
+          const dstScene = { nodes: [] } as GLTF.IScene
+          const newIndex = appendNode(nodeIndex, src, dst, context)
+          dstScene.nodes.push(newIndex)
+          dst.scenes.push(dstScene)
+        }
+      }
+    } else {
+      // merge src scene with dst scene
+      const nodesToAppend = src.scenes[0].nodes
+      for (let i = 0, len = nodesToAppend.length; i < len; i++) {
+        const nodeIndex = nodesToAppend[i]
+        const newIndex = appendNode(nodeIndex, src, dst, context)
+        dst.scenes[0].nodes.push(newIndex)
+      }
+    }
+  } else {
+    // Only append assets (meshes, materials, skins)
+    if (!dst.meshes) dst.meshes = []
+    for (let i = 0, len = src.meshes?.length ?? 0; i < len; i++) {
+      appendMesh(i, src, dst, context)
+    }
+
+    if (!dst.materials) dst.materials = []
+    for (let i = 0, len = src.materials?.length ?? 0; i < len; i++) {
+      appendMaterial(i, src, dst, context)
+    }
+
+    if (!dst.skins) dst.skins = []
+    for (let i = 0, len = src.skins?.length ?? 0; i < len; i++) {
+      appendSkin(i, src, dst, context)
+    }
   }
 
   if (src.animations) {
@@ -342,7 +386,7 @@ export function gltfReplaceUUIDsReferences(gltf: GLTF.IGLTF, UUIDs: [EntityUUID,
     if (!node.extensions) continue
 
     for (const extKey in node.extensions) {
-      if (extKey === NodeIDComponent.jsonID) continue
+      if (extKey === UUIDComponent.jsonID) continue
 
       const ext = node.extensions[extKey]
       for (const [prevUUID, newUUID] of UUIDs) {
@@ -354,4 +398,37 @@ export function gltfReplaceUUIDsReferences(gltf: GLTF.IGLTF, UUIDs: [EntityUUID,
       }
     }
   }
+}
+
+let maxAnisotropySupported: number | null = null
+
+export function getMaxAnisotropy(): number {
+  // Early return if not in client environment
+  if (!isClient) {
+    return 0
+  }
+
+  if (maxAnisotropySupported !== null) {
+    return maxAnisotropySupported
+  }
+
+  const canvas = document.createElement('canvas')
+  const gl = canvas.getContext('webgl')
+
+  if (!gl) {
+    maxAnisotropySupported = 0
+    return maxAnisotropySupported
+  }
+
+  const ext =
+    gl.getExtension('EXT_texture_filter_anisotropic') ||
+    gl.getExtension('MOZ_EXT_texture_filter_anisotropic') ||
+    gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic')
+
+  if (ext) {
+    maxAnisotropySupported = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)
+  } else {
+    maxAnisotropySupported = 0
+  }
+  return maxAnisotropySupported || 0
 }

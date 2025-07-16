@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -43,6 +43,7 @@ import RAPIER, {
 import {
   Box3,
   BufferAttribute,
+  InterleavedBufferAttribute,
   Matrix4,
   OrthographicCamera,
   PerspectiveCamera,
@@ -54,15 +55,19 @@ import {
 import { getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
-import { getAncestorWithComponents, useAncestorWithComponents } from '@ir-engine/ecs'
+import {
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  getAncestorWithComponents,
+  useAncestorWithComponents
+} from '@ir-engine/ecs'
 import { NO_PROXY, defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '@ir-engine/network'
+import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { computeTransformMatrix } from '../../transform/systems/TransformSystem'
 import { ColliderComponent } from '../components/ColliderComponent'
 import { CollisionComponent } from '../components/CollisionComponent'
 import { RigidBodyComponent } from '../components/RigidBodyComponent'
@@ -212,7 +217,7 @@ const scale = new Vector3()
 const mat4 = new Matrix4()
 
 function createRigidBody(world: PhysicsWorld, entity: Entity) {
-  computeTransformMatrix(entity)
+  TransformComponent.computeTransformMatrix(entity)
   TransformComponent.getMatrixRelativeToScene(entity, mat4)
   mat4.decompose(position, rotation, scale)
 
@@ -610,8 +615,13 @@ function createColliderDesc(
       if (!mesh?.geometry)
         return console.warn('[Physics]: Tried to load tri mesh but did not find a geometry', mesh) as any
       try {
+        /** @todo add support for interleaved buffers */
         const _buff = mesh.geometry.clone().scale(scale.x, scale.y, scale.z)
-        const vertices = new Float32Array((_buff.attributes.position as BufferAttribute).array)
+        let positionAttr = _buff.attributes.position
+        if ((positionAttr as InterleavedBufferAttribute).isInterleavedBufferAttribute) {
+          positionAttr = deinterleaveAttribute(positionAttr as InterleavedBufferAttribute)
+        }
+        const vertices = Float32Array.from(positionAttr.array)
         const indices = new Uint32Array(_buff.index!.array)
         colliderDesc = ColliderDesc.trimesh(vertices, indices)
         colliderDesc.setRotation(quaternionRelativeToRoot)
@@ -798,7 +808,7 @@ function removeCharacterController(world: PhysicsWorld, entity: Entity) {
 }
 
 /**
- * @deprecated - will be populated on AvatarControllerComponent
+ * @deprecated will be populated on AvatarControllerComponent
  */
 function getControllerOffset(world: PhysicsWorld, entity: Entity) {
   const controller = world.Controllers.get(entity)
@@ -936,6 +946,47 @@ function castRayFromCamera(
     raycastQuery.direction.set(0, 0, -1).transformDirection(_orthographicCamera.matrixWorld)
   }
   return Physics.castRay(world, raycastQuery, filterPredicate)
+}
+
+function getIntersectionsWithRay(world: PhysicsWorld, raycastQuery: RaycastArgs) {
+  const worldEntity = world.id
+  const worldTransform = getComponent(worldEntity, TransformComponent)
+  _worldInverseMatrix.copy(worldTransform.matrixWorld).invert()
+
+  const ray = new Ray(
+    _origin.copy(raycastQuery.origin).applyMatrix4(_worldInverseMatrix),
+    _direction
+      .copy(raycastQuery.direction)
+      .applyQuaternion(_quaternion.copy(worldTransform.rotation).invert())
+      .multiply(_vector3.set(1 / worldTransform.scale.x, 1 / worldTransform.scale.y, 1 / worldTransform.scale.z))
+  )
+  const maxToi = raycastQuery.maxDistance
+  const solid = true // TODO: Add option for this in args
+  const groups = raycastQuery.groups
+  const flags = raycastQuery.flags
+
+  const hits = [] as RaycastHit[]
+
+  world.intersectionsWithRay(
+    ray,
+    maxToi,
+    solid,
+    (hit) => {
+      hits.push({
+        collider: hit.collider,
+        distance: hit.toi,
+        position: ray.pointAt(hit.toi),
+        normal: hit.normal,
+        body: hit.collider.parent() as RigidBody,
+        entity: hit.collider.parent()?.entity ?? UndefinedEntity
+      })
+      return true
+    },
+    flags,
+    groups
+  )
+
+  return hits
 }
 
 export type ShapecastArgs = {
@@ -1094,6 +1145,7 @@ export const Physics = {
   castRay,
   castRayFromCamera,
   castShape,
+  getIntersectionsWithRay,
   /** Collisions */
   createCollisionEventQueue,
   drainCollisionEventQueue,

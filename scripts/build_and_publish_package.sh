@@ -8,8 +8,10 @@ DOCKERFILE=$3
 START_TIME=$4
 REGION=$5
 NODE_ENV=$6
-DESTINATION_REPO_PROVIDER=$7
-PRIVATE_REPO=$8
+SOURCE_REPO_NAME=$7
+DESTINATION_REPO_PROVIDER=$8
+DESTINATION_REPO_NAME=$9
+PRIVATE_REPO=$10
 
 DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE
 SOURCE_REPO_NAME=$SOURCE_REPO_NAME_STEM-root
@@ -18,19 +20,23 @@ if [ "$SOURCE_REPO_PROVIDER" == "gcp" ]; then
   # Set default repo name pattern
   SOURCE_REPO_NAME="$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root"
   
-  # Apply environment-specific suffixes based on APP_HOST
-  if [[ "$APP_HOST" =~ "preview" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$RELEASE_NAME" = "mt-rc" ]]; then
     SUFFIX="mt-rc"
-  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-int" ]]; then
       SUFFIX="mt-int"
-  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-qat-dev" ]]; then
     SUFFIX="mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "qat-dev" ]]; then
     SUFFIX="qat"
+  elif [[ "$RELEASE_NAME" = "mt-nightly" ]]; then
+    SUFFIX="mt-nightly"
+  elif [[ "$RELEASE_NAME" = "mt-weekly" ]]; then
+    SUFFIX="mt-weekly"
+  elif [[ "$RELEASE_NAME" = "mt-prdmirr" ]]; then
+    SUFFIX="mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-prd" ]] || [[ "$RELEASE_NAME" =~ "mt-dev" ]] || [[ "$RELEASE_NAME" = "mt-stg" ]]; then
+    SUFFIX="mt"
   else
     SUFFIX=""
   fi
@@ -44,30 +50,34 @@ fi
 if [ "$DESTINATION_REPO_PROVIDER" = "aws" ]; then
   if [ "$PRIVATE_REPO" = "true" ]; then
     aws ecr get-login-password --region $REGION | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
-    aws ecr describe-repositories --repository-names $DESTINATION_REPO_NAME_STEM-$PACKAGE --region $REGION || aws ecr create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region $REGION
+    aws ecr describe-repositories --repository-names $DESTINATION_REPO_NAME --region $REGION || aws ecr create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region $REGION
   else
     aws ecr-public get-login-password --region us-east-1 | docker login -u AWS --password-stdin $DESTINATION_REPO_URL
-    aws ecr-public describe-repositories --repository-names $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1 || aws ecr-public create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1
+    aws ecr-public describe-repositories --repository-names $DESTINATION_REPO_NAME --region us-east-1 || aws ecr-public create-repository --repository-name $DESTINATION_REPO_NAME_STEM-$PACKAGE --region us-east-1
   fi
 elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
   DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
 
-  # Apply environment-specific suffixes based on APP_HOST
-  if [[ "$APP_HOST" =~ "preview" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$RELEASE_NAME" = "mt-rc" ]]; then
     SUFFIX="mt-rc"
-  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
-      SUFFIX="mt-int"
-  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
-      SUFFIX="mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-      SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "qat" ]]; then
-      SUFFIX="qat"
+  elif [[ "$RELEASE_NAME" = "mt-int" ]]; then
+    SUFFIX="mt-int"
+  elif [[ "$RELEASE_NAME" = "mt-qat-dev" ]]; then
+    SUFFIX="mt-qat"
+  elif [[ "$RELEASE_NAME" = "qat-dev" ]]; then
+    SUFFIX="qat"
+  elif [[ "$RELEASE_NAME" = "mt-nightly" ]]; then
+    SUFFIX="mt-nightly"
+  elif [[ "$RELEASE_NAME" = "mt-weekly" ]]; then
+    SUFFIX="mt-weekly"
+  elif [[ "$RELEASE_NAME" = "mt-prdmirr" ]]; then
+    SUFFIX="mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-prd" ]] || [[ "$RELEASE_NAME" =~ "mt-dev" ]] || [[ "$RELEASE_NAME" = "mt-stg" ]]; then
+    SUFFIX="mt"
   else
-      SUFFIX=""
+    SUFFIX=""
   fi
     
   # Only modify the repo name if a suffix was identified
@@ -125,10 +135,16 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg MYSQL_PORT=$MYSQL_PORT \
     --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
     --build-arg MYSQL_DATABASE=$MYSQL_DATABASE \
-    --build-arg APP_HOST \
-    --build-arg GCP_PROJECT \
-    --build-arg GCP_EDGE_CACHE_SERVICE \
-    --build-arg GCP_URL_MAP \
+    --build-arg POSTGRES_HOST=$POSTGRES_HOST \
+    --build-arg POSTGRES_USER=$POSTGRES_USER \
+    --build-arg POSTGRES_PORT=$POSTGRES_PORT \
+    --build-arg POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    --build-arg POSTGRES_DATABASE=$POSTGRES_DATABASE \
+    --build-arg APP_HOST=$APP_HOST \
+    --build-arg GCP_PROJECT=$GCP_PROJECT \
+    --build-arg GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE \
+    --build-arg GCP_URL_MAP=$GCP_URL_MAP \
+    --build-arg VITE_AGENT_API_URL=$VITE_AGENT_API_URL \
     --build-arg VITE_APP_HOST=$VITE_APP_HOST \
     --build-arg VITE_APP_PORT=$VITE_APP_PORT \
     --build-arg VITE_PWA_ENABLED=$VITE_PWA_ENABLED \
@@ -151,6 +167,7 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg VITE_ZENDESK_ENABLED=$VITE_ZENDESK_ENABLED \
     --build-arg VITE_ZENDESK_KEY=$VITE_ZENDESK_KEY \
     --build-arg VITE_DNS_PROVIDER=$VITE_DNS_PROVIDER \
+    --build-arg=VITE_MIDDLEWARE_API_URL=$VITE_MIDDLEWARE_API_URL \
     --build-arg VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED .
 else
   docker buildx build \
@@ -183,10 +200,16 @@ else
     --build-arg MYSQL_PORT=$MYSQL_PORT \
     --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
     --build-arg MYSQL_DATABASE=$MYSQL_DATABASE \
-    --build-arg APP_HOST \
-    --build-arg GCP_PROJECT \
-    --build-arg GCP_EDGE_CACHE_SERVICE \
-    --build-arg GCP_URL_MAP \
+    --build-arg POSTGRES_HOST=$POSTGRES_HOST \
+    --build-arg POSTGRES_USER=$POSTGRES_USER \
+    --build-arg POSTGRES_PORT=$POSTGRES_PORT \
+    --build-arg POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    --build-arg POSTGRES_DATABASE=$POSTGRES_DATABASE \
+    --build-arg APP_HOST=$APP_HOST \
+    --build-arg GCP_PROJECT=$GCP_PROJECT \
+    --build-arg GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE \
+    --build-arg GCP_URL_MAP=$GCP_URL_MAP \
+    --build-arg VITE_AGENT_API_URL=$VITE_AGENT_API_URL \
     --build-arg VITE_APP_HOST=$VITE_APP_HOST \
     --build-arg VITE_APP_PORT=$VITE_APP_PORT \
     --build-arg VITE_PWA_ENABLED=$VITE_PWA_ENABLED \
@@ -209,6 +232,7 @@ else
     --build-arg VITE_ZENDESK_ENABLED=$VITE_ZENDESK_ENABLED \
     --build-arg VITE_ZENDESK_KEY=$VITE_ZENDESK_KEY \
     --build-arg VITE_DNS_PROVIDER=$VITE_DNS_PROVIDER \
+    --build-arg=VITE_MIDDLEWARE_API_URL=$VITE_MIDDLEWARE_API_URL \
     --build-arg VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED .
 fi
 

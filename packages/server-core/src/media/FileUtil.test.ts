@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -213,6 +213,14 @@ describe('FileUtil functions', () => {
       const fileType: string = 'video/mp4'
       const fileName: string = 'video.mp4'
       expect(isValidFileType(fileType, fileName)).toBe(true)
+    })
+
+    it('returns true for valid model mime types', () => {
+      expect(isValidFileType('model/gltf+json', 'model.gltf')).toBe(true)
+      expect(isValidFileType('model/gltf-binary', 'model.glb')).toBe(true)
+      expect(isValidFileType('model/vrm', 'model.vrm')).toBe(true)
+      expect(isValidFileType('model/fbx', 'model.fbx')).toBe(true)
+      expect(isValidFileType('model/usdz', 'model.usdz')).toBe(true)
     })
 
     it('returns true for application/octet-stream with valid extensions', () => {

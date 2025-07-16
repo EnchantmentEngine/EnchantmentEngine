@@ -19,10 +19,14 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
+import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs'
+import { defineState, getMutableState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 import {
   SnapMode,
   SnapModeType,
@@ -32,9 +36,10 @@ import {
   TransformPivotType,
   TransformSpace,
   TransformSpaceType
-} from '@ir-engine/engine/src/scene/constants/transformConstants'
-import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
+} from '@ir-engine/spatial/src/common/constants/TransformConstants'
+import { useEffect } from 'react'
 import { EditorMode, EditorModeType } from '../constants/EditorModeTypes'
+import { VolumeVisibility } from '../functions/gizmos/studioIconGizmoHelper'
 
 export enum PlacementMode {
   DRAG,
@@ -46,17 +51,21 @@ export const EditorHelperState = defineState({
   initial: () => ({
     editorMode: EditorMode.Simple as EditorModeType,
     transformMode: TransformMode.translate as TransformModeType,
-    transformModeOnCancel: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
-    transformPivot: TransformPivot.Center as TransformPivotType,
-    gridSnap: SnapMode.Grid as SnapModeType,
+    transformPivot: TransformPivot.FirstSelected as TransformPivotType,
+    transformGizmoEntity: UndefinedEntity as Entity,
+    gridSnap: SnapMode.Disabled as SnapModeType,
     translationSnap: 0.5,
     rotationSnap: 10,
     scaleSnap: 0.1,
     placementMode: PlacementMode.DRAG,
     gizmoEnabled: true,
     gridVisibility: false,
-    gridHeight: 0
+    gridHeight: 0,
+    showGlbChildren: true,
+    volumeVisibility: 'Auto' as keyof typeof VolumeVisibility,
+    editorIconMaxSize: 0.5,
+    editorIconMinSize: 0.4
   }),
   extension: syncStateWithLocalStorage([
     'snapMode',
@@ -65,5 +74,17 @@ export const EditorHelperState = defineState({
     'scaleSnap',
     'gridVisibility',
     'gridHeight'
-  ])
+  ]),
+  reactor: () => {
+    const [showGlbChildrenFlag] = useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.ShowGlbChildren])
+
+    useEffect(() => {
+      const showGlbChildren = getMutableState(EditorHelperState).showGlbChildren
+      if (typeof showGlbChildrenFlag !== 'undefined') {
+        showGlbChildren.set(showGlbChildrenFlag)
+      }
+    }, [showGlbChildrenFlag])
+
+    return null
+  }
 })

@@ -19,29 +19,29 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 /* global window self */
 
-/** @deprecated - use import from @ir-engine/hyperflux instead */
+/** @deprecated use import from @ir-engine/hyperflux instead */
 const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined'
 
-/** @deprecated - use import from @ir-engine/hyperflux instead */
+/** @deprecated use import from @ir-engine/hyperflux instead */
 /* eslint-disable no-restricted-globals */
 const isWebWorker =
   typeof self === 'object' && self.constructor && self.constructor.name === 'DedicatedWorkerGlobalScope'
 /* eslint-enable no-restricted-globals */
 
-/** @deprecated - use import from @ir-engine/hyperflux instead */
+/** @deprecated use import from @ir-engine/hyperflux instead */
 const isClient =
   typeof process !== 'object' || typeof process.versions !== 'object' || typeof process.versions.node === 'undefined'
 
 /**
  * @see https://github.com/jsdom/jsdom/releases/tag/12.0.0
  * @see https://github.com/jsdom/jsdom/issues/1537
- * @deprecated - use import from @ir-engine/hyperflux instead
+ * @deprecated use import from @ir-engine/hyperflux instead
  */
 /* eslint-disable no-undef */
 const isJsDom = () =>

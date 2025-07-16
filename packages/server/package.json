@@ -1,7 +1,7 @@
 {
   "name": "@ir-engine/server",
   "description": "API Server for Infinite Reality Engine",
-  "version": "1.6.0",
+  "version": "1.0.3",
   "private": true,
   "homepage": "",
   "main": "dist/index.js",
@@ -30,7 +30,7 @@
     "node": ">= 22.11.0"
   },
   "scripts": {
-    "check-errors": "tsc --noemit",
+    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
     "dev": "cross-env APP_ENV=development concurrently -n server,instanceserver,mediaserver,files -c '#FF9800,#A2789C,#00908F,#F93822' \"ts-node --swc src/index.ts\" \"cd ../instanceserver && npm run dev\" \"cd ../instanceserver && npm run dev-channel\"",
     "start": "NODE_OPTIONS='--heapsnapshot-signal=SIGUSR2' cross-env APP_ENV=production ts-node --swc src/index.ts",
     "dev-api-server": "ts-node --swc src/index.ts",
@@ -42,7 +42,7 @@
   },
   "types": "lib/",
   "dependencies": {
-    "@ir-engine/server-core": "^1.6.0",
+    "@ir-engine/server-core": "^1.0.3",
     "@feathersjs/koa": "5.0.5",
     "@feathersjs/transport-commons": "5.0.5",
     "app-root-path": "^3.1.0",

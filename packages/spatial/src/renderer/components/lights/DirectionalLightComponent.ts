@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,116 +19,48 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { useEffect } from 'react'
-import { BufferGeometry, DirectionalLight, Float32BufferAttribute } from 'three'
+import { DirectionalLight } from 'three'
 
 import {
-  EntityTreeComponent,
   S,
-  UndefinedEntity,
-  createEntity,
   defineComponent,
   getMutableComponent,
-  hasComponent,
   removeComponent,
-  removeEntity,
   setComponent,
   useComponent,
-  useEntityContext,
-  useOptionalComponent
+  useEntityContext
 } from '@ir-engine/ecs'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { ActiveHelperComponent } from '../../../common/ActiveHelperComponent'
-import { mergeBufferGeometries } from '../../../common/classes/BufferGeometryUtils'
 import { T } from '../../../schema/schemaFunctions'
 import { RendererState } from '../../RendererState'
-import { LineSegmentComponent } from '../LineSegmentComponent'
 import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
-
-const size = 1
-const lightPlaneGeometry = new BufferGeometry()
-lightPlaneGeometry.setAttribute(
-  'position',
-  new Float32BufferAttribute(
-    [
-      -size,
-      size,
-      0,
-      size,
-      size,
-      0,
-      size,
-      size,
-      0,
-      size,
-      -size,
-      0,
-      size,
-      -size,
-      0,
-      -size,
-      -size,
-      0,
-      -size,
-      -size,
-      0,
-      -size,
-      size,
-      0,
-      -size,
-      size,
-      0,
-      size,
-      -size,
-      0,
-      size,
-      size,
-      0,
-      -size,
-      -size,
-      0
-    ],
-    3
-  )
-)
-
-const targetLineGeometry = new BufferGeometry()
-const t = size * 0.1
-targetLineGeometry.setAttribute(
-  'position',
-  new Float32BufferAttribute([-t, t, 0, 0, 0, 1, t, t, 0, 0, 0, 1, t, -t, 0, 0, 0, 1, -t, -t, 0, 0, 0, 1], 3)
-)
-
-const mergedGeometry = mergeBufferGeometries([targetLineGeometry, lightPlaneGeometry])
 
 export const DirectionalLightComponent = defineComponent({
   name: 'DirectionalLightComponent',
   jsonID: 'EE_directional_light',
 
   schema: S.Object({
-    light: S.NonSerialized(S.Type<DirectionalLight>()),
+    light: S.Type<DirectionalLight>({ serialized: false }),
     color: T.Color(),
-    intensity: S.Number(1),
-    castShadow: S.Bool(false),
-    shadowBias: S.Number(-0.00001),
-    shadowRadius: S.Number(1),
-    cameraFar: S.Number(200)
+    intensity: S.Number({ default: 1 }),
+    castShadow: S.Bool({ default: false }),
+    shadowBias: S.Number({ default: -0.00001 }),
+    shadowRadius: S.Number({ default: 1 }),
+    cameraFar: S.Number({ default: 200 })
   }),
 
   reactor: function () {
     const entity = useEntityContext()
     const renderState = useMutableState(RendererState)
-    const activeHelperComponent = useOptionalComponent(entity, ActiveHelperComponent)
-    const debugEnabled = renderState.nodeHelperVisibility
     const directionalLightComponent = useComponent(entity, DirectionalLightComponent)
     const light = useHookstate(() => new DirectionalLight()).value as DirectionalLight
-    const helperEntity = useHookstate(UndefinedEntity)
 
     useEffect(() => {
       setComponent(entity, LightTagComponent)
@@ -143,12 +75,6 @@ export const DirectionalLightComponent = defineComponent({
     useEffect(() => {
       light.color.set(directionalLightComponent.color.value)
     }, [directionalLightComponent.color])
-
-    useEffect(() => {
-      if (!helperEntity.value) return
-      const helper = getMutableComponent(helperEntity.value, LineSegmentComponent)
-      helper.color.set(directionalLightComponent.color.value)
-    }, [helperEntity.value, directionalLightComponent.color])
 
     useEffect(() => {
       light.intensity = directionalLightComponent.intensity.value
@@ -176,23 +102,6 @@ export const DirectionalLightComponent = defineComponent({
         light.shadow.needsUpdate = true
       }
     }, [renderState.shadowMapResolution])
-
-    useEffect(() => {
-      if (!debugEnabled.value && !hasComponent(entity, ActiveHelperComponent)) return
-      helperEntity.set(createEntity())
-      setComponent(helperEntity.value, EntityTreeComponent, { parentEntity: entity })
-      setComponent(helperEntity.value, LineSegmentComponent, {
-        name: 'directional-light-helper',
-        // Clone geometry because LineSegmentComponent disposes it when removed
-        geometry: mergedGeometry?.clone(),
-        color: directionalLightComponent.color.value
-      })
-
-      return () => {
-        removeEntity(helperEntity.value)
-        helperEntity.set(UndefinedEntity)
-      }
-    }, [debugEnabled, activeHelperComponent])
 
     return null
   }

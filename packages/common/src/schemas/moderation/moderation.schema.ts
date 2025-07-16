@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -63,6 +63,9 @@ export const moderationSchema = Type.Object(
       format: 'uuid'
     }),
     ipAddress: Type.Optional(Type.String({ maxLength: 255 })),
+    reportedUserIpAddress: Type.Optional(Type.String({ maxLength: 255 })),
+    reportedUserCountry: Type.Optional(Type.String({ maxLength: 100 })),
+    reportingUserCountry: Type.Optional(Type.String({ maxLength: 100 })),
     reportDetails: Type.String({ maxLength: 1050 }),
     status: StringEnum(['open', 'resolved']),
     reportedAt: Type.String({ format: 'date-time' }),
@@ -72,6 +75,9 @@ export const moderationSchema = Type.Object(
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),
+    referenceNumber: Type.Integer(),
+    reportedUserEmail: Type.Optional(Type.String()),
+    createdByEmail: Type.Optional(Type.String()),
     createdAt: Type.String({ format: 'date-time' }),
     updatedAt: Type.String({ format: 'date-time' })
   },
@@ -82,7 +88,16 @@ export interface ModerationType extends Static<typeof moderationSchema> {}
 // Schema for creating new entries
 export const moderationDataSchema = Type.Pick(
   moderationSchema,
-  ['type', 'reportedUserId', 'reportedLocationId', 'ipAddress', 'abuseReason', 'reportDetails'],
+  [
+    'type',
+    'reportedUserId',
+    'reportedLocationId',
+    'ipAddress',
+    'abuseReason',
+    'reportDetails',
+    'reportedUserCountry',
+    'reportingUserCountry'
+  ],
   {
     $id: 'ModerationData'
   }
@@ -91,7 +106,13 @@ export interface ModerationData extends Static<typeof moderationDataSchema> {}
 
 // Schema for updating existing entries
 export const moderationPatchSchema = Type.Partial(
-  Type.Pick(moderationSchema, ['status', 'abuseReason', 'reportDetails']),
+  Type.Pick(moderationSchema, [
+    'status',
+    'abuseReason',
+    'reportDetails',
+    'reportedUserCountry',
+    'reportingUserCountry'
+  ]),
   {
     $id: 'ModerationPatch'
   }
@@ -102,15 +123,18 @@ export interface ModerationPatch extends Static<typeof moderationPatchSchema> {}
 export const moderationQueryProperties = Type.Pick(moderationSchema, [
   'id',
   'type',
+  'referenceNumber',
   'reportedLocationId',
   'reportedUserId',
   'abuseReason',
-  'status'
+  'status',
+  'reportedUserCountry',
+  'reportingUserCountry'
 ])
 export const moderationQuerySchema = Type.Intersect(
   [
     querySyntax(moderationQueryProperties, {
-      id: {
+      referenceNumber: {
         $like: Type.String()
       }
     }),

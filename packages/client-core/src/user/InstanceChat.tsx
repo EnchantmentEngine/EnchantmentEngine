@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -27,9 +27,16 @@ import { useFind, useMutation } from '@ir-engine/common'
 import { InstanceID, MessageType, messagePath } from '@ir-engine/common/src/schema.type.module'
 import { useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import { AudioEffectPlayer } from '@ir-engine/engine/src/audio/systems/MediaSystem'
-import { State, UserID, dispatchAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
-import { PeerMediaChannelState } from '@ir-engine/network/src/media/PeerMediaChannelState'
+import {
+  MediaChannelState,
+  NetworkState,
+  State,
+  UserID,
+  dispatchAction,
+  useHookstate,
+  useMutableState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button } from '@ir-engine/ui'
 import {
@@ -192,14 +199,15 @@ function NewMessage() {
           spellCheck={false}
           autoComplete="off"
           className="my-auto ml-5 flex w-full resize-none items-center justify-start bg-transparent text-sm text-text-primary outline-none lg:ml-8 lg:mr-4 lg:text-base lg:text-white"
+          data-testid="chat-message-input"
           onKeyUp={(event) => event.key === 'Enter' && sendMessage()}
           onChange={handleComposedMessage}
         />
         <span className="sm:m-[5px] sm:mr-2.5">
           {isMobile ? (
-            <Send01Sm className="text-text-primary" onClick={sendMessage} />
+            <Send01Sm className="text-text-primary" data-testid="send-message-button-mobile" onClick={sendMessage} />
           ) : (
-            <LocationIconButton icon={Send01Lg} onClick={sendMessage} />
+            <LocationIconButton icon={Send01Lg} data-testid="send-message-button" onClick={sendMessage} />
           )}
         </span>
       </div>
@@ -209,14 +217,14 @@ function NewMessage() {
 
 function ReportUserButton({ userId }: { userId: UserID }) {
   const peerId = NetworkState.mediaNetwork.users[userId]?.[0]
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)
+  const peerMediaChannelState = useMutableState(MediaChannelState)
   if (!peerId) return null
 
-  const isCameraVisibile = peerMediaChannelState[peerId]?.['cam']?.value
+  const isCameraVisibile = peerMediaChannelState[peerId]?.[webcamVideoMediaChannelType]?.value
   if (!isCameraVisibile) return null
 
   return (
-    <button onClick={() => ReportUserState.setReportedPeerId(peerId)}>
+    <button data-testid="report-user-button" onClick={() => ReportUserState.setReportedPeerId(peerId)}>
       <ArrowTopRightOnSquareSm />
     </button>
   )
@@ -229,6 +237,7 @@ function Message({ message, hideUsername }: { message: MessageType; hideUsername
   return message.isNotification ? (
     <div
       className="my-4 place-self-center text-center text-xs text-text-primary lg:text-sm"
+      data-testid="notification-message"
       style={{
         textShadow: isMobile ? '' : '0px 1px 4px rgb(255, 255, 255)'
       }}
@@ -243,9 +252,13 @@ function Message({ message, hideUsername }: { message: MessageType; hideUsername
         newMessages.value[message.id] && 'opacity-100',
         hideUsername && '-mt-3'
       )}
+      data-testid="chat-message"
     >
       {message.senderId !== user.id.value && !hideUsername && (
-        <div className="flex items-center gap-x-2 text-xs font-bold text-text-primary lg:text-lg">
+        <div
+          className="flex items-center gap-x-2 text-xs font-bold text-text-primary lg:text-lg"
+          data-testid="chat-message-sender"
+        >
           {message.sender.name} <ReportUserButton userId={message.senderId} />
         </div>
       )}
@@ -304,6 +317,7 @@ function MessagesWrapper() {
           {!isMobile && isChatOpen.value && (
             <LocationIconButton
               icon={isChatOpen.value ? XCloseLg : MessageTextSquare01Lg}
+              data-testid="close-chat-button"
               onClick={() => isChatOpen.set(!isChatOpen.value)}
               className="h-[20px] w-[20px] lg:h-[24px] lg:w-[24px]"
             />
@@ -311,6 +325,7 @@ function MessagesWrapper() {
           {!isChatOpen.value && (
             <LocationIconButton
               icon={MessageTextSquare01Md}
+              data-testid="open-chat-button"
               onClick={() => isChatOpen.set(!isChatOpen.value)}
               className="h-[20px] w-[20px] lg:h-[24px] lg:w-[24px]"
             />

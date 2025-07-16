@@ -19,11 +19,10 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export type * from './schemas/analytics/analytics.schema'
 export type * from './schemas/assets/asset-library.schema'
 export type * from './schemas/bot/bot-command.schema'
 export type * from './schemas/bot/bot.schema'
@@ -41,6 +40,8 @@ export type * from './schemas/media/file-browser-upload.schema'
 export type * from './schemas/media/file-browser.schema'
 export type * from './schemas/media/invalidation.schema'
 export type * from './schemas/media/oembed.schema'
+export type * from './schemas/media/static-resource-search.schema'
+export type * from './schemas/media/static-resource-vector.schema'
 export type * from './schemas/media/static-resource.schema'
 export type * from './schemas/networking/allowed-domains.schema'
 export type * from './schemas/networking/instance-attendance.schema'
@@ -68,8 +69,6 @@ export type * from './schemas/recording/recording.schema'
 export type * from './schemas/route/route.schema'
 export type * from './schemas/scope/scope-type.schema'
 export type * from './schemas/scope/scope.schema'
-export type * from './schemas/setting/authentication-setting.schema'
-export type * from './schemas/setting/client-setting.schema'
 export type * from './schemas/setting/engine-setting.schema'
 export type * from './schemas/setting/feature-flag-setting.schema'
 export type * from './schemas/setting/project-setting.schema'
@@ -80,7 +79,6 @@ export type * from './schemas/social/invite-type.schema'
 export type * from './schemas/social/invite.schema'
 export type * from './schemas/social/location-admin.schema'
 export type * from './schemas/social/location-authorized-user.schema'
-export type * from './schemas/social/location-ban.schema'
 export type * from './schemas/social/location-setting.schema'
 export type * from './schemas/social/location-type.schema'
 export type * from './schemas/social/location.schema'
@@ -176,8 +174,6 @@ export const locationAdminPath = 'location-admin'
 
 export const channelPath = 'channel'
 
-export const locationBanPath = 'location-ban'
-
 export const locationSettingPath = 'location-setting'
 
 export const assetLibraryPath = 'asset-library'
@@ -217,15 +213,9 @@ export const projectSettingPath = 'project-setting'
 
 export const featureFlagSettingPath = 'feature-flag-setting'
 
-export const clientSettingPath = 'client-setting'
-
 export const matchUserPath = 'match-user'
 
 export const matchInstancePath = 'match-instance'
-
-export const authenticationSettingPath = 'authentication-setting'
-
-export const analyticsPath = 'analytics'
 
 export const serverSettingPath = 'server-setting'
 
@@ -294,3 +284,5 @@ export const moderationPath = 'moderation'
 export const moderationBanPath = 'moderation-ban'
 export const moderationAttachmentPath = 'moderation-attachment'
 export const moderationFileUploadPath = 'moderation-file-upload'
+
+export const ffmpegPath = 'ffmpeg'

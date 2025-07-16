@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -34,6 +34,8 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
+import { AssetsRefreshState } from '../../panels/assets/hooks'
+import { FileRefreshState } from '../../panels/files/helpers'
 import { EditorState } from '../../services/EditorServices'
 
 export default function SavePrefabPanel({ entity }) {
@@ -48,6 +50,9 @@ export default function SavePrefabPanel({ entity }) {
   const onSavePrefab = async () => {
     const saveName = srcPath.value + '.gltf'
     await exportRelativeGLTF(entity, getState(EditorState).projectName!, saveName, false)
+    AssetsRefreshState.triggerRefresh()
+    FileRefreshState.triggerRefresh()
+
     ModalState.closeModal()
   }
 

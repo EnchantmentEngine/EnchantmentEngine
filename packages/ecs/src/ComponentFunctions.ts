@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright 2021-2025 
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -35,13 +35,17 @@ import type from 'react/experimental'
 import {
   DeepReadonly,
   HyperFlux,
+  Identifiable,
   NO_PROXY_STEALTH,
+  Path,
   ReactorRoot,
   SetPartialStateAction,
   State,
   destroy,
+  extend,
   getState,
   hookstate,
+  identifiable,
   none,
   resolveObject,
   startReactor,
@@ -55,7 +59,7 @@ import { defineSystem } from './SystemFunctions'
 import { PresentationSystemGroup } from './SystemGroups'
 import { Transitionable, TransitionableTypes, getTransitionableKeyForType } from './Transitionable'
 import { createResizableTypeArray } from './bitecsLegacy'
-import { Kind, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
+import { Kind, Schema, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
 import {
   CreateSchemaValue,
   DeserializeSchemaValue,
@@ -128,7 +132,7 @@ export interface ComponentPartial<
    * @param initial the initial value created from the component's schema.
    * @returns The shape of the component's runtime data.
    */
-  onInit?: (initial: InitializationType) => ComponentType & OnInitValidateNotState<ComponentType>
+  onInit?: (entity: Entity, initial: InitializationType) => ComponentType & OnInitValidateNotState<ComponentType>
   /**
    * @description
    * Serializer function called when the component is saved to a snapshot or scene file.
@@ -185,14 +189,14 @@ export interface Component<
   name: string
   jsonID?: string
   schema?: Schema
-  onInit?: (initial: InitializationType) => ComponentType & OnInitValidateNotState<ComponentType>
+  onInit?: (entity: Entity, initial: InitializationType) => ComponentType & OnInitValidateNotState<ComponentType>
   toJSON: (component: ComponentType) => JSON
   onSet: (entity: Entity, component: State<ComponentType>, json?: SetJSON) => void
   onRemove: (entity: Entity, component: State<ComponentType>) => void
   reactor?: any
   reactorRoot?: ReactorRoot
   storage?: StorageType
-  stateMap: Record<Entity, State<ComponentType>>
+  stateMap: Record<Entity, State<ComponentType, Identifiable>>
   valueMap: Record<Entity, ComponentType>
   errors: ErrorTypes[]
   storageSize: number
@@ -211,7 +215,7 @@ export type ComponentErrorsType<C extends Component> =
 
 type Primitive = string | number | bigint | boolean | undefined | symbol
 export type ComponentPropertyPath<T, Prefix = ''> = {
-  [K in keyof T]: T[K] extends Function // eslint-disable-line @typescript-eslint/ban-types
+  [K in keyof T]: T[K] extends Function
     ? never
     : T[K] extends Primitive | Array<any>
     ? `${string & Prefix}${string & K}`
@@ -369,12 +373,18 @@ export const defineComponent = <
   ComponentMap.set(Component.name, Component)
 
   function setTransition<P extends ComponentPropertyPath<ComponentType>>(
+    /** @description The entity to transition the property of. */
     entity: Entity,
+    /** @description The path to the property to transition. */
     propertyPath: P,
+    /** @description The value to transition to. */
     value: ComponentPropertyFromPath<ComponentType, P> & TransitionableTypes,
     options: {
+      /** @description The duration of the transition in milliseconds. */
       duration?: number
+      /** @description The easing function to use for the transition. */
       easing?: EasingFunction
+      /** @description The type of transition to use. */
       type?: keyof typeof Transitionable
     }
   ) {
@@ -397,13 +407,16 @@ export const defineComponent = <
 export const getOptionalMutableComponent = <C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined => {
+): State<ComponentType<C>, Identifiable> | undefined => {
   return !bitECS.hasComponent(HyperFlux.store, entity, component)
     ? undefined
-    : (component.stateMap[entity]! as State<ComponentType<C>> | undefined)
+    : (component.stateMap[entity]! as State<ComponentType<C>, Identifiable> | undefined)
 }
 
-export const getMutableComponent = <C extends Component>(entity: Entity, component: C): State<ComponentType<C>> => {
+export const getMutableComponent = <C extends Component>(
+  entity: Entity,
+  component: C
+): State<ComponentType<C>, Identifiable> => {
   const componentState = getOptionalMutableComponent(entity, component)
   if (componentState === undefined) {
     console.warn(
@@ -445,11 +458,11 @@ export const createInitialComponentValue = <
   component: Component<Schema, InitializationType, ComponentType, JSON, SetJSON, unknown>
 ): ComponentType => {
   if (!component.schema) {
-    if (component.onInit) return component.onInit(undefined as InitializationType) as ComponentType
+    if (component.onInit) return component.onInit(entity, undefined!) as ComponentType
     return true as ComponentType // true as tag component
   }
-  const schema = CreateSchemaValue(entity, component.schema) as InitializationType
-  if (component.onInit) return component.onInit(schema) as ComponentType
+  const schema = CreateSchemaValue(component.schema) as InitializationType
+  if (component.onInit) return component.onInit(entity, schema) as ComponentType
   else return schema as unknown as ComponentType
 }
 
@@ -482,17 +495,21 @@ const resizeComponent = (component: Component, size: number) => {
   component.storageSize = size
 }
 
+let componentInstanceCount = 0
+
 const _getComponentState = <C extends Component>(entity: Entity, component: C) => {
   if (!component.stateMap[entity]) {
-    component.stateMap[entity] = hookstate(none, () => ({
-      onSet: (s, d) => {
-        const rootState = component.stateMap[entity]
-        component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
-        if (bitECS.hasComponent(HyperFlux.store, entity, component)) {
+    const id = `${component.name}_${entity}_${componentInstanceCount++}`
+    component.stateMap[entity] = hookstate(
+      none,
+      extend(identifiable(id), () => ({
+        onSet: (s, d) => {
+          const rootState = component.stateMap[entity]
+          component.valueMap[entity] = rootState.promised ? undefined : rootState.get(NO_PROXY_STEALTH)
           LayerFunctions.propagateLayer(entity, component)
         }
-      }
-    }))
+      }))
+    ) as State<ComponentType<C>, Identifiable>
   }
   return component.stateMap[entity]
 }
@@ -545,8 +562,11 @@ export const setComponent = <C extends Component>(
 
   if (component.reactor && !component.reactorRoot) {
     const root = startReactor(() => {
-      return React.createElement(QueryReactor, { Components: [component], ChildEntityReactor: component.reactor })
-    }) as ReactorRoot
+      return React.createElement(QueryReactor, {
+        Components: [component],
+        ChildEntityReactor: component.reactor as any
+      })
+    }, `Component - ${component.name}`) as ReactorRoot
     root.cleanupFunctions.add(() => {
       component.reactorRoot = undefined
     })
@@ -600,7 +620,6 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
 
   bitECS.removeComponent(HyperFlux.store, entity, component)
   component.onRemove(entity, component.stateMap[entity]!)
-  /** clear state data after reactor stops, to ensure hookstate is still referenceable */
   component.stateMap[entity]?.set(none)
   destroy(component.stateMap[entity])
   delete component.stateMap[entity]
@@ -682,7 +701,7 @@ export const deserializeComponent = <C extends Component>(
 
   const component = getComponent(entity, Component)
 
-  const args = Component.schema ? DeserializeSchemaValue(entity, Component.schema, component, json) : json
+  const args = Component.schema ? DeserializeSchemaValue(Component.schema, component, json) : json
 
   if (Component.schema && HasSchemaValidators(Component.schema)) {
     const [valid, key] = HasValidSchemaValues(Component.schema, args, component, entity)
@@ -731,7 +750,7 @@ export function _use(promise) {
 /**
  * Use a component in a reactive context (a React component)
  */
-export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>> {
+export function useComponent<C extends Component>(entity: Entity, component: C): State<ComponentType<C>, Identifiable> {
   if (entity === UndefinedEntity) throw new Error('InvalidUsage: useComponent called with UndefinedEntity')
 
   const state = _getComponentState(entity, component)
@@ -741,7 +760,7 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
     ;(React.use ?? _use)(state.promise)
   }
 
-  return useHookstate(state) as State<ComponentType<C>>
+  return useHookstate(state) as State<ComponentType<C>, Identifiable>
 }
 
 export function useHasComponent<C extends Component>(entity: Entity, component: C): boolean {
@@ -755,8 +774,8 @@ export function useHasComponent<C extends Component>(entity: Entity, component: 
 export function useOptionalComponent<C extends Component>(
   entity: Entity,
   component: C
-): State<ComponentType<C>> | undefined {
-  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>>
+): State<ComponentType<C>, Identifiable> | undefined {
+  const componentState = useHookstate(_getComponentState(entity, component)) as State<ComponentType<C>, Identifiable>
   return componentState.promised ? undefined : componentState
 }
 
@@ -823,7 +842,7 @@ function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Number
  * */
 function createPropagationArgsNumber<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -849,7 +868,7 @@ function createPropagationArgsNumber<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is of type any
  * */
 function createPropagationArgsAny<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -871,7 +890,7 @@ function createPropagationArgsAny<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Class
  * */
 function createPropagationArgsClass<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -880,7 +899,7 @@ function createPropagationArgsClass<C extends Component>(
   component: C
 ) {
   if (!obj) return undefined
-  if ('clone' in obj && typeof obj.clone === 'function') {
+  if (typeof obj === 'object' && 'clone' in obj && typeof obj.clone === 'function') {
     return obj.clone()
   } else {
     try {
@@ -899,7 +918,7 @@ function createPropagationArgsClass<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Object
  * */
 function createPropagationArgsObject<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -907,7 +926,7 @@ function createPropagationArgsObject<C extends Component>(
   entity: Entity,
   component: C
 ) {
-  if (!obj) return undefined
+  if (!obj || typeof obj !== 'object') return undefined
   const props = schema.properties as any
   const args = {} as any
   for (const k in props) {
@@ -922,7 +941,7 @@ function createPropagationArgsObject<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Record
  * */
 function createPropagationArgsRecord<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -945,7 +964,7 @@ function createPropagationArgsRecord<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Array
  * */
 function createPropagationArgsArray<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -967,7 +986,7 @@ function createPropagationArgsArray<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Tuple
  * */
 function createPropagationArgsTuple<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -989,7 +1008,7 @@ function createPropagationArgsTuple<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Union
  * */
 function createPropagationArgsUnion<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -1009,7 +1028,7 @@ function createPropagationArgsUnion<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} for the default case
  * */
 function createPropagationArgsDefault<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -1036,7 +1055,7 @@ function createPropagationArgsDefault<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs}
  * */
 function createPropagationArgsInner<C extends Component>(
-  schema: TTypedSchema<C>,
+  schema: Schema,
   key: string | number,
   data: any,
   layer: LayerID,
@@ -1045,14 +1064,14 @@ function createPropagationArgsInner<C extends Component>(
   component: C
 ) {
   const obj = key === '' ? data : data[key]
-  if (typeof obj === 'undefined') return undefined
-  switch (schema[Kind] as any) {
+  if (typeof obj === 'undefined' || !schema.options?.serialized) return undefined
+
+  switch (schema[Kind]) {
     case 'Null':
     case 'Undefined':
     case 'Void':
     case 'Bool':
     case 'String':
-    case 'Enum':
     case 'Literal': {
       return obj
     }
@@ -1080,11 +1099,7 @@ function createPropagationArgsInner<C extends Component>(
     case 'Union': {
       return CreatePropagationArgs.Union(schema, key, obj, layer, linkedLayer, entity, component)
     }
-    case 'NonSerialized': {
-      return undefined
-    }
     case 'Partial':
-    case 'Required':
     case 'Proxy':
     default: {
       return CreatePropagationArgs.Default(schema, key, obj, layer, linkedLayer, entity, component)
@@ -1144,6 +1159,7 @@ function createLayerPropagationArgs<C extends Component>(entity: Entity, linkedL
  * @note Checking whether this process/behavior should be run or not is done with the {@link shouldPropagate} helper function.
  * */
 function propagateLayer<C extends Component>(entity: Entity, component: C) {
+  if (!bitECS.hasComponent(HyperFlux.store, entity, component)) return
   if ((component as any) === LayerComponent || LayerComponents.includes(component as any)) return
   const relations = LayerFunctions.getLayerRelationsEntities(entity)
   if (!relations) return
@@ -1195,7 +1211,13 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
   return defineComponent({
     name: `${name}LayerComponent`,
     schema: S.Object({
-      relations: S.Record(S.Enum(Layers), S.Entity())
+      relations: S.Record(
+        S.Enum(Layers, {
+          $comment:
+            "A numeric enum, ie. the value of one of the following key-value pairs: 'Simulation': 0, 'Authoring': 1"
+        }),
+        S.Entity()
+      )
     }),
 
     // backward references
@@ -1219,6 +1241,7 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
           delete LayerComponents[linkedLayer].refs[relation]
         }
       }
+      LayerComponents[layer].refs[entity] = UndefinedEntity
     }
   })
 })
@@ -1298,20 +1321,17 @@ export const TransitionComponent = defineComponent({
       componentJsonID: S.String(),
       propertyPath: S.String(),
       transitionableType: S.String(),
-      duration: S.Number(500),
-      easing: S.String(Easing.exponential.inOut.path),
-      initialValue: S.NonSerialized(S.Type<TransitionableTypes>()),
-      outputValue: S.NonSerialized(S.Type<TransitionableTypes>()),
-      events: S.NonSerialized(
-        S.Array(
-          S.Object({
-            age: S.Number(),
-            fromValue: S.Type<TransitionableTypes>(),
-            toValue: S.Type<TransitionableTypes>(),
-            duration: S.Number(),
-            easing: S.String()
-          })
-        )
+      duration: S.Number({ default: 500 }),
+      easing: S.String({ default: Easing.exponential.inOut.path }),
+      initialValue: S.Type<TransitionableTypes | undefined>({ serialized: false }),
+      events: S.Array(
+        S.Object({
+          age: S.Number(),
+          toValue: S.Type<TransitionableTypes>(),
+          duration: S.Number(),
+          easing: S.String()
+        }),
+        { serialized: false }
       )
     })
   ),
@@ -1346,7 +1366,7 @@ export const TransitionComponent = defineComponent({
       (t) => t.componentJsonID === target.componentJsonID && t.propertyPath === target.propertyPath
     )
     if (!transition) {
-      const t = CreateSchemaValue(entity, TransitionComponent.schema.properties)
+      const t = CreateSchemaValue(TransitionComponent.schema.properties)
       transitions.push(t)
       transition = transitions[transitions.length - 1]
       transition.componentJsonID = target.componentJsonID
@@ -1356,12 +1376,10 @@ export const TransitionComponent = defineComponent({
     if (target.duration && transition.duration !== target.duration) transition.duration = target.duration
     if (target.easing && transition.easing !== target.easing.path) transition.easing = target.easing.path
     if (target.type && transition.transitionableType !== type) transition.transitionableType = type
-    TransitionComponent.updateTransition(entity, transition, 0, false)
     transition.events.push({
       age: 0,
       duration: transition.duration,
       easing: transition.easing,
-      fromValue: transition.outputValue,
       toValue: target.value
     })
   },
@@ -1372,6 +1390,8 @@ export const TransitionComponent = defineComponent({
     deltaMilliSeconds: number,
     setProperty: boolean = true
   ) {
+    if (transition.events.length === 0) return
+
     const Component = ComponentJSONIDMap.get(transition.componentJsonID)
     if (!Component) return
     const component = getComponent(entity, Component)
@@ -1381,11 +1401,6 @@ export const TransitionComponent = defineComponent({
 
     if (transition.initialValue === undefined) {
       transition.initialValue = typeof propertyValue === 'number' ? propertyValue : propertyValue.clone()
-    }
-
-    if (transition.events.length === 0) {
-      transition.outputValue = transition.initialValue
-      return
     }
 
     const transitionable = Transitionable[transition.transitionableType] as Transitionable
@@ -1424,7 +1439,9 @@ export const TransitionComponent = defineComponent({
       return true
     })
 
-    transition.outputValue = output
+    if (transition.events.length === 0) {
+      transition.initialValue = undefined
+    }
 
     if (setProperty) {
       if (typeof output === 'number') {

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -28,25 +28,34 @@ import ProfilePill from '@ir-engine/client-core/src/common/components/ProfilePil
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { RouterState } from '@ir-engine/client-core/src/common/services/RouterService'
+import { ThemeState } from '@ir-engine/client-core/src/common/services/ThemeService'
 import { useProjectPermissions } from '@ir-engine/client-core/src/hooks/useUserProjectPermission'
+import studioIconDark from '@ir-engine/client/src/assets/studio-icon-dark.svg'
+import studioIconLight from '@ir-engine/client/src/assets/studio-icon-light.svg'
 import { useFind } from '@ir-engine/common'
 import { ScopeType, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
 import { Engine } from '@ir-engine/ecs'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, DropdownItem } from '@ir-engine/ui'
+import { AddScene } from '@ir-engine/ui/src/components/editor/AddScene/AddScene'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import { ChevronDownSm, File04Sm, SquaresLg, UploadCloud02Sm } from '@ir-engine/ui/src/icons'
+import { ChevronDownSm, File04Sm, UploadCloud02Sm } from '@ir-engine/ui/src/icons'
 import { t } from 'i18next'
 import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { confirmSceneExists, onNewScene, onSaveScene, saveSceneGLTF } from '../../functions/sceneFunctions'
+import {
+  confirmSceneExists,
+  onNewScene,
+  onSaveScene,
+  saveSceneGLTF,
+  useCanSaveScene
+} from '../../functions/sceneFunctions'
 import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
 import { EditorState } from '../../services/EditorServices'
 import { UIAddonsState } from '../../services/UIAddonsState'
 import CreatePrefabPanel from '../dialogs/CreatePrefabPanelDialog'
-import CreateSceneDialog from '../dialogs/CreateScenePanelDialog'
 import ImportSettingsPanel from '../dialogs/ImportSettingsPanelDialog'
 import SaveNewSceneDialog from '../dialogs/SaveNewSceneDialog'
 import QuitToDashboardConfirmationDialog from './../dialogs/QuitToDashboardConfirmationDialog'
@@ -83,7 +92,8 @@ const onClickNewScene = async () => {
   const newSceneUIAddons = getState(UIAddonsState).editor.newScene
 
   if (Object.keys(newSceneUIAddons).length > 0) {
-    ModalState.openModal(<CreateSceneDialog />)
+    const { projectName } = getState(EditorState)
+    ModalState.openModal(<AddScene projectName={projectName!} />)
   } else {
     onNewScene()
   }
@@ -120,11 +130,15 @@ const generateToolbarMenu = () => {
     {
       name: t('editor:menubar.saveScene'),
       hotkey: `${cmdOrCtrlString}+s`,
-      action: onSaveScene
+      action: onSaveScene,
+      enabledHook: useCanSaveScene,
+      showSpinner: true
     },
     {
       name: t('editor:menubar.saveAs'),
-      action: () => ModalState.openModal(<SaveNewSceneDialog />)
+      action: () => ModalState.openModal(<SaveNewSceneDialog />),
+      enabledHook: useCanSaveScene,
+      showSpinner: true
     },
     {
       name: t('editor:menubar.importSettings'),
@@ -136,7 +150,11 @@ const generateToolbarMenu = () => {
     },
     {
       name: t('editor:menubar.exportLookdev'),
-      action: () => ModalState.openModal(<CreatePrefabPanel isExportLookDev={true} />)
+      action: () => ModalState.openModal(<CreatePrefabPanel isExportLookDev={true} />, () => {})
+    },
+    {
+      name: t('editor:menubar.documentation'),
+      href: 'https://docs.ir.world'
     },
     {
       name: t('editor:menubar.quit'),
@@ -163,8 +181,11 @@ export default function Toolbar() {
   const { t } = useTranslation()
   const anchorEvent = useHookstate<null | React.MouseEvent<HTMLElement>>(null)
   const anchorPosition = useHookstate({ left: 0, top: 0 })
+  const themeState = useMutableState(ThemeState)
 
   const { projectName, sceneName, sceneAssetID } = useMutableState(EditorState)
+  const sceneNameSimplified = sceneName.value?.split('.').slice(0, -1).join('.')
+
   const isModified = EditorState.useIsModified()
 
   const locationScopeQuery = useFind(scopePath, {
@@ -180,21 +201,30 @@ export default function Toolbar() {
   const locationQuery = useFind(locationPath, { query: { action: 'studio', sceneId: sceneAssetID.value } })
   const currentLocation = locationQuery.data[0]
 
+  // This is fine as long as toolbarMenu is a static object
+  const toolbarItemsEnabled = toolbarMenu.map((item) => {
+    if (!item.enabledHook) return true
+    return item.enabledHook()
+  })
+
   return (
     <>
       <div className="flex h-10 items-center justify-between px-4 py-0.5">
         <div className="flex items-center">
-          <div className="ml-3 mr-6 cursor-pointer" onClick={onCloseProject}>
-            <img src="ir-studio-icon.svg" alt="iR Engine Logo" className={`h-6 w-6`} />
+          <div className="cursor-pointer" data-testid="back-to-dashboard-button" onClick={onCloseProject}>
+            <img
+              src={themeState.theme.value === 'dark' ? studioIconDark : studioIconLight}
+              alt="Napster Engine Logo"
+              className="h-6 w-6"
+            />
           </div>
           <button
-            className="flex items-center justify-end gap-1 px-1 py-2 text-[#9CA0AA]"
+            data-testid="editor-main-menu-button"
             onClick={(event) => {
-              anchorPosition.set({ left: event.clientX - 5, top: event.clientY - 2 })
+              anchorPosition.set({ left: event.clientX - 20, top: event.clientY - 20 })
               anchorEvent.set(event)
             }}
           >
-            <SquaresLg />
             <ChevronDownSm />
           </button>
         </div>
@@ -203,15 +233,19 @@ export default function Toolbar() {
           <div className="rounded-2xl px-2.5">{t('editor:toolbar.lbl-simple')}</div>
           <div className="rounded-2xl px-2.5">{t('editor:toolbar.lbl-advanced')}</div>
         </div> */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5" data-testid="editor-breadcrumbs-container">
           <File04Sm />
           {projectName.value!.split('/').map((part, index) => (
             <Fragment key={index}>
-              <span className="text-text-secondary">{part}</span>
+              <span className="text-text-secondary" data-testid="editor-breadcrumbs-item">
+                {part}
+              </span>
               <span className="text-text-secondary">{' / '}</span>
             </Fragment>
           ))}
-          <span className="text-text-primary">{sceneName.value}</span>
+          <span className="text-text-primary" data-testid="editor-breadcrumbs-scene-name">
+            {sceneNameSimplified}
+          </span>
         </div>
 
         <div className="flex items-center justify-center gap-2">
@@ -231,7 +265,8 @@ export default function Toolbar() {
                       inStudio={true}
                       sceneModified={isModified}
                       onPublish={onPublish}
-                    />
+                    />,
+                    () => {}
                   )
                 }
                 className="rounded-[8px] py-1 text-base"
@@ -248,12 +283,17 @@ export default function Toolbar() {
         onClose={() => anchorEvent.set(null)}
       >
         <div className="w-[180px]" tabIndex={0}>
-          {toolbarMenu.map(({ name, action, hotkey }, index) => (
+          {toolbarMenu.map(({ name, href, action = () => {}, hotkey, showSpinner = false }, index) => (
             <DropdownItem
               key={name + '' + index}
+              disabled={!toolbarItemsEnabled[index]}
+              showSpinner={showSpinner}
               label={name}
+              href={href}
               secondaryText={hotkey}
+              data-testid={`editor-main-menu-item-${name.toLowerCase().replace(/\s+/g, '-')}`}
               onClick={() => {
+                if (!toolbarItemsEnabled[index]) return
                 action()
                 anchorEvent.set(null)
               }}

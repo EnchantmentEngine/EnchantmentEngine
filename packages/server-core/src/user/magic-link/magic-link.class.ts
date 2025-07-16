@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -36,6 +36,7 @@ import { smsPath } from '@ir-engine/common/src/schemas/user/sms.schema'
 
 import { BadRequest } from '@feathersjs/errors'
 import { EMAIL_REGEX } from '@ir-engine/common/src/regex'
+import { userPath } from '@ir-engine/common/src/schema.type.module'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import logger from '../../ServerLogger'
@@ -55,6 +56,33 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
   }
 
   /**
+   * Filters existing identity providers to exclude those associated with deactivated users
+   * @param existingIdentityProviders Array of identity providers to filter
+   * @returns Array of identity providers with active users only
+   */
+  private async filterActiveIdentityProviders(existingIdentityProviders: any[]): Promise<any[]> {
+    if (!existingIdentityProviders || existingIdentityProviders.length === 0) {
+      return []
+    }
+
+    const activeProviders: any[] = []
+    for (const provider of existingIdentityProviders) {
+      try {
+        const user = await this.app.service(userPath).get(provider.userId)
+        if (!user.isDeactivated) {
+          activeProviders.push(provider)
+        }
+      } catch (error) {
+        if (error.code !== 404) {
+          logger.error('Error checking user deactivation status for identity provider:', error)
+        }
+        // Skip providers with missing or errored users
+      }
+    }
+    return activeProviders
+  }
+
+  /**
    * A function used to sent an email
    *
    * @param toEmail email of reciever
@@ -71,8 +99,7 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
     const templatePath = path.join(emailAccountTemplatesPath, 'magiclink-email.pug')
 
     const compiledHTML = pug.compileFile(templatePath)({
-      headerLogo: `${config.client.url}/static/Email-Template-Header.png`,
-      irWhiteLogo: `${config.client.url}/static/3d-IR-White-Logo.png`,
+      headerLogo: `${config.client.url}/static/Napster-Horizontal-Black.png`,
       templateBg: `${config.client.url}/static/Email-Template-BG.png`,
       hashLink
     })
@@ -154,6 +181,9 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
       })
     ).data
 
+    // Filter out identity providers associated with deactivated users
+    const activeIdentityProviders = await this.filterActiveIdentityProviders(identityProviders)
+
     const authResult = await (this.app.service('authentication') as any).strategies.jwt.authenticate(
       { accessToken: data.accessToken },
       {}
@@ -161,7 +191,7 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
 
     const identityProviderGuest = authResult[identityProviderPath]
 
-    if (identityProviders.length === 0) {
+    if (activeIdentityProviders.length === 0) {
       identityProvider = await identityProviderService.create(
         {
           token: token,
@@ -173,7 +203,7 @@ export class MagicLinkService implements ServiceInterface<MagicLinkParams> {
         params as any
       )
     } else {
-      identityProvider = identityProviders[0]
+      identityProvider = activeIdentityProviders[0]
     }
 
     if (identityProvider) {

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -55,7 +55,9 @@ import authenticate from './hooks/authenticate'
 import { logError } from './hooks/log-error'
 import persistHeaders from './hooks/persist-headers'
 import { createDefaultStorageProvider } from './media/storageprovider/storageprovider'
+import monitoringServices from './monitoring'
 import mysql from './mysql'
+import postgres from './postgres'
 import services from './services'
 import authentication from './user/authentication'
 import primus from './util/primus'
@@ -101,6 +103,11 @@ export const configurePrimus =
       'ionic://' + appConfig.server.clientHost
     ]
     if (!instanceserver) origin.push('https://localhost:3001')
+
+    // Get metrics service if it exists
+    const metricsService = app.get('metricsService')
+    const metricsEnabled = process.env.PROMETHEUS_METRICS_ENABLED === 'true'
+
     app.configure(
       primus(
         {
@@ -119,6 +126,35 @@ export const configurePrimus =
             ;(message as any).feathers.forwarded = message.forwarded
             next()
           })
+
+          // Add event handlers for tracking WebSocket connections and messages if metrics service exists
+          if (metricsService && metricsEnabled) {
+            primus.on('connection', (spark) => {
+              metricsService.trackWebSocketConnection('connected')
+
+              // Track WebSocket messages
+              spark.on('data', (data) => {
+                metricsService.trackWebSocketMessage(
+                  'incoming',
+                  typeof data === 'object' ? data.type || 'unknown' : 'unknown'
+                )
+              })
+
+              // Track outgoing messages
+              spark.on('outgoing::data', (data) => {
+                metricsService.trackWebSocketMessage(
+                  'outgoing',
+                  typeof data === 'object' ? data.type || 'unknown' : 'unknown'
+                )
+              })
+            })
+
+            primus.on('disconnection', () => {
+              metricsService.trackWebSocketConnection('disconnected')
+            })
+
+            logger.info('WebSocket metrics tracking enabled for Primus')
+          }
         }
       )
     )
@@ -165,9 +201,24 @@ export const configureK8s = () => (app: Application) => {
   return app
 }
 
-export const serverPipe = pipe(configureOpenAPI(), configurePrimus(), configureRedis(), configureK8s()) as (
-  app: Application
-) => Application
+export const configureMonitoring = () => (app: Application) => {
+  // Set app name for monitoring
+  const serviceName = appConfig.monitoring?.metrics ? 'ir-engine-api' : 'ir-engine-api'
+  app.set('name', serviceName)
+
+  // Configure monitoring services
+  monitoringServices.forEach((service) => app.configure(service()))
+
+  return app
+}
+
+export const serverPipe = pipe(
+  configureOpenAPI(),
+  configureMonitoring(),
+  configurePrimus(),
+  configureRedis(),
+  configureK8s()
+) as (app: Application) => Application
 
 export const serverJobPipe = pipe(configurePrimus(), configureK8s()) as (app: Application) => Application
 
@@ -221,6 +272,10 @@ export const createFeathersKoaApp = async (
   // Doesn't appear anything else uses it.
   app.set('env', 'production')
   app.configure(mysql)
+
+  if (appConfig.vectordb.enabled) {
+    app.configure(postgres)
+  }
 
   // Enable security, CORS, compression, favicon and body parsing
   app.use(errorHandler()) // in koa no option to pass logger object its a async function instead and must be set first
@@ -278,5 +333,8 @@ export const tearDownAPI = async () => {
 
     const knex = (API.instance as any).get?.('knexClient')
     if (knex) await knex.destroy()
+
+    const vectorDb = (API.instance as any).get?.('vectorDbClient')
+    if (vectorDb) await vectorDb.destroy()
   }
 }

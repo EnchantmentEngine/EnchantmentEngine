@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -29,12 +29,11 @@ import {
   EngineState,
   getComponent,
   getOptionalComponent,
+  NetworkObjectAuthorityTag,
   SimulationSystemGroup
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
-import { NetworkObjectAuthorityTag } from '@ir-engine/network'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { ClientInputSystem } from '@ir-engine/spatial/src/input/systems/ClientInputSystem'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -43,6 +42,7 @@ import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { getHandTarget } from '../avatar/components/AvatarIKComponents'
 import { GrabbableComponent, GrabbedComponent, GrabberComponent } from './GrabbableComponent'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import '@ir-engine/spatial/src/transform/SpawnPoseState'
 import './GrabbableState'
 
@@ -73,8 +73,7 @@ const execute = () => {
 }
 
 const executeInput = () => {
-  const inputSources = InputSourceComponent.nonCapturedInputSources()
-  const buttons = InputComponent.getMergedButtonsForInputSources(inputSources)
+  const buttons = InputComponent.getButtons(getState(ReferenceSpaceState).viewerEntity)
   if (buttons.KeyU?.down) {
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     if (!selfAvatarEntity) return

@@ -19,9 +19,11 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
+
+import mime from 'mime-types'
 
 /**
  * This method takes a filename (with or without included path) and returns a cleaned version of it.
@@ -71,8 +73,11 @@ export const cleanFileNameString = (fullFileName: string, useStorageProviderLeng
  * @param file
  */
 export function cleanFileNameFile(file: File): File {
+  // Ensure File object contains correct mimetype.
+  const mimeType = mime.lookup(file.name) || 'application/octet-stream'
+
   const newFile = new File([file], cleanFileNameString(file.name), {
-    type: file.type,
+    type: mimeType,
     lastModified: file.lastModified
   })
   //overwrite the webkitRelativePath property to preserve directory structure

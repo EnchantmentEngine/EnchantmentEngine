@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -27,10 +27,13 @@ import { WidgetAppServiceReceptorSystem } from '../systems/WidgetAppService'
 
 import { OverlaySystem } from '@ir-engine/client-core/src/systems/OverlaySystem'
 import { AvatarSpawnSystem } from '../networking/AvatarSpawnSystem'
+import { AudioDuckingSystem } from '../systems/AudioDuckingSystem'
 import { AvatarUISystem } from '../systems/AvatarUISystem'
+import { LinkErrorSystem } from '../systems/LinkErrorSystem'
 import { LoadingUISystem } from '../systems/LoadingUISystem'
 import { MediaControlSystem } from '../systems/MediaControlSystem'
 import { PositionalAudioSystem } from '../systems/PositionalAudioSystem'
+import { PoiUiSystem } from '../systems/ui/PoiUI'
 import { WarningUISystem } from '../systems/WarningUISystem'
 import { WidgetUISystem } from '../systems/WidgetUISystem'
 import { UserUISystem } from '../user/UserUISystem'
@@ -40,12 +43,15 @@ import { PortalRedirectSystem } from './PortalRedirectSystem'
 import './ClientNetworkModule'
 
 export {
+  AudioDuckingSystem,
   AvatarSpawnSystem,
   AvatarUISystem,
+  LinkErrorSystem,
   LinkRedirectSystem,
   LoadingUISystem,
   MediaControlSystem,
   OverlaySystem,
+  PoiUiSystem,
   PortalRedirectSystem,
   PositionalAudioSystem,
   UserUISystem,

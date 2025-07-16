@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -409,6 +409,7 @@ export { default as ListSm } from './files/ListSm'
 export { default as LitLg } from './files/LitLg'
 export { default as LitMd } from './files/LitMd'
 export { default as LitSm } from './files/LitSm'
+export { default as Local } from './files/Local'
 export { default as Lock01Lg } from './files/Lock01Lg'
 export { default as Lock01Md } from './files/Lock01Md'
 export { default as Lock01Sm } from './files/Lock01Sm'
@@ -771,3 +772,11 @@ export { default as ZoomInSm } from './files/ZoomInSm'
 export { default as ZoomOutLg } from './files/ZoomOutLg'
 export { default as ZoomOutMd } from './files/ZoomOutMd'
 export { default as ZoomOutSm } from './files/ZoomOutSm'
+
+export { default as CustomEmoteCabbagePatch } from './files/custom/CustomEmoteCabbagePatch'
+export { default as CustomEmoteClapHands } from './files/custom/CustomEmoteClapHands'
+export { default as CustomEmoteMacarena } from './files/custom/CustomEmoteMacarena'
+export { default as CustomEmoteRunningMan } from './files/custom/CustomEmoteRunningMan'
+export { default as CustomEmoteTwistAndShout } from './files/custom/CustomEmoteTwistAndShout'
+export { default as CustomEmoteWaveHand } from './files/custom/CustomEmoteWaveHand'
+export { default as CustomScreenshare } from './files/custom/CustomScreenshare'

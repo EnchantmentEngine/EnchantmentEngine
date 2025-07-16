@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -30,6 +30,7 @@ import { entityExists, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
+  getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -50,7 +51,6 @@ import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { CameraComponent } from '../../../../spatial/src/camera/components/CameraComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 import { AvatarComponent } from './AvatarComponent'
 
 export const eyeOffset = 0.25
@@ -62,13 +62,13 @@ export const AvatarControllerComponent = defineComponent({
     /** The camera entity that should be updated by this controller */
     cameraEntity: S.Entity(),
     movementCaptured: S.Array(S.Entity()),
-    isJumping: S.Bool(false),
-    isWalking: S.Bool(false),
-    isInAir: S.Bool(false),
+    isJumping: S.Bool(),
+    isWalking: S.Bool(),
+    isInAir: S.Bool(),
     /** velocity along the Y axis */
-    verticalVelocity: S.Number(0),
+    verticalVelocity: S.Number(),
     /** Is the gamepad-driven jump active */
-    gamepadJumpActive: S.Bool(false),
+    gamepadJumpActive: S.Bool(),
     /** gamepad-driven input, in the local XZ plane */
     gamepadLocalInput: T.Vec3(),
     /** gamepad-driven movement, in the world XZ plane */
@@ -126,8 +126,6 @@ export const AvatarControllerComponent = defineComponent({
 
     useEffect(() => {
       if (!avatarComponent) return
-      setAvatarColliderTransform(entity)
-
       const cameraEntity = avatarControllerComponent.cameraEntity.value
       if (cameraEntity && entityExists(cameraEntity) && hasComponent(cameraEntity, FollowCameraComponent)) {
         const cameraComponent = getComponent(cameraEntity, FollowCameraComponent)
@@ -137,20 +135,20 @@ export const AvatarControllerComponent = defineComponent({
     }, [avatarComponent?.avatarHeight, camera.near])
 
     useEffect(() => {
-      if (!avatarComponent) return
-      if (isCameraAttachedToAvatar) {
-        const controller = getComponent(entity, AvatarControllerComponent)
-        removeComponent(controller.cameraEntity, FollowCameraComponent)
-      } else if (cameraHasTargetRotation) {
-        const controller = getComponent(entity, AvatarControllerComponent)
-        const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
-        setComponent(controller.cameraEntity, FollowCameraComponent, {
-          targetEntity: entity,
-          phi: targetCameraRotation.phi,
-          theta: targetCameraRotation.theta,
-          firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, eyeOffset),
-          thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
-        })
+      if (!avatarComponent || isCameraAttachedToAvatar || !cameraHasTargetRotation) return
+
+      const controller = getComponent(entity, AvatarControllerComponent)
+      const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
+      setComponent(controller.cameraEntity, FollowCameraComponent, {
+        targetEntity: entity,
+        phi: targetCameraRotation.phi,
+        theta: targetCameraRotation.theta,
+        firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, eyeOffset),
+        thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
+      })
+
+      return () => {
+        if (entityExists(controller.cameraEntity)) removeComponent(controller.cameraEntity, FollowCameraComponent)
       }
     }, [isCameraAttachedToAvatar, avatarComponent, cameraHasTargetRotation])
 
@@ -162,14 +160,12 @@ export const AvatarColliderComponent = defineComponent({
   name: 'AvatarColliderComponent',
   schema: S.Object({ colliderEntity: S.Entity() }),
 
-  reactor() {
-    const entity = useEntityContext()
-    const avatarColliderComponent = getComponent(entity, AvatarColliderComponent)
+  reactor({ entity }) {
     useEffect(() => {
+      const avatarColliderComponent = getOptionalComponent(entity, AvatarColliderComponent)
       return () => {
-        removeEntity(
-          avatarColliderComponent.colliderEntity
-        ) /** @todo Aidan said to figure out why this isn't cleaned up with EntityTree */
+        if (!avatarColliderComponent?.colliderEntity) return
+        removeEntity(avatarColliderComponent.colliderEntity)
       }
     }, [])
   }

@@ -6,8 +6,8 @@ Version 1.0. (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at
 https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
 The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
+and 15 have been added to cover use of software over a computer network and
+provide for limited attribution for the Original Developer. In addition,
 Exhibit A has been modified to be consistent with Exhibit B.
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -19,7 +19,7 @@ The Original Code is Ethereal Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Ethereal Engine team.
 
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023 
+All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025 
 Ethereal Engine. All Rights Reserved.
 */
 
@@ -29,8 +29,7 @@ import {
   destroyEngine,
   Entity,
   EntityContext,
-  EntityTreeComponent,
-  removeComponent,
+  getComponent,
   removeEntity,
   setComponent,
   UndefinedEntity
@@ -43,12 +42,11 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import { MockEventListener } from '../../../tests/util/MockEventListener'
 import { MockXRSession } from '../../../tests/util/MockXR'
 import { destroySpatialEngine, initializeSpatialEngine } from '../../initializeEngine'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
-import { RendererComponent } from '../../renderer/WebGLRendererSystem'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { XRState } from '../../xr/XRState'
-import { InputComponent } from '../components/InputComponent'
-import { InputState } from '../state/InputState'
+import { InputPointerComponent } from '../components/InputPointerComponent'
 import ClientInputHooks from './ClientInputHooks'
 
 const createMockHTMLCanvasElement = (ev: MockEventListener) => {
@@ -1105,175 +1103,63 @@ describe.skip('ClientInputHooks', () => {
       assert.notEqual(getState(XRState).session, null)
       assert.equal(ev.hasEvent(EvName), false)
     })
-  })
 
-  describe('MeshInputReactor', () => {
-    let testEntity = UndefinedEntity
+    it('should maintain consistent pointerId for emulated pointer across multiple touch events', () => {
+      // Ensure XR session is not active
+      getMutableState(XRState).session.set(null)
 
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, TransformComponent)
-      setComponent(testEntity, VisibleComponent)
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
-    it('should add the entityContext to the InputState.inputMeshes list when the entity.ancestor has an InputComponent', () => {
-      setComponent(testEntity, InputComponent)
-      const before = getState(InputState).inputMeshes
-      assert.equal(before.has(testEntity), false)
-
-      // Run the reactor and check the result
+      // Run the reactor
       const root = startReactor(() => {
         return React.createElement(
           EntityContext.Provider,
           { value: testEntity },
-          React.createElement(ClientInputHooks.MeshInputReactor, {})
-        )
-      }) as ReactorRoot
-      const result = getState(InputState).inputMeshes
-      assert.equal(result.has(testEntity), true)
-    })
-
-    it('should remove the entityContext from the InputState.inputMeshes list when the entity.ancestor does not have an InputComponent', () => {
-      // setComponent(testEntity, InputComponent)  // Do not set the InputComponent on the entity
-      getMutableState(InputState).inputMeshes.set(new Set([testEntity] as Entity[])) // Force-add the entity manually, to check this code path in isolation
-      const before = getState(InputState).inputMeshes
-      assert.equal(before.has(testEntity), true)
-
-      // Run the reactor and check the result
-      const root = startReactor(() => {
-        return React.createElement(
-          EntityContext.Provider,
-          { value: testEntity },
-          React.createElement(ClientInputHooks.MeshInputReactor, {})
-        )
-      }) as ReactorRoot
-      const result = getState(InputState).inputMeshes
-      assert.equal(result.has(testEntity), false)
-    })
-
-    it('should trigger whenever the entityContext.ancestor gets or removes its InputComponent', async () => {
-      const before = getState(InputState).inputMeshes
-      assert.equal(before.has(testEntity), false)
-
-      // Create the ancestor entity that contains the InputComponent
-      const parentEntity = createEntity()
-      setComponent(parentEntity, InputComponent)
-      setComponent(parentEntity, EntityTreeComponent)
-
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      assert.equal(before.has(testEntity), false)
-
-      // Setup the reactor
-      const root = startReactor(() => {
-        return React.createElement(
-          EntityContext.Provider,
-          { value: testEntity },
-          React.createElement(ClientInputHooks.MeshInputReactor, {})
+          React.createElement(ClientInputHooks.CanvasInputReactor, {})
         )
       }) as ReactorRoot
 
-      root.run()
+      // Simulate multiple pointer events with different browser pointer IDs (as would happen on mobile)
+      const pointerEvents = [
+        { pointerId: 1, clientX: 100, clientY: 100, button: 0, type: 'pointerenter' },
+        { pointerId: 2, clientX: 150, clientY: 150, button: 0, type: 'pointerdown' },
+        { pointerId: 3, clientX: 200, clientY: 200, button: 0, type: 'pointermove' },
+        { pointerId: 4, clientX: 250, clientY: 250, button: 0, type: 'pointerup' }
+      ]
 
-      // Check the result
-      const one = getState(InputState).inputMeshes
-      assert.equal(one.has(testEntity), true)
+      const createdPointerEntities: Entity[] = []
 
-      removeComponent(parentEntity, InputComponent)
-      root.run()
+      for (const eventData of pointerEvents) {
+        // Trigger the event
+        const listeners = ev.listeners[eventData.type]
+        if (listeners && listeners.length > 0) {
+          const event = new PointerEvent(eventData.type, eventData)
+          listeners[0](event)
+        }
 
-      const two = getState(InputState).inputMeshes
-      assert.equal(two.has(testEntity), false)
-    })
-  })
+        // Check that we always get the same pointer entity (with consistent pointerId = 1000)
+        const pointerEntity = InputPointerComponent.getPointerByID(testEntity, 1000)
 
-  describe('BoundingBoxInputReactor', () => {
-    let testEntity = UndefinedEntity
+        if (pointerEntity !== UndefinedEntity) {
+          createdPointerEntities.push(pointerEntity)
+          const pointerComponent = getComponent(pointerEntity, InputPointerComponent)
 
-    beforeEach(async () => {
-      createEngine()
-      testEntity = createEntity()
-      setComponent(testEntity, TransformComponent)
-      setComponent(testEntity, VisibleComponent)
-    })
+          // Verify that the pointerId is always 1000 (our consistent emulated pointer ID base)
+          assert.equal(
+            pointerComponent.pointerId,
+            1000,
+            `Expected consistent pointerId 1000, but got ${pointerComponent.pointerId} for event ${eventData.type}`
+          )
+        }
+      }
 
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
-    it('should add the entityContext to the InputState.inputBoundingBoxes list when the entity.ancestor has an InputComponent', () => {
-      setComponent(testEntity, InputComponent)
-      const before = getState(InputState).inputBoundingBoxes
-      assert.equal(before.has(testEntity), false)
-
-      // Run the reactor and check the result
-      const root = startReactor(() => {
-        return React.createElement(
-          EntityContext.Provider,
-          { value: testEntity },
-          React.createElement(ClientInputHooks.BoundingBoxInputReactor, {})
-        )
-      }) as ReactorRoot
-      const result = getState(InputState).inputBoundingBoxes
-      assert.equal(result.has(testEntity), true)
-    })
-
-    it('should remove the entityContext from the InputState.inputBoundingBoxes list when the entity.ancestor does not have an InputComponent', () => {
-      // setComponent(testEntity, InputComponent)  // Do not set the InputComponent on the entity
-      getMutableState(InputState).inputBoundingBoxes.set(new Set([testEntity] as Entity[])) // Force-add the entity manually, to check this code path in isolation
-      const before = getState(InputState).inputBoundingBoxes
-      assert.equal(before.has(testEntity), true)
-
-      // Run the reactor and check the result
-      const Reactor = startReactor(() => {
-        return React.createElement(
-          EntityContext.Provider,
-          { value: testEntity },
-          React.createElement(ClientInputHooks.BoundingBoxInputReactor, {})
-        )
-      }) as ReactorRoot
-      const result = getState(InputState).inputBoundingBoxes
-      assert.equal(result.has(testEntity), false)
-    })
-
-    it('should trigger whenever the entityContext.ancestor gets or removes its InputComponent', async () => {
-      const before = getState(InputState).inputMeshes
-      assert.equal(before.has(testEntity), false)
-
-      // Create the ancestor entity that contains the InputComponent
-      const parentEntity = createEntity()
-      setComponent(parentEntity, InputComponent)
-      setComponent(parentEntity, EntityTreeComponent)
-
-      // setComponent(testEntity, InputComponent)
-      setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
-      assert.equal(before.has(testEntity), false)
-
-      // Setup the reactor
-      const reactor = startReactor(() =>
-        React.createElement(
-          EntityContext.Provider,
-          { value: testEntity },
-          React.createElement(ClientInputHooks.BoundingBoxInputReactor, {})
-        )
+      // Verify that all events used the same pointer entity
+      const uniqueEntities = new Set(createdPointerEntities)
+      assert.equal(
+        uniqueEntities.size <= 1,
+        true,
+        `Expected all events to use the same pointer entity, but found ${uniqueEntities.size} different entities`
       )
 
-      // Check the result
-      const one = getState(InputState).inputBoundingBoxes
-      assert.equal(one.has(testEntity), true)
-
-      removeComponent(parentEntity, InputComponent)
-
-      reactor.run()
-
-      const two = getState(InputState).inputBoundingBoxes
-      assert.equal(two.has(testEntity), false)
+      root.stop()
     })
   })
 })

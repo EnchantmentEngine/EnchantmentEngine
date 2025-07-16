@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -35,11 +35,11 @@ export const HighlightState = defineState({
   initial: {
     blendFunction: BlendFunction.SCREEN,
     patternTexture: null! as Texture, // post processing args typed as (Texture | undefined) so we must override the type
-    patternScale: 1.0,
+    patternScale: 60.0,
     edgeStrength: 5.0,
     pulseSpeed: 0.0,
-    visibleEdgeColor: 0x375daf,
-    hiddenEdgeColor: 0x879ecf,
+    visibleEdgeColor: 0xffffff,
+    hiddenEdgeColor: 0xffffff,
     kernelSize: KernelSize.MEDIUM,
     blur: true,
     xRay: true,

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -47,22 +47,22 @@ describe('AssetType', () => {
 
     const badExt = FileToAssetExt(badURl2)
     for (const ext of exts) {
-      assert(badExt !== <AssetExt>ext)
+      assert(badExt !== (ext as AssetExt))
     }
 
     for (const ext of exts) {
       const url = 'https://localhost:3000/test.' + ext
-      assert(FileToAssetExt(url) === <AssetExt>ext)
+      assert(FileToAssetExt(url) === (ext as AssetExt))
     }
 
     for (const ext of exts) {
       const url = 'https://localhost:3000/test.' + ext.toUpperCase()
-      assert(FileToAssetExt(url) === <AssetExt>ext)
+      assert(FileToAssetExt(url) === (ext as AssetExt))
     }
 
     for (const ext of exts) {
       const url = 'localhost:3000/test.' + ext
-      assert(FileToAssetExt(url) === <AssetExt>ext)
+      assert(FileToAssetExt(url) === (ext as AssetExt))
     }
   })
 

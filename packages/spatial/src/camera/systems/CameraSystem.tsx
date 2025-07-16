@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -33,22 +33,25 @@ import {
   EntityUUID,
   getComponent,
   getOptionalMutableComponent,
+  NetworkObjectOwnedTag,
+  NetworkObjectSendPeriodicUpdatesTag,
   QueryReactor,
   removeComponent,
   setComponent,
   useEntityContext,
-  UUIDComponent
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
 import { defineState, getMutableState, none, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkObjectOwnedTag, NetworkObjectSendPeriodicUpdatesTag, WorldNetworkAction } from '@ir-engine/network'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { CameraSettingsState } from '../CameraSceneMetadata'
+import { CameraSettingsState } from '../CameraSettingsState'
 import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
+import { FollowCameraMode } from '../types/FollowCameraMode'
 
 export const CameraEntityState = defineState({
   name: 'CameraEntityState',
@@ -56,7 +59,9 @@ export const CameraEntityState = defineState({
 
   receptors: {
     onCameraSpawn: CameraActions.spawnCamera.receive((action) => {
-      getMutableState(CameraEntityState)[action.entityUUID].set(true)
+      getMutableState(CameraEntityState)[
+        UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+      ].set(true)
     }),
     onEntityDestroy: WorldNetworkAction.destroyEntity.receive((action) => {
       getMutableState(CameraEntityState)[action.entityUUID].set(none)
@@ -105,9 +110,25 @@ function CameraReactor() {
     if (!cameraSettings?.fov) return
     const follow = getOptionalMutableComponent(Engine.instance.cameraEntity, FollowCameraComponent)
     if (follow) {
-      follow.thirdPersonMinDistance.set(cameraSettings.minCameraDistance.value)
-      follow.thirdPersonMaxDistance.set(cameraSettings.maxCameraDistance.value)
-      follow.distance.set(cameraSettings.startCameraDistance.value)
+      let startDistance = cameraSettings.thirdPersonDefaultDistance.value
+      let minDistance = cameraSettings.thirdPersonMinDistance.value
+      let maxDistance = cameraSettings.thirdPersonMaxDistance.value
+      if (follow.mode.value === FollowCameraMode.FirstPerson) {
+        startDistance = 0
+        minDistance = 0
+        maxDistance = 0
+      } else if (follow.mode.value === FollowCameraMode.ThirdPerson) {
+        startDistance = cameraSettings.thirdPersonDefaultDistance.value
+        minDistance = cameraSettings.thirdPersonMinDistance.value
+        maxDistance = cameraSettings.thirdPersonMaxDistance.value
+      } else if (follow.mode.value === FollowCameraMode.TopDown) {
+        startDistance = cameraSettings.topDownDefaultDistance.value
+        minDistance = cameraSettings.topDownMinDistance.value
+        maxDistance = cameraSettings.topDownMaxDistance.value
+      }
+      follow.minDistance.set(minDistance)
+      follow.maxDistance.set(maxDistance)
+      follow.distance.set(startDistance)
     }
   }, [cameraSettings])
 

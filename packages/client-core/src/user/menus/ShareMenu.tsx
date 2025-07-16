@@ -19,142 +19,34 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
 import { QRCodeSVG } from 'qrcode.react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import multiLogger from '@ir-engine/common/src/logger'
-import { EMAIL_REGEX, PHONE_REGEX } from '@ir-engine/common/src/regex'
-import { InviteCode, InviteData, authenticationSettingPath } from '@ir-engine/common/src/schema.type.module'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
 
 import { useFind } from '@ir-engine/common'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button, Input } from '@ir-engine/ui'
 import { Copy03Lg, Send01Lg, Share06Sm } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import { InviteService } from '../../social/services/InviteService'
+import { useShareMenu } from '../../hooks/useShareMenu'
 import { clientContextParams } from '../../util/ClientContextState'
-import { AuthState } from '../services/AuthService'
 
 const logger = multiLogger.child({ component: 'client-core:ShareMenu', modifier: clientContextParams })
-
-const useShareMenuHooks = ({ refLink }) => {
-  const { t } = useTranslation()
-  const [token, setToken] = React.useState('')
-  const [isSpectatorMode, setSpectatorMode] = useState<boolean>(false)
-  const [shareLink, setShareLink] = useState('')
-  const selfUser = useMutableState(AuthState).user.value
-
-  const copyLinkToClipboard = () => {
-    navigator.clipboard.writeText(refLink.current.value)
-    NotificationService.dispatchNotify(t('user:usermenu.share.linkCopied'), { variant: 'success' })
-  }
-
-  const shareOnApps = () => {
-    navigator
-      .share({
-        title: t('user:usermenu.share.shareTitle'),
-        text: t('user:usermenu.share.shareDescription'),
-        url: document.location.href
-      })
-      .then(() => {
-        logger.info('Successfully shared')
-      })
-      .catch((error) => {
-        logger.error(error, 'Error during sharing')
-        NotificationService.dispatchNotify(t('user:usermenu.share.shareFailed'), { variant: 'error' })
-      })
-  }
-
-  const packageInvite = async (): Promise<void> => {
-    const isEmail = EMAIL_REGEX.test(token)
-    const isPhone = PHONE_REGEX.test(token)
-    const location = new URL(window.location as any)
-    const params = new URLSearchParams(location.search)
-    let inviteCode = '' as InviteCode
-
-    const sendData = {
-      inviteType: 'instance',
-      token: token.length === 8 ? null : token,
-      identityProviderType: isEmail ? 'email' : isPhone ? 'sms' : null,
-      targetObjectId: params.get('instanceId'),
-      deleteOnUse: true
-    } as InviteData
-
-    if (token.length === 8) {
-      inviteCode = token as InviteCode
-    }
-
-    if (isSpectatorMode) {
-      sendData.spawnType = 'spectate'
-      sendData.spawnDetails = { spectate: selfUser.id }
-    } else if (selfUser?.inviteCode) {
-      sendData.spawnType = 'inviteCode'
-      sendData.spawnDetails = { inviteCode: selfUser.inviteCode }
-    }
-
-    InviteService.sendInvite(sendData, inviteCode)
-    setToken('')
-  }
-
-  const handleChangeToken = (e) => {
-    setToken(e.target.value)
-  }
-
-  const getInviteLink = () => {
-    const location = new URL(window.location as any)
-    const params = new URLSearchParams(location.search)
-    if (selfUser?.inviteCode != null) {
-      params.set('inviteCode', selfUser.inviteCode)
-      location.search = params.toString()
-      return location.toString()
-    } else {
-      return location.toString()
-    }
-  }
-
-  const getSpectateModeUrl = () => {
-    const location = new URL(window.location as any)
-    const params = new URLSearchParams(location.search)
-    params.set('spectate', selfUser.id)
-    params.delete('inviteCode')
-    location.search = params.toString()
-    return location.toString()
-  }
-
-  const toggleSpectatorMode = () => {
-    setSpectatorMode(!isSpectatorMode)
-  }
-
-  useEffect(() => {
-    setShareLink(isSpectatorMode ? getSpectateModeUrl() : getInviteLink())
-  }, [isSpectatorMode])
-
-  return {
-    copyLinkToClipboard,
-    shareOnApps,
-    packageInvite,
-    handleChangeToken,
-    token,
-    shareLink,
-    isSpectatorMode,
-    toggleSpectatorMode
-  }
-}
 
 const ShareMenu = (): JSX.Element => {
   const { t } = useTranslation()
   const refLink = useRef() as React.MutableRefObject<HTMLInputElement>
 
-  const { copyLinkToClipboard, packageInvite, handleChangeToken, token, shareLink } = useShareMenuHooks({
-    refLink
-  })
+  const { copyLinkToClipboard, packageInvite, handleChangeToken, token, shareLink } = useShareMenu()
 
   useEffect(() => {
     logger.analytics({ event_name: 'share_clicked' })
@@ -172,7 +64,15 @@ const ShareMenu = (): JSX.Element => {
     navigator.clipboard.writeText(text)
     NotificationService.dispatchNotify(t('user:usermenu.share.linkCopied'), { variant: 'success' })
   }
-  const authSetting = useFind(authenticationSettingPath).data.at(0)
+  const engineSettingData = useFind(engineSettingPath, {
+    query: {
+      category: 'authentication',
+      paginate: false
+    }
+  })
+  const authSetting = unflattenArrayToObject(
+    engineSettingData.data.map((el) => ({ key: el.key, value: el.value, dataType: el.dataType }))
+  )
 
   const getConnectPlaceholder = () => {
     let smsMagicLink = false,
@@ -224,7 +124,7 @@ const ShareMenu = (): JSX.Element => {
             readOnly
             value={shareLink}
             endComponent={
-              <button className="h-4 w-4 text-text-primary" onMouseDown={copyLinkToClipboard}>
+              <button className="h-4 w-4 text-text-primary" onMouseDown={() => copyLinkToClipboard()}>
                 <Copy03Lg />
               </button>
             }

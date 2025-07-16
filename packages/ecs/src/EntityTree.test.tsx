@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -27,7 +27,16 @@ import { render } from '@testing-library/react'
 import React, { useEffect } from 'react'
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
-import { createEntity, entityExists, EntityUUID, hasComponents, removeEntity, S, UUIDComponent } from '@ir-engine/ecs'
+import {
+  createEntity,
+  entityExists,
+  EntityUUID,
+  hasComponents,
+  Not,
+  removeEntity,
+  S,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -36,7 +45,7 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { Entity, EntityID, EntityUUIDPair, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
 import {
   EntityTreeComponent,
@@ -310,10 +319,13 @@ describe('EntityTreeComponent', () => {
       setComponent(rootEntity, EntityTreeComponent, {
         parentEntity: UndefinedEntity
       })
-      setComponent(rootEntity, UUIDComponent, 'root' as EntityUUID)
+      setComponent(rootEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'root' as EntityID
+      })
 
       const entity = createEntity()
-      const testUUID = 'test-uuid' as EntityUUID
+      const testUUID = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       setComponent(entity, UUIDComponent, testUUID)
 
@@ -323,7 +335,7 @@ describe('EntityTreeComponent', () => {
       assert.equal(node.parentEntity, rootEntity)
 
       assert.equal(getComponent(entity, UUIDComponent), testUUID)
-      assert.equal(UUIDComponent.getEntityByUUID(testUUID), entity)
+      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.join(testUUID)), entity)
 
       const parentNode = getComponent(node.parentEntity!, EntityTreeComponent)
       assert.equal(parentNode.children.length, 1)
@@ -336,49 +348,55 @@ describe('EntityTreeComponent', () => {
       setComponent(rootEntity, EntityTreeComponent, {
         parentEntity: UndefinedEntity
       })
-      setComponent(rootEntity, UUIDComponent, 'root' as EntityUUID)
+      setComponent(rootEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'root' as EntityID
+      })
 
       const child_0 = createEntity()
       setComponent(child_0, EntityTreeComponent, {
         parentEntity: rootEntity
       })
-      setComponent(child_0, UUIDComponent, 'child-0' as EntityUUID)
+      setComponent(child_0, UUIDComponent, { entitySourceID: 'child' as SourceID, entityID: '0' as EntityID })
       const child_1 = createEntity()
       setComponent(child_1, EntityTreeComponent, {
         parentEntity: rootEntity
       })
-      setComponent(child_1, UUIDComponent, 'child-1' as EntityUUID)
+      setComponent(child_1, UUIDComponent, { entitySourceID: 'child' as SourceID, entityID: '1' as EntityID })
       const child_2 = createEntity()
       setComponent(child_2, EntityTreeComponent, {
         parentEntity: rootEntity
       })
-      setComponent(child_2, UUIDComponent, 'child-2' as EntityUUID)
+      setComponent(child_2, UUIDComponent, { entitySourceID: 'child' as SourceID, entityID: '2' as EntityID })
       const child_3 = createEntity()
       setComponent(child_3, EntityTreeComponent, {
         parentEntity: rootEntity
       })
-      setComponent(child_3, UUIDComponent, 'child-3' as EntityUUID)
+      setComponent(child_3, UUIDComponent, { entitySourceID: 'child' as SourceID, entityID: '3' as EntityID })
       const child_4 = createEntity()
       setComponent(child_4, EntityTreeComponent, {
         parentEntity: rootEntity
       })
-      setComponent(child_4, UUIDComponent, 'child-4' as EntityUUID)
+      setComponent(child_4, UUIDComponent, { entitySourceID: 'child' as SourceID, entityID: '4' as EntityID })
 
       const entity = createEntity()
       setComponent(entity, EntityTreeComponent, {
         parentEntity: rootEntity,
         childIndex: 2
       })
-      setComponent(entity, UUIDComponent, 'test-uuid' as EntityUUID)
+      setComponent(entity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'test-uuid' as EntityID
+      })
 
       const sceneNode = getComponent(rootEntity, EntityTreeComponent)
       assert.equal(sceneNode.children.length, 6)
-      assert.equal(sceneNode.children[0], UUIDComponent.getEntityByUUID('child-0' as EntityUUID))
-      assert.equal(sceneNode.children[1], UUIDComponent.getEntityByUUID('child-1' as EntityUUID))
+      assert.equal(sceneNode.children[0], UUIDComponent.getEntityByUUID('child0' as EntityUUID))
+      assert.equal(sceneNode.children[1], UUIDComponent.getEntityByUUID('child1' as EntityUUID))
       assert.equal(sceneNode.children[2], entity)
-      assert.equal(sceneNode.children[3], UUIDComponent.getEntityByUUID('child-2' as EntityUUID))
-      assert.equal(sceneNode.children[4], UUIDComponent.getEntityByUUID('child-3' as EntityUUID))
-      assert.equal(sceneNode.children[5], UUIDComponent.getEntityByUUID('child-4' as EntityUUID))
+      assert.equal(sceneNode.children[3], UUIDComponent.getEntityByUUID('child2' as EntityUUID))
+      assert.equal(sceneNode.children[4], UUIDComponent.getEntityByUUID('child3' as EntityUUID))
+      assert.equal(sceneNode.children[5], UUIDComponent.getEntityByUUID('child4' as EntityUUID))
       assert.equal(sceneNode.parentEntity, UndefinedEntity)
     })
 
@@ -388,16 +406,21 @@ describe('EntityTreeComponent', () => {
       setComponent(rootEntity, EntityTreeComponent, {
         parentEntity: UndefinedEntity
       })
-      setComponent(rootEntity, UUIDComponent, 'root' as EntityUUID)
+      setComponent(rootEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'root' as EntityID
+      })
 
       const entity = createEntity()
+      const uuid = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
-      setComponent(entity, UUIDComponent, 'test-uuid' as EntityUUID)
+      setComponent(entity, UUIDComponent, uuid)
+
       removeComponent(entity, EntityTreeComponent)
 
       // UUIDComponent should remain
-      assert.equal(getComponent(entity, UUIDComponent), 'test-uuid')
-      assert.equal(UUIDComponent.getEntityByUUID('test-uuid' as EntityUUID), entity)
+      assert.equal(UUIDComponent.get(entity), UUIDComponent.join(uuid))
+      assert.equal(UUIDComponent.getEntityByUUID(UUIDComponent.join(uuid)), entity)
 
       const parentNode = getComponent(rootEntity, EntityTreeComponent)
       assert.equal(parentNode.children.length, 0)
@@ -409,7 +432,10 @@ describe('EntityTreeComponent', () => {
       beforeEach(() => {
         root = createEntity()
         setComponent(root, EntityTreeComponent, { parentEntity: UndefinedEntity })
-        setComponent(root, UUIDComponent, 'root' as EntityUUID)
+        setComponent(root, UUIDComponent, {
+          entitySourceID: 'source' as SourceID,
+          entityID: 'root' as EntityID
+        })
       })
 
       it('should not add the entity node to the parent.EntityTreeComponent.children list if it was already added', () => {
@@ -451,7 +477,10 @@ describe('removeEntityNodeRecursively', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
   })
 
   afterEach(() => {
@@ -515,7 +544,10 @@ describe('traverseEntityNode', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
   })
 
   afterEach(() => {
@@ -560,7 +592,10 @@ describe('traverseEntityNodeChildFirst', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
   })
 
   afterEach(() => {
@@ -607,7 +642,10 @@ describe('traverseEntityNodeParent', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
   })
 
   afterEach(() => {
@@ -709,10 +747,10 @@ describe('traverseEntityNodeParent', () => {
   })
 }) //:: traverseEntityNodeParent
 
-const ComponentA = defineComponent({ name: 'ComponentA', schema: S.String('') })
-const ComponentB = defineComponent({ name: 'ComponentB', schema: S.String('') })
-const ComponentC = defineComponent({ name: 'ComponentC', schema: S.String('') })
-const ComponentD = defineComponent({ name: 'ComponentD', schema: S.String('') })
+const ComponentA = defineComponent({ name: 'ComponentA', schema: S.String() })
+const ComponentB = defineComponent({ name: 'ComponentB', schema: S.String() })
+const ComponentC = defineComponent({ name: 'ComponentC', schema: S.String() })
+const ComponentD = defineComponent({ name: 'ComponentD', schema: S.String() })
 
 describe('getAncestorWithComponents', () => {
   beforeEach(() => {
@@ -894,7 +932,10 @@ describe('findIndexOfEntityNode', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
   })
 
   afterEach(() => {
@@ -1354,11 +1395,10 @@ describe('useChildrenWithComponents', () => {
     const child_1 = createEntity()
     const child_2 = createEntity()
     let results = [UndefinedEntity]
-    const components = [ComponentA, ComponentB]
-    const exclude = [ComponentD]
+    const components = [ComponentA, ComponentB, Not(ComponentD)]
 
     const Reactor = () => {
-      const entities = useChildrenWithComponents(rootEntity, components, exclude)
+      const entities = useChildrenWithComponents(rootEntity, components)
       useEffect(() => {
         results = entities
       }, [entities])
@@ -1370,14 +1410,12 @@ describe('useChildrenWithComponents', () => {
     setComponent(child_1, EntityTreeComponent, { parentEntity: rootEntity })
     setComponent(child_2, EntityTreeComponent, { parentEntity: rootEntity })
 
-    for (const component of components) {
-      setComponent(child_1, component)
-      setComponent(child_2, component)
-    }
+    setComponent(child_1, ComponentA)
+    setComponent(child_2, ComponentA)
+    setComponent(child_1, ComponentB)
+    setComponent(child_2, ComponentB)
 
-    for (const component of exclude) {
-      setComponent(child_2, component)
-    }
+    setComponent(child_2, ComponentD)
 
     const { rerender, unmount } = render(tag)
 
@@ -1391,11 +1429,10 @@ describe('useChildrenWithComponents', () => {
     const child_1 = createEntity()
     const child_2 = createEntity()
     let results = [UndefinedEntity]
-    const components = [ComponentA, ComponentB]
-    const exclude = [ComponentC, ComponentD]
+    const components = [ComponentA, ComponentB, Not(ComponentC)]
 
     const Reactor = () => {
-      const entities = useChildrenWithComponents(rootEntity, components, exclude)
+      const entities = useChildrenWithComponents(rootEntity, components)
       useEffect(() => {
         results = entities
       }, [entities])
@@ -1407,12 +1444,12 @@ describe('useChildrenWithComponents', () => {
     setComponent(child_1, EntityTreeComponent, { parentEntity: rootEntity })
     setComponent(child_2, EntityTreeComponent, { parentEntity: rootEntity })
 
-    for (const component of components) {
-      setComponent(child_1, component)
-      setComponent(child_2, component)
-    }
+    setComponent(child_1, ComponentA)
+    setComponent(child_2, ComponentA)
+    setComponent(child_1, ComponentB)
+    setComponent(child_2, ComponentB)
 
-    setComponent(child_2, exclude[0])
+    setComponent(child_2, ComponentC)
 
     const { rerender, unmount } = render(tag)
 
@@ -1426,11 +1463,10 @@ describe('useChildrenWithComponents', () => {
     const child_1 = createEntity()
     const child_2 = createEntity()
     let results = [UndefinedEntity]
-    const components = [ComponentA, ComponentB]
-    const exclude = [ComponentD]
+    const components = [ComponentA, ComponentB, Not(ComponentD)]
 
     const Reactor = () => {
-      const entities = useChildrenWithComponents(rootEntity, components, exclude)
+      const entities = useChildrenWithComponents(rootEntity, components)
       useEffect(() => {
         results = entities
       }, [entities])
@@ -1442,10 +1478,10 @@ describe('useChildrenWithComponents', () => {
     setComponent(child_1, EntityTreeComponent, { parentEntity: rootEntity })
     setComponent(child_2, EntityTreeComponent, { parentEntity: rootEntity })
 
-    for (const component of components) {
-      setComponent(child_1, component)
-      setComponent(child_2, component)
-    }
+    setComponent(child_1, ComponentA)
+    setComponent(child_2, ComponentA)
+    setComponent(child_1, ComponentB)
+    setComponent(child_2, ComponentB)
 
     const { rerender, unmount } = render(tag)
 
@@ -2099,7 +2135,10 @@ describe('iterateEntityNode', () => {
 
     parentEntity = createEntity()
     setComponent(parentEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
-    setComponent(parentEntity, UUIDComponent, 'root' as EntityUUID)
+    setComponent(parentEntity, UUIDComponent, {
+      entitySourceID: 'source' as SourceID,
+      entityID: 'root' as EntityID
+    })
     setComponent(parentEntity, ComponentC, 'parentEntity-' + parentEntity)
   })
 

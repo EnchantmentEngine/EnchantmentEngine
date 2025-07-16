@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -31,6 +31,7 @@ import { defineState, getMutableState, none, useMutableState } from '@ir-engine/
 import '@ir-engine/common/src/utils/jsonUtils'
 
 import { ServiceTypes } from '@ir-engine/common/declarations'
+import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { AuthState } from '../user/services/AuthService'
 import { RethrownError } from './errors'
 
@@ -160,10 +161,12 @@ export const uploadToFeathersService = (
 
       if (Array.isArray(files)) {
         files.forEach((file) => {
+          file = cleanFileNameFile(file)
           formData.append('media[]', file)
         })
       } else {
-        formData.set('media', files)
+        const file = cleanFileNameFile(files)
+        formData.set('media', file)
       }
 
       request.open('post', `${config.client.serverUrl}/${service}`, true)

@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -32,7 +32,7 @@ import { twMerge } from 'tailwind-merge'
 import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
 import { useCurrentFiles } from '../files/helpers'
-import { assetCategories, useAssetsCategory, useAssetsQuery } from './hooks'
+import { assetCategories, AssetsRefreshState, useAssetsCategory, useAssetsQuery } from './hooks'
 
 export type AssetCategoryNode = {
   name: string
@@ -80,12 +80,12 @@ function FolderCategory({ item }: { item: AssetCategoryNode }) {
 
 function AssetCategory({ item }: { item: AssetCategoryNode }) {
   const { currentCategoryPath } = useAssetsCategory()
-  const { refetchResources, staticResourcesPagination } = useAssetsQuery()
+  const { staticResourcesPagination } = useAssetsQuery()
 
   const handleClickCategory = (item) => {
     currentCategoryPath.set(item)
     staticResourcesPagination.skip.set(0)
-    refetchResources()
+    AssetsRefreshState.triggerRefresh()
   }
 
   return <NodeHierarchyItem node={item} onClick={handleClickCategory} />

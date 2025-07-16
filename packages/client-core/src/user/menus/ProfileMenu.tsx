@@ -19,11 +19,11 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 
@@ -33,8 +33,7 @@ import multiLogger from '@ir-engine/common/src/logger'
 import {
   ScopeType,
   UserName,
-  authenticationSettingPath,
-  clientSettingPath,
+  engineSettingPath,
   identityProviderPath,
   projectSettingPath,
   scopePath,
@@ -52,7 +51,10 @@ import {
 
 import { API } from '@ir-engine/common'
 import { USERNAME_MAX_LENGTH } from '@ir-engine/common/src/constants/UserConstants'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import { INVALID_USER_NAME_REGEX } from '@ir-engine/common/src/regex'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
 import { iOS, isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
@@ -70,8 +72,8 @@ import {
   Refresh1Lg,
   ReportWebsiteDefaullg,
   Send01Lg,
-  Trash04Lg,
-  TwitterOriginalFalse
+  TwitterOriginalFalse,
+  XCloseMd
 } from '@ir-engine/ui/src/icons'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -80,6 +82,7 @@ import { twMerge } from 'tailwind-merge'
 import { initialAuthState, initialOAuthConnectedState } from '../../common/initialAuthState'
 import { ModalState } from '../../common/services/ModalState'
 import { NotificationService } from '../../common/services/NotificationService'
+import { ProjectState } from '../../common/services/ProjectService'
 import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
 import { useZendesk } from '../../hooks/useZendesk'
 import { LocationState } from '../../social/services/LocationService'
@@ -105,6 +108,27 @@ export const TermsOfServiceState = defineState({
 })
 
 const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
+  const engineSettingData = useFind(engineSettingPath, {
+    query: {
+      category: 'authentication',
+      paginate: false
+    }
+  })
+
+  const authSetting = useMemo(() => {
+    if (!engineSettingData.data) return null
+
+    return unflattenArrayToObject(
+      engineSettingData.data.map((el) => ({
+        key: el.key,
+        value: el.value,
+        dataType: el.dataType
+      }))
+    )
+  }, [engineSettingData.status])
+
+  const clientSetting = useEngineSetting<ClientEngineSettingType>('client')
+
   const { t } = useTranslation()
   const location = useLocation()
 
@@ -121,8 +145,6 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   /** Login Link feature that was needed for multi cam mocap that is not currently necessary. Keeping code around for now if we return to it*/
   //const loginLink = useHookstate('')
 
-  const authSetting = useFind(authenticationSettingPath).data.at(0)
-  const clientSetting = useFind(clientSettingPath).data.at(0)
   const loading = useHookstate(getMutableState(AuthState).isProcessing)
   const userId = selfUser.id.value
   const apiKey = useFind(userApiKeyPath).data[0]
@@ -136,6 +158,8 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
   const originallyAgeVerified = useHookstate(checked18OrOver)
   const originallyAcceptedTOS = useHookstate(acceptedTOS).value
   const currentLocation = getState(LocationState).currentLocation.location
+
+  const projectState = useMutableState(ProjectState)
 
   const projectSettings = useFind(projectSettingPath, {
     query: {
@@ -386,6 +410,18 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
   return (
     <div className="absolute z-50 h-fit max-h-[90dvh] w-[50vw] min-w-[720px] max-w-2xl overflow-y-auto rounded-2xl bg-surface-4 p-6 smh:max-h-[60dvh] smh:px-8 smh:py-6">
+      <div className="items-end">
+        <button
+          className={twMerge(
+            'flex h-[2rem] w-[2rem] items-center justify-center justify-self-end rounded-full text-ui-secondary hover:text-ui-hover-secondary focus:bg-ui-select-primary'
+          )}
+          onClick={() => {
+            ModalState.closeModal()
+          }}
+        >
+          <XCloseMd className="h-[1.5rem] w-[1.5rem]" />
+        </button>
+      </div>
       <div className="relative grid w-full grid-cols-5 gap-x-2">
         <div className="col-span-3 grid grid-cols-[auto,1fr] gap-x-6">
           <div className="relative h-20 w-20">
@@ -401,6 +437,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                     )
                   }}
                   className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#DDE1E5] p-2"
+                  data-testid="profile-menu-avatar-edit-button"
                 >
                   <Edit01Lg className="place-items-center text-text-secondary" />
                 </button>
@@ -409,13 +446,17 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
           </div>
 
           <div className="flex flex-col">
-            <Text fontSize="xl" fontWeight="semibold" className="text-text-primary">
+            <Text fontSize="xl" fontWeight="semibold" className="text-text-primary" data-testid="profile-menu-username">
               {hasAdminAccess ? t('user:usermenu.profile.youAreAn') : t('user:usermenu.profile.youAreA')}
               <span>{hasAdminAccess ? ' Admin' : isGuest ? ' Guest' : ' User'}</span>
             </Text>
 
             {acceptedTOS && (
-              <button className="w-fit" onClick={() => showUserId.set(!showUserId.value)}>
+              <button
+                className="w-fit"
+                data-testid={`profile-menu-${showUserId.value ? 'hide' : 'show'}-user-id-button`}
+                onClick={() => showUserId.set(!showUserId.value)}
+              >
                 <Text fontSize="sm" className="text-text-primary">
                   {showUserId.value ? t('user:usermenu.profile.hideUserId') : t('user:usermenu.profile.showUserId')}
                 </Text>
@@ -423,7 +464,11 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             )}
 
             {acceptedTOS && apiKey?.id && (
-              <button onClick={() => showApiKey.set(!showApiKey.value)} className="w-fit text-text-primary">
+              <button
+                data-testid={`profile-menu-${showApiKey.value ? 'hide' : 'show'}-api-key-button`}
+                onClick={() => showApiKey.set(!showApiKey.value)}
+                className="w-fit text-text-primary"
+              >
                 <Text fontSize="sm">
                   {showApiKey.value ? t('user:usermenu.profile.hideApiKey') : t('user:usermenu.profile.showApiKey')}
                 </Text>
@@ -438,16 +483,21 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               'flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-ui-secondary p-2 text-text-primary-button hover:bg-ui-hover-secondary focus:bg-ui-select-secondary',
               initialized ? 'justify-self-end' : 'col-start-3'
             )}
+            data-testid="profile-menu-settings-button"
             onClick={() => {
               ModalState.openModal(<SettingsMenu />)
             }}
           >
             <CogLg className="h-[1.875rem] w-[1.875rem]" />
           </button>
-
           {initialized && (
             <div className="flex w-full flex-col items-end gap-y-4">
-              <Button variant="secondary" className="w-[136px] rounded-[10px] lg:w-full" onClick={openChat}>
+              <Button
+                variant="secondary"
+                className="w-[136px] rounded-[10px] lg:w-full"
+                data-testid="profile-menu-help-chat-button"
+                onClick={openChat}
+              >
                 <HelpIconLg />
                 {t('user:usermenu.profile.helpChat')}
               </Button>
@@ -456,6 +506,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                 variant="red"
                 fullWidth={!isMobile}
                 className="w-[136px] rounded-[10px] lg:w-full"
+                data-testid="profile-menu-report-space-button"
                 onClick={() => ModalState.openModal(<ReportMenu type="location" locationId={currentLocation.id} />)}
               >
                 <ReportWebsiteDefaullg />
@@ -485,7 +536,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                 />
                 <a
                   className="inline text-sm text-text-primary underline-offset-4 hover:text-ui-hover-primary hover:underline"
-                  href={clientSetting?.termsOfService}
+                  href={clientSetting?.data?.termsOfService}
                   target="_blank"
                 >
                   {t('user:usermenu.profile.termsOfService')}
@@ -496,7 +547,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
                 checked={checked13OrOver.value}
                 onChange={() => checked13OrOver.set((v) => !v)}
                 disabled={checked13OrOver.value}
-                label={t('user:usermenu.profile.confirmAge13')}
+                label={t('user:usermenu.profile.confirmAge16')}
               />
             </>
           )}
@@ -534,6 +585,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             </button>
           }
           fullWidth
+          data-testid="profile-menu-username-input"
         />
 
         {showUserId.value && (
@@ -546,6 +598,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             endComponent={
               <button
                 className="h-4 w-4 text-text-primary"
+                data-testid="profile-menu-user-id-copy-button"
                 onMouseDown={() => {
                   navigator.clipboard.writeText(userId)
                   NotificationService.dispatchNotify(t('user:usermenu.profile.userIdCopied'), {
@@ -557,6 +610,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               </button>
             }
             fullWidth
+            data-testid="profile-menu-user-id-input"
           />
         )}
 
@@ -575,6 +629,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             endComponent={
               <button
                 className="h-4 w-4 text-text-primary"
+                data-testid="profile-menu-api-key-copy-button"
                 onMouseDown={() => {
                   navigator.clipboard.writeText(apiKey?.token)
                   NotificationService.dispatchNotify(t('user:usermenu.profile.apiKeyCopied'), {
@@ -586,6 +641,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               </button>
             }
             fullWidth
+            data-testid="profile-menu-api-key-input"
           />
         )}
 
@@ -600,11 +656,16 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               state={error.value ? 'error' : undefined}
               helperText={error.value ? getErrorText() : ''}
               endComponent={
-                <button className="h-4 w-4 text-text-primary" onMouseDown={handleGuestSubmit}>
+                <button
+                  className="h-4 w-4 text-text-primary"
+                  data-testid="profile-menu-submit-email-phone-number-button"
+                  onMouseDown={handleGuestSubmit}
+                >
                   <Send01Lg />
                 </button>
               }
               fullWidth
+              data-testid="profile-menu-email-phone-number-input"
               value={emailPhone.value}
               onChange={(e) => {
                 emailPhone.set(e.target.value)
@@ -618,6 +679,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         <div className="grid w-1/2 grid-cols-1 gap-y-1 px-5 smh:mt-5 smh:gap-y-2">
           <button
             className="flex w-full items-center justify-start gap-x-2 p-2 text-text-primary"
+            data-testid="profile-menu-logout-button"
             onClick={() => {
               ModalState.closeModal() // Close the ProfileMenu popover
               ModalState.openModal(
@@ -640,33 +702,6 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
             <LogIn01Lg />
             {t('user:usermenu.profile.logout.submit')}
           </button>
-
-          <button
-            className="flex w-full items-center justify-start gap-x-2 p-2 text-text-primary"
-            onClick={() => {
-              ModalState.closeModal() // Close the ProfileMenu popover
-              ModalState.openModal(
-                <ConfirmDialog
-                  title={t('user:usermenu.profile.delete.finalDeleteConfirm')}
-                  text={t('user:usermenu.profile.delete.finalDeleteText')}
-                  onSubmit={async () => {
-                    AuthService.removeUser(userId)
-                    AuthService.logoutUser()
-                  }}
-                  onClose={() => {
-                    ModalState.openModal(<ProfileMenu />)
-                  }}
-                />,
-                () => {
-                  ModalState.closeModal()
-                  ModalState.openModal(<ProfileMenu />)
-                }
-              )
-            }}
-          >
-            <Trash04Lg />
-            {t('user:usermenu.profile.delete.deleteAccount')}
-          </button>
         </div>
       )}
 
@@ -674,7 +709,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
 
       {!hideLogin && acceptedTOS && enableSocial && (
         <div className="flex w-full items-center justify-between gap-x-4">
-          <div className="flex items-center gap-x-4">
+          <div className="flex items-center gap-x-4" data-testid="profile-menu-social-login-buttons">
             {authState?.value?.facebook && (
               <Tooltip
                 position="top"
@@ -682,6 +717,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-facebook-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.facebook.value) {
                       handleRemoveOAuthServiceClick('facebook')
@@ -704,6 +740,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-twitter-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.twitter.value) {
                       handleRemoveOAuthServiceClick('twitter')
@@ -726,6 +763,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-google-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.google.value) {
                       handleRemoveOAuthServiceClick('google')
@@ -748,6 +786,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-apple-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.apple.value) {
                       handleRemoveOAuthServiceClick('apple')
@@ -770,6 +809,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-github-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.github.value) {
                       handleRemoveOAuthServiceClick('github')
@@ -792,6 +832,7 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
               >
                 <button
                   className="relative h-8 w-8"
+                  data-testid="profile-menu-discord-sso-login-button"
                   onClick={() => {
                     if (oauthConnectedState.discord.value) {
                       handleRemoveOAuthServiceClick('discord')
@@ -812,24 +853,32 @@ const ProfileMenu = ({ hideLogin, onClose }: Props): JSX.Element => {
         </div>
       )}
 
-      <div className="mt-1 flex w-full items-center justify-center gap-x-2 smh:mt-5">
-        <a href={clientSetting?.privacyPolicy} target="_blank">
-          <Text className="text-center text-text-primary" fontSize="sm">
-            {t('user:usermenu.profile.privacyPolicy')}
-          </Text>
-        </a>
-        {creatorPrivacyPolicyUrl?.value && (
-          <>
+      <div className="mt-1 flex w-full items-center justify-evenly gap-x-2 smh:mt-5">
+        <div className="flex-1"></div>
+        <div className="flex-1">
+          <a href={clientSetting?.data?.privacyPolicy} data-testid="profile-menu-privacy-policy-link" target="_blank">
             <Text className="text-center text-text-primary" fontSize="sm">
-              |
+              {t('user:usermenu.profile.privacyPolicy')}
             </Text>
-            <a href={creatorPrivacyPolicyUrl.value} target="_blank">
+          </a>
+          {creatorPrivacyPolicyUrl?.value && (
+            <>
               <Text className="text-center text-text-primary" fontSize="sm">
-                {t('user:usermenu.profile.creatorPrivacyPolicy')}
+                |
               </Text>
-            </a>
-          </>
-        )}
+              <a href={creatorPrivacyPolicyUrl.value} target="_blank">
+                <Text className="text-center text-text-primary" fontSize="sm">
+                  {t('user:usermenu.profile.creatorPrivacyPolicy')}
+                </Text>
+              </a>
+            </>
+          )}
+        </div>
+        <div className="flex-1 text-right">
+          <Text className="text-sm">
+            {t('admin:components.setting.releaseVersion')}: {projectState.builderInfo.engineVersion.value}
+          </Text>
+        </div>
       </div>
     </div>
   )

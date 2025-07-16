@@ -19,11 +19,11 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { BadRequest } from '@feathersjs/errors'
+import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { Params } from '@feathersjs/feathers'
 import {
   CREDENTIAL_OFFSET,
@@ -43,12 +43,13 @@ import {
   instanceAttendancePath,
   instancePath,
   instanceSignalingPath,
-  locationPath
+  locationPath,
+  moderationBanPath
 } from '@ir-engine/common/src/schema.type.module'
 import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
+import type { MessageTypes } from '@ir-engine/hyperflux'
 import { PeerID, getState } from '@ir-engine/hyperflux'
-import type { MessageTypes } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
 import crypto from 'crypto'
 import { Application } from '../../../declarations'
 import { ServerMode, ServerState } from '../../ServerState'
@@ -81,7 +82,16 @@ const peerJoin = async (app: Application, data: InstanceSignalingDataType, param
 
   const user = params.user
   if (!user) throw new BadRequest('Must be logged in to join instance')
-
+  const thisUserBanned = await app.service(moderationBanPath).find({
+    query: {
+      banUserId: user.id,
+      banned: true,
+      $limit: 0
+    }
+  })
+  if (thisUserBanned.total > 0) {
+    throw new Forbidden('You are banned')
+  }
   if (!peerID) throw new BadRequest('PeerID required')
 
   if (!data?.instanceID) throw new BadRequest('InstanceID required')
@@ -186,6 +196,18 @@ export default (app: Application): void => {
       const peerID = params!.socketQuery!.peerID
       const instanceId = data.instanceID
       if (!peerID || !instanceId) throw new BadRequest('instanceID required')
+
+      const user = params!.user
+      const thisUserBanned = await app.service(moderationBanPath).find({
+        query: {
+          banUserId: user!.id,
+          banned: true,
+          $limit: 0
+        }
+      })
+      if (thisUserBanned.total > 0) {
+        throw new Forbidden('You are banned')
+      }
 
       const now = await getDateTimeSql()
       await app.service(instanceAttendancePath).patch(

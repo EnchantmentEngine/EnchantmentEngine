@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -32,12 +32,15 @@ import { defineQuery, QueryReactor, useQuery } from '@ir-engine/ecs/src/QueryFun
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
 
-import { EngineState, Not, useEntityContext } from '@ir-engine/ecs'
+import { EngineState, NetworkSchemaState, Not, useEntityContext } from '@ir-engine/ecs'
 import React from 'react'
 import { Vector3 } from 'three'
-import { InputHeuristicState, IntersectionData } from '../../input/functions/ClientInputHeuristics'
+import {
+  filterEntitiesByViewer,
+  InputHeuristicState,
+  IntersectionData
+} from '../../input/functions/ClientInputHeuristics'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Physics, RaycastArgs } from '../classes/Physics'
@@ -111,12 +114,11 @@ const PhysicsSceneReactor = () => {
   const scene = useComponent(entity, SceneComponent)
 
   useEffect(() => {
-    if (!scene.active.value) return
     Physics.createWorld(entity)
     return () => {
       Physics.destroyWorld(entity)
     }
-  }, [scene.active.value])
+  }, [])
   return null
 }
 
@@ -132,6 +134,7 @@ const _inputRaycast = {
 const sceneQuery = defineQuery([SceneComponent])
 
 export function spatialInputRaycastHeuristic(
+  viewerEntity: Entity,
   intersectionData: Set<IntersectionData>,
   position: Vector3,
   direction: Vector3
@@ -142,11 +145,13 @@ export function spatialInputRaycastHeuristic(
   _inputRaycast.origin.copy(position)
   _inputRaycast.direction.copy(direction)
 
-  for (const entity of sceneQuery()) {
+  const scenes = sceneQuery().filter((e) => filterEntitiesByViewer(e, viewerEntity))
+
+  for (const entity of scenes) {
     const world = Physics.getWorld(entity)
     if (!world) continue
 
-    const hits = Physics.castRay(world, _inputRaycast)
+    const hits = Physics.getIntersectionsWithRay(world, _inputRaycast)
     for (const hit of hits) {
       if (!hit.entity) continue
       intersectionData.add({ entity: hit.entity, distance: hit.distance })
@@ -162,15 +167,15 @@ const reactor = () => {
   useEffect(() => {
     InputHeuristicState.addHeuristic(0, spatialInputRaycastHeuristic)
 
-    const networkState = getMutableState(NetworkState)
+    const networkState = getMutableState(NetworkSchemaState)
 
-    networkState.networkSchema[PhysicsSerialization.ID].set({
+    networkState[PhysicsSerialization.ID].set({
       read: PhysicsSerialization.readRigidBody,
       write: PhysicsSerialization.writeRigidBody
     })
 
     return () => {
-      networkState.networkSchema[PhysicsSerialization.ID].set(none)
+      networkState[PhysicsSerialization.ID].set(none)
     }
   }, [])
 

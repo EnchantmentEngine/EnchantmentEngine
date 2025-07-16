@@ -19,7 +19,7 @@ The Original Code is Infinite Reality Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Infinite Reality Engine team.
 
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
+All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
 Infinite Reality Engine. All Rights Reserved.
 */
 
@@ -158,7 +158,10 @@ const Modal = ({
   cancelKey = 'Escape',
   submitKey = 'Enter'
 }: ModalProps) => {
-  const twClassName = twMerge('absolute z-50 w-full rounded-xl border border-surface-1 bg-surface-1', className)
+  const twClassName = twMerge(
+    'absolute z-50 w-full rounded-xl border border-surface-1 bg-white dark:bg-surface-1',
+    className
+  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -171,7 +174,7 @@ const Modal = ({
   }, [onClose, onSubmit, submitButtonDisabled, submitLoading])
 
   return (
-    <div data-test-id={id} className={twClassName}>
+    <div data-test-id={id} className={twClassName} data-testid="modal">
       {onClose && <ModalHeader title={title} onClose={onClose} headerIconSrc={headerIconSrc} />}
       {rawChildren}
       {children && <div className="h-fit max-h-[60dvh] w-full overflow-y-auto px-10 py-6">{children}</div>}
