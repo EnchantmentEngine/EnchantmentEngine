@@ -23,7 +23,9 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 import { Schema } from '@ir-engine/ecs'
-import { isTextureUniform } from '@ir-engine/engine/src/material/defineMaterialPlugin'
+
+/** @todo copied from defineMaterialPlugin in engine package, will be removed once prototypes are fully removed  */
+export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
 
 import { Color, Euler, Quaternion, Texture, Vector2, Vector3, Vector4 } from 'three'
 
