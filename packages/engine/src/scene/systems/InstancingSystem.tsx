@@ -101,7 +101,6 @@ export const InstanceGenerator = ({ generator, index }: InstanceGeneratorProps) 
   }
 
   const gltfEntity = useEntity({ setup })
-
   const instanceMeshEntities = useQueryBySource(gltfEntity, [MeshComponent])
 
   return (
@@ -122,13 +121,26 @@ interface InstancedMeshReactorProps {
 const InstancedMeshReactor = ({ meshEntity, generator, levelIndex }: InstancedMeshReactorProps) => {
   const { instanceBuffers } = useComponent(generator, InstancingComponent)
   const mesh = useComponent(meshEntity, MeshComponent)
-  const { heuristic } = useComponent(generator, VariantComponent).value
+  const { heuristic } = useComponent(generator, VariantComponent)
 
   const generateInstancedMesh = useCallback(() => {
-    const buffers = Object.values(instanceBuffers.value) as InstancedBufferAttribute[]
-    const matrices = buffers.flatMap((buffer) => [...buffer.array])
+    const bufferAttributes = Object.values(instanceBuffers.value) as InstancedBufferAttribute[]
 
-    const instanceMatrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
+    if (bufferAttributes.length === 0) return
+
+    // Calculate total length efficiently
+    const totalLength = bufferAttributes.reduce((sum, buffer) => sum + buffer.array.length, 0)
+
+    // Create single concatenated Float32Array
+    const concatenatedArray = new Float32Array(totalLength)
+    let offset = 0
+
+    for (const buffer of bufferAttributes) {
+      concatenatedArray.set(buffer.array, offset)
+      offset += buffer.array.length
+    }
+
+    const instanceMatrix = new InstancedBufferAttribute(concatenatedArray, 16)
 
     const instancedMesh = new InstancedMesh(
       mesh.geometry.value.clone(),
@@ -147,7 +159,7 @@ const InstancedMeshReactor = ({ meshEntity, generator, levelIndex }: InstancedMe
     generateInstancedMesh()
   }, [instanceBuffers])
 
-  switch (heuristic) {
+  switch (heuristic.value) {
     case Heuristic.DISTANCE:
       return <DistanceReactor entity={meshEntity} generator={generator} index={levelIndex} key={meshEntity} />
     default:

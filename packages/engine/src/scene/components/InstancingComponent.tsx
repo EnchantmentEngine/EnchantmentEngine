@@ -25,12 +25,13 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { InstancedBufferAttribute, Matrix4, Mesh, Quaternion, Vector3 } from 'three'
 
+import { useHookstate } from '@hookstate/core'
 import { Entity, useQueryBySource } from '@ir-engine/ecs'
-import { defineComponent, getComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler'
 import { seededRandom } from 'three/src/math/MathUtils'
 
@@ -46,8 +47,7 @@ export const InstancingComponent = defineComponent({
     useMesh: S.Bool({ default: false }),
     count: S.Number({ default: 10 }),
     seed: S.Number(),
-    // Map mesh.id (NOT entity) to boolean flag
-    enabledMeshes: S.Record(S.Number(), S.Bool()),
+    activeMeshEntities: S.Record(S.Number(), S.Bool()),
     //internal
     instanceMatrix: S.Type<InstancedBufferAttribute>({ default: () => buffer, serialized: false }),
     // Map of mesh entity to samples
@@ -56,19 +56,15 @@ export const InstancingComponent = defineComponent({
 
   reactor: () => {
     const generator = useEntityContext()
-    const { useMesh } = useComponent(generator, InstancingComponent)
+    const { useMesh, activeMeshEntities } = useComponent(generator, InstancingComponent)
     const meshEntities = useQueryBySource(generator, [MeshComponent])
+    const samplers = useMemo(() => {
+      return meshEntities.filter((e) => !!activeMeshEntities.value[e])
+    }, [activeMeshEntities])
 
-    const { enabledMeshes } = useComponent(generator, InstancingComponent)
-    const samplers = meshEntities.filter((e) => {
-      const mesh = getComponent(e, MeshComponent)
-      console.log(mesh.id)
-      return enabledMeshes.value[mesh.id] ?? false
-    })
-
-    console.log(enabledMeshes, samplers)
-
-    if (!useMesh.value) return
+    if (!useMesh.value) {
+      return null
+    }
 
     return (
       <>
@@ -84,17 +80,21 @@ const MeshSampler = ({ entity, generator }: { entity: Entity; generator: Entity 
   const { count, seed, instanceBuffers } = useComponent(generator, InstancingComponent)
   const mesh = useComponent(entity, MeshComponent)
 
+  const sampler = useHookstate(() => {
+    const sampler = new MeshSurfaceSampler(mesh.value as Mesh)
+    sampler.build()
+    return sampler
+  })
+
   useEffect(() => {
     const matrices = [] as number[]
     const position = new Vector3()
     const scale = new Vector3(1, 1, 1)
-    const sampler = new MeshSurfaceSampler(mesh.value as Mesh)
-    sampler.build()
 
     for (let i = 0; i < count.value; i++) {
       const rot = new Quaternion().setFromAxisAngle(Vector3_Up, seededRandom(seed.value + i) * Math.PI * 2)
 
-      sampler.sample(position)
+      sampler.value.sample(position)
 
       const matrix = new Matrix4().compose(position, rot, scale)
       matrices.push(...matrix.elements)
@@ -109,7 +109,7 @@ const MeshSampler = ({ entity, generator }: { entity: Entity; generator: Entity 
         return data
       })
     }
-  }, [count, mesh])
+  }, [count])
 
   return null
 }

@@ -28,11 +28,12 @@ import { useTranslation } from 'react-i18next'
 import { MdScatterPlot } from 'react-icons/md'
 
 import { getChildrenWithComponents } from '@ir-engine/ecs'
-import { getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getSimulationCounterpart, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import InputGroup from '../../input/Group'
@@ -49,13 +50,21 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
   }
 
   const meshEntities = getChildrenWithComponents(entity, [MeshComponent])
-  const meshes = meshEntities.map((e) => getComponent(e, MeshComponent))
 
-  const { enabledMeshes } = instancingComponent
+  const meshInfos = meshEntities
+    .map((e) => getSimulationCounterpart(e))
+    .map((e) => ({
+      entity: e,
+      mesh: getComponent(e, MeshComponent),
+      name: getComponent(e, NameComponent)
+    }))
 
-  const toggleMesh = (meshId: number) => {
-    const updated = { ...enabledMeshes.value, [meshId]: !(enabledMeshes.value[meshId] ?? false) }
-    commitProperty(InstancingComponent, 'enabledMeshes')(updated)
+  const { activeMeshEntities } = instancingComponent
+  const toggleMesh = (e: Entity) => {
+    commitProperty(
+      InstancingComponent,
+      'activeMeshEntities'
+    )({ ...activeMeshEntities.value, [e]: !activeMeshEntities.value[e] })
   }
 
   return (
@@ -79,13 +88,10 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
         <button onClick={randomize}>Randomize</button>
       </InputGroup>
       <InputGroup label={'Meshes'}>
-        {meshes.map((mesh, index) => (
+        {meshInfos.map((info, index) => (
           <div key={index}>
-            <label>{mesh.name}</label>
-            <Checkbox
-              checked={enabledMeshes.value[meshEntities[index]] ?? false}
-              onChange={() => toggleMesh(mesh.id)}
-            />
+            <label>{info.name}</label>
+            <Checkbox checked={!!activeMeshEntities.value[info.entity]} onChange={() => toggleMesh(info.entity)} />
           </div>
         ))}
       </InputGroup>
