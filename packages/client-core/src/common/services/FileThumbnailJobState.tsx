@@ -39,8 +39,8 @@ import {
   getComponent,
   removeEntity,
   setComponent,
-  useChildrenWithComponents,
-  useOptionalComponent
+  useOptionalComponent,
+  useQueryBySource
 } from '@ir-engine/ecs'
 import {
   ErrorBoundary,
@@ -66,7 +66,7 @@ import {
   BoundingBoxComponent,
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, useRef } from 'react'
 import { Color, Euler, Material, Mesh, Quaternion, SphereGeometry } from 'three'
 
 import { useFind } from '@ir-engine/common'
@@ -86,11 +86,14 @@ import {
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent, SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { createHash } from 'crypto'
 import mime from 'mime-types'
 import { uploadToFeathersService } from '../../util/upload'
 import { getCanvasBlob } from '../utils'
+
+const ASSET_API_ENDPOINT = `${globalThis.process.env.VITE_MIDDLEWARE_API_URL}/assets`
 
 const getFilename = (path) => {
   return path.substring(path.lastIndexOf('/') + 1) // Get the filename after the last "/"
@@ -145,6 +148,7 @@ export const uploadDimension = async (modelEntity: Entity, src: string, projectN
     fileURL.search = ''
     fileURL.hash = ''
     const fileKeyKey = fileURL.href.replace(config.client.fileServer + '/', '')
+
     await API.instance
       .service(staticResourcePath)
       .find({
@@ -171,9 +175,67 @@ export const uploadDimension = async (modelEntity: Entity, src: string, projectN
     console.error('error in uploadDimension', e)
   }
 }
-const uploadToCVProcessor = async (src: string, projectName: string, blob: Blob | null) => {
-  //TODO upload to database
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64String = reader.result?.toString().split(',')[1] || ''
+      resolve(base64String)
+    }
+    reader.onerror = (error) => reject(error)
+    reader.readAsDataURL(blob)
+  })
 }
+
+const uploadToCVProcessor = async (modelEntity: Entity, src: string, projectName: string, blob: Blob | null) => {
+  // Process multi-view renderings using middleware assets microservice
+
+  if (!blob) return
+
+  setComponent(modelEntity, BoundingBoxComponent)
+  updateBoundingBox(modelEntity)
+  const boundingBox = getComponent(modelEntity, BoundingBoxComponent).box
+  const dimensions_x = boundingBox.max.x - boundingBox.min.x
+  const dimensions_y = boundingBox.max.y - boundingBox.min.y
+  const dimensions_z = boundingBox.max.z - boundingBox.min.z
+
+  const base64_image = await blobToBase64(blob)
+
+  const data = {
+    type: 'image_b64',
+    filename: src.split('/').pop()?.split('?')[0],
+    mime_type: 'image/png',
+    data_base64: base64_image,
+    dimensions: { x: dimensions_x, y: dimensions_y, z: dimensions_z }
+  }
+
+  const jsonData = JSON.stringify(data)
+
+  const url = `${ASSET_API_ENDPOINT}/process`
+  const options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: jsonData
+  }
+
+  fetch(url, options)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Error processing multi-view images: Status: ${response.status}`)
+      }
+      return response.json()
+    })
+    .then((responseData) => {
+      console.log('Sucessfully processed multi-view images:', responseData)
+    })
+    .catch((error) => {
+      console.error('Error processing multi-view images:', error)
+    })
+}
+
 const uploadThumbnail = async (src: string, projectName: string, blob: Blob | null) => {
   if (!blob) return
   const thumbnailMode = 'automatic'
@@ -497,6 +559,8 @@ const renderThumbnailFromAngle = (
       setCameraFocusOnBoxFromAngle(entity, cameraEntity, viewAngle)
 
       const camera = getComponent(cameraEntity, CameraComponent)
+      camera.layers.set(ObjectLayers.Scene)
+
       const viewCamera = camera.cameras[0]
 
       viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
@@ -615,8 +679,15 @@ const renderMultiViewImages = async (
         onError(error)
       }
     }
-    // TODO: Add functionality to process these images for computer vision tasks
-    uploadToCVProcessor(src, props.project, combinedBlob)
+
+    // Process multi-view images using middleware assets microservice
+    try {
+      console.log(`Processing multi-view images for ${src}`)
+      await uploadToCVProcessor(entity, src, props.project, combinedBlob)
+    } catch (error) {
+      console.error('Error processing multi-view images:', error)
+      onError(error)
+    }
     //job completed
     FileThumbnailJobState.removeCurrentJob()
   } catch (error) {
@@ -645,9 +716,12 @@ const renderThumbnail = (
   tryCatch(() => {
     setCameraFocusOnBox(entity, cameraEntity)
     const camera = getComponent(cameraEntity, CameraComponent)
+    camera.layers.set(ObjectLayers.Scene)
+
     const viewCamera = camera.cameras[0]
 
     viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
+
     setComponent(cameraEntity, RendererComponent, { scenes: [entity, lightEntity, skyboxEntity] })
 
     const renderer = getComponent(cameraEntity, RendererComponent)
@@ -719,6 +793,24 @@ const RenderModelThumbnail = (props: RenderThumbnailProps) => {
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
   const loaded = GLTFComponent.useSceneLoaded(entity)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    // Set a 10 second timeout
+    timeoutRef.current = setTimeout(() => {
+      if (!loaded && !errors) {
+        console.warn(`Thumbnail generation timed out after 10 seconds for ${src}`)
+        FileThumbnailJobState.removeCurrentJob()
+      }
+    }, 10000) // 10 seconds
+
+    // Clear timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [src])
 
   useEffect(() => {
     if (!entity || !lightEntity || !skyboxEntity || !cameraEntity) return
@@ -726,6 +818,13 @@ const RenderModelThumbnail = (props: RenderThumbnailProps) => {
   }, [entity, lightEntity, skyboxEntity, cameraEntity])
 
   useEffect(() => {
+    if (loaded || errors) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+
     if (!loaded) return
     if (jobType === 'dimension') {
       tryCatch(
@@ -827,7 +926,7 @@ const RenderLookDevThumbnail = (props: RenderThumbnailProps) => {
   const { src, onError } = props
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
-  const [lookdevSkybox] = useChildrenWithComponents(entity, [SkyboxComponent])
+  const [lookdevSkybox] = useQueryBySource(entity, [SkyboxComponent])
   const backgroundComponent = useOptionalComponent(lookdevSkybox, BackgroundComponent)
 
   useEffect(() => {

@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { act, render } from '@testing-library/react'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GLTF } from '@gltf-transform/core/dist/types/gltf'
@@ -43,6 +42,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import {
   DirectionalLightComponent,
   PointLightComponent,
@@ -66,7 +66,7 @@ import { startEngineReactor } from '../../tests/startEngineReactor'
 import { overrideFileLoaderLoad } from '../../tests/util/loadGLTFAssetNode'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { GLTFComponent } from './GLTFComponent'
-import { GLTFLoaderFunctions } from './GLTFLoaderFunctions'
+import { DependencyCache, GLTFLoaderFunctions } from './GLTFLoaderFunctions'
 import { KHRUnlitExtensionComponent } from './MaterialExtensionComponents'
 import { EXTMeshGPUInstancingComponent, KHRLightsPunctualComponent, KHRPunctualLight } from './MeshExtensionComponents'
 
@@ -123,10 +123,11 @@ describe('GLTF Loader', async () => {
     startEngineReactor()
     await Physics.load()
 
-    await act(() => render(null))
+    await flushAll()
   })
 
   afterEach(() => {
+    DependencyCache.clear()
     return destroyEngine()
   })
 
@@ -802,5 +803,34 @@ describe('GLTF Loader', async () => {
 
     const rigidbodyEntities = getChildrenWithComponents(entity, [RigidBodyComponent])
     expect(rigidbodyEntities.length).toBe(0)
+  })
+
+  it('properly sets normalScale when no tangents are present', async () => {
+    const src = base_url + '/NormalTangentTest/NormalTangentTest.gltf'
+
+    const entity = setupEntity()
+    setComponent(entity, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID })
+
+    setComponent(entity, GLTFComponent, {
+      cameraOcclusion: true,
+      src: src
+    })
+
+    await waitForScene(entity)
+
+    expect(GLTFComponent.isSceneLoaded(entity)).toBeTruthy()
+
+    const meshEntities = getChildrenWithComponents(entity, [MeshComponent])
+    expect(meshEntities.length).toBeGreaterThan(0)
+
+    const materialEntities = getChildrenWithComponents(entity, [MaterialStateComponent])
+    expect(materialEntities[0]).toBeDefined()
+    const material = getComponent(materialEntities[0], MaterialStateComponent).material as MeshStandardMaterial
+
+    expect(material.normalScale?.x).toBe(1)
+    expect(material.normalScale?.y).toBe(-1)
+
+    const mesh = getComponent(meshEntities[0], MeshComponent)
+    expect(mesh.geometry.hasAttribute('tangent')).toBeFalsy()
   })
 })

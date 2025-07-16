@@ -44,12 +44,15 @@ import { NetworkServicesClient } from '@google-cloud/networkservices'
 import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
 
 import logger from '../../ServerLogger'
+import { BaseStorageProvider } from './base.storage'
 
 /**
  * Storage provide class to communicate with GCP Cloud Storage API.
  */
-export class GCSStorage implements StorageProviderInterface {
-  constructor() {}
+export class GCSStorage extends BaseStorageProvider implements StorageProviderInterface {
+  constructor() {
+    super()
+  }
   /**
    * Name of GCS bucket.
    */
@@ -346,6 +349,10 @@ export class GCSStorage implements StorageProviderInterface {
     isDirectory = true
   ): Promise<FileBrowserContentType[]> {
     const prefix = folderName.endsWith('/') || !isDirectory ? folderName : folderName + '/'
+
+    // Check if prefix is blacklisted
+    this.checkBlacklistedPrefix(prefix)
+
     const response = await this.provider.bucket(this.bucket).getFiles({
       prefix,
       delimiter: recursive ? undefined : '/',
@@ -471,21 +478,22 @@ export class GCSStorage implements StorageProviderInterface {
     const newFilePath = path.join(newPath, newName)
     const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
 
-    if (listResponse.Contents.length > 0)
+    if (listResponse.Contents.length > 0) {
       return await Promise.all([
         ...listResponse.Contents.map(async (file) => {
           const relativePath = file.Key.replace(oldFilePath, '')
           const key = newFilePath + relativePath
 
+          if (file.Type === 'folder') {
+            return await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+          }
+
           if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
           else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
         })
       ])
-    else {
-      const oldPath = path.join(oldFilePath, '/')
-      const newPath = path.join(newFilePath, '/')
-      if (isCopy) return await this.provider.bucket(this.bucket).file(oldPath).copy(newPath, {})
-      else return await this.provider.bucket(this.bucket).file(oldPath).move(newPath, {})
     }
   }
 }

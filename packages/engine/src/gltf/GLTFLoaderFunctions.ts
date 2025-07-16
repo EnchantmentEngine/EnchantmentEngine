@@ -19,7 +19,7 @@ The Original Code is Ethereal Engine.
 The Original Developer is the Initial Developer. The Initial Developer of the
 Original Code is the Ethereal Engine team.
 
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025 
+All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025
 Ethereal Engine. All Rights Reserved.
 */
 
@@ -88,7 +88,6 @@ import {
   MathUtils,
   Matrix4,
   Mesh,
-  MeshPhysicalMaterial,
   MeshStandardMaterial,
   NumberKeyframeTrack,
   Object3D,
@@ -105,7 +104,7 @@ import {
   Vector3,
   VectorKeyframeTrack
 } from 'three'
-import { loadResource, unloadResourcesForEntity } from '../assets/functions/resourceLoaderFunctions'
+import { loadResource, unloadResource } from '../assets/functions/resourceLoaderFunctions'
 import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { Loader } from '../assets/loaders/base/Loader'
 import { ResourceCache } from '../assets/loaders/base/ResourceCache'
@@ -155,23 +154,6 @@ export function getImageURIMimeType(uri) {
   return 'image/png'
 }
 
-const assignFinalMaterial = (primitiveDef: GLTF.IMeshPrimitive, entity: Entity) => {
-  const material = getComponent(entity, MaterialStateComponent).material as MeshPhysicalMaterial
-  const useDerivativeTangents = primitiveDef.attributes.TANGENT === undefined
-  const useVertexColors = primitiveDef.attributes.COLOR_0 !== undefined
-  const useFlatShading = primitiveDef.attributes.NORMAL === undefined
-
-  if (useVertexColors) material.vertexColors = true
-  if (useFlatShading) material.flatShading = true
-
-  if (useDerivativeTangents) {
-    if (material.normalScale) material.normalScale.y *= -1
-    if (material.clearcoatNormalScale) material.clearcoatNormalScale.y *= -1
-  }
-
-  material.needsUpdate = true
-}
-
 const loadPrimitives = async (options: GLTFParserOptions, meshIndex: number): Promise<[BufferGeometry, Entity[]]> => {
   const json = options.document
   const mesh = json.meshes![meshIndex]
@@ -181,18 +163,42 @@ const loadPrimitives = async (options: GLTFParserOptions, meshIndex: number): Pr
   )
 
   if (primitives.length > 1) {
-    let needsTangentRecalculation = false
-    for (const [geometry] of primitives) {
-      if (geometry.attributes.tangent) needsTangentRecalculation = true
-      geometry.deleteAttribute('tangent')
+    const hasAnyTangents = primitives.some(([geometry]) => geometry.hasAttribute('tangent'))
+
+    if (hasAnyTangents) {
+      const tangentAttributeLength = 4
+      for (let i = 0; i < primitives.length; i++) {
+        let [geometry] = primitives[i]
+
+        if (!geometry.hasAttribute('tangent')) {
+          if (!geometry.index) {
+            geometry = geometry.toNonIndexed()
+            primitives[i][0] = geometry
+          }
+
+          try {
+            geometry.computeTangents()
+          } catch (e) {
+            console.warn(`Failed to compute tangents for primitive ${i}:`, e)
+            // Fallback
+            const count = geometry.getAttribute('position').count
+            const fallback = new Float32Array(count * tangentAttributeLength)
+            for (let j = 0; j < count; j++) {
+              fallback[j * 4 + 0] = 1
+              fallback[j * 4 + 1] = 0
+              fallback[j * 4 + 2] = 0
+              fallback[j * 4 + 3] = 1
+            }
+            geometry.setAttribute('tangent', new BufferAttribute(fallback, 4))
+          }
+        }
+      }
     }
 
     const newGeometry = mergeBufferGeometries(
       primitives.map(([geometry]) => geometry),
       true
     )!
-    if (needsTangentRecalculation) newGeometry?.computeTangents()
-
     return [newGeometry, primitives.map(([, material]) => material)]
   } else {
     return [primitives[0][0], [primitives[0][1]]]
@@ -228,13 +234,19 @@ const loadPrimitive = async (
     )
   }
 
+  const material = await materialPromise
+  const materialComponent = getComponent(material, MaterialStateComponent).material as MeshStandardMaterial
+  const useVertexColors = primitiveDef.attributes.COLOR_0 !== undefined
+  const useFlatShading = primitiveDef.attributes.NORMAL === undefined
+  if (useVertexColors) materialComponent.vertexColors = true
+  if (useFlatShading) materialComponent.flatShading = true
+
   if (hasDracoCompression) {
     return new Promise((resolve) => {
       KHR_DRACO_MESH_COMPRESSION.decodePrimitive(options, primitiveDef).then((geom) => {
         GLTFLoaderFunctions.computeBounds(json, geom, primitiveDef)
         assignExtrasToUserData(geom, primitiveDef)
         materialPromise.then((material) => {
-          assignFinalMaterial(primitiveDef, material)
           resolve([geom, material])
         })
       })
@@ -278,7 +290,6 @@ const loadPrimitive = async (
     GLTFLoaderFunctions.computeBounds(json, geometry, primitiveDef)
     assignExtrasToUserData(geometry, primitiveDef)
     const [material] = await Promise.all([materialPromise, Promise.all(promises)])
-    assignFinalMaterial(primitiveDef, material)
     if (primitiveDef.targets) await addMorphTargets(options, geometry, primitiveDef.targets)
     return [geometry, material]
   }
@@ -515,7 +526,7 @@ const loadBuffer = async (options: GLTFParserOptions, bufferIndex: number): Prom
     throw new Error('THREE.GLTFLoader: ' + bufferDef.type + ' buffer type is not supported.')
   }
 
-  const cache = DependencyCache.get(options.url)
+  const cache = DependencyCache.get(`${options.entity}${options.url}`)
   if (bufferDef.uri && cache?.has(bufferDef.uri)) {
     return cache.get(bufferDef.uri) as Promise<ArrayBuffer>
   }
@@ -744,11 +755,28 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
     )
   }
 
+  let hasTangents = false
+  if (json.meshes) {
+    for (const mesh of json.meshes) {
+      for (const primitive of mesh.primitives) {
+        if (
+          primitive.material === materialIndex &&
+          primitive.attributes &&
+          primitive.attributes.TANGENT !== undefined
+        ) {
+          hasTangents = true
+          break
+        }
+      }
+      if (hasTangents) break
+    }
+  }
+
   if (materialDef.normalTexture?.scale) {
     const scale = materialDef.normalTexture.scale
     materialConstructorParameters.normalScale = new Vector2(scale, scale)
   } else {
-    materialConstructorParameters.normalScale = new Vector2(1, 1)
+    materialConstructorParameters.normalScale = new Vector2(1, hasTangents ? 1 : -1)
   }
 
   if (typeof materialDef.occlusionTexture !== 'undefined') {
@@ -863,7 +891,6 @@ const mergeMorphTargets = async (options: GLTFParserOptions, nodeIndex: number) 
     const newAttributesLength = morphAttributes[name].length / morphTargets.length
     for (let j = newAttributesLength; j < morphAttributes[name].length; j++) {
       const mergeIntoIndex = j % newAttributesLength
-      // console.log(j + ' goes into ' + mergeIntoIndex)
       const newArray = new Float32Array(
         morphAttributes[name][j].array.length + morphAttributes[name][mergeIntoIndex].array.length
       )
@@ -1547,17 +1574,16 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
   const layer = LayerComponent.get(rootEntity)
 
   // Create a new dependency cache for this URL if it doesn't exist
-  if (!DependencyCache.has(options.url)) {
-    DependencyCache.set(options.url, new Map<string, Promise<any>>())
+  if (!DependencyCache.has(`${rootEntity}${options.url}`)) {
+    DependencyCache.set(`${rootEntity}${options.url}`, new Map<string, Promise<any>>())
   }
 
-  migrateSceneDeltas(options.entity, options.document)
+  migrateSceneDeltas(rootEntity, options.document)
 
   const overrides = json.extensions?.[OVERRIDE_EXTENSION_NAME]
   if (overrides) {
     for (const [id, ops] of Object.entries(overrides)) {
-      const rootUUID = UUIDComponent.getAsSourceID(rootEntity)
-      const overrideUUID = UUIDComponent.join({ entitySourceID: rootUUID, entityID: id as EntityID })
+      const overrideUUID = GLTFComponent.getOverrideUUID(rootEntity, id as EntityID)
       dispatchAction(AuthoringActions.ops({ ops: { [overrideUUID]: ops }, $user: SceneUser }))
     }
   }
@@ -1610,28 +1636,20 @@ const loadScene = async (options: GLTFParserOptions, sceneIndex: number) => {
     if (signal.aborted) return
 
     setAnimationClips(rootEntity, animationClips)
-  } finally {
-    // dereference body non-reactively if it exists
-    getComponent(options.entity, GLTFComponent).body = null
-
-    // Mark the scene as loaded by setting progress to 100
-    // This is important for tests that wait for scene loading
-    if (hasComponent(options.entity, GLTFComponent)) {
-      const gltfComponent = getMutableComponent(options.entity, GLTFComponent)
-      gltfComponent.progress.set(100)
-    }
+  } catch (error) {
+    console.error('Error loading GLTF scene:', error)
+    throw error
   }
 }
 
 const unloadScene = (url: string, entity: Entity) => {
   // handle reference counting
-  unloadResourcesForEntity(entity)
-
+  unloadResource(url, entity)
   // if no more references to this url, remove from cache
   const resourceCacheState = getState(ResourceCacheState)
   if (!resourceCacheState[url]) {
     delete interleavedBufferCache[url]
-    DependencyCache.delete(url)
+    DependencyCache.delete(`${entity}${url}`)
   }
 }
 
@@ -1694,10 +1712,20 @@ export const getDependency = <
   ...args: Args
 ) => {
   const url = options.url
-  const cache = DependencyCache.get(url)
+  const cache = DependencyCache.get(`${options.entity}${url}`)
   if (!cache) throw new Error('GLTFLoader: No cache found for url ' + url)
 
-  const cacheKey = type + ':' + JSON.stringify(args)
+  // Only include sourceID for entity-related dependencies
+  const entityTypes = ['node', 'scene'] as const
+  let cacheKey = type + ':'
+
+  if (entityTypes.includes(type as any)) {
+    // For entity types, include the source ID to make unique instances
+    const sourceID = GLTFComponent.getSourceID(options.entity)
+    cacheKey += sourceID + ':'
+  }
+
+  cacheKey += JSON.stringify(args)
   const dependency = cache.get(cacheKey) as ReturnType<Func> | undefined
 
   if (!dependency) {

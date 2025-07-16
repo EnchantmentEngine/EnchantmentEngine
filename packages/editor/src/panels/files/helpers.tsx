@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { ImmutableArray, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { ImmutableArray, defineState, getMutableState, useHookstate } from '@ir-engine/hyperflux'
 
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
@@ -53,6 +53,17 @@ export const FILES_PAGE_LIMIT = 100 as const
 
 export const availableTableColumns = ['name', 'type', 'author', 'createdAt', 'statistics', 'size'] as const
 
+// refresh counter
+export const FileRefreshState = defineState({
+  name: 'FileRefreshState',
+  initial: () => ({
+    refreshCounter: 0
+  }),
+  triggerRefresh: () => {
+    getMutableState(FileRefreshState).refreshCounter.set((prev) => prev + 1)
+  }
+})
+
 /* HOOKS */
 
 const FilesQueryContext = createContext({
@@ -67,14 +78,11 @@ const FilesQueryContext = createContext({
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
   const filesState = useMutableState(FilesState)
+  const projectName = useMutableState(EditorState).projectName.value
   const categories = useHookstate<any>([])
   const directory = (
-    filesState.selectedDirectory.value !== ''
-      ? filesState.selectedDirectory.value
-      : '/projects/' + filesState.projectName.value
+    filesState.selectedDirectory.value !== '' ? filesState.selectedDirectory.value : '/projects/' + projectName
   ).replace(/^\/+/, '')
-
-  const projectName = useMutableState(EditorState).projectName.value
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
@@ -87,7 +95,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   const foldersQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
-      directory: `/projects/${projectName}/public/**`
+      directory: `/projects/${projectName}/public/`
     }
   })
 
@@ -203,6 +211,14 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
     }
   }, [foldersQuery.data])
 
+  const refreshState = useHookstate(getMutableState(FileRefreshState))
+
+  useEffect(() => {
+    if (refreshState.refreshCounter.value > 0) {
+      refreshDirectory()
+    }
+  }, [refreshState.refreshCounter.value])
+
   return (
     <FilesQueryContext.Provider
       value={{
@@ -251,7 +267,6 @@ export function useFileBrowserDrop() {
         newPath,
         isCopy
       })
-
       await currentFiles.refreshDirectory()
     } catch (error) {
       console.error('Error moving file:', error)

@@ -33,6 +33,7 @@ import {
   getChildrenWithComponents,
   iterateEntityNode,
   removeEntity,
+  removeEntityNodeRecursively,
   UUIDComponent
 } from '@ir-engine/ecs'
 import {
@@ -134,7 +135,7 @@ export const replaceMaterialIndex = (assetEntity: Entity, targetEntity: Entity, 
   AuthoringState.snapshotEntities([targetEntity])
 }
 
-const updateMaterial = (assetEntity: Entity, targetEntity: Entity, materialIndex: number) => {
+export const updateMaterial = (assetEntity: Entity, targetEntity: Entity, materialIndex: number) => {
   const [newMaterialEntity] = getChildrenWithComponents(assetEntity, [MaterialStateComponent])
 
   const newMaterialComponent = getComponent(newMaterialEntity, MaterialStateComponent)
@@ -142,21 +143,30 @@ const updateMaterial = (assetEntity: Entity, targetEntity: Entity, materialIndex
   const materialInstanceComponent = getComponent(targetEntity, MaterialInstanceComponent)
   const materialEntity = materialInstanceComponent.entities[materialIndex]
 
-  /** Update the material parameters (will be applied to material via authoring state) */
-  setComponent(materialEntity, MaterialStateComponent, {
-    parameters: newMaterialComponent.parameters
-  })
+  /** If the material is the fallback material, set it to the new material, and update the new material to be in the expected source */
+  /** @todo this logic STILL fails, because material instance IDs are not serializable yet */
+  if (materialEntity === MaterialStateComponent.fallbackMaterial()) {
+    getMutableComponent(targetEntity, MaterialInstanceComponent).entities[materialIndex].set(newMaterialEntity)
+    const sourceEntity = UUIDComponent.getSourceEntity(targetEntity)
+    UUIDComponent.setSourceEntity(newMaterialEntity, sourceEntity)
+    setComponent(newMaterialEntity, EntityTreeComponent, { parentEntity: sourceEntity })
+  } else {
+    /** Update the material parameters (will be applied to material via authoring state) */
+    setComponent(materialEntity, MaterialStateComponent, {
+      parameters: newMaterialComponent.parameters
+    })
 
-  const materialPluginComponents = getAllComponents(newMaterialEntity).filter(
-    (c) =>
-      c.jsonID &&
-      c !== UUIDComponent &&
-      c !== MaterialStateComponent &&
-      c !== EntityTreeComponent &&
-      c !== NameComponent
-  )
-  for (const component of materialPluginComponents) {
-    deserializeComponent(materialEntity, component, serializeComponent(newMaterialEntity, component))
+    const materialPluginComponents = getAllComponents(newMaterialEntity).filter(
+      (c) =>
+        c.jsonID &&
+        c !== UUIDComponent &&
+        c !== MaterialStateComponent &&
+        c !== EntityTreeComponent &&
+        c !== NameComponent
+    )
+    for (const component of materialPluginComponents) {
+      deserializeComponent(materialEntity, component, serializeComponent(newMaterialEntity, component))
+    }
   }
 
   removeEntity(assetEntity)
@@ -215,25 +225,15 @@ export async function addMediaNode(
       /**
        * Load the lookdev object and override or attach it to the current scene
        */
-      AssetState.loadAsync(url, false, UUIDComponent.generateUUID(), UndefinedEntity, Layers.Authoring as LayerID).then(
+      AssetState.loadAsync(url, false, UUIDComponent.generate(), UndefinedEntity, Layers.Authoring as LayerID).then(
         (entity) => {
           const firstChild = getComponent(entity, EntityTreeComponent).children[0]
           const json = serializeEntity(firstChild)
-
-          const { entityUUID } = EditorControlFunctions.createObjectFromSceneElement(
-            [...json, ...extraComponentJson],
-            parent!,
-            before,
-            requestedName
-          )
-
           EditorControlFunctions.overwriteLookdevObject([...json, ...extraComponentJson], parent!, before)
-          removeEntity(entity)
+          removeEntityNodeRecursively(entity)
           const rootEntity = getState(EditorState).rootEntity
           const newSource = GLTFComponent.getSourceID(rootEntity)
           AuthoringState.snapshot(newSource)
-
-          return entityUUID
         }
       )
     } else if (contentType.startsWith('model/prefab')) {

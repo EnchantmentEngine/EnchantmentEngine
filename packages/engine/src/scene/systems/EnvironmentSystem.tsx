@@ -29,21 +29,20 @@ import {
   defineSystem,
   Entity,
   getOptionalMutableComponent,
-  hasComponent,
   haveCommonAncestor,
   PresentationSystemGroup,
   QueryReactor,
   removeComponent,
   setComponent,
   UndefinedEntity,
-  useChildrenWithComponents,
   useComponent,
   useOptionalComponent,
   useQuery,
+  useQueryBySource,
   UUIDComponent
 } from '@ir-engine/ecs'
 
-import { Identifiable, State } from '@ir-engine/hyperflux'
+import { Identifiable, NO_PROXY, State } from '@ir-engine/hyperflux'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
@@ -57,6 +56,7 @@ import {
   MeshStandardMaterial,
   RGBAFormat,
   SRGBColorSpace,
+  Texture,
   Vector3
 } from 'three'
 import { useTexture } from '../../assets/functions/resourceLoaderHooks'
@@ -68,7 +68,7 @@ import { addError, removeError } from '../functions/ErrorFunctions'
 const EnvMapReactor = (props: { entity: Entity }) => {
   const { entity } = props
   const envMapComponent = useComponent(entity, EnvMapComponent).type.value
-  const materialComponentEntities = useChildrenWithComponents(entity, [MaterialStateComponent])
+  const materialComponentEntities = useQueryBySource(entity, [MaterialStateComponent])
   return (
     <>
       {materialComponentEntities.map((materialComponentEntity, index) => {
@@ -164,9 +164,9 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     if (disallowedMaterials.has(materialState.type.value)) return
 
     const material = materialState.value as MeshStandardMaterial
-    material.envMap = backgroundComponent.value.clone() as any
+    material.envMap = backgroundComponent.get(NO_PROXY) as Texture
     ResourceState.addEntityResource(entity, material.envMap!)
-  }, [backgroundComponent?.value, materialState.value])
+  }, [backgroundComponent, materialState])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }
@@ -278,6 +278,7 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
         const material = materialComponent.value as MeshStandardMaterial
         material.envMap = null
       }
+      removeComponent(entity, BoxProjectionPlugin)
     }
   }, [])
 
@@ -295,26 +296,30 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     if (!bakeComponent) return
 
     if (!bakeComponent.boxProjection.value) {
-      if (hasComponent(entity, BoxProjectionPlugin)) {
-        removeComponent(entity, BoxProjectionPlugin)
-      }
+      removeComponent(entity, BoxProjectionPlugin)
       return
     }
 
     const entityPosition = transformComponent?.position.value.clone() || new Vector3(0, 0, 0)
-    const bakePosition = bakeComponent.bakePosition.value
-      ? bakeComponent.bakePosition.value.clone()
-      : entityPosition.add(bakeComponent.bakePositionOffset.value)
+    const cubeMapPos = entityPosition.clone().add(bakeComponent.bakePositionOffset.value)
+    const boxProjectionPlugin = getOptionalMutableComponent(entity, BoxProjectionPlugin)
 
-    setComponent(entity, BoxProjectionPlugin, {
-      cubeMapPos: bakePosition,
-      cubeMapSize: bakeComponent.bakeScale.value
-    })
-
-    return () => {
-      removeComponent(entity, BoxProjectionPlugin)
+    if (boxProjectionPlugin) {
+      boxProjectionPlugin.cubeMapPos.set(cubeMapPos)
+      boxProjectionPlugin.cubeMapSize.set(bakeComponent.bakeScale.value)
+    } else {
+      setComponent(entity, BoxProjectionPlugin, {
+        cubeMapPos: cubeMapPos,
+        cubeMapSize: bakeComponent.bakeScale.value
+      })
     }
-  }, [bakeComponent?.boxProjection, bakeComponent?.envMapOrigin])
+  }, [
+    bakeComponent?.boxProjection,
+    bakeComponent?.envMapOrigin,
+    bakeComponent?.bakePositionOffset,
+    bakeComponent?.bakeScale,
+    transformComponent?.position
+  ])
 
   useEffect(() => {
     if (!error) return

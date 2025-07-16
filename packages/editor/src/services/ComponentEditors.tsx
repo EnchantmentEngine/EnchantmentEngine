@@ -116,10 +116,13 @@ import SplineNodeEditor from '@ir-engine/ui/src/components/editor/properties/spl
 import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { MixerComponent } from '@ir-engine/engine/src/scene/components/MixerComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
+import MixerNodeEditor from '@ir-engine/ui/src/components/editor/properties/mixer'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
 import SplineTrackNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline/track'
 import TextNodeEditor from '@ir-engine/ui/src/components/editor/properties/text'
@@ -129,6 +132,7 @@ import VideoNodeEditor from '@ir-engine/ui/src/components/editor/properties/vide
 import VisualScriptNodeEditor from '@ir-engine/ui/src/components/editor/properties/visualScript'
 import VolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric'
 import LegacyVolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric/legacy'
+import PoiNodeEditor from '../../../ui/src/components/editor/properties/cameraPoi'
 import { EditorComponentType } from '../components/properties/Util'
 
 export const ComponentEditorsState = defineState({
@@ -184,7 +188,10 @@ export const ComponentEditorsState = defineState({
       [ScreenshareTargetComponent.name]: ScreenshareTargetNodeEditor,
       [TextComponent.name]: TextNodeEditor,
       [LookAtComponent.name]: LookAtNodeEditor,
-      [MediaComponent.name]: MediaNodeEditor
+      [MediaComponent.name]: MediaNodeEditor,
+      [MixerComponent.name]: MixerNodeEditor,
+      [PoiComponent.name]: PoiNodeEditor
+      //[PoiHotspotComponent.name]: PoiHotspotNodeEditor
     } as Record<string, EditorComponentType>
   }
 })
