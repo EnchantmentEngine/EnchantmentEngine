@@ -23,29 +23,109 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import React from 'react'
+import { useHookstate } from '@hookstate/core'
+import { validateEmail } from '@ir-engine/common/src/config'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
+import { PlusCircleMd } from '@ir-engine/ui/src/icons'
+import { Divider, Link } from '@ir-engine/ui/viewer'
+import React, { useEffect, useState } from 'react'
+import { FaLink } from 'react-icons/fa'
+import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'
+import { useMagicLink } from '../../hooks/useMagicLink'
+import { AuthService } from '../../user/services/AuthService'
+import { TextButton } from '../Glass/buttons/TextButton'
+import { Inner } from '../Glass/ToolbarAndSidebar'
+import CheckboxItem from './CheckboxItem'
+import FieldItem from './FieldItem'
+import { MenuItem } from './MenuItem'
 import { Section } from './Section'
-import ToggleItem from './ToggleItem'
+import { Socials } from './SSOScreen'
 
-export default function SetupScreen() {
-  const [tosAgreed, setTosAgreed] = React.useState(false)
-  const [ageAgreed, setAgeAgreed] = React.useState(false)
+export default function SignupScreen() {
+  const [tosAgreed, setTosAgreed] = useState(false)
+  const [ageAgreed, setAgeAgreed] = useState(false)
+  const username = useHookstate('')
+  const email = useHookstate('')
+  const isValid = useHookstate(false)
+
+  const { pending, handleMagicLink, sent } = useMagicLink()
+
+  const onMagicLinkClick = async () => {
+    sent.set(true)
+    await handleMagicLink(email.value, true, username.value)
+  }
+
+  useEffect(() => {
+    isValid.set(validateEmail(email.value))
+  }, [email.value])
+
+  const agreedToAll = tosAgreed && ageAgreed
+  const oauthConnectedState = useOAuthState()
+  const authSettings = useAuthSettings()
+
+  const handleProviderClick = (client: string) => {
+    AuthService.loginUserByOAuth(client, location, true, undefined, username.value)
+  }
+
+  const clientSetting = useEngineSetting<ClientEngineSettingType>('client')
+
+  const disconnectedProviders = Socials.filter((p) => !oauthConnectedState[p.client].value && authSettings[p.client])
+
+  const disableMagicLink = !agreedToAll || pending.value || sent.value || !isValid.value
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div>By signing up, you agree to the following:</div>
-      <Section>
-        <ToggleItem
-          checked={tosAgreed}
-          onClick={() => setTosAgreed(!tosAgreed)}
-          label="I agree to the Infinite Reality Terms of Service"
-        />
-        <ToggleItem
+    <Inner className="flex min-h-full flex-col gap-4">
+      <div className="font-dm-sans">By signing up, you agree to the following:</div>
+      <Section className="font-figtree">
+        <CheckboxItem checked={tosAgreed} onClick={() => setTosAgreed(!tosAgreed)}>
+          <span>
+            I agree to the{' '}
+            <Link target="_blank" href={clientSetting?.data?.termsOfService ?? ''}>
+              Infinite Reality Terms of Service
+            </Link>
+          </span>
+        </CheckboxItem>
+        <CheckboxItem
           checked={ageAgreed}
           onClick={() => setAgeAgreed(!ageAgreed)}
           label="I am 18 years of age or older"
         />
       </Section>
-    </div>
+      <Section disabled={!agreedToAll}>
+        <FieldItem type="text" label="Username" onChange={username.set} value={username.value} />
+      </Section>
+
+      <div className="mt-2">
+        <Section disabled={!agreedToAll}>
+          <FieldItem type="email" label="Email" onChange={email.set} value={email.value} />
+        </Section>
+
+        <TextButton
+          disabled={disableMagicLink}
+          onClick={onMagicLinkClick}
+          className={`text-md mx-auto mt-4 flex w-full justify-center gap-2`}
+        >
+          {sent.value ? 'Sent!' : 'Send magic link'}
+          <FaLink />
+        </TextButton>
+      </div>
+
+      <div className={`mt-4 ${agreedToAll ? '' : 'opacity-50'}`}>Or Connect to:</div>
+      <Section className={agreedToAll ? '' : 'pointer-events-none cursor-not-allowed opacity-50'}>
+        {disconnectedProviders.map((provider, index) => (
+          <React.Fragment key={provider.client}>
+            <MenuItem
+              label={provider.label}
+              onClick={() => handleProviderClick(provider.client)}
+              leftIcon={provider.icon}
+              rightIcon={<PlusCircleMd />}
+              hasChevron
+            />
+            {index < disconnectedProviders.length - 1 && <Divider />}
+          </React.Fragment>
+        ))}
+      </Section>
+    </Inner>
   )
 }

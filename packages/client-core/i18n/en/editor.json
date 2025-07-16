@@ -14,6 +14,7 @@
   "savingError": "Error saving Project",
   "savingErrorMsg": "An error occurred when saving the Project. Please try again or contact support.",
   "savingSceneErrorMsg": "The Scene did not load properly. Please try reloading the Scene.",
+  "savingLoadingSceneErrorMsg": "The Scene is not finished loading. Please wait for it to finish loading before saving.",
   "duplicating": "Duplicating Project",
   "exporting": "Exporting Project",
   "exportingError": "Error exporting the Project",
@@ -234,6 +235,7 @@
       "lbl-helperVolumes": "Helpers Volumes",
       "info-helperVolumes": "Helper geometry that helps components have visibility in the Scene when inactive.",
       "lbl-axisHelpers": "Axis Helpers",
+      "lbl-colliderHelpers": "Collider Helpers",
       "lbl-directManipulation": "Direct Manipulation"
     },
     "sceneScreenshot": {
@@ -250,7 +252,7 @@
       "publishDate": "✓ Published {{formattedDate}} at {{formattedTime}}",
       "notYetPublished": "Not Published Yet",
       "multiplayerFeatures": "Multiplayer Features",
-      "multiplayerDescription": "Choose which features visitors can use when visiting your Published Space with other users.",
+      "multiplayerDescription": "Choose which features visitors can use when visiting your Published World with other users.",
       "copy": "Copy",
       "copyPublicUrl": "Copy Public URL",
       "publicUrl": "Public URL",
@@ -258,7 +260,7 @@
       "noThumbnailPlaceholder": "Publish Scene to Generate a Preview Image",
       "createCompressedScenePublish": "Compress and Publish",
       "createCompressedScenePublishInfo": "This is a beta feature that optimizes your space for mobile devices. If you encounter errors, please refresh your browser and try again, or use the regular “Publish” function for now.",
-       "jumpControlFeature": "Jump Control",
+      "jumpControlFeature": "Jump Control",
       "jumpControlFeatureDesc": "Enable your avatar’s ability to jump.",
       "vrCapabilitiesFeature": "VR Capabilities",
       "vrCapabilitiesFeatureDesc": "Enable your eligible devices to render AR experiences."
@@ -749,6 +751,11 @@
         "donut": "Donut",
         "mesh": "Mesh"
       },
+      "poiComponent": {
+        "name": "POI Component",
+        "description": "Settings for a point of interest camera view",
+        "lbl-poiHotspotEntities": "POI Hotspot Entities"
+      },
       "emission-bursts": "Emission Bursts",
       "add-burst": "Add Burst",
       "remove-burst": "Remove Burst",
@@ -758,14 +765,36 @@
       "start-size": "Start Size",
       "start-speed": "Start Speed",
       "start-rotation": "Start Rotation",
-      "start-color": "Start Color",
+      "startColor": {
+        "title": "Start Color",
+        "type": "Type",
+        "constant": "Constant",
+        "range": "Range",
+        "random": "Random",
+        "gradient": "Gradient",
+        "color": "Color",
+        "opacity": "Opacity",
+        "start": "Start",
+        "remove": "Remove"
+      },
+      "rotation": {
+        "axisAngle": "Axis Angle",
+        "euler": "Euler",
+        "randomQuaternion": "Random Quaternion",
+        "axis": "Axis",
+        "angle": "Angle",
+        "anglePosition": "Angle {{position}}"
+      },
       "emission-over-time": "Emission Over Time",
-      "render-mode": "Render Mode",
-      "render-mode-type": {
+      "renderMode": {
+        "title": "Render Mode",
         "billboard": "Billboard",
         "stretched-billboard": "Stretched Billboard",
         "mesh": "Mesh",
-        "trail": "Trail"
+        "trail": "Trail",
+        "speedFactor": "Speed Factor",
+        "lengthFactor": "Length Factor",
+        "trailLength": "Trail Length"
       },
       "texture": "Particle Texture",
       "u-tiles": "U Tiles",
@@ -775,6 +804,19 @@
       "blending": "Blending",
       "transparent": "Transparent",
       "world-space": "Use World Space",
+      "valueGenerator": {
+        "value": "Value",
+        "min": "Min",
+        "max": "Max",
+        "addBezier": "Add Bezier",
+        "pIndex": "P{{index}}",
+        "start": "Start",
+        "remove": "Remove",
+        "type": "Type",
+        "constant": "Constant",
+        "interval": "Interval",
+        "bezier": "Bezier"
+      },
       "blending-type": {
         "normal": "Normal",
         "additive": "Additive",
@@ -792,6 +834,39 @@
       },
       "addBehavior": "Add Behavior",
       "behaviors": "Behaviors",
+      "behavior": {
+        "force": "Force",
+        "magnitude": "Magnitude",
+        "frequency": "Frequency",
+        "Power": "Power",
+        "positionAmount": "Position Amount",
+        "rotationAmount": "Rotation Amount",
+        "scale": "Scale",
+        "octaves": "Octaves",
+        "velocityMultiplier": "Velocity Multiplier",
+        "timeScale": "Time Scale",
+        "center": "Center",
+        "color": "Color",
+        "angularVelocity": "Angular Velocity",
+        "dynamic": "Dynamic",
+        "size": "Size",
+        "speed": "Speed",
+        "frame": "Frame",
+        "orbit": "Orbit",
+        "axis": "Axis",
+        "width": "Width",
+        "angle": "Angle",
+        "subParticleSystem": "Sub Particle System",
+        "type": "Type",
+        "applyForce": "Apply Force",
+        "noise": "Noise",
+        "turbulenceField": "Turbulence Field",
+        "gravity": "Gravity",
+        "typeOverLifetime": "{{type}} Over Lifetime",
+        "widthOverLength": "Width Over Length",
+        "changeEmitDirection": "Change Emit Direction",
+        "emitSubParticleSystem": "Emit Sub Particle System"
+      },
       "remove": "Remove"
     },
     "clouds": {
@@ -1539,6 +1614,7 @@
     "lbl-edited": "Edited",
     "lbl-duplicate": "Duplicate",
     "lbl-group": "Group",
+    "lbl-ungroup": "Ungroup",
     "lbl-cloneScene": "Clone Scene",
     "lbl-cloneSceneToProject": "Clone Scene to Project",
     "lbl-cloneOptions": "Please select the clone action you want to perform",
@@ -1673,7 +1749,7 @@
       "optionButtons": {
         "defaultEditor": {
           "title": "Blank Scene",
-          "description": "Use the advanced iR Spaces Editor to create your Space from the ground up. Recommended for experienced 3D creators.",
+          "description": "Use the advanced Worlds Editor to create your Space from the ground up. Recommended for experienced 3D creators.",
           "submitButtonText": "Continue in Editor"
         }
       }

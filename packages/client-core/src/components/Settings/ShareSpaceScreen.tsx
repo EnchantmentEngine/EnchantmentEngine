@@ -23,80 +23,50 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
+import { useHookstate } from '@hookstate/core'
+import { AnimatePresence } from 'motion/react'
 import { QRCodeSVG } from 'qrcode.react'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { useShareMenu } from '../../hooks/useShareMenu'
+import { TextButton } from '../Glass/buttons/TextButton'
+import { NavigateFuncProps } from '../Glass/NavigationProvider'
+import { Inner } from '../Glass/ToolbarAndSidebar'
+import ShareDrawer from './ShareDrawer'
 
-interface ShareSpaceScreenProps {
-  navigateTo: (screen: string) => void
-}
+type ShareSpaceScreenProps = NavigateFuncProps & {}
 
 const ShareSpaceScreen: React.FC<ShareSpaceScreenProps> = () => {
-  const [shareLink, setShareLink] = useState('')
-  const [showCopyNotification, setShowCopyNotification] = useState(false)
-
-  useEffect(() => {
-    // Set the share link to the current URL
-    setShareLink(window.location.href)
-  }, [])
-
-  const copyLinkToClipboard = () => {
-    navigator.clipboard.writeText(shareLink)
-    setShowCopyNotification(true)
-    setTimeout(() => {
-      setShowCopyNotification(false)
-    }, 3000)
-  }
-
-  const shareToMetaQuest = () => {
-    // Implement Meta Quest sharing functionality
-    console.log('Sharing to Meta Quest')
-  }
-
-  const shareByEmailOrPhone = () => {
-    // Implement email/phone sharing functionality
-    console.log('Opening email/phone sharing dialog')
-  }
+  const { shareLink, copyLinkToClipboard, questLink, inviteLink } = useShareMenu()
+  const openDrawer = useHookstate(false)
 
   return (
-    <div className="xs:gap-6 flex h-full flex-col items-center justify-between p-4 md:flex-row md:items-start md:justify-center md:gap-5">
-      {/* QR Code */}
-      <div className={' flex flex-1 flex-col justify-center'}>
-        <div className="rounded-lg bg-white p-4">
-          <QRCodeSVG className="h-[130px] w-[130px]" value={shareLink} />
+    <>
+      <Inner className="xs:gap-6 mx-auto flex min-h-full max-w-screen-sm flex-col items-center justify-between pb-[5rem]">
+        {/* QR Code */}
+        <div className={'flex flex-1 flex-col justify-center'}>
+          <div className="rounded-lg bg-white p-4">
+            <QRCodeSVG className="h-[130px] w-[130px]" value={shareLink} />
+          </div>
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="flex w-full flex-col gap-3">
-        <button
-          onClick={copyLinkToClipboard}
-          className="w-full rounded-full bg-white/20 py-3 text-center text-white hover:bg-white/30"
-        >
-          Copy Direct Link
-        </button>
+        {/* Action Buttons */}
+        <div className="flex w-full flex-col gap-3 text-sm">
+          <TextButton onClick={() => copyLinkToClipboard(inviteLink)} className="w-full" fade={`dark`}>
+            Copy Direct Link
+          </TextButton>
 
-        <button
-          onClick={shareToMetaQuest}
-          className="w-full rounded-full bg-white/20 py-3 text-center text-white hover:bg-white/30"
-        >
-          Share to Meta Quest
-        </button>
+          {/** commenting out in case we need to bring this back */}
+          {/* <TextButton onClick={() => copyLinkToClipboard(questLink)} className="w-full" fade={`dark`}>
+            Share to Meta Quest
+          </TextButton> */}
 
-        <button
-          onClick={shareByEmailOrPhone}
-          className="w-full rounded-full bg-white/20 py-3 text-center text-white hover:bg-white/30"
-        >
-          Share by email or phone
-        </button>
-      </div>
-
-      {/* Copy Notification */}
-      {showCopyNotification && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 rounded-full bg-gray-800/90 px-6 py-3 text-white">
-          Direct Link Has Been Copied.
+          <TextButton onClick={() => openDrawer.set(!openDrawer.value)} className="w-full" fade={`dark`}>
+            Share by email or phone
+          </TextButton>
         </div>
-      )}
-    </div>
+      </Inner>
+      <AnimatePresence>{openDrawer.value && <ShareDrawer onClose={() => openDrawer.set(false)} />}</AnimatePresence>
+    </>
   )
 }
 

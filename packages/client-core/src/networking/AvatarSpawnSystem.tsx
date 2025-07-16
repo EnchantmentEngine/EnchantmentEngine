@@ -30,12 +30,13 @@ import {
   defineSystem,
   Entity,
   EntityID,
-  getComponent,
   getOptionalComponent,
   PresentationSystemGroup,
   removeComponent,
   setComponent,
+  UndefinedEntity,
   useHasComponent,
+  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -47,6 +48,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NetworkPeerState,
   NetworkState,
   useHookstate,
   useImmediateEffect,
@@ -63,9 +65,8 @@ import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
-import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
+import { CameraMode, CameraModeType } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
@@ -128,15 +129,16 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     })
 
     return () => {
-      const network = NetworkState.worldNetwork
+      const selfAvatarUUID = AvatarComponent.getSelfAvatarUUID()
 
-      const peersCountForUser = network?.users?.[userID]?.length
+      const currentNetwork = NetworkState.worldNetwork
+      const networkPeerState = getState(NetworkPeerState)[currentNetwork?.id]
+      const peersCountForUser = networkPeerState?.users?.[userID]?.length || 0
 
-      // if we are the last peer in the world for this user, destroy the object
-      if (!peersCountForUser || peersCountForUser === 1) {
+      if (peersCountForUser <= 1) {
         dispatchAction(
           WorldNetworkAction.destroyEntity({
-            entityUUID: AvatarComponent.getSelfAvatarUUID()
+            entityUUID: selfAvatarUUID
           })
         )
       }
@@ -175,6 +177,38 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   return null
 }
 
+const CameraSettingsReactor = (props: {
+  cameraSettingsEntity: Entity | null
+  onCameraModeChange?: (cameraMode: CameraModeType) => void
+}) => {
+  const { cameraSettingsEntity, onCameraModeChange } = props
+
+  const engineState = useMutableState(EngineState)
+  const referenceSpaceState = useMutableState(ReferenceSpaceState)
+
+  const cameraSettingsComponent = useOptionalComponent(cameraSettingsEntity ?? UndefinedEntity, CameraSettingsComponent)
+
+  const cameraMode = cameraSettingsComponent?.cameraMode.value ?? CameraMode.FOLLOW
+
+  useEffect(() => {
+    onCameraModeChange?.(cameraMode)
+  }, [cameraMode, onCameraModeChange])
+
+  useEffect(() => {
+    const cameraEntity = referenceSpaceState.viewerEntity.value
+
+    if (engineState.isEditing.value || !cameraEntity || cameraMode !== CameraMode.GUIDED) return
+
+    setComponent(cameraEntity, PoiCameraComponent)
+
+    return () => {
+      removeComponent(cameraEntity, PoiCameraComponent)
+    }
+  }, [cameraMode, referenceSpaceState.viewerEntity, engineState.isEditing])
+
+  return null
+}
+
 const reactor = () => {
   const userID = useMutableState(EngineState).userID.value
   const locationSceneURL = useHookstate(getMutableState(LocationState).currentLocation.location.sceneURL).value
@@ -183,37 +217,22 @@ const reactor = () => {
 
   const cameraSettingsComponents = useChildrenWithComponents(sceneEntity, [CameraSettingsComponent])
   const cameraSettingsEntity = cameraSettingsComponents.length > 0 ? cameraSettingsComponents[0] : null
-  const engineState = useMutableState(EngineState)
-  const cameraSettingsComponent = cameraSettingsEntity
-    ? getComponent(cameraSettingsComponents[0], CameraSettingsComponent)
-    : null
-  const cameraMode = cameraSettingsComponent ? cameraSettingsComponent.cameraMode : CameraMode.FOLLOW
-  const isAvatarUsed = cameraMode === CameraMode.FOLLOW
+  const currentCameraMode = useHookstate<CameraModeType>(CameraMode.FOLLOW)
 
-  useEffect(() => {
-    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
-
-    if (!engineState.isEditing.value) {
-      if (cameraMode === CameraMode.FOLLOW) {
-        if (!isAvatarUsed) {
-          setComponent(cameraEntity, FollowCameraComponent)
-        }
-        removeComponent(cameraEntity, PoiCameraComponent)
-      } else if (cameraMode === CameraMode.POI) {
-        setComponent(cameraEntity, PoiCameraComponent)
-        removeComponent(cameraEntity, FollowCameraComponent)
-      }
-    }
-
-    return () => {
-      removeComponent(cameraEntity, FollowCameraComponent)
-      removeComponent(cameraEntity, PoiCameraComponent)
-    }
-  }, [cameraMode, isAvatarUsed, engineState.isEditing])
+  const handleCameraModeChange = (cameraMode: CameraModeType) => {
+    currentCameraMode.set(cameraMode)
+  }
 
   if (!gltfLoaded || !userID) return null
 
-  return (isAvatarUsed && <AvatarSpawnReactor key={sceneEntity} sceneEntity={sceneEntity} />) || null
+  return (
+    <>
+      <CameraSettingsReactor cameraSettingsEntity={cameraSettingsEntity} onCameraModeChange={handleCameraModeChange} />
+      {currentCameraMode.value === CameraMode.FOLLOW && (
+        <AvatarSpawnReactor key={sceneEntity} sceneEntity={sceneEntity} />
+      )}
+    </>
+  )
 }
 
 export const AvatarSpawnSystem = defineSystem({

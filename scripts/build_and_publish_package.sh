@@ -20,25 +20,23 @@ if [ "$SOURCE_REPO_PROVIDER" == "gcp" ]; then
   # Set default repo name pattern
   SOURCE_REPO_NAME="$SOURCE_REPO_NAME_STEM-root/$SOURCE_REPO_NAME_STEM-root"
   
-  # Apply environment-specific suffixes based on APP_HOST
-  if [[ "$APP_HOST" =~ "studio" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$RELEASE_NAME" = "mt-rc" ]]; then
     SUFFIX="mt-rc"
-  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-int" ]]; then
       SUFFIX="mt-int"
-  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-qat-dev" ]]; then
     SUFFIX="mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "qat-dev" ]]; then
     SUFFIX="qat"
-  elif [[ "$app_host" =~ "mt-nightly" ]]; then
-    suffix="mt-nightly"
-  elif [[ "$app_host" =~ "mt-weekly" ]]; then
-    suffix="mt-weekly"
-  elif [[ "$app_host" =~ "mt-prdmirr" ]]; then
-    suffix="mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-nightly" ]]; then
+    SUFFIX="mt-nightly"
+  elif [[ "$RELEASE_NAME" = "mt-weekly" ]]; then
+    SUFFIX="mt-weekly"
+  elif [[ "$RELEASE_NAME" = "mt-prdmirr" ]]; then
+    SUFFIX="mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-prd" ]] || [[ "$RELEASE_NAME" =~ "mt-dev" ]] || [[ "$RELEASE_NAME" = "mt-stg" ]]; then
+    SUFFIX="mt"
   else
     SUFFIX=""
   fi
@@ -61,21 +59,25 @@ elif [ "$DESTINATION_REPO_PROVIDER" == "gcp" ]; then
   echo "Log into Docker with GCP credentials"
   DESTINATION_REPO_NAME=$DESTINATION_REPO_NAME_STEM-$PACKAGE/$DESTINATION_REPO_NAME_STEM-$PACKAGE
 
-  # Apply environment-specific suffixes based on APP_HOST
-  if [[ "$APP_HOST" =~ "studio" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$RELEASE_NAME" = "mt-rc" ]]; then
     SUFFIX="mt-rc"
-  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
-      SUFFIX="mt-int"
-  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
-      SUFFIX="mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-      SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "qat" ]]; then
-      SUFFIX="qat"
+  elif [[ "$RELEASE_NAME" = "mt-int" ]]; then
+    SUFFIX="mt-int"
+  elif [[ "$RELEASE_NAME" = "mt-qat-dev" ]]; then
+    SUFFIX="mt-qat"
+  elif [[ "$RELEASE_NAME" = "qat-dev" ]]; then
+    SUFFIX="qat"
+  elif [[ "$RELEASE_NAME" = "mt-nightly" ]]; then
+    SUFFIX="mt-nightly"
+  elif [[ "$RELEASE_NAME" = "mt-weekly" ]]; then
+    SUFFIX="mt-weekly"
+  elif [[ "$RELEASE_NAME" = "mt-prdmirr" ]]; then
+    SUFFIX="mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-prd" ]] || [[ "$RELEASE_NAME" =~ "mt-dev" ]] || [[ "$RELEASE_NAME" = "mt-stg" ]]; then
+    SUFFIX="mt"
   else
-      SUFFIX=""
+    SUFFIX=""
   fi
     
   # Only modify the repo name if a suffix was identified
@@ -133,6 +135,11 @@ if [ "$DOCKERFILE" != "client-serve-static" ]; then
     --build-arg MYSQL_PORT=$MYSQL_PORT \
     --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
     --build-arg MYSQL_DATABASE=$MYSQL_DATABASE \
+    --build-arg POSTGRES_HOST=$POSTGRES_HOST \
+    --build-arg POSTGRES_USER=$POSTGRES_USER \
+    --build-arg POSTGRES_PORT=$POSTGRES_PORT \
+    --build-arg POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    --build-arg POSTGRES_DATABASE=$POSTGRES_DATABASE \
     --build-arg APP_HOST=$APP_HOST \
     --build-arg GCP_PROJECT=$GCP_PROJECT \
     --build-arg GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE \
@@ -193,6 +200,11 @@ else
     --build-arg MYSQL_PORT=$MYSQL_PORT \
     --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
     --build-arg MYSQL_DATABASE=$MYSQL_DATABASE \
+    --build-arg POSTGRES_HOST=$POSTGRES_HOST \
+    --build-arg POSTGRES_USER=$POSTGRES_USER \
+    --build-arg POSTGRES_PORT=$POSTGRES_PORT \
+    --build-arg POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    --build-arg POSTGRES_DATABASE=$POSTGRES_DATABASE \
     --build-arg APP_HOST=$APP_HOST \
     --build-arg GCP_PROJECT=$GCP_PROJECT \
     --build-arg GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE \

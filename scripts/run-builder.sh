@@ -73,7 +73,7 @@ validate_required_vars() {
 
 wait_for_builds_finished() {
   sleep $BUILD_WAIT_INTERVAL
-  
+
   # Get pod information for all services
   API_SLICE=($(kubectl get pods | grep ir-engine-kaniko-api || echo "NOT_FOUND - - -"))
   API_STATUS=${API_SLICE[2]:-"NOT_FOUND"}
@@ -149,7 +149,7 @@ wait_for_builds_finished() {
         cp instanceserver-build-logs.txt instanceserver-build-error.txt
       fi
     fi
-    
+
     return 0
   else
     wait_for_builds_finished
@@ -272,19 +272,23 @@ setup_package_environment() {
     return 1
   }
   
-  # Determine suffix based on APP_HOST
-  if [[ "$APP_HOST" =~ "studio" ]] || [[ "$APP_HOST" =~ "mt-stg" ]]; then
-    SUFFIX="mt"
-  elif [[ "$APP_HOST" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$RELEASE_NAME" = "mt-rc" ]]; then
     SUFFIX="-mt-rc"
-  elif [[ "$APP_HOST" =~ "mt-int" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-int" ]]; then
     SUFFIX="-mt-int"
-  elif [[ "$APP_HOST" =~ "mt-qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "mt-qat-dev" ]]; then
     SUFFIX="-mt-qat"
-  elif [[ "$APP_HOST" =~ "mt" ]]; then
-    SUFFIX="-mt"
-  elif [[ "$APP_HOST" =~ "qat" ]]; then
+  elif [[ "$RELEASE_NAME" = "qat-dev" ]]; then
     SUFFIX="-qat"
+  elif [[ "$RELEASE_NAME" = "mt-nightly" ]]; then
+    SUFFIX="-mt-nightly"
+  elif [[ "$RELEASE_NAME" = "mt-weekly" ]]; then
+    SUFFIX="-mt-weekly"
+  elif [[ "$RELEASE_NAME" = "mt-prdmirr" ]]; then
+    SUFFIX="-mt-prdmirr"
+  elif [[ "$RELEASE_NAME" = "mt-prd" ]] || [[ "$RELEASE_NAME" =~ "mt-dev" ]] || [[ "$RELEASE_NAME" = "mt-stg" ]]; then
+    SUFFIX="-mt"
   else
     SUFFIX=""
   fi
@@ -410,27 +414,26 @@ prune_gcp_images() {
 }
 
 determine_gcp_suffix() {
-  local app_host="${APP_HOST:-}"
+  local release_name="${RELEASE_NAME:-}"
   local suffix=""
 
-  if [[ "$app_host" =~ "studio" ]] || [[ "$app_host" =~ "mt-stg" ]]; then
-    suffix="mt"
-  elif [[ "$app_host" =~ "mt-rc" ]]; then
+  # Apply environment-specific suffixes based on RELEASE_NAME
+  if [[ "$release_name" = "mt-rc" ]]; then
     suffix="mt-rc"
-  elif [[ "$app_host" =~ "mt-int" ]]; then
+  elif [[ "$release_name" = "mt-int" ]]; then
     suffix="mt-int"
-  elif [[ "$app_host" =~ "mt-qat" ]]; then
+  elif [[ "$release_name" = "mt-qat-dev" ]]; then
     suffix="mt-qat"
-  elif [[ "$app_host" =~ "mt" ]]; then
-    suffix="mt"
-  elif [[ "$app_host" =~ "qat" ]]; then
+  elif [[ "$release_name" = "qat-dev" ]]; then
     suffix="qat"
-  elif [[ "$app_host" =~ "mt-nightly" ]]; then
+  elif [[ "$release_name" = "mt-nightly" ]]; then
     suffix="mt-nightly"
-  elif [[ "$app_host" =~ "mt-weekly" ]]; then
+  elif [[ "$release_name" = "mt-weekly" ]]; then
     suffix="mt-weekly"
-  elif [[ "$app_host" =~ "mt-prdmirr" ]]; then
+  elif [[ "$release_name" = "mt-prdmirr" ]]; then
     suffix="mt-prdmirr"
+  elif [[ "$release_name" = "mt-prd" ]] || [[ "$release_name" =~ "mt-dev" ]] || [[ "$release_name" = "mt-stg" ]]; then
+    suffix="mt"
   else
     suffix=""
   fi

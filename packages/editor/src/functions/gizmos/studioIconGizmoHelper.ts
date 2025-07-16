@@ -23,30 +23,19 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import {
-  defineQuery,
-  Engine,
-  Entity,
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  setComponent
-} from '@ir-engine/ecs'
-import { getMutableState } from '@ir-engine/hyperflux'
+import { Engine, Entity, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
-import { ActiveHelperComponent } from '@ir-engine/spatial/src/common/ActiveHelperComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { TransformComponent } from '@ir-engine/spatial/src/SpatialModule'
 import { Line, Raycaster, Sprite, SpriteMaterial, TextureLoader, Vector3 } from 'three'
+import { Vector3_One, Vector3_Zero } from '../../../../spatial/src/common/constants/MathConstants'
+import { EditorHelperState } from '../../services/EditorHelperState'
 import { getCameraFactor, intersectObjectWithRay } from './gizmoCommonFunctions'
-
-const minimumIconSize = new Vector3(1, 1, 1)
-const maximumIconSize = new Vector3(3, 3, 3)
 
 const _raycaster = new Raycaster() // for hover
 _raycaster.layers.set(ObjectLayers.NodeIcon)
@@ -54,6 +43,8 @@ _raycaster.firstHitOnly = true
 
 const _interpolationFactor = 0.3 // used for the hover grow effect
 
+const _parentWorldPositon = new Vector3()
+const _parentWorldScale = new Vector3()
 export const VolumeVisibility = {
   Off: 'Off' as const,
   Auto: 'Auto' as const,
@@ -69,13 +60,6 @@ export const getIconGizmo = (textureURL) => {
   })
   material.depthTest = false // Disable depth testing
   return new Sprite(material)
-}
-
-export const setVolumeVisibility = (visibility) => {
-  getMutableState(RendererState).nodeHelperVisibility.set(visibility !== VolumeVisibility.Off)
-  defineQuery([ActiveHelperComponent])().forEach((entity) =>
-    setComponent(entity, ActiveHelperComponent, { volumeControlled: visibility === VolumeVisibility.Auto })
-  )
 }
 
 export function gizmoIconHelperYAxisUpdate(helperEntity, position) {
@@ -99,26 +83,25 @@ export function gizmoIconHelperUpdate(helperEntity, start, end) {
   }
 }
 
-export function gizmoIconUpdate(parentEntity: Entity) {
-  const activeHelperComponent = getComponent(parentEntity, ActiveHelperComponent)
-  const transform = getComponent(activeHelperComponent.helperIconGizmo, TransformComponent)
-  const parentTransformScale = getComponent(parentEntity, TransformComponent).scale
+export function gizmoIconUpdate(parentEntity: Entity, iconEntity: Entity, directionalEntities: Entity[], currentsize) {
+  const transform = getComponent(iconEntity, TransformComponent)
+  TransformComponent.getWorldPosition(parentEntity, _parentWorldPositon)
+  TransformComponent.getWorldScale(parentEntity, _parentWorldScale)
   const size = transform.scale
   const finalSize = size
     .set(1, 1, 1)
-    .divide(parentTransformScale)
-    .multiplyScalar(getCameraFactor(transform.position, activeHelperComponent.sizeFactor))
-    .clamp(minimumIconSize, maximumIconSize)
+    .multiplyScalar(getCameraFactor(_parentWorldPositon, currentsize))
+    .max(Vector3_One)
+    .divide(_parentWorldScale)
 
-  setComponent(activeHelperComponent.helperIconGizmo, TransformComponent, { scale: finalSize })
-  for (const entity of activeHelperComponent.directionalEntities) {
+  setComponent(iconEntity, TransformComponent, { position: Vector3_Zero, scale: finalSize })
+  for (const entity of directionalEntities) {
     setComponent(entity, TransformComponent, { scale: finalSize })
   }
 }
 
-function pointerHover(parentEntity: Entity) {
-  const activeHelperComponent = getMutableComponent(parentEntity, ActiveHelperComponent)
-  const spriteObject = getComponent(activeHelperComponent.helperIconGizmo.value, ObjectComponent)
+function pointerHover(studioIcon: Entity) {
+  const spriteObject = getComponent(studioIcon, ObjectComponent)
   const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
   if (!inputPointerEntity) return
 
@@ -127,20 +110,22 @@ function pointerHover(parentEntity: Entity) {
   _raycaster.setFromCamera(pointerPosition, camera)
 
   const intersect = intersectObjectWithRay(spriteObject, _raycaster, true)
-  activeHelperComponent.hovered.set(intersect !== false)
-  const targetSize = intersect ? 0.5 : 0.4 // 0.25 is the hover size, 0.2 is the default size
-  //TODO : make the sizeFactor editable
-  const originalSize = activeHelperComponent.sizeFactor.value
-  const interpolatedSize = originalSize + (targetSize - originalSize) * _interpolationFactor
-  activeHelperComponent.sizeFactor.set(interpolatedSize)
-
   return intersect
 }
 
-export function onPointerHover(entity) {
-  const activeHelperComponent = getComponent(entity, ActiveHelperComponent)
-  const spriteObject = getOptionalComponent(activeHelperComponent.helperIconGizmo, ObjectComponent)
+export function setIconSize(intersect, currentSize) {
+  const targetSize = intersect
+    ? getState(EditorHelperState).editorIconMaxSize
+    : getState(EditorHelperState).editorIconMinSize
+  //TODO : make the sizeFactor editable
+  const originalSize = currentSize
+  const interpolatedSize = originalSize + (targetSize - originalSize) * _interpolationFactor
+  return interpolatedSize
+}
+
+export function onPointerHover(studioIcon) {
+  const spriteObject = getOptionalComponent(studioIcon, ObjectComponent)
   if (spriteObject === undefined) return
 
-  return pointerHover(entity)
+  return pointerHover(studioIcon)
 }

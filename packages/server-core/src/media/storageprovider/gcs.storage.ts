@@ -473,26 +473,31 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
    * @param isCopy If true it will create a copy of object.
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
-    const isDirectory = await this.isDirectory(oldName, oldPath)
     const oldFilePath = path.join(oldPath, oldName)
     const newFilePath = path.join(newPath, newName)
-    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
+    const listResponse = await this.listObjects(oldFilePath, false, undefined, false)
 
-    if (listResponse.Contents.length > 0)
+    if (listResponse.Contents.length > 0) {
       return await Promise.all([
         ...listResponse.Contents.map(async (file) => {
           const relativePath = file.Key.replace(oldFilePath, '')
           const key = newFilePath + relativePath
 
+          if (file.Type === 'folder' && isCopy) {
+            return await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+          } else if (file.Type === 'folder' && !isCopy) {
+            await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+            return await this.deleteResources([file.Key])
+          }
+
           if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})
           else return await this.provider.bucket(this.bucket).file(file.Key).move(key, {})
         })
       ])
-    else {
-      const oldPath = path.join(oldFilePath, '/')
-      const newPath = path.join(newFilePath, '/')
-      if (isCopy) return await this.provider.bucket(this.bucket).file(oldPath).copy(newPath, {})
-      else return await this.provider.bucket(this.bucket).file(oldPath).move(newPath, {})
     }
   }
 }
