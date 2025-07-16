@@ -132,6 +132,29 @@ db.url =
   `mysql://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}`
 
 /**
+ * Vector Database (PostgreSQL with PGVector)
+ */
+export const vectordb = {
+  enabled: process.env.VECTORDB_ENABLED === 'true',
+  username: testEnabled ? process.env.POSTGRES_TEST_USER! : process.env.POSTGRES_USER!,
+  password: testEnabled ? process.env.POSTGRES_TEST_PASSWORD! : process.env.POSTGRES_PASSWORD!,
+  database: testEnabled ? process.env.POSTGRES_TEST_DATABASE! : process.env.POSTGRES_DATABASE!,
+  host: testEnabled ? process.env.POSTGRES_TEST_HOST! : process.env.POSTGRES_HOST!,
+  port: testEnabled ? process.env.POSTGRES_TEST_PORT! : process.env.POSTGRES_PORT!,
+  dialect: 'postgres',
+  forceRefresh: process.env.FORCE_DB_REFRESH === 'true',
+  url: '',
+  charset: 'utf8',
+  pool: {
+    max: parseInt(process.env.POSTGRES_POOL_MAX || '5')
+  }
+}
+
+vectordb.url =
+  (testEnabled ? process.env.POSTGRES_TEST_URL : process.env.POSTGRES_URL) ||
+  `postgres://${vectordb.username}:${vectordb.password}@${vectordb.host}:${vectordb.port}/${vectordb.database}`
+
+/**
  * Server / backend
  */
 const server = {
@@ -463,6 +486,20 @@ const metabase = {
 }
 
 /**
+ * Monitoring
+ */
+const monitoring = {
+  metrics: {
+    enabled: process.env.PROMETHEUS_METRICS_ENABLED === 'true',
+    endpoint: process.env.METRICS_ENDPOINT || '/metrics',
+    // For GCP Cloud Monitoring integration
+    gcpProject: process.env.GCP_PROJECT,
+    useCloudMonitoring: process.env.USE_CLOUD_MONITORING === 'true'
+  }
+  // Note: Tracing configuration will be added in a separate PR
+}
+
+/**
  * Full config
  */
 const config = {
@@ -474,6 +511,7 @@ const config = {
   client,
   coil,
   db,
+  vectordb,
   email,
   'instance-server': instanceserver,
   'instance-server-webrtc': instanceServerWebRtc,
@@ -495,7 +533,8 @@ const config = {
     typeof process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'undefined' || process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'true',
   fsProjectSyncEnabled: process.env.FS_PROJECT_SYNC_ENABLED === 'false' ? false : true,
   zendesk,
-  metabase
+  metabase,
+  monitoring
 }
 
 chargebeeInst.configure({

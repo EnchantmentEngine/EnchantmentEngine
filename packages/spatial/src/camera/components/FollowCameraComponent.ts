@@ -56,6 +56,7 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 import { CameraSettingsState } from '../CameraSettingsState'
 import { setTargetCameraRotation } from '../functions/CameraFunctions'
 import { FollowCameraMode, FollowCameraShoulderSide } from '../types/FollowCameraMode'
+import { CameraOrbitComponent } from './CameraOrbitComponent'
 import { TargetCameraRotationComponent } from './TargetCameraRotationComponent'
 
 const window = 'window' in globalThis ? globalThis.window : ({} as any as Window)
@@ -267,6 +268,15 @@ export const FollowCameraComponent = defineComponent({
       }
       return mode !== follow.mode.value
     }
+
+    //disable orbit camera used for the editor to prevent conflicts / flickering
+    useImmediateEffect(() => {
+      const preexistingOrbit = hasComponent(entity, CameraOrbitComponent)
+      if (preexistingOrbit) removeComponent(entity, CameraOrbitComponent)
+      return () => {
+        if (preexistingOrbit) setComponent(entity, CameraOrbitComponent)
+      }
+    }, [])
 
     useImmediateEffect(() => {
       const cameraSettings = cameraSettingsState.value
@@ -708,10 +718,10 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   const thetaThreshold = 0.01
 
   if (
-    updatedPosition.distanceTo(follow.lastCyclePosition) > positionThreshold &&
-    Math.abs(updatedDistance - follow.lastCycleDistance) <= distanceThreshold &&
-    Math.abs(updatedPhi - follow.lastCyclePhi) <= phiThreshold &&
-    Math.abs(updatedTheta - follow.lastCycleTheta) <= thetaThreshold
+    updatedPosition.distanceTo(follow.lastCyclePosition) > positionThreshold ||
+    Math.abs(updatedDistance - follow.lastCycleDistance) > distanceThreshold ||
+    Math.abs(updatedPhi - follow.lastCyclePhi) > phiThreshold ||
+    Math.abs(updatedTheta - follow.lastCycleTheta) > thetaThreshold
   ) {
     follow.lastCameraAdjustmentTime = timeInSeconds
   }

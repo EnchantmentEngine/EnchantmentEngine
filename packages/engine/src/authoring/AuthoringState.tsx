@@ -469,7 +469,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
                 if (texture?.isTexture) {
                   texture.flipY = false
                   texture.needsUpdate = true
-                  texture.colorSpace = SRGBColorSpace
+                  if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
                   materialComponent.material[key].set(texture ?? null)
                 }
                 if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
@@ -486,7 +486,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
           }
           for (const [key, val] of Object.entries(args)) {
             if (typeof val === 'undefined' || typeof material[key] === 'undefined') continue
-            if (parameters[key]) continue
+            if (key in parameters) continue
             const _default = args[key].default
             if (args[key].type === 'color') {
               materialComponent.material[key].set(_default.isColor ? _default : new Color(_default))
