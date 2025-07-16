@@ -45,7 +45,7 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import React, { useCallback, useEffect } from 'react'
-import { InstancedBufferAttribute, InstancedMesh, Material } from 'three'
+import { InstancedBufferAttribute, InstancedMesh, Material, Matrix4 } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { InstancingComponent } from '../components/InstancingComponent'
 import { Heuristic, VariantComponent } from '../components/VariantComponent'
@@ -124,20 +124,21 @@ const InstancedMeshReactor = ({ meshEntity, generator, levelIndex }: InstancedMe
   const { heuristic } = useComponent(generator, VariantComponent)
 
   const generateInstancedMesh = useCallback(() => {
-    const bufferAttributes = Object.values(instanceBuffers.value) as InstancedBufferAttribute[]
+    let instanceMatrix = new InstancedBufferAttribute(new Float32Array([...new Matrix4().identity().elements]), 16)
+    const buffers = Object.values(instanceBuffers.value) as InstancedBufferAttribute[]
 
-    if (bufferAttributes.length === 0) return
+    if (buffers.length > 0) {
+      const totalLength = buffers.reduce((sum, buffer) => sum + buffer.array.length, 0)
+      const concatenatedArray = new Float32Array(totalLength)
 
-    const totalLength = bufferAttributes.reduce((sum, buffer) => sum + buffer.array.length, 0)
-    const concatenatedArray = new Float32Array(totalLength)
+      let offset = 0
+      for (const buffer of buffers) {
+        concatenatedArray.set(buffer.array, offset)
+        offset += buffer.array.length
+      }
 
-    let offset = 0
-    for (const buffer of bufferAttributes) {
-      concatenatedArray.set(buffer.array, offset)
-      offset += buffer.array.length
+      instanceMatrix = new InstancedBufferAttribute(concatenatedArray, 16)
     }
-
-    const instanceMatrix = new InstancedBufferAttribute(concatenatedArray, 16)
 
     const instancedMesh = new InstancedMesh(
       mesh.geometry.value.clone(),
