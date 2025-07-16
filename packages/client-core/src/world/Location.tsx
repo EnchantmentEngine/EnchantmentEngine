@@ -43,7 +43,7 @@ import { ThemeState } from '../common/services/ThemeService'
 import { useNetwork } from '../components/World/EngineHooks'
 import { useUserBannedCheck } from '../hooks/useUserBanned'
 import { LocationService } from '../social/services/LocationService'
-import { LoadingUISystemState } from '../systems/LoadingUISystemBasic'
+import { LoadingUISystemState } from '../systems/LoadingUISystem'
 import { clientContextParams } from '../util/ClientContextState'
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'

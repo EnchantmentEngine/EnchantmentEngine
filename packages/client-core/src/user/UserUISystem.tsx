@@ -35,7 +35,7 @@ import { EngineState, QueryReactor, setComponent, useEntityContext, useOptionalC
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
 import { ModalState } from '../common/services/ModalState'
 import { InviteService } from '../social/services/InviteService'
-import { LoadingUISystemState } from '../systems/LoadingUISystemBasic'
+import { LoadingUISystemState } from '../systems/LoadingUISystem'
 import { OverlayComponentState } from '../systems/OverlaySystem'
 import { ViewerMenuState } from '../util/ViewerMenuState'
 

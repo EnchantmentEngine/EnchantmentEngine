@@ -38,7 +38,7 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
 import { MultiplayerState } from '@ir-engine/client-core/src/common/services/MultiplayerState'
 import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
-import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystemBasic'
+import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import '../styles.scss'
 
