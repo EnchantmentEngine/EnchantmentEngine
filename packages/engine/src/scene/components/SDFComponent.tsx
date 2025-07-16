@@ -72,7 +72,7 @@ export const SDFComponent = defineComponent({
     enable: S.Bool({ default: false }),
     mode: S.Number({
       $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'TORUS', 'BOX', 'SPHERE', 'FOG'",
+        "A number enum, where: 0 represents 'TORUS', 1 represents 'BOX', 2 represents 'SPHERE', 3 represents 'FOG'",
       default: SDFMode.TORUS
     })
   }),

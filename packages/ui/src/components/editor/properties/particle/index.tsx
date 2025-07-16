@@ -25,37 +25,29 @@ Infinite Reality Engine. All Rights Reserved.
 
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  AdditiveBlending,
-  Blending,
-  CustomBlending,
-  MultiplyBlending,
-  NoBlending,
-  NormalBlending,
-  SubtractiveBlending
-} from 'three'
+import { AdditiveBlending, Blending, MultiplyBlending, NoBlending, NormalBlending, SubtractiveBlending } from 'three'
 import { BurstParameters, RenderMode } from 'three.quarks'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { State } from '@ir-engine/hyperflux'
+import { HiSparkles } from 'react-icons/hi'
+
+import { EditorComponentType, commitProperties, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
+import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { ParticleSystemComponent } from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
 import {
   ApplyForceBehaviorJSON,
   BehaviorJSON,
   BurstParametersJSON,
   CONE_SHAPE_DEFAULT,
   ColorGeneratorJSON,
-  ConstantColorJSON,
+  DEFAULT_EMISSION_OVER_TIME,
   DONUT_SHAPE_DEFAULT,
   MESH_SHAPE_DEFAULT,
   POINT_SHAPE_DEFAULT,
-  ParticleSystemComponent,
   SPHERE_SHAPE_DEFAULT,
   ValueGeneratorJSON
-} from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
-import { State } from '@ir-engine/hyperflux'
-import { HiSparkles } from 'react-icons/hi'
-
-import { EditorComponentType, commitProperties, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
-import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+} from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
 import { Checkbox } from '@ir-engine/ui'
 import Button from '../../../../primitives/tailwind/Button'
 import BehaviorInput from '../../input/Behavior'
@@ -142,6 +134,13 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
       probability: 1
     }
     const data = [...JSON.parse(JSON.stringify(particleSystem.systemParameters.emissionBursts)), nuBurst]
+
+    // unset emission over time so it doesn't override the bursts
+    onSetState('systemParameters.emissionOverTime')({
+      type: 'ConstantValue',
+      value: 0
+    })
+
     commitProperty(ParticleSystemComponent, 'systemParameters.emissionBursts' as any)(data)
   }, [])
 
@@ -153,6 +152,13 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
         )
       )
       commitProperty(ParticleSystemComponent, 'systemParameters.emissionBursts' as any)(data)
+      if (data.length === 0) {
+        // set default emission over time.
+        onSetState('systemParameters.emissionOverTime')({
+          type: 'ConstantValue',
+          value: DEFAULT_EMISSION_OVER_TIME
+        })
+      }
     }
   }, [])
 
@@ -226,22 +232,10 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
                 />
               </InputGroup>
 
-              <InputGroup name="Cycle" label={t('editor:properties.particle-system.burst.cycle')}>
-                <NumericInput
-                  value={burst.cycle.value}
-                  onChange={onSetState(`systemParameters.emissionBursts.${index}.cycle`)}
-                />
-              </InputGroup>
-
-              <InputGroup name="Interval" label={t('editor:properties.particle-system.burst.interval')}>
-                <NumericInput
-                  value={burst.interval.value}
-                  onChange={onSetState(`systemParameters.emissionBursts.${index}.interval`)}
-                />
-              </InputGroup>
-
               <InputGroup name="Probability" label={t('editor:properties.particle-system.burst.probability')}>
                 <NumericInput
+                  max={1}
+                  min={0}
                   value={burst.probability.value}
                   onChange={onSetState(`systemParameters.emissionBursts.${index}.probability`)}
                 />
@@ -287,11 +281,11 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
           onChange={onSetState}
         />
       </InputGroup>
-      <InputGroup name="Start Color" label={t('editor:properties.particle-system.start-color')}>
+      <InputGroup name="Start Color" label={t('editor:properties.particle-system.startColor.title')}>
         <ColorGenerator
           path="systemParameters.startColor"
           scope={particleSystemState.systemParameters.startColor as unknown as State<ColorGeneratorJSON>}
-          value={particleSystem.systemParameters.startColor as ConstantColorJSON}
+          value={particleSystem.systemParameters.startColor as ColorGeneratorJSON}
           onChange={onSetState}
         />
       </InputGroup>
@@ -303,38 +297,63 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
           onChange={onSetState}
         />
       </InputGroup>
-      <InputGroup name="Render Mode" label={t('editor:properties.particle-system.render-mode')}>
+      <InputGroup name="Render Mode" label={t('editor:properties.particle-system.renderMode.title')}>
         <SelectInput
           value={particleSystem.systemParameters.renderMode}
-          onChange={onSetSystemParm('renderMode')}
+          onChange={(value) => {
+            if (value === RenderMode.StretchedBillBoard) {
+              onSetState('systemParameters.rendererEmitterSettings.speedFactor')(1)
+              onSetState('systemParameters.rendererEmitterSettings.lengthFactor')(1)
+            } else if (value === RenderMode.Trail) {
+              onSetState('systemParameters.rendererEmitterSettings.startLength')({
+                type: 'ConstantValue',
+                value: 5,
+                a: 0,
+                b: 1,
+                functions: []
+              })
+              onSetState('systemParameters.rendererEmitterSettings.followLocalOrigin')(false)
+            }
+            onSetSystemParm('renderMode')(value)
+          }}
           options={[
-            { label: t('editor:properties.particle-system.render-mode-type.billboard'), value: RenderMode.BillBoard },
+            { label: t('editor:properties.particle-system.renderMode.billboard'), value: RenderMode.BillBoard },
             {
-              label: t('editor:properties.particle-system.render-mode-type.stretched-billboard'),
+              label: t('editor:properties.particle-system.renderMode.stretched-billboard'),
               value: RenderMode.StretchedBillBoard
             },
-            { label: t('editor:properties.particle-system.render-mode-type.mesh'), value: RenderMode.Mesh },
-            { label: t('editor:properties.particle-system.render-mode-type.trail'), value: RenderMode.Trail }
+            { label: t('editor:properties.particle-system.renderMode.mesh'), value: RenderMode.Mesh },
+            { label: t('editor:properties.particle-system.renderMode.trail'), value: RenderMode.Trail }
           ]}
         />
       </InputGroup>
+      {particleSystem.systemParameters.renderMode === RenderMode.StretchedBillBoard && (
+        <>
+          <InputGroup name="Speed Factor" label={t('editor:properties.particle-system.renderMode.speedFactor')}>
+            <NumericInput
+              value={particleSystem.systemParameters.rendererEmitterSettings?.speedFactor}
+              onChange={onSetState('systemParameters.rendererEmitterSettings.speedFactor')}
+            />
+          </InputGroup>
+          <InputGroup name="Length Factor" label={t('editor:properties.particle-system.renderMode.lengthFactor')}>
+            <NumericInput
+              value={particleSystem.systemParameters.rendererEmitterSettings?.lengthFactor}
+              onChange={onSetState('systemParameters.rendererEmitterSettings.lengthFactor')}
+            />
+          </InputGroup>
+        </>
+      )}
       {particleSystem.systemParameters.renderMode === RenderMode.Trail && (
         <>
-          <InputGroup name="Trail Length" label={t('editor:properties.particle-system.trail-length')}>
+          <InputGroup name="Trail Length" label={t('editor:properties.particle-system.renderMode.trailLength')}>
             <ValueGenerator
               path="systemParameters.rendererEmitterSettings.startLength"
-              value={particleSystem.systemParameters.rendererEmitterSettings.startLength as ValueGeneratorJSON}
+              value={particleSystem.systemParameters.rendererEmitterSettings?.startLength as ValueGeneratorJSON}
               scope={
                 (particleSystemState.systemParameters.rendererEmitterSettings as any)
                   .startLength as unknown as State<ValueGeneratorJSON>
               }
               onChange={onSetState}
-            />
-          </InputGroup>
-          <InputGroup name="Follow Local Origin" label={t('editor:properties.particle-system.follow-local-origin')}>
-            <Checkbox
-              checked={particleSystem.systemParameters.rendererEmitterSettings.followLocalOrigin}
-              onChange={onSetState('systemParameters.rendererEmitterSettings.followLocalOrigin')}
             />
           </InputGroup>
         </>
@@ -356,7 +375,7 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
           <>
             <NumericInput
               value={particleSystem.systemParameters.startTileIndex}
-              onChange={onSetState('systemParameters.startTileIndex')}
+              onChange={onSetSystemParm('startTileIndex')}
             />
             <Button
               onClick={() => {
@@ -386,19 +405,19 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="Mesh" label={t('editor:properties.particle-system.mesh')}>
         <ModelInput
           value={particleSystem.systemParameters.instancingGeometry}
-          onRelease={onSetState('instancingGeometry')}
+          onChange={onSetSystemParm('instancingGeometry')}
+          onRelease={onSetSystemParm('instancingGeometry')}
         />
       </InputGroup>
       <InputGroup name="Blending" label={t('editor:properties.particle-system.blending')}>
         <SelectInput
           value={particleSystem.systemParameters.blending as Blending}
-          onChange={onSetState('systemParameters.blending')}
+          onChange={onSetSystemParm('blending')}
           options={[
             { label: t('editor:properties.particle-system.blending-type.normal'), value: NormalBlending },
             { label: t('editor:properties.particle-system.blending-type.additive'), value: AdditiveBlending },
             { label: t('editor:properties.particle-system.blending-type.subtractive'), value: SubtractiveBlending },
             { label: t('editor:properties.particle-system.blending-type.multiply'), value: MultiplyBlending },
-            { label: t('editor:properties.particle-system.blending-type.custom'), value: CustomBlending },
             { label: t('editor:properties.particle-system.blending-type.no-blending'), value: NoBlending }
           ]}
         />
@@ -406,20 +425,22 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="Transparent" label={t('editor:properties.particle-system.transparent')}>
         <Checkbox
           checked={particleSystem.systemParameters.transparent ?? false}
-          onChange={onSetState('systemParameters.transparent')}
+          onChange={onSetSystemParm('transparent')}
         />
       </InputGroup>
       <InputGroup name="World Space" label={t('editor:properties.particle-system.world-space')}>
         <Checkbox checked={particleSystem.systemParameters.worldSpace} onChange={onSetSystemParm('worldSpace')} />
       </InputGroup>
-      <Button className="self-end" onClick={onAddBehavior}>
-        {t('editor:properties.particle-system.addBehavior')}
-      </Button>
+      <InputGroup name="Behaviors" label={t('editor:properties.particle-system.behaviors')}>
+        <Button className="self-end" onClick={onAddBehavior}>
+          {t('editor:properties.particle-system.addBehavior')}
+        </Button>
+      </InputGroup>
       <PaginatedList
         list={particleSystemState.behaviorParameters}
         element={(behaviorState: State<BehaviorJSON>, index) => {
           return (
-            <>
+            <div>
               <BehaviorInput
                 path={`behaviorParameters.${index}`}
                 scope={behaviorState}
@@ -427,7 +448,7 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
                 onChange={onSetState}
               />
               <Button onClick={onRemoveBehavior(index)}>{t('editor:properties.particle-system.remove')}</Button>
-            </>
+            </div>
           )
         }}
       />

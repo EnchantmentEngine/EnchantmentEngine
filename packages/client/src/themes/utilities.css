@@ -1,26 +1,56 @@
-@import "tailwindcss/utilities";
+@import 'tailwindcss/utilities';
 
-/* WebKit/Blink (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+@layer utilities {
+  /* WebKit/Blink (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-}
+  ::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+  }
 
-/* Firefox */
-html {
-  scrollbar-width: thin;
-}
+  /* Firefox */
+  html {
+    scrollbar-width: thin;
+  }
 
-.scrollbar-hide::-webkit-scrollbar {
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
-}
+  }
 
-/* For IE, Edge and Firefox */
-.scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  /* For IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .text-shadow-none {
+    text-shadow: none;
+  }
+
+  .text-shadow-sm {
+    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.05);
+  }
+
+  .text-shadow {
+    text-shadow: 0 0.125em 0.125em rgba(0, 0, 0, 0.25);
+  }
+
+  .text-shadow-md {
+    text-shadow:
+      0 0.25em 0.375em rgba(0, 0, 0, 0.07),
+      0 0.125em 0.25em rgba(0, 0, 0, 0.06);
+  }
+
+  .text-shadow-lg {
+    text-shadow:
+      0 0.625em 1em rgba(0, 0, 0, 0.1),
+      0 0.25em 0.375em rgba(0, 0, 0, 0.05);
+  }
+
+  .inset-shadow {
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25) inset;
+  }
 }

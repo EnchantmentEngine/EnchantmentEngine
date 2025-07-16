@@ -23,7 +23,6 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-export type * from './schemas/analytics/analytics.schema'
 export type * from './schemas/assets/asset-library.schema'
 export type * from './schemas/bot/bot-command.schema'
 export type * from './schemas/bot/bot.schema'
@@ -41,6 +40,8 @@ export type * from './schemas/media/file-browser-upload.schema'
 export type * from './schemas/media/file-browser.schema'
 export type * from './schemas/media/invalidation.schema'
 export type * from './schemas/media/oembed.schema'
+export type * from './schemas/media/static-resource-search.schema'
+export type * from './schemas/media/static-resource-vector.schema'
 export type * from './schemas/media/static-resource.schema'
 export type * from './schemas/networking/allowed-domains.schema'
 export type * from './schemas/networking/instance-attendance.schema'
@@ -215,8 +216,6 @@ export const featureFlagSettingPath = 'feature-flag-setting'
 export const matchUserPath = 'match-user'
 
 export const matchInstancePath = 'match-instance'
-
-export const analyticsPath = 'analytics'
 
 export const serverSettingPath = 'server-setting'
 

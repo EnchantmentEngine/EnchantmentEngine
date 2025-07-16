@@ -25,6 +25,7 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { startTransition, useEffect, useMemo, useRef } from 'react'
 import {
+  BufferAttribute,
   BufferGeometry,
   CompressedTexture,
   Group,
@@ -76,14 +77,15 @@ import { AssetState } from '../../gltf/GLTFState'
 import {
   ASTCTextureTarget,
   AudioFileFormat,
-  DRACO_Manifest,
+  DracoManifest,
   FORMAT_TO_EXTENSION,
   GeometryFormat,
   KTX2TextureTarget,
   PlayerManifest,
   TextureFormat,
   TextureType,
-  UniformSolveTarget
+  UniformSolveTarget,
+  UVOL_TYPE
 } from '../constants/LegacyUVOLTypes'
 import { PlayMode } from '../constants/PlayMode'
 import { handleAutoplay, LegacyVolumetricComponent } from './LegacyVolumetricComponent'
@@ -299,7 +301,7 @@ export const UVOL2Component = defineComponent({
   schema: S.Object({
     canPlay: S.Bool({ default: false }),
     manifestPath: S.String({ default: '' }),
-    data: S.Type<PlayerManifest>({} as PlayerManifest),
+    data: S.Type<PlayerManifest>({ default: {} as PlayerManifest }),
     useVideoTexture: S.Bool({ default: true }),
     hasAudio: S.Bool({ default: false }),
     bufferedUntil: S.Number({ default: 0 }),
@@ -498,7 +500,7 @@ function UVOL2Reactor() {
   const material = useMemo(() => {
     const manifest = component.data.value
     let _material: ShaderMaterial | MeshBasicMaterial = new MeshBasicMaterial({ color: 0xffffff })
-    if (manifest.type === 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE') {
+    if (manifest.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       const firstTarget = Object.keys(manifest.geometry.targets)[0]
       const hasNormals = !manifest.geometry.targets[firstTarget].settings.excludeNormals
       const shaderType = hasNormals ? 'physical' : 'basic'
@@ -596,7 +598,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
     }
 
     const [sortedManifest, sortedGeometryTargets, sortedTextureTargets, useVideoTexture] = calculatePriority(
-      component.data.get({ noproxy: true }) as DRACO_Manifest
+      component.data.get({ noproxy: true }) as DracoManifest
     )
     component.data.set(sortedManifest)
     component.geometryInfo.targets.set(sortedGeometryTargets)
@@ -642,7 +644,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
     }
 
     const shadow = getMutableComponent(entity, ShadowComponent)
-    if (sortedManifest.type === 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE') {
+    if (sortedManifest.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       // TODO: Cast shadows properly with uniform solve
       shadow.cast.set(false)
       shadow.receive.set(false)
@@ -763,7 +765,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
 
   useEffect(() => {
     if (!shadow) return
-    if (component.data.value.type === 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE') {
+    if (component.data.value.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       // TODO: Cast shadows properly with uniform solve
       shadow.cast.set(false)
       shadow.receive.set(false)
@@ -888,7 +890,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
             }
           }
 
-          segmentMesh.geometry.morphAttributes = {}
+          segmentMesh.geometry.morphAttributes = {} as Record<string, (BufferAttribute | InterleavedBufferAttribute)[]>
           if (!component.firstGeometryFrameLoaded.value) {
             // @ts-ignore
             mesh.copy(segmentMesh)
@@ -1094,7 +1096,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
       let headerTemplate: RegExp | undefined = /\/\/\sHEADER_REPLACE_START([\s\S]*?)\/\/\sHEADER_REPLACE_END/
       let mainTemplate: RegExp | undefined = /\/\/\sMAIN_REPLACE_START([\s\S]*?)\/\/\sMAIN_REPLACE_END/
 
-      if (component.data.value.type !== 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE' || 1 == 1) {
+      if (component.data.value.type !== UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
         headerTemplate = undefined
         mainTemplate = undefined
       }
@@ -1497,7 +1499,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
   }
 
   const updateGeometry = (currentTime: number) => {
-    if (component.data.value.type === 'UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE') {
+    if (component.data.value.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       updateUniformSolve(currentTime)
     } else {
       updateNonUniformSolve(currentTime)

@@ -24,31 +24,35 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import {
+  AnimationSystemGroup,
   Entity,
   EntityArrayBoundary,
-  PresentationSystemGroup,
   QueryReactor,
-  UUIDComponent,
   defineQuery,
   defineSystem,
   getComponent,
+  getMutableComponent,
   getOptionalComponent,
+  hasComponent,
+  removeComponent,
   setComponent,
-  useOptionalComponent
+  useComponent,
+  useOptionalComponent,
+  useQueryBySource
 } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, none } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import {
-  TransparencyDitheringPluginComponent,
-  TransparencyDitheringRootComponent,
-  ditherCalculationType
-} from '@ir-engine/spatial/src/renderer/materials/constants/plugins/TransparencyDitheringComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import React, { useEffect } from 'react'
+import {
+  DitherCalculationType,
+  TransparencyDitheringPluginComponent,
+  TransparencyDitheringRootComponent
+} from '../../material/plugins/TransparencyDitheringComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
@@ -74,38 +78,39 @@ const execute = () => {
       const pluginComponent = getOptionalComponent(materialEntity, TransparencyDitheringPluginComponent)
       if (!pluginComponent) continue
       const viewerPosition = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
-      pluginComponent.centers.value[cameraDithering].set(viewerPosition.x, viewerPosition.y, viewerPosition.z)
-      pluginComponent.distances.value[cameraDithering] = cameraAttached ? 8 : 3
-      pluginComponent.exponents.value[cameraDithering] = cameraAttached ? 10 : 6
-      pluginComponent.useWorldCalculation.value[cameraDithering] = ditherCalculationType.worldTransformed
+      pluginComponent.centers[cameraDithering].set(viewerPosition.x, viewerPosition.y, viewerPosition.z)
+      pluginComponent.distances[cameraDithering] = cameraAttached ? 8 : 3
+      pluginComponent.exponents[cameraDithering] = cameraAttached ? 10 : 6
+      pluginComponent.useWorldCalculation[cameraDithering] = DitherCalculationType.worldTransformed
       if (avatarEntity !== selfEntity) {
-        pluginComponent.distances.value[headDithering] = 10
+        pluginComponent.distances[headDithering] = 10
         continue
       }
-      pluginComponent.centers.value[headDithering].setY(avatarComponent.eyeHeight)
-      pluginComponent.distances.value[headDithering] =
+      pluginComponent.centers[headDithering].setY(avatarComponent.eyeHeight)
+      pluginComponent.distances[headDithering] =
         cameraComponent && !cameraAttached ? Math.max(Math.pow(cameraComponent.distance * 5, 2.5), 3) : 3.5
-      pluginComponent.exponents.value[headDithering] = cameraAttached ? 12 : 8
-      pluginComponent.useWorldCalculation.value[headDithering] = 1
+      pluginComponent.exponents[headDithering] = cameraAttached ? 12 : 8
+      pluginComponent.useWorldCalculation[headDithering] = DitherCalculationType.localPosition
     }
   }
 }
 
 export const AvatarTransparencySystem = defineSystem({
   uuid: 'AvatarTransparencySystem',
-  insert: { with: PresentationSystemGroup },
+  insert: { with: AnimationSystemGroup },
   execute,
   reactor: () => <QueryReactor Components={[AvatarComponent]} ChildEntityReactor={AvatarReactor} />
 })
 
 const AvatarReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const sourceID = UUIDComponent.getAsSourceID(entity)
-  const childEntities = UUIDComponent.useEntitiesBySource(sourceID)
+  const materialChildren = useQueryBySource(entity, [MaterialStateComponent])
+  const rootDitheringComponent = useOptionalComponent(entity, TransparencyDitheringRootComponent)
+  if (!rootDitheringComponent) return null
 
   return (
     <EntityArrayBoundary
-      entities={childEntities}
+      entities={materialChildren}
       ChildEntityReactor={DitherChildReactor}
       props={{ rootEntity: entity }}
     />
@@ -114,18 +119,20 @@ const AvatarReactor = (props: { entity: Entity }) => {
 
 const DitherChildReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const entity = props.entity
-  const materialComponentEntities = useOptionalComponent(entity, MaterialInstanceComponent)?.entities
-  const rootDitheringComponent = useOptionalComponent(props.rootEntity, TransparencyDitheringRootComponent)
+  const material = useComponent(entity, MaterialStateComponent)
 
   useEffect(() => {
-    if (!materialComponentEntities?.length || !rootDitheringComponent) return
-    for (const entity of materialComponentEntities.value) {
-      if (!entity) continue
-      if (!rootDitheringComponent.materials.value.includes(entity))
-        rootDitheringComponent.materials.set([...rootDitheringComponent.materials.value, entity])
-      setComponent(entity, TransparencyDitheringPluginComponent)
+    getMutableComponent(props.rootEntity, TransparencyDitheringRootComponent).materials.merge([props.entity])
+    setComponent(entity, TransparencyDitheringPluginComponent)
+    return () => {
+      if (hasComponent(props.rootEntity, TransparencyDitheringRootComponent)) {
+        const ditherRootMaterials = getMutableComponent(props.rootEntity, TransparencyDitheringRootComponent).materials
+        const index = ditherRootMaterials.value.indexOf(props.entity)
+        if (index >= 0) ditherRootMaterials[index].set(none)
+      }
+      removeComponent(entity, TransparencyDitheringPluginComponent)
     }
-  }, [materialComponentEntities, !!rootDitheringComponent])
+  }, [material.value])
 
   return null
 }

@@ -23,19 +23,21 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
+import { Engine, getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
 import { getState, none, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { destroySpatialViewer, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { RendererComponent } from '../components/RendererComponent'
 
 export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
+  const canvasRef = useRef(document.getElementById('engine-renderer-canvas') as HTMLCanvasElement | null)
+
   useEffect(() => {
     if (!ref) return
     const parent = ref.current as HTMLElement
-
-    const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
+    if (!parent) return
+    const canvas = (document.getElementById('engine-renderer-canvas') as HTMLCanvasElement) ?? canvasRef.current
 
     const originalParent = canvas.parentElement!
     canvas.hidden = false
@@ -50,6 +52,8 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
 
     return () => {
       observer.disconnect()
+      const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
+      if (!parent.contains(canvas)) return
       parent.removeChild(canvas)
       originalParent.appendChild(canvas)
       canvas.hidden = true
@@ -58,8 +62,11 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
 
   useEffect(() => {
     const canvas = document.getElementById('engine-renderer-canvas') as HTMLCanvasElement
+    canvasRef.current = canvas
     initializeSpatialViewer(canvas)
     return () => {
+      if (!Engine.instance) return
+      canvasRef.current = null
       destroySpatialViewer()
     }
   }, [])
@@ -79,6 +86,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     rendererComponent.scenes.merge([originEntity])
 
     return () => {
+      if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.value.indexOf(originEntity)
       rendererComponent.scenes[index].set(none)
@@ -94,6 +102,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     rendererComponent.scenes.merge([localFloorEntity])
 
     return () => {
+      if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.value.indexOf(localFloorEntity)
       rendererComponent.scenes[index].set(none)

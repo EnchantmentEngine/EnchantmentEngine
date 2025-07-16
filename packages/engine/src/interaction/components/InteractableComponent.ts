@@ -23,7 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, MeshBasicMaterial, Vector3 } from 'three'
 
 import {
   ECSState,
@@ -200,11 +200,8 @@ export const updateInteractableUI = (entity: Entity) => {
   }
   const deltaSeconds = getState(ECSState).deltaSeconds
   transition.update(deltaSeconds, (opacity) => {
-    if (opacity === 0) {
-      removeComponent(interactable.uiEntity, VisibleComponent)
-    }
     xrui.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
-      const mat = layer.contentMesh.material as THREE.MeshBasicMaterial
+      const mat = layer.contentMesh.material as MeshBasicMaterial
       mat.opacity = opacity
     })
   })
@@ -252,14 +249,12 @@ export const InteractableComponent = defineComponent({
     uiEntity: S.Entity({ serialized: false }),
     label: S.String({ default: 'E' }),
     uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, {
-      $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'none', 'on', 'off'",
+      $comment: "A number enum, where: 0 represents 'none', 1 represents 'on', 2 represents 'off'",
       default: XRUIVisibilityOverride.none,
       serialized: false
     }),
     uiActivationType: S.Enum(XRUIActivationType, {
-      $comment:
-        "Likely an indexed enum, ie. the numeric index of a value in the following sequence: 'proximity', 'hover'",
+      $comment: "A number enum, where: 0 represents 'proximity', 1 represents 'hover'",
       default: XRUIActivationType.proximity
     }),
     activationDistance: S.Number({ default: 2 }),
@@ -301,9 +296,10 @@ export const InteractableComponent = defineComponent({
 
     InputComponent.useExecuteWithInput(
       () => {
+        if (!interactableComponent.canInteract.value) return
         const buttons = InputComponent.getButtons(entity)
-        if (!interactableComponent.clickInteract.value) return
-        if (buttons.Interact?.up && !buttons.Interact.dragging) {
+
+        if (buttons.Interact?.up && !buttons.Interact?.dragging) {
           callInteractCallbacks(entity)
         }
       },

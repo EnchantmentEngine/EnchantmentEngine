@@ -32,6 +32,7 @@ import {
   EntityTreeComponent,
   getAncestorWithComponents,
   InputSystemGroup,
+  SourceID,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -70,7 +71,7 @@ import { EditorErrorState } from '../services/EditorErrorServices'
 import { EditorHelperState, PlacementMode, PlacementModeType } from '../services/EditorHelperState'
 
 import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions'
-import { AuthoringActions, AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState.tsx'
+import { AuthoringActions, AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { InputButtonBindings } from '@ir-engine/spatial/src/input/components/InputComponent'
@@ -183,8 +184,13 @@ const onDecreaseGridHeight = () => {
 
 const onDeleteSelection = () => {
   const entities = SelectionState.getSelectedEntities()
+  const sources = new Set<SourceID>(
+    entities
+      .filter((entity) => hasComponent(entity, UUIDComponent))
+      .map((entity) => getComponent(entity, UUIDComponent).entitySourceID)
+  )
   EditorControlFunctions.removeObject(entities)
-  AuthoringState.snapshotEntities(entities)
+  AuthoringState.snapshotSources(sources)
 }
 
 let lastDistanceToCenter = 10
@@ -353,6 +359,13 @@ const execute = () => {
         closestIntersection = intersection
       }
 
+      const selectedEntities = SelectionState.getSelectedEntities()
+      if (selectedEntities.length > 0) {
+        clickStartEntity = selectedEntities[0]
+      } else {
+        clickStartEntity = UndefinedEntity
+      }
+
       closestIntersection.entity = getAuthoringCounterpart(closestIntersection.entity)
 
       // Get top most parent entity from the GLTF document
@@ -393,7 +406,6 @@ const execute = () => {
     const editorHelperState = getState(EditorHelperState)
     if (!getState(ClickPlacementState).placementEntity && editorHelperState.gizmoEnabled) {
       const selectedEntities = SelectionState.getSelectedEntities()
-      const clickParentEntity = getAncestorWithComponents(clickStartEntity, [GLTFComponent])
 
       if (selectedEntities.length === 1 && selectedEntities[0] === clickStartEntity) {
         onFocusCamera(viewerEntity)

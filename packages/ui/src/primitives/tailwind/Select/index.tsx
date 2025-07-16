@@ -294,7 +294,6 @@ const Select = ({
                     {required && <span className="text-sm text-ui-error">*</span>}
                     <span className="text-xs text-text-secondary">{labelProps.text}</span>
                   </div>
-
                   {labelProps?.infoText && (
                     <Tooltip content={labelProps.infoText}>
                       <HelpIconSm className="text-text-tertiary" />
@@ -333,7 +332,7 @@ const Select = ({
                   }}
                   type="text"
                   className={twMerge(
-                    'w-full bg-inherit text-text-secondary focus:border-transparent focus:outline-none focus:ring-0',
+                    'box-content w-full border-y border-transparent bg-transparent text-text-secondary focus:border-transparent focus:outline-none focus:ring-0',
                     disabled ? 'cursor-not-allowed' : searchMode === undefined ? 'cursor-pointer' : 'cursor-text'
                   )}
                   data-testid="select-input"
@@ -392,6 +391,7 @@ const Select = ({
       contentStyle={{
         padding: '0px',
         border: 'none',
+        zIndex: 60,
         ...positionStyle
       }}
       onOpen={() => onOpen?.(true)}
@@ -399,7 +399,7 @@ const Select = ({
     >
       <div
         ref={contentRef}
-        className={`z-50 flex flex-col overflow-y-auto overflow-x-hidden rounded-lg`}
+        className={`z-[60] flex flex-col overflow-y-auto overflow-x-hidden rounded-lg border border-ui-outline bg-ui-background shadow-lg`}
         style={{
           width: triggerWidth,
           maxHeight: positioning.maxHeight
@@ -438,11 +438,16 @@ const Select = ({
             .filter((option) => Boolean(option))
             .map(({ value: currentValue, ...optionProps }, index) => (
               <DropdownItem
+                height={inputHeight}
                 key={index}
                 {...optionProps}
                 selected={localValue.value === currentValue}
                 active={index === activeIndex}
                 onMouseDown={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                }}
+                onClick={(e) => {
                   e.stopPropagation()
                   e.preventDefault()
                   closePopup()

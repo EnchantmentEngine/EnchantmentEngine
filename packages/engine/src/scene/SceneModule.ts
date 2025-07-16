@@ -25,8 +25,6 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { FogSystem } from '@ir-engine/spatial/src/renderer/FogSystem'
-import { NoiseOffsetSystem } from '@ir-engine/spatial/src/renderer/materials/constants/plugins/NoiseOffsetPlugin'
-
 import { PositionalAudioComponent } from '../audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
@@ -44,6 +42,8 @@ import { LookAtComponent } from './components/LookAtComponent'
 import { MediaComponent } from './components/MediaComponent'
 import { MountPointComponent } from './components/MountPointComponent'
 import { ParticleSystemComponent } from './components/ParticleSystemComponent'
+import { PoiComponent } from './components/PoiComponent'
+import { PoiHotspotComponent } from './components/PoiHotspotComponent'
 import { PrimitiveGeometryComponent } from './components/PrimitiveGeometryComponent'
 import { RenderSettingsComponent } from './components/RenderSettingsComponent'
 import { SceneDynamicLoadComponent } from './components/SceneDynamicLoadComponent'
@@ -62,6 +62,7 @@ import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
 import { LookAtSystem } from './systems/LookAtSystem'
+import { OrientedBoundingBoxSystem } from './systems/OrientedBoundingBoxSystem'
 import { ParticleSystem } from './systems/ParticleSystemSystem'
 import { PortalSystem } from './systems/PortalSystem'
 import { SceneKillHeightSystem } from './systems/SceneKillHeightSystem'
@@ -87,11 +88,14 @@ export const SceneComponents = [
   HyperspaceTagComponent,
   ImageComponent,
   // InteriorComponent,
+  PoiComponent,
+  PoiHotspotComponent,
   LookAtComponent,
   MediaComponent,
   // MediaSettingsComponent,
   MountPointComponent,
   // OceanComponent,
+
   ParticleSystemComponent,
   PostProcessingComponent,
   PrimitiveGeometryComponent,
@@ -122,7 +126,7 @@ export {
   LookAtSystem,
   MaterialLibrarySystem,
   MountPointSystem,
-  NoiseOffsetSystem,
+  OrientedBoundingBoxSystem,
   ParticleSystem,
   PortalSystem,
   SceneKillHeightSystem,

@@ -35,6 +35,7 @@ import {
   MeshBasicMaterial,
   MeshDepthMaterial,
   Object3D,
+  PerspectiveCamera,
   PlaneGeometry,
   RGBADepthPacking,
   Texture,
@@ -83,7 +84,7 @@ export class WebLayer3D extends Object3D {
     }
   }
 
-  private _camera?: THREE.PerspectiveCamera
+  private _camera?: PerspectiveCamera
 
   protected _webLayer: WebLayer
 
@@ -257,7 +258,7 @@ export class WebLayer3D extends Object3D {
     this.contentMesh.visible = false
     this.contentMesh['customDepthMaterial'] = this.depthMaterial
     this.contentMesh.onBeforeRender = (renderer, scene, camera) => {
-      this._camera = camera as THREE.PerspectiveCamera
+      this._camera = camera as PerspectiveCamera
     }
 
     this._boundsMesh.matrixAutoUpdate = true
@@ -416,7 +417,7 @@ export class WebLayer3D extends Object3D {
     const mesh = this.contentMesh
 
     const texture = this.texture
-    const material = mesh.material as THREE.MeshBasicMaterial
+    const material = mesh.material as MeshBasicMaterial
     if (texture && material.map !== texture) {
       const contentScale = this.contentMesh.scale
       const aspect = Math.abs(((contentScale.x * this.scale.x) / contentScale.y) * this.scale.y)
@@ -431,7 +432,7 @@ export class WebLayer3D extends Object3D {
     }
 
     // handle layer visibility or removal
-    const mat = mesh.material as THREE.MeshBasicMaterial
+    const mat = mesh.material as MeshBasicMaterial
     const isHidden = mat.opacity < 0.005
     if (isHidden) mesh.visible = false
     else if (mat.map) mesh.visible = true

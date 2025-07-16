@@ -34,7 +34,8 @@ import {
   Node,
   Primitive,
   Texture,
-  Transform
+  Transform,
+  WebIO
 } from '@gltf-transform/core'
 import { EXTMeshGPUInstancing, EXTMeshoptCompression, KHRTextureBasisu } from '@gltf-transform/extensions'
 import {
@@ -51,13 +52,6 @@ import {
   textureCompress,
   weld
 } from '@gltf-transform/functions'
-import { createHash } from 'crypto'
-import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
-import { getPixels } from 'ndarray-pixels'
-import { $attributes } from 'property-graph'
-import { LoaderUtils } from 'three'
-import { v4 as uuidv4 } from 'uuid'
-
 import {
   ExtractedImageTransformParameters,
   extractParameters,
@@ -68,6 +62,12 @@ import {
 import { baseName, dropRoot, pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { getMutableState, NO_PROXY } from '@ir-engine/hyperflux'
 import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
+import { createHash } from 'crypto'
+import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
+import { getPixels } from 'ndarray-pixels'
+import { $attributes } from 'property-graph'
+import { LoaderUtils } from 'three'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
   EEArgEntry,
@@ -394,10 +394,15 @@ const fileTypeToMime = (fileType: string) => {
   }
 }
 
-const loaderIO = ModelTransformLoader().then(({ io }) => io)
+let loaderIO: WebIO | null = null
+const loadIO = async () => {
+  if (loaderIO) return loaderIO
+  loaderIO = await ModelTransformLoader().then(({ io }) => io)
+  return loaderIO!
+}
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName: string, fileName: string, buffer: ArrayBuffer | Blob, path?: string) => {
+const doUpload = async (projectName: string, fileName: string, buffer: ArrayBuffer | Blob, path?: string, publishing = false) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
@@ -406,7 +411,7 @@ const doUpload = async (projectName: string, fileName: string, buffer: ArrayBuff
     resolveFunc = () => resolve()
   })
   uploadRequestState.queue.set([...queue, { file, projectName, callback: resolveFunc, path: path }])
-  if (fileName.includes('combined-mesh')) {
+  if (fileName.includes('compressed-published') || publishing) {
     uploadRequestState.isOnPublishing.set(true)
   }
   await promise
@@ -552,7 +557,6 @@ const createTextureOperations = (
 
   if (args.textureFormat !== 'default') {
     for (const texture of textures) {
-      console.log('considering texture ' + texture.getURI())
       if (texture.getMimeType() === 'image/ktx2') continue
       const oldSize = texture.getSize()
       if (!oldSize) continue
@@ -699,16 +703,20 @@ const writeFiles = async (
   {
     modelFormat,
     resourceUri,
-    dst
+    dst,
+    skipPartition,
+    publishing
   }: {
     modelFormat: ModelFormat
     resourceUri: string
     dst: string
+    skipPartition?: boolean
+    publishing?: boolean
   }
 ): Promise<string> => {
   const srcBaseURL = LoaderUtils.extractUrlBase(srcURL)
   const root = document.getRoot()
-  const io = await loaderIO
+  const io = await loadIO()
 
   const resourceName = baseName(srcURL).slice(0, baseName(srcURL).lastIndexOf('.'))
   const resourcePath = pathJoin(srcBaseURL, resourceUri || resourceName + '_resources')
@@ -725,7 +733,7 @@ const writeFiles = async (
   if (['glb', 'vrm'].includes(modelFormat)) {
     // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), new Blob([data]), path)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), new Blob([data]), path, publishing)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -751,12 +759,14 @@ const writeFiles = async (
           )
       )
     )
-    document.transform(
-      partition({
-        animations: true,
-        meshes: root.listMeshes().map((mesh) => mesh.getName())
-      })
-    )
+    if (!skipPartition) {
+      await document.transform(
+        partition({
+          animations: true,
+          meshes: root.listMeshes().map((mesh) => mesh.getName())
+        })
+      )
+    }
     const { json, resources } = await io.writeJSON(document, { format: Format.GLTF, basename: resourceName })
 
     const removeExtension = (uri: string) => {
@@ -797,13 +807,14 @@ const writeFiles = async (
     await Promise.all(
       Object.entries(resources).map(async ([uri, data]) => {
         const blob = new Blob([data as BlobPart], { type: fileTypeToMime(uri.split('.').pop()!)! })
-        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path)
+        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path, publishing)
       })
     )
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
-      path
+      path,
+      publishing
     )
   }
 
@@ -829,6 +840,80 @@ function preserveVertexColors(document: Document): Document {
     })
   return document
 }
+function hasKeywordInExtras(node: Node, keyword: string): boolean {
+  const extras = node.getExtras()
+  if (!extras) return false
+  return Object.keys(extras).some((key) => key.includes(keyword))
+}
+
+function preserveNodesInScene(document: Document, keywords: string[]) {
+  document
+    .getRoot()
+    .listNodes()
+    .forEach((node) => {
+      if (keywords.some((kw) => hasKeywordInExtras(node, kw))) {
+        if (!node.getMesh()) {
+          // Create dummy mesh with a single vertex primitive
+          const dummyMesh = document.createMesh('preserve-dummy')
+          const dummyPrim = document
+            .createPrimitive()
+            .setAttribute(
+              'POSITION',
+              document
+                .createAccessor()
+                .setType('VEC3')
+                .setArray(new Float32Array([0, 0, 0]))
+            )
+            .setIndices(
+              document
+                .createAccessor()
+                .setType('SCALAR')
+                .setArray(new Uint16Array([0]))
+            )
+          dummyMesh.addPrimitive(dummyPrim)
+          node.setMesh(dummyMesh)
+        }
+      }
+    })
+}
+
+async function preserveChildrenHierarchyAroundFlatten(document: Document, keywords: string[]) {
+  const root = document.getRoot()
+
+  //  Find nodes to preserve and map their children names
+  const nodesToPreserve = root.listNodes().filter((node) => keywords.some((kw) => hasKeywordInExtras(node, kw)))
+
+  const preservedChildrenMap = new Map<string, string[]>()
+
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = parentNode.listChildren().map((child) => child.getName())
+    preservedChildrenMap.set(parentNode.getName(), childNames)
+  })
+
+  // Run flatten
+  await document.transform(flatten())
+
+  //  After flatten, reattach children if they still exist
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = preservedChildrenMap.get(parentNode.getName())
+    if (!childNames) return
+
+    childNames.forEach((childName) => {
+      const childNode = root.listNodes().find((n) => n.getName() === childName)
+      if (childNode && childNode.getParentNode() !== parentNode) {
+        parentNode.addChild(childNode)
+      }
+    })
+  })
+
+  //  Remove dummy meshes after flatten
+  root.listNodes().forEach((node) => {
+    if (node.getMesh()?.getName() === 'preserve-dummy') {
+      node.getMesh()?.dispose()
+      node.setMesh(null)
+    }
+  })
+}
 
 export const transformModel = async (
   srcURL: string,
@@ -838,7 +923,7 @@ export const transformModel = async (
 ): Promise<string[]> => {
   onProgress?.(0, Status.TransformingModels)
 
-  const srcDocument = await (await loaderIO).read(srcURL)
+  const srcDocument = await (await loadIO()).read(srcURL)
   const documents: Document[] = []
   const textureOperations: TextureOperation[] = []
   const numDocOperations = modelOperations.length
@@ -890,13 +975,15 @@ export const transformModel = async (
       }
     }
   }
+  // We want to make sure if node has these keywords in extras, we preserve those nodes
+  const keyWordsToPreserveNode = ['EE_collider', 'EE_rigidbody']
 
   for (let i = 0; i < numDocOperations; i++) {
     const params = modelOperations[i]
     const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
-
     const document = cloneDocument(srcDocument)
-
+    // Preserve nodes with certain keywords in extras
+    preserveNodesInScene(document, keyWordsToPreserveNode)
     // Preserve vertex colors before applying transformations
     await document.transform(preserveVertexColors)
 
@@ -906,7 +993,7 @@ export const transformModel = async (
     params.combineMaterials && (await document.transform(combineMaterials))
     params.instance && (await document.transform(doInstancing))
     params.dedup && (await document.transform(dedup()))
-    params.flatten && (await document.transform(flatten()))
+    params.flatten && (await preserveChildrenHierarchyAroundFlatten(document, keyWordsToPreserveNode))
     params.join.enabled && (await document.transform(join(params.join.options)))
 
     if (params.simplifyRatio < 1) {
@@ -933,7 +1020,6 @@ export const transformModel = async (
       const operations = createTextureOperations(document, params, params.resources, textureUsages)
       textureOperations.push(...operations)
     }
-
     // Apply final optimizations
     if (params.reorder) {
       await MeshoptEncoder.ready
@@ -943,7 +1029,6 @@ export const transformModel = async (
     if (params.dracoCompression.enabled) {
       await document.transform(draco(params.dracoCompression.options))
     }
-
     documents.push(document)
   }
 
@@ -1175,4 +1260,129 @@ function adaptiveSimplify(document: Document, args: ModelTransformParameters): D
   }
 
   return document
+}
+
+async function resizeImage(
+  originalImage: Uint8Array,
+  mimeType: string,
+  maxSize: number
+): Promise<{ data: Uint8Array; mimeType: string }> {
+  // Create blob from original image bytes and mime type
+  const blob = new Blob([originalImage], { type: mimeType })
+  const imageBitmap = await createImageBitmap(blob)
+
+  // Calculate new size preserving aspect ratio
+  const aspectRatio = imageBitmap.width / imageBitmap.height
+  let newWidth = imageBitmap.width
+  let newHeight = imageBitmap.height
+
+  if (newWidth > maxSize || newHeight > maxSize) {
+    if (aspectRatio > 1) {
+      newWidth = maxSize
+      newHeight = Math.round(maxSize / aspectRatio)
+    } else {
+      newHeight = maxSize
+      newWidth = Math.round(maxSize * aspectRatio)
+    }
+  }
+
+  // Draw resized image onto canvas
+  const canvas = document.createElement('canvas')
+  canvas.width = newWidth
+  canvas.height = newHeight
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Failed to get 2D context')
+
+  ctx.drawImage(imageBitmap, 0, 0, newWidth, newHeight)
+
+  const outputMimeType = ['image/png', 'image/jpeg', 'image/webp'].includes(mimeType) ? mimeType : 'image/png'
+
+  const resizedBlob = await new Promise<Blob>((resolve) =>
+    canvas.toBlob((blob) => {
+      if (!blob) throw new Error('Canvas toBlob returned null')
+      resolve(blob)
+    }, outputMimeType)
+  )
+
+  const arrayBuffer = await resizedBlob.arrayBuffer()
+  return { data: new Uint8Array(arrayBuffer), mimeType: outputMimeType }
+}
+
+const safeImageCompress = async (
+  document: Document,
+  params: ModelTransformParameters,
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
+) => {
+  const textures = document.getRoot().listTextures()
+  const numTextures = textures.length
+  const totalProgressSteps = 1 + numTextures
+
+  for (const [i, texture] of textures.entries()) {
+    const originalImage = texture.getImage()
+    const mimeType = texture.getMimeType()
+
+    if (!originalImage || !mimeType) continue
+    if (!mimeType.startsWith('image/')) continue
+
+    onProgress?.((i + 1) / totalProgressSteps + 0.1, Status.ProcessingTexture, i, numTextures)
+
+    try {
+      const { data, mimeType: newMimeType } = await resizeImage(originalImage, mimeType, params.maxTextureSize)
+
+      texture.setImage(data)
+      texture.setMimeType(newMimeType)
+
+      const ext = newMimeType.split('/')[1] || 'png'
+      const fileName = texture.getURI().split('/').pop()!
+      const safeName = validTextureFileName(fileName.replace(/\.[^.]+$/, `.${ext}`))
+      texture.setURI(safeName)
+    } catch (e) {
+      console.error(`Failed to resize texture: ${texture.getName()}`, e)
+    }
+  }
+}
+
+export async function safeCompressGLTFWeb(
+  srcURL: string,
+  destinationUrl: string,
+  params: ModelTransformParameters,
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
+) {
+  onProgress?.(0, Status.TransformingModels)
+
+  const io = await loadIO()
+  const document: Document = await io.read(srcURL)
+  await document.transform(preserveVertexColors)
+
+  if (params.modelFormat === 'gltf') {
+    await safeImageCompress(document, params, onProgress)
+  } else {
+    await document.transform(
+      textureCompress({
+        resize: [params.maxTextureSize, params.maxTextureSize]
+      })
+    )
+  }
+  await document.transform(unInstanceSingletons)
+  await document.transform(dedup())
+  await document.transform(
+    weld({}),
+    simplify({
+      ratio: params.simplifyRatio,
+      error: params.simplifyErrorThreshold,
+      simplifier: MeshoptSimplifier
+    })
+  )
+
+  onProgress?.(0.8, Status.WritingFiles)
+
+  await writeFiles(srcURL, document, {
+    modelFormat: params.modelFormat,
+    resourceUri: params.resourceUri,
+    dst: destinationUrl,
+    skipPartition: true,
+    publishing: true
+  })
+
+  onProgress?.(1, Status.Complete)
 }

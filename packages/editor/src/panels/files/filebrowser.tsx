@@ -38,7 +38,13 @@ import { FilesState, FilesViewModeState, SelectedFilesState } from '../../servic
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
 import { FileContextMenu } from './contextmenu'
 import FileItem, { TableWrapper } from './fileitem'
-import { FILES_PAGE_LIMIT, canDropOnFileBrowser, useCurrentFiles, useFileBrowserDrop } from './helpers'
+import {
+  CurrentFilesQueryProvider,
+  FILES_PAGE_LIMIT,
+  canDropOnFileBrowser,
+  useCurrentFiles,
+  useFileBrowserDrop
+} from './helpers'
 import FilesLoaders from './loaders'
 
 export function Browser() {
@@ -139,25 +145,27 @@ export function Browser() {
           filesQuery?.setLimit(filesQuery.limit + FILES_PAGE_LIMIT)
         }}
       >
-        {sortedFiles.map((file, idx) => {
-          const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
-          return (
-            <FileItem
-              file={{ ...file, ...staticResourceData.value[file?.key] }}
-              onContextMenu={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
-                  selectedFiles.set([file])
-                }
-                setAnchorEvent(event)
-              }}
-              key={file.key}
-              data-testid="files-panel-file-item"
-              className={`${isListView ? `${backgroundColor}` : ''}`}
-            />
-          )
-        })}
+        <div className="flex h-full w-full flex-wrap">
+          {sortedFiles.map((file, idx) => {
+            const backgroundColor = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-0'
+            return (
+              <FileItem
+                file={{ ...file, ...staticResourceData.value[file?.key] }}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  if (!selectedFiles.value.find((selectedFile) => selectedFile.key === file.key)) {
+                    selectedFiles.set([file])
+                  }
+                  setAnchorEvent(event)
+                }}
+                key={file.key}
+                data-testid="files-panel-file-item"
+                className={`${isListView ? `${backgroundColor}` : ''}`}
+              />
+            )
+          })}
+        </div>
       </InfiniteScroll>
     </>
   )
@@ -207,9 +215,9 @@ export default function FileBrowser() {
   }, [projectName])
 
   return (
-    <>
+    <CurrentFilesQueryProvider>
       <FilesLoaders />
       <Browser />
-    </>
+    </CurrentFilesQueryProvider>
   )
 }

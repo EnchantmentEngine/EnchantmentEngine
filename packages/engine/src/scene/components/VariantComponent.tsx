@@ -35,8 +35,8 @@ import {
   UndefinedEntity,
   createEntity,
   removeEntity,
-  useChildrenWithComponents,
-  useEntityContext
+  useEntityContext,
+  useQueryBySource
 } from '@ir-engine/ecs'
 import {
   defineComponent,
@@ -91,7 +91,7 @@ export const distanceMetadataSchema = S.Object({
 
 export const deviceMetadataSchema = S.Object({
   device: S.Enum(Devices, {
-    $comment: "Likely a string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
+    $comment: "A string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
     default: Devices.DESKTOP
   })
 })
@@ -110,7 +110,7 @@ export const VariantComponent = defineComponent({
       })
     ),
     heuristic: S.Enum(Heuristic, {
-      $comment: "Likely a string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
+      $comment: "A string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
       default: Heuristic.MANUAL
     }),
     currentLevel: S.Number({ default: 0, serialized: false })
@@ -242,7 +242,7 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
     }
   }, [])
 
-  const childMeshEntities = useChildrenWithComponents(modelEntity, [MeshComponent])
+  const childMeshEntities = useQueryBySource(modelEntity, [MeshComponent])
 
   return (
     <>
