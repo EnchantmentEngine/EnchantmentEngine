@@ -34,14 +34,10 @@ import {
   Node,
   Primitive,
   Texture,
-  Transform
+  Transform,
+  WebIO
 } from '@gltf-transform/core'
-import {
-  EXTMeshGPUInstancing,
-  EXTMeshoptCompression,
-  KHRMeshQuantization,
-  KHRTextureBasisu
-} from '@gltf-transform/extensions'
+import { EXTMeshGPUInstancing, EXTMeshoptCompression, KHRTextureBasisu } from '@gltf-transform/extensions'
 import {
   cloneDocument,
   dedup,
@@ -396,10 +392,15 @@ const fileTypeToMime = (fileType) => {
   }
 }
 
-const loaderIO = ModelTransformLoader().then(({ io }) => io)
+let loaderIO: WebIO | null = null
+const loadIO = async () => {
+  if (loaderIO) return loaderIO
+  loaderIO = await ModelTransformLoader().then(({ io }) => io)
+  return loaderIO!
+}
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer, path?: string) => {
+const doUpload = async (projectName, fileName, buffer, path?: string, publishing = false) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
@@ -408,7 +409,7 @@ const doUpload = async (projectName, fileName, buffer, path?: string) => {
     resolver = resolve
   })
   uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver, path: path }])
-  if (fileName.includes('compressed-published')) {
+  if (fileName.includes('compressed-published') || publishing) {
     uploadRequestState.isOnPublishing.set(true)
   }
   await promise
@@ -701,17 +702,19 @@ const writeFiles = async (
     modelFormat,
     resourceUri,
     dst,
-    skipPartition
+    skipPartition,
+    publishing
   }: {
     modelFormat: ModelFormat
     resourceUri: string
     dst: string
     skipPartition?: boolean
+    publishing?: boolean
   }
 ): Promise<string> => {
   const srcBaseURL = LoaderUtils.extractUrlBase(srcURL)
   const root = document.getRoot()
-  const io = await loaderIO
+  const io = await loadIO()
 
   const resourceName = baseName(srcURL).slice(0, baseName(srcURL).lastIndexOf('.'))
   const resourcePath = pathJoin(srcBaseURL, resourceUri || resourceName + '_resources')
@@ -728,7 +731,7 @@ const writeFiles = async (
   if (['glb', 'vrm'].includes(modelFormat)) {
     // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path, publishing)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -802,13 +805,14 @@ const writeFiles = async (
     await Promise.all(
       Object.entries(resources).map(async ([uri, data]) => {
         const blob = new Blob([data as BlobPart], { type: fileTypeToMime(uri.split('.').pop()!)! })
-        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path)
+        await doUpload(...toProjectAndFileName(uri, srcBaseURL), blob, path, publishing)
       })
     )
     await doUpload(
       ...toProjectAndFileName(finalPath, srcBaseURL),
       new Blob([JSON.stringify(json)], { type: 'application/json' }),
-      path
+      path,
+      publishing
     )
   }
 
@@ -833,6 +837,80 @@ const preserveVertexColors: Transform = (document: Document) => {
       }
     })
 }
+function hasKeywordInExtras(node: Node, keyword: string): boolean {
+  const extras = node.getExtras()
+  if (!extras) return false
+  return Object.keys(extras).some((key) => key.includes(keyword))
+}
+
+function preserveNodesInScene(document: Document, keywords: string[]) {
+  document
+    .getRoot()
+    .listNodes()
+    .forEach((node) => {
+      if (keywords.some((kw) => hasKeywordInExtras(node, kw))) {
+        if (!node.getMesh()) {
+          // Create dummy mesh with a single vertex primitive
+          const dummyMesh = document.createMesh('preserve-dummy')
+          const dummyPrim = document
+            .createPrimitive()
+            .setAttribute(
+              'POSITION',
+              document
+                .createAccessor()
+                .setType('VEC3')
+                .setArray(new Float32Array([0, 0, 0]))
+            )
+            .setIndices(
+              document
+                .createAccessor()
+                .setType('SCALAR')
+                .setArray(new Uint16Array([0]))
+            )
+          dummyMesh.addPrimitive(dummyPrim)
+          node.setMesh(dummyMesh)
+        }
+      }
+    })
+}
+
+async function preserveChildrenHierarchyAroundFlatten(document: Document, keywords: string[]) {
+  const root = document.getRoot()
+
+  //  Find nodes to preserve and map their children names
+  const nodesToPreserve = root.listNodes().filter((node) => keywords.some((kw) => hasKeywordInExtras(node, kw)))
+
+  const preservedChildrenMap = new Map<string, string[]>()
+
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = parentNode.listChildren().map((child) => child.getName())
+    preservedChildrenMap.set(parentNode.getName(), childNames)
+  })
+
+  // Run flatten
+  await document.transform(flatten())
+
+  //  After flatten, reattach children if they still exist
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = preservedChildrenMap.get(parentNode.getName())
+    if (!childNames) return
+
+    childNames.forEach((childName) => {
+      const childNode = root.listNodes().find((n) => n.getName() === childName)
+      if (childNode && childNode.getParentNode() !== parentNode) {
+        parentNode.addChild(childNode)
+      }
+    })
+  })
+
+  //  Remove dummy meshes after flatten
+  root.listNodes().forEach((node) => {
+    if (node.getMesh()?.getName() === 'preserve-dummy') {
+      node.getMesh()?.dispose()
+      node.setMesh(null)
+    }
+  })
+}
 
 export const transformModel = async (
   srcURL: string,
@@ -842,7 +920,7 @@ export const transformModel = async (
 ): Promise<string[]> => {
   onProgress?.(0, Status.TransformingModels)
 
-  const srcDocument = await (await loaderIO).read(srcURL)
+  const srcDocument = await (await loadIO()).read(srcURL)
   const documents: Document[] = []
   const textureOperations: TextureOperation[] = []
   const numDocOperations = modelOperations.length
@@ -894,13 +972,15 @@ export const transformModel = async (
       }
     }
   }
+  // We want to make sure if node has these keywords in extras, we preserve those nodes
+  const keyWordsToPreserveNode = ['EE_collider', 'EE_rigidbody']
 
   for (let i = 0; i < numDocOperations; i++) {
     const params = modelOperations[i]
     const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
-
     const document = await cloneDocument(srcDocument)
-
+    // Preserve nodes with certain keywords in extras
+    preserveNodesInScene(document, keyWordsToPreserveNode)
     // Preserve vertex colors before applying transformations
     await document.transform(preserveVertexColors)
 
@@ -910,7 +990,7 @@ export const transformModel = async (
     params.combineMaterials && (await document.transform(combineMaterials))
     params.instance && (await document.transform(doInstancing))
     params.dedup && (await document.transform(dedup()))
-    params.flatten && (await document.transform(flatten()))
+    params.flatten && (await preserveChildrenHierarchyAroundFlatten(document, keyWordsToPreserveNode))
     params.join.enabled && (await document.transform(join(params.join.options)))
 
     if (params.simplifyRatio < 1) {
@@ -937,7 +1017,6 @@ export const transformModel = async (
       const operations = createTextureOperations(document, params, params.resources, textureUsages)
       textureOperations.push(...operations)
     }
-
     // Apply final optimizations
     if (params.reorder) {
       await MeshoptEncoder.ready
@@ -947,7 +1026,6 @@ export const transformModel = async (
     if (params.dracoCompression.enabled) {
       await document.transform(draco(params.dracoCompression.options))
     }
-
     documents.push(document)
   }
 
@@ -1250,7 +1328,8 @@ const safeImageCompress = async (
       texture.setMimeType(newMimeType)
 
       const ext = newMimeType.split('/')[1] || 'png'
-      const safeName = validTextureFileName(texture.getURI().replace(/\.[^.]+$/, `.${ext}`)).slice(6)
+      const fileName = texture.getURI().split('/').pop()!
+      const safeName = validTextureFileName(fileName.replace(/\.[^.]+$/, `.${ext}`))
       texture.setURI(safeName)
     } catch (e) {
       console.error(`Failed to resize texture: ${texture.getName()}`, e)
@@ -1266,78 +1345,39 @@ export async function safeCompressGLTFWeb(
 ) {
   onProgress?.(0, Status.TransformingModels)
 
-  try {
-    const io = await loaderIO
-    const document: Document = await io.read(srcURL)
+  const io = await loadIO()
+  const document: Document = await io.read(srcURL)
+  await document.transform(preserveVertexColors)
 
-    await document.transform(preserveVertexColors)
-
-    if (params.modelFormat === 'gltf') {
-      await safeImageCompress(document, params, onProgress)
-    }
-    await document.transform(unInstanceSingletons)
-    await document.transform(dedup())
-    await document.transform(weld())
-
-    await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ }))
+  if (params.modelFormat === 'gltf') {
+    await safeImageCompress(document, params, onProgress)
+  } else {
     await document.transform(
-      simplify({
-        ratio: 0.95, // Higher = less simplification
-        error: 0.001,
-        simplifier: MeshoptSimplifier
+      textureCompress({
+        resize: [params.maxTextureSize, params.maxTextureSize]
       })
     )
-
-    document.createExtension(KHRMeshQuantization)?.setRequired(true)
-    onProgress?.(0.8, Status.WritingFiles)
-    const eeMaterialExtension: EEMaterialExtension | undefined = document
-      .getRoot()
-      .listExtensionsUsed()
-      .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-    if (eeMaterialExtension) {
-      for (const texture of eeMaterialExtension.textures) {
-        document.createTexture().copy(texture)
-        // Find all materials that reference the old texture, and change their reference to the new texture
-      }
-      for (const material of document.getRoot().listMaterials()) {
-        const eeMaterial = material.getExtension<EEMaterial>('EE_material')
-        if (eeMaterial == null) continue
-        const matArgs = eeMaterial.args!
-
-        const newTextures = document.getRoot().listTextures()
-        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string) || []
-        materialArgsInfo.map((field) => {
-          let argEntry: EEArgEntry
-          try {
-            argEntry = matArgs.getPropRef(field) as EEArgEntry
-          } catch (e) {
-            argEntry = matArgs.getProp(field) as EEArgEntry
-          }
-
-          if (argEntry.type === 'texture') {
-            const oldTexture = argEntry.contents as Texture
-            if (oldTexture != null) {
-              const uuid: string = oldTexture.getExtras().uuid as string
-              const newTexture = newTextures.find((texture) => texture.getExtras().uuid === uuid)
-              if (newTexture == null) {
-                throw new Error('Transformed texture is not listed.')
-              }
-              argEntry.contents = newTexture
-            }
-          }
-        })
-      }
-    }
-    await writeFiles(srcURL, document, {
-      modelFormat: params.modelFormat,
-      resourceUri: params.resourceUri,
-      dst: destinationUrl,
-      skipPartition: true
-    })
-
-    onProgress?.(1, Status.Complete)
-  } catch (error) {
-    console.log(`Error compressing ${srcURL}:`, error)
-    throw error
   }
+  await document.transform(unInstanceSingletons)
+  await document.transform(dedup())
+  await document.transform(
+    weld({}),
+    simplify({
+      ratio: params.simplifyRatio,
+      error: params.simplifyErrorThreshold,
+      simplifier: MeshoptSimplifier
+    })
+  )
+
+  onProgress?.(0.8, Status.WritingFiles)
+
+  await writeFiles(srcURL, document, {
+    modelFormat: params.modelFormat,
+    resourceUri: params.resourceUri,
+    dst: destinationUrl,
+    skipPartition: true,
+    publishing: true
+  })
+
+  onProgress?.(1, Status.Complete)
 }

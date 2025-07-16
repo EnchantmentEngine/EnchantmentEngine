@@ -84,10 +84,12 @@ import {
   MeshStandardMaterial,
   Quaternion,
   Raycaster,
+  Texture,
   Vector2,
   Vector3
 } from 'three'
 import { getTextureAsync } from '../../assets/functions/resourceLoaderHooks'
+import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
@@ -1001,6 +1003,44 @@ describe('EntityCSMReactor', async () => {
         expect(result).toBe(Expected)
       })
     })
+
+    it('should update CSM on every change of shadow map type selection', async () => {
+      const Expected = true
+      const Initial = !Expected
+
+      CSM.initCSM({}, rendererEntity)
+      const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
+      csmComponent.needsUpdate.set(Initial)
+
+      const renderSettingsEntity = createEntity()
+      setComponent(renderSettingsEntity, RenderSettingsComponent)
+      const renderSettings = getMutableComponent(renderSettingsEntity, RenderSettingsComponent)
+      renderSettings.shadowMapType.set(1)
+
+      setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
+
+      const Reactor = () => {
+        return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
+          entity: testEntity,
+          rendererEntity: rendererEntity,
+          renderSettingsEntity: renderSettingsEntity
+        })
+      }
+      const root = startReactor(Reactor)
+
+      await act(() => render(null))
+
+      act(() => {
+        renderSettings.shadowMapType.set(2)
+      })
+
+      await vi.waitFor(() => {
+        expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
+        const result = getComponent(rendererEntity, CSMComponent)?.needsUpdate
+        expect(result).not.toBe(Initial)
+        expect(result).toBe(Expected)
+      })
+    })
   })
 
   describe('on change [csm, renderSettingsComponent.cascades]', async () => {
@@ -1643,6 +1683,11 @@ describe('ShadowSystem', async () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      getMutableState(AssetLoaderState).ktx2Loader.set({
+        load: (url, onLoad) => {
+          onLoad(new Texture())
+        }
+      } as any)
     })
 
     afterEach(() => {
@@ -1660,7 +1705,7 @@ describe('ShadowSystem', async () => {
         getMutableState(DomainConfigState).cloudDomain.set('InvalidDomain')
         const textureURL = `${
           getState(DomainConfigState).cloudDomain
-        }/projects/ir-engine/default-project/assets/drop-shadow.png`
+        }/projects/ir-engine/default-project/assets/drop-shadow.ktx2`
         ShadowSystemData._shadowMaterial.version = Initial
         const rendererEntity = defineQuery([RendererComponent])()[0]
         const Reactor = () => {
@@ -1685,7 +1730,7 @@ describe('ShadowSystem', async () => {
       it('.. should set _shadowMaterial.map to shadowTexture', async () => {
         const textureURL = `${
           getState(DomainConfigState).cloudDomain
-        }/projects/ir-engine/default-project/assets/drop-shadow.png`
+        }/projects/ir-engine/default-project/assets/drop-shadow.ktx2`
         const Expected = (await getTextureAsync(textureURL))[0]
         const Initial = ShadowSystemData._shadowMaterial.map
 

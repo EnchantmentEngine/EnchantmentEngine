@@ -155,12 +155,10 @@ export const ParticleSystemComponent = defineComponent({
     systemParameters: JSON.parse(JSON.stringify(component.systemParameters)),
     behaviorParameters: JSON.parse(JSON.stringify(component.behaviorParameters))
   }),
-
   reactor: function () {
     const entity = useEntityContext()
     const componentState = useComponent(entity, ParticleSystemComponent)
     const metadata = useHookstate({ textures: {}, geometries: {}, materials: {} } as ParticleSystemMetadata)
-
     // for particle meshes
     const geoDependencyEntity = useGLTFComponent(componentState.value.systemParameters.instancingGeometry, entity)
 
@@ -192,10 +190,14 @@ export const ParticleSystemComponent = defineComponent({
       const scale = getNestedScale(mesh)
       scaledGeometry.scale(scale.x, scale.y, scale.z)
       if (scaledGeometry) {
-        metadata.geometries.nested(componentState.value.systemParameters.instancingGeometry).set(scaledGeometry)
+        const geometryKey = componentState.value.systemParameters.instancingGeometry
+        metadata.geometries.nested(geometryKey).set(scaledGeometry)
 
         return () => {
-          metadata.geometries.nested(componentState.value.systemParameters.instancingGeometry).set(none)
+          // Check if metadata state is still valid before cleanup
+          if (metadata.geometries.value && geometryKey) {
+            metadata.geometries.nested(geometryKey).set(none)
+          }
         }
       }
     }, [geoDependencyEntity])
@@ -220,12 +222,14 @@ export const ParticleSystemComponent = defineComponent({
       const mergedGeometry = mergeGeometries(geometries)
 
       if (mergedGeometry) {
-        componentState.systemParameters.shape.geometry.set(componentState.value.systemParameters.shape.mesh!)
-        metadata.geometries.nested(componentState.value.systemParameters.shape.mesh!).set(mergedGeometry)
+        const shapeMeshKey = componentState.value.systemParameters.shape.mesh!
+        componentState.systemParameters.shape.geometry.set(shapeMeshKey)
+        metadata.geometries.nested(shapeMeshKey).set(mergedGeometry)
 
         return () => {
-          if (componentState.value.systemParameters.shape.mesh) {
-            metadata.geometries.nested(componentState.value.systemParameters.shape.mesh!).set(none)
+          // Check if metadata state is still valid before cleanup
+          if (metadata.geometries.value && shapeMeshKey) {
+            metadata.geometries.nested(shapeMeshKey).set(none)
           }
         }
       }
@@ -233,7 +237,11 @@ export const ParticleSystemComponent = defineComponent({
 
     const [texture] = useTexture(componentState.value.systemParameters.texture!, entity, (url) => {
       if (!entityExists(entity)) return
-      metadata.textures.nested(url).set(none)
+      // Check if metadata state is still valid before cleanup
+      if (metadata.textures.value && url) {
+        metadata.textures.nested(url).set(none)
+      }
+
       dudMaterial.map = null
     })
 
@@ -266,13 +274,27 @@ export const ParticleSystemComponent = defineComponent({
     const visible = useHasComponent(entity, VisibleComponent)
 
     useEffect(() => {
-      if (!dependenciesLoaded || !rendererEntity || !visible) return
+      if (!dependenciesLoaded || !visible || !rendererEntity) return
 
       const component = componentState.get(NO_PROXY)
       const rendererInstance = createBatchedRenderer(entity)
       const renderer = rendererInstance.renderer
 
       const systemParameters = JSON.parse(JSON.stringify(component.systemParameters)) as ExpandedSystemJSON
+
+      if (systemParameters.blending !== undefined) {
+        const materialKey = systemParameters.material || 'particle_material'
+
+        const particleMaterial = new MeshBasicMaterial({
+          color: systemParameters.startColor.color,
+          transparent: systemParameters.transparent,
+          blending: systemParameters.blending as Blending
+        })
+
+        metadata.materials.nested(materialKey).set(particleMaterial)
+        systemParameters.material = materialKey
+      }
+
       const system = ParticleSystem.fromJSON(systemParameters, metadata.value as ParticleSystemMetadata, {})
       renderer.addSystem(system)
       const behaviors = component.behaviorParameters.map((behaviorJSON) => {
@@ -306,9 +328,6 @@ export const ParticleSystemComponent = defineComponent({
         const index = renderer.systemToBatchIndex.get(system)
         if (typeof index !== 'undefined') {
           renderer.deleteSystem(system)
-          renderer.children.splice(index, 1)
-          const [batch] = renderer.batches.splice(index, 1)
-          batch.dispose()
           renderer.systemToBatchIndex.clear()
           for (let i = 0; i < renderer.batches.length; i++) {
             for (const system of renderer.batches[i].systems) {
@@ -321,7 +340,9 @@ export const ParticleSystemComponent = defineComponent({
 
         system.dispose()
         emitterAsObj3D.dispose()
-        removeBatchedRenderer(rendererEntity!)
+        if (entityExists(entity) && rendererEntity && entityExists(rendererEntity)) {
+          removeBatchedRenderer(rendererEntity)
+        }
       }
     }, [
       componentState.systemParameters,

@@ -154,7 +154,12 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
     return () => {
       CSM.dispose(rendererEntity)
     }
-  }, [directionalLightComponent?.castShadow.value, renderSettingsComponent.cascades.value, !!directionalLight])
+  }, [
+    directionalLightComponent?.castShadow.value,
+    renderSettingsComponent.cascades.value,
+    renderSettingsComponent.shadowMapType,
+    !!directionalLight
+  ])
 
   /** Must run after scene object system to ensure source light is not lit */
   useExecute(
@@ -169,6 +174,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   useEffect(() => {
     setComponent(rendererEntity, CSMComponent)
     const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
+
     if (!directionalLightComponent?.castShadow.value || !directionalLight) return
 
     csmComponent.shadowBias.set(directionalLight.shadow.bias)
@@ -436,7 +442,7 @@ const reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(
-    `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/drop-shadow.png`
+    `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/drop-shadow.ktx2`
   )
 
   useEffect(() => {
