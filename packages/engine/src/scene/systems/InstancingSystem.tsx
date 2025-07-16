@@ -128,13 +128,10 @@ const InstancedMeshReactor = ({ meshEntity, generator, levelIndex }: InstancedMe
 
     if (bufferAttributes.length === 0) return
 
-    // Calculate total length efficiently
     const totalLength = bufferAttributes.reduce((sum, buffer) => sum + buffer.array.length, 0)
-
-    // Create single concatenated Float32Array
     const concatenatedArray = new Float32Array(totalLength)
-    let offset = 0
 
+    let offset = 0
     for (const buffer of bufferAttributes) {
       concatenatedArray.set(buffer.array, offset)
       offset += buffer.array.length

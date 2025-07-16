@@ -26,8 +26,8 @@ Infinite Reality Engine. All Rights Reserved.
 import { InstancedBufferAttribute, Matrix4, Mesh, Quaternion, Vector3 } from 'three'
 
 import { useHookstate } from '@hookstate/core'
-import { Entity, useQueryBySource } from '@ir-engine/ecs'
-import { defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, useQueryBySource, UUIDComponent } from '@ir-engine/ecs'
+import { defineComponent, getComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -47,7 +47,7 @@ export const InstancingComponent = defineComponent({
     useMesh: S.Bool({ default: false }),
     count: S.Number({ default: 10 }),
     seed: S.Number(),
-    activeMeshEntities: S.Record(S.Number(), S.Bool()),
+    activeMeshEntities: S.Record(S.String(), S.Bool()),
     //internal
     instanceMatrix: S.Type<InstancedBufferAttribute>({ default: () => buffer, serialized: false }),
     // Map of mesh entity to samples
@@ -58,9 +58,12 @@ export const InstancingComponent = defineComponent({
     const generator = useEntityContext()
     const { useMesh, activeMeshEntities } = useComponent(generator, InstancingComponent)
     const meshEntities = useQueryBySource(generator, [MeshComponent])
+
     const samplers = useMemo(() => {
-      return meshEntities.filter((e) => !!activeMeshEntities.value[e])
-    }, [activeMeshEntities])
+      return meshEntities.filter((e) => {
+        return !!activeMeshEntities.value[getComponent(e, UUIDComponent).entityID]
+      })
+    }, [activeMeshEntities, meshEntities])
 
     if (!useMesh.value) {
       return null
