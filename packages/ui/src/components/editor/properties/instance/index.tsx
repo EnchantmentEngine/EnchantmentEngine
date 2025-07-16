@@ -27,11 +27,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdScatterPlot } from 'react-icons/md'
 
-import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getChildrenWithComponents } from '@ir-engine/ecs'
+import { getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import InputGroup from '../../input/Group'
 import NumericInput from '../../input/Numeric'
@@ -46,6 +48,16 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
     commitProperty(InstancingComponent, 'seed')(Math.round(Math.random() * 10 ** 5))
   }
 
+  const meshEntities = getChildrenWithComponents(entity, [MeshComponent])
+  const meshes = meshEntities.map((e) => getComponent(e, MeshComponent))
+
+  const { enabledMeshes } = instancingComponent
+
+  const toggleMesh = (meshId: number) => {
+    const updated = { ...enabledMeshes.value, [meshId]: !(enabledMeshes.value[meshId] ?? false) }
+    commitProperty(InstancingComponent, 'enabledMeshes')(updated)
+  }
+
   return (
     <NodeEditor
       name={t('editor:properties.instancing.name')}
@@ -53,11 +65,29 @@ export const InstancingNodeEditor: EditorComponentType = (props: { entity: Entit
       Icon={InstancingNodeEditor.iconComponent}
       {...props}
     >
-      <InputGroup name="Auto" label={'Auto'}>
-        <Checkbox checked={instancingComponent.auto.value} onChange={commitProperty(InstancingComponent, 'auto')} />
+      <InputGroup label={'Settings'}>
+        <Checkbox
+          checked={instancingComponent.useMesh.value}
+          onChange={commitProperty(InstancingComponent, 'useMesh')}
+        />
         <NumericInput value={instancingComponent.count.value} onChange={commitProperty(InstancingComponent, 'count')} />
-        <NumericInput value={instancingComponent.seed.value} onChange={commitProperty(InstancingComponent, 'seed')} />
+        <NumericInput
+          displayPrecision={0}
+          value={instancingComponent.seed.value}
+          onChange={commitProperty(InstancingComponent, 'seed')}
+        />
         <button onClick={randomize}>Randomize</button>
+      </InputGroup>
+      <InputGroup label={'Meshes'}>
+        {meshes.map((mesh, index) => (
+          <div key={index}>
+            <label>{mesh.name}</label>
+            <Checkbox
+              checked={enabledMeshes.value[meshEntities[index]] ?? false}
+              onChange={() => toggleMesh(mesh.id)}
+            />
+          </div>
+        ))}
       </InputGroup>
     </NodeEditor>
   )

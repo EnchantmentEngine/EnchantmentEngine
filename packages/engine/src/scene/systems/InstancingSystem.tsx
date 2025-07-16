@@ -44,8 +44,8 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
-import React, { useEffect } from 'react'
-import { InstancedMesh, Material } from 'three'
+import React, { useCallback, useEffect } from 'react'
+import { InstancedBufferAttribute, InstancedMesh, Material } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { InstancingComponent } from '../components/InstancingComponent'
 import { Heuristic, VariantComponent } from '../components/VariantComponent'
@@ -55,10 +55,7 @@ export const InstancingSystem = defineSystem({
   uuid: 'ee.engine.InstancingSystem',
   insert: { after: PresentationSystemGroup },
   reactor: () => {
-    const entities = useQuery([InstancingComponent, VariantComponent]).filter(
-      (e) => getComponent(e, InstancingComponent).auto
-    )
-
+    const entities = useQuery([InstancingComponent, VariantComponent])
     return (
       <>
         {entities.map((entity) => (
@@ -104,46 +101,55 @@ export const InstanceGenerator = ({ generator, index }: InstanceGeneratorProps) 
   }
 
   const gltfEntity = useEntity({ setup })
-  const meshEntities = useQueryBySource(gltfEntity, [MeshComponent])
+
+  const instanceMeshEntities = useQueryBySource(gltfEntity, [MeshComponent])
 
   return (
     <>
-      {meshEntities.map((entity) => (
-        <InstancedMeshReactor entity={entity} generator={generator} key={entity} index={index} />
+      {instanceMeshEntities.map((entity) => (
+        <InstancedMeshReactor meshEntity={entity} generator={generator} key={`${entity}-${index}`} levelIndex={index} />
       ))}
     </>
   )
 }
 
 interface InstancedMeshReactorProps {
-  entity: Entity
+  meshEntity: Entity
   generator: Entity
-  index: number
+  levelIndex: number
 }
 
-const InstancedMeshReactor = ({ entity, generator, index }: InstancedMeshReactorProps) => {
-  const { instanceMatrix } = useComponent(generator, InstancingComponent).value
-  const mesh = useComponent(entity, MeshComponent).value as InstancedMesh
+const InstancedMeshReactor = ({ meshEntity, generator, levelIndex }: InstancedMeshReactorProps) => {
+  const { instanceBuffers } = useComponent(generator, InstancingComponent)
+  const mesh = useComponent(meshEntity, MeshComponent)
   const { heuristic } = useComponent(generator, VariantComponent).value
 
-  const generateInstancedMesh = () => {
-    const instancedMesh = new InstancedMesh(mesh.geometry.clone(), mesh.material as Material, instanceMatrix.count)
-    instancedMesh.count = instanceMatrix.count
+  const generateInstancedMesh = useCallback(() => {
+    const buffers = Object.values(instanceBuffers.value) as InstancedBufferAttribute[]
+    const matrices = buffers.flatMap((buffer) => [...buffer.array])
+
+    const instanceMatrix = new InstancedBufferAttribute(new Float32Array(matrices), 16)
+
+    const instancedMesh = new InstancedMesh(
+      mesh.geometry.value.clone(),
+      mesh.value.material as Material,
+      instanceMatrix.count
+    )
     instancedMesh.instanceMatrix.copy(instanceMatrix as any)
     instancedMesh.frustumCulled = false
 
-    removeComponent(entity, MeshComponent)
-    setComponent(entity, MeshComponent, instancedMesh)
+    setComponent(meshEntity, MeshComponent, instancedMesh)
+
     return instancedMesh
-  }
+  }, [instanceBuffers])
 
   useEffect(() => {
     generateInstancedMesh()
-  }, [instanceMatrix])
+  }, [instanceBuffers])
 
   switch (heuristic) {
     case Heuristic.DISTANCE:
-      return <DistanceReactor entity={entity} generator={generator} index={index} key={entity} />
+      return <DistanceReactor entity={meshEntity} generator={generator} index={levelIndex} key={meshEntity} />
     default:
       return null
   }
