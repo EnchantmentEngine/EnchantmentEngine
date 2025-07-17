@@ -26,7 +26,6 @@ Infinite Reality Engine. All Rights Reserved.
 import React from 'react'
 import { useDrop } from 'react-dnd'
 
-import config from '@ir-engine/common/src/config'
 //import useUpload from '../assets/useUpload'
 import useUpload from '@ir-engine/editor/src/components/assets/useUpload'
 import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
@@ -53,30 +52,30 @@ export function FileBrowserInput({
   const onUpload = useUpload(uploadOptions)
 
   // todo fix for invalid URLs
-  const assetIsExternal = value && !value?.includes(config.client.fileServer) && !value.includes('blob:https://')
-  const uploadExternalAsset = () => {
-    onUpload([
-      {
-        isFile: true,
-        name: value?.split('/').pop(),
-        file: async (onSuccess, onFail) => {
-          try {
-            const asset = await fetch(value!)
-            const blob = await asset.blob()
-            const file = new File([blob], value!.split('/').pop()!)
-            onSuccess(file)
-          } catch (error) {
-            if (onFail) onFail(error)
-            else throw error
-          }
-        }
-      } as Partial<FileSystemFileEntry>
-    ] as any).then((assets) => {
-      if (assets) {
-        onRelease?.(assets[0])
-      }
-    })
-  }
+  // const assetIsExternal = value && !value?.includes(config.client.fileServer) && !value.includes('blob:https://')
+  // const uploadExternalAsset = () => {
+  //   onUpload([
+  //     {
+  //       isFile: true,
+  //       name: value?.split('/').pop(),
+  //       file: async (onSuccess, onFail) => {
+  //         try {
+  //           const asset = await fetch(value!)
+  //           const blob = await asset.blob()
+  //           const file = new File([blob], value!.split('/').pop()!)
+  //           onSuccess(file)
+  //         } catch (error) {
+  //           if (onFail) onFail(error)
+  //           else throw error
+  //         }
+  //       }
+  //     } as Partial<FileSystemFileEntry>
+  //   ] as any).then((assets) => {
+  //     if (assets) {
+  //       onRelease?.(assets[0])
+  //     }
+  //   })
+  // }
 
   const [{ canDrop, isOver }, dropRef] = useDrop({
     accept: [...acceptDropItems, ItemTypes.File],
