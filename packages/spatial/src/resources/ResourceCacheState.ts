@@ -25,10 +25,10 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Entity } from '@ir-engine/ecs'
 import { defineState } from '@ir-engine/hyperflux'
-import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceType } from './ResourceState'
 
 // Apply texture memory management patch
-import { applyTexturePatch } from '../loaders/texture/TexturePatch'
+import { applyTexturePatch } from './loaders/texture/TexturePatch'
 
 try {
   // Apply the texture patch directly - simpler and more direct

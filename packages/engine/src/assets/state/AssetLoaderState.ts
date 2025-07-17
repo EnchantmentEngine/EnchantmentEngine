@@ -25,12 +25,12 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
 
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
+import { KTX2Loader } from '@ir-engine/spatial/src/resources/loaders/ktx2/KTX2Loader'
 import { DefaultLoadingManager, WebGLRenderer } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'
 import { DRACOLoader } from '../loaders/gltf/DRACOLoader'
-import { KTX2Loader } from '../loaders/gltf/KTX2Loader'
 import { loadDRACODecoderNode, NodeDRACOLoader } from '../loaders/gltf/NodeDracoLoader'
-import { DomainConfigState } from './DomainConfigState'
 
 export const AssetLoaderState = defineState({
   name: 'AssetLoaderState',
@@ -70,7 +70,6 @@ export const AssetLoaderState = defineState({
 
     return {
       manager: DefaultLoadingManager,
-      ktx2Loader,
       dracoLoader,
       cortoLoader: null! as CORTOLoader
     }

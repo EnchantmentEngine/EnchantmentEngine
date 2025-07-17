@@ -75,6 +75,7 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { ResourceProgressComponent } from '@ir-engine/spatial/src/resources/ResourceProgressComponent'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { LoaderUtils } from 'three'
 import { loadResource } from '../assets/functions/resourceLoaderFunctions'
@@ -89,7 +90,6 @@ import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
 import { migrateEEMaterial } from './migrateEEMaterial'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
-import { ResourceProgressComponent } from './ResourceProgressComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
 export const GLTFComponent = defineComponent({

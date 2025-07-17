@@ -35,8 +35,8 @@ import {
   ResourceType
 } from '@ir-engine/spatial/src/resources/ResourceState'
 
-import { FileLoader } from '../loaders/base/FileLoader'
-import { Loader } from '../loaders/base/Loader'
+import { FileLoader } from './loaders/base/FileLoader'
+import { Loader } from './loaders/base/Loader'
 import { parseStorageProviderURLs } from './parseSceneJSON'
 import { loadResource } from './resourceLoaderFunctions'
 
