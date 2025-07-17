@@ -57,13 +57,13 @@ import {
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { NO_PROXY, State, useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { ContentFitTypeSchema } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { ImageAlphaMode, ImageProjection } from '../classes/ImageUtils'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
 

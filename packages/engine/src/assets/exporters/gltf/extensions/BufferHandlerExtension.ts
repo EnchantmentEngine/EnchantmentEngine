@@ -32,9 +32,9 @@ import { defineAction, dispatchAction, getMutableState, getState, NO_PROXY } fro
 import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
 import { pathJoin } from '../../../functions/miscUtils'
 
-import { FileToAssetExt } from '../../../constants/AssetType'
+import { FileToAssetExt } from '@ir-engine/spatial/src/resources/AssetType'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { modelResourcesPath } from '../../../functions/pathResolver'
-import { DomainConfigState } from '../../../state/DomainConfigState'
 import { UploadRequestState } from '../../../state/UploadRequestState'
 import { ExporterExtension, GLTFExporterPlugin, GLTFWriter } from '../GLTFExporter'
 

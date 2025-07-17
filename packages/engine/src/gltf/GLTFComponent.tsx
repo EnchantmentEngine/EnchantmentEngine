@@ -56,7 +56,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import {
   getMutableState,
   getState,
@@ -75,11 +74,12 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { FileLoader } from '@ir-engine/spatial/src/resources/loaders/base/FileLoader'
+import { parseStorageProviderURLs } from '@ir-engine/spatial/src/resources/parseSceneJSON'
+import { loadResource } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
 import { ResourceProgressComponent } from '@ir-engine/spatial/src/resources/ResourceProgressComponent'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { LoaderUtils } from 'three'
-import { loadResource } from '../assets/functions/resourceLoaderFunctions'
-import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AuthoringState, HistoryCommand } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'

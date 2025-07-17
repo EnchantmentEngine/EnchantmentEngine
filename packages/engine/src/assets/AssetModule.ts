@@ -24,9 +24,7 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { AssetLoaderState } from './state/AssetLoaderState'
-import { DomainConfigState } from './state/DomainConfigState'
 
 export default {
-  AssetLoaderState,
-  DomainConfigState
+  AssetLoaderState
 }
