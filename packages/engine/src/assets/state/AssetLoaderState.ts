@@ -26,8 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
 
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
-import { KTX2Loader } from '@ir-engine/spatial/src/resources/loaders/ktx2/KTX2Loader'
-import { DefaultLoadingManager, WebGLRenderer } from 'three'
+import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'
 import { DRACOLoader } from '../loaders/gltf/DRACOLoader'
 import { loadDRACODecoderNode, NodeDRACOLoader } from '../loaders/gltf/NodeDracoLoader'
@@ -47,24 +46,6 @@ export const AssetLoaderState = defineState({
       /* @ts-ignore */
       dracoLoader.preload = () => {
         return dracoLoader
-      }
-    }
-
-    const ktx2Loader = new KTX2Loader()
-    ktx2Loader.setTranscoderPath(getState(DomainConfigState).publicDomain + '/loader_decoders/basis/')
-    if (isClient) {
-      const renderer = new WebGLRenderer()
-      ktx2Loader.detectSupport(renderer)
-      renderer.dispose()
-    } else {
-      // @ts-ignore - make nodejs happy
-      ktx2Loader.workerConfig = {
-        astcSupported: false,
-        etc1Supported: false,
-        etc2Supported: false,
-        dxtSupported: false,
-        bptcSupported: false,
-        pvrtcSupported: false
       }
     }
 
