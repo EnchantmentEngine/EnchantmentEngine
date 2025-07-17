@@ -25,10 +25,8 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { AssetLoaderState } from './state/AssetLoaderState'
 import { DomainConfigState } from './state/DomainConfigState'
-import { ResourceLoadingManagerState } from './state/ResourceLoadingManagerState'
 
 export default {
   AssetLoaderState,
-  DomainConfigState,
-  ResourceLoadingManagerState
+  DomainConfigState
 }

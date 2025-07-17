@@ -1728,8 +1728,8 @@ const unloadScene = (url: string, entity: Entity) => {
   const resourceCacheState = getState(ResourceCacheState)
   if (!resourceCacheState[url]) {
     delete interleavedBufferCache[url]
-    DependencyCache.delete(`${entity}${url}`)
   }
+  DependencyCache.delete(`${entity}${url}`)
 }
 
 const unloadEntities = (sourceID: SourceID, layer: LayerID) => {
