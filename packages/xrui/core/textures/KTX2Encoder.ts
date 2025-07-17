@@ -26,7 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import { createWorkerFromCrossOriginURL } from '@ir-engine/spatial/src/common/functions/createWorkerFromCrossOriginURL'
 
 import { isClient } from '@ir-engine/hyperflux'
-import { WorkerPool } from '../WorkerPool'
+import { WorkerPool } from '@ir-engine/spatial/src/common/classes/WorkerPool'
 
 // @ts-ignore
 const workerPath = isClient ? new URL('./KTX2Worker.bundle.js', import.meta.url).href : ''

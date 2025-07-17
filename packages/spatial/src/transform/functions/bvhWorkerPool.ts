@@ -36,8 +36,8 @@ import { MeshBVH, SerializedBVH } from 'three-mesh-bvh'
 import Worker from 'web-worker'
 
 import { isClient } from '@ir-engine/hyperflux'
-import { WorkerPool } from '@ir-engine/xrui/core/WorkerPool'
 import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
+import { WorkerPool } from '../../common/classes/WorkerPool'
 
 const createWorker = () => {
   if (isClient) {

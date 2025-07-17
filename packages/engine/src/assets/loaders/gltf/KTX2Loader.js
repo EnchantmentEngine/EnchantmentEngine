@@ -63,7 +63,6 @@ import {
 	SRGBColorSpace,
 	UnsignedByteType,
 } from 'three';
-import { WorkerPool } from './WorkerPool.js';
 import {
 	read,
 	KHR_DF_FLAG_ALPHA_PREMULTIPLIED,
@@ -95,6 +94,7 @@ import { FileLoader } from '../base/FileLoader';
 import { Loader } from '../base/Loader';
 import { isClient } from '@ir-engine/hyperflux'
 import { CompressedTexture, CompressedArrayTexture } from 'three';
+import { WorkerPool } from '@ir-engine/spatial/src/common/classes/WorkerPool'
 
 import { DisplayP3ColorSpace, LinearDisplayP3ColorSpace } from '@ir-engine/spatial/src/threejsPatches'
 
