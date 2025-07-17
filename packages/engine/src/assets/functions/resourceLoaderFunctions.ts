@@ -27,11 +27,17 @@ import { Entity } from '@ir-engine/ecs'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { ResourceAssetType, ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 
+import { AudioLoader } from 'three'
 import { ResourceProgressComponent } from '../../gltf/ResourceProgressComponent'
-import { AssetLoader } from '../classes/AssetLoader'
-import { FileToAssetExt } from '../constants/AssetType'
+import { AssetExt, FileToAssetExt } from '../constants/AssetType'
+import { FileLoader } from '../loaders/base/FileLoader'
 import { Loader } from '../loaders/base/Loader'
+import { TextureLoader } from '../loaders/texture/TextureLoader'
+import { TGALoader } from '../loaders/tga/TGALoader'
+import { AssetLoaderState } from '../state/AssetLoaderState'
+import { DomainConfigState } from '../state/DomainConfigState'
 import { ResourceCacheState, ResourceStatus } from '../state/ResourceCacheState'
+
 interface Cloneable<T> {
   clone?: () => T
 }
@@ -56,6 +62,39 @@ const cloneAsset = <T>(asset: Cloneable<T> | undefined, onLoad: (T) => void): bo
   }
 
   return false
+}
+
+/**
+ * Matches absolute URLs. For eg: `http://example.com`, `https://example.com`, `ftp://example.com`, `//example.com`, etc.
+ * This Does NOT match relative URLs like `example.com`
+ */
+export const ABSOLUTE_URL_PROTOCOL_REGEX = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/
+
+export const isAbsolutePath = (path) => {
+  return ABSOLUTE_URL_PROTOCOL_REGEX.test(path)
+}
+
+export const getAbsolutePath = (url) => (isAbsolutePath(url) ? url : getState(DomainConfigState).publicDomain + url)
+
+export const getLoader = (assetType: AssetExt): Loader => {
+  switch (assetType) {
+    case AssetExt.KTX2:
+      return getState(AssetLoaderState).ktx2Loader! as any as Loader
+    case AssetExt.TGA:
+      return new TGALoader()
+    case AssetExt.PNG:
+    case AssetExt.JPEG:
+    case AssetExt.GIF:
+    case AssetExt.WEBP:
+      return new TextureLoader()
+    case AssetExt.AAC:
+    case AssetExt.MP3:
+    case AssetExt.OGG:
+    case AssetExt.M4A:
+      return new AudioLoader() as any as Loader
+    default:
+      return new FileLoader()
+  }
 }
 
 export const loadResource = <T extends ResourceAssetType>(
@@ -114,11 +153,11 @@ export const loadResource = <T extends ResourceAssetType>(
 
   const resource = resourceCacheState[url]
   ResourceState.debugLog(`ResourceState:load Loading resource: ${url} for entity: ${entity}`)
-  const absoluteURL = AssetLoader.getAbsolutePath(url)
+  const absoluteURL = getAbsolutePath(url)
 
   if (!loader) {
-    const assetExt = FileToAssetExt(url)
-    loader = AssetLoader.getLoader(assetExt)
+    const assetExt = FileToAssetExt(url)!
+    loader = getLoader(assetExt)
   }
 
   loader.load(

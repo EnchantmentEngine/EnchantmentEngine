@@ -47,8 +47,8 @@ import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import type Hls from 'hls.js'
 import { useEffect, useLayoutEffect } from 'react'
-import { AssetLoader } from '../../assets/classes/AssetLoader'
 import { FileToAssetType } from '../../assets/constants/AssetType'
+import { getAbsolutePath } from '../../assets/functions/resourceLoaderFunctions'
 import { AudioState } from '../../audio/AudioState'
 import { removePannerNode } from '../../audio/PositionalAudioFunctions'
 import { PlayMode } from '../constants/PlayMode'
@@ -223,7 +223,7 @@ export function MediaReactor() {
       return
     }
 
-    const urlToPlay = encodeURI(AssetLoader.getAbsolutePath(path))
+    const urlToPlay = encodeURI(getAbsolutePath(path))
 
     const checkMediaElement = getOptionalComponent(entity, MediaElementComponent)
     /** do nothing if we are already playing this track */
