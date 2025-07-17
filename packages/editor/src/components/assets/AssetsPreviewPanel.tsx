@@ -97,7 +97,6 @@ export const AssetsPreviewPanel = React.forwardRef(({ hideHeading, previewPanelP
       case AssetExt.GLB:
       case AssetExt.GLTF:
       case 'gltf-binary':
-      case AssetExt.USDZ:
       case AssetExt.FBX:
         const modelPreviewPanel = {
           PreviewSource: ModelPreviewPanel,

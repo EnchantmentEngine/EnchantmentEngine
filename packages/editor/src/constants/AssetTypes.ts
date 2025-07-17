@@ -66,8 +66,6 @@ export const ItemTypes = {
     'model/gltf',
     AssetExt.FBX,
     'model/fbx',
-    AssetExt.USDZ,
-    'model/usdz',
     AssetExt.VRM,
     'model/vrm'
   ],

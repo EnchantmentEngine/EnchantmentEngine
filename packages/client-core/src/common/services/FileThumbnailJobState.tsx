@@ -437,7 +437,7 @@ type ThumbnailFileType = 'image' | 'model' | 'texture' | 'video' | 'material' | 
 const extensionThumbnailTypes: { extensions: string[]; thumbnailType: ThumbnailFileType }[] = [
   { extensions: ['material.gltf'], thumbnailType: 'material' },
   { extensions: ['lookdev.gltf'], thumbnailType: 'lookDev' },
-  { extensions: ['gltf', 'glb', 'vrm', 'usdz', 'fbx'], thumbnailType: 'model' },
+  { extensions: ['gltf', 'glb', 'vrm', 'fbx'], thumbnailType: 'model' },
   { extensions: ['png', 'jpeg', 'jpg'], thumbnailType: 'image' },
   { extensions: ['ktx2'], thumbnailType: 'texture' },
   { extensions: ['mp4', 'm3u8'], thumbnailType: 'video' }
