@@ -28,13 +28,13 @@ import { LoaderUtils, Mesh, Object3D } from 'three'
 import matches, { Validator } from 'ts-matches'
 import { v4 as uuidv4 } from 'uuid'
 
-import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { defineAction, dispatchAction, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
+import { pathJoin } from '../../../functions/miscUtils'
 
-import { FileToAssetExt } from '../../../constants/AssetType'
+import { FileToAssetExt } from '@ir-engine/spatial/src/resources/AssetType'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { modelResourcesPath } from '../../../functions/pathResolver'
-import { DomainConfigState } from '../../../state/DomainConfigState'
 import { UploadRequestState } from '../../../state/UploadRequestState'
 import { ExporterExtension, GLTFExporterPlugin, GLTFWriter } from '../GLTFExporter'
 

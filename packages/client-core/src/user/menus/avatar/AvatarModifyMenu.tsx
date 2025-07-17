@@ -42,7 +42,7 @@ import { AvatarType } from '@ir-engine/common/src/schema.type.module'
 
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
-import { FileToAssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { FileToAssetExt } from '@ir-engine/spatial/src/resources/AssetType'
 import { Button, Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import { Upload01Lg, User01Lg, XCloseLg } from '@ir-engine/ui/src/icons'

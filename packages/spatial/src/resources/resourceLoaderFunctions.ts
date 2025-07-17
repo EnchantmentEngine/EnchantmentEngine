@@ -25,18 +25,19 @@ Infinite Reality Engine. All Rights Reserved.
 
 import { Entity } from '@ir-engine/ecs'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
-import { ResourceAssetType, ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
+import { ResourceAssetType, ResourceState, ResourceType } from './ResourceState'
 
 import { AudioLoader } from 'three'
-import { ResourceProgressComponent } from '../../gltf/ResourceProgressComponent'
-import { AssetExt, FileToAssetExt } from '../constants/AssetType'
-import { FileLoader } from '../loaders/base/FileLoader'
-import { Loader } from '../loaders/base/Loader'
-import { TextureLoader } from '../loaders/texture/TextureLoader'
-import { TGALoader } from '../loaders/tga/TGALoader'
-import { AssetLoaderState } from '../state/AssetLoaderState'
-import { DomainConfigState } from '../state/DomainConfigState'
-import { ResourceCacheState, ResourceStatus } from '../state/ResourceCacheState'
+// import { ResourceProgressComponent } from '../../gltf/ResourceProgressComponent'
+import { AssetExt, FileToAssetExt } from './AssetType'
+import { DomainConfigState } from './DomainConfigState'
+import { FileLoader } from './loaders/base/FileLoader'
+import { Loader } from './loaders/base/Loader'
+import { KTX2LoaderState } from './loaders/ktx2/KTX2LoaderState'
+import { TextureLoader } from './loaders/texture/TextureLoader'
+import { TGALoader } from './loaders/tga/TGALoader'
+import { ResourceCacheState, ResourceStatus } from './ResourceCacheState'
+import { ResourceProgressComponent } from './ResourceProgressComponent'
 
 interface Cloneable<T> {
   clone?: () => T
@@ -79,7 +80,7 @@ export const getAbsolutePath = (url) => (isAbsolutePath(url) ? url : getState(Do
 export const getLoader = (assetType: AssetExt): Loader => {
   switch (assetType) {
     case AssetExt.KTX2:
-      return getState(AssetLoaderState).ktx2Loader! as any as Loader
+      return getState(KTX2LoaderState) as any as Loader
     case AssetExt.TGA:
       return new TGALoader()
     case AssetExt.PNG:
