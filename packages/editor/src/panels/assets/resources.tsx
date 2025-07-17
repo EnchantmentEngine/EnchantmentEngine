@@ -219,7 +219,7 @@ function ResourceFile({
 }) {
   const anchorEvent = useHookstate<React.MouseEvent | undefined>(undefined)
 
-  const assetType = FileToAssetExt(resource.key)
+  const assetType = FileToAssetExt(resource.key)!
   const name = resource.name || resource.key.split('/').at(-1)!
 
   const [_, drag, preview] = useDrag(() => ({
