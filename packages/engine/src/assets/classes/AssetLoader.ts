@@ -88,38 +88,9 @@ export const isAbsolutePath = (path) => {
 
 const getAbsolutePath = (url) => (isAbsolutePath(url) ? url : getState(DomainConfigState).publicDomain + url)
 
-/**
- * @deprecated Use resourceLoaderHooks instead
- */
-const loadAsset = async <T>(
-  url: string,
-  onLoad: (response: T) => void = () => {},
-  onProgress: (request: ProgressEvent) => void = () => {},
-  onError: (event: ErrorEvent | Error) => void = () => {},
-  signal?: AbortSignal,
-  loader?: Loader
-) => {
-  if (!url) {
-    onError(new Error('URL is empty'))
-    return
-  }
-  url = getAbsolutePath(url)
-
-  if (!loader) {
-    const assetExt = getAssetType(url)
-    loader = getLoader(assetExt) as Loader
-  }
-
-  try {
-    return loader.load(url, onLoad, onProgress, onError, signal)
-  } catch (error) {
-    onError(error)
-  }
-}
-
 export const AssetLoader = {
   getAbsolutePath,
   getAssetType,
   getAssetClass,
-  loadAsset
+  getLoader
 }

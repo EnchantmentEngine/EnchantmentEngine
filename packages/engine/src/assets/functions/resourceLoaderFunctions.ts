@@ -113,8 +113,15 @@ export const loadResource = <T extends ResourceAssetType>(
 
   const resource = resourceCacheState[url]
   ResourceState.debugLog(`ResourceState:load Loading resource: ${url} for entity: ${entity}`)
-  AssetLoader.loadAsset<T>(
-    url,
+  const absoluteURL = AssetLoader.getAbsolutePath(url)
+
+  if (!loader) {
+    const assetExt = AssetLoader.getAssetType(url)
+    loader = AssetLoader.getLoader(assetExt)
+  }
+
+  loader.load(
+    absoluteURL,
     (response: T) => {
       if (!resource || !resource.value) {
         console.warn(`ResourceState:load Resource removed before load finished: ${url} for entity: ${entity}`)
@@ -149,7 +156,7 @@ export const loadResource = <T extends ResourceAssetType>(
       if (entity) ResourceProgressComponent.setResource(entity, url, request.loaded, request.total)
       onProgress(request)
     },
-    (error) => {
+    (error: ErrorEvent | Error) => {
       console.warn(`ResourceState:load error loading ${resourceType} at url ${url} for entity ${entity}`, error)
       if (resource && resource.value) {
         resource.status.set(ResourceStatus.Error)
@@ -157,8 +164,7 @@ export const loadResource = <T extends ResourceAssetType>(
       if (entity) ResourceProgressComponent.removeResource(entity, url)
       onError(error)
     },
-    signal,
-    loader
+    signal
   )
 }
 

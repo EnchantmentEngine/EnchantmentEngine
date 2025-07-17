@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import assert from 'assert'
-import Sinon from 'sinon'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 // hack to make tests happy
@@ -96,24 +95,6 @@ describe('AssetLoader', async () => {
       const url = 'www.test.com/file.pdf'
       const type = AssetLoader.getAssetClass(url)
       assert.equal(type, AssetType.Unknown)
-    })
-  })
-
-  describe('AssetLoader.load', () => {
-    let sandbox
-
-    beforeEach(() => {
-      sandbox = Sinon.createSandbox()
-    })
-
-    afterEach(() => {
-      sandbox.restore()
-    })
-
-    it('should give error for empty url', async () => {
-      AssetLoader.loadAsset('', undefined, undefined, (err) => {
-        assert.notEqual(err, null)
-      })
     })
   })
 
