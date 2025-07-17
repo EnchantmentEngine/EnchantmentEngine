@@ -28,7 +28,7 @@ import { defineState } from '@ir-engine/hyperflux'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 
 // Apply texture memory management patch
-import { applyTexturePatch } from '@ir-engine/engine/src/assets/loaders/texture/TexturePatch'
+import { applyTexturePatch } from '../loaders/texture/TexturePatch'
 
 try {
   // Apply the texture patch directly - simpler and more direct

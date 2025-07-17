@@ -28,9 +28,9 @@ import { LoaderUtils, Mesh, Object3D } from 'three'
 import matches, { Validator } from 'ts-matches'
 import { v4 as uuidv4 } from 'uuid'
 
-import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { defineAction, dispatchAction, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
+import { pathJoin } from '../../../functions/miscUtils'
 
 import { FileToAssetExt } from '../../../constants/AssetType'
 import { modelResourcesPath } from '../../../functions/pathResolver'
