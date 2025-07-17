@@ -30,7 +30,7 @@ import { Loader } from '../base/Loader'
 import { ImageBitmapLoader } from '../image/ImageBitmapLoader'
 
 // import resource state such that we have type override
-import '../ResourceState'
+import '../../ResourceState'
 
 const iOSMaxResolution = 1024
 
