@@ -50,6 +50,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { useGLTFComponent } from '@ir-engine/engine/src/assets/functions/useGLTFComponent'
 import { NO_PROXY, getMutableState, none, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -59,7 +60,7 @@ import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/Scene
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { getRendererEntity, useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { useGLTFComponent, useTexture } from '../../assets/functions/resourceLoaderHooks'
+import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import {
   BehaviorJSON,
   DEFAULT_PARTICLE_SYSTEM_PARAMETERS,
