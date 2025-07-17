@@ -26,8 +26,7 @@ Infinite Reality Engine. All Rights Reserved.
 import React, { Fragment, useEffect } from 'react'
 import { ColorSpace, LinearSRGBColorSpace, SRGBColorSpace, Texture, Vector2 } from 'three'
 
-import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
-import { AssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { ImageFileTypes, VideoFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
 import { useHookstate } from '@ir-engine/hyperflux'
 
@@ -63,8 +62,7 @@ export default function TexturePreviewInput({
   preview?: string
 }) {
   const { preview, onModify } = rest
-  const validSrcValue =
-    typeof value === 'string' && [AssetType.Image, AssetType.Video].includes(AssetLoader.getAssetClass(value))
+  const validSrcValue = typeof value === 'string' && [AssetType.Image, AssetType.Video].includes(FileToAssetType(value))
 
   const srcState = useHookstate(value)
   const texture = srcState.value as Texture
@@ -109,7 +107,7 @@ export default function TexturePreviewInput({
               <div className="h-auto w-auto rounded bg-neutral-900">
                 <Fragment>
                   {(typeof preview === 'string' ||
-                    (typeof value === 'string' && AssetLoader.getAssetClass(value) === AssetType.Image)) && (
+                    (typeof value === 'string' && FileToAssetType(value) === AssetType.Image)) && (
                     <img
                       src={previewSrc}
                       className="h-full w-full rounded object-contain"
@@ -117,7 +115,7 @@ export default function TexturePreviewInput({
                       crossOrigin="anonymous"
                     />
                   )}
-                  {typeof value === 'string' && AssetLoader.getAssetClass(value) === AssetType.Video && (
+                  {typeof value === 'string' && FileToAssetType(value) === AssetType.Video && (
                     <video src={previewSrc} className="h-full w-full rounded object-contain" />
                   )}
                 </Fragment>

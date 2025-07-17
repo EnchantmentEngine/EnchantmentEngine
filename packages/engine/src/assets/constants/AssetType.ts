@@ -135,6 +135,12 @@ export const FileExtToAssetExt = (fileExt: string): AssetExt | undefined => {
 }
 
 const dataURLStart = 'data:image'
+
+/**
+ * Get asset type from the asset file extension.
+ * @param file Name of the Asset file.
+ * @returns Asset type of the file.
+ */
 export const FileToAssetExt = (file: string): AssetExt | undefined => {
   if (isURL(file)) {
     const url = new URL(file)
@@ -152,6 +158,11 @@ export const FileToAssetExtAndType = (file: string): [AssetExt | undefined, Asse
   return [FileToAssetExt(file), FileToAssetType(file)]
 }
 
+/**
+ * Get asset class from the asset file extension.
+ * @param fileName Name of the Asset file.
+ * @returns Asset class of the file.
+ */
 export const FileToAssetType = (fileName: string): AssetType => {
   if (!fileName || fileName === '') {
     return AssetType.Unknown

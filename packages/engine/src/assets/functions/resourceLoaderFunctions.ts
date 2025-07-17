@@ -29,6 +29,7 @@ import { ResourceAssetType, ResourceState, ResourceType } from '@ir-engine/spati
 
 import { ResourceProgressComponent } from '../../gltf/ResourceProgressComponent'
 import { AssetLoader } from '../classes/AssetLoader'
+import { FileToAssetExt } from '../constants/AssetType'
 import { Loader } from '../loaders/base/Loader'
 import { ResourceCacheState, ResourceStatus } from '../state/ResourceCacheState'
 interface Cloneable<T> {
@@ -116,7 +117,7 @@ export const loadResource = <T extends ResourceAssetType>(
   const absoluteURL = AssetLoader.getAbsolutePath(url)
 
   if (!loader) {
-    const assetExt = AssetLoader.getAssetType(url)
+    const assetExt = FileToAssetExt(url)
     loader = AssetLoader.getLoader(assetExt)
   }
 

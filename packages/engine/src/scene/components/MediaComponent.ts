@@ -48,6 +48,7 @@ import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/component
 import type Hls from 'hls.js'
 import { useEffect, useLayoutEffect } from 'react'
 import { AssetLoader } from '../../assets/classes/AssetLoader'
+import { FileToAssetType } from '../../assets/constants/AssetType'
 import { AudioState } from '../../audio/AudioState'
 import { removePannerNode } from '../../audio/PositionalAudioFunctions'
 import { PlayMode } from '../constants/PlayMode'
@@ -230,7 +231,7 @@ export function MediaReactor() {
       return
     }
 
-    const assetClass = AssetLoader.getAssetClass(urlToPlay).toLowerCase()
+    const assetClass = FileToAssetType(urlToPlay).toLowerCase()
 
     if (assetClass !== 'audio' && assetClass !== 'video') {
       addError(entity, MediaComponent, 'UNSUPPORTED_ASSET_CLASS')
@@ -456,7 +457,7 @@ export function MediaReactor() {
       }
 
       for (const path of paths) {
-        const assetClass = AssetLoader.getAssetClass(path).toLowerCase()
+        const assetClass = FileToAssetType(path).toLowerCase()
         if (path !== '' && assetClass !== 'audio' && assetClass !== 'video') {
           return addError(entity, MediaComponent, 'UNSUPPORTED_ASSET_CLASS')
         }
@@ -555,7 +556,7 @@ const setUpMediaElement = (
     soundEffects: GainNode
   }
 ) => {
-  const assetClass = AssetLoader.getAssetClass(path).toLowerCase()
+  const assetClass = FileToAssetType(path).toLowerCase()
 
   const hasMediaElementComponent = hasComponent(entity, MediaElementComponent)
   let element: HTMLMediaElement | null = null

@@ -32,7 +32,7 @@ import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { defineAction, dispatchAction, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
 
-import { AssetLoader } from '../../../classes/AssetLoader'
+import { FileToAssetExt } from '../../../constants/AssetType'
 import { modelResourcesPath } from '../../../functions/pathResolver'
 import { DomainConfigState } from '../../../state/DomainConfigState'
 import { UploadRequestState } from '../../../state/UploadRequestState'
@@ -145,7 +145,7 @@ export default class BufferHandlerExtension extends ExporterExtension implements
           : modelName
         const finalURI = this.resourceURI ? projectSpaceModelName.replace(/^assets\//, '') : uri
         imageDef.uri = uri
-        imageDef.mimeType = `image/${AssetLoader.getAssetType(uri)}`
+        imageDef.mimeType = `image/${FileToAssetExt(uri)}`
         const blob = new Blob([buffer])
         const file = new File([blob], finalURI)
         const uploadRequestState = getMutableState(UploadRequestState)
