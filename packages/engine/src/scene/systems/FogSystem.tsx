@@ -36,11 +36,10 @@ import {
 } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
 import { FogSettingsComponent, FogType } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
 
 export const FogShaderPluginComponent = defineMaterialPlugin({
@@ -63,7 +62,6 @@ export const FogShaderPluginComponent = defineMaterialPlugin({
 
 function FogGroupReactor(props: { fogEntity: Entity }) {
   const entity = useEntityContext()
-  const obj = useComponent(entity, MeshComponent)?.get(NO_PROXY)
   const fogSettings = useComponent(props.fogEntity, FogSettingsComponent)
 
   useEffect(() => {
@@ -71,7 +69,7 @@ function FogGroupReactor(props: { fogEntity: Entity }) {
     return () => {
       removeComponent(entity, FogShaderPluginComponent)
     }
-  }, [!!obj])
+  }, [])
 
   useEffect(() => {
     setComponent(entity, FogShaderPluginComponent, { heightFactor: fogSettings.height.value })
@@ -91,7 +89,7 @@ const FogReactor = () => {
   return (
     <QueryReactor
       ChildEntityReactor={FogGroupReactor}
-      Components={[MeshComponent, VisibleComponent]}
+      Components={[MaterialStateComponent, VisibleComponent]}
       props={{ fogEntity: entity }}
     />
   )
