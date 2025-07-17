@@ -317,7 +317,7 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
 
   useEffect(() => {
-    const entities = materialEntities.value
+    const entities = [...materialEntities.value]
     for (const materialEntity of entities) {
       setComponent(materialEntity, InstanceVariantMaterialPluginComponent)
     }
