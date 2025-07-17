@@ -59,7 +59,6 @@ export const MimeTypeToExtension = {
   'model/gltf': 'gltf',
   'model/gltf-binary': 'glb',
   'model/vrm': 'vrm',
-  'model/fbx': 'fbx',
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/jpg': 'jpg',

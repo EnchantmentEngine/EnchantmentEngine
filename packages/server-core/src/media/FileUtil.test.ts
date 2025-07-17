@@ -219,7 +219,6 @@ describe('FileUtil functions', () => {
       expect(isValidFileType('model/gltf+json', 'model.gltf')).toBe(true)
       expect(isValidFileType('model/gltf-binary', 'model.glb')).toBe(true)
       expect(isValidFileType('model/vrm', 'model.vrm')).toBe(true)
-      expect(isValidFileType('model/fbx', 'model.fbx')).toBe(true)
     })
 
     it('returns true for application/octet-stream with valid extensions', () => {

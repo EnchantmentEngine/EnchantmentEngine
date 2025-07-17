@@ -59,16 +59,7 @@ export const ItemTypes = {
   Folder: 'folder',
   Audios: [AssetExt.MP3, 'mpeg', 'audio/mpeg'],
   Images: [AssetExt.PNG, AssetExt.JPEG, 'jpg', 'gif', AssetExt.KTX2, 'image/png', 'image/jpeg', 'image/ktx2'],
-  Models: [
-    AssetExt.GLB,
-    'model/glb',
-    AssetExt.GLTF,
-    'model/gltf',
-    AssetExt.FBX,
-    'model/fbx',
-    AssetExt.VRM,
-    'model/vrm'
-  ],
+  Models: [AssetExt.GLB, 'model/glb', AssetExt.GLTF, 'model/gltf', AssetExt.VRM, 'model/vrm'],
   Scripts: ['tsx', 'ts', 'jsx', 'js', 'script'],
   Videos: [AssetExt.MP4, AssetExt.M3U8, 'video/mp4', AssetExt.MKV],
   Volumetrics: ['manifest'],

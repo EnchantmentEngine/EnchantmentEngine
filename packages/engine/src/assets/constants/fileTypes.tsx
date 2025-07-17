@@ -42,7 +42,7 @@ export const ImageFileTypes = [
   'image/ktx2'
 ]
 //array containing model file type.
-export const ModelFileTypes = ['.glb', '.gltf', 'model/gltf-binary', 'model/gltf+json', '.fbx', '.vrm']
+export const ModelFileTypes = ['.glb', '.gltf', 'model/gltf-binary', 'model/gltf+json', '.vrm']
 //array containing volumetric file type.
 export const VolumetricFileTypes = ['.manifest']
 //array containing custom script type.
@@ -87,7 +87,6 @@ export const AssetTypeToMimeType = {
 export const ExtensionToAssetType = {
   gltf: AssetExt.GLTF,
   glb: AssetExt.GLB,
-  fbx: AssetExt.FBX,
   vrm: AssetExt.VRM,
   tga: AssetExt.TGA,
   ktx2: AssetExt.KTX2,

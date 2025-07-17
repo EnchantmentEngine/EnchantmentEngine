@@ -41,8 +41,6 @@ export enum AssetExt {
   GLB = 'glb',
   GLTF = 'gltf',
   VRM = 'vrm',
-  FBX = 'fbx',
-  OBJ = 'obj',
   BIN = 'bin',
 
   PNG = 'png',
@@ -80,8 +78,6 @@ export const AssetExtToAssetType = (assetExt: AssetExt | undefined): AssetType =
     case AssetExt.GLB:
     case AssetExt.GLTF:
     case AssetExt.VRM:
-    case AssetExt.FBX:
-    case AssetExt.OBJ:
       return AssetType.Model
 
     // Image
