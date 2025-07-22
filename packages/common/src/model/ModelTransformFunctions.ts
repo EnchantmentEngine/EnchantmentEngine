@@ -1,7 +1,6 @@
 import {
   BufferUtils,
   Document,
-  Extension,
   Format,
   Buffer as glBuffer,
   Material,
@@ -19,9 +18,7 @@ import {
   draco,
   flatten,
   join,
-  palette,
   partition,
-  prune,
   reorder,
   simplify,
   textureCompress,
@@ -40,15 +37,9 @@ import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 import { createHash } from 'crypto'
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
 import { getPixels } from 'ndarray-pixels'
-import { $attributes } from 'property-graph'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
 
-import {
-  EEArgEntry,
-  EEMaterial,
-  EEMaterialExtension
-} from '@ir-engine/engine/src/assets/compression/extensions/EE_MaterialTransformer'
 import {
   EEResourceID,
   EEResourceIDExtension
@@ -241,41 +232,6 @@ const unInstanceSingletons: Transform = (document: Document) => {
     })
 }
 
-const combineMaterials: Transform = (document: Document) => {
-  const root = document.getRoot()
-  const cache: Material[] = []
-  console.log('combining materials...')
-  root.listMaterials().map((material) => {
-    const eeMat = material.getExtension<EEMaterial>('EE_material')
-    const dupe = cache.find((cachedMaterial) => {
-      const cachedEEMat = cachedMaterial.getExtension<EEMaterial>('EE_material')
-      if (eeMat !== null && cachedEEMat !== null) {
-        return (
-          eeMat.prototype === cachedEEMat.prototype &&
-          ((eeMat.args === cachedEEMat.args && eeMat.args === null) ||
-            (cachedEEMat.args && eeMat.args?.equals(cachedEEMat.args)))
-        )
-      } else return material.equals(cachedMaterial)
-    })
-    if (dupe !== undefined) {
-      console.log('found duplicate material...')
-      let dupeCount = 0
-      root
-        .listMeshes()
-        .flatMap((mesh) => mesh.listPrimitives())
-        .map((prim) => {
-          if (prim.getMaterial() === material) {
-            prim.setMaterial(dupe)
-            dupeCount++
-          }
-        })
-      console.log('replaced ' + dupeCount + ' materials')
-    } else {
-      cache.push(material)
-    }
-  })
-}
-
 const combineMeshes: Transform = (document: Document) => {
   const root = document.getRoot()
   const prims = root.listMeshes().flatMap((mesh) => mesh.listPrimitives())
@@ -406,97 +362,6 @@ const toProjectAndFileName = (fUploadPath: string, srcBaseURL: string): [string,
   return [projectName, fileName]
 }
 
-const toTransformedDocument = async (srcDocument: Document, args: ModelTransformParameters): Promise<Document> => {
-  const document = cloneDocument(srcDocument)
-
-  const sourceExtensions = new Map<string, Extension>(
-    srcDocument
-      .getRoot()
-      .listExtensionsUsed()
-      .map((ext) => [ext.extensionName, ext])
-  )
-  const targetExtensions = new Map<string, Extension>(
-    document
-      .getRoot()
-      .listExtensionsUsed()
-      .map((ext) => [ext.extensionName, ext])
-  )
-
-  for (const extName of sourceExtensions.keys()) {
-    ;(sourceExtensions.get(extName) as any).copyTo?.(targetExtensions.get(extName))
-  }
-
-  if (args.meshoptCompression.enabled) {
-    await document.transform(meshoptCompression)
-  }
-
-  /* ID unnamed resources */
-  await document.transform(unInstanceSingletons)
-  args.split && (await document.transform(split))
-  args.combineMaterials && (await document.transform(combineMaterials))
-  args.instance && (await document.transform(doInstancing))
-  args.dedup && (await document.transform(dedup()))
-  args.flatten && (await document.transform(flatten()))
-  args.join.enabled && (await document.transform(join(args.join.options)))
-  args.palette.enabled &&
-    (await Promise.all([
-      document.transform(removeUVsOnUntexturedMeshes),
-      document.transform(palette(args.palette.options))
-    ]))
-  args.prune && (await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ })))
-
-  /* Separate Instanced Geometry */
-  // TODO: make sure the order of operations is correct. They are very order dependent!
-  const instancedNodes = document
-    .getRoot()
-    .listNodes()
-    .filter((node) => !!node.getMesh()?.getExtension('EXT_mesh_gpu_instancing'))
-    .map((node) => [node, node.getParentNode()])
-  instancedNodes.map(([node, parent]) => {
-    node instanceof Node && parent?.removeChild(node)
-  })
-
-  if (args.weld.enabled) {
-    await document.transform(weld())
-  }
-
-  if (args.simplifyRatio < 1) {
-    const simplifyTransforms = [] as Transform[]
-    //gltfTransform documentation recommends doing a weld before simply
-    if (!args.weld.enabled) simplifyTransforms.push(weld())
-    simplifyTransforms.push(
-      args.adaptiveSimplification
-        ? (doc) => {
-            adaptiveSimplify(doc, args)
-            return doc
-          }
-        : simplify({ simplifier: MeshoptSimplifier, ratio: args.simplifyRatio, error: args.simplifyErrorThreshold })
-    )
-    await document.transform(...simplifyTransforms)
-  }
-
-  if (args.reorder) {
-    await MeshoptEncoder.ready
-    await document.transform(
-      reorder({
-        encoder: MeshoptEncoder,
-        target: 'performance'
-      })
-    )
-  }
-
-  if (args.dracoCompression.enabled) {
-    await document.transform(draco(args.dracoCompression.options))
-  }
-
-  /* Return Instanced Geometry to Scene Graph */
-  instancedNodes.map(([node, parent]) => {
-    node instanceof Node && parent?.addChild(node)
-  })
-
-  return document
-}
-
 type TextureOperation = {
   shouldResize: boolean
   shouldConvertToKTX: boolean
@@ -521,20 +386,6 @@ const createTextureOperations = (
   const textures = root.listTextures()
 
   // TODO: write the GLTF transform maintainers a bug about losing references to extension-provided textures, meshes and buffers
-  const eeMaterialExtension: EEMaterialExtension | undefined = root
-    .listExtensionsUsed()
-    .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-  if (eeMaterialExtension) {
-    for (let i = 0; i < eeMaterialExtension.textures.length; i++) {
-      const texture = eeMaterialExtension.textures[i]
-      const extensions = eeMaterialExtension.textureExtensions[i]
-      for (const extension of extensions) {
-        texture.setExtension(extension.extensionName, extension)
-      }
-    }
-
-    textures.push(...eeMaterialExtension.textures)
-  }
 
   if (args.textureFormat !== 'default') {
     for (const texture of textures) {
@@ -927,33 +778,6 @@ export const transformModel = async (
 
         textureUsages.get(uri)!.add(edge.getName().replaceAll(/(Map|Texture)/g, ''))
       }
-
-      eeMatScan: {
-        const eeMat = mat.getExtension<EEMaterial>('EE_material')
-        const args = eeMat?.args
-        if (args == null) {
-          break eeMatScan
-        }
-
-        for (const edge of graph.listChildEdges(args)) {
-          const argEntry = edge.getChild() as EEArgEntry
-          if (argEntry == null) {
-            continue
-          }
-          const { type, contents } = argEntry[$attributes]
-          if (type !== 'texture' || contents == null) {
-            continue
-          }
-
-          const uri = contents.getURI()
-
-          if (!textureUsages.has(uri)) {
-            textureUsages.set(uri, new Set())
-          }
-
-          textureUsages.get(uri)!.add(edge.getName().replaceAll(/(Map|Texture)/g, ''))
-        }
-      }
     }
   }
   // We want to make sure if node has these keywords in extras, we preserve those nodes
@@ -971,7 +795,6 @@ export const transformModel = async (
     // Apply basic optimizations
     await document.transform(unInstanceSingletons)
     params.split && (await document.transform(split))
-    params.combineMaterials && (await document.transform(combineMaterials))
     params.instance && (await document.transform(doInstancing))
     params.dedup && (await document.transform(dedup()))
     params.flatten && (await preserveChildrenHierarchyAroundFlatten(document, keyWordsToPreserveNode))
@@ -1024,47 +847,6 @@ export const transformModel = async (
 
   // Write files
   const results: string[] = []
-
-  for (const document of documents) {
-    const eeMaterialExtension: EEMaterialExtension | undefined = document
-      .getRoot()
-      .listExtensionsUsed()
-      .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-    if (eeMaterialExtension) {
-      for (const texture of eeMaterialExtension.textures) {
-        document.createTexture().copy(texture)
-        // Find all materials that reference the old texture, and change their reference to the new texture
-      }
-      for (const material of document.getRoot().listMaterials()) {
-        const eeMaterial = material.getExtension<EEMaterial>('EE_material')
-        if (eeMaterial == null) continue
-        const matArgs = eeMaterial.args!
-
-        const newTextures = document.getRoot().listTextures()
-        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string) || []
-        materialArgsInfo.map((field) => {
-          let argEntry: EEArgEntry
-          try {
-            argEntry = matArgs.getPropRef(field) as EEArgEntry
-          } catch (e) {
-            argEntry = matArgs.getProp(field) as EEArgEntry
-          }
-
-          if (argEntry.type === 'texture') {
-            const oldTexture = argEntry.contents as Texture
-            if (oldTexture != null) {
-              const uuid: string = oldTexture.getExtras().uuid as string
-              const newTexture = newTextures.find((texture) => texture.getExtras().uuid === uuid)
-              if (newTexture == null) {
-                throw new Error('Transformed texture is not listed.')
-              }
-              argEntry.contents = newTexture
-            }
-          }
-        })
-      }
-    }
-  }
 
   for (let i = 0; i < numDocOperations; i++) {
     onProgress?.((i + 1 + numTextureOperations) / totalProgressSteps, Status.WritingFiles)

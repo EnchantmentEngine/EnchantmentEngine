@@ -63,7 +63,6 @@ import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadC
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
-import { migrateEEMaterial } from './migrateEEMaterial'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
@@ -465,7 +464,6 @@ export const parseGLTFFile = (
 
     json = JSON.parse(JSON.stringify(json))
 
-    json = migrateEEMaterial(json)
     return [parseStorageProviderURLs(json), body]
   } catch (error) {
     if (onError) onError(error)
