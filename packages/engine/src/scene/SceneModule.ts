@@ -73,6 +73,7 @@ import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
 import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
 import { VariantSystem } from './systems/VariantSystem'
 
+import { LightmapComponent } from '../lightmap/LightmapComponent'
 import './functions/definePrefab'
 
 /** This const MUST be kept here, to ensure all components definitions are loaded by the time the scene loading occurs */
@@ -116,7 +117,8 @@ export const SceneComponents = [
   VolumetricComponent,
   // WaterComponent,
   LinkComponent,
-  TextComponent
+  TextComponent,
+  LightmapComponent
 ]
 
 export {

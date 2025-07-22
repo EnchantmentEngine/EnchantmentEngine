@@ -30,6 +30,7 @@ import { RenderInfoSystem } from '@ir-engine/spatial/src/renderer/RenderInfoSyst
 // import { EditorInstanceNetworkingSystem } from './components/realtime/EditorInstanceNetworkingSystem'
 import { PositionalAudioSystem } from '@ir-engine/client-core/src/systems/PositionalAudioSystem'
 import { PoiUiSystem } from '@ir-engine/client-core/src/systems/ui/PoiUI'
+import { LightmapSystem } from './lightmapper/LightmapSystem'
 import { ActiveHelperSystem } from './systems/ActiveHelperSystem'
 import { CameraGizmoSystem } from './systems/CameraGizmoSystem'
 import { ClickPlacementSystem } from './systems/ClickPlacementSystem'
@@ -47,6 +48,7 @@ export {
   CameraGizmoSystem,
   ClickPlacementSystem,
   EditorControlSystem,
+  LightmapSystem,
   ModelLoadingSpinnerSystem,
   ObjectGridSnapSystem,
   OverlaySystem,
