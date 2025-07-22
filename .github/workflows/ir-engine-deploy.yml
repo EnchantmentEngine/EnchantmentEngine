@@ -2,7 +2,7 @@ name: Deploy Napster Engine
 
 on:
   push:
-    branches: [dev, int, stg]
+    branches: [dud] # disable, set to dud branch
     paths-ignore:
       - '**/*.md'
       - '.*ignore'

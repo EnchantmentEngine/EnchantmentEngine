@@ -303,7 +303,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
                 <Text component="h3">{clipText(project.name.replace(/-/g, ' '), 25, 'start')}</Text>
               </Tooltip>
 
-              {project.name !== 'ir-engine/default-project' && (
+              {project.name !== 'enchantmentengine/default-project' && (
                 <button
                   className="absolute right-2"
                   onClick={(e: any) => {
