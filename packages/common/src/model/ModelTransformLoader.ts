@@ -31,7 +31,6 @@ import {
   JSONSchema,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { EEMaterialExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_MaterialTransformer'
 import { VRMExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_VRMTransformer'
 import { MOZLightmapExtension } from '@ir-engine/engine/src/assets/compression/extensions/MOZ_LightmapTransformer'
 import { TransformComponent } from '@ir-engine/spatial'
@@ -157,7 +156,6 @@ export default async function ModelTransformLoader() {
     KHRTextureBasisu,
     KHRTextureTransform,
     MOZLightmapExtension,
-    EEMaterialExtension,
     VRMExtension
   ]
   io.registerExtensions(nonComponentExtensions)

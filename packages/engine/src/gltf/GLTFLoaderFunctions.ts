@@ -742,7 +742,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialExtensions = materialDef.extensions || {}
 
   let materialConstructor = MeshStandardMaterial
-  if (!materialExtensions['EE_material'] && materialExtensions['KHR_materials_unlit']) {
+  if (materialExtensions['KHR_materials_unlit']) {
     const kmuExtension = KHRUnlitExtensionComponent
     materialConstructor = kmuExtension.getMaterialType() as any
     promises.push(kmuExtension.extendMaterialParams(options, materialConstructorParameters, materialDef))
@@ -906,23 +906,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
       extensionPromises.push(
         Component.extendMaterialParams(options, materialConstructorParameters, materialDef, materialIndex)
       )
-    }
-  }
-
-  // backwards support for EE_material
-  const EE_materialExtensionParams = materialDef.extensions?.['EE_material'] as any
-  if (EE_materialExtensionParams?.args) {
-    for (const prop in EE_materialExtensionParams.args) {
-      const contents = EE_materialExtensionParams.args[prop].contents
-      if (!!contents && typeof contents === 'object' && typeof contents.index === 'number') {
-        extensionPromises.push(
-          GLTFLoaderFunctions.assignTexture(options, contents).then((map) => {
-            materialConstructorParameters[prop] = map
-          })
-        )
-      } else {
-        materialConstructorParameters[prop] = contents
-      }
     }
   }
 
