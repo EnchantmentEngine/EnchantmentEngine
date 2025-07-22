@@ -33,9 +33,5 @@
     ],
     "erasableSyntaxOnly": true
   },
-  "include": [
-    "../../__global.d.ts",
-    "./src",
-    "./index.ts"
-  ]
+  "include": ["../../__global.d.ts", "./tests", "./src", "./index.ts"]
 }

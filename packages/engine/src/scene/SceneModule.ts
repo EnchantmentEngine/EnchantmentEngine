@@ -24,7 +24,6 @@ Infinite Reality Engine. All Rights Reserved.
 */
 
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
-import { FogSystem } from '@ir-engine/spatial/src/renderer/FogSystem'
 import { PositionalAudioComponent } from '../audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
@@ -61,6 +60,7 @@ import { VariantComponent } from './components/VariantComponent'
 import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
+import { FogSystem } from './systems/FogSystem'
 import { LookAtSystem } from './systems/LookAtSystem'
 import { OrientedBoundingBoxSystem } from './systems/OrientedBoundingBoxSystem'
 import { ParticleSystem } from './systems/ParticleSystemSystem'
@@ -73,6 +73,7 @@ import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
 import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
 import { VariantSystem } from './systems/VariantSystem'
 
+import { LightmapComponent } from '../lightmap/LightmapComponent'
 import './functions/definePrefab'
 
 /** This const MUST be kept here, to ensure all components definitions are loaded by the time the scene loading occurs */
@@ -116,7 +117,8 @@ export const SceneComponents = [
   VolumetricComponent,
   // WaterComponent,
   LinkComponent,
-  TextComponent
+  TextComponent,
+  LightmapComponent
 ]
 
 export {

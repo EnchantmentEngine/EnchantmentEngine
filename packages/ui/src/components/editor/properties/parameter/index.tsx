@@ -36,7 +36,7 @@ import SelectInput from '../../input/Select'
 import StringInput from '../../input/String'
 import TexturePreviewInput from '../../input/Texture'
 
-/**@TODO this should be looking up values from material prototype definitions to avoid incorrectly typed fields */
+/** @todo change this to use component schemas instead */
 export default function ParameterInput({
   path,
   values,
@@ -128,8 +128,12 @@ export default function ParameterInput({
                     <TexturePreviewInput
                       preview={thumbnails?.[k]}
                       value={valuesWithDefaults[k]}
-                      onRelease={setArgsProp(k)}
-                      onModify={onModify}
+                      onRelease={setArgsProp(k + '.map')}
+                      onModify={{
+                        channel: setArgsProp(k + '.channel'),
+                        offset: setArgsProp(k + '.offset'),
+                        repeat: setArgsProp(k + '.repeat')
+                      }}
                     />
                   )
                 case 'vec2':

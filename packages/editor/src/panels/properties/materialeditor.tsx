@@ -33,8 +33,8 @@ import {
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -219,7 +219,7 @@ export function MaterialEditor(props: { entity: Entity }) {
             path={UUIDComponent.get(entity)}
             values={currentPlugin}
             onChange={(key) => commitProperty(MaterialPluginComponents[selectedPlugin.value], key)}
-            defaults={generateDefaults(currentPlugin)}
+            defaults={generateDefaults(currentPlugin, MaterialPluginComponents[selectedPlugin.value].schema)}
           />
           <Button
             variant="tertiary"

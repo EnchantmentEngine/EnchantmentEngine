@@ -31,6 +31,7 @@ import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GrabbableComponent } from '@ir-engine/engine/src/grabbable/GrabbableComponent'
 import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
+import { LightmapComponent } from '@ir-engine/engine/src/lightmap/LightmapComponent'
 import { AudioAnalysisComponent } from '@ir-engine/engine/src/scene/components/AudioAnalysisComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
@@ -120,7 +121,8 @@ export const ComponentShelfCategoriesState = defineState({
         SkyboxComponent,
         TextComponent,
         LookAtComponent,
-        FogSettingsComponent
+        FogSettingsComponent,
+        LightmapComponent
       ],
       Camera: [PoiComponent] //PoiHotspotComponent
     } as Record<string, Component[]>

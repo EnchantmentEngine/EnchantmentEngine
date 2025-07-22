@@ -30,11 +30,11 @@ import { RenderInfoSystem } from '@ir-engine/spatial/src/renderer/RenderInfoSyst
 // import { EditorInstanceNetworkingSystem } from './components/realtime/EditorInstanceNetworkingSystem'
 import { PositionalAudioSystem } from '@ir-engine/client-core/src/systems/PositionalAudioSystem'
 import { PoiUiSystem } from '@ir-engine/client-core/src/systems/ui/PoiUI'
+import { LightmapSystem } from './lightmapper/LightmapSystem'
 import { ActiveHelperSystem } from './systems/ActiveHelperSystem'
 import { CameraGizmoSystem } from './systems/CameraGizmoSystem'
 import { ClickPlacementSystem } from './systems/ClickPlacementSystem'
 import { EditorControlSystem } from './systems/EditorControlSystem'
-import { ModelHandlingSystem } from './systems/ModelHandlingSystem'
 import { ModelLoadingSpinnerSystem } from './systems/ModelLoadingSpinnerSystem'
 import { ObjectGridSnapSystem } from './systems/ObjectGridSnapSystem'
 import { RenderMonitorSystem } from './systems/RenderMonitorSystem'
@@ -48,7 +48,7 @@ export {
   CameraGizmoSystem,
   ClickPlacementSystem,
   EditorControlSystem,
-  ModelHandlingSystem,
+  LightmapSystem,
   ModelLoadingSpinnerSystem,
   ObjectGridSnapSystem,
   OverlaySystem,
