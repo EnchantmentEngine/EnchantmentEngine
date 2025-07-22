@@ -49,7 +49,7 @@ To install Enchantment Engine locally, the following pre-reqs are required.
 ### Getting Started
 
 ```
-git clone https://github.com/ir-engine/ir-engine --depth 1 --branch dev
+git clone https://github.com/EnchantmentEngine/EnchantmentEngine --depth 1 --branch dev
 npm i
 npm run dev-reinit
 npm run dev
