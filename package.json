@@ -92,13 +92,11 @@
     "create-build-status": "ts-node --swc scripts/create-build-status.ts",
     "record-build-error": "ts-node --swc scripts/record-build-error.ts",
     "record-build-success": "ts-node --swc scripts/record-build-success.ts",
-    "add-license-headers": "ts-node --swc scripts/add-license-headers.ts",
     "storybook": "cd packages/ui && npm run storybook",
     "build:storybook": "cd packages/ui && npm run build:storybook"
   },
   "types": "lib/",
   "pre-commit": [
-    "add-license-headers",
     "format-staged"
   ],
   "lint-staged": {
