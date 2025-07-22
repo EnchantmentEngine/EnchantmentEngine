@@ -7,31 +7,31 @@ describe('STATIC_ASSET_REGEX', () => {
     const positiveCases = [
       {
         url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/images/logo.png',
-        orgName: 'ir-engine',
+        orgName: 'EnchantmentEngine',
         projectName: 'default-project',
         assetPath: 'assets/images/logo.png'
       },
       {
         url: 'https://example.com/static-resources/EnchantmentEngine/default-project/assets/images/logo.png',
-        orgName: 'ir-engine',
+        orgName: 'EnchantmentEngine',
         projectName: 'default-project',
         assetPath: 'assets/images/logo.png'
       },
       {
         url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/emotes.glb',
-        orgName: 'ir-engine',
+        orgName: 'EnchantmentEngine',
         projectName: 'default-project',
         assetPath: 'assets/animations/emotes.glb'
       },
       {
         url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/locomotion.glb',
-        orgName: 'ir-engine',
+        orgName: 'EnchantmentEngine',
         projectName: 'default-project',
         assetPath: 'assets/animations/locomotion.glb'
       },
       {
         url: 'https://example.com/projects/EnchantmentEngine/default-project/public/animations/locomotion.glb',
-        orgName: 'ir-engine',
+        orgName: 'EnchantmentEngine',
         projectName: 'default-project',
         assetPath: 'public/animations/locomotion.glb'
       }
