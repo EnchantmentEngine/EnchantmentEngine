@@ -1,4 +1,3 @@
-
 import { Cache, LoadingManager } from 'three'
 
 import { parseStorageProviderURLs } from '../../parseSceneJSON'

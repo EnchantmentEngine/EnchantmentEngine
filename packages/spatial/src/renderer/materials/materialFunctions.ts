@@ -1,4 +1,3 @@
-
 import { Color, Material, Mesh, Shader, Texture } from 'three'
 
 import { Entity, getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs'

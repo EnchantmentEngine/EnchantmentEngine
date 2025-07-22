@@ -1,4 +1,3 @@
-
 import { EPSILON, equalsTolerance, parseSafeFloats, toSafeString } from '../../../../VisualScriptModule'
 
 export type Vec2JSON = number[]

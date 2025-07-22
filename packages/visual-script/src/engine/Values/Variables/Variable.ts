@@ -1,4 +1,3 @@
-
 import { EventEmitter } from '../../Events/EventEmitter'
 import { Metadata } from '../../Metadata'
 

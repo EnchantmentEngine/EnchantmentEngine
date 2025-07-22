@@ -24,7 +24,7 @@
           "bakeType": "Baked",
           "resolution": 2048,
           "refreshMode": "OnAwake",
-          "envMapOrigin": "__$project$__/ir-engine/default-project/public/scenes/apartment.envmap.ktx2",
+          "envMapOrigin": "__$project$__/EnchantmentEngine/default-project/public/scenes/apartment.envmap.ktx2",
           "boxProjection": false
         },
         "EE_camera_settings": {
@@ -83,8 +83,8 @@
         },
         "EE_visible": {},
         "EE_scene_settings": {
-          "thumbnailURL": "__$project$__/ir-engine/default-project/public/scenes/apartment.thumbnail.jpg",
-          "loadingScreenURL": "__$project$__/ir-engine/default-project/public/scenes/apartment.loadingscreen.ktx2",
+          "thumbnailURL": "__$project$__/EnchantmentEngine/default-project/public/scenes/apartment.thumbnail.jpg",
+          "loadingScreenURL": "__$project$__/EnchantmentEngine/default-project/public/scenes/apartment.loadingscreen.ktx2",
           "primaryColor": "#A8B6C6",
           "backgroundColor": "rgb(64, 70, 71)",
           "alternativeColor": "#8EBBAE",
@@ -130,7 +130,7 @@
         "EE_visible": {},
         "EE_skybox": {
           "backgroundColor": 0,
-          "equirectangularPath": "__$project$__/ir-engine/default-project/assets/apartment_skybox.ktx2?hash=6d6fe4",
+          "equirectangularPath": "__$project$__/EnchantmentEngine/default-project/assets/apartment_skybox.ktx2?hash=6d6fe4",
           "cubemapPath": "",
           "backgroundType": 2,
           "skyboxProps": {
@@ -318,7 +318,7 @@
         },
         "EE_visible": {},
         "EE_model": {
-          "src": "__$project$__/ir-engine/default-project/assets/apartment.glb",
+          "src": "__$project$__/EnchantmentEngine/default-project/assets/apartment.glb",
           "cameraOcclusion": true,
           "applyColliders": false,
           "shape": "box"
@@ -905,7 +905,7 @@
           "location": "sky-station",
           "effectType": "Hyperspace",
           "previewType": "Spherical",
-          "previewImageURL": "__$project$__/ir-engine/default-project/public/scenes/apartment-Portal.ktx2",
+          "previewImageURL": "__$project$__/EnchantmentEngine/default-project/public/scenes/apartment-Portal.ktx2",
           "redirect": false,
           "spawnPosition": {
             "x": -12,
@@ -1140,7 +1140,7 @@
           "receive": true
         },
         "EE_model": {
-          "src": "__$project$__/ir-engine/default-project/assets/keycard.glb",
+          "src": "__$project$__/EnchantmentEngine/default-project/assets/keycard.glb",
           "cameraOcclusion": false,
           "applyColliders": false,
           "shape": "box"
@@ -1163,7 +1163,7 @@
         "EE_envmap": {
           "type": "Skybox",
           "envMapSourceColor": 1193046,
-          "envMapSourceURL": "__$project$__/ir-engine/default-project/assets/skyboxsun25deg/",
+          "envMapSourceURL": "__$project$__/EnchantmentEngine/default-project/assets/skyboxsun25deg/",
           "envMapCubemapURL": "",
           "envMapSourceEntityUUID": "",
           "envMapIntensity": 1
@@ -1282,7 +1282,7 @@
           "bakeType": "Baked",
           "resolution": 1024,
           "refreshMode": "OnAwake",
-          "envMapOrigin": "__$project$__/ir-engine/default-project/public/scenes/apartment.gltf-New-EnvMap%20Bake.ktx2?hash=876f20",
+          "envMapOrigin": "__$project$__/EnchantmentEngine/default-project/public/scenes/apartment.gltf-New-EnvMap%20Bake.ktx2?hash=876f20",
           "boxProjection": true
         },
         "EE_visible": {}

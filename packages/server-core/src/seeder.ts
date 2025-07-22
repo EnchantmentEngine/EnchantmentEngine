@@ -36,7 +36,7 @@ export async function seeder(app: Application, forceRefresh: boolean, prepareDb:
     }
     copyDefaultProject()
     if (config.kubernetes.enabled || config.testEnabled)
-      await app.service(projectPath)._seedProject('ir-engine/default-project')
+      await app.service(projectPath)._seedProject('EnchantmentEngine/default-project')
   }
 
   if (!config.kubernetes.enabled && !config.testEnabled) await app.service(projectPath)._syncDevLocalProjects()

@@ -1,4 +1,3 @@
-
 import { defineComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { DirectionalLight, Shader as ShaderType, Vector3 } from 'three'

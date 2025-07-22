@@ -2,7 +2,7 @@ import { useFind, useGet } from '@ir-engine/common'
 import { config } from '@ir-engine/common/src/config'
 import { UserID, avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 
-export const DEFAULT_PROFILE_IMG_PLACEHOLDER = `${config.client.fileServer}/projects/ir-engine/default-project/assets/default-silhouette.svg`
+export const DEFAULT_PROFILE_IMG_PLACEHOLDER = `${config.client.fileServer}/projects/EnchantmentEngine/default-project/assets/default-silhouette.svg`
 
 export const useUserAvatarThumbnail = (userId?: UserID) => {
   const userAvatar = useFind(userAvatarPath, {

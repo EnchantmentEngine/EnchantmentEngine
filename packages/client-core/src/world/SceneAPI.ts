@@ -80,7 +80,7 @@ export const renameScene = async (
 
 export const createScene = async (
   projectName: string,
-  templateURL = config.client.fileServer + '/projects/ir-engine/default-project/public/scenes/default.gltf'
+  templateURL = config.client.fileServer + '/projects/EnchantmentEngine/default-project/public/scenes/default.gltf'
 ) => {
   const sceneData = await API.instance.service(fileBrowserPath).patch(null, {
     project: projectName,

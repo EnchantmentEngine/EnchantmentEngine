@@ -1,4 +1,3 @@
-
 /**
  * Install-manifest.ts
  * - uses CLI to fetch a manifest and clone projects

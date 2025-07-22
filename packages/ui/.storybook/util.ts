@@ -1,4 +1,3 @@
-
 import { ws } from 'msw'
 
 const primus = ws.link(/primus/g)

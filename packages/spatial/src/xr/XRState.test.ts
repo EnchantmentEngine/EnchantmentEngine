@@ -1,4 +1,3 @@
-
 import { createEngine, destroyEngine } from '@ir-engine/ecs'
 import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'

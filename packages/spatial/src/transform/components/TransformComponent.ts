@@ -1,4 +1,3 @@
-
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
 import { EntityTreeComponent, getAncestorWithComponents, hasComponent, S } from '@ir-engine/ecs'

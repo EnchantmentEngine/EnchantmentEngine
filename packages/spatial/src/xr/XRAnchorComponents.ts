@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D, ShadowMaterial } from 'three'
 import matches from 'ts-matches'

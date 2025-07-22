@@ -1,4 +1,3 @@
-
 import { isClient } from '@ir-engine/hyperflux'
 import { LoadingManager, Texture } from 'three'
 import { iOS } from '../../../common/functions/isMobile'

@@ -1,4 +1,3 @@
-
 import { Entity, S, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,

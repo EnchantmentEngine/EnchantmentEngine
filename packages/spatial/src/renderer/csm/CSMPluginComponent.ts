@@ -1,4 +1,3 @@
-
 import { defineComponent, Entity, getComponent, getOptionalComponent } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'

@@ -1,4 +1,3 @@
-
 import { Link } from '../Nodes/Link'
 
 export type Choices = string[] | { text: string; value: any }[]

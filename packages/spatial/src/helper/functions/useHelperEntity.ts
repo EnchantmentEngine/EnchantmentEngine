@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { Mesh, Object3D } from 'three'
 

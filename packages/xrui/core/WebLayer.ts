@@ -1,4 +1,3 @@
-
 import { Bounds, Edges, traverseChildElements } from './dom-utils'
 import { WebLayerManagerBase } from './WebLayerManagerBase'
 import { WebRenderer } from './WebRenderer'

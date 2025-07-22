@@ -1,4 +1,3 @@
-
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'

@@ -1,4 +1,3 @@
-
 import { Assert } from '../Diagnostics/Assert'
 import { VisualScriptEngine } from '../Execution/VisualScriptEngine'
 import { IGraph } from '../Graphs/Graph'

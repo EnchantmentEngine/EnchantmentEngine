@@ -1,4 +1,3 @@
-
 import { Entity } from '@ir-engine/ecs'
 import { defineState } from '@ir-engine/hyperflux'
 import { ResourceType } from './ResourceState'

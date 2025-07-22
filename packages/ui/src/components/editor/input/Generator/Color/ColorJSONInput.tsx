@@ -1,4 +1,3 @@
-
 import { ColorJSON } from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
 import React from 'react'
 import { useTranslation } from 'react-i18next'

@@ -1,4 +1,3 @@
-
 import { EPSILON, equalsTolerance, parseSafeFloats, toSafeString } from '../../../../VisualScriptModule'
 import { Mat3, mat4ToMat3 } from './Mat3'
 import { Mat4 } from './Mat4'

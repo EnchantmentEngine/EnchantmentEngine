@@ -68,7 +68,7 @@ const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props
     setComponent(avatar.value, EnvMapComponent, {
       type: EnvMapSourceType.Equirectangular,
       envMapSourceURL:
-        config.client.fileServer + '/projects/ir-engine/default-project/public/scenes/apartment-envmap.ktx2',
+        config.client.fileServer + '/projects/EnchantmentEngine/default-project/public/scenes/apartment-envmap.ktx2',
       envMapIntensity: 5
     })
     setComponent(avatar.value, AvatarComponent)

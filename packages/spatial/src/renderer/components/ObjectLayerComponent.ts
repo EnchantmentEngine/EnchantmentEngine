@@ -1,4 +1,3 @@
-
 import { Object3D } from 'three'
 
 import { Entity, entityExists } from '@ir-engine/ecs'

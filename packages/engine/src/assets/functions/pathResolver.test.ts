@@ -6,31 +6,31 @@ describe('STATIC_ASSET_REGEX', () => {
   it('should match static asset URLs', () => {
     const positiveCases = [
       {
-        url: 'https://example.com/projects/ir-engine/default-project/assets/images/logo.png',
+        url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/images/logo.png',
         orgName: 'ir-engine',
         projectName: 'default-project',
         assetPath: 'assets/images/logo.png'
       },
       {
-        url: 'https://example.com/static-resources/ir-engine/default-project/assets/images/logo.png',
+        url: 'https://example.com/static-resources/EnchantmentEngine/default-project/assets/images/logo.png',
         orgName: 'ir-engine',
         projectName: 'default-project',
         assetPath: 'assets/images/logo.png'
       },
       {
-        url: 'https://example.com/projects/ir-engine/default-project/assets/animations/emotes.glb',
+        url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/emotes.glb',
         orgName: 'ir-engine',
         projectName: 'default-project',
         assetPath: 'assets/animations/emotes.glb'
       },
       {
-        url: 'https://example.com/projects/ir-engine/default-project/assets/animations/locomotion.glb',
+        url: 'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/locomotion.glb',
         orgName: 'ir-engine',
         projectName: 'default-project',
         assetPath: 'assets/animations/locomotion.glb'
       },
       {
-        url: 'https://example.com/projects/ir-engine/default-project/public/animations/locomotion.glb',
+        url: 'https://example.com/projects/EnchantmentEngine/default-project/public/animations/locomotion.glb',
         orgName: 'ir-engine',
         projectName: 'default-project',
         assetPath: 'public/animations/locomotion.glb'
@@ -49,7 +49,7 @@ describe('STATIC_ASSET_REGEX', () => {
     const negativeCases = [
       'https://example.com/static-resources/',
       'https://example.com/project/subdir/assets',
-      'https://example.com/ir-engine/default-project/assets/animations/emotes.glb'
+      'https://example.com/EnchantmentEngine/default-project/assets/animations/emotes.glb'
     ]
     negativeCases.forEach((url) => {
       assert.doesNotMatch(url, STATIC_ASSET_REGEX, `Expected '${url}' to not match STATIC_ASSET_REGEX`)

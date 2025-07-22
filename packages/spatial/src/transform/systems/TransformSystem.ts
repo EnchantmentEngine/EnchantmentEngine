@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { Frustum, Matrix4, Vector3 } from 'three'
 

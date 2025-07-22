@@ -1,4 +1,3 @@
-
 import { Entity, getOptionalComponent, getSimulationCounterpart } from '@ir-engine/ecs'
 import { useMemo } from 'react'
 import { Box3, Vector3 } from 'three'

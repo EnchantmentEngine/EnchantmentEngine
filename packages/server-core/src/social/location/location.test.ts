@@ -34,7 +34,7 @@ describe('location.test', () => {
 
     const scene = await app.service(staticResourcePath).find({
       query: {
-        key: 'projects/ir-engine/default-project/public/scenes/default.gltf'
+        key: 'projects/EnchantmentEngine/default-project/public/scenes/default.gltf'
       }
     })
 

@@ -1,4 +1,3 @@
-
 import { defineState, getMutableState } from '@ir-engine/hyperflux'
 
 import { createBaseRegistry } from '../functions/createRegistry'

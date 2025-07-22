@@ -1,4 +1,3 @@
-
 import '@ir-engine/hyperflux'
 import assert from 'assert'
 import React, { useEffect } from 'react'

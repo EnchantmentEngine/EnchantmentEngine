@@ -1,4 +1,3 @@
-
 import { EntityID, UUIDComponent } from '@ir-engine/ecs'
 import { getAllComponents, Layers, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'

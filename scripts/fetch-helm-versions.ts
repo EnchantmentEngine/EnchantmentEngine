@@ -1,4 +1,3 @@
-
 import appRootPath from 'app-root-path'
 import { exec } from 'child_process'
 import cli from 'cli'

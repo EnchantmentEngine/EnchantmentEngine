@@ -1,4 +1,3 @@
-
 import { defineQuery, defineSystem, Engine, Entity, getChildrenWithComponents } from '@ir-engine/ecs'
 import { defineComponent, getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 

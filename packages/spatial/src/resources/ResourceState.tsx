@@ -1,4 +1,3 @@
-
 import {
   AnimationClip,
   BufferAttribute,

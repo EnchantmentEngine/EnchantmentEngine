@@ -13,9 +13,9 @@ export async function up(knex: Knex): Promise<void> {
 
   if (tableExists) {
     await knex(staticResourcePath)
-      .whereNot('project', 'ir-engine/default-project')
+      .whereNot('project', 'EnchantmentEngine/default-project')
       .andWhere('type', 'scene')
-      .andWhere('thumbnailKey', 'projects/ir-engine/default-project/public/scenes/default.thumbnail.jpg')
+      .andWhere('thumbnailKey', 'projects/EnchantmentEngine/default-project/public/scenes/default.thumbnail.jpg')
       .update({ thumbnailKey: null })
   }
 

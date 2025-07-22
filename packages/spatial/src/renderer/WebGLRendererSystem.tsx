@@ -1,4 +1,3 @@
-
 import { SMAAPreset } from 'postprocessing'
 import React, { useEffect } from 'react'
 import { ArrayCamera, Color, CubeTexture, Fog, FogExp2, Object3D, Scene, Texture } from 'three'

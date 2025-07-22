@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { Fog, FogExp2 } from 'three'
 

@@ -1,4 +1,3 @@
-
 import { createEngine, createEntity, destroyEngine, Entity, EntityTreeComponent, setComponent } from '@ir-engine/ecs'
 import { Vector3 } from 'three'
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'

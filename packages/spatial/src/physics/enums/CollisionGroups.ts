@@ -1,4 +1,3 @@
-
 export const CollisionGroups = {
   None: 0,
   Default: 1 << 0,

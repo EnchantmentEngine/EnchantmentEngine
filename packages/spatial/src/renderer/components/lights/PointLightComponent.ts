@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { Color, PointLight } from 'three'
 

@@ -1,4 +1,3 @@
-
 import { Matrix4, Quaternion, Vector2, Vector3 } from 'three'
 
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'

@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react'
 import { DirectionalLight } from 'three'
 

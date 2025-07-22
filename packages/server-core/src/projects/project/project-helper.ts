@@ -1334,10 +1334,10 @@ export const checkProjectAutoUpdate = async (app: Application, projectName: stri
 }
 
 export const copyDefaultProject = () => {
-  deleteFolderRecursive(path.join(projectsRootFolder, `ir-engine/default-project`))
+  deleteFolderRecursive(path.join(projectsRootFolder, `EnchantmentEngine/default-project`))
   copyFolderRecursiveSync(
     path.join(appRootPath.path, 'packages/projects/default-project'),
-    path.join(projectsRootFolder, 'ir-engine')
+    path.join(projectsRootFolder, 'EnchantmentEngine')
   )
 }
 
@@ -1603,9 +1603,9 @@ export const updateProject = async (
   },
   params?: ProjectParams
 ) => {
-  if (data.sourceURL === 'ir-engine/default-project') {
+  if (data.sourceURL === 'EnchantmentEngine/default-project') {
     copyDefaultProject()
-    await uploadLocalProjectToProvider(app, 'ir-engine/default-project')
+    await uploadLocalProjectToProvider(app, 'EnchantmentEngine/default-project')
     if (params?.jobId) {
       const date = await getDateTimeSql()
       await app.service(apiJobPath).patch(params.jobId as string, {
@@ -1617,7 +1617,7 @@ export const updateProject = async (
       (await app.service(projectPath).find({
         query: {
           action: 'admin',
-          name: 'ir-engine/default-project',
+          name: 'EnchantmentEngine/default-project',
           $limit: 1
         }
       })) as Paginated<ProjectType>

@@ -1,4 +1,3 @@
-
 import React, { Fragment, useEffect } from 'react'
 import { ColorSpace, LinearSRGBColorSpace, Texture, Vector2 } from 'three'
 

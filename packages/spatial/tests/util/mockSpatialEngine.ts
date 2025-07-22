@@ -1,4 +1,3 @@
-
 import { initializeSpatialEngine, initializeSpatialViewer } from '../../src/initializeEngine'
 import { mockEngineRenderer } from './MockEngineRenderer'
 

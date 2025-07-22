@@ -1,4 +1,3 @@
-
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { getState } from '@ir-engine/hyperflux'
 

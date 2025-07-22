@@ -1,4 +1,3 @@
-
 /** List of Asset Types. */
 export const AssetType = {
   Model: 'Model',

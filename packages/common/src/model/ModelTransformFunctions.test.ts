@@ -7,13 +7,13 @@ describe('Model Transform Functions', () => {
     it('should match valid asset project paths', () => {
       const validProjectPaths = [
         {
-          url: 'https://ir.world:8642/projects/ir-engine/default-project/assets/collisioncube-LOD0.glb',
-          orgAndProjName: 'ir-engine/default-project',
+          url: 'https://ir.world:8642/projects/EnchantmentEngine/default-project/assets/collisioncube-LOD0.glb',
+          orgAndProjName: 'EnchantmentEngine/default-project',
           assetName: 'collisioncube-LOD0.glb'
         },
         {
-          url: 'https://ir.world:8642/projects/ir-engine/default-project/public/collisioncube-LOD0.glb',
-          orgAndProjName: 'ir-engine/default-project',
+          url: 'https://ir.world:8642/projects/EnchantmentEngine/default-project/public/collisioncube-LOD0.glb',
+          orgAndProjName: 'EnchantmentEngine/default-project',
           assetName: 'collisioncube-LOD0.glb'
         },
         {
@@ -34,9 +34,9 @@ describe('Model Transform Functions', () => {
       ]
 
       /**
-       * https://ir.world/projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
-       * Match 1: projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
-       * Group 1: ir-engine/default-project
+       * https://ir.world/projects/EnchantmentEngine/default-project/assets/collisioncube-LOD0.glb
+       * Match 1: projects/EnchantmentEngine/default-project/assets/collisioncube-LOD0.glb
+       * Group 1: EnchantmentEngine/default-project
        * Group 2: collisioncube-LOD0.glb
        */
       validProjectPaths.forEach((filename) => {
@@ -57,8 +57,8 @@ describe('Model Transform Functions', () => {
 
     it('should not match invalid asset project paths', () => {
       const invalidProjectPaths = [
-        'https://ir.world:8642/projects/ir-engine/default-project/blah/collisioncube-LOD0.glb',
-        'https://ir.world:8642/projects/ir-engine/default-project/custom-prefabs/collisioncube-LOD0.glb'
+        'https://ir.world:8642/projects/EnchantmentEngine/default-project/blah/collisioncube-LOD0.glb',
+        'https://ir.world:8642/projects/EnchantmentEngine/default-project/custom-prefabs/collisioncube-LOD0.glb'
       ]
       invalidProjectPaths.forEach((filename) => {
         assert.ok(!MATCH_ASSET_PROJECT_FILENAME_REGEX.test(filename), `Expected '${filename}' to be invalid`)

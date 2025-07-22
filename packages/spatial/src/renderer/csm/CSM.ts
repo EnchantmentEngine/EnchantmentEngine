@@ -1,4 +1,3 @@
-
 import {
   Box3,
   ColorRepresentation,

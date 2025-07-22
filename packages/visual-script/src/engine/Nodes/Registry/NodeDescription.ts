@@ -1,4 +1,3 @@
-
 import { IGraph } from '../../Graphs/Graph'
 import { IHasNodeFactory, INodeDefinition, NodeFactory } from '../NodeDefinitions'
 import { INode } from '../NodeInstance'

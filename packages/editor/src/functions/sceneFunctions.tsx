@@ -135,7 +135,7 @@ export const logNewScene = (authoringApp: string, entryPoint: string = 'editor')
 }
 
 export const onNewScene = async (
-  templateURL = config.client.fileServer + '/projects/ir-engine/default-project/public/scenes/default.gltf'
+  templateURL = config.client.fileServer + '/projects/EnchantmentEngine/default-project/public/scenes/default.gltf'
 ) => {
   const { projectName } = getState(EditorState)
   if (!projectName) return

@@ -1,4 +1,3 @@
-
 import React from 'react'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'

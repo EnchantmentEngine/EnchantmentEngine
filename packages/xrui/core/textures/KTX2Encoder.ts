@@ -1,4 +1,3 @@
-
 import { createWorkerFromCrossOriginURL } from '@ir-engine/spatial/src/common/functions/createWorkerFromCrossOriginURL'
 
 import { isClient } from '@ir-engine/hyperflux'

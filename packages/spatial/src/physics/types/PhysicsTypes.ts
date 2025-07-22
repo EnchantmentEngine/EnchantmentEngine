@@ -1,4 +1,3 @@
-
 import RAPIER, { ActiveCollisionTypes, RigidBodyType, ShapeType, Vector } from '@dimforge/rapier3d-compat'
 
 import { Entity } from '@ir-engine/ecs/src/Entity'

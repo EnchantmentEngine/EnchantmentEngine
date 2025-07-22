@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview
  * Contains declarations for the functions and hooks used by ClientInputSystem.reactor.

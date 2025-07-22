@@ -1,4 +1,3 @@
-
 import { FrontSide, IUniform, Material, MeshStandardMaterial as MeshStandardMaterial0, Shader, Vector2 } from 'three'
 
 import {

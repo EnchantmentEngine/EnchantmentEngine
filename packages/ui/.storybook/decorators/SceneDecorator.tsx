@@ -1,4 +1,3 @@
-
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import * as ECS from '@ir-engine/ecs'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'

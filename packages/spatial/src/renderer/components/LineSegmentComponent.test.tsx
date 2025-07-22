@@ -1,4 +1,3 @@
-
 import assert from 'assert'
 import sinon from 'sinon'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'

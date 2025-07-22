@@ -1,4 +1,3 @@
-
 import { defineComponent, useComponent, useEntityContext, useOptionalComponent } from '@ir-engine/ecs'
 
 import { useAncestorWithComponents } from '@ir-engine/ecs'

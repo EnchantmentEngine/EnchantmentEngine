@@ -50,7 +50,7 @@ describe('projects.test', () => {
   it('should find the projects', async () => {
     const foundProjects = await app.service(projectsPath).find()
     assert.notEqual(
-      foundProjects.findIndex((project) => project === 'ir-engine/default-project'),
+      foundProjects.findIndex((project) => project === 'EnchantmentEngine/default-project'),
       -1
     )
   })

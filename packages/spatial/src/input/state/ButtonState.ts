@@ -1,4 +1,3 @@
-
 import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { Quaternion, Vector2, Vector3 } from 'three'
 

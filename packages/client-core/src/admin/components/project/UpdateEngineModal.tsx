@@ -196,7 +196,7 @@ export default function UpdateEngineModal() {
             </div>
             <div className="grid gap-2">
               {projectState.projects.value
-                .filter((project) => project.name !== 'ir-engine/default-project' && project.repositoryPath)
+                .filter((project) => project.name !== 'EnchantmentEngine/default-project' && project.repositoryPath)
                 .map((project) => (
                   <div key={project.id} className="border   px-3.5 py-5">
                     <Checkbox
