@@ -29,7 +29,7 @@ import { useDrop } from 'react-dnd'
 //import useUpload from '../assets/useUpload'
 import useUpload from '@ir-engine/editor/src/components/assets/useUpload'
 import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
-import { AllFileTypes } from '@ir-engine/engine/src/assets/constants/fileTypes'
+import { AllFileTypes } from '@ir-engine/spatial/src/resources/fileTypes'
 import { twMerge } from 'tailwind-merge'
 import { ControlledStringInput, StringInputProps } from '../String'
 
