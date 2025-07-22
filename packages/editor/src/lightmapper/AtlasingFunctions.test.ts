@@ -185,7 +185,7 @@ describe('AtlasingFunctions', () => {
       expect(meshComponent.geometry.attributes.uv2.itemSize).toBe(2)
 
       expect(mockUnwrapper.packAtlas).toHaveBeenCalledWith([geometry], 'uv2', 'uv')
-      expect(mockUnwrapper.packOptions.padding).toBe(1)
+      expect(mockUnwrapper.packOptions.padding).toBe(2)
     })
 
     it('should return early if unwrapper is not loaded', async () => {
