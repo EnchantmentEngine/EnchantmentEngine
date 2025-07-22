@@ -1,10 +1,12 @@
-# Infinite Reality Engine
+# Enchantment Engine
+
+A fork of ([Napster Engine](https://github.com/ir-engine)) (previously Infinite Reality Engine, Ethereal Engine)
 
 [Napster Engine sizzle.webm](https://github.com/user-attachments/assets/b09dc3c3-7fa2-4e01-b1b9-2c9eef4c317b)
 
 ## Background
 
-We ([Infinite Reality Engine](https://github.com/ir-engine)) believe that creating, hosting and experiencing 3D websites should be easy.
+We believe that creating, hosting and experiencing 3D websites should be easy.
 
 We want a fair and human future where designing and participating in immersive experiences and shared digital spaces should be as easy and natural as making and opening a website.
 
@@ -23,13 +25,13 @@ We want a fair and human future where designing and participating in immersive e
 
 ## Project API
 
-### [Library of Napster Engine Projects](https://github.com/ir-engine/project-manifest)
+### [Library of Projects](https://github.com/ir-engine/project-manifest)
 
-Create composable plug-ins for Napster Engine experiences with the plugin system (Projects API)
+Create composable plug-ins for engine experiences with the plugin system (Projects API)
 
-## Launch Napster Engine with Control Center Install
+## Launch with Control Center Install
 
-### [Use Napster Engine Launcher GUI](https://github.com/ir-engine/ir-engine-launcher)
+### [Use Launcher GUI](https://github.com/ir-engine/ir-engine-launcher)
 
 Best for simple self hosting.
 
@@ -37,11 +39,11 @@ Best for simple self hosting.
 
 ### Pre-Requisites
 
-To install Napster Engine locally, the following pre-reqs are required.
+To install Enchantment Engine locally, the following pre-reqs are required.
 
 - Linux, Mac, or Windows (via WSL2)
 - Node.js v22 or later ([`nvm`](https://github.com/nvm-sh/nvm) is recommended)
-- Docker. (Although Docker is technically optional, running Napster Engine requires starting up half a dozen different services, and using Docker Compose will make your life dramatically easier.)
+- Docker. (Although Docker is technically optional, running Enchantment Engine requires starting up half a dozen different services, and using Docker Compose will make your life dramatically easier.)
 - MariaDB and Redis. (If you're using Docker, containers for MariaDB and Redis will automatically be started up.)
 
 ### Getting Started
@@ -65,7 +67,7 @@ Then open https://localhost:3000/location/apartment
 
 - We expect contributors and community members to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 - See the **[Contributing Guide](CONTRIBUTING.md)** and corresponding [wiki entry](https://github.com/ir-engine/ir-engine/wiki/Testing-&-Contributing) for more details.
-- Version numbering of the Napster Engine monorepo follows the [Semantic versioning](http://semver.org/) approach.
+- Version numbering of the Enchantment Engine monorepo follows the [Semantic versioning](http://semver.org/) approach.
 - We use the [Prettier.io](https://prettier.io/) formatter for our code style.
 - [Standard Readme](https://github.com/RichardLitt/standard-readme) for the README structure.
 
