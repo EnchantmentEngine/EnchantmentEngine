@@ -111,7 +111,7 @@ describe('StaticResourceHooks', () => {
   })
 
   it('Uploads and renames file with and without the use of a custom name', async function () {
-    const key = 'projects/EnchantmentEngine/default-project/assets/collisioncube.glb'
+    const key = 'projects/enchantmentengine/default-project/assets/collisioncube.glb'
     const [_, directory, file] = /(.*)\/([^\\\/]+$)/.exec(key)!
 
     //upload new file

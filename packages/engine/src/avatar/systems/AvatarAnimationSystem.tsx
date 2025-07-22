@@ -165,7 +165,7 @@ const AnimationLoader = () => {
     animations.map((animationFile) => {
       return `${
         getState(DomainConfigState).cloudDomain
-      }/projects/EnchantmentEngine/default-project/assets/animations/${animationFile}.glb`
+      }/projects/enchantmentengine/default-project/assets/animations/${animationFile}.glb`
     }),
     true
   )

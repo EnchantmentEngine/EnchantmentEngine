@@ -118,7 +118,7 @@ describe('upload-asset', () => {
 
   //   it('should add asset as a new static resource from url', async () => {
   //     const storageProvider = getStorageProvider()
-  //     const url = storageProvider.getCachedURL('/projects/EnchantmentEngine/default-project/public/scenes/default.gltf')
+  //     const url = storageProvider.getCachedURL('/projects/enchantmentengine/default-project/public/scenes/default.gltf')
   //     const name = 'default.gltf'
   //     const hash = createStaticResourceHash(url)
 

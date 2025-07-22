@@ -465,9 +465,9 @@ describe('regex.test', () => {
   describe('ASSETS_REGEX', () => {
     it('should match assets URLs', () => {
       const positiveCases = [
-        'https://example.com/projects/EnchantmentEngine/default-project/assets/images/logo.png',
-        'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/emotes.glb',
-        'https://example.com/projects/EnchantmentEngine/default-project/assets/animations/locomotion.glb'
+        'https://example.com/projects/enchantmentengine/default-project/assets/images/logo.png',
+        'https://example.com/projects/enchantmentengine/default-project/assets/animations/emotes.glb',
+        'https://example.com/projects/enchantmentengine/default-project/assets/animations/locomotion.glb'
       ]
       positiveCases.forEach((url) => {
         assert.match(url, ASSETS_REGEX, `Expected '${url}' to match ASSETS_REGEX`)
@@ -476,9 +476,9 @@ describe('regex.test', () => {
 
     it('should not match non-assets URLs', () => {
       const negativeCases = [
-        'https://example.com/projects/EnchantmentEngine/default-project/scene.json',
-        'https://example.com/projects/EnchantmentEngine/default-project/assets',
-        'https://example.com/EnchantmentEngine/default-project/assets/animations/emotes.glb'
+        'https://example.com/projects/enchantmentengine/default-project/scene.json',
+        'https://example.com/projects/enchantmentengine/default-project/assets',
+        'https://example.com/enchantmentengine/default-project/assets/animations/emotes.glb'
       ]
       negativeCases.forEach((url) => {
         assert.doesNotMatch(url, ASSETS_REGEX, `Expected '${url}' to not match ASSETS_REGEX`)

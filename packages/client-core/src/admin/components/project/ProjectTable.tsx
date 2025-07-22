@@ -96,7 +96,7 @@ export default function ProjectTable(props: { search: string }) {
         <Button
           size="sm"
           className="mr-2 h-min whitespace-pre  text-[#214AA6] disabled:opacity-50 dark:text-white"
-          disabled={project.name === 'EnchantmentEngine/default-project'}
+          disabled={project.name === 'enchantmentengine/default-project'}
           onClick={() => {
             activeProjectId.set(project.id)
             ModalState.openModal(
@@ -110,7 +110,7 @@ export default function ProjectTable(props: { search: string }) {
         <Button
           size="sm"
           className="mr-2 h-min whitespace-pre  text-[#214AA6] disabled:opacity-50 dark:text-white"
-          disabled={!project || !project.repositoryPath || project.name === 'EnchantmentEngine/default-project'}
+          disabled={!project || !project.repositoryPath || project.name === 'enchantmentengine/default-project'}
           onClick={() => {
             ModalState.openModal(
               <ConfirmDialog
@@ -174,7 +174,7 @@ export default function ProjectTable(props: { search: string }) {
         <Button
           size="sm"
           className="h-min whitespace-pre  text-[#214AA6] disabled:opacity-50 dark:text-white"
-          disabled={project.name === 'EnchantmentEngine/default-project'}
+          disabled={project.name === 'enchantmentengine/default-project'}
           onClick={() => {
             ModalState.openModal(
               <ConfirmDialog
@@ -216,7 +216,7 @@ export default function ProjectTable(props: { search: string }) {
         projectVersion: row.version,
         enabled: (
           <Toggle
-            disabled={row.name === 'EnchantmentEngine/default-project'}
+            disabled={row.name === 'enchantmentengine/default-project'}
             value={row.enabled}
             onChange={() => handleEnabledChange(row)}
           />

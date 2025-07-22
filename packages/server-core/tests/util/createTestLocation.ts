@@ -9,7 +9,7 @@ export const createTestLocation = async (app: Application, params = { isInternal
 
   const scene = await app.service(staticResourcePath).find({
     query: {
-      key: 'projects/EnchantmentEngine/default-project/public/scenes/default.gltf'
+      key: 'projects/enchantmentengine/default-project/public/scenes/default.gltf'
     }
   })
 

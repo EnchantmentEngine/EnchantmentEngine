@@ -1,6 +1,6 @@
 /**
  * Captures org name, project name and asset path from a URL.
- * For eg: `https://example.com/projects/EnchantmentEngine/default-project/assets/animations/locomotion.glb` will capture following groups
+ * For eg: `https://example.com/projects/enchantmentengine/default-project/assets/animations/locomotion.glb` will capture following groups
  * - `ir-engine` => Group 1
  * - `default-project` => Group 2
  * - `assets/animations/locomotion.glb` => Group 3

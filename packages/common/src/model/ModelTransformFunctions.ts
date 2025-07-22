@@ -57,9 +57,9 @@ import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadReq
 import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '../regex'
 import ModelTransformLoader from './ModelTransformLoader'
 /**
- * https://ir.world/projects/EnchantmentEngine/default-project/assets/collisioncube-LOD0.glb
- * Match 1: projects/EnchantmentEngine/default-project/assets/collisioncube-LOD0.glb
- * Group 1: EnchantmentEngine/default-project
+ * https://ir.world/projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
+ * Match 1: projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
+ * Group 1: enchantmentengine/default-project
  * Group 2: collisioncube-LOD0.glb
  */
 

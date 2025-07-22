@@ -162,7 +162,7 @@ export const HyperspaceTagComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const [galaxyTexture] = useTexture(
-      `${getState(DomainConfigState).cloudDomain}/projects/EnchantmentEngine/default-project/assets/galaxyTexture.jpg`,
+      `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/galaxyTexture.jpg`,
       entity
     )
     const hyperspaceEffectEntityState = useHookstate(createEntity)

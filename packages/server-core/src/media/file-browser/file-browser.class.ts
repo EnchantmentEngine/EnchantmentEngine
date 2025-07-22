@@ -504,7 +504,7 @@ export class FileBrowserService
    * This prevents the default thumbnail from being deleted.
    */
   private isDefaultThumbnail(thumbnail: StaticResourceType): boolean {
-    return thumbnail.name === 'default.thumbnail.jpg' && thumbnail.project === 'EnchantmentEngine/default-project'
+    return thumbnail.name === 'default.thumbnail.jpg' && thumbnail.project === 'enchantmentengine/default-project'
   }
 
   /**

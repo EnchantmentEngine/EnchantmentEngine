@@ -42,7 +42,7 @@ export async function up(knex: Knex): Promise<void> {
 
     for (const project of projects) {
       if (project.name === 'default-project') {
-        const newName = 'EnchantmentEngine/default-project'
+        const newName = 'enchantmentengine/default-project'
         await knex(projectPath).where('id', project.id).update({
           name: newName
         })
