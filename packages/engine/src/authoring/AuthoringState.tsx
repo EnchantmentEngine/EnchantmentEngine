@@ -70,13 +70,14 @@ import {
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import {
   MaterialPrototypeDefinitions,
-  MaterialStateComponent
+  MaterialStateComponent,
+  SerializedTexture
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
 import { Color, Material, SRGBColorSpace, Vector2, Vector3 } from 'three'
-import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -464,9 +465,13 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
             if (args[key].type === 'texture') {
               if (!val || (material[key]?.isTexture && val === material[key].userData?.url)) continue
               asyncUpdateCount += 1
-              getTextureAsync(val).then(([texture]) => {
+              const textureData = val as SerializedTexture
+              getTextureAsync(textureData.source).then(([texture]) => {
                 asyncUpdateCount -= 1
                 if (texture?.isTexture) {
+                  texture.channel = textureData.channel
+                  if (textureData.repeat) texture.repeat.copy(textureData.repeat)
+                  if (textureData.offset) texture.offset.copy(textureData.offset)
                   texture.flipY = false
                   texture.needsUpdate = true
                   if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
