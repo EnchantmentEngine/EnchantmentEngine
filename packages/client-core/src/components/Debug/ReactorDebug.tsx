@@ -1,23 +1,3 @@
-/*
-CPAL-1.0 License
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-The Original Code is Infinite Reality Engine.
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
@@ -53,6 +33,7 @@ const execute = () => {
         lastRender: number
         fiberCount: number
         peakFiberCount: number
+        ended: boolean
       }
     >
     for (const [key, value] of Object.entries(state)) {
@@ -96,16 +77,16 @@ const ReactorFrequencySystem = defineSystem({
 
 const sortOptions = [
   {
+    label: 'Fiber Count',
+    value: 'fibers'
+  },
+  {
     label: 'Render Count',
     value: 'renders'
   },
   {
     label: 'Average Render Time',
     value: 'time'
-  },
-  {
-    label: 'Fiber Count',
-    value: 'fibers'
   }
 ]
 
@@ -116,7 +97,7 @@ export function ReactorDebug() {
 
   useFrameUpdate()
 
-  const sortBy = useHookstate<'renders' | 'time' | 'fibers'>('renders')
+  const sortBy = useHookstate<'fibers' | 'renders' | 'time'>('fibers')
 
   useEffect(() => {
     open = true
@@ -145,19 +126,40 @@ export function ReactorDebug() {
         {
           name: val.name,
           uuid: key,
+          fiberCount: val.fiberCount,
           renderCount: val.count,
           renderTime: val.time,
-          fiberCount: val.fiberCount,
           peakFiberCount: val.peakFiberCount,
           average: RenderFrequencyAverage.get(key)?.average ?? 0,
-          stack: val.stack
+          stack: val.stack as string[],
+          ended: val.ended
         }
       ] as const
     })
-    .reduce((acc, [key, val]) => {
-      acc[key] = val
-      return acc
-    }, {})
+    .reduce(
+      (acc, [key, val]) => {
+        acc[key] = val
+        return acc
+      },
+      {} as Record<
+        string,
+        {
+          name: string
+          uuid: string
+          fiberCount: number
+          renderCount: number
+          renderTime: number
+          peakFiberCount: number
+          average: number
+          stack: string[]
+          ended: boolean
+        }
+      >
+    )
+
+  const totalFiberCount = Object.values(state).reduce((acc, val) => acc + val.fiberCount, 0)
+  const totalRenderCount = Object.values(state).reduce((acc, val) => acc + val.renderCount, 0)
+  const totalRenderTime = Object.values(state).reduce((acc, val) => acc + val.renderTime, 0)
 
   return (
     <div className="mx-1 my-0.5 bg-neutral-600 p-1">
@@ -165,6 +167,15 @@ export function ReactorDebug() {
       <div className="flex w-full justify-start gap-x-2">
         <div className="text-text-primary-button">Sort</div>
         <Dropdown onChange={(val: any) => sortBy.set(val)} value={sortBy.value} options={sortOptions} />
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total fiber count: {totalFiberCount}</Text>
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total render count: {totalRenderCount}</Text>
+      </div>
+      <div className="flex w-full justify-start gap-x-2">
+        <Text className="text-text-primary-button">Total render time: {totalRenderTime} (inaccurate)</Text>
       </div>
       <JSONTree
         data={state}
@@ -178,7 +189,7 @@ export function ReactorDebug() {
             | { average?: number; renderCount?: number; peakFiberCount?: number }
             | undefined
 
-          if (!valA || !valB) return a.localeCompare(b)
+          if (!valA || !valB) return 0
 
           return sortBy.value === 'time'
             ? (valB.average || 0) - (valA.average || 0)

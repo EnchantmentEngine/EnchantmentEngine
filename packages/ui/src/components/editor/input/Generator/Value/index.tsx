@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   BezierFunctionJSON,
   ConstantValueJSON,
@@ -33,23 +8,21 @@ import {
 } from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
 import { State } from '@ir-engine/hyperflux'
 import React, { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import Button from '../../../../../primitives/tailwind/Button'
 import PaginatedList from '../../../layout/PaginatedList'
 import InputGroup from '../../Group'
 import NumericInput from '../../Numeric'
 import SelectInput from '../../Select'
 
-export default function ValueGenerator({
-  path,
-  scope,
-  value,
-  onChange
-}: {
+type ValueGeneratorProps = Readonly<{
   path: string
   scope: State<ValueGeneratorJSON>
   value: ValueGeneratorJSON
   onChange: (path: string) => (value: any) => void
-}) {
+}>
+export default function ValueGenerator({ path, scope, value, onChange }: ValueGeneratorProps) {
+  const { t } = useTranslation()
   const onChangeType = useCallback(() => {
     const thisOnChange = onChange(`${path}.type`)
     return (type: typeof value.type) => {
@@ -59,7 +32,6 @@ export default function ValueGenerator({
   }, [scope, onChange])
 
   const onAddBezier = useCallback(() => {
-    const bezierScope = scope as State<PiecewiseBezierValueJSON>
     const thisOnChange = onChange(path + '.functions')
     return () => {
       const bezierJson = value as PiecewiseBezierValueJSON
@@ -97,7 +69,11 @@ export default function ValueGenerator({
     const constant = constantScope.value
     return (
       <>
-        <InputGroup name="value" label="Value">
+        <InputGroup
+          name="value"
+          label={t('editor:properties.particle-system.valueGenerator.value')}
+          containerClassName="pl-0"
+        >
           <NumericInput value={constant.value} onChange={onChange(path + '.value')} />
         </InputGroup>
       </>
@@ -109,10 +85,18 @@ export default function ValueGenerator({
     const interval = intervalScope.value
     return (
       <>
-        <InputGroup name="min" label="Min">
+        <InputGroup
+          name="min"
+          label={t('editor:properties.particle-system.valueGenerator.min')}
+          containerClassName="pl-0"
+        >
           <NumericInput value={interval.a} onChange={onChange(path + '.a')} />
         </InputGroup>
-        <InputGroup name="max" label="Max">
+        <InputGroup
+          name="max"
+          label={t('editor:properties.particle-system.valueGenerator.max')}
+          containerClassName="pl-0"
+        >
           <NumericInput value={interval.b} onChange={onChange(path + '.b')} />
         </InputGroup>
       </>
@@ -123,38 +107,43 @@ export default function ValueGenerator({
     const bezierScope = scope as State<PiecewiseBezierValueJSON>
     return (
       <div>
-        <Button onClick={onAddBezier()}>Add Bezier</Button>
+        <Button onClick={onAddBezier()}>{t('editor:properties.particle-system.valueGenerator.addBezier')}</Button>
         {
           <PaginatedList // we still need to make paginated list in tailwind
             list={bezierScope.functions}
             element={(element: State<BezierFunctionJSON>, index: number) => (
-              <div
-                style={{
-                  margin: '2rem',
-                  padding: '2rem',
-                  border: '1px solid white',
-                  borderRadius: '1rem'
-                }}
-              >
-                <InputGroup label={'p0'}>
+              <div className="m-8 rounded-2xl border border-white p-8">
+                <InputGroup
+                  label={t('editor:properties.particle-system.valueGenerator.pIndex', { index: 0 })}
+                  containerClassName="pl-0"
+                >
                   <NumericInput
                     value={element.function.p0.value}
                     onChange={onChange(path + '.functions.' + index + '.function.p0')}
                   />
                 </InputGroup>
-                <InputGroup label={'p1'}>
+                <InputGroup
+                  label={t('editor:properties.particle-system.valueGenerator.pIndex', { index: 1 })}
+                  containerClassName="pl-0"
+                >
                   <NumericInput
                     value={element.function.p1.value}
                     onChange={onChange(path + '.functions.' + index + '.function.p1')}
                   />
                 </InputGroup>
-                <InputGroup label={'p2'}>
+                <InputGroup
+                  label={t('editor:properties.particle-system.valueGenerator.pIndex', { index: 2 })}
+                  containerClassName="pl-0"
+                >
                   <NumericInput
                     value={element.function.p2.value}
                     onChange={onChange(path + '.functions.' + index + '.function.p2')}
                   />
                 </InputGroup>
-                <InputGroup label={'p3'}>
+                <InputGroup
+                  label={t('editor:properties.particle-system.valueGenerator.pIndex', { index: 3 })}
+                  containerClassName="pl-0"
+                >
                   <NumericInput
                     value={element.function.p3.value}
                     onChange={onChange(path + '.functions.' + index + '.function.p3')}
@@ -163,14 +152,19 @@ export default function ValueGenerator({
                 <br />
                 <hr />
                 <br />
-                <InputGroup label={'start'}>
+                <InputGroup
+                  label={t('editor:properties.particle-system.valueGenerator.start')}
+                  containerClassName="pl-0"
+                >
                   <NumericInput
                     value={element.start.value}
                     onChange={onChange(path + '.functions.' + index + '.start')}
                   />
                 </InputGroup>
                 <br />
-                <Button onClick={onRemoveBezier(element)}>Remove</Button>
+                <Button onClick={onRemoveBezier(element)}>
+                  {t('editor:properties.particle-system.valueGenerator.remove')}
+                </Button>
               </div>
             )}
           />
@@ -187,13 +181,17 @@ export default function ValueGenerator({
 
   return (
     <>
-      <InputGroup name="type" label="Type">
+      <InputGroup
+        name="type"
+        label={t('editor:properties.particle-system.valueGenerator.type')}
+        containerClassName="pl-0"
+      >
         <SelectInput
           value={value.type}
           options={[
-            { label: 'Constant', value: 'ConstantValue' },
-            { label: 'Interval', value: 'IntervalValue' },
-            { label: 'Bezier', value: 'PiecewiseBezier' }
+            { label: t('editor:properties.particle-system.valueGenerator.constant'), value: 'ConstantValue' },
+            { label: t('editor:properties.particle-system.valueGenerator.interval'), value: 'IntervalValue' },
+            { label: t('editor:properties.particle-system.valueGenerator.bezier'), value: 'PiecewiseBezier' }
           ]}
           onChange={onChangeType()}
         />

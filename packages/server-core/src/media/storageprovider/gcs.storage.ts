@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { spawn } from 'child_process'
 import path from 'path/posix'
 import S3BlobStore from 's3-blob-store'
@@ -473,10 +448,9 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
    * @param isCopy If true it will create a copy of object.
    */
   async moveObject(oldName: string, newName: string, oldPath: string, newPath: string, isCopy = false) {
-    const isDirectory = await this.isDirectory(oldName, oldPath)
     const oldFilePath = path.join(oldPath, oldName)
     const newFilePath = path.join(newPath, newName)
-    const listResponse = await this.listObjects(oldFilePath + (isDirectory ? '/' : ''), false, undefined, isDirectory)
+    const listResponse = await this.listObjects(oldFilePath, false, undefined, false)
 
     if (listResponse.Contents.length > 0) {
       return await Promise.all([
@@ -484,10 +458,15 @@ export class GCSStorage extends BaseStorageProvider implements StorageProviderIn
           const relativePath = file.Key.replace(oldFilePath, '')
           const key = newFilePath + relativePath
 
-          if (file.Type === 'folder') {
+          if (file.Type === 'folder' && isCopy) {
             return await this.putObject({ Key: key } as StorageObjectInterface, {
               isDirectory: true
             })
+          } else if (file.Type === 'folder' && !isCopy) {
+            await this.putObject({ Key: key } as StorageObjectInterface, {
+              isDirectory: true
+            })
+            return await this.deleteResources([file.Key])
           }
 
           if (isCopy) return await this.provider.bucket(this.bucket).file(file.Key).copy(key, {})

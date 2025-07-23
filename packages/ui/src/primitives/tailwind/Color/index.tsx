@@ -1,27 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { ColorResult } from '@uiw/color-convert'
 import SketchPicker from '@uiw/react-color-sketch'
 import React, { useEffect, useRef, useState } from 'react'
@@ -55,6 +31,7 @@ export function ColorInput({
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLDivElement>(null)
+  const [openUp, setOpenUp] = useState<boolean>(false)
 
   const handleTogglePicker = () => {
     if (!isPickerOpen) {
@@ -92,6 +69,17 @@ export function ColorInput({
     }
   }, [hexColor, onRelease])
 
+  // Color picker to pop up depending on placement of the window's inner
+  useEffect(() => {
+    if (!pickerRef.current) return
+
+    const rect = pickerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+
+    setOpenUp(spaceBelow < 300 && spaceAbove > 300)
+  }, [pickerRef.current])
+
   return (
     <div
       tabIndex={0} // Make the div focusable
@@ -110,7 +98,7 @@ export function ColorInput({
         {isPickerOpen && ( //state to track open/close of color picker
           <div ref={pickerRef}>
             <SketchPicker
-              className={twMerge('absolute right-4 z-10 mt-5 ', sketchPickerClassName)}
+              className={twMerge('absolute right-4 z-10 mt-5 ', openUp ? 'bottom-full' : 'mt-5', sketchPickerClassName)}
               color={hexColor}
               onChange={handleChange}
               disableAlpha={true}

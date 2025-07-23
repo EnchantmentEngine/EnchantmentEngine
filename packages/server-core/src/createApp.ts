@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 // Do not delete json and urlencoded, they are used even if some IDEs show them as unused
 
 import { feathers } from '@feathersjs/feathers'
@@ -45,7 +20,7 @@ import { pipe } from '@ir-engine/common/src/utils/pipe'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import { createHyperStore, getMutableState } from '@ir-engine/hyperflux'
 
-import { DomainConfigState } from '@ir-engine/engine/src/assets/state/DomainConfigState'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { Application } from '../declarations'
 import packagejson from '../package.json'
 import { logger } from './ServerLogger'
@@ -55,7 +30,9 @@ import authenticate from './hooks/authenticate'
 import { logError } from './hooks/log-error'
 import persistHeaders from './hooks/persist-headers'
 import { createDefaultStorageProvider } from './media/storageprovider/storageprovider'
+import monitoringServices from './monitoring'
 import mysql from './mysql'
+import postgres from './postgres'
 import services from './services'
 import authentication from './user/authentication'
 import primus from './util/primus'
@@ -101,6 +78,11 @@ export const configurePrimus =
       'ionic://' + appConfig.server.clientHost
     ]
     if (!instanceserver) origin.push('https://localhost:3001')
+
+    // Get metrics service if it exists
+    const metricsService = app.get('metricsService')
+    const metricsEnabled = process.env.PROMETHEUS_METRICS_ENABLED === 'true'
+
     app.configure(
       primus(
         {
@@ -119,6 +101,35 @@ export const configurePrimus =
             ;(message as any).feathers.forwarded = message.forwarded
             next()
           })
+
+          // Add event handlers for tracking WebSocket connections and messages if metrics service exists
+          if (metricsService && metricsEnabled) {
+            primus.on('connection', (spark) => {
+              metricsService.trackWebSocketConnection('connected')
+
+              // Track WebSocket messages
+              spark.on('data', (data) => {
+                metricsService.trackWebSocketMessage(
+                  'incoming',
+                  typeof data === 'object' ? data.type || 'unknown' : 'unknown'
+                )
+              })
+
+              // Track outgoing messages
+              spark.on('outgoing::data', (data) => {
+                metricsService.trackWebSocketMessage(
+                  'outgoing',
+                  typeof data === 'object' ? data.type || 'unknown' : 'unknown'
+                )
+              })
+            })
+
+            primus.on('disconnection', () => {
+              metricsService.trackWebSocketConnection('disconnected')
+            })
+
+            logger.info('WebSocket metrics tracking enabled for Primus')
+          }
         }
       )
     )
@@ -165,9 +176,24 @@ export const configureK8s = () => (app: Application) => {
   return app
 }
 
-export const serverPipe = pipe(configureOpenAPI(), configurePrimus(), configureRedis(), configureK8s()) as (
-  app: Application
-) => Application
+export const configureMonitoring = () => (app: Application) => {
+  // Set app name for monitoring
+  const serviceName = appConfig.monitoring?.metrics ? 'ir-engine-api' : 'ir-engine-api'
+  app.set('name', serviceName)
+
+  // Configure monitoring services
+  monitoringServices.forEach((service) => app.configure(service()))
+
+  return app
+}
+
+export const serverPipe = pipe(
+  configureOpenAPI(),
+  configureMonitoring(),
+  configurePrimus(),
+  configureRedis(),
+  configureK8s()
+) as (app: Application) => Application
 
 export const serverJobPipe = pipe(configurePrimus(), configureK8s()) as (app: Application) => Application
 
@@ -221,6 +247,10 @@ export const createFeathersKoaApp = async (
   // Doesn't appear anything else uses it.
   app.set('env', 'production')
   app.configure(mysql)
+
+  if (appConfig.vectordb.enabled) {
+    app.configure(postgres)
+  }
 
   // Enable security, CORS, compression, favicon and body parsing
   app.use(errorHandler()) // in koa no option to pass logger object its a async function instead and must be set first
@@ -278,5 +308,8 @@ export const tearDownAPI = async () => {
 
     const knex = (API.instance as any).get?.('knexClient')
     if (knex) await knex.destroy()
+
+    const vectorDb = (API.instance as any).get?.('vectorDbClient')
+    if (vectorDb) await vectorDb.destroy()
   }
 }

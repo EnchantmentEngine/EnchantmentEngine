@@ -1,27 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { VALID_HEIRARCHY_SEARCH_REGEX } from '@ir-engine/common/src/regex'
 import {
@@ -36,7 +12,7 @@ import {
   Layers,
   traverseEntityNode,
   UndefinedEntity,
-  useComponent,
+  useOptionalComponent,
   useQuery,
   UUIDComponent
 } from '@ir-engine/ecs'
@@ -148,24 +124,23 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   const ChildEntityReactor = (props: { entity: Entity }) => {
     const entity = props.entity
-    const entityTreeComponent = useComponent(entity, EntityTreeComponent)
-    const [parentEntity, setParentEntity] = useState(entityTreeComponent.value.parentEntity)
-    const [childIndex, setChildIndex] = useState(entityTreeComponent.value.childIndex)
+    const entityTreeComponent = useOptionalComponent(entity, EntityTreeComponent)
+    const parentEntity = useHookstate(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
+    const childIndex = useHookstate(entityTreeComponent?.childIndex.value ?? undefined)
 
     useEffect(() => {
-      if (entityTreeComponent.value.parentEntity !== parentEntity) {
-        setParentEntity(entityTreeComponent.value.parentEntity)
+      if (entityTreeComponent?.parentEntity.value !== parentEntity.value) {
+        parentEntity.set(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
         reparentRefresh.set((reparentRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent.parentEntity.value])
+    }, [entityTreeComponent?.parentEntity.value])
 
     useEffect(() => {
-      if (entityTreeComponent.value.childIndex !== childIndex) {
-        setChildIndex(entityTreeComponent.value.childIndex)
+      if (entityTreeComponent?.childIndex.value !== childIndex.value) {
+        childIndex.set(entityTreeComponent?.childIndex.value)
         childIndexRefresh.set((childIndexRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent.value.childIndex])
-
+    }, [entityTreeComponent?.childIndex.value])
     return null
   }
 
@@ -178,7 +153,8 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
       entities,
       childEntities,
       reparentRefresh,
-      childIndexRefresh
+      childIndexRefresh,
+      rootEntity
     ]
   )
 
@@ -198,7 +174,7 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   useEffect(() => {
     hierarchyTreeState.expandedNodes.set({ [sourceID]: { [rootEntity]: true } })
-  }, [sourceID])
+  }, [sourceID, rootEntity])
 
   useEffect(() => {
     if (!selectionState.selectedEntities.value.length) {

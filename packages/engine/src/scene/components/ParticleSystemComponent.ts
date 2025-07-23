@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Blending, DoubleSide, Matrix4, MeshBasicMaterial, Object3D, Vector3 } from 'three'
 import { BatchedRenderer, Behavior, BehaviorFromJSON, ParticleSystem } from 'three.quarks'
@@ -36,8 +11,7 @@ import {
   getAncestorWithComponents,
   getChildrenWithComponents,
   removeEntity,
-  useEntityContext,
-  useQuery
+  useEntityContext
 } from '@ir-engine/ecs'
 import {
   defineComponent,
@@ -50,7 +24,7 @@ import {
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { AssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
+import { useGLTFComponent } from '@ir-engine/engine/src/assets/functions/useGLTFComponent'
 import { NO_PROXY, getMutableState, none, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -59,9 +33,9 @@ import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/Obje
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { getRendererEntity, useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
+import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { AssetLoader } from '../../assets/classes/AssetLoader'
-import { useGLTFComponent, useTexture } from '../../assets/functions/resourceLoaderHooks'
 import {
   BehaviorJSON,
   DEFAULT_PARTICLE_SYSTEM_PARAMETERS,
@@ -160,7 +134,6 @@ export const ParticleSystemComponent = defineComponent({
     const entity = useEntityContext()
     const componentState = useComponent(entity, ParticleSystemComponent)
     const metadata = useHookstate({ textures: {}, geometries: {}, materials: {} } as ParticleSystemMetadata)
-    const particleSystemQuery = useQuery([ParticleSystemComponent])
     // for particle meshes
     const geoDependencyEntity = useGLTFComponent(componentState.value.systemParameters.instancingGeometry, entity)
 
@@ -192,10 +165,14 @@ export const ParticleSystemComponent = defineComponent({
       const scale = getNestedScale(mesh)
       scaledGeometry.scale(scale.x, scale.y, scale.z)
       if (scaledGeometry) {
-        metadata.geometries.nested(componentState.value.systemParameters.instancingGeometry).set(scaledGeometry)
+        const geometryKey = componentState.value.systemParameters.instancingGeometry
+        metadata.geometries.nested(geometryKey).set(scaledGeometry)
 
         return () => {
-          metadata.geometries.nested(componentState.value.systemParameters.instancingGeometry).set(none)
+          // Check if metadata state is still valid before cleanup
+          if (metadata.geometries.value && geometryKey) {
+            metadata.geometries.nested(geometryKey).set(none)
+          }
         }
       }
     }, [geoDependencyEntity])
@@ -220,12 +197,14 @@ export const ParticleSystemComponent = defineComponent({
       const mergedGeometry = mergeGeometries(geometries)
 
       if (mergedGeometry) {
-        componentState.systemParameters.shape.geometry.set(componentState.value.systemParameters.shape.mesh!)
-        metadata.geometries.nested(componentState.value.systemParameters.shape.mesh!).set(mergedGeometry)
+        const shapeMeshKey = componentState.value.systemParameters.shape.mesh!
+        componentState.systemParameters.shape.geometry.set(shapeMeshKey)
+        metadata.geometries.nested(shapeMeshKey).set(mergedGeometry)
 
         return () => {
-          if (componentState.value.systemParameters.shape.mesh) {
-            metadata.geometries.nested(componentState.value.systemParameters.shape.mesh!).set(none)
+          // Check if metadata state is still valid before cleanup
+          if (metadata.geometries.value && shapeMeshKey) {
+            metadata.geometries.nested(shapeMeshKey).set(none)
           }
         }
       }
@@ -233,7 +212,11 @@ export const ParticleSystemComponent = defineComponent({
 
     const [texture] = useTexture(componentState.value.systemParameters.texture!, entity, (url) => {
       if (!entityExists(entity)) return
-      metadata.textures.nested(url).set(none)
+      // Check if metadata state is still valid before cleanup
+      if (metadata.textures.value && url) {
+        metadata.textures.nested(url).set(none)
+      }
+
       dudMaterial.map = null
     })
 
@@ -246,15 +229,15 @@ export const ParticleSystemComponent = defineComponent({
 
     const doLoadEmissionGeo =
       componentState.systemParameters.shape.type.value === 'mesh_surface' &&
-      AssetLoader.getAssetClass(componentState.systemParameters.shape.mesh.value ?? '') === AssetType.Model
+      FileToAssetType(componentState.systemParameters.shape.mesh.value ?? '') === AssetType.Model
 
     const doLoadInstancingGeo =
       componentState.systemParameters.instancingGeometry.value &&
-      AssetLoader.getAssetClass(componentState.systemParameters.instancingGeometry.value) === AssetType.Model
+      FileToAssetType(componentState.systemParameters.instancingGeometry.value) === AssetType.Model
 
     const doLoadTexture =
       componentState.systemParameters.texture.value &&
-      AssetLoader.getAssetClass(componentState.systemParameters.texture.value) === AssetType.Image
+      FileToAssetType(componentState.systemParameters.texture.value) === AssetType.Image
 
     const loadedEmissionGeo = !!shapeMeshEntity || !doLoadEmissionGeo
     const loadedInstanceGeo = !!geoDependencyEntity || !doLoadInstancingGeo
@@ -266,13 +249,27 @@ export const ParticleSystemComponent = defineComponent({
     const visible = useHasComponent(entity, VisibleComponent)
 
     useEffect(() => {
-      if (!dependenciesLoaded || !visible) return
+      if (!dependenciesLoaded || !visible || !rendererEntity) return
 
       const component = componentState.get(NO_PROXY)
       const rendererInstance = createBatchedRenderer(entity)
       const renderer = rendererInstance.renderer
 
       const systemParameters = JSON.parse(JSON.stringify(component.systemParameters)) as ExpandedSystemJSON
+
+      if (systemParameters.blending !== undefined) {
+        const materialKey = systemParameters.material || 'particle_material'
+
+        const particleMaterial = new MeshBasicMaterial({
+          color: systemParameters.startColor.color,
+          transparent: systemParameters.transparent,
+          blending: systemParameters.blending as Blending
+        })
+
+        metadata.materials.nested(materialKey).set(particleMaterial)
+        systemParameters.material = materialKey
+      }
+
       const system = ParticleSystem.fromJSON(systemParameters, metadata.value as ParticleSystemMetadata, {})
       renderer.addSystem(system)
       const behaviors = component.behaviorParameters.map((behaviorJSON) => {
@@ -306,9 +303,6 @@ export const ParticleSystemComponent = defineComponent({
         const index = renderer.systemToBatchIndex.get(system)
         if (typeof index !== 'undefined') {
           renderer.deleteSystem(system)
-          renderer.children.splice(index, 1)
-          const [batch] = renderer.batches.splice(index, 1)
-          batch.dispose()
           renderer.systemToBatchIndex.clear()
           for (let i = 0; i < renderer.batches.length; i++) {
             for (const system of renderer.batches[i].systems) {
@@ -321,15 +315,16 @@ export const ParticleSystemComponent = defineComponent({
 
         system.dispose()
         emitterAsObj3D.dispose()
-        removeBatchedRenderer(rendererEntity!)
+        if (entityExists(entity) && rendererEntity && entityExists(rendererEntity)) {
+          removeBatchedRenderer(rendererEntity)
+        }
       }
     }, [
       componentState.systemParameters,
       componentState.behaviorParameters,
       dependenciesLoaded,
       rendererEntity,
-      visible,
-      particleSystemQuery.length
+      visible
     ])
 
     return null

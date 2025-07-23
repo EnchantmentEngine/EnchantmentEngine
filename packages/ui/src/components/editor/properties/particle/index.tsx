@@ -1,39 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  AdditiveBlending,
-  Blending,
-  CustomBlending,
-  MultiplyBlending,
-  NoBlending,
-  NormalBlending,
-  SubtractiveBlending
-} from 'three'
+import { AdditiveBlending, Blending, MultiplyBlending, NoBlending, NormalBlending, SubtractiveBlending } from 'three'
 import { BurstParameters, RenderMode } from 'three.quarks'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -49,6 +16,7 @@ import {
   BurstParametersJSON,
   CONE_SHAPE_DEFAULT,
   ColorGeneratorJSON,
+  DEFAULT_EMISSION_OVER_TIME,
   DONUT_SHAPE_DEFAULT,
   MESH_SHAPE_DEFAULT,
   POINT_SHAPE_DEFAULT,
@@ -141,6 +109,13 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
       probability: 1
     }
     const data = [...JSON.parse(JSON.stringify(particleSystem.systemParameters.emissionBursts)), nuBurst]
+
+    // unset emission over time so it doesn't override the bursts
+    onSetState('systemParameters.emissionOverTime')({
+      type: 'ConstantValue',
+      value: 0
+    })
+
     commitProperty(ParticleSystemComponent, 'systemParameters.emissionBursts' as any)(data)
   }, [])
 
@@ -152,6 +127,13 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
         )
       )
       commitProperty(ParticleSystemComponent, 'systemParameters.emissionBursts' as any)(data)
+      if (data.length === 0) {
+        // set default emission over time.
+        onSetState('systemParameters.emissionOverTime')({
+          type: 'ConstantValue',
+          value: DEFAULT_EMISSION_OVER_TIME
+        })
+      }
     }
   }, [])
 
@@ -225,22 +207,10 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
                 />
               </InputGroup>
 
-              <InputGroup name="Cycle" label={t('editor:properties.particle-system.burst.cycle')}>
-                <NumericInput
-                  value={burst.cycle.value}
-                  onChange={onSetState(`systemParameters.emissionBursts.${index}.cycle`)}
-                />
-              </InputGroup>
-
-              <InputGroup name="Interval" label={t('editor:properties.particle-system.burst.interval')}>
-                <NumericInput
-                  value={burst.interval.value}
-                  onChange={onSetState(`systemParameters.emissionBursts.${index}.interval`)}
-                />
-              </InputGroup>
-
               <InputGroup name="Probability" label={t('editor:properties.particle-system.burst.probability')}>
                 <NumericInput
+                  max={1}
+                  min={0}
                   value={burst.probability.value}
                   onChange={onSetState(`systemParameters.emissionBursts.${index}.probability`)}
                 />
@@ -302,38 +272,63 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
           onChange={onSetState}
         />
       </InputGroup>
-      <InputGroup name="Render Mode" label={t('editor:properties.particle-system.render-mode')}>
+      <InputGroup name="Render Mode" label={t('editor:properties.particle-system.renderMode.title')}>
         <SelectInput
           value={particleSystem.systemParameters.renderMode}
-          onChange={onSetSystemParm('renderMode')}
+          onChange={(value) => {
+            if (value === RenderMode.StretchedBillBoard) {
+              onSetState('systemParameters.rendererEmitterSettings.speedFactor')(1)
+              onSetState('systemParameters.rendererEmitterSettings.lengthFactor')(1)
+            } else if (value === RenderMode.Trail) {
+              onSetState('systemParameters.rendererEmitterSettings.startLength')({
+                type: 'ConstantValue',
+                value: 5,
+                a: 0,
+                b: 1,
+                functions: []
+              })
+              onSetState('systemParameters.rendererEmitterSettings.followLocalOrigin')(false)
+            }
+            onSetSystemParm('renderMode')(value)
+          }}
           options={[
-            { label: t('editor:properties.particle-system.render-mode-type.billboard'), value: RenderMode.BillBoard },
+            { label: t('editor:properties.particle-system.renderMode.billboard'), value: RenderMode.BillBoard },
             {
-              label: t('editor:properties.particle-system.render-mode-type.stretched-billboard'),
+              label: t('editor:properties.particle-system.renderMode.stretched-billboard'),
               value: RenderMode.StretchedBillBoard
             },
-            { label: t('editor:properties.particle-system.render-mode-type.mesh'), value: RenderMode.Mesh },
-            { label: t('editor:properties.particle-system.render-mode-type.trail'), value: RenderMode.Trail }
+            { label: t('editor:properties.particle-system.renderMode.mesh'), value: RenderMode.Mesh },
+            { label: t('editor:properties.particle-system.renderMode.trail'), value: RenderMode.Trail }
           ]}
         />
       </InputGroup>
+      {particleSystem.systemParameters.renderMode === RenderMode.StretchedBillBoard && (
+        <>
+          <InputGroup name="Speed Factor" label={t('editor:properties.particle-system.renderMode.speedFactor')}>
+            <NumericInput
+              value={particleSystem.systemParameters.rendererEmitterSettings?.speedFactor}
+              onChange={onSetState('systemParameters.rendererEmitterSettings.speedFactor')}
+            />
+          </InputGroup>
+          <InputGroup name="Length Factor" label={t('editor:properties.particle-system.renderMode.lengthFactor')}>
+            <NumericInput
+              value={particleSystem.systemParameters.rendererEmitterSettings?.lengthFactor}
+              onChange={onSetState('systemParameters.rendererEmitterSettings.lengthFactor')}
+            />
+          </InputGroup>
+        </>
+      )}
       {particleSystem.systemParameters.renderMode === RenderMode.Trail && (
         <>
-          <InputGroup name="Trail Length" label={t('editor:properties.particle-system.trail-length')}>
+          <InputGroup name="Trail Length" label={t('editor:properties.particle-system.renderMode.trailLength')}>
             <ValueGenerator
               path="systemParameters.rendererEmitterSettings.startLength"
-              value={particleSystem.systemParameters.rendererEmitterSettings.startLength as ValueGeneratorJSON}
+              value={particleSystem.systemParameters.rendererEmitterSettings?.startLength as ValueGeneratorJSON}
               scope={
                 (particleSystemState.systemParameters.rendererEmitterSettings as any)
                   .startLength as unknown as State<ValueGeneratorJSON>
               }
               onChange={onSetState}
-            />
-          </InputGroup>
-          <InputGroup name="Follow Local Origin" label={t('editor:properties.particle-system.follow-local-origin')}>
-            <Checkbox
-              checked={particleSystem.systemParameters.rendererEmitterSettings.followLocalOrigin}
-              onChange={onSetState('systemParameters.rendererEmitterSettings.followLocalOrigin')}
             />
           </InputGroup>
         </>
@@ -398,7 +393,6 @@ const ParticleSystemNodeEditor: EditorComponentType = (props) => {
             { label: t('editor:properties.particle-system.blending-type.additive'), value: AdditiveBlending },
             { label: t('editor:properties.particle-system.blending-type.subtractive'), value: SubtractiveBlending },
             { label: t('editor:properties.particle-system.blending-type.multiply'), value: MultiplyBlending },
-            { label: t('editor:properties.particle-system.blending-type.custom'), value: CustomBlending },
             { label: t('editor:properties.particle-system.blending-type.no-blending'), value: NoBlending }
           ]}
         />

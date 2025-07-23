@@ -1,33 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   defineState,
   getMutableState,
   getState,
   HyperFlux,
+  NO_PROXY,
   useMutableState,
   VIDEO_CONSTRAINTS
 } from '@ir-engine/hyperflux'
@@ -54,7 +30,7 @@ export const MediaStreamState = defineState({
     /** Whether the audio is enabled or not. */
     microphoneEnabled: false,
     /** Whether the face tracking is enabled or not. */
-    /** @deprecated - face tracking has been disabled */
+    /** @deprecated face tracking has been disabled */
     faceTracking: false,
     /** Video stream for streaming data. */
     webcamMediaStream: null as MediaStream | null,
@@ -64,6 +40,7 @@ export const MediaStreamState = defineState({
     microphoneDestinationNode: null as MediaStreamAudioDestinationNode | null,
     /** Audio Gain to be applied on media stream. */
     microphoneGainNode: null as GainNode | null,
+    microphoneGainValue: 1,
     /** Local screen container. */
     screenshareMediaStream: null as MediaStream | null,
     screenshareEnabled: false,
@@ -128,13 +105,30 @@ export const MediaStreamState = defineState({
       )
     }, [state.screenshareMediaStream.value, state.screenshareEnabled.value, state.screenShareAudioPaused.value])
 
-    useEffect(() => {
+    const enumerateDevices = () => {
       navigator.mediaDevices.enumerateDevices().then((devices) => {
         const videoDevices = devices.filter((device) => device.kind === 'videoinput')
         state.availableVideoDevices.set(videoDevices)
         const audioDevices = devices.filter((device) => device.kind === 'audioinput')
         state.availableAudioDevices.set(audioDevices)
       })
+    }
+
+    useEffect(() => {
+      enumerateDevices()
+
+      // Re-enumerate devices when device list changes (e.g., permissions granted)
+      // Check if addEventListener exists (not available in test environments)
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+        const handleDeviceChange = () => enumerateDevices()
+        navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange)
+
+        return () => {
+          if (typeof navigator.mediaDevices.removeEventListener === 'function') {
+            navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange)
+          }
+        }
+      }
     }, [])
 
     useEffect(() => {
@@ -195,7 +189,7 @@ export const MediaStreamState = defineState({
           const src = ctx.createMediaStreamSource(new MediaStream([audioTrack]))
           const dst = ctx.createMediaStreamDestination()
           const gainNode = ctx.createGain()
-          gainNode.gain.value = 1
+          gainNode.gain.value = state.microphoneGainValue.value
           ;[src, gainNode, dst].reduce((a, b) => a && (a.connect(b) as any))
           state.microphoneGainNode.set(gainNode)
           state.microphoneDestinationNode.set(dst)
@@ -216,6 +210,18 @@ export const MediaStreamState = defineState({
         state.microphoneDestinationNode.set(null)
       }
     }, [state.microphoneEnabled.value])
+
+    useEffect(() => {
+      if (!state.microphoneGainNode.value) return
+
+      const gainNode = state.microphoneGainNode.get(NO_PROXY) as GainNode | null
+      if (!gainNode) return
+
+      gainNode.gain.exponentialRampToValueAtTime(
+        state.microphoneGainValue.value,
+        state.microphoneGainNode.value.context.currentTime + 0.01
+      )
+    }, [state.microphoneGainValue.value])
 
     useEffect(() => {
       if (!state.screenshareEnabled.value) return

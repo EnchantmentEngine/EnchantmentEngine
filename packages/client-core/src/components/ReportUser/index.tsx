@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useMutation } from '@ir-engine/common'
 import { ABUSE_REASONS } from '@ir-engine/common/src/constants/ModerationConstants'
 import {
@@ -44,6 +19,7 @@ import { LocationState } from '../../social/services/LocationService'
 import { ReportUserState } from '../../util/ReportUserState'
 import { uploadToFeathersService } from '../../util/upload'
 import { IconButton } from '../Glass/buttons/IconButton'
+import { Inner } from '../Glass/ToolbarAndSidebar'
 
 const backButtonStyles = `
   left-4
@@ -54,8 +30,8 @@ const actionButtonStyles = `
   items-center self-stretch
   text-white
   rounded-full
-  bg-[rgba(255,255,255,0.2)]
-  shadow-[inset_0px_1px_1px_rgba(255,255,255,0.25),inset_0px_-1px_1px_rgba(255,255,255,0.1),0px_8px_6px_rgba(0,0,0,0.05)]
+  bg-black/10
+  shadow-md
 `
 
 const baseContainerStyles = `
@@ -219,7 +195,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
           onChange={(e) => handleChange(e.target.value, 'details')}
           placeholder={fieldOptions.details.placeholder}
           className={twMerge(
-            'transparent-1/2 min-h-[120px] w-full border-0 bg-black/20 backdrop-blur-xl',
+            'transparent-1/2 min-h-[120px] w-full border-0 bg-black/20 backdrop-blur-xl placeholder:text-white/70',
             errors.details.value && 'border-ui-error'
           )}
         />
@@ -309,7 +285,7 @@ const ReportUserMenu = (props: ReportMenuProps) => {
     }
   }
 
-  return <div className="w-full">{showContents()}</div>
+  return <Inner className="w-full">{showContents()}</Inner>
 }
 
 export default ReportUserMenu

@@ -1,36 +1,15 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { BadRequest, Forbidden, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { projectHistoryPath, projectPath } from '@ir-engine/common/src/schema.type.module'
+import { staticResourceVectorPath } from '@ir-engine/common/src/schemas/media/static-resource-vector.schema'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 import { isValidId } from '@ir-engine/common/src/utils/isValidId'
+import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
 import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
 import { isEmpty } from 'lodash'
 import { HookContext } from '../../../declarations'
 import logger from '../../ServerLogger'
+import { default as appConfig } from '../../appconfig'
 import allowNullQuery from '../../hooks/allow-null-query'
 import checkScope from '../../hooks/check-scope'
 import enableClientPagination from '../../hooks/enable-client-pagination'
@@ -363,6 +342,46 @@ const addLog = async (context: HookContext<StaticResourceService>, actionType: '
   }
 }
 
+/**
+ * Sync static resource to vector database after create/update
+ */
+const syncToVectorDatabase = async (context: HookContext<StaticResourceService>) => {
+  if (appConfig.vectordb.enabled) {
+    try {
+      const vectorService = context.app.service(staticResourceVectorPath)
+      if (vectorService && typeof vectorService.syncStaticResource === 'function') {
+        const staticResource = context.result as StaticResourceType
+        const assetClass = FileToAssetType(staticResource.key)
+
+        if (assetClass === AssetType.Material || assetClass === AssetType.Model) {
+          await vectorService.syncStaticResource(staticResource)
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing to vector database:', error)
+      // Don't throw error to avoid breaking the main operation
+    }
+  }
+}
+
+/**
+ * Remove static resource from vector database after delete
+ */
+const removeFromVectorDatabase = async (context: HookContext<StaticResourceService>) => {
+  if (appConfig.vectordb.enabled) {
+    try {
+      const vectorService = context.app.service(staticResourceVectorPath)
+      if (vectorService && typeof vectorService.deleteByStaticResourceId === 'function') {
+        const staticResourceId = context.id as string
+        await vectorService.deleteByStaticResourceId(staticResourceId)
+      }
+    } catch (error) {
+      console.error('Error removing from vector database:', error)
+      // Don't throw error to avoid breaking the main operation
+    }
+  }
+}
+
 export default {
   around: {
     all: [schemaHooks.resolveResult(staticResourceResolver)]
@@ -473,10 +492,10 @@ export default {
         )
       )
     ],
-    create: [updateResourcesJson],
-    update: [updateResourcesJson],
-    patch: [updateResourcesJson, (context) => addLog(context, 'patch')],
-    remove: [removeResourcesJson, (context) => addLog(context, 'delete')]
+    create: [updateResourcesJson, syncToVectorDatabase],
+    update: [updateResourcesJson, syncToVectorDatabase],
+    patch: [updateResourcesJson, syncToVectorDatabase, (context) => addLog(context, 'patch')],
+    remove: [removeResourcesJson, removeFromVectorDatabase, (context) => addLog(context, 'delete')]
   },
 
   error: {

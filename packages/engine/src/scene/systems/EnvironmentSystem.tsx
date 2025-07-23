@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 
 import {
@@ -35,16 +10,17 @@ import {
   removeComponent,
   setComponent,
   UndefinedEntity,
-  useChildrenWithComponents,
   useComponent,
   useOptionalComponent,
   useQuery,
+  useQueryBySource,
   UUIDComponent
 } from '@ir-engine/ecs'
 
-import { Identifiable, State } from '@ir-engine/hyperflux'
+import { Identifiable, NO_PROXY, State } from '@ir-engine/hyperflux'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import {
@@ -56,9 +32,9 @@ import {
   MeshStandardMaterial,
   RGBAFormat,
   SRGBColorSpace,
+  Texture,
   Vector3
 } from 'three'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { EnvMapBakeComponent } from '../components/EnvMapBakeComponent'
 import { BoxProjectionPlugin, EnvMapComponent } from '../components/EnvmapComponent'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
@@ -67,7 +43,7 @@ import { addError, removeError } from '../functions/ErrorFunctions'
 const EnvMapReactor = (props: { entity: Entity }) => {
   const { entity } = props
   const envMapComponent = useComponent(entity, EnvMapComponent).type.value
-  const materialComponentEntities = useChildrenWithComponents(entity, [MaterialStateComponent])
+  const materialComponentEntities = useQueryBySource(entity, [MaterialStateComponent])
   return (
     <>
       {materialComponentEntities.map((materialComponentEntity, index) => {
@@ -163,9 +139,9 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     if (disallowedMaterials.has(materialState.type.value)) return
 
     const material = materialState.value as MeshStandardMaterial
-    material.envMap = backgroundComponent.value.clone() as any
+    material.envMap = backgroundComponent.get(NO_PROXY) as Texture
     ResourceState.addEntityResource(entity, material.envMap!)
-  }, [backgroundComponent?.value, materialState.value])
+  }, [backgroundComponent, materialState])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }

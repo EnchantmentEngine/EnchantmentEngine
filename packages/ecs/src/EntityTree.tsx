@@ -1,30 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { NO_PROXY, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import React, { useLayoutEffect } from 'react'
+import * as bitECS from 'bitecs'
+import React, { useEffect } from 'react'
 import {
   Component,
   ComponentType,
@@ -36,13 +12,17 @@ import {
   getOptionalMutableComponent,
   hasComponent,
   hasComponents,
+  LayerComponents,
+  Layers,
   removeEntity,
   setComponent,
   useHasComponents,
   useOptionalComponent
 } from './ComponentFunctions'
 import { Entity, UndefinedEntity } from './Entity'
+import { QueryReactor, useQuery } from './QueryFunctions'
 import { S } from './schemas/JSONSchemas'
+import { UUIDComponent } from './UUIDComponent'
 
 type EntityTreeSetType = {
   parentEntity: Entity
@@ -431,9 +411,12 @@ export function useAncestorWithComponents(
     const startEntity = includeSelf ? entity : parentEntity ?? UndefinedEntity
 
     const root = startEntity
-      ? startReactor(function useQueryReactor() {
-          return <ParentSubReactor entity={startEntity} key={startEntity} />
-        })
+      ? startReactor(
+          function useQueryReactor() {
+            return <ParentSubReactor entity={startEntity} key={startEntity} />
+          },
+          'useAncestorWithComponents ' + entity + componentsString
+        )
       : null
 
     return () => {
@@ -446,41 +429,84 @@ export function useAncestorWithComponents(
 }
 
 /**
- * @internal
- * @description
- *
- * Returns whether or not `@param entity` has any of the `@param components`
- * @param entity The {@link Entity} whose {@link EntityTreeComponent} will be traversed during the search.
- * @param components The list of Components that the parent must have at least one of in order to be considered a match.
- * */
-const _useHasAnyComponents = (entity: Entity, components: ComponentType<any>[]) => {
-  let result = false
-  for (const component of components) {
-    useOptionalComponent(entity, component)
-    if (hasComponent(entity, component)) {
-      result = true
-    }
-  }
-  return result
+ * Returns all the entities that meet a query and belong to a particular source entity
+ * - if you need entities from potentially deeply nested entities,
+ *   use useChildrenWithComponents instead (but note it incurs a significant performance cost)
+ */
+export function useQueryBySource(
+  sourceEntity: Entity,
+  queryTerms: bitECS.QueryTerm[],
+  layer = Layers.Simulation
+): Entity[] {
+  const query = useQuery([...queryTerms], layer)
+  return query.filter((e) => hasComponent(e, UUIDComponent) && UUIDComponent.getSourceEntity(e) === sourceEntity)
 }
 
+/**
+ * Returns a list of all ancestors for an entity
+ * @param entity
+ * @returns
+ */
+export function useAncestorTree(entity: Entity) {
+  const ancestors = useHookstate([] as Entity[])
+
+  useImmediateEffect(() => {
+    let unmounted = false
+    const ParentSubReactor = React.memo((props: { entity: Entity }) => {
+      const tree = useOptionalComponent(props.entity, EntityTreeComponent)
+      useEffect(() => {
+        if (!tree) return
+        // capture value to use in the cleanup function to prevent errors
+        const parentEntity = tree.parentEntity
+        ancestors.set((prev) => {
+          if (prev.indexOf(parentEntity) < 0) prev.push(parentEntity)
+          return prev
+        })
+        return () => {
+          if (unmounted) return
+          ancestors.set((prev) => prev.filter((e) => e !== parentEntity))
+        }
+      }, [tree?.parentEntity])
+      if (!tree?.parentEntity) return null
+      return <ParentSubReactor key={tree.parentEntity} entity={tree.parentEntity} />
+    })
+
+    const root = startReactor(function useQueryReactor() {
+      return <ParentSubReactor entity={entity} key={entity} />
+    }, 'useAncestorTree ' + entity)
+    return () => {
+      unmounted = true
+      root.stop()
+    }
+  }, [entity])
+
+  return ancestors.get(NO_PROXY) as Entity[]
+}
+
+/**
+ * WARNING: This function is not optimized for performance. Do not use it for queries that return a lot of results.
+ * Gets all the entities that meet a query and are deep children of the rootEntity
+ * @param rootEntity
+ * @param queryTerms
+ * @param layer
+ * @returns
+ */
 export function useChildrenWithComponents(
   rootEntity: Entity,
-  components: ComponentType<any>[],
-  exclude: ComponentType<any>[] = []
+  queryTerms: bitECS.QueryTerm[],
+  layer = Layers.Simulation
 ): Entity[] {
   const children = useHookstate([] as Entity[])
-  const componentsString = components.map((component) => component.name).join()
-  const excludeString = exclude.map((component) => component.name).join()
+
   useImmediateEffect(() => {
     let unmounted = false
     const ChildSubReactor = (props: { entity: Entity }) => {
-      const tree = useOptionalComponent(props.entity, EntityTreeComponent)
-      const matchesQuery = useHasComponents(props.entity, components)
-      const matchesExcludeQuery = _useHasAnyComponents(props.entity, exclude)
+      const ancestorTree = useAncestorTree(props.entity)
+      /** @todo somehow wrapping this in a useMemo doesn't work */
+      const includesRootEntity = ancestorTree.includes(rootEntity)
 
-      useLayoutEffect(() => {
-        if (!matchesQuery || matchesExcludeQuery) return
+      useEffect(() => {
+        if (!includesRootEntity) return
         children.set((prev) => {
           if (prev.indexOf(props.entity) < 0) prev.push(props.entity)
           return prev
@@ -494,26 +520,18 @@ export function useChildrenWithComponents(
             })
           }
         }
-      }, [matchesQuery, matchesExcludeQuery])
-
-      if (!tree?.children) return null
-      return (
-        <>
-          {tree.children.map((e) => (
-            <ChildSubReactor key={e} entity={e} />
-          ))}
-        </>
-      )
+      }, [includesRootEntity])
+      return null
     }
 
     const root = startReactor(function useQueryReactor() {
-      return <ChildSubReactor entity={rootEntity} key={rootEntity} />
-    })
+      return <QueryReactor Components={[...queryTerms, LayerComponents[layer]]} ChildEntityReactor={ChildSubReactor} />
+    }, 'useChildrenWithComponents ' + rootEntity)
     return () => {
       unmounted = true
       root.stop()
     }
-  }, [rootEntity, componentsString, excludeString])
+  }, [rootEntity]) /** @todo expose bitECS.queryHash and include that here too */
 
   return children.get(NO_PROXY) as Entity[]
 }
@@ -538,9 +556,14 @@ export function getChildrenWithComponents(
   const tree = getOptionalComponent(rootEntity, EntityTreeComponent)
   if (!tree?.children) return result
 
-  // Add the current entity's children to the result
-  result.push(...tree.children.filter((childEntity) => hasComponents(childEntity, components)))
-  // Recurse search
+  for (const child of tree.children) {
+    let valid = true
+    for (const comp of components) {
+      if (!hasComponent(child, comp)) valid = false
+    }
+    if (valid) result.push(child)
+  }
+
   for (const childEntity of tree.children) getChildrenWithComponents(childEntity, components, result)
 
   return result

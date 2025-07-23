@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { GLTF } from '@gltf-transform/core'
 import React, { Suspense, useEffect } from 'react'
 
@@ -56,7 +31,6 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import {
   getMutableState,
   getState,
@@ -75,10 +49,12 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { FileLoader } from '@ir-engine/spatial/src/resources/loaders/base/FileLoader'
+import { parseStorageProviderURLs } from '@ir-engine/spatial/src/resources/parseSceneJSON'
+import { loadResource } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
+import { ResourceProgressComponent } from '@ir-engine/spatial/src/resources/ResourceProgressComponent'
 import { ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { LoaderUtils } from 'three'
-import { loadResource } from '../assets/functions/resourceLoaderFunctions'
-import { FileLoader } from '../assets/loaders/base/FileLoader'
 import { AssetLoaderState } from '../assets/state/AssetLoaderState'
 import { AuthoringState, HistoryCommand } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
@@ -87,9 +63,7 @@ import { SceneDynamicLoadComponent } from '../scene/components/SceneDynamicLoadC
 import { addError, removeError } from '../scene/functions/ErrorFunctions'
 import { GLTFLoaderFunctions, GLTFParserOptions } from './GLTFLoaderFunctions'
 import { AssetState } from './GLTFState'
-import { migrateEEMaterial } from './migrateEEMaterial'
 import { OVERRIDE_EXTENSION_NAME } from './overrideExporterExtension'
-import { ResourceProgressComponent } from './ResourceProgressComponent'
 import { useApplyCollidersToChildMeshesEffect } from './useApplyCollidersToChildMeshesEffect'
 
 export const GLTFComponent = defineComponent({
@@ -413,7 +387,7 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
   const componentDependencies = Object.entries(dependencies.componentDependencies)
   const deltaDependencies = dependencies.deltaDependencies
 
-  const commands = useMutableState(AuthoringState).commands[SceneUser].get(NO_PROXY) as HistoryCommand[] | undefined
+  const commands = useMutableState(AuthoringState).commands[SceneUser]
 
   useEffect(() => {
     return () => {
@@ -423,9 +397,10 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
   }, [])
 
   useEffect(() => {
-    if (!commands) return
+    const commandArr = commands.get(NO_PROXY) as HistoryCommand[] | undefined
+    if (!commandArr) return
 
-    for (const command of commands) {
+    for (const command of commandArr) {
       for (const overrideUUID in command) {
         if (!deltaDependencies[overrideUUID]) continue
 
@@ -489,7 +464,6 @@ export const parseGLTFFile = (
 
     json = JSON.parse(JSON.stringify(json))
 
-    json = migrateEEMaterial(json)
     return [parseStorageProviderURLs(json), body]
   } catch (error) {
     if (onError) onError(error)
@@ -535,6 +509,7 @@ const useGLTFDocument = (entity: Entity) => {
       entity,
       (response) => {
         if (signal.aborted) return
+
         const [gltf, body] = parseGLTFFile(response, onError)
 
         if (gltf) {

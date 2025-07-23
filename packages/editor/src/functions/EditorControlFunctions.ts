@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
 import {
@@ -141,7 +116,7 @@ const modifyProperty = <C extends Component<any, any>>(
   return affectedNodes
 }
 
-const lookDevComponent: Component[] = [
+export const lookDevComponent: Component[] = [
   SkyboxComponent,
   HemisphereLightComponent,
   DirectionalLightComponent,
@@ -160,10 +135,16 @@ const overwriteLookdevObject = (
     const sceneEntitiesWithComponent = getChildrenWithComponents(parentEntity, [lookDevComp])
     if (sceneEntitiesWithComponent.length) {
       deserializeComponent(sceneEntitiesWithComponent[0], lookDevComp, props)
-      EditorState.markModifiedScene(parentEntity)
     } else {
-      createObjectFromSceneElement(componentJson, parentEntity, beforeEntity)
+      const vec3 = new Vector3()
+      createObjectFromSceneElement(
+        [comp, { name: TransformComponent.jsonID, props: { position: vec3 } }],
+        parentEntity,
+        beforeEntity,
+        name?.split('_').slice(1).join('-')
+      )
     }
+    EditorState.markModifiedScene(parentEntity)
   }
 }
 
@@ -481,7 +462,7 @@ const groupObjects = (entities: Entity[]) => {
   const firstEntity = entities[0]
   if (hasComponent(firstEntity, SceneComponent)) return
   const parentEntity = getComponent(firstEntity, EntityTreeComponent).parentEntity
-  const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent])
+  const gltfEntity = getAncestorWithComponents(firstEntity, [GLTFComponent], true, false)
   const newParent = UUIDComponent.create(gltfEntity, UUIDComponent.generateUUID(), Layers.Authoring)
   setComponent(newParent, NameComponent, 'New Group')
   setComponent(newParent, EntityTreeComponent, { parentEntity })

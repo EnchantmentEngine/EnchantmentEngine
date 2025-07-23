@@ -1,34 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useRender3DPanelSystem } from '@ir-engine/client-core/src/hooks/useRender3DPanelSystem'
 import {
   createEntity,
   EntityID,
   EntityTreeComponent,
-  getComponent,
   removeComponent,
   setComponent,
   SourceID,
@@ -36,11 +10,9 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { AmbientLightComponent, TransformComponent } from '@ir-engine/spatial'
-import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import React, { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { CameraGizmoComponent } from '../../../classes/gizmo/camera/CameraGizmoComponent'
@@ -70,9 +42,6 @@ export default function CameraGizmoTool({
     removeComponent(cameraEntity, CameraOrbitComponent)
     setComponent(cameraEntity, TransformComponent, { position: new Vector3(0, 0, 2) })
 
-    const camera = getComponent(cameraEntity, CameraComponent)
-    camera.layers.set(ObjectLayers.Gizmos)
-
     const lightEntity = createEntity()
     setComponent(lightEntity, AmbientLightComponent)
     setComponent(lightEntity, TransformComponent)
@@ -82,7 +51,7 @@ export default function CameraGizmoTool({
   }, [])
 
   return (
-    <div className="z-[4] ml-auto h-20 w-20 ">
+    <div className="z-20 ml-auto h-20 w-20 ">
       <canvas id="camera-gizmo-tool" ref={panelRef} style={{ pointerEvents: 'all' }} />
     </div>
   )

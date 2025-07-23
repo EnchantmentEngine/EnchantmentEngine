@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { removeFromFileThumbnailsSeen } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import {
@@ -51,14 +26,16 @@ import i18n from 'i18next'
 import { showGifFileConfimation, showMultipleFileModal } from '../panels/files/toolbar'
 import { ImportSettingsState } from '../services/ImportSettingsState'
 
-enum FileType {
-  THREE_D = '3D',
-  IMAGE = 'Image',
-  AUDIO = 'Audio',
-  VIDEO = 'Video',
-  UNKNOWN = 'Unknown',
-  GIF = 'GIF'
-}
+const FileType = {
+  THREE_D: '3D',
+  IMAGE: 'Image',
+  AUDIO: 'Audio',
+  VIDEO: 'Video',
+  UNKNOWN: 'Unknown',
+  GIF: 'GIF'
+} as const
+
+type FileTypeValue = (typeof FileType)[keyof typeof FileType]
 
 const unsupportedFileMessage = {
   [FileType.THREE_D]: 'editor:errors.unsupported-3D-file',
@@ -75,8 +52,8 @@ const supportedFiles = {
   [FileType.VIDEO]: new Set(['.mp4', '.mkv', '.avi'])
 }
 
-function findMimeType(file: File): FileType {
-  let fileType = FileType.UNKNOWN
+function findMimeType(file: File): FileTypeValue {
+  let fileType: FileTypeValue = FileType.UNKNOWN
   if (file.type.startsWith('image/')) {
     if (file.type.includes('gif')) {
       fileType = FileType.GIF
@@ -95,7 +72,7 @@ function findMimeType(file: File): FileType {
 }
 
 function isValidFileType(file, acceptedFileTypes?: string | undefined): { isValid: boolean; errorMessage?: string } {
-  const mimeType: FileType = findMimeType(file)
+  const mimeType: FileTypeValue = findMimeType(file)
   // check for the mimetype of file
   if (acceptedFileTypes && !acceptedFileTypes?.toLocaleLowerCase().includes(mimeType.toLocaleLowerCase())) {
     return {
@@ -248,7 +225,7 @@ export const filterGifFiles = async (projectName: string, directoryPath: string,
 
   const { gifFiles, notGifFiles } = files.reduce(
     (result, file) => {
-      const mimeType: FileType = findMimeType(file)
+      const mimeType: FileTypeValue = findMimeType(file)
       if (mimeType === FileType.GIF) {
         result.gifFiles.push(file)
       } else {
@@ -300,8 +277,60 @@ export const handleConvertGifFileToVideoAndUpload = (
   )
 }
 
+const validateFileIntegrity = async (files: File[]): Promise<File[]> => {
+  const validFiles: File[] = []
+
+  for (const file of files) {
+    try {
+      if (file.type.startsWith('image/')) {
+        await validateImageMetadata(file)
+      } else if (file.type.startsWith('video/')) {
+        await validateVideoMetadata(file)
+      }
+      validFiles.push(file)
+    } catch (error) {
+      console.warn(`Corrupted file detected: ${file.name}`, error)
+      NotificationService.dispatchNotify(`File "${file.name}" appears to be corrupted, please try a different file.`, {
+        variant: 'warning'
+      })
+    }
+  }
+
+  return validFiles
+}
+
+const validateImageMetadata = (file: File): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(img.src)
+      resolve()
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error('Invalid image file'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+const validateVideoMetadata = (file: File): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src)
+      resolve()
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src)
+      reject(new Error('Invalid video file'))
+    }
+    video.src = URL.createObjectURL(file)
+  })
+}
+
 // uploads files and returns an array of uploaded urls
-export const handleUploadFiles = (
+export const handleUploadFiles = async (
   projectName: string,
   directoryPath: string,
   files: FileList | File[],
@@ -311,9 +340,11 @@ export const handleUploadFiles = (
   const { ktx2: compressedImage } = CommonKnownContentTypes
   const importSettingsState = getMutableState(ImportSettingsState)
   const errors: Error[] = []
+  const validFiles = await validateFileIntegrity(Array.from(files))
 
+  // Process valid files
   return Promise.all(
-    Array.from(files).map(async (file) => {
+    validFiles.map(async (file) => {
       file = cleanFileNameFile(file)
 
       const ext = file.name.split('.').pop() ?? ''
@@ -440,6 +471,9 @@ export const inputFileWithAddToScene = ({
   updateThumbnail?: boolean
 }): Promise<null> =>
   new Promise((resolve, reject) => {
+    if (!directoryPath.endsWith('/')) {
+      directoryPath = directoryPath + '/'
+    }
     const el = document.createElement('input')
     el.type = 'file'
     if (preserveDirectory) {
@@ -494,7 +528,26 @@ const createFileUploader = ({
     el.accept = acceptedFileTypes
     el.style.display = 'none'
 
+    let isResolved = false
+
+    const cleanup = () => {
+      el.remove()
+    }
+
+    const handleCancel = () => {
+      if (!isResolved) {
+        isResolved = true
+        cleanup()
+        reject(new Error('File selection was canceled'))
+      }
+    }
+
+    el.addEventListener('cancel', handleCancel)
+
     el.onchange = async () => {
+      if (isResolved) return
+      isResolved = true
+
       try {
         if (el.files?.length) {
           const newFiles = validatedFiles(el.files, acceptedFileTypes)
@@ -520,7 +573,7 @@ const createFileUploader = ({
       } catch (err) {
         reject(err)
       } finally {
-        el.remove()
+        cleanup()
       }
     }
 

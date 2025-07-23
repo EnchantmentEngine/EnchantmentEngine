@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   AnimationClip,
   BufferAttribute,
@@ -82,23 +57,25 @@ export interface DisposableObject {
 
 // Cache.enabled = true
 
-export enum ResourceType {
-  Mesh = 'Mesh',
-  SkinnedMesh = 'SkinnedMesh',
-  Texture = 'Texture',
-  Geometry = 'Geometry',
-  Material = 'Material',
-  AnimationClip = 'AnimationClip',
-  Line = 'Line',
-  Light = 'Light',
-  Audio = 'Audio',
-  File = 'File',
-  ArrayBuffer = 'ArrayBuffer',
-  BufferAttribute = 'BufferAttribute',
-  InterleavedBufferAttribute = 'InterleavedBufferAttribute',
-  Unknown = 'Unknown'
-  // ECSData = 'ECSData',
-}
+export const ResourceType = {
+  Mesh: 'Mesh',
+  SkinnedMesh: 'SkinnedMesh',
+  Texture: 'Texture',
+  Geometry: 'Geometry',
+  Material: 'Material',
+  AnimationClip: 'AnimationClip',
+  Line: 'Line',
+  Light: 'Light',
+  Audio: 'Audio',
+  File: 'File',
+  ArrayBuffer: 'ArrayBuffer',
+  BufferAttribute: 'BufferAttribute',
+  InterleavedBufferAttribute: 'InterleavedBufferAttribute',
+  Unknown: 'Unknown'
+  // ECSData: 'ECSData',
+} as const
+
+export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType]
 
 export type ResourceAssetType =
   | Texture
@@ -290,6 +267,7 @@ const resourceCallbacks = {
 
       resource.metadata.merge({ onGPU: false, discarded: false })
       asset.onUpdate = () => {
+        if (!resource?.value?.metadata) return
         resource.metadata.merge({ onGPU: true, discarded: false })
         setTimeout(() => {
           const viewer = getState(ReferenceSpaceState).viewerEntity
@@ -309,6 +287,7 @@ const resourceCallbacks = {
                   asset
                     .offloadTextureData()
                     .then(() => {
+                      if (!resource?.value?.metadata) return
                       resource.metadata.merge({ onGPU: true, discarded: true })
                     })
                     .catch((err) => {
@@ -489,8 +468,9 @@ const disposeMesh = (asset: Mesh) => {
 const disposeMaterial = (asset: Material | Material[]) => {
   const dispose = (material: Material) => {
     if ((material as DisposableObject).disposed) return
-    for (const [_, val] of Object.entries(material) as [string, Texture][]) {
-      if (isTexture(val)) {
+    for (const [key, val] of Object.entries(material) as [string, Texture][]) {
+      // Ignore envmaps until resource reference counting is reimplemented
+      if (isTexture(val) && key !== 'envMap') {
         // Dispose texture if it was added to material after the material added
         val.dispose?.()
       }
@@ -646,7 +626,7 @@ const addEntityResource = (
     case ResourceType.Material: {
       const material = asset as Material
       for (const [key, val] of Object.entries(material) as [string, any][]) {
-        if (isTexture(val)) {
+        if (isTexture(val) && key !== 'envMap') {
           addEntityResource(entity, val, returnedResources)
         }
       }
@@ -693,6 +673,7 @@ const removeEntityResource = (resource: Resource) => {
 const useEntityResource = (entity: Entity, asset: ResourceAssetType) => {
   useEffect(() => {
     const resources = addEntityResource(entity, asset)
+    if (!resources.length) return
 
     return () => {
       for (const resource of resources) removeEntityResource(resource)

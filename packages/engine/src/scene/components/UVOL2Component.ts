@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { startTransition, useEffect, useMemo, useRef } from 'react'
 import {
   BufferAttribute,
@@ -68,9 +43,9 @@ import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { AssetExt } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { getLoader } from '../../assets/classes/AssetLoader'
+import { AssetExt } from '@ir-engine/spatial/src/resources/AssetType'
+import { getLoader } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { AudioState } from '../../audio/AudioState'
 import { AssetState } from '../../gltf/GLTFState'
@@ -85,7 +60,7 @@ import {
   TextureFormat,
   TextureType,
   UniformSolveTarget,
-  UvolType
+  UVOL_TYPE
 } from '../constants/LegacyUVOLTypes'
 import { PlayMode } from '../constants/PlayMode'
 import { handleAutoplay, LegacyVolumetricComponent } from './LegacyVolumetricComponent'
@@ -500,7 +475,7 @@ function UVOL2Reactor() {
   const material = useMemo(() => {
     const manifest = component.data.value
     let _material: ShaderMaterial | MeshBasicMaterial = new MeshBasicMaterial({ color: 0xffffff })
-    if (manifest.type === UvolType.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
+    if (manifest.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       const firstTarget = Object.keys(manifest.geometry.targets)[0]
       const hasNormals = !manifest.geometry.targets[firstTarget].settings.excludeNormals
       const shaderType = hasNormals ? 'physical' : 'basic'
@@ -644,7 +619,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
     }
 
     const shadow = getMutableComponent(entity, ShadowComponent)
-    if (sortedManifest.type === UvolType.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
+    if (sortedManifest.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       // TODO: Cast shadows properly with uniform solve
       shadow.cast.set(false)
       shadow.receive.set(false)
@@ -765,7 +740,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
 
   useEffect(() => {
     if (!shadow) return
-    if (component.data.value.type === UvolType.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
+    if (component.data.value.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       // TODO: Cast shadows properly with uniform solve
       shadow.cast.set(false)
       shadow.receive.set(false)
@@ -1096,7 +1071,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
       let headerTemplate: RegExp | undefined = /\/\/\sHEADER_REPLACE_START([\s\S]*?)\/\/\sHEADER_REPLACE_END/
       let mainTemplate: RegExp | undefined = /\/\/\sMAIN_REPLACE_START([\s\S]*?)\/\/\sMAIN_REPLACE_END/
 
-      if (component.data.value.type !== UvolType.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE || 1 == 1) {
+      if (component.data.value.type !== UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
         headerTemplate = undefined
         mainTemplate = undefined
       }
@@ -1499,7 +1474,7 @@ transformed.z += mix(keyframeA.z, keyframeB.z, mixRatio);
   }
 
   const updateGeometry = (currentTime: number) => {
-    if (component.data.value.type === UvolType.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
+    if (component.data.value.type === UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE) {
       updateUniformSolve(currentTime)
     } else {
       updateNonUniformSolve(currentTime)

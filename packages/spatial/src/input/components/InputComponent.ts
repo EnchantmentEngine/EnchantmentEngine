@@ -1,31 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useLayoutEffect } from 'react'
-
 import {
+  AnimationSystemGroup,
+  defineQuery,
   defineSystem,
   EngineState,
   getComponent,
@@ -38,9 +13,9 @@ import {
   defineComponent,
   getMutableComponent,
   getOptionalComponent,
+  hasComponent,
   removeComponent,
-  setComponent,
-  useComponent
+  setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
@@ -348,7 +323,7 @@ export const InputComponent = defineComponent({
     return axes as AxisValueMap<BindingsType>
   },
 
-  // @deprecated use getButtons instead
+  /** @deprecated use getButtons instead  */
   getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
@@ -356,7 +331,7 @@ export const InputComponent = defineComponent({
     return InputComponent.getButtons(entityContext, inputBindings)
   },
 
-  // @deprecated use getAxes instead
+  /** @deprecated use getAxes instead */
   getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
@@ -381,48 +356,6 @@ export const InputComponent = defineComponent({
       { after: InputSystemGroup }
     )
     return hasFocus
-  },
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const input = useComponent(entity, InputComponent)
-
-    useLayoutEffect(() => {
-      if (!input.inputSources.length || !input.highlight) return
-      setComponent(entity, HighlightComponent)
-      return () => {
-        removeComponent(entity, HighlightComponent)
-      }
-    }, [input.inputSources, input.highlight])
-
-    // useEffect(() => {
-    //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
-    //   // whether or not it's a rigidbody or a mesh
-    //
-    //   //then we might just need to abandon the Input layer raycast, leave that as-is, add the distance heuristic and call it a day
-    //
-    //   // the input system can still perform physics and mesh bvh raycasts on things that have an InputComponent as an entity ancestor
-    //   // I think I know how this can work
-    //   //awesome
-    //
-    //   //techincally if we add the distance heuristic a rigidbody / collider are not needed
-    //
-    //   // after entity tree has loaded (how do we check for this...)
-    //   // create an input rigidbody if one doesn't exist
-    //   // if (!hasComponent(entity, RigidBodyComponent)) {
-    //   //   setComponent(entity, RigidBodyComponent, { type: BodyTypes.Fixed }) //assume kinematic if it had no rigidbody before
-    //   // }
-    //   // // create an input colliderComponent if one doesn't exist
-    //   // if (!hasComponent(entity, ColliderComponent)) {
-    //   //   //TODO - check if we have a mesh, if we do, use the mesh as a collider type....if not then generate a bounding sphere
-    //   //   setComponent(entity, ColliderComponent)
-    //   // }
-    //   // const hasMesh = hasComponent(entity, MeshComponent)
-    //   // const collider = getMutableComponent(entity, ColliderComponent)
-    //   // collider.collisionLayer.set(collider.collisionLayer.value | CollisionGroups.Input)
-    // }, [])
-
-    return null
   }
 })
 
@@ -430,11 +363,13 @@ function getLargestMagnitudeNumber(a: number, b: number) {
   return Math.abs(a) > Math.abs(b) ? a : b
 }
 
-export const enum InputExecutionOrder {
-  'Before' = -1,
-  'With' = 0,
-  'After' = 1
-}
+export const InputExecutionOrder = {
+  Before: -1,
+  With: 0,
+  After: 1
+} as const
+
+export type InputExecutionOrder = (typeof InputExecutionOrder)[keyof typeof InputExecutionOrder]
 
 function getInputExecutionInsert(order: InputExecutionOrder) {
   switch (order) {
@@ -451,4 +386,23 @@ function getInputExecutionInsert(order: InputExecutionOrder) {
 export const InputExecutionSystemGroup = defineSystem({
   uuid: 'ee.engine.InputExecutionSystemGroup',
   insert: { with: InputSystemGroup }
+})
+
+const inputQuery = defineQuery([InputComponent])
+
+const execute = () => {
+  for (const entity of inputQuery()) {
+    const component = getComponent(entity, InputComponent)
+    const highlight = component.highlight && component.inputSources.length
+    if (highlight) {
+      if (!hasComponent(entity, HighlightComponent)) setComponent(entity, HighlightComponent)
+    } else removeComponent(entity, HighlightComponent)
+  }
+}
+
+/** System for inserting subsystems*/
+export const InputHighlightSystem = defineSystem({
+  uuid: 'ee.engine.InputHighlightSystem',
+  insert: { with: AnimationSystemGroup },
+  execute
 })

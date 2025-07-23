@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import appRootPath from 'app-root-path'
 import chargebeeInst from 'chargebee'
 import fs from 'fs'
@@ -130,6 +105,29 @@ export const db = {
 db.url =
   (testEnabled ? process.env.MYSQL_TEST_URL : process.env.MYSQL_URL) ||
   `mysql://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}`
+
+/**
+ * Vector Database (PostgreSQL with PGVector)
+ */
+export const vectordb = {
+  enabled: process.env.VECTORDB_ENABLED === 'true',
+  username: testEnabled ? process.env.POSTGRES_TEST_USER! : process.env.POSTGRES_USER!,
+  password: testEnabled ? process.env.POSTGRES_TEST_PASSWORD! : process.env.POSTGRES_PASSWORD!,
+  database: testEnabled ? process.env.POSTGRES_TEST_DATABASE! : process.env.POSTGRES_DATABASE!,
+  host: testEnabled ? process.env.POSTGRES_TEST_HOST! : process.env.POSTGRES_HOST!,
+  port: testEnabled ? process.env.POSTGRES_TEST_PORT! : process.env.POSTGRES_PORT!,
+  dialect: 'postgres',
+  forceRefresh: process.env.FORCE_DB_REFRESH === 'true',
+  url: '',
+  charset: 'utf8',
+  pool: {
+    max: parseInt(process.env.POSTGRES_POOL_MAX || '5')
+  }
+}
+
+vectordb.url =
+  (testEnabled ? process.env.POSTGRES_TEST_URL : process.env.POSTGRES_URL) ||
+  `postgres://${vectordb.username}:${vectordb.password}@${vectordb.host}:${vectordb.port}/${vectordb.database}`
 
 /**
  * Server / backend
@@ -463,6 +461,20 @@ const metabase = {
 }
 
 /**
+ * Monitoring
+ */
+const monitoring = {
+  metrics: {
+    enabled: process.env.PROMETHEUS_METRICS_ENABLED === 'true',
+    endpoint: process.env.METRICS_ENDPOINT || '/metrics',
+    // For GCP Cloud Monitoring integration
+    gcpProject: process.env.GCP_PROJECT,
+    useCloudMonitoring: process.env.USE_CLOUD_MONITORING === 'true'
+  }
+  // Note: Tracing configuration will be added in a separate PR
+}
+
+/**
  * Full config
  */
 const config = {
@@ -474,6 +486,7 @@ const config = {
   client,
   coil,
   db,
+  vectordb,
   email,
   'instance-server': instanceserver,
   'instance-server-webrtc': instanceServerWebRtc,
@@ -495,7 +508,8 @@ const config = {
     typeof process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'undefined' || process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'true',
   fsProjectSyncEnabled: process.env.FS_PROJECT_SYNC_ENABLED === 'false' ? false : true,
   zendesk,
-  metabase
+  metabase,
+  monitoring
 }
 
 chargebeeInst.configure({

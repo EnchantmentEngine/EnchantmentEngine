@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /**
  * @fileoverview Contains function declarations describing the heuristics used by ClientInputSystem.
  */
@@ -32,6 +7,8 @@ import {
   EngineState,
   Entity,
   EntityUUID,
+  getAncestorWithComponents,
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -55,7 +32,6 @@ import { XRScenePlacementComponent } from '../../xr/XRScenePlacementComponent'
 import { XRState } from '../../xr/XRState'
 import { InputComponent } from '../components/InputComponent'
 import { InputSourceComponent } from '../components/InputSourceComponent'
-import { InputState } from '../state/InputState'
 
 const _worldPosInputSourceComponent = new Vector3()
 const _worldPosInputComponent = new Vector3()
@@ -166,6 +142,8 @@ const sortDistance = (a: IntersectionData, b: IntersectionData) => {
 const hitTarget = new Vector3()
 const ray = new Ray()
 
+const boundingBoxQuery = defineQuery([VisibleComponent, BoundingBoxComponent])
+
 export function boundingBoxHeuristic(
   viewerEntity: Entity,
   intersectionData: Set<IntersectionData>,
@@ -178,9 +156,10 @@ export function boundingBoxHeuristic(
   ray.origin.copy(position)
   ray.direction.copy(direction)
 
-  const inputState = getState(InputState)
-  for (const entity of inputState.inputBoundingBoxes) {
-    if (!filterEntitiesByViewer(entity, viewerEntity)) continue
+  const boxEntities = boundingBoxQuery()
+    .filter(filterEntitiesByInput)
+    .filter((e) => filterEntitiesByViewer(e, viewerEntity))
+  for (const entity of boxEntities) {
     const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
     if (!boundingBox) continue
     const hit = ray.intersectBox(boundingBox.box, hitTarget)
@@ -200,10 +179,10 @@ export function meshHeuristic(
   position: Vector3,
   direction: Vector3
 ) {
-  const isEditing = getState(EngineState).isEditing
-  const inputState = getState(InputState)
-  const objects = (isEditing ? meshesQuery() : Array.from(inputState.inputMeshes))
+  const entities = meshesQuery()
+    .filter(filterEntitiesByInput)
     .filter((eid) => filterEntitiesByViewer(eid, viewerEntity))
+  const objects = entities
     .filter((eid) => hasComponent(eid, ObjectComponent))
     .map((eid) => getComponent(eid, ObjectComponent))
 
@@ -244,4 +223,18 @@ export function filterEntitiesByViewer(entity: Entity, viewerEntity: Entity) {
     }
   })
   return isRendered
+}
+
+const inputComponentArray = [InputComponent]
+
+/**
+ * Filters entities by input
+ * - return all meshes when authoring
+ * - iterate parent hierarchy until we find one with an input component
+ * @param entity
+ * @returns
+ */
+export function filterEntitiesByInput(entity: Entity) {
+  if (getAuthoringCounterpart(entity)) return true
+  return !!getAncestorWithComponents(entity, inputComponentArray)
 }

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { API, PaginationQuery } from '@ir-engine/common'
 import {
   FileBrowserContentType,
@@ -39,8 +14,8 @@ import {
   getComponent,
   removeEntity,
   setComponent,
-  useChildrenWithComponents,
-  useOptionalComponent
+  useOptionalComponent,
+  useQueryBySource
 } from '@ir-engine/ecs'
 import {
   ErrorBoundary,
@@ -73,7 +48,7 @@ import { useFind } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
 import { getChildrenWithComponents } from '@ir-engine/ecs'
 import { uploadProjectFiles } from '@ir-engine/editor/src/functions/assetFunctions'
-import { useGLTFComponent, useTexture } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
+import { useGLTFComponent } from '@ir-engine/engine/src/assets/functions/useGLTFComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
@@ -88,6 +63,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/Re
 import { BackgroundComponent, SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { createHash } from 'crypto'
 import mime from 'mime-types'
 import { uploadToFeathersService } from '../../util/upload'
@@ -286,8 +262,8 @@ const uploadThumbnail = async (src: string, projectName: string, blob: Blob | nu
         }
       })
       .catch((e) => console.error(e))
-  } catch {
-    ;(e) => console.error(e)
+  } catch (e) {
+    console.error(e)
   }
 }
 const useGenerateHelper = (
@@ -436,7 +412,7 @@ type ThumbnailFileType = 'image' | 'model' | 'texture' | 'video' | 'material' | 
 const extensionThumbnailTypes: { extensions: string[]; thumbnailType: ThumbnailFileType }[] = [
   { extensions: ['material.gltf'], thumbnailType: 'material' },
   { extensions: ['lookdev.gltf'], thumbnailType: 'lookDev' },
-  { extensions: ['gltf', 'glb', 'vrm', 'usdz', 'fbx'], thumbnailType: 'model' },
+  { extensions: ['gltf', 'glb', 'vrm'], thumbnailType: 'model' },
   { extensions: ['png', 'jpeg', 'jpg'], thumbnailType: 'image' },
   { extensions: ['ktx2'], thumbnailType: 'texture' },
   { extensions: ['mp4', 'm3u8'], thumbnailType: 'video' }
@@ -461,14 +437,6 @@ export const extensionCanHaveDimension = (ext: string): boolean => {
   const fileType = extensionThumbnailTypeMap.get(ext)
   // Only model files can have dimensions, but exclude material and lookdev assets
   return fileType === 'model' && ext !== 'material.gltf' && ext !== 'lookdev.gltf'
-}
-
-const tryCatch = (fn: (...args: any[]) => void, onError: (err) => void) => {
-  try {
-    fn()
-  } catch (e) {
-    onError(e)
-  }
 }
 
 const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
@@ -713,7 +681,7 @@ const renderThumbnail = (
 ) => {
   const { src, project, onError } = props
 
-  tryCatch(() => {
+  try {
     setCameraFocusOnBox(entity, cameraEntity)
     const camera = getComponent(cameraEntity, CameraComponent)
     camera.layers.set(ObjectLayers.Scene)
@@ -733,17 +701,15 @@ const renderThumbnail = (
     render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent), 0, false)
 
     canvas!.toBlob((blob: Blob) => {
-      tryCatch(
-        () =>
-          uploadThumbnail(src, project, blob).then(() => {
-            FileThumbnailJobState.removeCurrentJob()
-          }),
-        (err) => {
+      uploadThumbnail(src, project, blob)
+        .then(() => FileThumbnailJobState.removeCurrentJob())
+        .catch((err) => {
           onError(err)
-        }
-      )
+        })
     })
-  }, onError)
+  } catch (e) {
+    onError(e)
+  }
 }
 
 const RenderVideoThumbnail = (props: RenderThumbnailProps) => {
@@ -752,17 +718,25 @@ const RenderVideoThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!src) return
 
-    tryCatch(() => {
+    try {
       const video = document.createElement('video')
       video.src = src
       video.crossOrigin = 'anonymous'
       seekVideo(video, 1)
         .then(() => drawToCanvas(video))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
-        .then(() => video.remove())
-        .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .then((blob) => uploadThumbnail(src, project, blob))
+        .then(() => {
+          video.remove()
+          FileThumbnailJobState.removeCurrentJob()
+        })
+        .catch((err) => {
+          video.remove()
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [src])
   return null
 }
@@ -773,7 +747,7 @@ const RenderImageThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!src) return
 
-    tryCatch(() => {
+    try {
       const image = new Image()
       image.crossOrigin = 'anonymous'
       image.src = src
@@ -781,9 +755,14 @@ const RenderImageThumbnail = (props: RenderThumbnailProps) => {
         .decode()
         .then(() => drawToCanvas(image))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
+        .then((blob) => uploadThumbnail(src, project, blob))
         .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .catch((err) => {
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [src])
   return null
 }
@@ -827,14 +806,17 @@ const RenderModelThumbnail = (props: RenderThumbnailProps) => {
 
     if (!loaded) return
     if (jobType === 'dimension') {
-      tryCatch(
-        () => {
-          uploadDimension(entity, src, props.project).then(() => {
+      try {
+        uploadDimension(entity, src, props.project)
+          .then(() => {
             FileThumbnailJobState.removeCurrentJob()
           })
-        },
-        (err) => onError(err)
-      )
+          .catch((err) => {
+            onError(err)
+          })
+      } catch (e) {
+        onError(e)
+      }
     } else if (jobType === 'thumbnail') {
       console.log('upload thumbnail')
       renderThumbnail(entity, lightEntity, skyboxEntity, cameraEntity, props)
@@ -859,7 +841,7 @@ const RenderTextureThumbnail = (props: RenderThumbnailProps) => {
   useEffect(() => {
     if (!texture) return
 
-    tryCatch(() => {
+    try {
       const image = new Image()
       image.crossOrigin = 'anonymous'
 
@@ -870,10 +852,18 @@ const RenderTextureThumbnail = (props: RenderThumbnailProps) => {
         })
         .then(() => drawToCanvas(image))
         .then(getCanvasBlob)
-        .then((blob) => tryCatch(() => uploadThumbnail(src, project, blob), onError))
-        .then(() => image.remove())
-        .then(() => FileThumbnailJobState.removeCurrentJob())
-    }, onError)
+        .then((blob) => uploadThumbnail(src, project, blob))
+        .then(() => {
+          image.remove()
+          FileThumbnailJobState.removeCurrentJob()
+        })
+        .catch((err) => {
+          image.remove()
+          onError(err)
+        })
+    } catch (e) {
+      onError(e)
+    }
   }, [texture])
 
   useEffect(() => {
@@ -903,15 +893,12 @@ const RenderMaterialThumbnail = (props: RenderThumbnailProps) => {
       return
     }
 
-    /** @todo Remove the setTimeout when the GLTF loader refactor has been completed */
-    setTimeout(() => {
-      const sphere = new Mesh(new SphereGeometry(1), material)
-      if (Object.hasOwn(sphere.material, 'flatShading')) {
-        ;(sphere.material as Material & { flatShading: boolean }).flatShading = false
-      }
-      setComponent(entity, MeshComponent, sphere)
-      renderThumbnail(entity, lightEntity, skyboxEntity, cameraEntity, props)
-    }, 1000)
+    const sphere = new Mesh(new SphereGeometry(1), material)
+    if (Object.hasOwn(sphere.material, 'flatShading')) {
+      ;(sphere.material as Material & { flatShading: boolean }).flatShading = false
+    }
+    setComponent(entity, MeshComponent, sphere)
+    renderThumbnail(entity, lightEntity, skyboxEntity, cameraEntity, props)
   }, [entity, lightEntity, skyboxEntity, cameraEntity, gltfEntity])
 
   useEffect(() => {
@@ -926,7 +913,7 @@ const RenderLookDevThumbnail = (props: RenderThumbnailProps) => {
   const { src, onError } = props
   const [entity, lightEntity, skyboxEntity, cameraEntity] = useRenderEntities(src)
   const errors = ErrorComponent.useComponentErrors(entity, GLTFComponent)
-  const [lookdevSkybox] = useChildrenWithComponents(entity, [SkyboxComponent])
+  const [lookdevSkybox] = useQueryBySource(entity, [SkyboxComponent])
   const backgroundComponent = useOptionalComponent(lookdevSkybox, BackgroundComponent)
 
   useEffect(() => {

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Entity, EntityTreeComponent, createEntity, setComponent } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -48,6 +23,9 @@ import {
   TorusGeometry,
   Vector3
 } from 'three'
+
+const iconGizmoTransitionTimeout = 1000 // ms
+const iconGizmoGrowInterpolationFactor = 0.3 // ms
 
 const gizmoMaterial = new MeshBasicMaterial({
   depthTest: false,
@@ -104,6 +82,7 @@ matInvisible.visible = false
 
 const matHelper = gizmoLineMaterial.clone()
 matHelper.opacity = gizmoMaterialProperties[GizmoMaterial.HELPER].opacity
+matHelper.transparent = true
 
 const matHelperRed = gizmoLineMaterial.clone()
 matHelperRed.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED].color)
@@ -125,22 +104,26 @@ matBlue.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE].color)
 const matRedTransparent = gizmoMaterial.clone()
 matRedTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.RED_TRANSPARENT].color)
 matRedTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.RED_TRANSPARENT].opacity
+matRedTransparent.transparent = true
 
 const matGreenTransparent = gizmoMaterial.clone()
 matGreenTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.GREEN_TRANSPARENT].color)
 matGreenTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.GREEN_TRANSPARENT].opacity
+matGreenTransparent.transparent = true
 
 const matBlueTransparent = gizmoMaterial.clone()
 matBlueTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.BLUE_TRANSPARENT].color)
 matBlueTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.BLUE_TRANSPARENT].opacity
+matBlueTransparent.transparent = true
 
 const matWhiteTransparent = gizmoMaterial.clone()
 matWhiteTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.WHITE_TRANSPARENT].opacity
+matWhiteTransparent.transparent = true
 
 const matYellowTransparent = gizmoMaterial.clone()
 matYellowTransparent.color.setHex(gizmoMaterialProperties[GizmoMaterial.YELLOW_TRANSPARENT].color)
 matYellowTransparent.opacity = gizmoMaterialProperties[GizmoMaterial.YELLOW_TRANSPARENT].opacity
-
+matYellowTransparent.transparent = true
 // const matYellow = gizmoMaterial.clone()
 //matYellow.color.setHex(materialProperties[GizmoMaterial.YELLOW].color)
 
@@ -501,7 +484,9 @@ export {
   helperScale,
   helperTranslate,
   iconGizmoArrow,
+  iconGizmoGrowInterpolationFactor,
   iconGizmoHelper,
+  iconGizmoTransitionTimeout,
   iconGizmoYHelper,
   matBlue,
   matBlueTransparent,

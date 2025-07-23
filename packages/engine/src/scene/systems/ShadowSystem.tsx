@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import {
   Box3,
@@ -95,9 +70,9 @@ import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderMod
 import { CSMPluginComponent } from '@ir-engine/spatial/src/renderer/csm/CSMPluginComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
-import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
@@ -154,7 +129,12 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
     return () => {
       CSM.dispose(rendererEntity)
     }
-  }, [directionalLightComponent?.castShadow.value, renderSettingsComponent.cascades.value, !!directionalLight])
+  }, [
+    directionalLightComponent?.castShadow.value,
+    renderSettingsComponent.cascades.value,
+    renderSettingsComponent.shadowMapType,
+    !!directionalLight
+  ])
 
   /** Must run after scene object system to ensure source light is not lit */
   useExecute(
@@ -169,6 +149,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   useEffect(() => {
     setComponent(rendererEntity, CSMComponent)
     const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
+
     if (!directionalLightComponent?.castShadow.value || !directionalLight) return
 
     csmComponent.shadowBias.set(directionalLight.shadow.bias)
@@ -436,7 +417,7 @@ const reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(
-    `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/drop-shadow.ktx2`
+    `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/drop-shadow.ktx2`
   )
 
   useEffect(() => {

@@ -1,32 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   BufferUtils,
   Document,
-  Extension,
   Format,
   Buffer as glBuffer,
   Material,
@@ -44,9 +18,7 @@ import {
   draco,
   flatten,
   join,
-  palette,
   partition,
-  prune,
   reorder,
   simplify,
   textureCompress,
@@ -65,15 +37,9 @@ import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 import { createHash } from 'crypto'
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
 import { getPixels } from 'ndarray-pixels'
-import { $attributes } from 'property-graph'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
 
-import {
-  EEArgEntry,
-  EEMaterial,
-  EEMaterialExtension
-} from '@ir-engine/engine/src/assets/compression/extensions/EE_MaterialTransformer'
 import {
   EEResourceID,
   EEResourceIDExtension
@@ -82,9 +48,9 @@ import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadReq
 import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '../regex'
 import ModelTransformLoader from './ModelTransformLoader'
 /**
- * https://ir.world/projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
- * Match 1: projects/ir-engine/default-project/assets/collisioncube-LOD0.glb
- * Group 1: ir-engine/default-project
+ * https://ir.world/projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
+ * Match 1: projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
+ * Group 1: enchantmentengine/default-project
  * Group 2: collisioncube-LOD0.glb
  */
 
@@ -96,7 +62,7 @@ import ModelTransformLoader from './ModelTransformLoader'
  * @param count
  * @returns
  */
-const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: Mesh, count) => {
+const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: Mesh, count: number) => {
   return mesh.listPrimitives().map((prim) => {
     const buffer = prim.getAttribute('POSITION')?.getBuffer() ?? doc.createBuffer()
 
@@ -124,7 +90,7 @@ const createBatch = (doc: Document, batchExtension: EXTMeshGPUInstancing, mesh: 
   })
 }
 
-const removeUVsOnUntexturedMeshes: Transform = (document: Document) => {
+function removeUVsOnUntexturedMeshes(document: Document): Document {
   document
     .getRoot()
     .listMeshes()
@@ -145,6 +111,7 @@ const removeUVsOnUntexturedMeshes: Transform = (document: Document) => {
       prim.setAttribute('TEXCOORD_0', null)
       prim.setAttribute('TEXCOORD_1', null)
     })
+  return document
 }
 
 const split: Transform = (document: Document) => {
@@ -187,7 +154,7 @@ const split: Transform = (document: Document) => {
   })
 }
 
-const pruneUnusedNodes = (nodes: Node[], logger) => {
+const pruneUnusedNodes = (nodes: Node[], logger: unknown) => {
   let node: Node | undefined
   let unusedNodes = 0
   while ((node = nodes.pop())) {
@@ -265,41 +232,6 @@ const unInstanceSingletons: Transform = (document: Document) => {
     })
 }
 
-const combineMaterials: Transform = (document: Document) => {
-  const root = document.getRoot()
-  const cache: Material[] = []
-  console.log('combining materials...')
-  root.listMaterials().map((material) => {
-    const eeMat = material.getExtension<EEMaterial>('EE_material')
-    const dupe = cache.find((cachedMaterial) => {
-      const cachedEEMat = cachedMaterial.getExtension<EEMaterial>('EE_material')
-      if (eeMat !== null && cachedEEMat !== null) {
-        return (
-          eeMat.prototype === cachedEEMat.prototype &&
-          ((eeMat.args === cachedEEMat.args && eeMat.args === null) ||
-            (cachedEEMat.args && eeMat.args?.equals(cachedEEMat.args)))
-        )
-      } else return material.equals(cachedMaterial)
-    })
-    if (dupe !== undefined) {
-      console.log('found duplicate material...')
-      let dupeCount = 0
-      root
-        .listMeshes()
-        .flatMap((mesh) => mesh.listPrimitives())
-        .map((prim) => {
-          if (prim.getMaterial() === material) {
-            prim.setMaterial(dupe)
-            dupeCount++
-          }
-        })
-      console.log('replaced ' + dupeCount + ' materials')
-    } else {
-      cache.push(material)
-    }
-  })
-}
-
 const combineMeshes: Transform = (document: Document) => {
   const root = document.getRoot()
   const prims = root.listMeshes().flatMap((mesh) => mesh.listPrimitives())
@@ -356,16 +288,17 @@ const hashBuffer = (buffer: Uint8Array): string => {
   return `buffer_${hash}`
 }
 
-enum Status {
-  TransformingModels,
-  ProcessingTexture,
-  WritingFiles,
-  Complete
-}
+const Status = {
+  TransformingModels: 0,
+  ProcessingTexture: 1,
+  WritingFiles: 2,
+  Complete: 3
+} as const
 
+export type ModelTransformStatus = (typeof Status)[keyof typeof Status]
 export { Status as ModelTransformStatus }
 
-const mimeToFileType = (mimeType) => {
+const mimeToFileType = (mimeType: string) => {
   switch (mimeType) {
     case 'image/jpg':
     case 'image/jpeg':
@@ -379,7 +312,7 @@ const mimeToFileType = (mimeType) => {
   }
 }
 
-const fileTypeToMime = (fileType) => {
+const fileTypeToMime = (fileType: string) => {
   switch (fileType) {
     case 'jpg':
       return 'image/jpg'
@@ -400,15 +333,21 @@ const loadIO = async () => {
 }
 let ktx2Encoder: KTX2Encoder | null = null
 
-const doUpload = async (projectName, fileName, buffer, path?: string, publishing = false) => {
+const doUpload = async (
+  projectName: string,
+  fileName: string,
+  buffer: ArrayBuffer | Blob,
+  path?: string,
+  publishing = false
+) => {
   const file = new File([buffer], fileName)
   const uploadRequestState = getMutableState(UploadRequestState)
   const queue = uploadRequestState.queue.get(NO_PROXY)
-  let resolver
-  const promise = new Promise((resolve) => {
-    resolver = resolve
+  let resolveFunc!: () => void
+  const promise = new Promise<void>((resolve) => {
+    resolveFunc = () => resolve()
   })
-  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolver, path: path }])
+  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolveFunc, path: path }])
   if (fileName.includes('compressed-published') || publishing) {
     uploadRequestState.isOnPublishing.set(true)
   }
@@ -421,97 +360,6 @@ const toProjectAndFileName = (fUploadPath: string, srcBaseURL: string): [string,
     MATCH_ASSET_PROJECT_FILENAME_REGEX.exec(fUploadPath) ??
     MATCH_ASSET_PROJECT_FILENAME_REGEX.exec(pathJoin(srcBaseURL, fUploadPath))!
   return [projectName, fileName]
-}
-
-const toTransformedDocument = async (srcDocument: Document, args: ModelTransformParameters): Promise<Document> => {
-  const document = cloneDocument(srcDocument)
-
-  const sourceExtensions = new Map<string, Extension>(
-    srcDocument
-      .getRoot()
-      .listExtensionsUsed()
-      .map((ext) => [ext.extensionName, ext])
-  )
-  const targetExtensions = new Map<string, Extension>(
-    document
-      .getRoot()
-      .listExtensionsUsed()
-      .map((ext) => [ext.extensionName, ext])
-  )
-
-  for (const extName of sourceExtensions.keys()) {
-    ;(sourceExtensions.get(extName) as any).copyTo?.(targetExtensions.get(extName))
-  }
-
-  if (args.meshoptCompression.enabled) {
-    await document.transform(meshoptCompression)
-  }
-
-  /* ID unnamed resources */
-  await document.transform(unInstanceSingletons)
-  args.split && (await document.transform(split))
-  args.combineMaterials && (await document.transform(combineMaterials))
-  args.instance && (await document.transform(doInstancing))
-  args.dedup && (await document.transform(dedup()))
-  args.flatten && (await document.transform(flatten()))
-  args.join.enabled && (await document.transform(join(args.join.options)))
-  args.palette.enabled &&
-    (await Promise.all([
-      document.transform(removeUVsOnUntexturedMeshes),
-      document.transform(palette(args.palette.options))
-    ]))
-  args.prune && (await document.transform(prune({ keepAttributes: true /*keepExtras: true*/ })))
-
-  /* Separate Instanced Geometry */
-  // TODO: make sure the order of operations is correct. They are very order dependent!
-  const instancedNodes = document
-    .getRoot()
-    .listNodes()
-    .filter((node) => !!node.getMesh()?.getExtension('EXT_mesh_gpu_instancing'))
-    .map((node) => [node, node.getParentNode()])
-  instancedNodes.map(([node, parent]) => {
-    node instanceof Node && parent?.removeChild(node)
-  })
-
-  if (args.weld.enabled) {
-    await document.transform(weld())
-  }
-
-  if (args.simplifyRatio < 1) {
-    const simplifyTransforms = [] as Transform[]
-    //gltfTransform documentation recommends doing a weld before simply
-    if (!args.weld.enabled) simplifyTransforms.push(weld())
-    simplifyTransforms.push(
-      args.adaptiveSimplification
-        ? (doc) => {
-            adaptiveSimplify(doc, args)
-            return doc
-          }
-        : simplify({ simplifier: MeshoptSimplifier, ratio: args.simplifyRatio, error: args.simplifyErrorThreshold })
-    )
-    await document.transform(...simplifyTransforms)
-  }
-
-  if (args.reorder) {
-    await MeshoptEncoder.ready
-    await document.transform(
-      reorder({
-        encoder: MeshoptEncoder,
-        target: 'performance'
-      })
-    )
-  }
-
-  if (args.dracoCompression.enabled) {
-    await document.transform(draco(args.dracoCompression.options))
-  }
-
-  /* Return Instanced Geometry to Scene Graph */
-  instancedNodes.map(([node, parent]) => {
-    node instanceof Node && parent?.addChild(node)
-  })
-
-  return document
 }
 
 type TextureOperation = {
@@ -538,20 +386,6 @@ const createTextureOperations = (
   const textures = root.listTextures()
 
   // TODO: write the GLTF transform maintainers a bug about losing references to extension-provided textures, meshes and buffers
-  const eeMaterialExtension: EEMaterialExtension | undefined = root
-    .listExtensionsUsed()
-    .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-  if (eeMaterialExtension) {
-    for (let i = 0; i < eeMaterialExtension.textures.length; i++) {
-      const texture = eeMaterialExtension.textures[i]
-      const extensions = eeMaterialExtension.textureExtensions[i]
-      for (const extension of extensions) {
-        texture.setExtension(extension.extensionName, extension)
-      }
-    }
-
-    textures.push(...eeMaterialExtension.textures)
-  }
 
   if (args.textureFormat !== 'default') {
     for (const texture of textures) {
@@ -613,7 +447,7 @@ const createTextureOperations = (
 
   return operations
 }
-const validTextureFileName = (input: string) => {
+function validTextureFileName(input: string): string {
   let result = ''
   if (VALID_FILENAME_REGEX.test(input)) {
     return input
@@ -731,7 +565,7 @@ const writeFiles = async (
   if (['glb', 'vrm'].includes(modelFormat)) {
     // For GLB/VRM, we keep textures embedded and don't process them separately
     const data = await io.writeBinary(document)
-    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), data, path, publishing)
+    await doUpload(...toProjectAndFileName(finalPath, srcBaseURL), new Blob([data]), path, publishing)
   } else if (modelFormat === 'gltf') {
     await Promise.all(
       [root.listBuffers(), root.listMeshes(), root.listTextures()].map(
@@ -783,7 +617,7 @@ const writeFiles = async (
         resourceUri.length > 0 ? resourceUri : resourceName + '_resources',
         `${
           (image.uri ?? '').length > 0 ? removeExtension(image.uri!).replaceAll(/^\.\//g, '') : image.name
-        }.${mimeToFileType(image.mimeType)}`
+        }.${mimeToFileType(image.mimeType || '')}`
       )
       resources[nuURI] = resources[image.uri!]
       delete resources[image.uri!]
@@ -822,7 +656,7 @@ const writeFiles = async (
 }
 
 // Add a function to preserve vertex colors
-const preserveVertexColors: Transform = (document: Document) => {
+function preserveVertexColors(document: Document): Document {
   document
     .getRoot()
     .listMeshes()
@@ -836,13 +670,88 @@ const preserveVertexColors: Transform = (document: Document) => {
         colorAttr.setExtras({ preserve: true })
       }
     })
+  return document
+}
+function hasKeywordInExtras(node: Node, keyword: string): boolean {
+  const extras = node.getExtras()
+  if (!extras) return false
+  return Object.keys(extras).some((key) => key.includes(keyword))
+}
+
+function preserveNodesInScene(document: Document, keywords: string[]) {
+  document
+    .getRoot()
+    .listNodes()
+    .forEach((node) => {
+      if (keywords.some((kw) => hasKeywordInExtras(node, kw))) {
+        if (!node.getMesh()) {
+          // Create dummy mesh with a single vertex primitive
+          const dummyMesh = document.createMesh('preserve-dummy')
+          const dummyPrim = document
+            .createPrimitive()
+            .setAttribute(
+              'POSITION',
+              document
+                .createAccessor()
+                .setType('VEC3')
+                .setArray(new Float32Array([0, 0, 0]))
+            )
+            .setIndices(
+              document
+                .createAccessor()
+                .setType('SCALAR')
+                .setArray(new Uint16Array([0]))
+            )
+          dummyMesh.addPrimitive(dummyPrim)
+          node.setMesh(dummyMesh)
+        }
+      }
+    })
+}
+
+async function preserveChildrenHierarchyAroundFlatten(document: Document, keywords: string[]) {
+  const root = document.getRoot()
+
+  //  Find nodes to preserve and map their children names
+  const nodesToPreserve = root.listNodes().filter((node) => keywords.some((kw) => hasKeywordInExtras(node, kw)))
+
+  const preservedChildrenMap = new Map<string, string[]>()
+
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = parentNode.listChildren().map((child) => child.getName())
+    preservedChildrenMap.set(parentNode.getName(), childNames)
+  })
+
+  // Run flatten
+  await document.transform(flatten())
+
+  //  After flatten, reattach children if they still exist
+  nodesToPreserve.forEach((parentNode) => {
+    const childNames = preservedChildrenMap.get(parentNode.getName())
+    if (!childNames) return
+
+    childNames.forEach((childName) => {
+      const childNode = root.listNodes().find((n) => n.getName() === childName)
+      if (childNode && childNode.getParentNode() !== parentNode) {
+        parentNode.addChild(childNode)
+      }
+    })
+  })
+
+  //  Remove dummy meshes after flatten
+  root.listNodes().forEach((node) => {
+    if (node.getMesh()?.getName() === 'preserve-dummy') {
+      node.getMesh()?.dispose()
+      node.setMesh(null)
+    }
+  })
 }
 
 export const transformModel = async (
   srcURL: string,
   modelOperations: ModelTransformParameters[],
-  onMetadata: (index: number, key: string, data: any) => void = (key, data) => {},
-  onProgress?: (progress: number, status: Status, numerator?: number, denominator?: number) => void
+  onMetadata: (index: number, key: string, data: any) => void = (_key, _data) => {},
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
 ): Promise<string[]> => {
   onProgress?.(0, Status.TransformingModels)
 
@@ -869,52 +778,26 @@ export const transformModel = async (
 
         textureUsages.get(uri)!.add(edge.getName().replaceAll(/(Map|Texture)/g, ''))
       }
-
-      eeMatScan: {
-        const eeMat = mat.getExtension<EEMaterial>('EE_material')
-        const args = eeMat?.args
-        if (args == null) {
-          break eeMatScan
-        }
-
-        for (const edge of graph.listChildEdges(args)) {
-          const argEntry = edge.getChild() as EEArgEntry
-          if (argEntry == null) {
-            continue
-          }
-          const { type, contents } = argEntry[$attributes]
-          if (type !== 'texture' || contents == null) {
-            continue
-          }
-
-          const uri = contents.getURI()
-
-          if (!textureUsages.has(uri)) {
-            textureUsages.set(uri, new Set())
-          }
-
-          textureUsages.get(uri)!.add(edge.getName().replaceAll(/(Map|Texture)/g, ''))
-        }
-      }
     }
   }
+  // We want to make sure if node has these keywords in extras, we preserve those nodes
+  const keyWordsToPreserveNode = ['EE_collider', 'EE_rigidbody']
 
   for (let i = 0; i < numDocOperations; i++) {
     const params = modelOperations[i]
     const isGLBFormat = ['glb', 'vrm'].includes(params.modelFormat)
-
-    const document = await cloneDocument(srcDocument)
-
+    const document = cloneDocument(srcDocument)
+    // Preserve nodes with certain keywords in extras
+    preserveNodesInScene(document, keyWordsToPreserveNode)
     // Preserve vertex colors before applying transformations
     await document.transform(preserveVertexColors)
 
     // Apply basic optimizations
     await document.transform(unInstanceSingletons)
     params.split && (await document.transform(split))
-    params.combineMaterials && (await document.transform(combineMaterials))
     params.instance && (await document.transform(doInstancing))
     params.dedup && (await document.transform(dedup()))
-    params.flatten && (await document.transform(flatten()))
+    params.flatten && (await preserveChildrenHierarchyAroundFlatten(document, keyWordsToPreserveNode))
     params.join.enabled && (await document.transform(join(params.join.options)))
 
     if (params.simplifyRatio < 1) {
@@ -941,7 +824,6 @@ export const transformModel = async (
       const operations = createTextureOperations(document, params, params.resources, textureUsages)
       textureOperations.push(...operations)
     }
-
     // Apply final optimizations
     if (params.reorder) {
       await MeshoptEncoder.ready
@@ -951,7 +833,6 @@ export const transformModel = async (
     if (params.dracoCompression.enabled) {
       await document.transform(draco(params.dracoCompression.options))
     }
-
     documents.push(document)
   }
 
@@ -966,47 +847,6 @@ export const transformModel = async (
 
   // Write files
   const results: string[] = []
-
-  for (const document of documents) {
-    const eeMaterialExtension: EEMaterialExtension | undefined = document
-      .getRoot()
-      .listExtensionsUsed()
-      .find((ext) => ext.extensionName === 'EE_material') as EEMaterialExtension
-    if (eeMaterialExtension) {
-      for (const texture of eeMaterialExtension.textures) {
-        document.createTexture().copy(texture)
-        // Find all materials that reference the old texture, and change their reference to the new texture
-      }
-      for (const material of document.getRoot().listMaterials()) {
-        const eeMaterial = material.getExtension<EEMaterial>('EE_material')
-        if (eeMaterial == null) continue
-        const matArgs = eeMaterial.args!
-
-        const newTextures = document.getRoot().listTextures()
-        const materialArgsInfo = eeMaterialExtension.materialInfoMap.get(matArgs.getExtras().uuid as string) || []
-        materialArgsInfo.map((field) => {
-          let argEntry: EEArgEntry
-          try {
-            argEntry = matArgs.getPropRef(field) as EEArgEntry
-          } catch (e) {
-            argEntry = matArgs.getProp(field) as EEArgEntry
-          }
-
-          if (argEntry.type === 'texture') {
-            const oldTexture = argEntry.contents as Texture
-            if (oldTexture != null) {
-              const uuid: string = oldTexture.getExtras().uuid as string
-              const newTexture = newTextures.find((texture) => texture.getExtras().uuid === uuid)
-              if (newTexture == null) {
-                throw new Error('Transformed texture is not listed.')
-              }
-              argEntry.contents = newTexture
-            }
-          }
-        })
-      }
-    }
-  }
 
   for (let i = 0; i < numDocOperations; i++) {
     onProgress?.((i + 1 + numTextureOperations) / totalProgressSteps, Status.WritingFiles)
@@ -1162,14 +1002,14 @@ const getVertexDensityImportance = (mesh: Mesh): number => {
 }
 
 // adaptiveSimplify function with inverted logic to increase simplification
-const adaptiveSimplify = (document: Document, args: ModelTransformParameters) => {
+function adaptiveSimplify(document: Document, args: ModelTransformParameters): Document {
   const meshes = document.getRoot().listMeshes()
 
   for (const mesh of meshes) {
     const importance = calculateMeshImportance(mesh)
     const adaptiveRatio = args.simplifyRatio * importance
 
-    for (const prim of mesh.listPrimitives()) {
+    for (const _prim of mesh.listPrimitives()) {
       try {
         simplify({
           simplifier: MeshoptSimplifier,
@@ -1181,6 +1021,8 @@ const adaptiveSimplify = (document: Document, args: ModelTransformParameters) =>
       }
     }
   }
+
+  return document
 }
 
 async function resizeImage(
@@ -1232,7 +1074,7 @@ async function resizeImage(
 const safeImageCompress = async (
   document: Document,
   params: ModelTransformParameters,
-  onProgress?: (progress: number, status: Status, numerator?: number, denominator?: number) => void
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
 ) => {
   const textures = document.getRoot().listTextures()
   const numTextures = textures.length
@@ -1267,7 +1109,7 @@ export async function safeCompressGLTFWeb(
   srcURL: string,
   destinationUrl: string,
   params: ModelTransformParameters,
-  onProgress?: (progress: number, status: Status, numerator?: number, denominator?: number) => void
+  onProgress?: (progress: number, status: ModelTransformStatus, numerator?: number, denominator?: number) => void
 ) {
   onProgress?.(0, Status.TransformingModels)
 

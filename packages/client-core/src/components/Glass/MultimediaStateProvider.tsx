@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
@@ -98,21 +73,25 @@ const useMultimediaState = () => {
   const currentLocation = useHookstate(getMutableState(LocationState).currentLocation.location)
   const networkState = useMutableState(NetworkState)
   const mediaNetworkState = useMediaNetwork()
-  const mediaNetworkReady = mediaNetworkState?.ready?.value
-  const videoEnabled = currentLocation?.locationSetting?.value
-    ? currentLocation?.locationSetting?.videoEnabled?.value
-    : false
-  const audioEnabled = currentLocation?.locationSetting?.value
-    ? currentLocation?.locationSetting?.audioEnabled?.value
-    : false
-  const screenshareEnabled = currentLocation?.locationSetting?.value
-    ? currentLocation?.locationSetting?.screenSharingEnabled?.value
-    : false
+  const mediaNetworkReady = mediaNetworkState?.ready?.value ?? false
+  const mediaNetworkConfigEnabled = networkState.config.media.value
+
+  // Default these to true when location setting is not available yet
+  const locationSetting = currentLocation?.locationSetting?.value
+  const videoEnabled = locationSetting ? currentLocation?.locationSetting?.videoEnabled?.value : true
+  const audioEnabled = locationSetting ? currentLocation?.locationSetting?.audioEnabled?.value : true
+  const screenshareEnabled = locationSetting ? currentLocation?.locationSetting?.screenSharingEnabled?.value : true
 
   const mediaStreamState = useMutableState(MediaStreamState)
   const numVideoDevices = mediaStreamState.availableVideoDevices.value.length
   const hasAudioDevice = mediaStreamState.availableAudioDevices.value.length > 0
   const hasVideoDevice = numVideoDevices > 0
+
+  // Fallback device detection - assume devices exist if browser supports getUserMedia
+  const browserSupportsAudio = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  const browserSupportsVideo = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  const hasAudioDeviceFallback = hasAudioDevice || browserSupportsAudio
+  const hasVideoDeviceFallback = hasVideoDevice || browserSupportsVideo
   const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
   const isCamVideoEnabled = !!mediaStreamState.webcamMediaStream.value && mediaStreamState.webcamEnabled.value
   const isCamAudioEnabled = !!mediaStreamState.microphoneMediaStream.value && mediaStreamState.microphoneEnabled.value
@@ -144,16 +123,16 @@ const useMultimediaState = () => {
     setSearch(params)
   }
 
-  const isNetworkLoading = networkState.config.media.value && !mediaNetworkState?.ready?.value
+  const isNetworkLoading = mediaNetworkConfigEnabled && !mediaNetworkReady
   const isLoading = isNetworkLoading
 
   const isCamLoading = !!mediaStreamState.webcamMediaStream.value !== mediaStreamState.webcamEnabled.value
 
-  const isNetworkReady = mediaNetworkReady && mediaNetworkState?.ready?.value
+  const isNetworkReady = mediaNetworkConfigEnabled && mediaNetworkReady
 
-  const isMicReady = audioEnabled && hasAudioDevice && isNetworkReady
+  const isMicReady = audioEnabled && hasAudioDeviceFallback && isNetworkReady
 
-  const isCamReady = videoEnabled && hasVideoDevice && isNetworkReady
+  const isCamReady = videoEnabled && hasVideoDeviceFallback && isNetworkReady
 
   const isScreenshareReady =
     !isMobile &&
@@ -163,7 +142,7 @@ const useMultimediaState = () => {
 
   const isVRReady = supportsVR && xrEnabled
   const isSpectateReady = spectating
-  const isMultiVideoReady = isCamReady && isCamVideoEnabled && numVideoDevices > 1
+  const isMultiVideoReady = isCamReady && isCamVideoEnabled && (numVideoDevices > 1 || hasVideoDeviceFallback)
 
   const _MicIcon = isCamAudioEnabled ? MicrophoneOnIcon : MicrophoneOffIcon
 

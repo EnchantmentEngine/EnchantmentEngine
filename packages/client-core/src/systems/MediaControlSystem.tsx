@@ -1,35 +1,11 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { MeshBasicMaterial, Vector3 } from 'three'
+import { MeshBasicMaterial, Quaternion, Vector3 } from 'three'
 
 import { isClient } from '@ir-engine/common/src/utils/getEnvironment'
 import {
   Engine,
   EngineState,
   EntityTreeComponent,
+  getChildrenWithComponents,
   getMutableComponent,
   InputSystemGroup,
   UndefinedEntity
@@ -59,28 +35,45 @@ const MediaFadeTransitions = new Map<Entity, ReturnType<typeof createTransitionS
 const mediaQuery = defineQuery([MediaComponent])
 
 export const createMediaControlsUI = (entity: Entity, aspectRatio: number = 1) => {
-  const ui = createMediaControlsView(entity)
-
   const mediaTransform = getComponent(entity, TransformComponent)
-  setComponent(ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-  setComponent(ui.entity, NameComponent, 'mediacontrols-ui-' + entity)
-  setComponent(ui.entity, TransformComponent, { rotation: mediaTransform.rotation })
 
-  ui.container.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
+  const uiFront = createMediaControlsView(entity)
+  setComponent(uiFront.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(uiFront.entity, NameComponent, 'mediacontrols-ui-frontside-' + entity)
+  setComponent(uiFront.entity, TransformComponent, { rotation: mediaTransform.rotation })
+  uiFront.container.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
     const mat = layer.contentMesh.material as MeshBasicMaterial
     mat.transparent = true
   })
 
-  return ui
+  const rotationQuaternion = new Quaternion()
+  rotationQuaternion.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI) // 180 degrees in radians
+  const backRotation = mediaTransform.rotation.clone().multiply(rotationQuaternion)
+
+  const uiBack = createMediaControlsView(entity)
+  setComponent(uiBack.entity, EntityTreeComponent, { parentEntity: uiFront.entity })
+  setComponent(uiBack.entity, NameComponent, 'mediacontrols-ui-backside-' + entity)
+  setComponent(uiBack.entity, TransformComponent, { rotation: backRotation })
+  uiBack.container.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
+    const mat = layer.contentMesh.material as MeshBasicMaterial
+    mat.transparent = true
+  })
+
+  return uiFront
 }
 
 const onUpdate = (entity: Entity) => {
   const mediaComponent = getMutableComponent(entity, MediaComponent)
   if (!mediaComponent.controls.value) return
   const xrui = getOptionalComponent(mediaComponent.xruiEntity.value, XRUIComponent)
+
   if (!xrui) return
+  const xruiChildren = getChildrenWithComponents(mediaComponent.xruiEntity.value, [XRUIComponent]).map((entity) =>
+    getComponent(entity, XRUIComponent)
+  )
+  const xruiList = [xrui, ...xruiChildren]
   const transition = MediaFadeTransitions.get(entity)!
-  const buttonLayer = xrui.rootLayer.querySelector('#button')
+  const buttonLayers = xruiList.map((xrui) => xrui.rootLayer.querySelector('#button'))
 
   const inputComponent = getComponent(entity, InputComponent)
   const inputSourceEntity = inputComponent?.inputSources[0]
@@ -117,22 +110,21 @@ const onUpdate = (entity: Entity) => {
   const uiTransform = getComponent(mediaComponent.xruiEntity.value, TransformComponent)
   const transform = getComponent(entity, TransformComponent)
 
-  //logic for positioning the controls on the border of the video no matter the resolution/scale
-  // if (buttonLayer) {
-  //   let buttonOffset = buttonLayer.domSize.y * xrui.rootLayer.domSize.y * 1.2 //HACK 1.2 is a magic number here to include the button border (10px on a 100px button)
-  //   controlsUiPosVec3.set(transform.scale.x * 0.5 - buttonOffset, -transform.scale.y * 0.5 - buttonOffset, 0)
-  // }
-
   controlsUiPosVec3.copy(mediaComponent.uiOffset.value) //used to add - might be nice to allow for some pre-placed anchor positions
   controlsUiPosVec3.add(transform.position)
   uiTransform.position.copy(controlsUiPosVec3)
 
   const deltaSeconds = getState(ECSState).deltaSeconds
   transition.update(deltaSeconds, (opacity) => {
-    buttonLayer?.scale.setScalar(0.9 + 0.1 * opacity * opacity)
-    xrui.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
-      const mat = layer.contentMesh.material as MeshBasicMaterial
-      mat.opacity = opacity
+    ;``
+    buttonLayers.forEach((buttonLayer) => {
+      buttonLayer?.scale.setScalar(0.9 + 0.1 * opacity * opacity)
+    })
+    xruiList.forEach((xrui) => {
+      xrui.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
+        const mat = layer.contentMesh.material as MeshBasicMaterial
+        mat.opacity = opacity
+      })
     })
   })
 }

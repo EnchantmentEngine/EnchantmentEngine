@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   ComponentJSONIDMap,
   deserializeComponent,
@@ -70,13 +45,14 @@ import {
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import {
   MaterialPrototypeDefinitions,
-  MaterialStateComponent
+  MaterialStateComponent,
+  SerializedTexture
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
 import { Color, Material, SRGBColorSpace, Vector2, Vector3 } from 'three'
-import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -464,12 +440,16 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
             if (args[key].type === 'texture') {
               if (!val || (material[key]?.isTexture && val === material[key].userData?.url)) continue
               asyncUpdateCount += 1
-              getTextureAsync(val).then(([texture]) => {
+              const textureData = val as SerializedTexture
+              getTextureAsync(textureData.source).then(([texture]) => {
                 asyncUpdateCount -= 1
                 if (texture?.isTexture) {
+                  texture.channel = textureData.channel
+                  if (textureData.repeat) texture.repeat.copy(textureData.repeat)
+                  if (textureData.offset) texture.offset.copy(textureData.offset)
                   texture.flipY = false
                   texture.needsUpdate = true
-                  texture.colorSpace = SRGBColorSpace
+                  if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
                   materialComponent.material[key].set(texture ?? null)
                 }
                 if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
@@ -486,7 +466,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
           }
           for (const [key, val] of Object.entries(args)) {
             if (typeof val === 'undefined' || typeof material[key] === 'undefined') continue
-            if (parameters[key]) continue
+            if (key in parameters) continue
             const _default = args[key].default
             if (args[key].type === 'color') {
               materialComponent.material[key].set(_default.isColor ? _default : new Color(_default))

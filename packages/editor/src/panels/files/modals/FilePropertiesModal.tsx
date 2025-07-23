@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
@@ -34,6 +9,7 @@ import {
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
+import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { NO_PROXY, State, getMutableState, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
@@ -63,6 +39,7 @@ export default function FilePropertiesModal() {
   const editedField = useHookstate<string | null>(null)
   const tagInput = useHookstate<string>('')
   const sharedTags = useHookstate<string[]>([])
+  const totalSize = useHookstate<string>('')
 
   let title: string
   let filename: string
@@ -233,6 +210,32 @@ export default function FilePropertiesModal() {
     }
   }
 
+  useEffect(() => {
+    const getTotalSize = () => {
+      return bytesToSize(
+        files
+          .map((file) => {
+            const sizeStr = file.size || '0'
+            const regex = /^([\d.]+)\s*([A-Za-z]+)$/
+            const matches = sizeStr.match(regex)
+
+            if (!matches) return 0
+
+            const value = parseFloat(matches[1])
+            const unit = matches[2]
+
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+            const unitIndex = sizes.findIndex((size) => size.toLowerCase() === unit.toLowerCase())
+            if (unitIndex === -1) return 0
+
+            return value * Math.pow(1024, unitIndex)
+          })
+          .reduce((total, value) => total + value, 0)
+      )
+    }
+    totalSize.set(getTotalSize())
+  }, [files])
+
   return (
     <Modal
       title={title}
@@ -326,7 +329,7 @@ export default function FilePropertiesModal() {
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.size')}</Text>
           <Text className="" data-testid="files-panel-file-item-properties-file-size">
-            {files.map((file) => file.size).reduce((total, value) => total + parseInt(value ?? '0'), 0)}
+            {totalSize.value}
           </Text>
         </div>
         {fileStaticResources.length > 0 && (
