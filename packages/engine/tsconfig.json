@@ -2,10 +2,9 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "ESNext",
+    "module": "esnext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -24,7 +23,9 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "erasableSyntaxOnly": true,
+     "rewriteRelativeImportExtensions": true,
+     "erasableSyntaxOnly": true,
+ ,
     "types": ["@types/node"]
   },
   "include": ["../../__global.d.ts", "./src", "./index.ts"]

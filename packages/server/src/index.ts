@@ -1,4 +1,4 @@
-import { updateAppConfig } from '@ir-engine/server-core/src/updateAppConfig'
+import { updateAppConfig } from '@ir-engine/server-core/src/updateAppConfig.ts'
 
 const init = async () => {
   await updateAppConfig()

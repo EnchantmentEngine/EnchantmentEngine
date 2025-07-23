@@ -1,6 +1,7 @@
 {
   "name": "@ir-engine/editor",
   "version": "1.0.3",
+  "type": "module",
   "main": "lib/editor.umd.js",
   "module": "lib/editor.es.js",
   "types": "lib/index.d.ts",

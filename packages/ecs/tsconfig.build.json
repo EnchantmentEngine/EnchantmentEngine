@@ -6,7 +6,6 @@
     "module": "es2020",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-    "moduleResolution": "node",
     "moduleDetection": "force",
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
@@ -22,7 +21,9 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": true,
-    "erasableSyntaxOnly": true,
+     "rewriteRelativeImportExtensions": true,
+     "erasableSyntaxOnly": true,
+ ,
     "types": ["@types/node"]
   },
   "exclude": ["./src/*.test.ts", "./src/*.test.tsx"],

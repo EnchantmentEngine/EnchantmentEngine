@@ -1,6 +1,7 @@
 {
   "name": "@ir-engine/client",
   "version": "1.0.3",
+  "type": "module",
   "private": true,
   "repository": {
     "type": "git",

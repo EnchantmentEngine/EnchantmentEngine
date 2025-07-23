@@ -2,14 +2,9 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "module": "esnext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -28,20 +23,11 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": [
-      "@types/node"
-    ],
-    "erasableSyntaxOnly": true
+    "types": ["@types/node"],
+     "rewriteRelativeImportExtensions": true,
+     "erasableSyntaxOnly": true,
+ 
   },
-  "exclude": [
-    "**/node_modules/**", 
-    "./src/**/*.test.tsx"
-  ],
-  "include": [
-    "../../__global.d.ts",
-    "../server-core/src",
-    "../client-core/src",
-    "./src",
-    "./index.ts"
-  ]
+  "exclude": ["**/node_modules/**", "./src/**/*.test.tsx"],
+  "include": ["../../__global.d.ts", "../server-core/src", "../client-core/src", "./src", "./index.ts"]
 }

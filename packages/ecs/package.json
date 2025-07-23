@@ -1,6 +1,7 @@
 {
   "name": "@ir-engine/ecs",
   "version": "1.0.3",
+  "type": "module",
   "main": "index.ts",
   "description": "Fast and reactive ECS for the Infinite Reality Engine",
   "publishConfig": {
