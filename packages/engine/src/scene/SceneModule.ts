@@ -1,30 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
-import { FogSystem } from '@ir-engine/spatial/src/renderer/FogSystem'
 import { PositionalAudioComponent } from '../audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
@@ -61,6 +35,7 @@ import { VariantComponent } from './components/VariantComponent'
 import { VideoComponent } from './components/VideoComponent'
 import { VolumetricComponent } from './components/VolumetricComponent'
 import { EnvironmentSystem } from './systems/EnvironmentSystem'
+import { FogSystem } from './systems/FogSystem'
 import { LookAtSystem } from './systems/LookAtSystem'
 import { OrientedBoundingBoxSystem } from './systems/OrientedBoundingBoxSystem'
 import { ParticleSystem } from './systems/ParticleSystemSystem'
@@ -73,6 +48,7 @@ import { DropShadowSystem, ShadowSystem } from './systems/ShadowSystem'
 import { TriggerCallbackSystem } from './systems/TriggerCallbackSystem'
 import { VariantSystem } from './systems/VariantSystem'
 
+import { LightmapComponent } from '../lightmap/LightmapComponent'
 import './functions/definePrefab'
 
 /** This const MUST be kept here, to ensure all components definitions are loaded by the time the scene loading occurs */
@@ -116,7 +92,8 @@ export const SceneComponents = [
   VolumetricComponent,
   // WaterComponent,
   LinkComponent,
-  TextComponent
+  TextComponent,
+  LightmapComponent
 ]
 
 export {

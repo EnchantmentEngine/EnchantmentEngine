@@ -1,0 +1,82 @@
+import React, { useEffect } from 'react'
+
+import {
+  Entity,
+  PresentationSystemGroup,
+  QueryReactor,
+  removeComponent,
+  setComponent,
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
+import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
+import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+
+import { FogSettingsComponent, FogType } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
+
+export const FogShaderPluginComponent = defineMaterialPlugin({
+  name: 'FogShaderPluginComponent',
+
+  jsonID: 'IR_fog_shader',
+
+  uniforms: S.Object({
+    fogTime: S.Number(),
+    fogTimeScale: S.Number({ default: 1 }),
+    heightFactor: S.Number({ default: 0.05 })
+  }),
+
+  onApply(shader) {},
+
+  update: (component, deltaSeconds) => {
+    component.fogTime += deltaSeconds
+  }
+})
+
+function FogGroupReactor(props: { fogEntity: Entity }) {
+  const entity = useEntityContext()
+  const fogSettings = useComponent(props.fogEntity, FogSettingsComponent)
+
+  useEffect(() => {
+    setComponent(entity, FogShaderPluginComponent)
+    return () => {
+      removeComponent(entity, FogShaderPluginComponent)
+    }
+  }, [])
+
+  useEffect(() => {
+    setComponent(entity, FogShaderPluginComponent, { heightFactor: fogSettings.height.value })
+  }, [fogSettings.height.value])
+
+  useEffect(() => {
+    setComponent(entity, FogShaderPluginComponent, { fogTimeScale: fogSettings.timeScale.value })
+  }, [fogSettings.timeScale.value])
+
+  return null
+}
+
+const FogReactor = () => {
+  const entity = useEntityContext()
+  const fogComponent = useComponent(entity, FogSettingsComponent)
+  if (fogComponent.type.value !== FogType.Brownian && fogComponent.type.value !== FogType.Height) return null
+  return (
+    <QueryReactor
+      ChildEntityReactor={FogGroupReactor}
+      Components={[MaterialStateComponent, VisibleComponent]}
+      props={{ fogEntity: entity }}
+    />
+  )
+}
+
+const reactor = () => {
+  // TODO support multiple fog entities via spatial queries
+  return <QueryReactor ChildEntityReactor={FogReactor} Components={[FogSettingsComponent]} />
+}
+
+export const FogSystem = defineSystem({
+  uuid: 'ee.engine.FogSystem',
+  insert: { after: PresentationSystemGroup },
+  reactor
+})

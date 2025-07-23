@@ -1,3 +1,4 @@
+
 #!/usr/bin/env node
 
 // Cross-platform pre-commit hook using Node.js
@@ -26,14 +27,6 @@ if (isMainRepo) {
 process.chdir(rootProjectDir);
 
 try {
-    // Run add-license-headers (only in main repository)
-    if (isMainRepo) {
-        console.log('Adding license headers (main repo only)...');
-        execSync('npm run add-license-headers', { stdio: 'inherit' });
-    } else {
-        console.log('Skipping license headers (nested repo - handled by main repo)');
-    }
-
     // Run format-staged (lint-staged)
     console.log('Running lint-staged...');
     execSync('npm run format-staged', { stdio: 'inherit' });

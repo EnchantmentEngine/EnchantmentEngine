@@ -29,7 +29,7 @@
           "bakeType": "Baked",
           "resolution": 2048,
           "refreshMode": "OnAwake",
-          "envMapOrigin": "__$project$__/ir-engine/default-project/public/scenes/sponza.envmap.ktx2",
+          "envMapOrigin": "__$project$__/enchantmentengine/default-project/public/scenes/sponza.envmap.ktx2",
           "boxProjection": true
         },
         "EE_fog": {
@@ -145,8 +145,8 @@
           "shadowMapType": 2
         },
         "EE_scene_settings": {
-          "thumbnailURL": "__$project$__/ir-engine/default-project/public/scenes/sponza.thumbnail.jpg",
-          "loadingScreenURL": "__$project$__/ir-engine/default-project/public/scenes/sponza.loadingscreen.ktx2",
+          "thumbnailURL": "__$project$__/enchantmentengine/default-project/public/scenes/sponza.thumbnail.jpg",
+          "loadingScreenURL": "__$project$__/enchantmentengine/default-project/public/scenes/sponza.loadingscreen.ktx2",
           "primaryColor": "#B3B3B3",
           "backgroundColor": "#2C2C2C",
           "alternativeColor": "#A1A1A1",
@@ -193,8 +193,8 @@
         "EE_visible": {},
         "EE_skybox": {
           "backgroundColor": 3026478,
-          "equirectangularPath": "__$project$__/ir-engine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
-          "cubemapPath": "__$project$__/ir-engine/default-project/assets/skyboxsun25deg/",
+          "equirectangularPath": "__$project$__/enchantmentengine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
+          "cubemapPath": "__$project$__/enchantmentengine/default-project/assets/skyboxsun25deg/",
           "backgroundType": 2,
           "skyboxProps": {
             "turbidity": 10,

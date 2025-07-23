@@ -34,19 +34,6 @@ else
     LINT_STAGED="./node_modules/.bin/lint-staged"
 fi
 
-# Run add-license-headers (only in main repository)
-if [ "$IS_MAIN_REPO" = true ]; then
-    echo "Adding license headers (main repo only)..."
-    "$TS_NODE" --swc scripts/add-license-headers.ts
-    RESULT=$?
-    if [ $RESULT -ne 0 ]; then
-        echo "License header check failed"
-        exit 1
-    fi
-else
-    echo "Skipping license headers (nested repo - handled by main repo)"
-fi
-
 # Run format-staged (lint-staged)
 echo "Running lint-staged..."
 "$LINT_STAGED"
