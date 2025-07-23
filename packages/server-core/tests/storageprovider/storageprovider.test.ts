@@ -127,9 +127,13 @@ describe('storageprovider', () => {
 
       it(`should be able to rename object in ${providerType.name}`, async function () {
         const temp2Folder = path.join(testFolderName, 'temp2')
-        await provider.moveObject(testFileName, 'Renamed.txt', testFolderName, temp2Folder, false)
-        const res = await provider.listFolderContent(temp2Folder, true)
 
+        await provider.moveObject(testFileName, 'Renamed.txt', temp2Folder, temp2Folder, false)
+
+        assert(await provider.doesExist('Renamed.txt', temp2Folder))
+        assert(!(await provider.doesExist(testFileName, temp2Folder)))
+
+        const res = await provider.listFolderContent(temp2Folder, true)
         assert.equal(res[0]?.name, 'Renamed')
       })
 

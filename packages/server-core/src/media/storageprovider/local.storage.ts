@@ -372,11 +372,15 @@ export class LocalStorage implements StorageProviderInterface {
     if (recursive) absoluteDirPath = path.join(absoluteDirPath, '**')
 
     const folder = glob
-      .sync(path.join(absoluteDirPath, '*/'))
+      .sync(path.join(absoluteDirPath, '*/'), {
+        dot: true,
+        nodir: false // include directories
+      })
       .map((p) => this._processContent(relativeDirPath, p, true))
     const files = glob
-      .sync(path.join(absoluteDirPath, '*.*'), {
-        dot: true
+      .sync(path.join(absoluteDirPath, '*'), {
+        dot: true,
+        nodir: true // only include files
       })
       .map((p) => this._processContent(relativeDirPath, p))
 
