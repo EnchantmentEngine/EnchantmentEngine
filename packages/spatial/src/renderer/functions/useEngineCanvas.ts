@@ -1,4 +1,4 @@
-import { Engine, getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
+import { Engine, getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { destroySpatialViewer, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
@@ -55,32 +55,36 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
   useEffect(() => {
     if (!viewerEntity || !originEntity) return
 
-    const rendererComponent = getOptionalMutableComponent(viewerEntity, RendererComponent)
+    const rendererComponent = getOptionalComponent(viewerEntity, RendererComponent)
     if (!rendererComponent) return
 
     rendererComponent.scenes.push(originEntity)
+    setComponent(viewerEntity, RendererComponent)
 
     return () => {
       if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.indexOf(originEntity)
       rendererComponent.scenes.splice(index, 1)
+      setComponent(viewerEntity, RendererComponent)
     }
   }, [viewerEntity, originEntity])
 
   useEffect(() => {
     if (!viewerEntity || !localFloorEntity) return
 
-    const rendererComponent = getOptionalMutableComponent(viewerEntity, RendererComponent)
+    const rendererComponent = getOptionalComponent(viewerEntity, RendererComponent)
     if (!rendererComponent) return
 
     rendererComponent.scenes.push(localFloorEntity)
+    setComponent(viewerEntity, RendererComponent)
 
     return () => {
       if (!Engine.instance) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
       const index = rendererComponent.scenes.indexOf(localFloorEntity)
       rendererComponent.scenes.splice(index, 1)
+      setComponent(viewerEntity, RendererComponent)
     }
   }, [viewerEntity, localFloorEntity])
 }

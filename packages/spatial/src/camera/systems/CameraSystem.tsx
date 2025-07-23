@@ -7,7 +7,7 @@ import {
   Engine,
   EntityUUID,
   getComponent,
-  getOptionalMutableComponent,
+  getOptionalComponent,
   NetworkObjectOwnedTag,
   NetworkObjectSendPeriodicUpdatesTag,
   QueryReactor,
@@ -83,7 +83,7 @@ function CameraReactor() {
   // TODO: this is messy and not properly reactive; we need a better way to handle camera settings
   useEffect(() => {
     if (!cameraSettings?.fov) return
-    const follow = getOptionalMutableComponent(Engine.instance.cameraEntity, FollowCameraComponent)
+    const follow = getOptionalComponent(Engine.instance.cameraEntity, FollowCameraComponent)
     if (follow) {
       let startDistance = cameraSettings.thirdPersonDefaultDistance.value
       let minDistance = cameraSettings.thirdPersonMinDistance.value
