@@ -8,7 +8,6 @@ import {
   createViewCursor,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   readFloat64,
   readUint8,
@@ -371,9 +370,9 @@ describe('PhysicsSerialization', () => {
         await vi.waitFor(() => {
           expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
         })
-        getMutableComponent(testEntity, RigidBodyComponent).position.x = Expected.x
-        getMutableComponent(testEntity, RigidBodyComponent).position.y = Expected.y
-        getMutableComponent(testEntity, RigidBodyComponent).position.z = Expected.z
+        getComponent(testEntity, RigidBodyComponent).position.x = Expected.x
+        getComponent(testEntity, RigidBodyComponent).position.y = Expected.y
+        getComponent(testEntity, RigidBodyComponent).position.z = Expected.z
         const cursor: ViewCursor = createViewCursor()
         const write = writeComponent(RigidBodyComponent.position)
         write(cursor, testEntity)
@@ -396,10 +395,10 @@ describe('PhysicsSerialization', () => {
         await vi.waitFor(() => {
           expect(getComponent(testEntity, RigidBodyComponent)).toBeDefined()
         })
-        getMutableComponent(testEntity, RigidBodyComponent).rotation.x = Expected.x
-        getMutableComponent(testEntity, RigidBodyComponent).rotation.y = Expected.y
-        getMutableComponent(testEntity, RigidBodyComponent).rotation.z = Expected.z
-        getMutableComponent(testEntity, RigidBodyComponent).rotation.w = Expected.w
+        getComponent(testEntity, RigidBodyComponent).rotation.x = Expected.x
+        getComponent(testEntity, RigidBodyComponent).rotation.y = Expected.y
+        getComponent(testEntity, RigidBodyComponent).rotation.z = Expected.z
+        getComponent(testEntity, RigidBodyComponent).rotation.w = Expected.w
         const cursor: ViewCursor = createViewCursor()
         const write = writeComponent(RigidBodyComponent.rotation)
         write(cursor, testEntity)

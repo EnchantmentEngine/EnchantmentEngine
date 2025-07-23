@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import { EntityID, SourceID, createEntity } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -368,7 +367,7 @@ describe('Physics : Rapier->ECS API', () => {
       }
       /** @description Set the {@link RigidBodyComponent.targetKinematicLerpMultiplier} to 0 for all of the linear interpolation tests */
       beforeEach(() => {
-        getMutableComponent(testEntity, RigidBodyComponent).targetKinematicLerpMultiplier = 0
+        getComponent(testEntity, RigidBodyComponent).targetKinematicLerpMultiplier = 0
       })
 
       it('... should apply deterministic linear interpolation to the position of the KinematicBody of the given entity', () => {
@@ -450,7 +449,7 @@ describe('Physics : Rapier->ECS API', () => {
        *  @description Sets the entity's {@link RigidBodyComponent.targetKinematicLerpMultiplier} property to `@param mult`
        *  @returns The `@param mult` itself  */
       function setMultiplier(entity: Entity, mult: number): number {
-        getMutableComponent(entity, RigidBodyComponent).targetKinematicLerpMultiplier = mult
+        getComponent(entity, RigidBodyComponent).targetKinematicLerpMultiplier = mult
         return mult
       }
       /**

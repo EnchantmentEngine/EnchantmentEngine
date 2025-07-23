@@ -1,5 +1,5 @@
 import { Entity, UUIDComponent, hasComponent, setComponent } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -21,7 +21,7 @@ const targetRotation = new Quaternion()
  * @param zoomDelta Scroll input delta.
  */
 export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): void => {
-  const poiCamera = getMutableComponent(cameraEntity, PoiCameraComponent)
+  const poiCamera = getComponent(cameraEntity, PoiCameraComponent)
   const cameraSettingsState = getMutableState(CameraSettingsState)
 
   if (poiCamera.targetPoiIndex < 0) {
@@ -231,7 +231,7 @@ const execute = () => {
       setComponent(viewerEntity, TransformComponent, { position: targetPosition, rotation: targetRotation })
 
       if (settings.poiScrollTransitionType.value === PoiScrollTransition.Snapping) {
-        const poiCameraMutable = getMutableComponent(viewerEntity, PoiCameraComponent)
+        const poiCameraMutable = getComponent(viewerEntity, PoiCameraComponent)
 
         const lerpSpeed = settings.poiLerpSpeed.value
         const deltaTime = getState(ECSState).deltaSeconds

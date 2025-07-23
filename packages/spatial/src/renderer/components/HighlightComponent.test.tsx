@@ -9,7 +9,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -230,7 +229,7 @@ describe('HighlightSystem', () => {
       testEntity = createEntity()
       getMutableState(RendererState).usePostProcessing.set(true)
       setComponent(testEntity, SceneComponent)
-      getMutableComponent(rootEntity, RendererComponent).scenes.push(testEntity)
+      getComponent(rootEntity, RendererComponent).scenes.push(testEntity)
       setComponent(testEntity, PostProcessingComponent, { enabled: true })
       setComponent(testEntity, EntityTreeComponent)
     })

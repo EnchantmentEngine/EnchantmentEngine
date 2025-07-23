@@ -1,13 +1,6 @@
 import { Matrix3, Spherical, Vector3 } from 'three'
 
-import {
-  defineSystem,
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  InputSystemGroup,
-  query
-} from '@ir-engine/ecs'
+import { defineSystem, getComponent, getOptionalComponent, InputSystemGroup, query } from '@ir-engine/ecs'
 import { isClient } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
@@ -29,7 +22,7 @@ const execute = () => {
   if (!isClient) return
 
   for (const cameraEid of query(orbitCameraQueryTerms)) {
-    const cameraOrbit = getMutableComponent(cameraEid, CameraOrbitComponent)
+    const cameraOrbit = getComponent(cameraEid, CameraOrbitComponent)
 
     const buttons = InputComponent.getButtons(cameraEid)
     const axes = InputComponent.getAxes(cameraEid)

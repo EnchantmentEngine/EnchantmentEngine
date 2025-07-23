@@ -18,7 +18,6 @@ import {
   createEntity,
   Entity,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -328,7 +327,7 @@ describe('LineSegmentComponent', () => {
         assert(hasComponent(entity, ObjectComponent))
       })
 
-      const lineSegmentComponent = getMutableComponent(entity, LineSegmentComponent)
+      const lineSegmentComponent = getComponent(entity, LineSegmentComponent)
       lineSegmentComponent.geometry = geometry2
       lineSegmentComponent.material = material2
 

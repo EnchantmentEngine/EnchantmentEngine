@@ -2,7 +2,6 @@ import { defineQuery, ECSState, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -401,7 +400,7 @@ const initialCameraPlacement = (entity: Entity) => {
 
 const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   const follow = getComponent(cameraEntity, FollowCameraComponent)
-  const followState = getMutableComponent(cameraEntity, FollowCameraComponent)
+  const followState = getComponent(cameraEntity, FollowCameraComponent)
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
   const cameraSettings = getMutableState(CameraSettingsState)

@@ -5,7 +5,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   setComponent,
   UndefinedEntity
 } from '@ir-engine/ecs'
@@ -241,18 +240,15 @@ describe('ClientInputFunctions', () => {
         const pointerEntity = createEntity()
         setComponent(pointerEntity, InputSourceComponent)
         // @ts-expect-error
-        getMutableComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(
-          pointerEntity,
-          {
-            pressed: true,
-            downPointerPosition: new Vector2(0, 0),
-            dragging: false,
-            touched: true,
-            down: false,
-            up: false,
-            value: 1
-          }
-        )
+        getComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(pointerEntity, {
+          pressed: true,
+          downPointerPosition: new Vector2(0, 0),
+          dragging: false,
+          touched: true,
+          down: false,
+          up: false,
+          value: 1
+        })
 
         // Run and Check the result
         ClientInputFunctions.updatePointerDragging(pointerEntity, ev)
@@ -280,18 +276,15 @@ describe('ClientInputFunctions', () => {
         // Set up input source with initial button state
         setComponent(pointerEntity, InputSourceComponent)
         // @ts-expect-error
-        getMutableComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(
-          pointerEntity,
-          {
-            pressed: true,
-            downPointerPosition: new Vector2(0, 0), // Initial click position
-            dragging: false,
-            touched: true,
-            down: false,
-            up: false,
-            value: 1
-          }
-        )
+        getComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(pointerEntity, {
+          pressed: true,
+          downPointerPosition: new Vector2(0, 0), // Initial click position
+          dragging: false,
+          touched: true,
+          down: false,
+          up: false,
+          value: 1
+        })
 
         // Run and Check the result
         ClientInputFunctions.updatePointerDragging(pointerEntity, ev)
@@ -318,18 +311,15 @@ describe('ClientInputFunctions', () => {
         // Set up input source with initial button state
         setComponent(pointerEntity, InputSourceComponent)
         // @ts-expect-error
-        getMutableComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(
-          pointerEntity,
-          {
-            pressed: true,
-            downPointerPosition: position.clone(), // Same as current position
-            dragging: false,
-            touched: true,
-            down: false,
-            up: false,
-            value: 1
-          }
-        )
+        getComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(pointerEntity, {
+          pressed: true,
+          downPointerPosition: position.clone(), // Same as current position
+          dragging: false,
+          touched: true,
+          down: false,
+          up: false,
+          value: 1
+        })
 
         // Run and Check the result
         ClientInputFunctions.updatePointerDragging(pointerEntity, ev)
@@ -355,18 +345,15 @@ describe('ClientInputFunctions', () => {
         // Set up input source with initial button state
         setComponent(pointerEntity, InputSourceComponent)
         // @ts-expect-error
-        getMutableComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(
-          pointerEntity,
-          {
-            pressed: true,
-            downPointerPosition: new Vector2(0, 0),
-            dragging: false,
-            touched: true,
-            down: false,
-            up: false,
-            value: 1
-          }
-        )
+        getComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(pointerEntity, {
+          pressed: true,
+          downPointerPosition: new Vector2(0, 0),
+          dragging: false,
+          touched: true,
+          down: false,
+          up: false,
+          value: 1
+        })
 
         // Run and Check the result
         ClientInputFunctions.updatePointerDragging(pointerEntity, ev)
@@ -392,18 +379,15 @@ describe('ClientInputFunctions', () => {
         // Set up input source with initial button state (not pressed)
         setComponent(pointerEntity, InputSourceComponent)
         // @ts-expect-error
-        getMutableComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(
-          pointerEntity,
-          {
-            pressed: false, // Button not pressed
-            downPointerPosition: new Vector2(0, 0),
-            dragging: false,
-            touched: true,
-            down: false,
-            up: false,
-            value: 0
-          }
-        )
+        getComponent(pointerEntity, InputSourceComponent).buttons[Btn] = createInitialButtonState(pointerEntity, {
+          pressed: false, // Button not pressed
+          downPointerPosition: new Vector2(0, 0),
+          dragging: false,
+          touched: true,
+          down: false,
+          up: false,
+          value: 0
+        })
 
         // Run and Check the result
         ClientInputFunctions.updatePointerDragging(pointerEntity, ev)

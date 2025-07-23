@@ -9,7 +9,6 @@ import {
   UndefinedEntity,
   createEntity,
   getComponent,
-  getMutableComponent,
   removeEntity,
   serializeComponent,
   setComponent
@@ -290,8 +289,9 @@ describe('PostProcessingComponent', async () => {
         assert.ok(getComponent(testEntity, PostProcessingComponent).effects[effectKey])
       })
 
-      const postProcessingComponent = getMutableComponent(testEntity, PostProcessingComponent)
-      postProcessingComponent.effects[effectKey].isActive.set(true)
+      const postProcessingComponent = getComponent(testEntity, PostProcessingComponent)
+      postProcessingComponent.effects[effectKey].isActive = true
+      setComponent(testEntity, PostProcessingComponent)
 
       await vi.waitFor(() => {
         // @ts-ignore Allow access to the EffectPass.effects private field
@@ -299,7 +299,8 @@ describe('PostProcessingComponent', async () => {
         assert.equal(Boolean(before.find((el) => el.name == effectKey)), true, effectKey + ' should be turned on')
       })
 
-      postProcessingComponent.effects[effectKey].isActive.set(false)
+      postProcessingComponent.effects[effectKey].isActive = false
+      setComponent(testEntity, PostProcessingComponent)
 
       await vi.waitFor(() => {
         // @ts-ignore Allow access to the EffectPass.effects private field

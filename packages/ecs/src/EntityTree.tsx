@@ -7,9 +7,7 @@ import {
   defineComponent,
   entityExists,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   hasComponents,
   LayerComponents,
@@ -71,7 +69,7 @@ export const EntityTreeComponent = defineComponent({
     // If a previous parentEntity, remove this entity from its children
     if (currentParentEntity && currentParentEntity !== json.parentEntity) {
       if (entityExists(currentParentEntity)) {
-        const oldParent = getOptionalMutableComponent(currentParentEntity, EntityTreeComponent)
+        const oldParent = getComponent(currentParentEntity, EntityTreeComponent)
         if (oldParent) {
           const parentChildIndex = oldParent.children.findIndex((child) => child === entity)
           oldParent.children.splice(parentChildIndex, 1)
@@ -88,7 +86,7 @@ export const EntityTreeComponent = defineComponent({
     if (parentEntity && entityExists(parentEntity)) {
       if (!hasComponent(parentEntity, EntityTreeComponent)) setComponent(parentEntity, EntityTreeComponent)
 
-      const parentState = getMutableComponent(parentEntity, EntityTreeComponent)
+      const parentState = getComponent(parentEntity, EntityTreeComponent)
       const parent = getComponent(parentEntity, EntityTreeComponent)
 
       const prevChildIndex = parent.children.indexOf(entity)
@@ -116,7 +114,7 @@ export const EntityTreeComponent = defineComponent({
     const parentEntity = component.parentEntity
     if (parentEntity && entityExists(parentEntity)) {
       if (hasComponent(parentEntity, EntityTreeComponent)) {
-        const parentState = getMutableComponent(parentEntity, EntityTreeComponent)
+        const parentState = getComponent(parentEntity, EntityTreeComponent)
         const parent = getComponent(parentEntity, EntityTreeComponent)
         const parentChildIndex = parent.children.findIndex((child) => child === entity)
         if (parentChildIndex > -1) parentState.children.splice(parentChildIndex, 1)

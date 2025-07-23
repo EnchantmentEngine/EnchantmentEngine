@@ -383,29 +383,6 @@ export const defineComponent = <
   return Component
 }
 
-/** @deprecated */
-export const getOptionalMutableComponent = <C extends Component>(
-  entity: Entity,
-  component: C
-): DeepReadonly<ComponentType<C>> | undefined => {
-  return bitECS.hasComponent(HyperFlux.store, entity, component) ? component.valueMap[entity] : undefined
-}
-
-/** @deprecated */
-export const getMutableComponent = <C extends Component>(
-  entity: Entity,
-  component: C
-): DeepReadonly<ComponentType<C>> => {
-  const componentState = getOptionalMutableComponent(entity, component)
-  if (componentState === undefined) {
-    console.warn(
-      `[getMutableComponent]: entity ${entity} does not have ${component.name}. This will be an error in the future. Use getOptionalMutableComponent if there is uncertainty over whether or not an entity has the specified component.`
-    )
-    return undefined as any
-  }
-  return componentState
-}
-
 export const getOptionalComponent = <C extends Component>(
   entity: Entity,
   component: C

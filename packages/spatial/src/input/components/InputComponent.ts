@@ -11,7 +11,6 @@ import {
 } from '@ir-engine/ecs'
 import {
   defineComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -278,7 +277,7 @@ export const InputComponent = defineComponent({
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
-    const input = getMutableComponent(inputEntity, InputComponent)
+    const input = getComponent(inputEntity, InputComponent)
     if (inputBindings) {
       for (const binding of Object.keys(inputBindings)) {
         if (!input.buttonBindings[binding]) input.buttonBindings[binding] = inputBindings[binding] as any

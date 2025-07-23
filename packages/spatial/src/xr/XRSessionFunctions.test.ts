@@ -9,7 +9,7 @@ import {
   XREmulatorHelper
 } from '../../tests/webxr/emulator'
 
-import { createEngine, destroyEngine, getComponent, getMutableComponent } from '@ir-engine/ecs'
+import { createEngine, destroyEngine, getComponent } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { ReferenceSpaceState, TransformComponent } from '../SpatialModule'
@@ -128,7 +128,7 @@ describe('onSessionEnd', () => {
     const Expected = Vector3_Zero
     const Initial = new Vector3(41, 42, 43)
     // Set the data as expected
-    const origin = getMutableComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
+    const origin = getComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
     origin.position = Initial
     // Sanity check before running
     const before = origin.position
@@ -148,7 +148,7 @@ describe('onSessionEnd', () => {
     const Expected = Q_IDENTITY
     const Initial = new Quaternion(40, 41, 42, 43).normalize()
     // Set the data as expected
-    const origin = getMutableComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
+    const origin = getComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
     origin.rotation = Initial
     // Sanity check before running
     const before = origin.rotation
@@ -170,7 +170,7 @@ describe('onSessionEnd', () => {
     const Expected = Vector3_One
     const Initial = new Vector3(41, 42, 43)
     // Set the data as expected
-    const origin = getMutableComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
+    const origin = getComponent(getState(ReferenceSpaceState).originEntity, TransformComponent)
     origin.scale = Initial
     // Sanity check before running
     const before = origin.scale
@@ -190,7 +190,7 @@ describe('onSessionEnd', () => {
     const Expected = Vector3_Zero
     const Initial = new Vector3(41, 42, 43)
     // Set the data as expected
-    const localFloor = getMutableComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
+    const localFloor = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
     localFloor.position = Initial
     // Sanity check before running
     const before = localFloor.position
@@ -210,7 +210,7 @@ describe('onSessionEnd', () => {
     const Expected = Q_IDENTITY
     const Initial = new Quaternion(40, 41, 42, 43).normalize()
     // Set the data as expected
-    const localFloor = getMutableComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
+    const localFloor = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
     localFloor.rotation = Initial
     // Sanity check before running
     const before = localFloor.rotation
@@ -232,7 +232,7 @@ describe('onSessionEnd', () => {
     const Expected = Vector3_One
     const Initial = new Vector3(41, 42, 43)
     // Set the data as expected
-    const localFloor = getMutableComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
+    const localFloor = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
     localFloor.scale = Initial
     // Sanity check before running
     const before = localFloor.scale
@@ -252,7 +252,7 @@ describe('onSessionEnd', () => {
     const Expected = Vector3_One
     const Initial = new Vector3(41, 42, 43)
     // Set the data as expected
-    const viewer = getMutableComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+    const viewer = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     viewer.scale = Initial
     // Sanity check before running
     const before = viewer.scale

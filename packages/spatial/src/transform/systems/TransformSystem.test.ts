@@ -10,7 +10,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent
@@ -132,7 +131,7 @@ describe('TransformSystem', () => {
         for (const entity of entities) {
           setComponent(entity, TransformComponent)
           setComponent(entity, CameraComponent)
-          getMutableComponent(entity, CameraComponent).matrixWorld = Initial
+          getComponent(entity, CameraComponent).matrixWorld = Initial
         }
         // Sanity check before running
         for (const entity of entities) {
@@ -159,7 +158,7 @@ describe('TransformSystem', () => {
         for (const entity of entities) {
           setComponent(entity, TransformComponent)
           setComponent(entity, CameraComponent)
-          getMutableComponent(entity, CameraComponent).matrixWorld = Expected
+          getComponent(entity, CameraComponent).matrixWorld = Expected
         }
         // Sanity check before running
         for (const entity of entities) {
@@ -187,7 +186,7 @@ describe('TransformSystem', () => {
         for (const entity of entities) {
           setComponent(entity, TransformComponent)
           setComponent(entity, CameraComponent)
-          getMutableComponent(entity, CameraComponent).matrixWorld = Initial
+          getComponent(entity, CameraComponent).matrixWorld = Initial
         }
         // Sanity check before running
         for (const entity of entities) {
@@ -215,7 +214,7 @@ describe('TransformSystem', () => {
         for (const entity of entities) {
           setComponent(entity, TransformComponent)
           setComponent(entity, CameraComponent)
-          getMutableComponent(entity, CameraComponent).projectionMatrix = Expected
+          getComponent(entity, CameraComponent).projectionMatrix = Expected
         }
         // Sanity check before running
         for (const entity of entities) {
@@ -243,7 +242,7 @@ describe('TransformSystem', () => {
         for (const entity of entities) {
           setComponent(entity, TransformComponent)
           setComponent(entity, CameraComponent)
-          getMutableComponent(entity, CameraComponent).projectionMatrixInverse = Expected
+          getComponent(entity, CameraComponent).projectionMatrixInverse = Expected
         }
         // Sanity check before running
         for (const entity of entities) {

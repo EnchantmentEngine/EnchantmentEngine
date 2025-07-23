@@ -1,6 +1,6 @@
 import { Color, Material, Mesh, Shader, Texture } from 'three'
 
-import { Entity, getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs'
+import { Entity, getComponent, hasComponent } from '@ir-engine/ecs'
 
 import { getState } from '@ir-engine/hyperflux'
 import { MeshComponent } from '../components/MeshComponent'
@@ -93,7 +93,7 @@ export const setupMaterialParameters = (entity: Entity, type: string, properties
     if (typeof v === 'object') return
     params[k] = v
   })
-  getMutableComponent(entity, MaterialStateComponent).parameters.merge(params)
+  getComponent(entity, MaterialStateComponent).parameters.merge(params)
   return params
 }
 

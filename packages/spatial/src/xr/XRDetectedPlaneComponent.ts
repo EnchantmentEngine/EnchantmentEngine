@@ -9,7 +9,6 @@ import {
   createEntity,
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeEntity,
   setComponent,
   useComponent,
@@ -105,7 +104,7 @@ export const XRDetectedPlaneComponent = defineComponent({
     if (plane.lastChangedTime > lastKnownTime) {
       state.planesLastChangedTimes.set(plane, plane.lastChangedTime)
       const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
-      const planeComponent = getMutableComponent(entity, XRDetectedPlaneComponent)
+      const planeComponent = getComponent(entity, XRDetectedPlaneComponent)
       planeComponent.geometry?.dispose()
       planeComponent.shadowMesh?.geometry.dispose()
       const mesh = new Mesh(geometry, shadowMaterial)

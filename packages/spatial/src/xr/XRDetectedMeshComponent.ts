@@ -8,7 +8,6 @@ import {
   createEntity,
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeComponent,
   removeEntity,
   setComponent,
@@ -112,7 +111,7 @@ export const XRDetectedMeshComponent = defineComponent({
     if (mesh.lastChangedTime > lastKnownTime) {
       state.meshesLastChangedTimes.set(mesh, mesh.lastChangedTime)
       const geometry = XRDetectedMeshComponent.createGeometryFromMesh(mesh)
-      const meshComponent = getMutableComponent(entity, XRDetectedMeshComponent)
+      const meshComponent = getComponent(entity, XRDetectedMeshComponent)
       meshComponent.geometry?.dispose()
       meshComponent.shadowMesh?.geometry.dispose()
       const meshObj = new Mesh(geometry, shadowMaterial)

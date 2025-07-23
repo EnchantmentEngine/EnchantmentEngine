@@ -11,13 +11,7 @@ import {
 } from 'three'
 
 import { createEntity, defineQuery, EntityTreeComponent, removeEntity, UUIDComponent } from '@ir-engine/ecs'
-import {
-  getComponent,
-  getMutableComponent,
-  hasComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { CameraComponent } from '../../camera/components/CameraComponent'
@@ -99,7 +93,7 @@ function practicalSplit(amount: number, near: number, far: number, lambda: numbe
 }
 
 function createLight(i: number, rendererEntity: Entity): void {
-  const csm = getMutableComponent(rendererEntity, CSMComponent)
+  const csm = getComponent(rendererEntity, CSMComponent)
 
   const light = new DirectionalLight(csm.lightColor, csm.lightIntensity)
   light.castShadow = true
@@ -131,7 +125,7 @@ function createLight(i: number, rendererEntity: Entity): void {
 
 function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
-  const csm = getMutableComponent(entity, CSMComponent)
+  const csm = getComponent(entity, CSMComponent)
 
   /**@todo why aren't these being cleared after the component is ostensibly removed and reset??? */
   csm.lights = []
@@ -156,7 +150,7 @@ function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): 
 
 function initCascades(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
-  const csm = getMutableComponent(entity, CSMComponent)
+  const csm = getComponent(entity, CSMComponent)
 
   const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
   camera.updateProjectionMatrix()
@@ -224,7 +218,7 @@ function updateShadowBounds(rendererEntity?: Entity): void {
 function getBreaks(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
   const csm = getComponent(entity, CSMComponent)
-  const mutableCsm = getMutableComponent(entity, CSMComponent)
+  const mutableCsm = getComponent(entity, CSMComponent)
 
   const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar)
@@ -255,7 +249,7 @@ function getBreaks(rendererEntity?: Entity): void {
 function updateCSM(rendererEntity: Entity): void {
   const entity = rendererEntity
   const csm = getComponent(entity, CSMComponent)
-  const mutableCsm = getMutableComponent(entity, CSMComponent)
+  const mutableCsm = getComponent(entity, CSMComponent)
 
   if (csm.sourceLight) {
     // Update light direction
@@ -332,7 +326,7 @@ function removeInclude(): void {
 
 function updateUniforms(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
-  const csm = getMutableComponent(entity, CSMComponent)
+  const csm = getComponent(entity, CSMComponent)
 
   const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar)
@@ -401,7 +395,7 @@ function updateFrustums(rendererEntity?: Entity): void {
 
 function removeCSMLights(rendererEntity: Entity): void {
   const entity = rendererEntity
-  const csm = getMutableComponent(entity, CSMComponent)
+  const csm = getComponent(entity, CSMComponent)
 
   csm.lights.forEach((light) => {
     light.dispose()
@@ -458,7 +452,7 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
     setComponent(entity, CSMComponent)
   }
 
-  const csm = getMutableComponent(entity, CSMComponent)
+  const csm = getComponent(entity, CSMComponent)
 
   csm.cascades = params.cascades ?? CSMDefaults.cascades
   csm.maxFar = params.maxFar ?? CSMDefaults.maxFar

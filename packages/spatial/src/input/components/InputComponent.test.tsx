@@ -4,12 +4,7 @@ import React, { useEffect } from 'react'
 import sinon from 'sinon'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import {
-  getComponent,
-  getMutableComponent,
-  serializeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, serializeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { ReactorRoot, getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
@@ -221,9 +216,9 @@ describe('InputComponent', () => {
       setComponent(one, InputSourceComponent)
       setComponent(two, InputSourceComponent)
       setComponent(three, InputSourceComponent)
-      getMutableComponent(one, InputSourceComponent).buttons = Buttons1
-      getMutableComponent(two, InputSourceComponent).buttons = Buttons2
-      getMutableComponent(three, InputSourceComponent).buttons = Buttons3
+      getComponent(one, InputSourceComponent).buttons = Buttons1
+      getComponent(two, InputSourceComponent).buttons = Buttons2
+      getComponent(three, InputSourceComponent).buttons = Buttons3
       // Create the entity that the InputSink will reference
       const inputEntity = createEntity()
       setComponent(inputEntity, InputComponent, { inputSources: [one, two, three] })
@@ -245,7 +240,7 @@ describe('InputComponent', () => {
       const testEntity = createEntity()
       setComponent(testEntity, InputSourceComponent)
       setComponent(testEntity, InputComponent, { inputSources: [testEntity] })
-      const inputSource = getMutableComponent(testEntity, InputSourceComponent)
+      const inputSource = getComponent(testEntity, InputSourceComponent)
 
       // Create test buttons
       const buttonAlias = {
@@ -306,7 +301,7 @@ describe('InputComponent', () => {
       // Test case 5: Full combo pressed - first entity context
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
-      getMutableComponent(testEntity, InputSourceComponent).buttons = {
+      getComponent(testEntity, InputSourceComponent).buttons = {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true })
       }
@@ -317,7 +312,7 @@ describe('InputComponent', () => {
       assert.ok(!result.KeyB, 'KeyB should not be available, as it is consumed')
 
       ClientInputFunctions.refreshInputs(true)
-      getMutableComponent(testEntity, InputSourceComponent).buttons = {
+      getComponent(testEntity, InputSourceComponent).buttons = {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true })
       }
@@ -344,7 +339,7 @@ describe('InputComponent', () => {
       // Test case 6: Full combo with mixed states
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
-      getMutableComponent(testEntity, InputSourceComponent).buttons = {
+      getComponent(testEntity, InputSourceComponent).buttons = {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, pressed: true }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, touched: true })
       }
@@ -355,7 +350,7 @@ describe('InputComponent', () => {
       // Test case 7: Full combo with dragging/rotating states
       ClientInputFunctions.refreshInputs(true)
       result = InputComponent.getButtons(testEntity, buttonAlias)
-      getMutableComponent(testEntity, InputSourceComponent).buttons = {
+      getComponent(testEntity, InputSourceComponent).buttons = {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, dragging: true }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, rotating: true })
       }
@@ -365,7 +360,7 @@ describe('InputComponent', () => {
 
       // Test case 8: Full combo with different values
       ClientInputFunctions.refreshInputs(true)
-      getMutableComponent(testEntity, InputSourceComponent).buttons = {
+      getComponent(testEntity, InputSourceComponent).buttons = {
         [KeyboardButton.KeyA]: createInitialButtonState(testEntity, { down: true, value: 0.5 }),
         [KeyboardButton.KeyB]: createInitialButtonState(testEntity, { down: true, value: 0.8 })
       }
@@ -403,7 +398,7 @@ describe('InputComponent', () => {
       // Set up input source components
       setComponent(one, InputSourceComponent)
       setComponent(two, InputSourceComponent)
-      getMutableComponent(one, InputSourceComponent).source = {
+      getComponent(one, InputSourceComponent).source = {
         handedness: 'none',
         targetRayMode: 'screen',
         gripSpace: undefined,
@@ -422,7 +417,7 @@ describe('InputComponent', () => {
         hand: undefined
       } as unknown as XRInputSource
 
-      getMutableComponent(two, InputSourceComponent).source = {
+      getComponent(two, InputSourceComponent).source = {
         handedness: 'none',
         targetRayMode: 'screen',
         gripSpace: undefined,
@@ -447,7 +442,7 @@ describe('InputComponent', () => {
       // Create an inputSink entity that holds entity source one
       const sinkEntity = createEntity()
       setComponent(sinkEntity, InputSinkComponent)
-      getMutableComponent(sinkEntity, InputSinkComponent).inputEntity = inputEntity
+      getComponent(sinkEntity, InputSinkComponent).inputEntity = inputEntity
 
       // Set the child entity as a child of the sink
       const childEntity = createEntity()
@@ -474,7 +469,7 @@ describe('InputComponent', () => {
       const testEntity = createEntity()
       setComponent(testEntity, InputSourceComponent)
       setComponent(testEntity, InputComponent, { inputSources: [testEntity] })
-      const inputSource = getMutableComponent(testEntity, InputSourceComponent)
+      const inputSource = getComponent(testEntity, InputSourceComponent)
 
       // Test case 1: Initial state - no buttons
       let result = InputComponent.getButtons(testEntity, DefaultButtonBindings)
@@ -508,7 +503,7 @@ describe('InputComponent', () => {
       // Create input source entity
       const inputSourceEntity = createEntity()
       setComponent(inputSourceEntity, InputSourceComponent)
-      const inputSource = getMutableComponent(inputSourceEntity, InputSourceComponent)
+      const inputSource = getComponent(inputSourceEntity, InputSourceComponent)
 
       // Create two different entities that will access the same input source
       const entity1 = createEntity()
@@ -575,7 +570,7 @@ describe('InputComponent', () => {
       // Set the testEntity input sources
       const inputSourceEntity = createEntity()
       setComponent(inputSourceEntity, InputSourceComponent)
-      getMutableComponent(testEntity, InputComponent).inputSources = [inputSourceEntity]
+      getComponent(testEntity, InputComponent).inputSources = [inputSourceEntity]
 
       // Extract the useExecute system out of the global list
       const list = Array.from(SystemDefinitions.entries())
@@ -601,7 +596,7 @@ describe('InputComponent', () => {
       await vi.waitFor(() => {
         assert.equal(effectSpy.callCount, 2)
       })
-      getMutableComponent(testEntity, InputComponent).inputSources = []
+      getComponent(testEntity, InputComponent).inputSources = []
       syst.execute()
 
       // Check the spies and the list of sources after running the system and the reactor

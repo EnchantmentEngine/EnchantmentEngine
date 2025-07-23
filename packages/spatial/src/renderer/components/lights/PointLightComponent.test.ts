@@ -8,7 +8,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   serializeComponent,
@@ -138,7 +137,7 @@ describe('PointLightComponent', () => {
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, Expected)
 
-      getMutableComponent(testEntity, PointLightComponent).helperEntity = DummyEntity
+      getComponent(testEntity, PointLightComponent).helperEntity = DummyEntity
       await vi.waitFor(() => {
         const result = getComponent(testEntity, PointLightComponent)
         assertPointLightComponentNotEq(result, PointLightComponentDefaults)

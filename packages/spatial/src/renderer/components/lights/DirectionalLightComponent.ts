@@ -4,7 +4,7 @@ import { DirectionalLight } from 'three'
 import {
   S,
   defineComponent,
-  getMutableComponent,
+  getComponent,
   removeComponent,
   setComponent,
   useComponent,
@@ -39,7 +39,7 @@ export const DirectionalLightComponent = defineComponent({
 
     useEffect(() => {
       setComponent(entity, LightTagComponent)
-      getMutableComponent(entity, DirectionalLightComponent).light = light
+      getComponent(entity, DirectionalLightComponent).light = light
       setComponent(entity, ObjectComponent, light)
 
       return () => {

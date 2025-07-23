@@ -5,7 +5,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   serializeComponent,
@@ -379,7 +378,7 @@ describe('FogSettingsComponent', () => {
     })
 
     it('should initialize/create a FogSettingsComponent, and all its data, as expected', async () => {
-      const fogSettingsComponent = getMutableComponent(entity, FogSettingsComponent)
+      const fogSettingsComponent = getComponent(entity, FogSettingsComponent)
       assert(fogSettingsComponent, 'fog setting component exists')
 
       setComponent(entity, FogSettingsComponent, {

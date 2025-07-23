@@ -14,7 +14,6 @@ import {
   deserializeComponent,
   getAllComponents,
   getComponent,
-  getMutableComponent,
   hasComponent,
   hasComponents,
   removeComponent,
@@ -491,9 +490,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, 21)
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = Expected
-            component.onSet(testEntity, data as any, value)
+            component.onSet(testEntity, data, value)
 
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
@@ -507,9 +506,9 @@ describe('ComponentFunctions', async () => {
             const component = defineComponent({ name: 'TestComponent', schema: S.Number({ default: 1234 }) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, Expected)
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = 0 // Falsy value. Won't call onSet
-            component.onSet(testEntity, data as any, value)
+            component.onSet(testEntity, data, value)
 
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
@@ -521,9 +520,9 @@ describe('ComponentFunctions', async () => {
             const component = defineComponent({ name: 'TestComponent', schema: S.Number({ default: 1234 }) })
             expect(IsSingleValueSchema(component.schema)).toBeTruthy()
             setComponent(testEntity, component, 21)
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = Expected
-            component.onSet(testEntity, data as any, value)
+            component.onSet(testEntity, data, value)
 
             const result = getComponent(testEntity, component)
             expect(result).toBe(Expected)
@@ -561,9 +560,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = 'SomeString'
-            component.onSet(testEntity, data as any, value as any)
+            component.onSet(testEntity, data, value as any)
             const result = getComponent(testEntity, component)
 
             expect(result).toBe(value)
@@ -576,9 +575,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = { one: 42 }
-            component.onSet(testEntity, data as any, value as any)
+            component.onSet(testEntity, data, value as any)
             const result = getComponent(testEntity, component)
 
             expect(result).toEqual(value)
@@ -595,9 +594,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, Expected)
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = 0
-            component.onSet(testEntity, data as any, value as any)
+            component.onSet(testEntity, data, value as any)
 
             const result = getComponent(testEntity, component)
             expect(result).toEqual(Expected)
@@ -631,9 +630,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = 'SomeString'
-            component.onSet(testEntity, data as any, value as any)
+            component.onSet(testEntity, data, value as any)
             const result = getComponent(testEntity, component)
 
             expect(result).toBe(value)
@@ -646,9 +645,9 @@ describe('ComponentFunctions', async () => {
             })
             expect(IsSingleValueSchema(component.schema)).toBeFalsy()
             setComponent(testEntity, component, { one: 21 })
-            const data = getMutableComponent(testEntity, component)
+            const data = getComponent(testEntity, component)
             const value = { one: 42 }
-            component.onSet(testEntity, data as any, value as any)
+            component.onSet(testEntity, data, value as any)
             const result = getComponent(testEntity, component)
 
             expect(result).toEqual(value)

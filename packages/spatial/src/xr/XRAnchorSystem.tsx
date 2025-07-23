@@ -15,7 +15,6 @@ import { EntityTreeComponent, createEntity } from '@ir-engine/ecs'
 import {
   ComponentType,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   removeComponent,
   setComponent,
@@ -47,7 +46,7 @@ import { ReferenceSpace, XRState } from './XRState'
 
 export const updateHitTest = (entity: Entity) => {
   const xrFrame = getState(XRState).xrFrame!
-  const hitTest = getMutableComponent(entity, XRHitTestComponent)
+  const hitTest = getComponent(entity, XRHitTestComponent)
   if (!hitTest.source) return
 
   const hitTestResults = xrFrame.getHitTestResults(hitTest.source)
