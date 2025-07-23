@@ -1,7 +1,7 @@
 import { default as appRootPath } from 'app-root-path'
 import fs from 'fs'
 import fsStore from 'fs-blob-store'
-import glob from 'glob'
+import { glob } from 'glob'
 import kill from 'kill-port'
 import path from 'path/posix'
 import { PassThrough, Readable } from 'stream'
@@ -139,7 +139,7 @@ export class LocalStorage implements StorageProviderInterface {
     const filePath = path.join(this.PATH_PREFIX, prefix)
     if (!fs.existsSync(filePath)) return { Contents: [] }
     // glob all files and directories
-    let globResult = glob.sync(path.join(filePath, '**'), {
+    let globResult = await glob(path.join(filePath, '**'), {
       dot: true
     })
     globResult = globResult.filter(
@@ -338,7 +338,7 @@ export class LocalStorage implements StorageProviderInterface {
     const signedUrl = this.getSignedUrl(res.key, 3600, null)
 
     if (isDir) {
-      const filePaths = glob.sync('**', {
+      const filePaths = await glob('**', {
         // "**" means you search on the whole folder
         cwd: pathString, // folder path
         absolute: true, // you have to set glob to return absolute path not only file names
