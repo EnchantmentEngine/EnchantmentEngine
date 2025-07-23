@@ -32,6 +32,7 @@ import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowCo
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
 import { SpawnPointComponent } from '@ir-engine/engine/src/scene/components/SpawnPointComponent'
 import { SplineComponent } from '@ir-engine/engine/src/scene/components/SplineComponent'
+import { TerrainMeshComponent } from '@ir-engine/engine/src/scene/components/TerrainMeshComponent'
 import { TextComponent } from '@ir-engine/engine/src/scene/components/TextComponent'
 import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
@@ -58,7 +59,13 @@ export const ComponentShelfCategoriesState = defineState({
   initial: () => {
     return {
       Files: [GLTFComponent, MediaComponent, VideoComponent, ImageComponent],
-      'Scene Composition': [CameraComponent, PrimitiveGeometryComponent, GroundPlaneComponent, VariantComponent],
+      'Scene Composition': [
+        CameraComponent,
+        PrimitiveGeometryComponent,
+        GroundPlaneComponent,
+        TerrainMeshComponent,
+        VariantComponent
+      ],
       Physics: [ColliderComponent, RigidBodyComponent, TriggerCallbackComponent],
       Interaction: [
         SpawnPointComponent,

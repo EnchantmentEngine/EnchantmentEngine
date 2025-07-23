@@ -29,6 +29,7 @@ import { SkyboxComponent } from './components/SkyboxComponent'
 import { SpawnPointComponent } from './components/SpawnPointComponent'
 import { SplineComponent } from './components/SplineComponent'
 import { SplineTrackComponent } from './components/SplineTrackComponent'
+import { TerrainMeshComponent } from './components/TerrainMeshComponent'
 import { TextComponent } from './components/TextComponent'
 import { TriggerCallbackComponent } from './components/TriggerCallbackComponent'
 import { VariantComponent } from './components/VariantComponent'
@@ -85,6 +86,7 @@ export const SceneComponents = [
   SpawnPointComponent,
   SplineComponent,
   SplineTrackComponent,
+  TerrainMeshComponent,
   TriggerCallbackComponent,
   VariantComponent,
   VideoComponent,

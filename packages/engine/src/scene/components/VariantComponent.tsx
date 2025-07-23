@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 import {
   Entity,
@@ -215,7 +215,9 @@ const InstancingVariantReactor = (props: { entity: Entity }) => {
   return (
     <>
       {variantComponent.levels.map((level, index) => (
-        <VariantInstanceLoadReactor entity={props.entity} level={index} key={index} />
+        <Suspense key={index}>
+          <VariantInstanceLoadReactor entity={props.entity} level={index} />
+        </Suspense>
       ))}
     </>
   )
@@ -229,7 +231,7 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
     setComponent(entity, UUIDComponent, {
-      entitySourceID: getComponent(props.entity, UUIDComponent).entitySourceID,
+      entitySourceID: UUIDComponent.getAsSourceID(props.entity),
       entityID: 'LOD-' + props.level
     } as EntityUUIDPair)
     setComponent(entity, NameComponent, getComponent(props.entity, NameComponent) + ' LOD ' + props.level)
@@ -264,31 +266,22 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
 }
 
 const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; meshEntity: Entity; level: number }) => {
+  const instanceMatrix = useComponent(props.variantEntity, InstancingComponent).instanceMatrix.value
   useEffect(() => {
-    const level = getComponent(props.variantEntity, VariantComponent).levels[props.level]
-
-    const minDistance = level.metadata['minDistance']
-    const maxDistance = level.metadata['maxDistance']
     const mesh = getComponent(props.meshEntity, MeshComponent)
-
-    // debug
-    // mesh.material = new MeshStandardMaterial({
-    //   color: props.level === 0 ? 0xff0000 : props.level === 1 ? 0x00ff00 : 0x0000ff
-    // })
-
     const instancingComponent = getComponent(props.variantEntity, InstancingComponent)
 
-    //convert to instanced mesh, using existing instance matrix
-    const instancedMesh =
-      mesh instanceof InstancedMesh
-        ? mesh
-        : new InstancedMesh(mesh.geometry.clone(), mesh.material, instancingComponent.instanceMatrix.count)
+    const instancedMesh = new InstancedMesh(
+      mesh.geometry.clone(),
+      mesh.material,
+      instancingComponent.instanceMatrix.count
+    )
     instancedMesh.instanceMatrix.copy(instancingComponent.instanceMatrix)
     instancedMesh.frustumCulled = false
 
     removeComponent(props.meshEntity, MeshComponent)
     setComponent(props.meshEntity, MeshComponent, instancedMesh)
-  }, [])
+  }, [instanceMatrix])
 
   const materialEntities = useComponent(props.meshEntity, MaterialInstanceComponent).entities
   const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
