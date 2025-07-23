@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { GLTF } from '@gltf-transform/core'
 import {
   EntityTreeComponent,
@@ -366,7 +341,7 @@ export async function exportGLTFScene(
   relativePath: string,
   exportRoot = true,
   exportExtensionTypes: ExportExtension[] = defaultExportExtensionList.map((ext) => ext())
-) {
+): Promise<[GLTF.IGLTF, ...File[]]> {
   const exportExtensions = exportExtensionTypes //.map((ext) => new ext())
 
   const gltf = {
@@ -463,8 +438,6 @@ export async function exportGLTFScene(
 
   // destroy hookstate store
   destroy(context.materialPromises)
-
-  if (!gltf) return []
 
   // const blob = [new Blob([JSON.stringify(gltf, null, 2)], { type: 'application/gltf+json' })]
   // const gltfFile = new File(blob, relativePath)
@@ -826,8 +799,10 @@ const _builtinMaterialDefs = {
   color: (materialDef: GLTF.IMaterial, value: MaterialColorValue) => {
     if (!materialDef.pbrMetallicRoughness) materialDef.pbrMetallicRoughness = {}
     // Set RGB array
-    if (!('toArray' in value.contents)) return console.warn('Could not serialize color', value)
-    materialDef.pbrMetallicRoughness.baseColorFactor = value.contents.toArray()
+    if (value.contents.isColor) materialDef.pbrMetallicRoughness.baseColorFactor = value.contents.toArray()
+    else {
+      materialDef.pbrMetallicRoughness.baseColorFactor = new Color(value.contents).toArray()
+    }
     // Set A channel to GLTF default because color is just RGB
     materialDef.pbrMetallicRoughness.baseColorFactor[3] = 1
   },
@@ -855,8 +830,10 @@ const _builtinMaterialDefs = {
     materialDef.pbrMetallicRoughness.metallicRoughnessTexture = value.contents
   },
   emissive: (materialDef: GLTF.IMaterial, value: MaterialColorValue) => {
-    if (!('toArray' in value.contents)) return console.warn('Could not serialize color', value)
-    materialDef.emissiveFactor = value.contents.toArray()
+    if (value.contents.isColor) materialDef.emissiveFactor = value.contents.toArray()
+    else {
+      materialDef.emissiveFactor = new Color(value.contents).toArray()
+    }
   },
   emissiveMap: (materialDef: GLTF.IMaterial, value: MaterialTextureValue) => {
     materialDef.emissiveTexture = value.contents
@@ -879,28 +856,38 @@ export const materialExtensions = [
   KHRAnisotropyExtensionComponent
 ]
 
-const exportMaterial = async (
-  entity: Entity,
-  gltf: GLTF.IGLTF,
-  context: GLTFSceneExportContext
-): Promise<number | null> => {
-  const material = getComponent(entity, MaterialStateComponent).material
-
-  const cache = context.cache.materials
-  if (cache.has(material)) return cache.get(material)!
-
-  const materialEntityUUID = getComponent(entity, UUIDComponent)
-
-  //do not export fallback material
-  if (
-    materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
-    materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
-  )
-    return null
-
+export const materialValuesToMaterialDef = (materialValues: Record<string, MaterialValue>) => {
   const materialDef: GLTF.IMaterial = {}
 
-  materialDef.name = getComponent(entity, NameComponent)
+  for (const key in _builtinMaterialDefs) {
+    const resultValue = materialValues[key]
+    if (resultValue?.contents != null) {
+      _builtinMaterialDefs[key](materialDef, resultValue)
+      delete materialValues[key]
+    }
+  }
+
+  materialDef.extensions ??= {}
+  for (const ext of materialExtensions) {
+    if (typeof ext.exportMaterialExtension === 'function') {
+      const extension = ext.exportMaterialExtension(materialValues)
+      if (extension && Object.keys(extension).length > 0) {
+        materialDef.extensions[ext.jsonID] = extension
+      }
+    }
+  }
+
+  return materialDef
+}
+
+export const materialToMaterialDef = async (
+  material: Material,
+  name: string,
+  handleTexture: ((texture: Texture, field: string) => Promise<number | void> | undefined) | null = null
+) => {
+  const materialDef: GLTF.IMaterial = {}
+
+  materialDef.name = name
 
   if (material.transparent) {
     materialDef.alphaMode = 'BLEND'
@@ -925,10 +912,8 @@ const exportMaterial = async (
       }
       const texture = value as Texture
 
-      if (texture.isTexture) {
-        if (field === 'envMap') return //for skipping environment maps which cause errors
-        if ((texture as CubeTexture).isCubeTexture) return //for skipping environment maps which cause errors
-        const textureIndex = await exportTexture(texture, gltf, context)
+      if (texture.isTexture && handleTexture) {
+        const textureIndex = await handleTexture(texture, field)
         if (typeof textureIndex !== 'number') return
         argEntry.contents = {
           index: textureIndex,
@@ -939,24 +924,39 @@ const exportMaterial = async (
     })
   )
 
-  for (const key in _builtinMaterialDefs) {
-    const resultValue = result[key]
-    if (resultValue?.contents != null) {
-      _builtinMaterialDefs[key](materialDef, resultValue)
-      delete result[key]
+  return { ...materialDef, ...materialValuesToMaterialDef(result) }
+}
+
+const exportMaterial = async (
+  entity: Entity,
+  gltf: GLTF.IGLTF,
+  context: GLTFSceneExportContext
+): Promise<number | null> => {
+  const material = getComponent(entity, MaterialStateComponent).material
+
+  const cache = context.cache.materials
+  if (cache.has(material)) return cache.get(material)!
+
+  const materialEntityUUID = getComponent(entity, UUIDComponent)
+
+  //do not export fallback material
+  if (
+    materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
+    materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
+  )
+    return null
+
+  const materialDef: GLTF.IMaterial = await materialToMaterialDef(
+    material,
+    getComponent(entity, NameComponent),
+    (texture, field) => {
+      if (field === 'envMap') return //for skipping environment maps which cause errors
+      if ((texture as CubeTexture).isCubeTexture) return //for skipping environment maps which cause errors
+      return exportTexture(texture, gltf, context)
     }
-  }
+  )
 
   materialDef.extensions ??= {}
-  for (const ext of materialExtensions) {
-    if (typeof ext.exportMaterialExtension === 'function') {
-      const extension = ext.exportMaterialExtension(result)
-      if (extension && Object.keys(extension).length > 0) {
-        materialDef.extensions[ext.jsonID] = extension
-      }
-    }
-  }
-
   const components = getAllComponents(entity)
   for (const component of components) {
     if (!component.jsonID) continue

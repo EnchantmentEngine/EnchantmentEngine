@@ -34,7 +34,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import { FileThumbnailJobState, uploadDimension } from './FileThumbnailJobState'
 
 describe('FileThumbnailJobState', () => {
-  const testKey = 'projects/ir-engine/default-project/public/test.glb'
+  const testKey = 'projects/enchantmentengine/default-project/public/test.glb'
   const testUrl = 'https://domain/' + testKey
 
   const filesQueryData: FileBrowserContentType[] = [

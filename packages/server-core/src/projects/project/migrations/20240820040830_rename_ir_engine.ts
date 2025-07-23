@@ -41,7 +41,7 @@ export async function up(knex: Knex): Promise<void> {
 
     for (const project of projects) {
       if (project.name === 'etherealengine/default-project') {
-        const newName = 'ir-engine/default-project'
+        const newName = 'enchantmentengine/default-project'
         await knex(projectPath).where('id', project.id).update({
           name: newName
         })
@@ -69,7 +69,7 @@ export async function down(knex: Knex): Promise<void> {
     const projects: ProjectType[] = await knex.select('*').from(projectPath)
 
     for (const project of projects) {
-      if (project.name === 'ir-engine/default-project') {
+      if (project.name === 'enchantmentengine/default-project') {
         const newName = 'etherealengine/default-project'
         await knex(projectPath).where('id', project.id).update({
           name: newName

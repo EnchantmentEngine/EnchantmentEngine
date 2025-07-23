@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Geometry } from '@ir-engine/spatial/src/common/constants/Geometry'
 import {
   BoxGeometry,
@@ -66,7 +41,7 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.SphereGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     widthSegments: { default: 32, min: 3 },
     heightSegments: { default: 16, min: 2 },
     phiStart: { default: 0, min: 0 },
@@ -76,8 +51,8 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.CylinderGeometry]: {
-    radiusTop: { default: 1, min: 0 },
-    radiusBottom: { default: 1, min: 0 },
+    radiusTop: { default: 1, min: 0.01 },
+    radiusBottom: { default: 1, min: 0.01 },
     height: { default: 1, min: 1 },
     radialSegments: { default: 8, min: 3 },
     heightSegments: { default: 1, min: 1 },
@@ -87,7 +62,7 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.CapsuleGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     length: { default: 1, min: 1 },
     capSegments: { default: 4, min: 1 },
     radialSegments: { default: 8, min: 3 }
@@ -99,15 +74,15 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.CircleGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     segments: { default: 32, min: 0 },
     thetaStart: { default: 0, min: 0 },
     thetaLength: { default: Math.PI * 2, min: 0 }
   },
 
   [GeometryType.RingGeometry]: {
-    innerRadius: { default: 0.5, min: 1 },
-    outerRadius: { default: 1, min: 1 },
+    innerRadius: { default: 0.5, min: 0.01 },
+    outerRadius: { default: 1, min: 0.01 },
     thetaSegments: { default: 32, min: 1 },
     phiSegments: { default: 1, min: 1 },
     thetaStart: { default: 0, min: 0 },
@@ -115,7 +90,7 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.TorusGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     tube: { default: 0.4, min: 0.1 },
     radialSegments: { default: 8, min: 2 },
     tubularSegments: { default: 6, min: 3 },
@@ -123,27 +98,27 @@ export const GeometryTypeParamsEnum = {
   },
 
   [GeometryType.DodecahedronGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     detail: { default: 0, min: 0 }
   },
 
   [GeometryType.IcosahedronGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     detail: { default: 0, min: 0 }
   },
 
   [GeometryType.OctahedronGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     detail: { default: 0, min: 0 }
   },
 
   [GeometryType.TetrahedronGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     detail: { default: 0, min: 0 }
   },
 
   [GeometryType.TorusKnotGeometry]: {
-    radius: { default: 1, min: 1 },
+    radius: { default: 1, min: 0.01 },
     tube: { default: 0.4, min: 0.1 },
     tubularSegments: { default: 64, min: 3 },
     radialSegments: { default: 8, min: 3 },

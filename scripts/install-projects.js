@@ -64,8 +64,8 @@ async function installAllProjects() {
     await Promise.all(projects.map((project) => download(project.name)))
     const updatedProject = await app
       .service(projectPath)
-      .update('', { sourceURL: 'ir-engine/default-project' }, { isInternal: true, isJob: true })
-    const projectConfig = await getProjectConfig('ir-engine/default-project')
+      .update('', { sourceURL: 'enchantmentengine/default-project' }, { isInternal: true, isJob: true })
+    const projectConfig = await getProjectConfig('enchantmentengine/default-project')
     if (projectConfig && projectConfig.onEvent)
       await onProjectEvent(app, updatedProject, projectConfig.onEvent, 'onUpdate')
     process.exit(0)
