@@ -457,14 +457,14 @@ export function useAncestorTree(entity: Entity) {
       useEffect(() => {
         if (!tree) return
         // capture value to use in the cleanup function to prevent errors
-        const parentEntityValue = tree.parentEntity
+        const parentEntity = tree.parentEntity
         ancestors.set((prev) => {
-          if (prev.indexOf(parentEntityValue) < 0) prev.push(parentEntityValue)
+          if (prev.indexOf(parentEntity) < 0) prev.push(parentEntity)
           return prev
         })
         return () => {
           if (unmounted) return
-          ancestors.set((prev) => prev.filter((e) => e !== parentEntityValue))
+          ancestors.set((prev) => prev.filter((e) => e !== parentEntity))
         }
       }, [tree?.parentEntity])
       if (!tree?.parentEntity) return null

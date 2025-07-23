@@ -1,7 +1,7 @@
 import { default as appRootPath } from 'app-root-path'
 import fs from 'fs'
 import fsStore from 'fs-blob-store'
-import glob from 'glob'
+import { glob } from 'glob'
 import kill from 'kill-port'
 import path from 'path/posix'
 import { PassThrough, Readable } from 'stream'
@@ -372,11 +372,15 @@ export class LocalStorage implements StorageProviderInterface {
     if (recursive) absoluteDirPath = path.join(absoluteDirPath, '**')
 
     const folder = glob
-      .sync(path.join(absoluteDirPath, '*/'))
+      .sync(path.join(absoluteDirPath, '*/'), {
+        dot: true,
+        nodir: false // include directories
+      })
       .map((p) => this._processContent(relativeDirPath, p, true))
     const files = glob
-      .sync(path.join(absoluteDirPath, '*.*'), {
-        dot: true
+      .sync(path.join(absoluteDirPath, '*'), {
+        dot: true,
+        nodir: true // only include files
       })
       .map((p) => this._processContent(relativeDirPath, p))
 

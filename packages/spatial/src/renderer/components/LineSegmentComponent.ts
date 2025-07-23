@@ -62,10 +62,7 @@ export const LineSegmentComponent = defineComponent({
     useEffect(() => {
       const opacity = component.opacity
       if (opacity === undefined) return
-      const mat = component.material as Material & {
-        opacity?: number
-        transparent?: boolean
-      }
+      const mat = component.material
 
       mat.transparent = opacity < 1
       mat.opacity = opacity
@@ -73,7 +70,7 @@ export const LineSegmentComponent = defineComponent({
     }, [component.opacity])
 
     useEffect(() => {
-      const geo = component.geometry as BufferGeometry<NormalBufferAttributes>
+      const geo = component.geometry
       lineSegment.geometry = geo
       return () => {
         geo.dispose()
