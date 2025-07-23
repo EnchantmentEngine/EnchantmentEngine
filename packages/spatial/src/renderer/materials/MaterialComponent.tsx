@@ -228,7 +228,7 @@ const MaterialInstanceSubReactor = (props: {
     const references = getMutableState(MaterialReferenceState)[materialEntity]
     if (!references.value) references.set([entity])
     else references.merge([entity])
-  }, [materialStateComponent?.material, meshComponent?.value])
+  }, [materialStateComponent?.material, meshComponent])
 
   return null
 }

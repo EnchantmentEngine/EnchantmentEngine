@@ -121,7 +121,7 @@ export const HemiSphereLightHelperReactor: React.FC = (props: { parentEntity; ic
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'hemisphere-light-helper',
       geometry: gizmoGeometry?.clone(),
-      color: hemisphereLightComponent.skyColor.value,
+      color: hemisphereLightComponent.skyColor,
       opacity: 0
     })
 
@@ -153,7 +153,7 @@ export const HemiSphereLightHelperReactor: React.FC = (props: { parentEntity; ic
     const helper = getMutableComponent(hemisphereLightHelperEntity.value, LineSegmentComponent)
     if (!helper) return
 
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : hemisphereLightComponent.skyColor.value)
+    helper.color = hovered ? BOUNDING_BOX_COLORS.HOVERED : hemisphereLightComponent.skyColor
   }, [
     hemisphereLightHelperEntity,
     hemisphereLightComponent.skyColor,

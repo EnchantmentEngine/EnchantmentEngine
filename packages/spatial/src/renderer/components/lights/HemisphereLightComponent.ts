@@ -40,7 +40,7 @@ export const HemisphereLightComponent = defineComponent({
     }, [hemisphereLightComponent.intensity])
 
     useEffect(() => {
-      light.color.set(hemisphereLightComponent.skyColor.value)
+      light.color.set(hemisphereLightComponent.skyColor)
     }, [hemisphereLightComponent.skyColor])
 
     return null

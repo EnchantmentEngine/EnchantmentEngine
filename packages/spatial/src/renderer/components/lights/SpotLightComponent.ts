@@ -86,8 +86,8 @@ export const SpotLightComponent = defineComponent({
     }, [spotLightComponent.castShadow])
 
     useEffect(() => {
-      light.color = new Color(spotLightComponent.color.value)
-    }, [spotLightComponent.color.value])
+      light.color = new Color(spotLightComponent.color)
+    }, [spotLightComponent.color])
 
     useEffect(() => {
       if (light.shadow.mapSize.x !== renderState.shadowMapResolution.value) {

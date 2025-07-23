@@ -205,7 +205,7 @@ const rendererReactor = () => {
 
   useEffect(() => {
     changeRenderMode(entity)
-  }, [engineRendererSettings.renderMode, renderer.effectComposer.value])
+  }, [engineRendererSettings.renderMode, renderer.effectComposer])
 
   return null
 }
