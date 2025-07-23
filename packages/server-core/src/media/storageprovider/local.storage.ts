@@ -139,7 +139,7 @@ export class LocalStorage implements StorageProviderInterface {
     const filePath = path.join(this.PATH_PREFIX, prefix)
     if (!fs.existsSync(filePath)) return { Contents: [] }
     // glob all files and directories
-    let globResult = await glob(path.join(filePath, '**'), {
+    let globResult = glob.sync(path.join(filePath, '**'), {
       dot: true
     })
     globResult = globResult.filter(
@@ -333,16 +333,12 @@ export class LocalStorage implements StorageProviderInterface {
     )
   }
 
-  private _processContent = async (
-    dirPath: string,
-    pathString: string,
-    isDir = false
-  ): Promise<FileBrowserContentType> => {
+  private _processContent = (dirPath: string, pathString: string, isDir = false): FileBrowserContentType => {
     const res = { key: pathString.replace(this.PATH_PREFIX, '') } as FileBrowserContentType
     const signedUrl = this.getSignedUrl(res.key, 3600, null)
 
     if (isDir) {
-      const filePaths = await glob('**', {
+      const filePaths = glob.sync('**', {
         // "**" means you search on the whole folder
         cwd: pathString, // folder path
         absolute: true, // you have to set glob to return absolute path not only file names
@@ -375,16 +371,14 @@ export class LocalStorage implements StorageProviderInterface {
     let absoluteDirPath = path.join(this.PATH_PREFIX, relativeDirPath)
     if (recursive) absoluteDirPath = path.join(absoluteDirPath, '**')
 
-    const folder = await Promise.all(
-      glob.sync(path.join(absoluteDirPath, '*/')).map((p) => this._processContent(relativeDirPath, p, true))
-    )
-    const files = await Promise.all(
-      glob
-        .sync(path.join(absoluteDirPath, '*.*'), {
-          dot: true
-        })
-        .map((p) => this._processContent(relativeDirPath, p))
-    )
+    const folder = glob
+      .sync(path.join(absoluteDirPath, '*/'))
+      .map((p) => this._processContent(relativeDirPath, p, true))
+    const files = glob
+      .sync(path.join(absoluteDirPath, '*.*'), {
+        dot: true
+      })
+      .map((p) => this._processContent(relativeDirPath, p))
 
     folder.push(...files)
     return folder
