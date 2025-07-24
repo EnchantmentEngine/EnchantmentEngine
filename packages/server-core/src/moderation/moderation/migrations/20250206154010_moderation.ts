@@ -12,6 +12,10 @@ export async function up(knex: Knex): Promise<void> {
     table.string('reportDetails', 1050).notNullable()
     table.string('abuseReason', 255).notNullable()
     table.string('type', 255).notNullable()
+    table.string('reportedUserIpAddress', 255).nullable()
+    table.increments('referenceNumber').unsigned().nullable().unique()
+    table.string('reportedUserCountry', 100).nullable()
+    table.string('reportingUserCountry', 100).nullable()
     //@ts-ignore
     table.uuid('reportedUserId', 36).collate('utf8mb4_bin')
 
