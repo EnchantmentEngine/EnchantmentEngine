@@ -1,10 +1,8 @@
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { ShadowMapResolutionOptions } from '@ir-engine/client-core/src/user/menus/SettingsMenu'
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import { useFind } from '@ir-engine/common'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { engineSettingPath, fileBrowserUploadPath } from '@ir-engine/common/src/schema.type.module'
 import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
 import { useComponent } from '@ir-engine/ecs'
@@ -177,13 +175,7 @@ export function ViewportContainer() {
     canvasRef.set(canvasReactRef)
   }, [canvasReactRef.current])
 
-  const [transformPivotFeatureFlag] = useFeatureFlags([FeatureFlags.Studio.UI.TransformPivot])
-
-  const leftItems = [
-    <TransformSpaceTool />,
-    ...(transformPivotFeatureFlag ? [<TransformPivotTool />] : []),
-    <TransformSnapTool />
-  ]
+  const leftItems = [<TransformSpaceTool />, <TransformPivotTool />, <TransformSnapTool />]
   const rightItems = [<SceneHelpersTool />, <RenderModeTool />, <ScenePlaybackTool />]
 
   const getItemsByVisible = (items, visibleByIndex) => {

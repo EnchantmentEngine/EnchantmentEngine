@@ -11,8 +11,6 @@ import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/Spect
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions } from '../../systems/WidgetAppService'
 
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import multiLogger from '@ir-engine/common/src/logger'
 import { EngineState } from '@ir-engine/ecs'
 import { MediaStreamService, MediaStreamState } from '@ir-engine/hyperflux'
@@ -76,14 +74,6 @@ export const MediaIconsBox = () => {
   const supportsAR = xrState.supportedSessionModes['immersive-ar'].value
   const xrMode = xrState.sessionMode.value
   const supportsVR = xrState.supportedSessionModes['immersive-vr'].value
-
-  const [
-    // motionCaptureEnabled,
-    xrEnabled
-  ] = useFeatureFlags([
-    // FeatureFlags.Client.Menu.MotionCapture,
-    FeatureFlags.Client.Menu.XR
-  ])
 
   const toggleRecording = () => {
     const activeRecording = recordingState.recordingID.value
@@ -205,7 +195,7 @@ export const MediaIconsBox = () => {
           onClick={MediaStreamState.toggleScreenshare}
         />
       ) : null}
-      {supportsVR && xrEnabled && (
+      {supportsVR && (
         <LocationIconButton
           tooltip={{
             title: t('user:menu.enterVR')

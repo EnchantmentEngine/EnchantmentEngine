@@ -2,7 +2,6 @@ import React, { Fragment, useEffect } from 'react'
 
 import { useHookstate } from '@hookstate/core'
 import { useFind, useMutation } from '@ir-engine/common'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { AvatarID, avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { hasComponent } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
@@ -12,7 +11,6 @@ import { useMutableState } from '@ir-engine/hyperflux'
 import Avatar from '../../common/components/Avatar/Avatar2'
 import AvatarPreview from '../../common/components/AvatarPreview'
 import { ModalState } from '../../common/services/ModalState'
-import useFeatureFlags from '../../hooks/useFeatureFlags'
 import AvatarCreatorMenu, { SupportedSdks } from '../../user/menus/avatar/AvatarCreatorMenu'
 import AvatarModifyMenu from '../../user/menus/avatar/AvatarModifyMenu'
 import { AuthService, AuthState } from '../../user/services/AuthService'
@@ -45,11 +43,6 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo, navigateClose }
 
   const selectedAvatarId = useHookstate('' as AvatarID)
   const selectedAvatar = avatars.find((avatar) => avatar.id === selectedAvatarId.value)
-
-  const [createAvatarEnabled, uploadAvatarEnabled] = useFeatureFlags([
-    FeatureFlags.Client.Menu.CreateAvatar,
-    FeatureFlags.Client.Menu.UploadAvatar
-  ])
 
   useEffect(() => {
     if (!userAvatarId) return
@@ -91,14 +84,13 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo, navigateClose }
       </Section>
 
       {/* Action Buttons */}
-      <Section className={createAvatarEnabled || uploadAvatarEnabled ? '' : 'hidden'}>
+      <Section>
         <MenuItem
           label="Create Avatar"
           onClick={() => {
             const Menu = AvatarCreatorMenu(SupportedSdks.ReadyPlayerMe)
             ModalState.openModal(<Menu showBackButton={false} previewEnabled={true} />, () => ModalState.closeModal())
           }}
-          className={createAvatarEnabled ? '' : 'hidden'}
         />
         <div className="h-px bg-white/10"></div>
         <MenuItem
@@ -106,7 +98,6 @@ const AvatarScreen: React.FC<AvatarScreenProps> = ({ navigateTo, navigateClose }
           onClick={() => {
             ModalState.openModal(<AvatarModifyMenu />)
           }}
-          className={uploadAvatarEnabled ? '' : 'hidden'}
         />
       </Section>
       <div className="flex-1 overflow-auto">

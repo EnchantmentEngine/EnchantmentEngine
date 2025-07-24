@@ -1,6 +1,3 @@
-import React from 'react'
-
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import multiLogger from '@ir-engine/common/src/logger'
 import { PlaybackState, RecordingState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { EngineState } from '@ir-engine/ecs'
@@ -12,6 +9,7 @@ import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { endXRSession, requestXRSession } from '@ir-engine/spatial/src/xr/XRSessionFunctions'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { CustomScreenshare as ScreenshareIcon } from '@ir-engine/ui/src/icons'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   BsCameraVideoOffFill as CameraOffIcon,
@@ -23,7 +21,6 @@ import { MdFlipCameraAndroid } from 'react-icons/md'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { VrIcon } from '../../common/components/Icons/VrIcon'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
-import useFeatureFlags from '../../hooks/useFeatureFlags'
 import { LocationState } from '../../social/services/LocationService'
 import { clientContextParams } from '../../util/ClientContextState'
 
@@ -103,14 +100,6 @@ const useMultimediaState = () => {
   const xrState = useMutableState(XRState)
   const supportsVR = xrState.supportedSessionModes['immersive-vr'].value
 
-  const [
-    // motionCaptureEnabled,
-    xrEnabled
-  ] = useFeatureFlags([
-    // FeatureFlags.Client.Menu.MotionCapture,
-    FeatureFlags.Client.Menu.XR
-  ])
-
   const xrSessionActive = xrState.sessionActive.value
   const [params, setSearch] = useSearchParams()
 
@@ -140,7 +129,7 @@ const useMultimediaState = () => {
     screenshareEnabled &&
     isNetworkReady
 
-  const isVRReady = supportsVR && xrEnabled
+  const isVRReady = supportsVR
   const isSpectateReady = spectating
   const isMultiVideoReady = isCamReady && isCamVideoEnabled && (numVideoDevices > 1 || hasVideoDeviceFallback)
 

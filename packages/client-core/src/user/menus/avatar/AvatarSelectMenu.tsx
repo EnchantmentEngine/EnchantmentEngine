@@ -7,15 +7,12 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 import { SpawnEffectComponent } from '@ir-engine/engine/src/avatar/components/SpawnEffectComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { debounce } from 'lodash'
-import React, { forwardRef, Fragment, useEffect, useImperativeHandle, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { Button, Input } from '@ir-engine/ui'
 import { ArrowLeftLg, UserPlus01Sm, XCloseLg } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { debounce } from 'lodash'
+import React, { forwardRef, Fragment, useEffect, useImperativeHandle, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
 import { ModalState } from '../../../common/services/ModalState'
 import { AuthService, AuthState } from '../../services/AuthService'
@@ -41,11 +38,6 @@ const AvatarSelectMenu = forwardRef(({ showBackButton, previewEnabled = true }: 
   const avatarCreatorMenuRef = useRef<{
     handleClose: () => Promise<void>
   } | null>(null)
-
-  const [createAvatarEnabled, uploadAvatarEnabled] = useFeatureFlags([
-    FeatureFlags.Client.Menu.CreateAvatar,
-    FeatureFlags.Client.Menu.UploadAvatar
-  ])
 
   const page = useHookstate(0)
   const selectedAvatarId = useHookstate('' as AvatarID)
@@ -198,38 +190,32 @@ const AvatarSelectMenu = forwardRef(({ showBackButton, previewEnabled = true }: 
                   }, 100)
                 }}
               />
-              {createAvatarEnabled && (
-                <Button
-                  className="whitespace-nowrap rounded-md text-sm font-normal"
-                  size="l"
-                  variant="primary"
-                  onClick={() => {
-                    const Menu = AvatarCreatorMenu2(SupportedSdks.ReadyPlayerMe)
-                    ModalState.openModal(
-                      <Menu
-                        ref={avatarCreatorMenuRef}
-                        showBackButton={showBackButton}
-                        previewEnabled={previewEnabled}
-                      />,
-                      handleAvatarCreatorMenuClose
-                    )
-                  }}
-                >
-                  <UserPlus01Sm />
-                  {t('user:avatar.createAvatar')}
-                </Button>
-              )}
-              {uploadAvatarEnabled && (
-                <Button
-                  className="min-w-[8rem] rounded-md text-sm font-normal"
-                  variant="secondary"
-                  onClick={() => {
-                    ModalState.openModal(<AvatarModifyMenu />)
-                  }}
-                >
-                  {t('user:avatar.uploadAvatar')}
-                </Button>
-              )}
+
+              <Button
+                className="whitespace-nowrap rounded-md text-sm font-normal"
+                size="l"
+                variant="primary"
+                onClick={() => {
+                  const Menu = AvatarCreatorMenu2(SupportedSdks.ReadyPlayerMe)
+                  ModalState.openModal(
+                    <Menu ref={avatarCreatorMenuRef} showBackButton={showBackButton} previewEnabled={previewEnabled} />,
+                    handleAvatarCreatorMenuClose
+                  )
+                }}
+              >
+                <UserPlus01Sm />
+                {t('user:avatar.createAvatar')}
+              </Button>
+
+              <Button
+                className="min-w-[8rem] rounded-md text-sm font-normal"
+                variant="secondary"
+                onClick={() => {
+                  ModalState.openModal(<AvatarModifyMenu />)
+                }}
+              >
+                {t('user:avatar.uploadAvatar')}
+              </Button>
             </div>
             <div className="flex max-h-[calc(95vh-7.5rem)] flex-col pb-6">
               <div className="flex max-w-96 flex-1 flex-col gap-2 overflow-y-auto">

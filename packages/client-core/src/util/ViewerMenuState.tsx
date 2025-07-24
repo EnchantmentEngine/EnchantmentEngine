@@ -14,14 +14,14 @@ export const ViewerMenuState = defineState({
     userMenus: {
       profile: true,
       settings: false,
-      readyplayer: false,
-      avaturn: false,
+      readyplayer: true,
+      avaturn: true,
       avatarselect: false,
       avatarmodify: false,
       share: false,
-      emote: false,
+      emote: true,
       friends: false,
-      social: false,
+      social: true,
       embedframe: true
     } as Record<string, boolean>,
     externalInjectedMenus: {} as Record<string, ExternalMenuType>
