@@ -16,8 +16,7 @@ export async function up(knex: Knex): Promise<void> {
 
   if (tableExists) {
     const hasIdColum = await knex.schema.hasColumn(userPath, 'id')
-    const hasAvatarIdColumn = await knex.schema.hasColumn(userPath, 'avatarId')
-    if (!(hasIdColum && hasAvatarIdColumn)) {
+    if (!hasIdColum) {
       await knex.schema.dropTable(userPath)
       tableExists = false
     }
@@ -31,12 +30,11 @@ export async function up(knex: Knex): Promise<void> {
       table.boolean('isGuest').notNullable().defaultTo(true)
       table.string('inviteCode', 255).nullable().unique()
       table.string('did', 255).nullable()
-      //@ts-ignore
-      table.uuid('avatarId').collate('utf8mb4_bin').nullable().index()
+      table.boolean('ageVerified').nullable().defaultTo(false)
+      table.boolean('isDeactivated').defaultTo(false)
+      table.dateTime('deactivatedAt').nullable()
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
-
-      table.foreign('avatarId').references('id').inTable('avatar').onDelete('SET NULL').onUpdate('CASCADE')
     })
   }
 
