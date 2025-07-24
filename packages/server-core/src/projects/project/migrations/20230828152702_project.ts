@@ -14,20 +14,29 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable(projectPath, (table) => {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary().notNullable()
-      table.string('name', 255).defaultTo(null)
+      table.string('name', 255).defaultTo(null).unique()
       table.string('repositoryPath', 255).defaultTo(null)
       table.json('settings').defaultTo(null)
       table.boolean('needsRebuild').defaultTo(null)
+      table.string('visibility', 255).defaultTo('private')
       table.string('sourceRepo', 255).defaultTo(null)
       table.string('sourceBranch', 255).defaultTo(null)
       table.string('updateType', 255).defaultTo(null)
       table.string('updateSchedule', 255).defaultTo(null)
+      table.boolean('enabled').defaultTo(true)
+      table.boolean('hasLocalChanges').defaultTo(false)
+      table.boolean('assetsOnly').defaultTo(false)
       //@ts-ignore
       table.uuid('updateUserId').collate('utf8mb4_bin').defaultTo(null)
       table.string('commitSHA', 255).defaultTo(null)
       table.dateTime('commitDate').defaultTo(null)
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
+      //@ts-ignore
+      table.uuid('updatedBy', 36).collate('utf8mb4_bin')
+
+      // Foreign keys
+      table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
 
     await knex.raw('SET FOREIGN_KEY_CHECKS=1')
