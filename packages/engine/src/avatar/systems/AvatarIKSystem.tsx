@@ -259,9 +259,9 @@ const SetupIkMatrices = () => {
   const entity = useEntityContext()
   const rigComponent = useComponent(entity, AvatarRigComponent)
   useEffect(() => {
-    if (!rigComponent.bonesToEntities.hips.value) return
+    if (!rigComponent.bonesToEntities.hips) return
 
-    const rig = rigComponent.bonesToEntities.value
+    const rig = rigComponent.bonesToEntities
 
     // get list of bone names for arms and legs
     const boneNames = VRMHumanBoneList.filter(

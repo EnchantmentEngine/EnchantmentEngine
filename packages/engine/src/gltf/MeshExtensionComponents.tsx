@@ -49,12 +49,12 @@ export const KHRLightsPunctualComponent = defineComponent({
 
     const gltfEntity = getAncestorWithComponents(entity, [GLTFComponent])
     const gltfComponent = useOptionalComponent(gltfEntity, GLTFComponent)
-    const json = gltfComponent?.document.value
+    const json = gltfComponent?.document
     const extensions: {
       lights?: KHRPunctualLight[]
     } = (json?.extensions && json.extensions[KHRLightsPunctualComponent.jsonID]) || {}
     const lightDefs = extensions.lights
-    const lightDef = lightDefs && component.light.value !== undefined ? lightDefs[component.light.value] : undefined
+    const lightDef = lightDefs && component.light !== undefined ? lightDefs[component.light] : undefined
 
     useEffect(() => {
       return () => {

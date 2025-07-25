@@ -76,18 +76,18 @@ export const SDFComponent = defineComponent({
 
     useEffect(() => {
       if (!SDFShader) return
-      const color = new Color(sdfComponent.color.value)
+      const color = new Color(sdfComponent.color)
       SDFShader.shader.uniforms.uColor.value = new Vector3(color.r, color.g, color.b)
     }, [sdfComponent.color])
 
     useEffect(() => {
       if (!SDFShader) return
-      SDFShader.shader.uniforms.scale.value = sdfComponent.scale.value
+      SDFShader.shader.uniforms.scale.value = sdfComponent.scale
     }, [sdfComponent.scale])
 
     useEffect(() => {
       if (!SDFShader) return
-      SDFShader.shader.uniforms.mode.value = sdfComponent.mode.value
+      SDFShader.shader.uniforms.mode.value = sdfComponent.mode
     }, [sdfComponent.mode])
 
     if (!rendererEntity) return null
@@ -113,7 +113,7 @@ const RendererReactor = (props: { entity: Entity; rendererEntity: Entity }) => {
 
   useEffect(() => {
     if (!rendererEntity) return
-    const composer = rendererComponent.effectComposer.value
+    const composer = rendererComponent.effectComposer
     if (!composer) return
 
     const depthRenderTarget = new WebGLRenderTarget(window.innerWidth, window.innerHeight)

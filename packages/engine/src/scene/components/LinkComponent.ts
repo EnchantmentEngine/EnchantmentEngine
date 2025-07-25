@@ -80,9 +80,9 @@ export const LinkComponent = defineComponent({
 
     useEffect(() => {
       clearErrors(entity, LinkComponent)
-      if (link.sceneNav.value) return
+      if (link.sceneNav) return
       try {
-        new URL(link.url.value)
+        new URL(link.url)
       } catch {
         return addError(entity, LinkComponent, 'INVALID_URL', 'Please enter a valid URL.')
       }

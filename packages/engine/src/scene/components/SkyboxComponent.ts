@@ -62,9 +62,7 @@ export const SkyboxComponent = defineComponent({
     const skyboxState = useComponent(entity, SkyboxComponent)
     const cubemapTexture = useHookstate<undefined | CubeTexture>(undefined)
     const [texture, error] = useTexture(
-      skyboxState.backgroundType.value === SkyTypeEnum.equirectangular && !iOS
-        ? skyboxState.equirectangularPath.value
-        : '',
+      skyboxState.backgroundType === SkyTypeEnum.equirectangular && !iOS ? skyboxState.equirectangularPath : '',
       entity
     )
 
@@ -92,7 +90,7 @@ export const SkyboxComponent = defineComponent({
     }, [texture])
 
     useEffect(() => {
-      if (skyboxState.backgroundType.value !== SkyTypeEnum.equirectangular || !texture) return
+      if (skyboxState.backgroundType !== SkyTypeEnum.equirectangular || !texture) return
 
       texture.colorSpace = SRGBColorSpace
       texture.mapping = EquirectangularReflectionMapping
@@ -110,12 +108,12 @@ export const SkyboxComponent = defineComponent({
     }, [error])
 
     useEffect(() => {
-      if (skyboxState.backgroundType.value !== SkyTypeEnum.color && !forceColorFallback.value) return
+      if (skyboxState.backgroundType !== SkyTypeEnum.color && !forceColorFallback) return
 
       const col =
-        forceColorFallback.value && skyboxState.backgroundType.value !== SkyTypeEnum.color
+        forceColorFallback.value && skyboxState.backgroundType !== SkyTypeEnum.color
           ? tempColor
-          : skyboxState.backgroundColor.value
+          : skyboxState.backgroundColor
       const resolution = 64 // Min value required
       /** @todo track this in resource manager */
       const colorTexture = new DataTexture(getRGBArray(new Color(col)), resolution, resolution, RGBAFormat)
@@ -134,7 +132,7 @@ export const SkyboxComponent = defineComponent({
     }, [skyboxState.backgroundType, skyboxState.backgroundColor, forceColorFallback])
 
     useEffect(() => {
-      if (skyboxState.backgroundType.value !== SkyTypeEnum.cubemap) return
+      if (skyboxState.backgroundType !== SkyTypeEnum.cubemap) return
       const onLoad = (cubeTexture: CubeTexture) => {
         cubeTexture.colorSpace = SRGBColorSpace
         cubeTexture.mapping = CubeReflectionMapping
@@ -149,7 +147,7 @@ export const SkyboxComponent = defineComponent({
         ((event: ProgressEvent<EventTarget>) => void) | undefined,
         ((event: ErrorEvent) => void) | undefined
       ] = [
-        skyboxState.cubemapPath.value,
+        skyboxState.cubemapPath,
         onLoad,
         undefined,
         (error) => addError(entity, SkyboxComponent, 'FILE_ERROR', error.message)
@@ -171,23 +169,22 @@ export const SkyboxComponent = defineComponent({
     }, [cubemapTexture])
 
     useEffect(() => {
-      if (skyboxState.backgroundType.value !== SkyTypeEnum.skybox) {
-        if (skyboxState.sky.value) skyboxState.sky.set(null)
+      if (skyboxState.backgroundType !== SkyTypeEnum.skybox) {
+        setComponent(entity, SkyboxComponent, { sky: null })
         return
       }
 
-      skyboxState.sky.set(new Sky())
+      const sky = new Sky()
+      setComponent(entity, SkyboxComponent, { sky })
 
-      const sky = skyboxState.sky.value! as Sky
+      sky.azimuth = skyboxState.skyboxProps.azimuth
+      sky.inclination = skyboxState.skyboxProps.inclination
 
-      sky.azimuth = skyboxState.skyboxProps.value.azimuth
-      sky.inclination = skyboxState.skyboxProps.value.inclination
-
-      sky.mieCoefficient = skyboxState.skyboxProps.value.mieCoefficient
-      sky.mieDirectionalG = skyboxState.skyboxProps.value.mieDirectionalG
-      sky.rayleigh = skyboxState.skyboxProps.value.rayleigh
-      sky.turbidity = skyboxState.skyboxProps.value.turbidity
-      sky.luminance = skyboxState.skyboxProps.value.luminance
+      sky.mieCoefficient = skyboxState.skyboxProps.mieCoefficient
+      sky.mieDirectionalG = skyboxState.skyboxProps.mieDirectionalG
+      sky.rayleigh = skyboxState.skyboxProps.rayleigh
+      sky.turbidity = skyboxState.skyboxProps.turbidity
+      sky.luminance = skyboxState.skyboxProps.luminance
 
       const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
       const generatedTexture = sky.generateSkyboxTextureCube(renderer.renderer!)

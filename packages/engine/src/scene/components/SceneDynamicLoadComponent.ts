@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, hasComponent, removeComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  hasComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { CallbackComponent, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
@@ -23,14 +29,14 @@ export const SceneDynamicLoadComponent = defineComponent({
 
     /** Trigger mode */
     useEffect(() => {
-      if (component.mode.value !== 'trigger') return
+      if (component.mode !== 'trigger') return
 
       function doLoad() {
-        component.loaded.set(true)
+        setComponent(entity, SceneDynamicLoadComponent, { loaded: true })
       }
 
       function doUnload() {
-        component.loaded.set(false)
+        setComponent(entity, SceneDynamicLoadComponent, { loaded: false })
       }
 
       if (hasComponent(entity, CallbackComponent)) {

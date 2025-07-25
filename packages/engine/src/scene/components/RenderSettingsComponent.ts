@@ -48,19 +48,19 @@ export const RenderSettingsComponent = defineComponent({
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMapping = component.toneMapping.value
+      renderer.toneMapping = component.toneMapping
     }, [component.toneMapping, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMappingExposure = component.toneMappingExposure.value
+      renderer.toneMappingExposure = component.toneMappingExposure
     }, [component.toneMappingExposure, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.shadowMap.type = component.shadowMapType.value
+      renderer.shadowMap.type = component.shadowMapType
       renderer.shadowMap.needsUpdate = true
     }, [component.shadowMapType, rendererEntity])
 

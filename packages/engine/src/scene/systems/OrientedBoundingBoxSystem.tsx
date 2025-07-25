@@ -108,7 +108,7 @@ const OrientedBoundingBoxReactor = (props: { entity: Entity }) => {
 
   useEffect(() => {
     if (!loaded) return
-    if (gltf.src.value) {
+    if (gltf.src) {
       setComponent(entity, OrientedBoundingBoxComponent)
       updateBoundingBox(entity)
       const helperEntity = createSceneEntity('OrientedBoundingBoxHelper', entity)

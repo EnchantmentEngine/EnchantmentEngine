@@ -115,10 +115,10 @@ export const SplineHelperComponent = defineComponent({
     useEffect(() => {
       if (!helperEntity) return
 
-      setComponent(helperEntity, ObjectLayerMaskComponent, component.layerMask.value)
+      setComponent(helperEntity, ObjectLayerMaskComponent, component.layerMask)
 
       const line = getComponent(helperEntity, ObjectComponent) as Line
-      const curve = spline.curve.value
+      const curve = spline.curve
 
       const positions = line.geometry.attributes.position
       for (let i = 0; i < ARC_SEGMENTS; i++) {

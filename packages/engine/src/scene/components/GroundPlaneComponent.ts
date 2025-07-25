@@ -12,7 +12,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { State } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -88,11 +87,9 @@ export const GroundPlaneComponent = defineComponent({
         removeComponent(entity, MeshComponent)
         removeEntity(materialEntity)
       }
-    }, [component.visible.value])
+    }, [component.visible])
 
-    const meshComponent = useOptionalComponent(entity, MeshComponent) as any as State<
-      Mesh<any, MeshLambertMaterial | ShadowMaterial>
-    >
+    const meshComponent = useOptionalComponent(entity, MeshComponent) as Mesh<any, MeshLambertMaterial | ShadowMaterial>
 
     const material = useOptionalComponent(
       UUIDComponent.useEntityByUUID((source + materialID) as EntityUUID),
@@ -101,9 +98,9 @@ export const GroundPlaneComponent = defineComponent({
 
     useLayoutEffect(() => {
       if (!meshComponent || !material) return
-      const color = component.color.value
-      if (meshComponent.material.color.value == color) return
-      meshComponent.material.color.value.set(component.color.value)
+      const color = component.color
+      if (meshComponent.material.color == color) return
+      meshComponent.material.color.set(component.color)
     }, [component.color, material])
 
     return null
