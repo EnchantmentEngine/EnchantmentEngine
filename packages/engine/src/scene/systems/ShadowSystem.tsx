@@ -401,7 +401,7 @@ const RendererShadowReactor = () => {
   const rendererComponent = useComponent(entity, RendererComponent)
 
   useEffect(() => {
-    const renderer = getComponent(entity, RendererComponent).renderer
+    const renderer = rendererComponent.renderer
     if (!renderer) return
     renderer.shadowMap.enabled = renderer.shadowMap.autoUpdate = useShadows
   }, [useShadows, rendererComponent.renderer])

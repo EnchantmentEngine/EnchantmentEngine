@@ -530,6 +530,8 @@ export const setComponent = <C extends Component>(
 export const hasComponent = <C extends Component>(entity: Entity, component: C): boolean => {
   if (!component) throw new Error('[hasComponent]: component is undefined')
   if (!entity) return false
+  /** @todo this line might help some edge cases */
+  // if (!entityExists(entity)) return false
   return bitECS.hasComponent(HyperFlux.store, entity, component)
 }
 

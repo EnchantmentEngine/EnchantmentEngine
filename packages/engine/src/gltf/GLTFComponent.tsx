@@ -242,12 +242,11 @@ export const GLTFComponentReactor = () => {
 
   useEffect(() => {
     return () => {
-      if (hasComponent(entity, GLTFComponent)) {
-        setComponent(entity, GLTFComponent, {
-          loaded: false,
-          progress: 0
-        })
-      }
+      if (!entityExists(entity) || !hasComponent(entity, GLTFComponent)) return
+      setComponent(entity, GLTFComponent, {
+        loaded: false,
+        progress: 0
+      })
     }
   }, [])
 
