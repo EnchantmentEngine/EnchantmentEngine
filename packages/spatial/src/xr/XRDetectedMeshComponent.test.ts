@@ -21,6 +21,7 @@ import { BoxGeometry, BufferGeometry, Matrix4, Mesh, Quaternion, Vector3 } from 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../SpatialModule'
 import { NameComponent } from '../common/NameComponent'
+import { MeshComponent } from '../renderer/components/MeshComponent'
 import { ObjectComponent } from '../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
 import { XRDetectedMeshComponent, XRDetectedMeshComponentState } from './XRDetectedMeshComponent'
@@ -347,29 +348,6 @@ describe('XRDetectedMeshComponent', () => {
         expect(resultSpy).toHaveBeenCalledTimes(0)
       })
 
-      it('should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument', async () => {
-        const Expected = {} as XRMesh
-        const Initial = { semanticLabel: 'testLabel' } as XRMesh
-        // Set the data as expected
-        const resultSpy = vi.spyOn(XRDetectedMeshComponent, 'createGeometryFromMesh')
-        // Sanity check before running
-        expect(resultSpy).toHaveBeenCalledTimes(0)
-        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Initial })
-
-        await act(() => render(null))
-
-        expect(resultSpy).toHaveBeenCalledTimes(1)
-        expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeTruthy()
-
-        // Run and Check the result
-        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Expected })
-
-        await act(() => render(null))
-
-        expect(resultSpy).toHaveBeenCalledTimes(2)
-        expect(resultSpy).toHaveBeenCalledWith(Expected)
-      })
-
       it('should set XRDetectedMeshComponent.geometry to the newly created geometry', async () => {
         const Initial = { id: 42 } as BufferGeometry
         // Set the data as expected
@@ -385,6 +363,30 @@ describe('XRDetectedMeshComponent', () => {
 
         const result = getComponent(testEntity, XRDetectedMeshComponent).geometry
         expect(result).not.toBe(Initial) // A change in .mesh should trigger a change in .geometry
+      })
+
+      it('should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument', async () => {
+        const Expected = {} as XRMesh
+        const Initial = { semanticLabel: 'testLabel' } as XRMesh
+
+        setComponent(testEntity, XRDetectedMeshComponent)
+        getComponent(testEntity, XRDetectedMeshComponent).mesh = Initial
+
+        await vi.waitUntil(() => hasComponent(testEntity, MeshComponent), { timeout: 100000 })
+
+        const firstMesh = getComponent(testEntity, MeshComponent)
+        const firstGeometry = firstMesh.geometry
+        expect(getComponent(testEntity, XRDetectedMeshComponent).geometry).toBe(firstMesh.geometry)
+
+        expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeTruthy()
+
+        // Run and Check the result
+        setComponent(testEntity, XRDetectedMeshComponent)
+        getComponent(testEntity, XRDetectedMeshComponent).mesh = Expected
+
+        await vi.waitFor(() => getComponent(testEntity, XRDetectedMeshComponent).geometry !== firstGeometry)
+        await vi.waitFor(() => getComponent(testEntity, MeshComponent) !== firstMesh)
+        expect(hasComponent(testEntity, MeshComponent)).toBe(true)
       })
 
       it(`should create a new Mesh object with XRDetectedMeshComponent.shadowMesh

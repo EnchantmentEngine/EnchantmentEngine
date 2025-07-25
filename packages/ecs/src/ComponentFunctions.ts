@@ -709,12 +709,13 @@ export function useComponent<C extends Component>(entity: Entity, component: C):
   if (entity === UndefinedEntity) throw new Error('InvalidUsage: useComponent called with UndefinedEntity')
 
   const state = _getComponentCounter(entity, component)
-  useHookstate(state)
 
   // use() will suspend the component (by throwing a promise) and resume when the promise is resolved
   if (state.promise) {
     ;(React.use ?? _use)(state.promise)
   }
+
+  useHookstate(state).value // force the component to be reactive
 
   return component.valueMap[entity]
 }

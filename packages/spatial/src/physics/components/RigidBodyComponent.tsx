@@ -1,7 +1,6 @@
 import { Entity, S, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
-  getComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -125,20 +124,20 @@ const RigidBodyReactor = () => {
   const physicsWorld = Physics.useWorld(entity)!
 
   useEffect(() => {
-    if (!component.initialized) return
-    TransformComponent.dirty[entity] = 1
-  }, [component.initialized])
-
-  useEffect(() => {
     if (!physicsWorld) return
     Physics.createRigidBody(physicsWorld, entity)
-    component.initialized = true
+    setComponent(entity, RigidBodyComponent, { initialized: true })
     return () => {
       Physics.removeRigidbody(physicsWorld, entity)
       if (!hasComponent(entity, RigidBodyComponent)) return
-      getComponent(entity, RigidBodyComponent).initialized = false
+      setComponent(entity, RigidBodyComponent, { initialized: false })
     }
   }, [physicsWorld])
+
+  useEffect(() => {
+    if (!component.initialized) return
+    TransformComponent.dirty[entity] = 1
+  }, [component.initialized])
 
   useEffect(() => {
     if (!physicsWorld) return

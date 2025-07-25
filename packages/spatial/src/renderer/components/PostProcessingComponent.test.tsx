@@ -4,17 +4,17 @@ import assert from 'assert'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import {
-  Entity,
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
   getComponent,
+  hasComponent,
   removeEntity,
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { Effect } from 'postprocessing'
 import { useEffect } from 'react'
@@ -35,29 +35,23 @@ class MockEffect extends Effect {
   }
 }
 
-export const MockEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
-  isActive
-  rendererEntity: Entity
-  effectData
-  effects
-}) => {
-  const { isActive, rendererEntity, effectData, effects } = props
+export const MockEffectProcessReactor: React.FC<EffectReactorProps<true>> = (props) => {
+  const { isActive, entity, rendererEntity, effectData, effects } = props
   const effectState = getState(PostProcessingEffectState)
 
   useEffect(() => {
-    if (effectData[effectKey].value) return
-    effectData[effectKey].set(effectState[effectKey].defaultValues)
-  }, [])
-
-  useEffect(() => {
-    if (!isActive?.value) {
-      if (effects[effectKey].value) effects[effectKey].set(none)
-      return
+    if (!effectData[effectKey]) {
+      effectData[effectKey] = effectState[effectKey].defaultValues
+      setComponent(entity, PostProcessingComponent)
     }
-    const eff = new MockEffect(effectData[effectKey].value)
-    effects[effectKey].set(eff)
+    if (!isActive) return
+    const eff = new MockEffect(effectData[effectKey])
+    effects[effectKey] = eff
+    setComponent(rendererEntity, RendererComponent)
     return () => {
-      effects[effectKey].set(none)
+      delete effects[effectKey]
+      if (!hasComponent(rendererEntity, RendererComponent)) return
+      setComponent(rendererEntity, RendererComponent)
     }
   }, [isActive])
 
@@ -285,9 +279,7 @@ describe('PostProcessingComponent', async () => {
 
       setComponent(rootEntity, RendererComponent)
 
-      await vi.waitFor(() => {
-        assert.ok(getComponent(testEntity, PostProcessingComponent).effects[effectKey])
-      })
+      await vi.waitFor(() => assert.ok(getComponent(testEntity, PostProcessingComponent).effects[effectKey]))
 
       const postProcessingComponent = getComponent(testEntity, PostProcessingComponent)
       postProcessingComponent.effects[effectKey].isActive = true

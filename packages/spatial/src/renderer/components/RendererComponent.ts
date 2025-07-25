@@ -1,5 +1,14 @@
-import { defineComponent, Entity, getComponent, hasComponent, S, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { getState, none, useMutableState } from '@ir-engine/hyperflux'
+import {
+  defineComponent,
+  Entity,
+  getComponent,
+  hasComponent,
+  S,
+  setComponent,
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
 import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
@@ -244,11 +253,13 @@ export const RendererComponent = defineComponent({
 
       const outlineEffect = new OutlineEffect(scene, camera, getState(HighlightState))
       rendererComponent.effectInstances.OutlineEffect = outlineEffect
+      setComponent(entity, RendererComponent)
 
       return () => {
         if (!hasComponent(entity, RendererComponent)) return
         outlineEffect.dispose()
         delete rendererComponent.effectInstances.OutlineEffect
+        setComponent(entity, RendererComponent)
       }
     }, [!!rendererComponent.effectComposer, hightlightState])
 
@@ -282,15 +293,18 @@ export const RendererComponent = defineComponent({
       }
 
       effectComposer.setRenderer(rendererComponent.renderer as WebGLRenderer)
+      setComponent(entity, RendererComponent)
 
       return () => {
         if (!hasComponent(entity, RendererComponent)) return
+        const enabled = renderSettings.usePostProcessing.value as boolean
         if (enabled) {
           for (const effect in effectsVal) {
             effectsVal[effect].dispose()
-            effectComposer[effect].set(none)
+            delete effectComposer[effect]
           }
         }
+        setComponent(entity, RendererComponent)
         effectComposer.EffectPass.dispose()
         effectComposer.removePass(effectPass)
         if (rendererComponent.passesFakeMap.value) {
@@ -300,9 +314,9 @@ export const RendererComponent = defineComponent({
         }
       }
     }, [
-      rendererComponent.effects,
-      rendererComponent.effectComposer,
-      rendererComponent?.effectInstances?.OutlineEffect,
+      JSON.stringify(Object.keys(rendererComponent.effects)),
+      !!rendererComponent.effectComposer,
+      !!rendererComponent?.effectInstances?.OutlineEffect,
       renderSettings.usePostProcessing.value
     ])
 

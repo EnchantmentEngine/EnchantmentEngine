@@ -53,6 +53,7 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
                 isActive={postProcessingComponent.effects[key]?.isActive}
                 rendererEntity={rendererEntity}
                 effectData={postProcessingComponent.effects}
+                entity={entity}
                 effects={effects}
                 composer={composer}
                 scene={scene}

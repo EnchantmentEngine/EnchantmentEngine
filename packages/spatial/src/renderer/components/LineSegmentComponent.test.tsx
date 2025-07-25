@@ -327,9 +327,7 @@ describe('LineSegmentComponent', () => {
         assert(hasComponent(entity, ObjectComponent))
       })
 
-      const lineSegmentComponent = getComponent(entity, LineSegmentComponent)
-      lineSegmentComponent.geometry = geometry2
-      lineSegmentComponent.material = material2
+      setComponent(entity, LineSegmentComponent, { geometry: geometry2, material: material2 })
 
       await vi.waitFor(
         () => {

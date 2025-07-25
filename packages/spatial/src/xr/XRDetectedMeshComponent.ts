@@ -116,8 +116,7 @@ export const XRDetectedMeshComponent = defineComponent({
       meshComponent.shadowMesh?.geometry.dispose()
       const meshObj = new Mesh(geometry, shadowMaterial)
       setComponent(entity, MeshComponent, meshObj)
-      meshComponent.geometry = geometry
-      meshComponent.shadowMesh = meshObj
+      setComponent(entity, XRDetectedMeshComponent, { geometry, shadowMesh: meshObj })
     }
   },
 
