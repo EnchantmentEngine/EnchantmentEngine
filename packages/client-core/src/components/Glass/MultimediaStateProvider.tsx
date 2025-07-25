@@ -167,7 +167,7 @@ const useMultimediaState = () => {
     isCamReady,
     isScreenshareReady,
     isMultiVideoReady,
-    supportsVR,
+    isVRReady: supportsVR,
     isSpectateReady,
 
     isCamVideoEnabled,
