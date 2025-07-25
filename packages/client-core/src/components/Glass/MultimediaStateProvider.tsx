@@ -129,7 +129,6 @@ const useMultimediaState = () => {
     screenshareEnabled &&
     isNetworkReady
 
-  const isVRReady = supportsVR
   const isSpectateReady = spectating
   const isMultiVideoReady = isCamReady && isCamVideoEnabled && (numVideoDevices > 1 || hasVideoDeviceFallback)
 
@@ -168,7 +167,7 @@ const useMultimediaState = () => {
     isCamReady,
     isScreenshareReady,
     isMultiVideoReady,
-    isVRReady,
+    supportsVR,
     isSpectateReady,
 
     isCamVideoEnabled,

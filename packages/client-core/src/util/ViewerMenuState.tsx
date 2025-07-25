@@ -13,14 +13,14 @@ export const ViewerMenuState = defineState({
   initial: () => ({
     userMenus: {
       profile: true,
-      settings: false,
+      settings: true,
       readyplayer: true,
       avaturn: true,
-      avatarselect: false,
-      avatarmodify: false,
-      share: false,
+      avatarselect: true,
+      avatarmodify: true,
+      share: true,
       emote: true,
-      friends: false,
+      friends: true,
       social: true,
       embedframe: true
     } as Record<string, boolean>,

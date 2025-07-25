@@ -359,7 +359,7 @@ const execute = () => {
         selectedParentEntity === clickStartEntity ? closestIntersection.entity : selectedParentEntity
 
       // If hiding children of GLB, don't allow those children to be selected (clicking in scene view)
-      if (!getState(EditorHelperState).showGlbChildren && selectedParentEntity) {
+      if (selectedParentEntity) {
         const forceSelectGlbParent = isEntityGlb(selectedParentEntity) // && hasComponent(selectedParentEntity, SceneComponent)
         clickStartEntity = forceSelectGlbParent ? selectedParentEntity : selectedEntity //selectedEntity vs clickStartEntity so that we allow closest intersection drill down above to work
       } else {

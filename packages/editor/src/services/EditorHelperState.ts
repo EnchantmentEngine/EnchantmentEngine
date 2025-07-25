@@ -36,7 +36,6 @@ export const EditorHelperState = defineState({
     gizmoEnabled: true,
     gridVisibility: false,
     gridHeight: 0,
-    showGlbChildren: true,
     volumeVisibility: 'Auto' as keyof typeof VolumeVisibility,
     editorIconMaxSize: 0.5,
     editorIconMinSize: 0.4

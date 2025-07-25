@@ -31,7 +31,6 @@ import { DnDFileType, FileDataType, ItemTypes, SupportedFileTypes } from '../../
 import { addMediaNode } from '../../functions/addMediaNode'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
 import { cmdOrCtrlString, isEntityGlb } from '../../functions/utils'
-import { EditorHelperState } from '../../services/EditorHelperState'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { SelectionState } from '../../services/SelectionServices'
@@ -81,7 +80,7 @@ function bothContainsRigidbody(dragEntity: Entity | Entity[], targetEntity: Enti
 
 function isGlbIssue(entity: Entity): boolean {
   //@todo update this when we support adding children to GLB based prefabs
-  return isEntityGlb(entity) //&& !getMutableState(EditorHelperState).showGlbChildren.value
+  return isEntityGlb(entity)
 }
 
 const didHierarchyChange = (prev: HierarchyTreeNodeType[], curr: HierarchyTreeNodeType[]) => {
@@ -116,7 +115,6 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const renamingEntity = useHookstate<Entity | null>(null)
   const contextMenu = useHookstate({ entity: UndefinedEntity, anchorEvent: undefined as React.MouseEvent | undefined })
   const entities = useQuery([UUIDComponent], Layers.Authoring)
-  const showGlbChildren = useMutableState(EditorHelperState).showGlbChildren
 
   const childEntities = useQuery([EntityTreeComponent], Layers.Authoring)
   const reparentRefresh = useHookstate(0)
@@ -145,11 +143,10 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   }
 
   const hierarchyNodes = useMemo(
-    () => ecsHierarchyTreeWalker(rootEntity, !showGlbChildren.value),
+    () => ecsHierarchyTreeWalker(rootEntity),
     [
       hierarchyTreeState.expandedNodes[sourceID],
       selectionState.selectedEntities,
-      showGlbChildren,
       entities,
       childEntities,
       reparentRefresh,
