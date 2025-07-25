@@ -21,7 +21,6 @@ import {
   Entity,
   EntityID,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -607,7 +606,7 @@ describe('MixerComponent.ts', async () => {
           MixerComponent.setEntry(mixerEntity, rightCoord, xSetter(rightValue))
 
           // Change the coordinate using the mutable component
-          getMutableComponent(mixerEntity, MixerComponent).coord.set(midCoord)
+          setComponent(mixerEntity, MixerComponent, { coord: midCoord })
 
           // The reactor should automatically run and set the target entity properties
           await vi.waitUntil(() => targetComp.x === leftValue * 0.25 + rightValue * 0.75)

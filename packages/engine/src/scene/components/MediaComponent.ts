@@ -2,7 +2,6 @@ import { ComponentType, EngineState, entityExists, useEntityContext } from '@ir-
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -545,7 +544,7 @@ const setUpMediaElement = (
   setComponent(entity, MediaElementComponent, {
     element: element
   })
-  const mediaElementState = getMutableComponent(entity, MediaElementComponent)
+  const mediaElementState = getComponent(entity, MediaElementComponent)
 
   element.crossOrigin = 'anonymous'
   element.preload = 'auto'

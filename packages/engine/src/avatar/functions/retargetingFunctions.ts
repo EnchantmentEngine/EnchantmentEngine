@@ -1,13 +1,6 @@
 import { AnimationClip, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack } from 'three'
 
-import {
-  Entity,
-  EntityTreeComponent,
-  EntityUUID,
-  getComponent,
-  getMutableComponent,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { Entity, EntityTreeComponent, EntityUUID, getComponent, setComponent, UUIDComponent } from '@ir-engine/ecs'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { getHips } from '../AvatarBoneMatching'
@@ -92,5 +85,5 @@ export const retargetAnimationClips = (sourceAnimationEntity) => {
     }
     animationClips.push(newClip)
   }
-  getMutableComponent(sourceAnimationEntity, AnimationComponent).animations.set(animationClips)
+  setComponent(sourceAnimationEntity, AnimationComponent, { animations: animationClips })
 }

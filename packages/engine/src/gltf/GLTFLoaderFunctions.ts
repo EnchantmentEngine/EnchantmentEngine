@@ -14,7 +14,6 @@ import {
   UUIDComponent,
   deserializeComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   iterateEntityNode,
   removeComponent,
@@ -1580,7 +1579,9 @@ const setAnimationClips = (rootEntity: Entity, animationClips: AnimationClip[]) 
         animations: obj3d.animations
       })
     } else {
-      getMutableComponent(rootEntity, AnimationComponent).animations.merge(obj3d.animations)
+      setComponent(rootEntity, AnimationComponent, {
+        animations: { ...getComponent(rootEntity, AnimationComponent).animations, ...obj3d.animations }
+      })
     }
   }
 }

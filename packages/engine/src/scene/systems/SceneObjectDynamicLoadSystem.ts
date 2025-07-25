@@ -1,5 +1,5 @@
 import { PresentationSystemGroup } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -54,7 +54,7 @@ const execute = () => {
     const distanceToAvatar = _cameraVec3.distanceToSquared(objectPosition)
     const loadDistance = dynamicComponent.distance * dynamicComponent.distance * distanceMultiplier
 
-    getMutableComponent(entity, SceneDynamicLoadComponent).loaded.set(distanceToAvatar < loadDistance)
+    setComponent(entity, SceneDynamicLoadComponent, { loaded: distanceToAvatar < loadDistance })
   }
 }
 

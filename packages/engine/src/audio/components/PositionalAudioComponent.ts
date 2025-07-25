@@ -56,16 +56,16 @@ export const PositionalAudioComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      if (!mediaElement?.element.value) return
-      const audioNodes = AudioNodeGroups.get(mediaElement.element.value as HTMLMediaElement)
+      if (!mediaElement?.element) return
+      const audioNodes = AudioNodeGroups.get(mediaElement.element)
       if (!audioNodes?.panner) return
-      audioNodes.panner.refDistance = audio.refDistance.value
-      audioNodes.panner.rolloffFactor = audio.rolloffFactor.value
-      audioNodes.panner.maxDistance = audio.maxDistance.value
-      audioNodes.panner.distanceModel = audio.distanceModel.value
-      audioNodes.panner.coneInnerAngle = audio.coneInnerAngle.value
-      audioNodes.panner.coneOuterAngle = audio.coneOuterAngle.value
-      audioNodes.panner.coneOuterGain = audio.coneOuterGain.value
+      audioNodes.panner.refDistance = audio.refDistance
+      audioNodes.panner.rolloffFactor = audio.rolloffFactor
+      audioNodes.panner.maxDistance = audio.maxDistance
+      audioNodes.panner.distanceModel = audio.distanceModel
+      audioNodes.panner.coneInnerAngle = audio.coneInnerAngle
+      audioNodes.panner.coneOuterAngle = audio.coneOuterAngle
+      audioNodes.panner.coneOuterGain = audio.coneOuterGain
     }, [
       audio.refDistance,
       audio.rolloffFactor,

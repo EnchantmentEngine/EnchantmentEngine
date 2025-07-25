@@ -1,7 +1,6 @@
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, getMutableComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { PlayMode } from '../constants/PlayMode'
 
@@ -35,22 +34,22 @@ export const PlaylistComponent = defineComponent({
   },
 
   playNextTrack: (entity, delta = 1) => {
-    const component = getMutableComponent(entity, PlaylistComponent)
+    const component = getComponent(entity, PlaylistComponent)
     const tracksCount = component.tracks.length
 
     if (tracksCount === 0) return
 
     if (tracksCount === 1 || component.playMode === PlayMode.singleloop) {
       const currentTrackUUID = component.currentTrackUUID
-      component.currentTrackUUID.set('')
-      component.currentTrackUUID.set(currentTrackUUID)
-
+      component.currentTrackUUID = ''
+      component.currentTrackUUID = currentTrackUUID
+      setComponent(entity, PlaylistComponent)
       return
     }
 
     if (component.playMode === PlayMode.loop) {
       const previousTrackIndex = (component.currentTrackIndex + delta + tracksCount) % tracksCount
-      component.currentTrackUUID.set(component.tracks[previousTrackIndex].uuid)
+      setComponent(entity, PlaylistComponent, { currentTrackUUID: component.tracks[previousTrackIndex].uuid })
     } else if (component.playMode === PlayMode.random) {
       let randomIndex = (Math.floor(Math.random() * tracksCount) + tracksCount) % tracksCount
 
@@ -59,7 +58,7 @@ export const PlaylistComponent = defineComponent({
         randomIndex = (Math.floor(Math.random() * tracksCount) + tracksCount) % tracksCount
       }
 
-      component.currentTrackUUID.set(component.tracks[randomIndex].uuid)
+      setComponent(entity, PlaylistComponent, { currentTrackUUID: component.tracks[randomIndex].uuid })
     }
   },
   reactor: () => {
@@ -70,7 +69,7 @@ export const PlaylistComponent = defineComponent({
       for (let i = 0; i < component.tracks.length; i++) {
         if (component.tracks[i].uuid === trackUUID) {
           return {
-            track: component.tracks[i].get(NO_PROXY),
+            track: component.tracks[i],
             index: i
           }
         }
@@ -83,12 +82,14 @@ export const PlaylistComponent = defineComponent({
 
     useEffect(() => {
       const index = findTrack(component.currentTrackUUID).index
-      component.currentTrackIndex.set(index)
+      setComponent(entity, PlaylistComponent, {
+        currentTrackIndex: index
+      })
     }, [component.currentTrackUUID, component.tracks])
 
     useEffect(() => {
       if (component.tracks.length === 0) {
-        component.merge({
+        setComponent(entity, PlaylistComponent, {
           currentTrackUUID: '',
           currentTrackIndex: -1
         })
@@ -108,11 +109,11 @@ export const PlaylistComponent = defineComponent({
         if (nonEmptyTrackIndex === -1) return
 
         if (component.currentTrackUUID === '') {
-          component.merge({
+          setComponent(entity, PlaylistComponent, {
             currentTrackUUID: component.tracks[nonEmptyTrackIndex].uuid,
-            currentTrackIndex: nonEmptyTrackIndex
+            currentTrackIndex: nonEmptyTrackIndex,
+            paused: false
           })
-          component.paused.set(false)
         }
       }
     }, [component.autoplay, component.tracks])

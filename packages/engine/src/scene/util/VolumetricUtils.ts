@@ -1,5 +1,5 @@
-import { Engine, getChildrenWithComponents, getComponent } from '@ir-engine/ecs'
-import { ImmutableArray, State, getState } from '@ir-engine/hyperflux'
+import { Engine, Entity, getChildrenWithComponents, getComponent, setComponent } from '@ir-engine/ecs'
+import { ImmutableArray, getState } from '@ir-engine/hyperflux'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
@@ -19,6 +19,7 @@ import {
 } from 'three'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { AssetState } from '../../gltf/GLTFState'
+import { PlaylistComponent } from '../components/PlaylistComponent'
 import {
   ASTCTextureTarget,
   AudioFileFormat,
@@ -623,16 +624,17 @@ export const getTexture = ({
 interface HandleAutoplayProps {
   audioContext: AudioContext
   media: HTMLMediaElement
-  paused: State<boolean>
+  entity: Entity
 }
 
-export const handleMediaAutoplay = ({ audioContext, media, paused }: HandleAutoplayProps) => {
+export const handleMediaAutoplay = ({ audioContext, media, entity }: HandleAutoplayProps) => {
   const attachEventListeners = () => {
     const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
+      setComponent
       window.removeEventListener('pointerdown', playMedia)
       window.removeEventListener('keypress', playMedia)
       window.removeEventListener('touchstart', playMedia)
@@ -657,6 +659,6 @@ export const handleMediaAutoplay = ({ audioContext, media, paused }: HandleAutop
     })
     .then(() => {
       console.log('Media playback started by handleAutoplay')
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
     })
 }

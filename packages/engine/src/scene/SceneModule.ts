@@ -3,7 +3,6 @@ import { PositionalAudioComponent } from '../audio/components/PositionalAudioCom
 import { LoopAnimationComponent } from '../avatar/components/LoopAnimationComponent'
 import { GrabbableComponent } from '../grabbable/GrabbableComponent'
 import { MountPointSystem } from '../interaction/systems/MountPointSystem'
-import { MaterialLibrarySystem } from '../scene/materials/systems/MaterialLibrarySystem'
 import { CameraSettingsComponent } from './components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from './components/EnvMapBakeComponent'
 import { EnvMapComponent } from './components/EnvmapComponent'
@@ -101,7 +100,6 @@ export {
   EnvironmentSystem,
   FogSystem,
   LookAtSystem,
-  MaterialLibrarySystem,
   MountPointSystem,
   OrientedBoundingBoxSystem,
   ParticleSystem,

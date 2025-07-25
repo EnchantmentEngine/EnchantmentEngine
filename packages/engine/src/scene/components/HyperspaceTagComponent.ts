@@ -27,7 +27,6 @@ import {
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   setComponent
@@ -238,9 +237,9 @@ export const HyperspaceTagComponent = defineComponent({
           hyperspaceEffect.tubeMaterial.opacity = opacity
         })
 
-        const sceneVisible = getMutableComponent(entity, HyperspaceTagComponent).sceneVisible
+        const sceneVisible = getComponent(entity, HyperspaceTagComponent).sceneVisible
 
-        if (transition.state === 'IN' && transition.alpha >= 1 && sceneVisible.value) {
+        if (transition.state === 'IN' && transition.alpha >= 1 && sceneVisible) {
           /**
            * hide scene, render just the hyperspace effect and avatar
            */
@@ -249,11 +248,15 @@ export const HyperspaceTagComponent = defineComponent({
           // teleport player to where the portal spawn position is
           teleportAvatar(AvatarComponent.getSelfAvatarEntity(), activePortal!.remoteSpawnPosition, true)
           camera.layers.disable(ObjectLayers.Scene)
-          sceneVisible.set(false)
+          setComponent(entity, HyperspaceTagComponent, {
+            sceneVisible: false
+          })
         }
 
-        if (transition.state === 'OUT' && transition.alpha <= 0 && !sceneVisible.value) {
-          sceneVisible.set(true)
+        if (transition.state === 'OUT' && transition.alpha <= 0 && !sceneVisible) {
+          setComponent(entity, HyperspaceTagComponent, {
+            sceneVisible: true
+          })
           removeComponent(entity, HyperspaceTagComponent)
           getMutableState(PortalState).activePortalEntity.set(UndefinedEntity)
           getMutableState(PortalState).portalReady.set(false)

@@ -14,7 +14,6 @@ import {
   EntityID,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -295,7 +294,7 @@ describe('EntityCSMReactor', async () => {
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
-      getMutableComponent(testEntity, DirectionalLightComponent).light.set(null as any)
+      setComponent(testEntity, DirectionalLightComponent, { light: null as any })
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.EntityCSMReactor, {
           entity: testEntity,
@@ -653,7 +652,7 @@ describe('EntityCSMReactor', async () => {
         entityID: 'renderer' as EntityID
       })
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
@@ -678,7 +677,7 @@ describe('EntityCSMReactor', async () => {
 
       await act(() => render(null))
 
-      getMutableComponent(rendererEntity, CSMComponent).merge({ needsUpdate: Initial })
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
 
       await act(() => render(null))
 
@@ -690,7 +689,7 @@ describe('EntityCSMReactor', async () => {
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.castShadow is falsy', async () => {
       const Initial = false
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: false })
@@ -709,7 +708,7 @@ describe('EntityCSMReactor', async () => {
         return getComponent(testEntity, DirectionalLightComponent).light
       })
 
-      getMutableComponent(rendererEntity, CSMComponent).needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
 
       await act(() => render(null))
 
@@ -722,7 +721,7 @@ describe('EntityCSMReactor', async () => {
       const Expected = 42_000
       const Initial = 21_000
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).shadowBias.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { shadowBias: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, shadowBias: Initial })
@@ -755,7 +754,7 @@ describe('EntityCSMReactor', async () => {
       const Expected = 42_000
       const Initial = 21_000
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).maxFar.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { maxFar: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true, cameraFar: Initial })
@@ -791,7 +790,7 @@ describe('EntityCSMReactor', async () => {
       getMutableState(RendererState).shadowMapResolution.set(Initial)
 
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).shadowMapSize.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { shadowMapSize: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
@@ -956,7 +955,7 @@ describe('EntityCSMReactor', async () => {
       const Initial = !Expected
 
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
@@ -984,13 +983,10 @@ describe('EntityCSMReactor', async () => {
       const Initial = !Expected
 
       CSM.initCSM({}, rendererEntity)
-      const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
-      csmComponent.needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
 
       const renderSettingsEntity = createEntity()
-      setComponent(renderSettingsEntity, RenderSettingsComponent)
-      const renderSettings = getMutableComponent(renderSettingsEntity, RenderSettingsComponent)
-      renderSettings.shadowMapType.set(1)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { shadowMapType: 1 })
 
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
 
@@ -1005,9 +1001,7 @@ describe('EntityCSMReactor', async () => {
 
       await act(() => render(null))
 
-      act(() => {
-        renderSettings.shadowMapType.set(2)
-      })
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { shadowMapType: 2 })
 
       await vi.waitFor(() => {
         expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
@@ -1045,7 +1039,7 @@ describe('EntityCSMReactor', async () => {
       const Initial = 21
 
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).cascades.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { cascades: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
@@ -1074,7 +1068,7 @@ describe('EntityCSMReactor', async () => {
       const Initial = false
 
       CSM.initCSM({}, rendererEntity)
-      getMutableComponent(rendererEntity, CSMComponent).needsUpdate.set(Initial)
+      setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)
       setComponent(testEntity, DirectionalLightComponent, { castShadow: true })
@@ -1190,7 +1184,6 @@ describe('CSMReactor', async () => {
   describe('on cleanup', async () => {
     it('should not call EntityCSMReactor if renderSettingsComponent.csm is falsy', async () => {
       const rendererEntity = defineQuery([RendererComponent])()[0]
-      getMutableComponent(rendererEntity, RendererComponent)
 
       const directionalLightEntity = createEntity()
       setComponent(directionalLightEntity, DirectionalLightComponent)
@@ -1207,7 +1200,7 @@ describe('CSMReactor', async () => {
         entityID: 'renderSettings' as EntityID
       })
       setComponent(renderSettingsEntity, RenderSettingsComponent, { primaryLight: directionalLightUUID })
-      getMutableComponent(renderSettingsEntity, RenderSettingsComponent).csm.set(false)
+      setComponent(renderSettingsEntity, RenderSettingsComponent, { csm: false })
 
       const Reactor = () => {
         return React.createElement(ShadowSystemReactors.CSMReactor, {
@@ -1507,8 +1500,7 @@ describe('RendererShadowReactor', async () => {
     it('should not do anything (return early) and not crash if RendererComponent.renderer is falsy', async () => {
       const Initial = undefined
 
-      setComponent(testEntity, RendererComponent)
-      getMutableComponent(testEntity, RendererComponent).renderer.set(null)
+      setComponent(testEntity, RendererComponent, { renderer: null })
       const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
@@ -1530,8 +1522,7 @@ describe('RendererShadowReactor', async () => {
       const Expected = getShadowsEnabled()
       const Initial = !Expected
 
-      setComponent(testEntity, RendererComponent)
-      getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { enabled: Initial } } as any)
+      setComponent(testEntity, RendererComponent, { renderer: { shadowMap: { enabled: Initial } } } as any)
       const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,
@@ -1554,8 +1545,7 @@ describe('RendererShadowReactor', async () => {
       const Expected = getShadowsEnabled()
       const Initial = !Expected
 
-      setComponent(testEntity, RendererComponent)
-      getMutableComponent(testEntity, RendererComponent).renderer.merge({ shadowMap: { autoUpdate: Initial } } as any)
+      setComponent(testEntity, RendererComponent, { renderer: { shadowMap: { autoUpdate: Initial } } } as any)
       const Reactor = () => {
         return React.createElement(
           EntityContext.Provider,

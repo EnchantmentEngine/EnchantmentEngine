@@ -11,7 +11,6 @@ import {
   EntityUUID,
   getAncestorWithComponents,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   getSimulationCounterpart,
   hasComponent,
@@ -19,6 +18,7 @@ import {
   LayerID,
   Layers,
   removeComponent,
+  setComponent,
   SimulationLayerComponent,
   SourceID,
   UndefinedEntity,
@@ -31,16 +31,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import {
-  getMutableState,
-  getState,
-  NO_PROXY,
-  NO_PROXY_STEALTH,
-  none,
-  SceneUser,
-  State,
-  useMutableState
-} from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY, none, SceneUser, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -92,15 +83,15 @@ export const GLTFComponent = defineComponent({
 
   useDependenciesLoaded(entity: Entity) {
     const dependencies = useComponent(entity, GLTFComponent).dependencies
-    return dependenciesLoaded(dependencies.value as Dependencies | undefined)
+    return dependenciesLoaded(dependencies)
   },
 
   useSceneLoaded(entity: Entity) {
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     if (!gltfComponent) return false
     const dependencies = gltfComponent.dependencies
-    const progress = gltfComponent.progress.value
-    return dependenciesLoaded(dependencies.value as Dependencies | undefined) && progress === 100
+    const progress = gltfComponent.progress
+    return dependenciesLoaded(dependencies) && progress === 100
   },
 
   isSceneLoaded(entity: Entity) {
@@ -131,7 +122,7 @@ export const GLTFComponent = defineComponent({
       : ('' as SourceID),
 
   useSourceID: (entity: Entity): SourceID => {
-    const uuid = useOptionalComponent(entity, UUIDComponent)?.value
+    const uuid = useOptionalComponent(entity, UUIDComponent)
     if (!uuid) return '' as SourceID
     if (hasComponent(entity, GLTFComponent)) return UUIDComponent.getAsSourceID(entity)
     return uuid?.entitySourceID || ('' as SourceID)
@@ -222,7 +213,7 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     if (!sceneLoaded) return
 
-    const occlusion = gltfComponent.cameraOcclusion.value
+    const occlusion = gltfComponent.cameraOcclusion
     const source = UUIDComponent.getAsSourceID(entity)
     const entities = UUIDComponent.getEntitiesBySource(source)
     if (!occlusion) {
@@ -236,7 +227,7 @@ export const GLTFComponentReactor = () => {
         ObjectLayerMaskComponent.enableLayer(curr, ObjectLayers.Camera)
       }
     }
-  }, [gltfComponent.cameraOcclusion.value, sceneLoaded])
+  }, [gltfComponent.cameraOcclusion, sceneLoaded])
 
   useGLTFDocument(entity)
 
@@ -252,18 +243,19 @@ export const GLTFComponentReactor = () => {
   useEffect(() => {
     return () => {
       if (hasComponent(entity, GLTFComponent)) {
-        const component = getMutableComponent(entity, GLTFComponent)
-        component.loaded.set(false)
-        component.progress.set(0)
+        setComponent(entity, GLTFComponent, {
+          loaded: false,
+          progress: 0
+        })
       }
     }
   }, [])
 
-  const dependencies = gltfComponent.dependencies.get(NO_PROXY_STEALTH) as Dependencies | undefined
+  const dependencies = gltfComponent.dependencies
 
   return (
     <>
-      <ResourceReactor documentID={sourceID} entity={entity} loaded={gltfComponent.loaded.value} />
+      <ResourceReactor documentID={sourceID} entity={entity} loaded={gltfComponent.loaded} />
       {dependencies && !dependenciesLoaded(dependencies) ? (
         <DependencyReactor key={entity} gltfComponentEntity={entity} dependencies={dependencies} />
       ) : null}
@@ -279,7 +271,7 @@ const ResourceReactor = (props: { documentID: SourceID; entity: Entity; loaded: 
   const simulationEntity = getSimulationCounterpart(entity)
   useApplyCollidersToChildMeshesEffect(simulationEntity)
 
-  if (!loaded || gltfComponent.progress.value === 100) return null
+  if (!loaded || gltfComponent.progress === 100) return null
 
   return (
     <ChildResourceReactor
@@ -298,7 +290,7 @@ const ChildResourceReactor = (props: { rootEntity: Entity; sourceEntities: Entit
 
   useEffect(() => {
     const percentage = Math.floor(Math.min(resourceProgress, dependenciesLoaded ? 100 : 99))
-    getMutableComponent(rootEntity, GLTFComponent).progress.set(percentage)
+    setComponent(rootEntity, GLTFComponent, { progress: percentage })
   }, [resourceProgress, dependenciesLoaded])
 
   useEffect(() => {
@@ -321,18 +313,18 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
   const errors = ErrorComponent.useComponentErrors(entity, component)
 
   const removeGLTFDependency = () => {
-    const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
+    const gltfComponent = getComponent(gltfComponentEntity, GLTFComponent)
     const uuid = UUIDComponent.get(entity)
-    ;(gltfComponent.dependencies as State<Dependencies>).componentDependencies.set((prev) => {
-      const dependencyArr = prev![uuid] as Component[]
-      if (!dependencyArr) return prev
-      const index = dependencyArr.findIndex((compItem) => compItem.jsonID === component.jsonID)
-      dependencyArr.splice(index, 1)
-      if (!dependencyArr.length) {
-        delete prev![uuid]
-      }
-      return prev
-    })
+    const componentDependencies = gltfComponent.dependencies!.componentDependencies
+
+    const dependencyArr = componentDependencies![uuid]
+    if (!dependencyArr) return
+    const index = dependencyArr.findIndex((compItem) => compItem.jsonID === component.jsonID)
+    dependencyArr.splice(index, 1)
+    if (!dependencyArr.length) {
+      delete componentDependencies![uuid]
+      setComponent(gltfComponentEntity, GLTFComponent)
+    }
   }
 
   useEffect(() => {
@@ -413,8 +405,9 @@ const DependencyReactor = (props: { gltfComponentEntity: Entity; dependencies: D
       }
     }
 
-    const gltfComponent = getMutableComponent(gltfComponentEntity, GLTFComponent)
-    gltfComponent.dependencies.merge({ deltaDependencies })
+    const gltfComponent = getComponent(gltfComponentEntity, GLTFComponent)
+    gltfComponent.dependencies!.deltaDependencies = deltaDependencies
+    setComponent(gltfComponentEntity, GLTFComponent)
   }, [commands])
 
   return (
@@ -473,18 +466,18 @@ export const parseGLTFFile = (
 
 const useGLTFDocument = (entity: Entity) => {
   const state = useComponent(entity, GLTFComponent)
-  const url = state.src.value
+  const url = state.src
 
   const dynamicLoadComponent = useOptionalComponent(entity, SceneDynamicLoadComponent)
   const layer = LayerComponent.get(entity)
   const isEditing = layer === Layers.Authoring
 
-  const dynamicLoadAndNotEditing = !isEditing && !!dynamicLoadComponent && !dynamicLoadComponent?.loaded?.value
-  const gltfComponent = getMutableComponent(entity, GLTFComponent)
+  const dynamicLoadAndNotEditing = !isEditing && !!dynamicLoadComponent && !dynamicLoadComponent?.loaded
+  const gltfComponent = getComponent(entity, GLTFComponent)
   useEffect(() => {
     if (dynamicLoadAndNotEditing) return
     if (!url) {
-      gltfComponent.progress.set(100)
+      setComponent(entity, GLTFComponent, { progress: 100 })
       return
     }
 
@@ -513,9 +506,11 @@ const useGLTFDocument = (entity: Entity) => {
         const [gltf, body] = parseGLTFFile(response, onError)
 
         if (gltf) {
-          state.document.set(gltf)
           const dependencies = buildDependencies(entity, gltf)
-          state.dependencies.set(dependencies)
+          setComponent(entity, GLTFComponent, {
+            document: gltf,
+            dependencies
+          })
 
           // Load scene immediately while we have the body in scope
           const options = getGLTFOptions(entity, signal, body)
@@ -528,7 +523,7 @@ const useGLTFDocument = (entity: Entity) => {
               // Check if component still exists before setting state
               if (hasComponent(entity, GLTFComponent)) {
                 // Scene loading is now handled in useGLTFDocument, so we just set documentLoaded
-                getMutableComponent(entity, GLTFComponent).loaded.set(true)
+                setComponent(entity, GLTFComponent, { loaded: true })
                 // force transform update for all entities in the model.
                 // required to propagate dirty update auth to sim layers
                 TransformComponent.dirty[entity] = 1
@@ -554,9 +549,10 @@ const useGLTFDocument = (entity: Entity) => {
     return () => {
       abortController.abort()
       if (!entityExists(entity) || !hasComponent(entity, GLTFComponent)) return
-      const gltfComponent = getMutableComponent(entity, GLTFComponent)
-      gltfComponent.document.set(null)
-      gltfComponent.progress.set(0)
+      setComponent(entity, GLTFComponent, {
+        document: null,
+        progress: 0
+      })
     }
   }, [url, dynamicLoadAndNotEditing])
 }

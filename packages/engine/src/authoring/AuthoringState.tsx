@@ -9,7 +9,6 @@ import {
   getAllComponents,
   getAuthoringCounterpart,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerComponent,
@@ -52,7 +51,7 @@ import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoader
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
-import { Color, Material, SRGBColorSpace, Vector2, Vector3 } from 'three'
+import { Color, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -430,8 +429,8 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
         // annoying necessity to ensure ops from scene deltas get applied
         /** @todo this will be removed once material plugins handle all materials */
         if (Component === MaterialStateComponent) {
-          const materialComponent = getMutableComponent(entity, MaterialStateComponent)
-          const { material, parameters } = materialComponent.get(NO_PROXY)
+          const materialComponent = getComponent(entity, MaterialStateComponent)
+          const { material, parameters } = materialComponent
           const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
           let asyncUpdateCount = 0
           for (const [key, val] of Object.entries(parameters)) {
@@ -450,18 +449,18 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
                   texture.flipY = false
                   texture.needsUpdate = true
                   if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
-                  materialComponent.material[key].set(texture ?? null)
+                  materialComponent.material[key] = texture ?? null
                 }
-                if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
+                if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
               })
             } else if (args[key].type === 'color') {
-              materialComponent.material[key].set(val.isColor ? val : new Color(val))
+              materialComponent.material[key] = val.isColor ? val : new Color(val)
             } else if (args[key].type === 'vec2') {
-              materialComponent.material[key].set(val.isVector2 ? val : new Vector2().fromArray(val))
+              materialComponent.material[key] = val.isVector2 ? val : new Vector2().fromArray(val)
             } else if (args[key].type === 'vec3') {
-              materialComponent.material[key].set(val.isVector3 ? val : new Vector3().fromArray(val))
+              materialComponent.material[key] = val.isVector3 ? val : new Vector3().fromArray(val)
             } else {
-              materialComponent.material[key].set(val)
+              materialComponent.material[key] = val
             }
           }
           for (const [key, val] of Object.entries(args)) {
@@ -469,16 +468,17 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
             if (key in parameters) continue
             const _default = args[key].default
             if (args[key].type === 'color') {
-              materialComponent.material[key].set(_default.isColor ? _default : new Color(_default))
+              materialComponent.material[key] = _default.isColor ? _default : new Color(_default)
             } else if (args[key].type === 'vec2') {
-              materialComponent.material[key].set(_default.isVector2 ? _default : new Vector2().fromArray(_default))
+              materialComponent.material[key] = _default.isVector2 ? _default : new Vector2().fromArray(_default)
             } else if (args[key].type === 'vec3') {
-              materialComponent.material[key].set(_default.isVector3 ? _default : new Vector3().fromArray(_default))
+              materialComponent.material[key] = _default.isVector3 ? _default : new Vector3().fromArray(_default)
             } else {
-              materialComponent.material[key].set(_default)
+              materialComponent.material[key] = _default
             }
           }
-          if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
+          setComponent(entity, MaterialStateComponent)
+          if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
         }
       }
       if (currentState[nodeID]) {

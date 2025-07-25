@@ -3,7 +3,6 @@ import { Quaternion } from 'three'
 import {
   ComponentType,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -94,8 +93,9 @@ export const AvatarAxesControlSchemeBehavior = {
 const onShiftLeft = () => {
   const entity = AvatarComponent.getSelfAvatarEntity()
   if (!entity) return
-  const controller = getMutableComponent(entity, AvatarControllerComponent)
-  controller.isWalking.set(!controller.isWalking.value)
+  setComponent(entity, AvatarControllerComponent, {
+    isWalking: !getComponent(entity, AvatarControllerComponent).isWalking
+  })
 }
 
 // const isAvatarClicked = () => {

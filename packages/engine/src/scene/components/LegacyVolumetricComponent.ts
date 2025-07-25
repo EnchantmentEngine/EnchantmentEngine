@@ -1,17 +1,17 @@
 import { useEffect } from 'react'
 
-import { Engine, useEntityContext } from '@ir-engine/ecs'
+import { Engine, Entity, useEntityContext } from '@ir-engine/ecs'
 import {
-  ComponentType,
   defineComponent,
   getComponent,
   removeComponent,
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { getState, State } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
+import { hasComponent } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { AudioState } from '../../audio/AudioState'
 import { PlayMode } from '../constants/PlayMode'
@@ -20,17 +20,15 @@ import { ShadowComponent } from './ShadowComponent'
 import { UVOL1Component } from './UVOL1Component'
 import { UVOL2Component } from './UVOL2Component'
 
-export function handleAutoplay(
-  audioContext: AudioContext,
-  media: HTMLMediaElement,
-  volumetric: State<ComponentType<typeof LegacyVolumetricComponent>>
-) {
+export function handleAutoplay(audioContext: AudioContext, media: HTMLMediaElement, entity: Entity) {
   const attachEventListeners = () => {
     const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()
-      volumetric.paused.set(false)
+      if (hasComponent(entity, LegacyVolumetricComponent)) {
+        setComponent(entity, LegacyVolumetricComponent, { paused: false })
+      }
       window.removeEventListener('pointerdown', playMedia)
       window.removeEventListener('keypress', playMedia)
       window.removeEventListener('touchstart', playMedia)
@@ -53,7 +51,9 @@ export function handleAutoplay(
       }
     })
     .then(() => {
-      volumetric.paused.set(false)
+      if (hasComponent(entity, LegacyVolumetricComponent)) {
+        setComponent(entity, LegacyVolumetricComponent, { paused: false })
+      }
     })
 }
 

@@ -4,7 +4,6 @@ import { EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engin
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   setComponent,
@@ -57,9 +56,9 @@ export const AvatarRigComponent = defineComponent({
   }),
 
   setBone: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.bonesToEntities[boneName].set(boneEntity)
-    rigComponent.entitiesToBones[boneEntity].set(boneName)
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.bonesToEntities[boneName] = boneEntity
+    rigComponent.entitiesToBones[boneEntity] = boneName
   },
 
   setPose: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
@@ -68,12 +67,14 @@ export const AvatarRigComponent = defineComponent({
 
     const parent = entityTreeComponent.parentEntity
 
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.parentWorldRotationInverses[boneName].set(
-      TransformComponent.getWorldRotation(parent, new Quaternion()).invert()
-    )
-    rigComponent.parentWorldRotations[boneName].set(TransformComponent.getWorldRotation(parent, new Quaternion()))
-    rigComponent.rotations[boneName].set(transformComponent.rotation.clone())
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.parentWorldRotationInverses[boneName] = TransformComponent.getWorldRotation(
+      parent,
+      new Quaternion()
+    ).invert()
+
+    rigComponent.parentWorldRotations[boneName] = TransformComponent.getWorldRotation(parent, new Quaternion())
+    rigComponent.rotations[boneName] = transformComponent.rotation.clone()
   },
 
   useAvatarLoaded: (entity: Entity) => {

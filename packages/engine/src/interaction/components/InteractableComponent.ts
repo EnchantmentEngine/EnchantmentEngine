@@ -5,7 +5,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getSimulationCounterpart,
   removeComponent,
   removeEntity,
@@ -17,7 +16,6 @@ import {
 import {
   defineComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -156,14 +154,14 @@ export const updateInteractableUI = (entity: Entity) => {
     } else {
       activateUI = interactable.uiVisibilityOverride !== XRUIVisibilityOverride.off //could be more explicit, needs to be if we add more enum options
     }
-    getMutableComponent(entity, InteractableComponent).canInteract.set(activateUI)
+    setComponent(entity, InteractableComponent, { canInteract: activateUI })
   }
 
   //highlight if hovering OR if closest, otherwise turn off highlight
-  const mutableInteractable = getMutableComponent(entity, InteractableComponent)
+  const mutableInteractable = getComponent(entity, InteractableComponent)
   const newHighlight = hovering || entity === getState(InteractableState).available[0]
-  if (mutableInteractable.highlighted.value !== newHighlight) {
-    mutableInteractable.highlighted.set(newHighlight)
+  if (mutableInteractable.highlighted !== newHighlight) {
+    setComponent(entity, InteractableComponent, { highlighted: newHighlight })
   }
 
   if (transition.state === 'OUT' && activateUI) {
@@ -201,7 +199,7 @@ const addInteractableUI = (entity: Entity) => {
     TransformComponent.getWorldPosition(entity, _center)
     uiTransform.position.copy(_center)
   }
-  getMutableComponent(entity, InteractableComponent).uiEntity.set(uiEntity)
+  setComponent(entity, InteractableComponent, { uiEntity })
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {
     referenceEntities: [entity, getState(ReferenceSpaceState).viewerEntity],
@@ -271,7 +269,7 @@ export const InteractableComponent = defineComponent({
 
     InputComponent.useExecuteWithInput(
       () => {
-        if (!interactableComponent.canInteract.value) return
+        if (!interactableComponent.canInteract) return
         const buttons = InputComponent.getButtons(entity)
 
         if (buttons.Interact?.up && !buttons.Interact?.dragging) {
@@ -287,11 +285,11 @@ export const InteractableComponent = defineComponent({
       if (!isEditing.value) {
         addInteractableUI(simulationEntity)
         return () => {
-          const interactableComponent = getOptionalMutableComponent(entity, InteractableComponent)
+          const interactableComponent = getOptionalComponent(entity, InteractableComponent)
           if (!interactableComponent) return
-          const uiEntity = interactableComponent.uiEntity.value
+          const uiEntity = interactableComponent.uiEntity
           if (uiEntity) {
-            interactableComponent.uiEntity.set(UndefinedEntity)
+            setComponent(uiEntity, InteractableComponent, { uiEntity: UndefinedEntity })
             removeEntity(uiEntity)
           }
         }
@@ -299,7 +297,7 @@ export const InteractableComponent = defineComponent({
     }, [isEditing.value])
 
     useEffect(() => {
-      const msg = interactableComponent.label?.value ?? ''
+      const msg = interactableComponent.label ?? ''
       modalState.interactMessage?.set(msg)
     }, [interactableComponent.label]) //TODO just nuke the whole XRUI and recreate....
     return null
