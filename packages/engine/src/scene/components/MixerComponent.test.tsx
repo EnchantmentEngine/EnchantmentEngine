@@ -21,7 +21,6 @@ import {
   Entity,
   EntityID,
   getComponent,
-  hasComponent,
   removeComponent,
   removeEntity,
   S,
@@ -31,6 +30,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getMutableState, UserID } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
@@ -511,6 +511,7 @@ describe('MixerComponent.ts', async () => {
         setComponent(targetEntity, testComponent)
         setComponent(mixerEntity, MixerComponent)
         mixerComp = getComponent(mixerEntity, MixerComponent)
+        await flushAll()
       })
 
       afterEach(() => {
@@ -526,7 +527,6 @@ describe('MixerComponent.ts', async () => {
         const xValue = 10
         const yValue = 20
         MixerComponent.setEntry(mixerEntity, 0, { ...xSetter?.(xValue), ...ySetter?.(yValue) })
-
         // Wait for component to be initialized
         await vi.waitUntil(() => {
           mixerComp = getComponent(mixerEntity, MixerComponent)
@@ -539,7 +539,7 @@ describe('MixerComponent.ts', async () => {
         // Serialize, remove, and deserialize component
         const serialized = serializeComponent(mixerEntity, MixerComponent)
         removeComponent(mixerEntity, MixerComponent)
-        await vi.waitUntil(() => !hasComponent(mixerEntity, MixerComponent))
+        await flushAll() // force react to register the change
         deserializeComponent(mixerEntity, MixerComponent, serialized)
 
         // Wait for component to be reinitialized
