@@ -5,7 +5,7 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -150,10 +150,10 @@ export const HemiSphereLightHelperReactor: React.FC = (props: { parentEntity; ic
   useEffect(() => {
     if (hemisphereLightHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(hemisphereLightHelperEntity.value, LineSegmentComponent)
-    if (!helper) return
-
-    helper.color = hovered ? BOUNDING_BOX_COLORS.HOVERED : hemisphereLightComponent.skyColor
+    if (!hasComponent(hemisphereLightHelperEntity.value, LineSegmentComponent)) return
+    setComponent(hemisphereLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : hemisphereLightComponent.skyColor
+    })
   }, [
     hemisphereLightHelperEntity,
     hemisphereLightComponent.skyColor,

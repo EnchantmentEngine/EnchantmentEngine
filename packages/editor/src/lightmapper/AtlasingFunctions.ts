@@ -7,7 +7,6 @@ import {
   EntityTreeComponent,
   getAncestorWithComponents,
   getComponent,
-  getMutableComponent,
   getSimulationCounterpart,
   hasComponent,
   Layers,
@@ -147,7 +146,7 @@ async function exportAtlasData(
     const atlasEntity = UUIDComponent.create(rootEntity, entityUUID as EntityID)
     setComponent(atlasEntity, TransformComponent)
 
-    getMutableComponent(rootEntity, EntityTreeComponent).children.merge([atlasEntity])
+    getComponent(rootEntity, EntityTreeComponent).children.push(atlasEntity)
 
     const originalMesh = getComponent(entity, MeshComponent)
     const geometry = new BufferGeometry()

@@ -240,16 +240,6 @@ export const GLTFComponentReactor = () => {
     }
   }, [gltfComponent.src])
 
-  useEffect(() => {
-    return () => {
-      if (!entityExists(entity) || !hasComponent(entity, GLTFComponent)) return
-      setComponent(entity, GLTFComponent, {
-        loaded: false,
-        progress: 0
-      })
-    }
-  }, [])
-
   const dependencies = gltfComponent.dependencies
 
   return (
@@ -327,9 +317,8 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
   }
 
   useEffect(() => {
-    const compValue = comp.value
     for (const dep of dependencies) {
-      if (!dep.eval(compValue[dep.key], entity)) return
+      if (!dep.eval(comp[dep.key], entity)) return
     }
 
     removeGLTFDependency()

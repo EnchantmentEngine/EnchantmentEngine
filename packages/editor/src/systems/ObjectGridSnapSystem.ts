@@ -8,7 +8,6 @@ import {
   EntityTreeComponent,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   Not,
   removeComponent,
@@ -171,19 +170,21 @@ function calculateTranslation(bbox1: Box3, bbox2: Box3): Vector3 {
 }
 
 function setHelperLayer(entity: Entity, layer: ObjectLayer) {
-  const helper = getOptionalMutableComponent(entity, BoundingBoxHelperComponent)
-  if (helper) {
-    const layerMask = getLayerMaskFromLayer(layer)
-    if (!layerMask) return
-    helper.layerMask.set(layerMask)
-  }
+  const helper = hasComponent(entity, BoundingBoxHelperComponent)
+  if (!helper) return
+  const layerMask = getLayerMaskFromLayer(layer)
+  if (!layerMask) return
+  setComponent(entity, BoundingBoxHelperComponent, {
+    layerMask: layerMask
+  })
 }
 
 function setHelperColor(entity: Entity, color: Color) {
-  const helper = getOptionalMutableComponent(entity, BoundingBoxHelperComponent)
-  if (helper) {
-    helper.color.set(color)
-  }
+  const helper = hasComponent(entity, BoundingBoxHelperComponent)
+  if (!helper) return
+  setComponent(entity, BoundingBoxHelperComponent, {
+    color: color
+  })
 }
 
 function resetHelperTransform(entity: Entity) {

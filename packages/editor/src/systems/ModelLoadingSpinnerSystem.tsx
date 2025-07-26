@@ -17,14 +17,14 @@ import React, { useEffect } from 'react'
 const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const { entity } = props
   const gltfComponent = useComponent(props.entity, GLTFComponent)
-  const errors = !!ErrorComponent.useComponentErrors(props.entity, GLTFComponent)?.value
+  const errors = !!ErrorComponent.useComponentErrors(props.entity, GLTFComponent)
   const loaded = GLTFComponent.useSceneLoaded(props.entity)
   const isScene = useHasComponent(entity, SceneComponent)
-  const shouldHaveSpinner = !isScene && !!gltfComponent.src.value && !errors && !loaded
+  const shouldHaveSpinner = !isScene && !!gltfComponent.src && !errors && !loaded
 
   useEffect(() => {
     if (!shouldHaveSpinner) return
-    const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src.value}`, entity)
+    const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src}`, entity)
     return () => {
       removeEntity(spinnerEntity)
     }

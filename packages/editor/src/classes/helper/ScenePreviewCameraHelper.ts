@@ -5,7 +5,8 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -155,7 +156,7 @@ export const ScenePreviewCameraHelperReactor: React.FC = (props: { parentEntity;
     const helperEntity = createEntity()
     setComponent(helperEntity, EntityTreeComponent, { parentEntity })
 
-    const camera = previewCameraComponent.camera.value as PerspectiveCamera
+    const camera = previewCameraComponent.camera
     const gizmoGeometry = createCameraGizmoGeometry(camera)
 
     setComponent(helperEntity, LineSegmentComponent, {
@@ -189,16 +190,15 @@ export const ScenePreviewCameraHelperReactor: React.FC = (props: { parentEntity;
   useEffect(() => {
     if (cameraHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(cameraHelperEntity.value, LineSegmentComponent)
-    if (!helper) return
+    if (!hasComponent(cameraHelperEntity.value, LineSegmentComponent)) return
 
-    const camera = previewCameraComponent.camera.value as PerspectiveCamera
-    const newGeometry = createCameraGizmoGeometry(camera)
-
-    if (helper.geometry.value) {
-      helper.geometry.value.dispose()
+    const oldGeometry = getComponent(cameraHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry.dispose()
     }
-    helper.geometry.set(newGeometry)
+    const camera = previewCameraComponent.camera
+    const newGeometry = createCameraGizmoGeometry(camera)
+    setComponent(cameraHelperEntity.value, LineSegmentComponent, { geometry: newGeometry })
   }, [cameraHelperEntity, previewCameraComponent.camera])
 
   return null
