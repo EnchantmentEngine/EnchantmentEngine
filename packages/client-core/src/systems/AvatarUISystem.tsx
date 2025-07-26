@@ -225,7 +225,7 @@ const execute = () => {
 
 const AvatarInstanceReactor = () => {
   const avatarEntity = useEntityContext()
-  const isSelf = useComponent(avatarEntity, NetworkObjectComponent).ownerId.value === getState(EngineState).userID
+  const isSelf = useComponent(avatarEntity, NetworkObjectComponent).ownerId === getState(EngineState).userID
 
   const immersiveMedia = useMutableState(MediaSettingsState).immersiveMedia.value
 

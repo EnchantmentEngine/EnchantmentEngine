@@ -73,7 +73,7 @@ const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'])
  * @notes troika.Text line height format, as declared by `troika-three-text`in its Text.lineHeight `@member` property.
  */
 export type TroikaTextLineHeight = number | 'normal'
-const TroikaTextLineHeightSchema = S.Union([S.Number(), S.Literal('normal')], { default: 'normal' })
+const TroikaTextLineHeightSchema = S.Union([S.Number(), S.Literal('normal')], { default: 1.2 })
 
 /**
  * @summary
@@ -198,8 +198,8 @@ export const TextComponent = defineComponent({
       default: FontMaterialKind.Basic
     }), // Default to whatever value is marked at id=0 in FontMaterialKind
     // Font Outline Properties
-    outlineOpacity: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
-    outlineWidth: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
+    outlineOpacity: S.Number({ default: 100, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
+    outlineWidth: S.Number({ default: 3, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
     outlineBlur: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
     outlineOffset: T.Vec2(new Vector2(0, 0)), // range[0..100+], sent to troika as [0..100]% :string
     outlineColor: T.Color(0xffffff),

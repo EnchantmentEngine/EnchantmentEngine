@@ -8,7 +8,6 @@ import { MdOutlineTimeline } from 'react-icons/md'
 import { useComponent } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { NO_PROXY } from '@ir-engine/hyperflux'
 import { HiPlus } from 'react-icons/hi2'
 import { MdClear } from 'react-icons/md'
 import { Quaternion, Vector3 } from 'three'
@@ -44,7 +43,7 @@ export const SplineNodeEditor: EditorComponentType = (props) => {
             size="20px"
             onClick={() => {
               const elem = { position: new Vector3(), rotation: new Quaternion() }
-              const newElements = [...elements.get(NO_PROXY), elem]
+              const newElements = [...elements, elem]
               commitProperty(SplineComponent, 'elements')(newElements)
             }}
           />
@@ -65,7 +64,7 @@ export const SplineNodeEditor: EditorComponentType = (props) => {
                   <MdClear
                     className="text-neutral-700"
                     onClick={() => {
-                      const newElements = [...elements.get(NO_PROXY)].filter((_, i) => i !== index)
+                      const newElements = [...elements].filter((_, i) => i !== index)
                       commitProperty(SplineComponent, 'elements')(newElements)
                     }}
                   />
@@ -74,7 +73,7 @@ export const SplineNodeEditor: EditorComponentType = (props) => {
               <InputGroup name="Position" label={`${t('editor:properties.transform.lbl-position')}`} className="w-auto">
                 <Vector3Input
                   //style={{ maxWidth: 'calc(100% - 2px)', paddingRight: `3px`, width: '100%' }}
-                  value={elem.position.value}
+                  value={elem.position}
                   smallStep={0.01}
                   mediumStep={0.1}
                   largeStep={1}
@@ -89,7 +88,7 @@ export const SplineNodeEditor: EditorComponentType = (props) => {
               <InputGroup name="Rotation" label={`${t('editor:properties.transform.lbl-rotation')}`} className="w-auto">
                 <EulerInput
                   //style={{ maxWidth: 'calc(100% - 2px)', paddingRight: `3px`, width: '100%' }}
-                  quaternion={elem.rotation.value}
+                  quaternion={elem.rotation}
                   unit="°"
                   onChange={(quat) => {
                     commitProperty(SplineComponent, `elements.${index}.quaternion` as any)(quat)

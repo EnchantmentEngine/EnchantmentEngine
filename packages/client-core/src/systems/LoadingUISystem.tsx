@@ -7,7 +7,6 @@ import {
   UndefinedEntity,
   createEntity,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent,
@@ -79,7 +78,7 @@ export const LoadingUISystemState = defineState({
 
   createLoadingUI: () => {
     const ui = createLoaderDetailView()
-    getMutableComponent(ui.entity, InputComponent).grow.set(false)
+    setComponent(ui.entity, InputComponent, { grow: false })
     setComponent(ui.entity, NameComponent, 'Loading XRUI')
 
     const meshEntity = createEntity()
@@ -131,7 +130,7 @@ export const LoadingUISystemState = defineState({
 
 const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
-  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress.value
+  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress
   const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
   const avatarEntity = AvatarComponent.useSelfAvatarEntity()
   const avatarLoaded = AvatarRigComponent.useAvatarLoaded(avatarEntity)
@@ -139,7 +138,7 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const spectatorLoaded = !!useMutableState(SpectateEntityState).value[userID]
   const [cameraSettingsEntity] = useChildrenWithComponents(sceneEntity, [CameraSettingsComponent])
   const cameraSettings = useOptionalComponent(cameraSettingsEntity, CameraSettingsComponent)
-  const followMode = cameraSettings && cameraSettings?.cameraMode.value === CameraMode.FOLLOW
+  const followMode = cameraSettings && cameraSettings?.cameraMode === CameraMode.FOLLOW
   const cameraReady = followMode ? avatarLoaded || spectatorLoaded : true
   const viewerReady = cameraReady && sceneLoaded
   const locationState = useMutableState(LocationState)
@@ -215,7 +214,7 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
   const meshEntity = state.meshEntity.value
 
   const sceneComponent = useComponent(props.entity, SceneSettingsComponent)
-  const [loadingTexture, error] = useTexture(sceneComponent.loadingScreenURL.value, props.entity)
+  const [loadingTexture, error] = useTexture(sceneComponent.loadingScreenURL, props.entity)
 
   useEffect(() => {
     if (!loadingTexture) return
@@ -243,9 +242,9 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
   /** Scene data changes */
   useEffect(() => {
     const colors = state.colors
-    colors.main.set(sceneComponent.primaryColor.value)
-    colors.background.set(sceneComponent.backgroundColor.value)
-    colors.alternate.set(sceneComponent.alternativeColor.value)
+    colors.main.set(sceneComponent.primaryColor)
+    colors.background.set(sceneComponent.backgroundColor)
+    colors.alternate.set(sceneComponent.alternativeColor)
 
     return () => {
       colors.main.set('black')

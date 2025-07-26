@@ -17,7 +17,7 @@ import NumericInput from '../../../input/Numeric'
 export const HemisphereLightNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
-  const lightComponent = useComponent(props.entity, HemisphereLightComponent).value
+  const lightComponent = useComponent(props.entity, HemisphereLightComponent)
 
   return (
     <NodeEditor

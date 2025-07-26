@@ -2,7 +2,7 @@ import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
 
 import React, { useEffect } from 'react'
 
-import { State, useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate } from '@ir-engine/hyperflux'
 
 import Button from '../../../primitives/tailwind/Button'
 
@@ -18,8 +18,8 @@ export default function PaginatedList<T>({
   element,
   options
 }: {
-  ['list']: T[] | State<T[]>
-  ['element']: (val: T | State<T>, _index: number) => JSX.Element
+  ['list']: T[] | T[]
+  ['element']: (val: T | T, _index: number) => JSX.Element
   ['options']?: {
     ['countPerPage']?: number
   }

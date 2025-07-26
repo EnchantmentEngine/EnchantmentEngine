@@ -163,7 +163,7 @@ const CameraSettingsReactor = (props: {
 
   const cameraSettingsComponent = useOptionalComponent(cameraSettingsEntity ?? UndefinedEntity, CameraSettingsComponent)
 
-  const cameraMode = cameraSettingsComponent?.cameraMode.value ?? CameraMode.FOLLOW
+  const cameraMode = cameraSettingsComponent?.cameraMode ?? CameraMode.FOLLOW
 
   useEffect(() => {
     onCameraModeChange?.(cameraMode)

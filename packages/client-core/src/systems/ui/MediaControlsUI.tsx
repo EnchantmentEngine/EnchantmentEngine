@@ -2,14 +2,14 @@ import React from 'react'
 
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
-  hasComponent
+  hasComponent,
+  setComponent,
+  useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { createXRUI, XRUI } from '@ir-engine/engine/src/xrui/createXRUI'
-import { useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { PauseCircleLg, PlayLg, VolumeMaxLg, VolumeXLg } from '@ir-engine/ui/src/icons'
@@ -37,22 +37,26 @@ const MediaControlsView = (props: MediaControlsProps) => {
   const transform = getComponent(props.entity, TransformComponent)
   const widthFactor = transform?.scale.x ?? 1
   const heightFactor = transform?.scale.y ?? 1
-  const mediaComponent = useHookstate(getMutableComponent(props.entity, MediaComponent))
+  const mediaComponent = useComponent(props.entity, MediaComponent)
   const mediaStyles = { fill: 'white', width: `100%`, height: `100%` }
 
   const buttonClickPausedToggle = () => {
     //early out if the mediaElement is null
     if (!hasComponent(props.entity, MediaElementComponent)) return
 
-    const isPaused = mediaComponent.paused.value
-    mediaComponent.paused.set(!isPaused)
+    const isPaused = mediaComponent.paused
+    setComponent(props.entity, MediaComponent, {
+      paused: !isPaused
+    })
   }
 
   const buttonClickMuteToggle = () => {
     //early out if the mediaElement is null
     if (!hasComponent(props.entity, MediaElementComponent)) return
-    const isMuted = mediaComponent.muted.value
-    mediaComponent.muted.set(!isMuted)
+    const isMuted = mediaComponent.muted
+    setComponent(props.entity, MediaComponent, {
+      muted: !isMuted
+    })
   }
 
   const width = 1000
@@ -109,8 +113,8 @@ const MediaControlsView = (props: MediaControlsProps) => {
           }}
           onClick={buttonClickPausedToggle}
         >
-          {mediaComponent.paused.value && <PlayLg style={mediaStyles} />}
-          {!mediaComponent.paused.value && <PauseCircleLg style={mediaStyles} />}
+          {mediaComponent.paused && <PlayLg style={mediaStyles} />}
+          {!mediaComponent.paused && <PauseCircleLg style={mediaStyles} />}
         </button>
       </div>
 
@@ -146,8 +150,8 @@ const MediaControlsView = (props: MediaControlsProps) => {
           }}
           onClick={buttonClickMuteToggle}
         >
-          {mediaComponent.muted.value && <VolumeXLg style={mediaStyles} />}
-          {!mediaComponent.muted.value && <VolumeMaxLg style={mediaStyles} />}
+          {mediaComponent.muted && <VolumeXLg style={mediaStyles} />}
+          {!mediaComponent.muted && <VolumeMaxLg style={mediaStyles} />}
         </button>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  getOptionalMutableComponent,
+  getOptionalComponent,
   hasComponent,
   setComponent,
   useComponent,
@@ -334,7 +334,7 @@ function VolumetricCurrentTimeScrubber(props: { entity: Entity }) {
         }}
         onScrubEnd={(value) => {
           if (!isChanging) return
-          const uvol2Component = getOptionalMutableComponent(props.entity, UVOL2Component)
+          const uvol2Component = getOptionalComponent(props.entity, UVOL2Component)
           if (
             uvol2Component &&
             volumetricComponent.currentTrackInfo.currentTime < value &&

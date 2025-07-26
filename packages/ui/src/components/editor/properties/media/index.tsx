@@ -6,7 +6,6 @@ import {
   EntityID,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   getSimulationCounterpart,
   hasComponent,
   setComponent,
@@ -139,7 +138,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
 
   const simulationEntity = getSimulationCounterpart(entity)
   const media = useOptionalComponent(simulationEntity, MediaComponent)
-  const mediaElement = getOptionalMutableComponent(simulationEntity, MediaElementComponent)
+  const mediaElement = useOptionalComponent(simulationEntity, MediaElementComponent)
 
   const mediaEntities = useQuery([MediaComponent])
   const mediaOptions = mediaEntities
