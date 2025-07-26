@@ -37,6 +37,8 @@ export const useDraggable = ({
     lastY: number
     anchorDistanceX?: number
     anchorDistanceY?: number
+    initialAnchorDistanceX?: number
+    initialAnchorDistanceY?: number
   }>({
     startX: targetStartX || 0,
     startY: targetStartY || 0,
@@ -132,6 +134,121 @@ export const useDraggable = ({
       placer = target
     }
 
+    // Store initial anchor distances for proper positioning
+    const storeInitialAnchorDistances = () => {
+      if (anchor) {
+        const parentRect = container.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+
+        switch (anchor) {
+          case 'left':
+          case 'top-left':
+          case 'bottom-left':
+            coords.current.initialAnchorDistanceX = initialX
+            coords.current.anchorDistanceX = initialX
+            break
+          case 'right':
+          case 'top-right':
+          case 'bottom-right':
+            coords.current.initialAnchorDistanceX = parentRect.width - targetRect.width - initialX
+            coords.current.anchorDistanceX = parentRect.width - targetRect.width - initialX
+            break
+          case 'center':
+            coords.current.initialAnchorDistanceX = (parentRect.width - targetRect.width) / 2 - initialX
+            coords.current.anchorDistanceX = (parentRect.width - targetRect.width) / 2 - initialX
+            break
+        }
+
+        switch (anchor) {
+          case 'top':
+          case 'top-left':
+          case 'top-right':
+            coords.current.initialAnchorDistanceY = initialY
+            coords.current.anchorDistanceY = initialY
+            break
+          case 'bottom':
+          case 'bottom-left':
+          case 'bottom-right':
+            coords.current.initialAnchorDistanceY = parentRect.height - targetRect.height - initialY
+            coords.current.anchorDistanceY = parentRect.height - targetRect.height - initialY
+            break
+          case 'center':
+            coords.current.initialAnchorDistanceY = (parentRect.height - targetRect.height) / 2 - initialY
+            coords.current.anchorDistanceY = (parentRect.height - targetRect.height) / 2 - initialY
+            break
+        }
+      }
+    }
+
+    // Store initial anchor distances
+    storeInitialAnchorDistances()
+
+    // Function to maintain anchor position
+    const maintainAnchorPosition = () => {
+      if (!anchor) return
+
+      const parentRect = container.getBoundingClientRect()
+      const targetRect = target.getBoundingClientRect()
+
+      const maxX = parentRect.width - targetRect.width
+      const maxY = parentRect.height - targetRect.height
+
+      let newX = target.offsetLeft
+      let newY = target.offsetTop
+
+      // Use stored anchor distances to maintain relative position
+      switch (anchor) {
+        case 'left':
+          newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
+          break
+        case 'right':
+          const rightDistance = coords.current.anchorDistanceX || 0
+          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - rightDistance, maxX))
+          break
+        case 'top':
+          newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
+          break
+        case 'bottom':
+          const bottomDistance = coords.current.anchorDistanceY || 0
+          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomDistance, maxY))
+          break
+        case 'top-left':
+          newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
+          newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
+          break
+        case 'top-right':
+          const topRightDistance = coords.current.anchorDistanceX || 0
+          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - topRightDistance, maxX))
+          newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
+          break
+        case 'bottom-left':
+          newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
+          const bottomLeftDistance = coords.current.anchorDistanceY || 0
+          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomLeftDistance, maxY))
+          break
+        case 'bottom-right':
+          const bottomRightDistanceX = coords.current.anchorDistanceX || 0
+          const bottomRightDistanceY = coords.current.anchorDistanceY || 0
+          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - bottomRightDistanceX, maxX))
+          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomRightDistanceY, maxY))
+          break
+        case 'center':
+          newX = Math.max(0, Math.min((parentRect.width - targetRect.width) / 2, maxX))
+          newY = Math.max(0, Math.min((parentRect.height - targetRect.height) / 2, maxY))
+          break
+      }
+
+      // Update position if changed
+      if (newX !== target.offsetLeft) {
+        target.style.left = `${newX}px`
+        coords.current.lastX = newX
+      }
+      if (newY !== target.offsetTop) {
+        target.style.top = `${newY}px`
+        coords.current.lastY = newY
+      }
+    }
+
     // Function to constrain element within parent boundaries
     const constrainToParent = () => {
       const parentRect = container.getBoundingClientRect()
@@ -145,72 +262,7 @@ export const useDraggable = ({
 
       // Handle anchoring to different positions
       if (anchor) {
-        let newX = currentX
-        let newY = currentY
-
-        // Initialize anchor distances if not set
-        if (coords.current.anchorDistanceX === undefined) {
-          coords.current.anchorDistanceX = currentX
-        }
-        if (coords.current.anchorDistanceY === undefined) {
-          coords.current.anchorDistanceY = currentY
-        }
-
-        switch (anchor) {
-          case 'left':
-            // Keep original distance from left edge
-            newX = Math.max(0, Math.min(coords.current.anchorDistanceX, maxX))
-            break
-          case 'right':
-            // Keep original distance from right edge
-            const originalRightDistance = parentRect.width - targetRect.width - coords.current.anchorDistanceX
-            newX = Math.max(0, Math.min(parentRect.width - targetRect.width - originalRightDistance, maxX))
-            break
-          case 'top':
-            // Keep original distance from top edge
-            newY = Math.max(0, Math.min(coords.current.anchorDistanceY, maxY))
-            break
-          case 'bottom':
-            // Keep original distance from bottom edge
-            const originalBottomDistance = parentRect.height - targetRect.height - coords.current.anchorDistanceY
-            newY = Math.max(0, Math.min(parentRect.height - targetRect.height - originalBottomDistance, maxY))
-            break
-          case 'top-left':
-            newX = Math.max(0, Math.min(coords.current.anchorDistanceX, maxX))
-            newY = Math.max(0, Math.min(coords.current.anchorDistanceY, maxY))
-            break
-          case 'top-right':
-            const originalRightDist = parentRect.width - targetRect.width - coords.current.anchorDistanceX
-            newX = Math.max(0, Math.min(parentRect.width - targetRect.width - originalRightDist, maxX))
-            newY = Math.max(0, Math.min(coords.current.anchorDistanceY, maxY))
-            break
-          case 'bottom-left':
-            newX = Math.max(0, Math.min(coords.current.anchorDistanceX, maxX))
-            const originalBottomDist = parentRect.height - targetRect.height - coords.current.anchorDistanceY
-            newY = Math.max(0, Math.min(parentRect.height - targetRect.height - originalBottomDist, maxY))
-            break
-          case 'bottom-right':
-            const originalRightDistBR = parentRect.width - targetRect.width - coords.current.anchorDistanceX
-            const originalBottomDistBR = parentRect.height - targetRect.height - coords.current.anchorDistanceY
-            newX = Math.max(0, Math.min(parentRect.width - targetRect.width - originalRightDistBR, maxX))
-            newY = Math.max(0, Math.min(parentRect.height - targetRect.height - originalBottomDistBR, maxY))
-            break
-          case 'center':
-            // Center the element
-            newX = Math.max(0, Math.min((parentRect.width - targetRect.width) / 2, maxX))
-            newY = Math.max(0, Math.min((parentRect.height - targetRect.height) / 2, maxY))
-            break
-        }
-
-        // Update position if changed
-        if (newX !== currentX) {
-          target.style.left = `${newX}px`
-          coords.current.lastX = newX
-        }
-        if (newY !== currentY) {
-          target.style.top = `${newY}px`
-          coords.current.lastY = newY
-        }
+        maintainAnchorPosition()
       } else {
         // Constrain to parent boundaries (no anchoring)
         const constrainedX = Math.max(0, Math.min(currentX, maxX))
@@ -242,10 +294,42 @@ export const useDraggable = ({
       coords.current.lastX = target.offsetLeft
       coords.current.lastY = target.offsetTop
 
-      // Update anchor distances after manual dragging
+      // Update anchor distances after manual dragging to maintain new relative position
       if (anchor) {
-        coords.current.anchorDistanceX = target.offsetLeft
-        coords.current.anchorDistanceY = target.offsetTop
+        const parentRect = container.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+
+        switch (anchor) {
+          case 'left':
+          case 'top-left':
+          case 'bottom-left':
+            coords.current.anchorDistanceX = target.offsetLeft
+            break
+          case 'right':
+          case 'top-right':
+          case 'bottom-right':
+            coords.current.anchorDistanceX = parentRect.width - targetRect.width - target.offsetLeft
+            break
+          case 'center':
+            coords.current.anchorDistanceX = (parentRect.width - targetRect.width) / 2 - target.offsetLeft
+            break
+        }
+
+        switch (anchor) {
+          case 'top':
+          case 'top-left':
+          case 'top-right':
+            coords.current.anchorDistanceY = target.offsetTop
+            break
+          case 'bottom':
+          case 'bottom-left':
+          case 'bottom-right':
+            coords.current.anchorDistanceY = parentRect.height - targetRect.height - target.offsetTop
+            break
+          case 'center':
+            coords.current.anchorDistanceY = (parentRect.height - targetRect.height) / 2 - target.offsetTop
+            break
+        }
       }
 
       document.body.style.userSelect = 'auto'
@@ -274,7 +358,7 @@ export const useDraggable = ({
     // Resize observer to handle parent container resizing
     const resizeObserver = new ResizeObserver(() => {
       if (!isDragging.current) {
-        constrainToParent()
+        maintainAnchorPosition()
       }
     })
     resizeObserver.observe(container)
@@ -291,7 +375,7 @@ export const useDraggable = ({
       document.removeEventListener('mouseleave', onMouseUp)
       resizeObserver.disconnect()
     }
-  }, [targetId, placerId])
+  }, [targetId, placerId, anchor, targetStartX, targetStartY, topOffset])
 
   return {
     isDragging: isDragging.current,
