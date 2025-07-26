@@ -177,7 +177,7 @@ const execute = () => {
 
     _scene.fog = fog
 
-    render(renderer, _scene, camera, deltaSeconds, rendererState.usePostProcessing, csm)
+    render(renderer, _scene, camera as ArrayCamera, deltaSeconds, rendererState.usePostProcessing, csm)
   }
   onRenderEnd()
 }

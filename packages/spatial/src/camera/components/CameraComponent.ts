@@ -1,10 +1,12 @@
-import { ArrayCamera, PerspectiveCamera } from 'three'
+import { ArrayCamera, OrthographicCamera, PerspectiveCamera } from 'three'
 
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useImmediateEffect } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
+
+export type CameraComponentType = ArrayCamera | OrthographicCamera
 
 export const CameraComponent = defineComponent({
   name: 'CameraComponent',
@@ -17,8 +19,11 @@ export const CameraComponent = defineComponent({
     far: S.Number({ default: 1000 })
   }),
 
-  onInit: (entity, initial) =>
-    new ArrayCamera([new PerspectiveCamera(initial.fov, initial.aspect, initial.near, initial.far)]) as any,
+  onInit: (entity, initial): CameraComponentType => {
+    // Create a PerspectiveCamera and wrap it in an ArrayCamera
+    const perspectiveCamera = new PerspectiveCamera(initial.fov, initial.aspect, initial.near, initial.far)
+    return new ArrayCamera([perspectiveCamera])
+  },
 
   reactor: () => {
     const entity = useEntityContext()
@@ -26,7 +31,7 @@ export const CameraComponent = defineComponent({
 
     useImmediateEffect(() => {
       const camera = cameraComponent.value
-      setComponent(entity, ObjectComponent, camera)
+      setComponent(entity, ObjectComponent, camera as any)
 
       return () => {
         removeComponent(entity, ObjectComponent)

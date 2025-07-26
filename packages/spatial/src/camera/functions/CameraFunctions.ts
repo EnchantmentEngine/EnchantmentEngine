@@ -2,7 +2,7 @@ import { ComponentType, getComponent, getOptionalComponent, setComponent } from 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
 import { getState } from '@ir-engine/hyperflux'
-import { Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
+import { ArrayCamera, Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -100,7 +100,7 @@ export function setCameraFocusOnBoxFromAngle(
   const radius = boundingSphere.radius
 
   const camera = getComponent(cameraEntity, CameraComponent)
-  const fov = camera.fov * (Math.PI / 180) // convert vertical fov to radians
+  const fov = (camera as ArrayCamera).fov * (Math.PI / 180) // convert vertical fov to radians
 
   // Calculate the direction vector based on the view angle
   let direction = new Vector3()
@@ -160,7 +160,7 @@ export function setCameraFocusOnBoxFromAngle(
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
 
   // Update the view camera matrices
-  const viewCamera = camera.isArrayCamera ? camera.cameras[0] : camera
+  const viewCamera = (camera as ArrayCamera).isArrayCamera ? (camera as ArrayCamera).cameras[0] : camera
   viewCamera.matrixWorld.copy(camera.matrixWorld)
   viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
   viewCamera.projectionMatrix.copy(camera.projectionMatrix)

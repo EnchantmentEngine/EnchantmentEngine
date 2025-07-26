@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Frustum, Matrix4, Vector3 } from 'three'
+import { ArrayCamera, Frustum, Matrix4, Vector3 } from 'three'
 
 import {
   AnimationSystemGroup,
@@ -139,7 +139,7 @@ const execute = () => {
     if (xrFrame && entity === viewerEntity) continue
     const camera = getComponent(entity, CameraComponent)
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
-    const viewCamera = camera.isArrayCamera ? camera.cameras[0] : camera
+    const viewCamera = (camera as ArrayCamera).isArrayCamera ? (camera as ArrayCamera).cameras[0] : camera
     viewCamera.matrixWorld.copy(camera.matrixWorld)
     viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
     viewCamera.projectionMatrix.copy(camera.projectionMatrix)

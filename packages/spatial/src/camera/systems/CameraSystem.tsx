@@ -79,7 +79,7 @@ function CameraReactor() {
       ? (new ArrayCamera([
           new PerspectiveCamera(
             cameraSettings.fov.value,
-            camera?.value.aspect,
+            (camera?.value as ArrayCamera).aspect,
             cameraSettings.cameraNearClip.value,
             cameraSettings.cameraFarClip.value
           )
@@ -90,12 +90,12 @@ function CameraReactor() {
   useEffect(() => {
     if (!camera) return
     if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
-      if (camera.value.isOrthographicCamera) return
+      if ((camera.value as OrthographicCamera).isOrthographicCamera) return
       const altCamera = alternateCameraRef.current as OrthographicCamera
       alternateCameraRef.current = camera.get(NO_PROXY) as ArrayCamera
       camera!.set(altCamera)
     } else {
-      if (camera.value.isArrayCamera) return
+      if ((camera.value as ArrayCamera).isArrayCamera) return
       const altCamera = alternateCameraRef.current as ArrayCamera
       alternateCameraRef.current = camera.get(NO_PROXY) as OrthographicCamera
       camera!.set(altCamera)

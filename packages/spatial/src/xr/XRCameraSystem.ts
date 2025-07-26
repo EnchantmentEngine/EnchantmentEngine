@@ -130,8 +130,8 @@ function updateCameraFromXRViewerPose() {
 
   // check if it's necessary to rebuild camera list
   let cameraListNeedsUpdate = false
-  if (views.length !== camera.cameras.length) {
-    camera.cameras.length = 0
+  if (views.length !== (camera as ArrayCamera).cameras.length) {
+    ;(camera as ArrayCamera).cameras.length = 0
     cameraListNeedsUpdate = true
   }
 
@@ -181,7 +181,7 @@ function updateCameraFromXRViewerPose() {
     if (viewport) viewCamera.viewport.set(viewport.x, viewport.y, viewport.width, viewport.height)
 
     if (cameraListNeedsUpdate === true) {
-      camera.cameras.push(viewCamera)
+      ;(camera as ArrayCamera).cameras.push(viewCamera)
     }
   }
 }
@@ -202,7 +202,7 @@ export function updateXRCamera() {
   const session = xrState.session
 
   if (session === null) {
-    camera.cameras = [cameraL]
+    ;(camera as ArrayCamera).cameras = [cameraL]
     cameraL.copy(camera, false)
     const size = renderer.getDrawingBufferSize(_vec)
     cameraL.viewport.x = 0
@@ -229,7 +229,7 @@ export function updateXRCamera() {
     _currentDepthFar = camera.far
   }
 
-  updateProjectionFromCameraArrayUnion(camera)
+  updateProjectionFromCameraArrayUnion(camera as ArrayCamera)
 }
 
 const execute = () => {

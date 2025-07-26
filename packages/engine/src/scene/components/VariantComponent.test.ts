@@ -20,7 +20,7 @@ import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { InstancingComponent } from './InstancingComponent'
-import { deviceMetadataSchema, distanceMetadataSchema, Heuristic, VariantComponent } from './VariantComponent'
+import { deviceMetadataSchema, distanceMetadataSchema, VariantComponent } from './VariantComponent'
 
 const VariantComponentDefaults = {
   levels: [] as Array<{
@@ -139,7 +139,7 @@ describe('VariantComponent', () => {
     it('should render variant levels as instances when InstancingComponent is present', async () => {
       let distance = 0
       setComponent(testEntity, VariantComponent, {
-        heuristic: 'DISTANCE' as Heuristic,
+        heuristic: 'DISTANCE',
         levels: lods.map((src) => {
           const start = distance
           distance += 20

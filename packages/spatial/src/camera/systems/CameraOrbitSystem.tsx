@@ -1,4 +1,4 @@
-import { Matrix3, Spherical, Vector3 } from 'three'
+import { Matrix3, OrthographicCamera, Spherical, Vector3 } from 'three'
 
 import {
   defineSystem,
@@ -48,7 +48,7 @@ const execute = () => {
     const camera = getComponent(cameraEid, CameraComponent)
     // distance <= cameraOrbit.maximumZoomDistance.value && distance >= cameraOrbit.minimumZoomDistance.value
 
-    if (camera.isOrthographicCamera) {
+    if ((camera as OrthographicCamera).isOrthographicCamera) {
       const renderer = getComponent(cameraEid, RendererComponent)
       const canvasParent = renderer.canvas!.parentElement
       if (!canvasParent) continue
@@ -56,13 +56,14 @@ const execute = () => {
       const height = canvasParent.clientHeight
       const aspect = width / height
 
-      const heightVisible = 2 * Math.tan((DEG2RAD * getState(CameraSettingsState).fov) / 2) * distance
+      const fov = getState(CameraSettingsState).fov
+      const heightVisible = 2 * Math.tan((DEG2RAD * fov) / 2) * distance
       const widthVisible = heightVisible * aspect
 
-      camera.left = -widthVisible / 2
-      camera.right = widthVisible / 2
-      camera.top = heightVisible / 2
-      camera.bottom = -heightVisible / 2
+      ;(camera as OrthographicCamera).left = -widthVisible / 2
+      ;(camera as OrthographicCamera).right = widthVisible / 2
+      ;(camera as OrthographicCamera).top = heightVisible / 2
+      ;(camera as OrthographicCamera).bottom = -heightVisible / 2
       camera.updateProjectionMatrix()
     }
 
