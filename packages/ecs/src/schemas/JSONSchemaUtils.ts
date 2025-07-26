@@ -94,6 +94,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
       if (!validValue(value)) return value
       if (!Array.isArray(value)) return undefined
       const props = schema.properties as TArraySchema<Schema>['properties']
+      if (!props?.options?.serialized) return curr
       const _curr = curr as Array<any>
       const currentLength = _curr.length
       if (currentLength < value.length) {

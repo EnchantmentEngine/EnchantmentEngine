@@ -1,5 +1,6 @@
 import {
   defineComponent,
+  entityExists,
   hasComponent,
   setComponent,
   useComponent,
@@ -62,7 +63,7 @@ export const ColliderComponent = defineComponent({
       setComponent(entity, ColliderComponent, { hasCollider: true })
 
       return () => {
-        if (hasComponent(entity, ColliderComponent)) {
+        if (entityExists(entity) && hasComponent(entity, ColliderComponent)) {
           setComponent(entity, ColliderComponent, { hasCollider: false })
         }
         if (!physicsWorld) return

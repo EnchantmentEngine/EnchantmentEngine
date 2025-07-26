@@ -63,11 +63,11 @@ export const LoopAnimationComponent = defineComponent({
 
   reactor: function () {
     const entity = useEntityContext()
-
     const loopAnimationComponent = useComponent(entity, LoopAnimationComponent)
     const animComponent = useOptionalComponent(entity, AnimationComponent)
     const rigComponent = useOptionalComponent(entity, AvatarRigComponent)
     const lastAnimationPack = useHookstate('')
+
     useEffect(() => {
       if (!animComponent?.animations || (loopAnimationComponent.useVRM && rigComponent?.bonesToEntities.hips)) return
 
@@ -79,18 +79,18 @@ export const LoopAnimationComponent = defineComponent({
         if (animComponent.mixer) {
           animComponent.mixer.stopAllAction()
         }
-        loopAnimationComponent._action = null
+        setComponent(entity, LoopAnimationComponent, { _action: null })
         return
       }
 
       const clip = animComponent.animations[loopAnimationComponent.activeClipIndex] as AnimationClip
       if (!clip) {
-        loopAnimationComponent._action = null
+        setComponent(entity, LoopAnimationComponent, { _action: null })
         return
       }
       animComponent.mixer.time = 0
       const action = animComponent.mixer.clipAction(clip)
-      loopAnimationComponent._action = action
+      setComponent(entity, LoopAnimationComponent, { _action: action })
 
       if (!loopAnimationComponent.paused) {
         action.play()
@@ -222,7 +222,7 @@ export const LoopAnimationComponent = defineComponent({
       retargetAnimationClips(animationPackGLTF[1])
       animComponent.animations = getComponent(animationPackGLTF[1], AnimationComponent).animations
       lastAnimationPack.set(loopAnimationComponent.animationPack)
-    }, [animationPackGLTF, animComponent])
+    }, [animationPackGLTF, animComponent?.animations])
 
     useEffect(() => {
       if (!animComponent?.animations) return

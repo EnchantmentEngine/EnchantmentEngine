@@ -325,7 +325,7 @@ export const defineComponent = <
 
   Component.onRemove = () => {}
   Component.toJSON = (component: ComponentType) => {
-    if (!def.schema) return (component ?? {}) as JSON
+    if (!def.schema) return (component || {}) as JSON
     return SerializeSchema(def.schema, component) as any as JSON
   }
 
@@ -671,7 +671,8 @@ export const deserializeComponent = <C extends Component>(
 }
 
 export const serializeComponent = <C extends Component>(entity: Entity, Component: C) => {
-  return SerializeSchema(Component.schema, getComponent(entity, Component)) as ReturnType<C['toJSON']>
+  const component = getComponent(entity, Component)
+  return JSON.parse(JSON.stringify(Component.toJSON(component))) as ReturnType<C['toJSON']>
 }
 
 // use seems to be unavailable in the server environment

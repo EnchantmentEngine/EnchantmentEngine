@@ -1,6 +1,7 @@
 import { Entity, S, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
+  entityExists,
   hasComponent,
   removeComponent,
   setComponent,
@@ -129,7 +130,7 @@ const RigidBodyReactor = () => {
     setComponent(entity, RigidBodyComponent, { initialized: true })
     return () => {
       Physics.removeRigidbody(physicsWorld, entity)
-      if (!hasComponent(entity, RigidBodyComponent)) return
+      if (!entityExists(entity) || !hasComponent(entity, RigidBodyComponent)) return
       setComponent(entity, RigidBodyComponent, { initialized: false })
     }
   }, [physicsWorld])
