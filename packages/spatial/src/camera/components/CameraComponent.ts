@@ -18,19 +18,21 @@ export const CameraComponent = defineComponent({
   }),
 
   onInit: (entity, initial) =>
-    new ArrayCamera([new PerspectiveCamera(initial.fov, initial.aspect, initial.near, initial.far)]),
+    new ArrayCamera([new PerspectiveCamera(initial.fov, initial.aspect, initial.near, initial.far)]) as any,
 
   reactor: () => {
     const entity = useEntityContext()
     const cameraComponent = useComponent(entity, CameraComponent)
 
     useImmediateEffect(() => {
-      const camera = cameraComponent.value as ArrayCamera
+      const camera = cameraComponent.value
       setComponent(entity, ObjectComponent, camera)
+
       return () => {
         removeComponent(entity, ObjectComponent)
       }
-    }, [])
+    }, [cameraComponent])
+
     return null
   }
 })

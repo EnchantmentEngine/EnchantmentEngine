@@ -108,6 +108,8 @@
     ]
   },
   "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "9.26.0",
     "@ianvs/prettier-plugin-sort-imports": "4.1.0",
@@ -159,6 +161,7 @@
     "@hookstate/core": "4.0.1",
     "@swc/core": "1.7.35",
     "app-root-path": "3.1.0",
+    "buffer": "^6.0.3",
     "class-variance-authority": "0.7.1",
     "cli": "1.0.1",
     "cycle-import-check": "^1.4.0",
@@ -171,6 +174,7 @@
     "motion": "12.14.0",
     "ollama": "^0.5.16",
     "patch-package": "^8.0.0",
+    "process": "^0.11.10",
     "ts-node": "10.9.2",
     "typescript": "5.8.3"
   },

@@ -139,7 +139,7 @@ const execute = () => {
     if (xrFrame && entity === viewerEntity) continue
     const camera = getComponent(entity, CameraComponent)
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
-    const viewCamera = camera.cameras[0]
+    const viewCamera = camera.isArrayCamera ? camera.cameras[0] : camera
     viewCamera.matrixWorld.copy(camera.matrixWorld)
     viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
     viewCamera.projectionMatrix.copy(camera.projectionMatrix)

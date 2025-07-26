@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { PerspectiveCamera } from 'three'
+import React, { useEffect, useRef } from 'react'
+import { ArrayCamera, OrthographicCamera, PerspectiveCamera } from 'three'
 
 import {
   AnimationSystemGroup,
@@ -14,10 +14,11 @@ import {
   removeComponent,
   setComponent,
   useEntityContext,
+  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, none, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, NO_PROXY, none, useMutableState } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
@@ -25,8 +26,10 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 import { CameraSettingsState } from '../CameraSettingsState'
 import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
+import { CameraOrbitComponent } from '../components/CameraOrbitComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
 import { FollowCameraMode } from '../types/FollowCameraMode'
+import { ProjectionType } from '../types/ProjectionType'
 
 export const CameraEntityState = defineState({
   name: 'CameraEntityState',
@@ -68,10 +71,40 @@ const CameraEntity = (props: { entityUUID: EntityUUID }) => {
 
 function CameraReactor() {
   const cameraSettings = useMutableState(CameraSettingsState)
+  const camera = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  const cameraOrbit = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraOrbitComponent)
+
+  const alternateCameraRef = useRef<ArrayCamera | OrthographicCamera>(
+    cameraSettings.projectionType.value === ProjectionType.Orthographic
+      ? (new ArrayCamera([
+          new PerspectiveCamera(
+            cameraSettings.fov.value,
+            camera?.value.aspect,
+            cameraSettings.cameraNearClip.value,
+            cameraSettings.cameraFarClip.value
+          )
+        ]) as any)
+      : (new OrthographicCamera(-1, 1, 1, -1, camera?.value.near, camera?.value.far) as any)
+  )
+
+  useEffect(() => {
+    if (!camera) return
+    if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
+      if (camera.value.isOrthographicCamera) return
+      const altCamera = alternateCameraRef.current as OrthographicCamera
+      alternateCameraRef.current = camera.get(NO_PROXY) as ArrayCamera
+      camera!.set(altCamera)
+    } else {
+      if (camera.value.isArrayCamera) return
+      const altCamera = alternateCameraRef.current as ArrayCamera
+      alternateCameraRef.current = camera.get(NO_PROXY) as OrthographicCamera
+      camera!.set(altCamera)
+    }
+  }, [cameraSettings.projectionType])
 
   useEffect(() => {
     if (!cameraSettings?.cameraNearClip) return
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent) as PerspectiveCamera
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as PerspectiveCamera
     if (camera?.isPerspectiveCamera) {
       camera.fov = cameraSettings.fov.value
       camera.near = cameraSettings.cameraNearClip.value
