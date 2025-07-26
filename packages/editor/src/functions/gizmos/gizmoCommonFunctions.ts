@@ -4,7 +4,7 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { IntersectionData } from '@ir-engine/spatial/src/input/functions/ClientInputHeuristics'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { Object3D, Raycaster, Vector3 } from 'three'
+import { ArrayCamera, Object3D, OrthographicCamera, Raycaster, Vector3 } from 'three'
 import { EditorHelperState } from '../../services/EditorHelperState'
 
 export function intersectObjectWithRay(object: Object3D, raycaster: Raycaster, includeInvisible?: boolean) {
@@ -48,8 +48,9 @@ export function getCameraFactor(
   camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 ) {
   if (!camera) return size * multiplier
-  const factor = (camera as any).isOrthographicCamera
+  const factor = (camera as OrthographicCamera).isOrthographicCamera
     ? ((camera as any).top - (camera as any).bottom) / camera.zoom
-    : position.distanceTo(camera.position) * Math.min((1.9 * Math.tan((Math.PI * camera.fov) / 360)) / camera.zoom, 7)
+    : position.distanceTo(camera.position) *
+      Math.min((1.9 * Math.tan((Math.PI * (camera as ArrayCamera).fov) / 360)) / camera.zoom, 7)
   return factor * size * multiplier
 }

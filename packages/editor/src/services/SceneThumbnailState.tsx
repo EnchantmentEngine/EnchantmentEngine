@@ -15,6 +15,7 @@ import { defineState, getMutableState, getState, useHookstate } from '@ir-engine
 import { ReferenceSpaceState } from '@ir-engine/spatial/src/ReferenceSpaceState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { useEffect } from 'react'
+import { PerspectiveCamera } from 'three'
 import { commitProperty } from '../components/properties/Util'
 import { uploadProjectFiles } from '../functions/assetFunctions'
 import { takeScreenshot } from '../functions/takeScreenshot'
@@ -37,7 +38,14 @@ export const SceneThumbnailState = defineState({
   createThumbnail: async (width = 512, height = 320, quality = 1) => {
     const cameraEntity = getState(ReferenceSpaceState).viewerEntity
     const camera = getComponent(cameraEntity, CameraComponent)
-    const thumbnailBlob = await takeScreenshot(camera, cameraEntity, width, height, quality, 'jpeg')
+    const thumbnailBlob = await takeScreenshot(
+      camera as PerspectiveCamera,
+      cameraEntity,
+      width,
+      height,
+      quality,
+      'jpeg'
+    )
     if (!thumbnailBlob) return
     const sceneName = getState(EditorState).sceneName
     if (!sceneName) {
