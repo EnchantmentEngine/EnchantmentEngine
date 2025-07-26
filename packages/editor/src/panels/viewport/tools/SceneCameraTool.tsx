@@ -4,7 +4,7 @@ import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSetting
 import { ProjectionType } from '@ir-engine/spatial/src/camera/types/ProjectionType'
 import { Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
-import { Grid01Sm, GridDotsHorizontalCenterSm } from '@ir-engine/ui/src/icons'
+import { Grid3x3Sm, GridPerspectiveSm } from '@ir-engine/ui/src/icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -48,11 +48,7 @@ export default function SceneCameraTool() {
       <Placer id="scene-camera-tool-placer" />
       <div className="mt-2 flex flex-col overflow-hidden rounded bg-surface-3">
         <Tooltip content={tooltipText} position="left">
-          <ViewportButton
-            onClick={handleToggle}
-            selected={false}
-            icon={isOrtho ? Grid01Sm : GridDotsHorizontalCenterSm}
-          />
+          <ViewportButton onClick={handleToggle} selected={false} icon={isOrtho ? Grid3x3Sm : GridPerspectiveSm} />
         </Tooltip>
       </div>
     </div>
