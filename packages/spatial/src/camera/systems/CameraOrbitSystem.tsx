@@ -8,15 +8,17 @@ import {
   InputSystemGroup,
   query
 } from '@ir-engine/ecs'
-import { isClient } from '@ir-engine/hyperflux'
+import { getState, isClient } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { DEG2RAD } from 'three/src/math/MathUtils'
 import { InputComponent } from '../../input/components/InputComponent'
 import { InputPointerComponent } from '../../input/components/InputPointerComponent'
 import { MouseScroll } from '../../input/state/ButtonState'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { CameraSettingsState } from '../CameraSettingsState'
 
 const delta = new Vector3()
 const normalMatrix = new Matrix3()
@@ -45,6 +47,25 @@ const execute = () => {
     const distance = transform.position.distanceTo(editorCameraCenter)
     const camera = getComponent(cameraEid, CameraComponent)
     // distance <= cameraOrbit.maximumZoomDistance.value && distance >= cameraOrbit.minimumZoomDistance.value
+
+    if (camera.isOrthographicCamera) {
+      const renderer = getComponent(cameraEid, RendererComponent)
+      const canvasParent = renderer.canvas!.parentElement
+      if (!canvasParent) continue
+      const width = canvasParent.clientWidth
+      const height = canvasParent.clientHeight
+      const aspect = width / height
+
+      const heightVisible = 2 * Math.tan((DEG2RAD * getState(CameraSettingsState).fov) / 2) * distance
+      const widthVisible = heightVisible * aspect
+
+      camera.left = -widthVisible / 2
+      camera.right = widthVisible / 2
+      camera.top = heightVisible / 2
+      camera.bottom = -heightVisible / 2
+      camera.updateProjectionMatrix()
+    }
+
     if (zoom) {
       delta.set(0, 0, zoom * distance * cameraOrbit.zoomSpeed.value)
       if (delta.length() < distance) {

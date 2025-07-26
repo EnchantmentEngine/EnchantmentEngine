@@ -61,7 +61,7 @@ export const studioIconGizmoInputHeuristic = (
   if (!gizmoEnabled) return
 
   _raycaster.set(position, direction)
-  _raycaster.camera = getComponent(viewerEmtity, CameraComponent).cameras[0]
+  _raycaster.camera = getComponent(viewerEmtity, CameraComponent).camera
 
   const objects = inputObjectsQuery().map((eid) => getComponent(eid, ObjectComponent))
 
