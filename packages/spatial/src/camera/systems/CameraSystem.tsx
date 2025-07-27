@@ -10,6 +10,7 @@ import {
   getOptionalMutableComponent,
   NetworkObjectOwnedTag,
   NetworkObjectSendPeriodicUpdatesTag,
+  query,
   QueryReactor,
   removeComponent,
   setComponent,
@@ -20,7 +21,9 @@ import {
 } from '@ir-engine/ecs'
 import { defineState, getMutableState, getState, NO_PROXY, none, useMutableState } from '@ir-engine/hyperflux'
 
+import { DEG2RAD } from 'three/src/math/MathUtils'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
@@ -72,7 +75,6 @@ const CameraEntity = (props: { entityUUID: EntityUUID }) => {
 function CameraReactor() {
   const cameraSettings = useMutableState(CameraSettingsState)
   const camera = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
-  const cameraOrbit = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraOrbitComponent)
 
   const alternateCameraRef = useRef<ArrayCamera | OrthographicCamera>(
     cameraSettings.projectionType.value === ProjectionType.Orthographic
@@ -100,6 +102,7 @@ function CameraReactor() {
       alternateCameraRef.current = camera.get(NO_PROXY) as OrthographicCamera
       camera!.set(altCamera)
     }
+    camera.value.updateProjectionMatrix()
   }, [cameraSettings.projectionType])
 
   useEffect(() => {
@@ -167,9 +170,58 @@ const OwnedCameraReactor = () => {
   return null
 }
 
+const updateOrthographicCamera = (camera: OrthographicCamera, distance: number, aspect: number, fov: number) => {
+  const heightVisible = 2 * Math.tan((DEG2RAD * fov) / 2) * distance
+  const widthVisible = heightVisible * aspect
+
+  camera.left = -widthVisible / 2
+  camera.right = widthVisible / 2
+  camera.top = heightVisible / 2
+  camera.bottom = -heightVisible / 2
+}
+
+const updatePerspectiveCamera = (camera: PerspectiveCamera, aspect: number) => {
+  camera.aspect = aspect
+}
+
+const isOrthographicCamera = (camera: any): camera is OrthographicCamera => {
+  return camera && camera.isOrthographicCamera
+}
+
+const isPerspectiveCamera = (camera: any): camera is PerspectiveCamera => {
+  return camera && camera.isPerspectiveCamera
+}
+
+const execute = () => {
+  for (const cameraEid of query([RendererComponent, CameraComponent, CameraOrbitComponent])) {
+    const transform = getComponent(cameraEid, TransformComponent)
+    const cameraOrbit = getComponent(cameraEid, CameraOrbitComponent)
+    const camera = getComponent(cameraEid, CameraComponent)
+    const renderer = getComponent(cameraEid, RendererComponent)
+
+    if (!renderer.canvas?.parentElement) {
+      continue
+    }
+
+    const canvasParent = renderer.canvas.parentElement
+    const aspect = canvasParent.clientWidth / canvasParent.clientHeight
+
+    if (isOrthographicCamera(camera)) {
+      const fov = getState(CameraSettingsState).fov
+      const distance = transform.position.distanceTo(cameraOrbit.cameraOrbitCenter)
+      updateOrthographicCamera(camera, distance, aspect, fov)
+    } else if (isPerspectiveCamera(camera)) {
+      updatePerspectiveCamera(camera, aspect)
+    }
+
+    camera.updateProjectionMatrix()
+  }
+}
+
 export const CameraSystem = defineSystem({
   uuid: 'ee.engine.CameraSystem',
   insert: { with: AnimationSystemGroup },
+  execute: execute,
   reactor: () => {
     if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <CameraReactor />

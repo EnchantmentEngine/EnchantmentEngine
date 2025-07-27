@@ -35,7 +35,6 @@ export default function SceneCameraTool() {
     ? t('editor:toolbar.camera.orthographic', 'Orthographic Camera')
     : t('editor:toolbar.camera.perspective', 'Perspective Camera')
 
-  console.log('DEBUG', cameraSettings.projectionType.value, isOrtho)
   const handleToggle = () => {
     cameraSettings.projectionType.set(isOrtho ? ProjectionType.Perspective : ProjectionType.Orthographic)
   }
