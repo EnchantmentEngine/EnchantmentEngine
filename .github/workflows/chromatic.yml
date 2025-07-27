@@ -15,27 +15,42 @@ jobs:
   check-and-publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Check if Chromatic token is configured
+        id: check_token
+        run: |
+          if [ -z "${{ secrets.CHROMATIC_TOKEN }}" ]; then
+            echo "CHROMATIC_TOKEN is not configured. Skipping Chromatic deployment."
+            echo "token_available=false" >> $GITHUB_OUTPUT
+          else
+            echo "CHROMATIC_TOKEN is configured."
+            echo "token_available=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout Code
+        if: steps.check_token.outputs.token_available == 'true'
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
+        if: steps.check_token.outputs.token_available == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
       - name: Install dependencies
+        if: steps.check_token.outputs.token_available == 'true'
         run: npm i
 
       - name: Run stories check script
+        if: steps.check_token.outputs.token_available == 'true'
         id: check_stories
         run: |
           npx tsx packages/ui/scripts/check-modified-files.ts
         continue-on-error: true
 
       - name: Publish to Chromatic
-        if: steps.check_stories.outcome == 'success'
+        if: steps.check_token.outputs.token_available == 'true' && steps.check_stories.outcome == 'success'
         uses: chromaui/action@v1
         with:
           projectToken: ${{ secrets.CHROMATIC_TOKEN }}
