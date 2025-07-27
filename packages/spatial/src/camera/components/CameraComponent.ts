@@ -8,6 +8,14 @@ import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 
 export type CameraComponentType = ArrayCamera | OrthographicCamera
 
+export const isOrthographicCamera = (camera: any): camera is OrthographicCamera => {
+  return camera && camera.isOrthographicCamera
+}
+
+export const isPerspectiveCamera = (camera: any): camera is PerspectiveCamera => {
+  return camera && camera.isPerspectiveCamera
+}
+
 export const CameraComponent = defineComponent({
   name: 'CameraComponent',
   jsonID: 'EE_camera',

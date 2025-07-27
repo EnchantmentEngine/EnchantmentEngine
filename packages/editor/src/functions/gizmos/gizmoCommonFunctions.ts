@@ -1,10 +1,14 @@
 import { EngineState, getComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import {
+  CameraComponent,
+  isOrthographicCamera,
+  isPerspectiveCamera
+} from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { IntersectionData } from '@ir-engine/spatial/src/input/functions/ClientInputHeuristics'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { ArrayCamera, Object3D, OrthographicCamera, Raycaster, Vector3 } from 'three'
+import { Object3D, Raycaster, Vector3 } from 'three'
 import { EditorHelperState } from '../../services/EditorHelperState'
 
 export function intersectObjectWithRay(object: Object3D, raycaster: Raycaster, includeInvisible?: boolean) {
@@ -43,14 +47,24 @@ export function templateGizmoInputHeuristic(gizmoInputRaycast: Raycaster, gizmoO
 
 export function getCameraFactor(
   position: Vector3,
-  size,
+  size: number,
   multiplier = 0.3,
   camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 ) {
   if (!camera) return size * multiplier
-  const factor = (camera as OrthographicCamera).isOrthographicCamera
-    ? ((camera as any).top - (camera as any).bottom) / camera.zoom
-    : position.distanceTo(camera.position) *
-      Math.min((1.9 * Math.tan((Math.PI * (camera as ArrayCamera).fov) / 360)) / camera.zoom, 7)
-  return factor * size * multiplier
+
+  if (isOrthographicCamera(camera)) {
+    const factor = (camera.top - camera.bottom) / camera.zoom
+    return factor * size * multiplier
+  }
+
+  if (isPerspectiveCamera(camera)) {
+    const distance = position.distanceTo(camera.position)
+    const fovRadians = (Math.PI * camera.fov) / 360
+    const factor = distance * Math.min((1.9 * Math.tan(fovRadians)) / camera.zoom, 7)
+    return factor * size * multiplier
+  }
+
+  // Fallback for other camera types
+  return size * multiplier
 }

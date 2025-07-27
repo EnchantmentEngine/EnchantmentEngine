@@ -197,12 +197,12 @@ export function updateXRCamera() {
   const renderer = getOptionalComponent(viewerEntity, RendererComponent)?.renderer
   if (!renderer) return
 
-  const camera = getComponent(viewerEntity, CameraComponent)
+  const camera = getComponent(viewerEntity, CameraComponent) as ArrayCamera // will always be Array Camera
   const xrState = getState(XRState)
   const session = xrState.session
 
   if (session === null) {
-    ;(camera as ArrayCamera).cameras = [cameraL]
+    camera.cameras = [cameraL]
     cameraL.copy(camera, false)
     const size = renderer.getDrawingBufferSize(_vec)
     cameraL.viewport.x = 0
@@ -229,7 +229,7 @@ export function updateXRCamera() {
     _currentDepthFar = camera.far
   }
 
-  updateProjectionFromCameraArrayUnion(camera as ArrayCamera)
+  updateProjectionFromCameraArrayUnion(camera)
 }
 
 const execute = () => {

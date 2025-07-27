@@ -28,7 +28,7 @@ import { ComputedTransformComponent } from '../../transform/components/ComputedT
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
 import { CameraActions } from '../CameraState'
-import { CameraComponent } from '../components/CameraComponent'
+import { CameraComponent, isOrthographicCamera, isPerspectiveCamera } from '../components/CameraComponent'
 import { CameraOrbitComponent } from '../components/CameraOrbitComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
 import { FollowCameraMode } from '../types/FollowCameraMode'
@@ -76,28 +76,42 @@ function CameraReactor() {
   const cameraSettings = useMutableState(CameraSettingsState)
   const camera = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 
+  const getCameraAspect = () => {
+    if (!camera?.value) return 1
+    if (isPerspectiveCamera(camera.value)) return camera.value.aspect
+    return 1 // Default aspect for orthographic cameras
+  }
+
+  const getCameraNearFar = () => {
+    if (!camera?.value) return { near: 0.1, far: 2000 }
+    return { near: camera.value.near, far: camera.value.far }
+  }
+
   const alternateCameraRef = useRef<ArrayCamera | OrthographicCamera>(
     cameraSettings.projectionType.value === ProjectionType.Orthographic
       ? (new ArrayCamera([
           new PerspectiveCamera(
             cameraSettings.fov.value,
-            (camera?.value as ArrayCamera).aspect,
+            getCameraAspect(),
             cameraSettings.cameraNearClip.value,
             cameraSettings.cameraFarClip.value
           )
         ]) as any)
-      : (new OrthographicCamera(-1, 1, 1, -1, camera?.value.near, camera?.value.far) as any)
+      : (() => {
+          const { near, far } = getCameraNearFar()
+          return new OrthographicCamera(-1, 1, 1, -1, near, far) as any
+        })()
   )
 
   useEffect(() => {
     if (!camera) return
     if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
-      if ((camera.value as OrthographicCamera).isOrthographicCamera) return
+      if (isOrthographicCamera(camera.value)) return
       const altCamera = alternateCameraRef.current as OrthographicCamera
       alternateCameraRef.current = camera.get(NO_PROXY) as ArrayCamera
       camera!.set(altCamera)
     } else {
-      if ((camera.value as ArrayCamera).isArrayCamera) return
+      if (isPerspectiveCamera(camera.value)) return
       const altCamera = alternateCameraRef.current as ArrayCamera
       alternateCameraRef.current = camera.get(NO_PROXY) as OrthographicCamera
       camera!.set(altCamera)
@@ -107,8 +121,8 @@ function CameraReactor() {
 
   useEffect(() => {
     if (!cameraSettings?.cameraNearClip) return
-    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as PerspectiveCamera
-    if (camera?.isPerspectiveCamera) {
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+    if (isPerspectiveCamera(camera)) {
       camera.fov = cameraSettings.fov.value
       camera.near = cameraSettings.cameraNearClip.value
       camera.far = cameraSettings.cameraFarClip.value
@@ -182,14 +196,6 @@ const updateOrthographicCamera = (camera: OrthographicCamera, distance: number, 
 
 const updatePerspectiveCamera = (camera: PerspectiveCamera, aspect: number) => {
   camera.aspect = aspect
-}
-
-const isOrthographicCamera = (camera: any): camera is OrthographicCamera => {
-  return camera && camera.isOrthographicCamera
-}
-
-const isPerspectiveCamera = (camera: any): camera is PerspectiveCamera => {
-  return camera && camera.isPerspectiveCamera
 }
 
 const execute = () => {
