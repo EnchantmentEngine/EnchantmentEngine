@@ -1797,7 +1797,7 @@ describe('ShadowSystem', async () => {
       expect(resultSpy).toHaveBeenCalledTimes(entities.length * 3)
     })
 
-    it.only('should call RendererShadowReactor once for every entity that has a RendererComponent', async () => {
+    it('should call RendererShadowReactor once for every entity that has a RendererComponent', async () => {
       getMutableState(RendererState).useShadows.set(true)
 
       const renderSettingsEntity = createEntity()
