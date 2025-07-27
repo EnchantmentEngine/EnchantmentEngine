@@ -100,7 +100,7 @@ const AvatarPreview = ({ fill, avatarUrl, onAvatarError, onAvatarLoaded }: Props
 
   useEffect(() => {
     if (!errors) return
-    if (onAvatarError) onAvatarError(errors.value['LOADING_ERROR'])
+    if (onAvatarError) onAvatarError(errors['LOADING_ERROR'])
   }, [errors])
 
   useEffect(() => {

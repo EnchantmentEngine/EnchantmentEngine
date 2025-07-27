@@ -312,8 +312,8 @@ const ComponentReactor = (props: { gltfComponentEntity: Entity; entity: Entity; 
     dependencyArr.splice(index, 1)
     if (!dependencyArr.length) {
       delete componentDependencies![uuid]
-      setComponent(gltfComponentEntity, GLTFComponent)
     }
+    setComponent(gltfComponentEntity, GLTFComponent)
   }
 
   useEffect(() => {

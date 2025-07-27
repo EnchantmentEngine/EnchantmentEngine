@@ -149,7 +149,7 @@ export async function validateGLTFCache(url: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.warn('Error validating GLTF cache:', error)
+    // console.warn('Error validating GLTF cache:', error)
     return false
   }
 }
@@ -163,14 +163,14 @@ export async function storeGLTFMetadata(url: string, document: GLTF.IGLTF): Prom
   try {
     const hash = extractHashFromURL(url)
     if (!hash) {
-      console.warn('No hash found in GLTF URL, cannot store metadata:', url)
+      // console.warn('No hash found in GLTF URL, cannot store metadata:', url)
       return
     }
 
     const dependencies = extractGLTFDependencies(url, document)
     await ResourceCache?.putGLTFMetadata(url, hash, dependencies)
   } catch (error) {
-    console.warn('Error storing GLTF metadata:', error)
+    // console.warn('Error storing GLTF metadata:', error)
   }
 }
 
