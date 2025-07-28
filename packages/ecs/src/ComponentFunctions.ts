@@ -4,27 +4,20 @@
  */
 import * as bitECS from 'bitecs'
 import React from 'react'
-// tslint:disable:ordered-imports
-import type from 'react/experimental'
 
 import {
   DeepReadonly,
   HyperFlux,
-  Identifiable,
-  NO_PROXY_STEALTH,
-  Path,
+  None,
   ReactorRoot,
-  SetPartialStateAction,
+  SimpleStore,
   State,
-  destroy,
-  extend,
+  createSimpleStore,
   getState,
-  hookstate,
-  identifiable,
-  none,
+  hookSimpleStore,
   resolveObject,
   startReactor,
-  useHookstate
+  useSimpleStore
 } from '@ir-engine/hyperflux'
 import { ECSState } from './ECSState'
 import { Easing, EasingFunction } from './EasingFunctions'
@@ -171,7 +164,7 @@ export interface Component<
   reactor?: any
   reactorRoot?: ReactorRoot
   storage?: StorageType
-  counterMap: Record<Entity, State<number, Identifiable>>
+  counterMap: Record<Entity, SimpleStore<number>>
   valueMap: Record<Entity, ComponentType>
   errors: ErrorTypes[]
   storageSize: number
@@ -456,10 +449,7 @@ const _incrementCounter = (c: number) => c + 1
 const _getComponentCounter = <C extends Component>(entity: Entity, component: C) => {
   if (!component.counterMap[entity]) {
     const id = `${component.name}_${entity}_${componentInstanceCount++}`
-    component.counterMap[entity] = hookstate(
-      none,
-      extend(identifiable(id), () => ({}))
-    ) as State<number, Identifiable>
+    component.counterMap[entity] = createSimpleStore<number>(None, id)
   }
   return component.counterMap[entity]
 }
@@ -575,8 +565,7 @@ export const removeComponent = <C extends Component>(entity: Entity, component: 
 
   bitECS.removeComponent(HyperFlux.store, entity, component)
   component.onRemove(entity, component.valueMap[entity])
-  component.counterMap[entity].set(none)
-  destroy(component.counterMap[entity])
+  component.counterMap[entity].set(None)
   delete component.counterMap[entity]
   delete component.valueMap[entity]
 }
@@ -675,45 +664,13 @@ export const serializeComponent = <C extends Component>(entity: Entity, Componen
   return JSON.parse(JSON.stringify(Component.toJSON(component))) as ReturnType<C['toJSON']>
 }
 
-// use seems to be unavailable in the server environment
-export function _use(promise) {
-  if (promise.status === 'fulfilled') {
-    return promise.value
-  } else if (promise.status === 'rejected') {
-    throw promise.reason
-  } else if (promise.status === 'pending') {
-    throw promise
-  } else {
-    promise.status = 'pending'
-    promise.then(
-      (result) => {
-        promise.status = 'fulfilled'
-        promise.value = result
-      },
-      (reason) => {
-        promise.status = 'rejected'
-        promise.reason = reason
-      }
-    )
-    throw promise
-  }
-}
-
 /**
  * Use a component in a reactive context (a React component)
  */
 export function useComponent<C extends Component>(entity: Entity, component: C): ComponentType<C> {
   if (entity === UndefinedEntity) throw new Error('InvalidUsage: useComponent called with UndefinedEntity')
-
-  const state = _getComponentCounter(entity, component)
-
-  // use() will suspend the component (by throwing a promise) and resume when the promise is resolved
-  if (state.promise) {
-    ;(React.use ?? _use)(state.promise)
-  }
-
-  useHookstate(state).value // force the component to be reactive
-
+  const counter = _getComponentCounter(entity, component)
+  useSimpleStore(counter)
   return component.valueMap[entity]
 }
 
@@ -726,7 +683,9 @@ export function useHasComponent<C extends Component>(entity: Entity, component: 
  * Use a component in a reactive context (a React component)
  */
 export function useOptionalComponent<C extends Component>(entity: Entity, component: C): ComponentType<C> | undefined {
-  const promised = useHookstate(_getComponentCounter(entity, component)).promised
+  const counter = _getComponentCounter(entity, component)
+  hookSimpleStore(counter)
+  const promised = counter.promise
   return promised ? undefined : component.valueMap[entity]
 }
 

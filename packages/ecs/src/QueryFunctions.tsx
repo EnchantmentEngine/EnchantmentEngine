@@ -5,6 +5,7 @@ import * as bitECSLegacy from './bitecsLegacy'
 import {
   defineState,
   getMutableState,
+  hookSimpleStore,
   HyperFlux,
   ImmutableArray,
   NO_PROXY,
@@ -192,7 +193,8 @@ const QuerySubReactor = memo(
 
     const ids = [] as string[]
     for (const c of components) {
-      const id = useHookstate(c.counterMap[props.entity])?.identifier
+      hookSimpleStore(c.counterMap[props.entity])
+      const id = c.counterMap[props.entity].identifier
       if (id) ids.push(id)
     }
     const id = ids.join('_')
