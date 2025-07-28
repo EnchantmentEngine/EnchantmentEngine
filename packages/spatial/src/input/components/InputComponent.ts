@@ -203,6 +203,7 @@ export const InputComponent = defineComponent({
                 // For combo buttons, check if all buttons in the combo are available
                 const states = b.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
 
+                /** @todo we need to figure out how to distinguish when a combo matches exactly, eg CTRL+Z will fire if SHIFT is down too */
                 const isActive = states.length === b.length
 
                 if (!result && isActive) {
@@ -212,8 +213,8 @@ export const InputComponent = defineComponent({
                 }
 
                 if (result && isActive) {
-                  result.down = states.some((s) => s.down)
                   result.pressed = states.every((s) => s.pressed)
+                  result.down = states.some((s) => s.down) && result.pressed
                   result.touched = states.every((s) => s.touched)
                   result.value = Math.max(...states.map((s) => s.value))
                   result.dragging = states.some((s) => s.dragging)
