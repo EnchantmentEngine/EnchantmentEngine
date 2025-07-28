@@ -10,7 +10,7 @@ import {
   SRGBColorSpace
 } from 'three'
 
-import { Engine, entityExists, useEntityContext } from '@ir-engine/ecs'
+import { entityExists, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -19,11 +19,12 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
@@ -32,7 +33,11 @@ import { SkyTypeEnum } from '../constants/SkyTypeEnum'
 import { getRGBArray, loadCubeMapTexture } from '../constants/Util'
 import { addError, removeError } from '../functions/ErrorFunctions'
 
-const tempColor = new Color(0.65, 0.8, 1)
+// temporary logic to force solid color on iOS. We use a separate variable to keep track of this
+// so we can fall back to a sensical default value (in spite of bad serialized color data)
+// in the event the user did not set up a color themselves
+/**@todo implement smart asset LOD system to load lower resolution skybox textures on iOS */
+const forceColorFallback = iOS
 
 export const SkyboxComponent = defineComponent({
   name: 'SkyboxComponent',
@@ -62,7 +67,9 @@ export const SkyboxComponent = defineComponent({
     const skyboxState = useComponent(entity, SkyboxComponent)
     const cubemapTexture = useHookstate<undefined | CubeTexture>(undefined)
     const [texture, error] = useTexture(
-      skyboxState.backgroundType === SkyTypeEnum.equirectangular && !iOS ? skyboxState.equirectangularPath : '',
+      skyboxState.backgroundType === SkyTypeEnum.equirectangular && !forceColorFallback
+        ? skyboxState.equirectangularPath
+        : '',
       entity
     )
 
@@ -71,15 +78,6 @@ export const SkyboxComponent = defineComponent({
         if (entityExists(entity) && hasComponent(entity, BackgroundComponent))
           removeComponent(entity, BackgroundComponent)
       }
-    }, [])
-
-    const forceColorFallback = useHookstate(false)
-    useEffect(() => {
-      // temporary logic to force solid color on iOS. We use a separate variable to keep track of this
-      // so we can fall back to a sensical default value (in spite of bad serialized color data)
-      // in the event the user did not set up a color themselves
-      /**@todo implement smart asset LOD system to load lower resolution skybox textures on iOS */
-      if (iOS) forceColorFallback.set(true)
     }, [])
 
     useEffect(() => {
@@ -115,10 +113,8 @@ export const SkyboxComponent = defineComponent({
     useEffect(() => {
       if (skyboxState.backgroundType !== SkyTypeEnum.color && !forceColorFallback) return
 
-      const col =
-        forceColorFallback.value && skyboxState.backgroundType !== SkyTypeEnum.color
-          ? tempColor
-          : skyboxState.backgroundColor
+      const tempColor = new Color(0.65, 0.8, 1)
+      const col = forceColorFallback ? tempColor : skyboxState.backgroundColor
       const resolution = 64 // Min value required
       /** @todo track this in resource manager */
       const colorTexture = new DataTexture(getRGBArray(new Color(col)), resolution, resolution, RGBAFormat)
@@ -167,6 +163,7 @@ export const SkyboxComponent = defineComponent({
     }, [cubemapTexture])
 
     useEffect(() => {
+      if (skyboxState.backgroundType !== SkyTypeEnum.skybox) return
       const sky = new Sky()
       setComponent(entity, SkyboxComponent, { sky })
 
@@ -179,21 +176,21 @@ export const SkyboxComponent = defineComponent({
       sky.turbidity = skyboxState.skyboxProps.turbidity
       sky.luminance = skyboxState.skyboxProps.luminance
 
-      const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
       const generatedTexture = sky.generateSkyboxTextureCube(renderer.renderer!)
       generatedTexture.mapping = CubeReflectionMapping
       generatedTexture.generateMipmaps = false
-
       setComponent(entity, BackgroundComponent, generatedTexture)
+
       sky.dispose()
 
       return () => {
         removeComponent(entity, BackgroundComponent)
-        sky.dispose()
+        if (!entityExists(entity) || !hasComponent(entity, SkyboxComponent)) return
+        setComponent(entity, SkyboxComponent, { sky: null })
       }
     }, [
       skyboxState.backgroundType,
-      skyboxState.skyboxProps,
       skyboxState.skyboxProps.azimuth,
       skyboxState.skyboxProps.inclination,
       skyboxState.skyboxProps.mieCoefficient,
