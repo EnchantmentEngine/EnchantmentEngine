@@ -296,7 +296,6 @@ export const VideoCarousel = ({ handleSidebarOpen, videoElements, videoMediaStre
     [collapsed]
   )
   useMotionValueEvent(scrollYProgress, 'change', positionVideosWithCollapsed)
-  useMotionValueEvent(scrollYProgress, 'renderRequest', positionVideosWithCollapsed)
 
   useLayoutEffect(() => {
     if (!container.current || !videosRef.current || !numVideos) {
