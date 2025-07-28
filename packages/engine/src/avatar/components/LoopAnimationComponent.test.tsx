@@ -136,12 +136,7 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await vi.waitFor(() => GLTFComponent.isSceneLoaded(entity), { timeout: 20000 })
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
@@ -151,6 +146,7 @@ describe('LoopAnimationComponent', () => {
 
       const action = await vi.waitFor(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
+        console.log(loopAnimationComponent)
         const action = loopAnimationComponent._action
         assert(!!action)
         assert(action.isRunning())
