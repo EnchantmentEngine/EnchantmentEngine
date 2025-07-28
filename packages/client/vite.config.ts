@@ -10,6 +10,7 @@ import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
 import { EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import appRootPath from 'app-root-path'
 import { EngineSettings } from '../common/src/constants/EngineSettings'
@@ -226,8 +227,15 @@ export default defineConfig(async () => {
     optimizeDeps: {
       entries: ['./src/main.tsx'],
       include: ['@reactflow/core', '@reactflow/minimap', '@reactflow/controls', '@reactflow/background'],
+
       esbuildOptions: {
-        target: 'es2020'
+        target: 'es2020',
+        plugins: [
+          NodeGlobalsPolyfillPlugin({
+            buffer: true,
+            process: true
+          })
+        ]
       }
     },
     plugins: [
@@ -276,7 +284,12 @@ export default defineConfig(async () => {
     ].filter(Boolean),
     resolve: {
       alias: {
-        'react-json-tree': 'react-json-tree/lib/umd/react-json-tree'
+        'react-json-tree': 'react-json-tree/lib/umd/react-json-tree',
+        buffer: 'buffer',
+        process: 'process/browser',
+        stream: 'stream-browserify',
+        crypto: 'crypto-browserify',
+        util: 'util'
       }
     },
     build: {
