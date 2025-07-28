@@ -12,10 +12,10 @@ import {
 import { overrideFileLoaderLoad } from '@ir-engine/spatial/tests/util/overrideAssetLoaders'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
 
-import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { createTestGLTFEntity, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { DependencyCache } from '../../gltf/GLTFLoaderFunctions'
 import { LoopAnimationComponent } from './LoopAnimationComponent'
 
 describe('LoopAnimationComponent', () => {
@@ -28,6 +28,7 @@ describe('LoopAnimationComponent', () => {
     })
 
     afterEach(() => {
+      DependencyCache.clear()
       return destroyEngine()
     })
 
@@ -94,12 +95,7 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await vi.waitFor(() => GLTFComponent.isSceneLoaded(entity), { timeout: 20000 })
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
@@ -142,11 +138,8 @@ describe('LoopAnimationComponent', () => {
         activeClipIndex: 0
       })
 
-      await flushAll()
-
       const action = await vi.waitFor(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
-        console.log(loopAnimationComponent)
         const action = loopAnimationComponent._action
         assert(!!action)
         assert(action.isRunning())
