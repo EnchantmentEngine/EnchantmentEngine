@@ -11,7 +11,6 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill'
 import { EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import appRootPath from 'app-root-path'
 import { EngineSettings } from '../common/src/constants/EngineSettings'
@@ -235,8 +234,7 @@ export default defineConfig(async () => {
           NodeGlobalsPolyfillPlugin({
             buffer: true,
             process: true
-          }),
-          NodeModulesPolyfillPlugin()
+          })
         ]
       }
     },
