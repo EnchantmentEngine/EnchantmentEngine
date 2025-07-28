@@ -194,7 +194,7 @@ const QuerySubReactor = memo(
     const ids = [] as string[]
     for (const c of components) {
       hookSimpleStore(c.counterMap[props.entity])
-      const id = c.counterMap[props.entity].identifier
+      const id = c.counterMap[props.entity]?.identifier
       if (id) ids.push(id)
     }
     const id = ids.join('_')

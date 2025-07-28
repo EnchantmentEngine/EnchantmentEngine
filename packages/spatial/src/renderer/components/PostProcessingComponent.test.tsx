@@ -43,6 +43,7 @@ export const MockEffectProcessReactor: React.FC<EffectReactorProps<true>> = (pro
     if (!effectData[effectKey]) {
       effectData[effectKey] = effectState[effectKey].defaultValues
       setComponent(entity, PostProcessingComponent)
+      return
     }
     if (!isActive) return
     const eff = new MockEffect(effectData[effectKey])
