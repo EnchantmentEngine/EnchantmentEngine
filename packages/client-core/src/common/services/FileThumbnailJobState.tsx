@@ -529,7 +529,7 @@ const renderThumbnailFromAngle = (
       const camera = getComponent(cameraEntity, CameraComponent)
       camera.layers.set(ObjectLayers.Scene)
 
-      const viewCamera = camera.isArrayCamera ? camera.cameras[0] : camera
+      const viewCamera = camera.cameras[0]
 
       viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
       setComponent(cameraEntity, RendererComponent, { scenes: [entity, lightEntity, skyboxEntity] })
@@ -686,7 +686,7 @@ const renderThumbnail = (
     const camera = getComponent(cameraEntity, CameraComponent)
     camera.layers.set(ObjectLayers.Scene)
 
-    const viewCamera = camera.isArrayCamera ? camera.cameras[0] : camera
+    const viewCamera = camera.cameras[0]
 
     viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
 
