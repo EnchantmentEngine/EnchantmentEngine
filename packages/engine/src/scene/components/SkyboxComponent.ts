@@ -97,6 +97,11 @@ export const SkyboxComponent = defineComponent({
       texture.minFilter = LinearFilter
       texture.generateMipmaps = false
       setComponent(entity, BackgroundComponent, texture)
+      return () => {
+        if (entityExists(entity) && hasComponent(entity, BackgroundComponent)) {
+          removeComponent(entity, BackgroundComponent)
+        }
+      }
     }, [texture, skyboxState.backgroundType])
 
     useEffect(() => {
@@ -133,7 +138,9 @@ export const SkyboxComponent = defineComponent({
 
     useEffect(() => {
       if (skyboxState.backgroundType !== SkyTypeEnum.cubemap) return
+      const abortController = new AbortController()
       const onLoad = (cubeTexture: CubeTexture) => {
+        if (abortController.signal.aborted) return
         cubeTexture.colorSpace = SRGBColorSpace
         cubeTexture.mapping = CubeReflectionMapping
         cubeTexture.generateMipmaps = false
@@ -141,20 +148,11 @@ export const SkyboxComponent = defineComponent({
         setComponent(entity, BackgroundComponent, cubeTexture)
         removeError(entity, SkyboxComponent, 'FILE_ERROR')
       }
-      const loadArgs: [
-        string,
-        (texture: CubeTexture) => void,
-        ((event: ProgressEvent<EventTarget>) => void) | undefined,
-        ((event: ErrorEvent) => void) | undefined
-      ] = [
-        skyboxState.cubemapPath,
-        onLoad,
-        undefined,
-        (error) => addError(entity, SkyboxComponent, 'FILE_ERROR', error.message)
-      ]
-      /** @todo replace this with useCubemap */
-      loadCubeMapTexture(...loadArgs)
+      loadCubeMapTexture(skyboxState.cubemapPath, onLoad, undefined, (error) =>
+        addError(entity, SkyboxComponent, 'FILE_ERROR', error.message)
+      )
       return () => {
+        abortController.abort()
         removeComponent(entity, BackgroundComponent)
       }
     }, [skyboxState.backgroundType, skyboxState.cubemapPath])
@@ -169,11 +167,6 @@ export const SkyboxComponent = defineComponent({
     }, [cubemapTexture])
 
     useEffect(() => {
-      if (skyboxState.backgroundType !== SkyTypeEnum.skybox) {
-        setComponent(entity, SkyboxComponent, { sky: null })
-        return
-      }
-
       const sky = new Sky()
       setComponent(entity, SkyboxComponent, { sky })
 
@@ -193,6 +186,11 @@ export const SkyboxComponent = defineComponent({
 
       setComponent(entity, BackgroundComponent, generatedTexture)
       sky.dispose()
+
+      return () => {
+        removeComponent(entity, BackgroundComponent)
+        sky.dispose()
+      }
     }, [
       skyboxState.backgroundType,
       skyboxState.skyboxProps,

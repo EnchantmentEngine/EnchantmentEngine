@@ -213,6 +213,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
       const entitiesToUpdate = [studioIconEntity, ...directionalEntitiesState.value, ...lineEntitiesState.value]
 
       for (const entityToUpdate of entitiesToUpdate) {
+        if (!entityExists(entityToUpdate)) continue
         setVisibleComponent(entityToUpdate, visible)
       }
     }

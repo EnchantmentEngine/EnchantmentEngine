@@ -5,7 +5,6 @@ import * as bitECSLegacy from './bitecsLegacy'
 import {
   defineState,
   getMutableState,
-  hookSimpleStore,
   HyperFlux,
   ImmutableArray,
   NO_PROXY,
@@ -16,7 +15,15 @@ import {
 } from '@ir-engine/hyperflux'
 
 import { OpReturnType } from 'bitecs'
-import { Component, EntityContext, LayerComponent, LayerComponents, LayerID, Layers } from './ComponentFunctions'
+import {
+  Component,
+  EntityContext,
+  LayerComponent,
+  LayerComponents,
+  LayerID,
+  Layers,
+  useOptionalComponent
+} from './ComponentFunctions'
 import { Entity } from './Entity'
 
 export const $opType = Symbol.for('bitecs-opType')
@@ -193,7 +200,7 @@ const QuerySubReactor = memo(
 
     const ids = [] as string[]
     for (const c of components) {
-      hookSimpleStore(c.counterMap[props.entity])
+      useOptionalComponent(props.entity, c)
       const id = c.counterMap[props.entity]?.identifier
       if (id) ids.push(id)
     }
