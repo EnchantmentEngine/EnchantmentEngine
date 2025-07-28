@@ -99,7 +99,7 @@ function updateProjectionFromCameraArrayUnion(camera: ArrayCamera) {
 }
 
 function updateCameraFromXRViewerPose() {
-  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as ArrayCamera
   const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
   const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!
@@ -130,8 +130,8 @@ function updateCameraFromXRViewerPose() {
 
   // check if it's necessary to rebuild camera list
   let cameraListNeedsUpdate = false
-  if (views.length !== (camera as ArrayCamera).cameras.length) {
-    ;(camera as ArrayCamera).cameras.length = 0
+  if (views.length !== camera.cameras.length) {
+    camera.cameras.length = 0
     cameraListNeedsUpdate = true
   }
 
@@ -181,7 +181,7 @@ function updateCameraFromXRViewerPose() {
     if (viewport) viewCamera.viewport.set(viewport.x, viewport.y, viewport.width, viewport.height)
 
     if (cameraListNeedsUpdate === true) {
-      ;(camera as ArrayCamera).cameras.push(viewCamera)
+      camera.cameras.push(viewCamera)
     }
   }
 }
