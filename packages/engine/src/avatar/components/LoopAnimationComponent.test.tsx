@@ -12,6 +12,7 @@ import {
 import { overrideFileLoaderLoad } from '@ir-engine/spatial/tests/util/overrideAssetLoaders'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
 
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { createTestGLTFEntity, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
@@ -145,6 +146,8 @@ describe('LoopAnimationComponent', () => {
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
       })
+
+      await flushAll()
 
       const action = await vi.waitFor(() => {
         const loopAnimationComponent = getComponent(entity, LoopAnimationComponent)
