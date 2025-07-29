@@ -38,13 +38,12 @@ export const CameraComponent = defineComponent({
     const camera = useComponent(entity, CameraComponent)
 
     useImmediateEffect(() => {
-      const camera = cameraComponent.value
       setComponent(entity, ObjectComponent, camera as any)
 
       return () => {
         removeComponent(entity, ObjectComponent)
       }
-    }, [cameraComponent])
+    }, [camera])
 
     return null
   }
