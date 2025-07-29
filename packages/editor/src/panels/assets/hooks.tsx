@@ -45,7 +45,7 @@ export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const currentCategoryPath = useHookstate<AssetCategoryNode | undefined>(undefined)
 
   const categorySidbarWidth = useHookstate(300)
-  const previousSearchQuery = usePrevious(search.query)
+  const previousSearchQuery = usePrevious(search.query.value)
 
   const staticResourcesFindApi = (forceRefresh = false) => {
     const abortController = new AbortController()

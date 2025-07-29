@@ -1,5 +1,15 @@
-import { Engine, getComponent, getOptionalComponent, serializeComponent, setComponent } from '@ir-engine/ecs'
-import { it } from '@ir-engine/engine/src/scene/util/testUtil'
+import {
+  createEngine,
+  createEntity,
+  destroyEngine,
+  Engine,
+  Entity,
+  getComponent,
+  getOptionalComponent,
+  removeEntity,
+  serializeComponent,
+  setComponent
+} from '@ir-engine/ecs'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
@@ -12,8 +22,7 @@ import {
   SRGBColorSpace,
   Texture
 } from 'three'
-import { assert, describe, expect, vi } from 'vitest'
-import { Sky } from '../classes/Sky'
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SkyTypeEnum } from '../constants/SkyTypeEnum'
 import { SkyboxComponent } from './SkyboxComponent'
 
@@ -34,6 +43,18 @@ const SkyboxComponentDefaults = {
 }
 
 describe('SkyboxComponent', () => {
+  let entity: Entity
+
+  beforeEach(() => {
+    createEngine()
+    entity = createEntity()
+  })
+
+  afterEach(() => {
+    removeEntity(entity)
+    destroyEngine()
+  })
+
   describe('Fields', () => {
     it('should initialize the *Component.name field with the expected value', () => {
       assert.equal(SkyboxComponent.name, 'SkyboxComponent')
@@ -45,7 +66,7 @@ describe('SkyboxComponent', () => {
   })
 
   describe('onInit', () => {
-    it('should initialize the *Component with the expected default values', ({ entity }) => {
+    it('should initialize the *Component with the expected default values', () => {
       setComponent(entity, SkyboxComponent)
       const result = getComponent(entity, SkyboxComponent)
       expect(JSON.stringify(result)).toEqual(JSON.stringify(SkyboxComponentDefaults))
@@ -53,14 +74,14 @@ describe('SkyboxComponent', () => {
   })
 
   describe('toJSON', () => {
-    it("should serialize the component's default data as expected", ({ entity }) => {
+    it("should serialize the component's default data as expected", () => {
       setComponent(entity, SkyboxComponent)
 
       const result = serializeComponent(entity, SkyboxComponent)
       expect(result).toEqual(SkyboxComponentDefaults)
     })
 
-    it("should serialize the component's non-default data as expected", ({ entity }) => {
+    it("should serialize the component's non-default data as expected", () => {
       const expected: typeof SkyboxComponentDefaults = {
         ...SkyboxComponentDefaults,
         cubemapPath: '/path/to/cubemap.png'
@@ -75,7 +96,7 @@ describe('SkyboxComponent', () => {
   })
 
   describe('onSet', () => {
-    it('should change the values of an initialized SkyboxComponent', ({ entity }) => {
+    it('should change the values of an initialized SkyboxComponent', () => {
       const Expected = {
         backgroundColor: 0xff0000,
         equirectangularPath: 'path/to/equirect.jpg',
@@ -103,7 +124,7 @@ describe('SkyboxComponent', () => {
   })
 
   describe('reactor', () => {
-    it('should react to equirectangular textures', async ({ entity }) => {
+    it('should react to equirectangular textures', async () => {
       setComponent(entity, SkyboxComponent)
       const initial = getComponent(entity, SkyboxComponent)
 
@@ -125,19 +146,17 @@ describe('SkyboxComponent', () => {
       expect(background.minFilter).toEqual(LinearFilter)
     })
 
-    it('should support solid colors', async ({ entity }) => {
-      let background = getComponent(entity, BackgroundComponent) as DataTexture | undefined
-      expect(background).toBeUndefined()
+    it('should support solid colors', async () => {
+      mockSpatialEngine()
+
+      expect(getComponent(entity, BackgroundComponent)).toBeUndefined()
 
       setComponent(entity, SkyboxComponent, {
         backgroundType: SkyTypeEnum.color,
         backgroundColor: 0xffffff
       })
 
-      background = undefined
-      background = await vi.waitUntil(() => getOptionalComponent(entity, BackgroundComponent) as DataTexture)
-
-      background = background!
+      const background = await vi.waitUntil(() => getOptionalComponent(entity, BackgroundComponent) as DataTexture)
 
       expect(background.colorSpace).toBe(SRGBColorSpace)
       expect(background.mapping).toBe(EquirectangularReflectionMapping)
@@ -154,7 +173,7 @@ describe('SkyboxComponent', () => {
       expect(g).toBe(255)
     })
 
-    it.skip('should support cubemaps', async ({ entity }) => {
+    it.skip('should support cubemaps', async () => {
       setComponent(entity, SkyboxComponent, {
         backgroundType: SkyTypeEnum.cubemap,
         cubemapPath: 'https://picsum.photos/200.jpg'
@@ -164,17 +183,14 @@ describe('SkyboxComponent', () => {
       // see loadCubeMapTexture() - @ir-engine/src/scenes/constants/Util.ts
     })
 
-    it('should set Sky properties correctly when skyboxProps change', async ({ entity }) => {
+    it('should set Sky properties correctly when skyboxProps change', async () => {
       mockSpatialEngine()
-      // Create a Sky instance
-      const sky = new Sky()
 
       setComponent(Engine.instance.viewerEntity, RendererComponent)
 
       // Set initial component with default skyboxProps
       setComponent(entity, SkyboxComponent, {
         backgroundType: SkyTypeEnum.skybox,
-        sky,
         skyboxProps: {
           turbidity: 10,
           rayleigh: 1,

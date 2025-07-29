@@ -4,7 +4,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   isAncestor,
   removeComponent,
@@ -499,14 +498,14 @@ const _tempPosition = new Vector3()
 const _tempRotation = new Quaternion()
 const _tempScale = new Vector3()
 function applyRotation(gizmoEntity: Entity, pointerEntity: Entity) {
-  const gizmoControl = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
-  const axis = gizmoControl.axis.value
-  const pointStart = gizmoControl.pointerPlaneStartPosition.value
-  const pointEnd = gizmoControl.pointerPlaneEndPosition.value
-  const eye = gizmoControl.eye.value
-  const pivotEntity = gizmoControl.pivotEntity.value
-  const pivotStartPosition = gizmoControl.pivotStartPosition.value
-  const pivotStartRotation = gizmoControl.pivotStartRotation.value
+  const gizmoControl = getComponent(gizmoEntity, TransformGizmoControlComponent)
+  const axis = gizmoControl.axis
+  const pointStart = gizmoControl.pointerPlaneStartPosition
+  const pointEnd = gizmoControl.pointerPlaneEndPosition
+  const eye = gizmoControl.eye
+  const pivotEntity = gizmoControl.pivotEntity
+  const pivotStartPosition = gizmoControl.pivotStartPosition
+  const pivotStartRotation = gizmoControl.pivotStartRotation
 
   _offset.copy(pointEnd).sub(pointStart)
 
@@ -514,21 +513,19 @@ function applyRotation(gizmoEntity: Entity, pointerEntity: Entity) {
   const camera = getComponent(pointer.cameraEntity, CameraComponent)
 
   const ROTATION_SPEED =
-    20 / gizmoControl.pivotStartPosition.value.distanceTo(_tempVector.setFromMatrixPosition(camera.matrixWorld))
+    20 / gizmoControl.pivotStartPosition.distanceTo(_tempVector.setFromMatrixPosition(camera.matrixWorld))
 
   let _inPlaneRotation = false
 
   if (axis === TransformAxis.XYZE) {
     _tempVector.copy(_offset).cross(eye).normalize()
     _tempVector.applyQuaternion(pivotStartRotation)
-    gizmoControl.rotationAxis.value.copy(_tempVector)
-    gizmoControl.rotationAngle.set(
-      _offset.dot(_tempVector.copy(gizmoControl.rotationAxis.value).cross(eye)) * ROTATION_SPEED
-    )
+    gizmoControl.rotationAxis.copy(_tempVector)
+    gizmoControl.rotationAngle = _offset.dot(_tempVector.copy(gizmoControl.rotationAxis).cross(eye)) * ROTATION_SPEED
   } else if (axis === TransformAxis.X || axis === TransformAxis.Y || axis === TransformAxis.Z) {
     _tempVector.copy(Axis[axis])
     _tempVector.applyQuaternion(pivotStartRotation)
-    gizmoControl.rotationAxis.set(_tempVector.clone())
+    gizmoControl.rotationAxis.copy(_tempVector)
 
     _tempVector.cross(eye)
 
@@ -536,34 +533,33 @@ function applyRotation(gizmoEntity: Entity, pointerEntity: Entity) {
     if (_tempVector.length() === 0) {
       _inPlaneRotation = true
     } else {
-      gizmoControl.rotationAngle.set(_offset.dot(_tempVector.normalize()) * ROTATION_SPEED)
+      gizmoControl.rotationAngle = _offset.dot(_tempVector.normalize()) * ROTATION_SPEED
     }
   }
 
   if (axis === TransformAxis.E || _inPlaneRotation) {
-    gizmoControl.rotationAxis.set(eye)
-    gizmoControl.rotationAngle.set(pointEnd.angleTo(pointStart))
+    gizmoControl.rotationAxis.copy(eye)
+    gizmoControl.rotationAngle = pointEnd.angleTo(pointStart)
 
     _startNorm.copy(pointStart).normalize()
     _endNorm.copy(pointEnd).normalize()
 
-    gizmoControl.rotationAngle.set((v) => v * (_endNorm.cross(_startNorm).dot(eye) < 0 ? 1 : -1))
+    gizmoControl.rotationAngle *= _endNorm.cross(_startNorm).dot(eye) < 0 ? 1 : -1
   }
 
   // Apply rotation snap
 
-  if (gizmoControl.rotationSnap.value)
-    gizmoControl.rotationAngle.set(
-      Math.round(gizmoControl.rotationAngle.value / gizmoControl.rotationSnap.value) * gizmoControl.rotationSnap.value
-    )
+  if (gizmoControl.rotationSnap)
+    gizmoControl.rotationAngle =
+      Math.round(gizmoControl.rotationAngle / gizmoControl.rotationSnap) * gizmoControl.rotationSnap
 
   const rotMatrix = _rotMatrix.makeRotationFromQuaternion(
-    _tempQuaternion.setFromAxisAngle(gizmoControl.rotationAxis.value, gizmoControl.rotationAngle.value)
+    _tempQuaternion.setFromAxisAngle(gizmoControl.rotationAxis, gizmoControl.rotationAngle)
   )
   const pivotTranslation = _pivotTranslation.makeTranslation(pivotStartPosition)
   const pivotTranslationInv = _pivotTranslationInv.copy(pivotTranslation).invert()
 
-  for (const eid of [pivotEntity, ...gizmoControl.controlledEntities.value]) {
+  for (const eid of [pivotEntity, ...gizmoControl.controlledEntities]) {
     if (EntityHierarchyLockState.isEntityLocked(eid)) continue
     const worldMatrix = _targetStartWorldTransforms.get(eid)!
     const newWorldMatrix = _tempMatrix
@@ -579,22 +575,22 @@ function applyRotation(gizmoEntity: Entity, pointerEntity: Entity) {
 }
 
 export function onPointerHover(gizmoEntity: Entity, pointerEntities: Entity[]) {
-  const gizmoControl = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
-  if (gizmoControl.dragging.value === true) return
-  const gizmoVisual = getComponent(gizmoControl.visualEntity.value, TransformGizmoVisualComponent)
+  const gizmoControl = getComponent(gizmoEntity, TransformGizmoControlComponent)
+  if (gizmoControl.dragging === true) return
+  const gizmoVisual = getComponent(gizmoControl.visualEntity, TransformGizmoVisualComponent)
 
   for (const pointerEntity of pointerEntities) {
     const intersections = getComponent(pointerEntity, InputSourceComponent).intersections
     for (const intersection of intersections) {
       if (isAncestor(gizmoVisual.picker, intersection.entity)) {
         const axis = getComponent(intersection.entity, NameComponent)
-        gizmoControl.axis.set(axis as keyof typeof TransformAxis)
+        setComponent(gizmoEntity, TransformGizmoControlComponent, { axis: axis as keyof typeof TransformAxis })
         return
       }
     }
   }
 
-  gizmoControl.axis.set(null)
+  setComponent(gizmoEntity, TransformGizmoControlComponent, { axis: null })
 }
 
 const _targetStartWorldTransforms = new Map<Entity, Matrix4>()
@@ -602,22 +598,23 @@ const _targetStartWorldTransforms = new Map<Entity, Matrix4>()
 export function onPointerDown(gizmoEntity: Entity, pointerEntity: Entity) {
   // TODO support gizmos in multiple viewports
   // (we will need to maintain separate gizmo visuals for each viewport)
-  const gizmoControl = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
+  const gizmoControl = getComponent(gizmoEntity, TransformGizmoControlComponent)
   const planeIntersect = getPointerPlaneIntersect(gizmoEntity, pointerEntity)
   if (!planeIntersect) return
-  const pivotEntity = gizmoControl.pivotEntity.value
+  const pivotEntity = gizmoControl.pivotEntity
   const transform = getComponent(pivotEntity, TransformComponent)
-  gizmoControl.pivotStartPosition.set(transform.position.clone())
-  gizmoControl.pivotStartRotation.set(transform.rotation.clone())
-  gizmoControl.pointerPlaneStartPosition.set(planeIntersect.point.clone().sub(gizmoControl.pivotStartPosition.value))
-  gizmoControl.pointerPlaneEndPosition.set(planeIntersect.point.clone().sub(gizmoControl.pivotStartPosition.value))
+  gizmoControl.pivotStartPosition = transform.position.clone()
+  gizmoControl.pivotStartRotation = transform.rotation.clone()
+  gizmoControl.pointerPlaneStartPosition = planeIntersect.point.clone().sub(gizmoControl.pivotStartPosition)
+  gizmoControl.pointerPlaneEndPosition = planeIntersect.point.clone().sub(gizmoControl.pivotStartPosition)
   _targetStartWorldTransforms.clear()
   _targetStartWorldTransforms.set(pivotEntity, transform.matrixWorld.clone())
-  for (const cEntity of gizmoControl.controlledEntities.value) {
+  for (const cEntity of gizmoControl.controlledEntities) {
     const cTransform = getComponent(cEntity, TransformComponent)
     _targetStartWorldTransforms.set(cEntity, cTransform.matrixWorld.clone())
   }
-  gizmoControl.dragging.set(true)
+  gizmoControl.dragging = true
+  setComponent(gizmoEntity, TransformGizmoControlComponent)
 }
 
 export function onPointerDrag(gizmoEntity: Entity, pointerEntity: Entity) {
@@ -640,26 +637,22 @@ export function onPointerDrag(gizmoEntity: Entity, pointerEntity: Entity) {
 }
 
 export function onPointerUp(gizmoEntity: Entity, pointerEntity: Entity) {
-  const gizmoControl = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
-  const pointStart = gizmoControl.pointerPlaneStartPosition.value
-  const pointEnd = gizmoControl.pointerPlaneEndPosition.value
+  const gizmoControl = getComponent(gizmoEntity, TransformGizmoControlComponent)
+  const pointStart = gizmoControl.pointerPlaneStartPosition
+  const pointEnd = gizmoControl.pointerPlaneEndPosition
   _offset.copy(pointEnd).sub(pointStart)
   const didMove = _offset.length() > 0.0001
-  gizmoControl.dragging.set(false)
-  gizmoControl.axis.set(null)
-  removeComponent(gizmoControl.planeEntity.value, VisibleComponent)
+  gizmoControl.dragging = false
+  gizmoControl.axis = null
+  removeComponent(gizmoControl.planeEntity, VisibleComponent)
   if (!didMove) {
     const pointer = getComponent(pointerEntity, InputPointerComponent)
     if (hasComponent(pointer.cameraEntity, CameraOrbitComponent)) {
-      CameraOrbitComponent.setFocus(
-        pointer.cameraEntity,
-        gizmoControl.pivotStartPosition.value,
-        gizmoControl.pivotBounds.value
-      )
+      CameraOrbitComponent.setFocus(pointer.cameraEntity, gizmoControl.pivotStartPosition, gizmoControl.pivotBounds)
     }
   } else {
     if (getState(ObjectGridSnapState).enabled) ObjectGridSnapState.apply()
-    AuthoringState.snapshotEntities(gizmoControl.controlledEntities.value as Entity[])
+    AuthoringState.snapshotEntities(gizmoControl.controlledEntities)
   }
 }
 

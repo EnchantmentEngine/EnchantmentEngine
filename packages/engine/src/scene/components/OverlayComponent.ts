@@ -39,10 +39,10 @@ export const OverlayComponent = defineComponent({
 
     useEffect(() => {
       clearErrors(entity, OverlayComponent)
-      if (overlayComponent.src.value) return
-      if (overlayComponent.type.value !== 'iframe') return
+      if (overlayComponent.src) return
+      if (overlayComponent.type !== 'iframe') return
       try {
-        new URL(overlayComponent.src.value)
+        new URL(overlayComponent.src)
       } catch {
         return addError(entity, OverlayComponent, 'INVALID_URL', 'Please enter a valid URL.')
       }

@@ -1,4 +1,4 @@
-import { NO_PROXY, none, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { NO_PROXY, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import * as bitECS from 'bitecs'
 import React, { useEffect } from 'react'
 import {
@@ -7,9 +7,7 @@ import {
   defineComponent,
   entityExists,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   hasComponents,
   LayerComponents,
@@ -67,67 +65,59 @@ export const EntityTreeComponent = defineComponent({
       throw new Error('Entity cannot be its own parent: ' + entity)
     }
 
-    const currentParentEntity = component.parentEntity.value
+    const currentParentEntity = component.parentEntity
     // If a previous parentEntity, remove this entity from its children
     if (currentParentEntity && currentParentEntity !== json.parentEntity) {
       if (entityExists(currentParentEntity)) {
-        const oldParent = getOptionalMutableComponent(currentParentEntity, EntityTreeComponent)
+        const oldParent = getComponent(currentParentEntity, EntityTreeComponent)
         if (oldParent) {
-          const parentChildIndex = oldParent.children.value.findIndex((child) => child === entity)
-          const children = oldParent.children.get(NO_PROXY)
-          oldParent.children.set([...children.slice(0, parentChildIndex), ...children.slice(parentChildIndex + 1)])
+          const parentChildIndex = oldParent.children.findIndex((child) => child === entity)
+          oldParent.children.splice(parentChildIndex, 1)
         }
       }
     }
     // set new data
     if (typeof json.parentEntity !== 'undefined') {
-      component.parentEntity.set(json.parentEntity)
+      component.parentEntity = json.parentEntity
     }
 
-    const parentEntity = component.parentEntity.value
+    const parentEntity = component.parentEntity
 
     if (parentEntity && entityExists(parentEntity)) {
       if (!hasComponent(parentEntity, EntityTreeComponent)) setComponent(parentEntity, EntityTreeComponent)
 
-      const parentState = getMutableComponent(parentEntity, EntityTreeComponent)
+      const parentState = getComponent(parentEntity, EntityTreeComponent)
       const parent = getComponent(parentEntity, EntityTreeComponent)
 
       const prevChildIndex = parent.children.indexOf(entity)
       const isDifferentIndex = typeof json.childIndex === 'number' ? prevChildIndex !== json.childIndex : false
 
       if (isDifferentIndex && prevChildIndex !== -1) {
-        parentState.children.set((prevChildren) => [
-          ...prevChildren.slice(0, prevChildIndex),
-          ...prevChildren.slice(prevChildIndex + 1)
-        ])
+        parentState.children.splice(prevChildIndex, 1)
       }
 
       if (isDifferentIndex || prevChildIndex === -1) {
         if (typeof json.childIndex !== 'undefined') {
           const childIndex =
             parentState.children.length > json.childIndex ? json.childIndex : parentState.children.length
-          parentState.children.set((prevChildren) => [
-            ...prevChildren.slice(0, childIndex),
-            entity,
-            ...prevChildren.slice(childIndex)
-          ])
+          parentState.children.splice(childIndex, 0, entity)
         } else {
-          parentState.children.set([...parent.children, entity])
+          parentState.children.push(entity)
         }
       }
 
-      component.childIndex.set(parent.children.indexOf(entity))
+      component.childIndex = parent.children.indexOf(entity)
     }
   },
 
   onRemove: (entity, component) => {
-    const parentEntity = component.parentEntity.value
+    const parentEntity = component.parentEntity
     if (parentEntity && entityExists(parentEntity)) {
       if (hasComponent(parentEntity, EntityTreeComponent)) {
-        const parentState = getMutableComponent(parentEntity, EntityTreeComponent)
+        const parentState = getComponent(parentEntity, EntityTreeComponent)
         const parent = getComponent(parentEntity, EntityTreeComponent)
         const parentChildIndex = parent.children.findIndex((child) => child === entity)
-        if (parentChildIndex > -1) parentState.children[parentChildIndex].set(none)
+        if (parentChildIndex > -1) parentState.children.splice(parentChildIndex, 1)
       }
     }
   }
@@ -410,13 +400,13 @@ export function useAncestorWithComponents(
       const matchesQuery = useHasComponents(props.entity, components)
       useImmediateEffect(() => {
         if (!unmounted) forceUpdate()
-      }, [tree?.parentEntity?.value, matchesQuery])
+      }, [tree?.parentEntity, matchesQuery])
       if (matchesQuery && closest) return null
-      if (!tree?.parentEntity?.value) return null
-      return <ParentSubReactor key={tree.parentEntity.value} entity={tree.parentEntity.value} />
+      if (!tree?.parentEntity) return null
+      return <ParentSubReactor key={tree.parentEntity} entity={tree.parentEntity} />
     })
 
-    const startEntity = includeSelf ? entity : parentEntity?.value ?? UndefinedEntity
+    const startEntity = includeSelf ? entity : parentEntity ?? UndefinedEntity
 
     const root = startEntity
       ? startReactor(
@@ -431,7 +421,7 @@ export function useAncestorWithComponents(
       unmounted = true
       root?.stop()
     }
-  }, [entity, componentsString, includeSelf, parentEntity?.value])
+  }, [entity, componentsString, includeSelf, parentEntity])
 
   return result
 }
@@ -465,18 +455,18 @@ export function useAncestorTree(entity: Entity) {
       useEffect(() => {
         if (!tree) return
         // capture value to use in the cleanup function to prevent errors
-        const parentEntityValue = tree.parentEntity.value
+        const parentEntity = tree.parentEntity
         ancestors.set((prev) => {
-          if (prev.indexOf(parentEntityValue) < 0) prev.push(parentEntityValue)
+          if (prev.indexOf(parentEntity) < 0) prev.push(parentEntity)
           return prev
         })
         return () => {
           if (unmounted) return
-          ancestors.set((prev) => prev.filter((e) => e !== parentEntityValue))
+          ancestors.set((prev) => prev.filter((e) => e !== parentEntity))
         }
-      }, [tree?.parentEntity?.value])
-      if (!tree?.parentEntity?.value) return null
-      return <ParentSubReactor key={tree.parentEntity.value} entity={tree.parentEntity.value} />
+      }, [tree?.parentEntity])
+      if (!tree?.parentEntity) return null
+      return <ParentSubReactor key={tree.parentEntity} entity={tree.parentEntity} />
     })
 
     const root = startReactor(function useQueryReactor() {

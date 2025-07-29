@@ -42,22 +42,22 @@ export const CameraGizmoVisualComponent = defineComponent({
       setComponent(gizmo, CameraGizmoTagComponent)
       setComponent(gizmo, VisibleComponent)
       setComponent(gizmo, EntityTreeComponent, {
-        parentEntity: visualComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: visualComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
       setupGizmo(gizmo, cameraGizmo, ObjectLayers.Scene)
 
-      visualComponent.gizmo.set(gizmo)
+      setComponent(cameraGizmoVisualEntity, CameraGizmoVisualComponent, { gizmo })
 
       setComponent(picker, ObjectComponent, new Object3D())
       setComponent(picker, NameComponent, `cameraGizmoPickerMeshEntity`)
       setComponent(picker, CameraGizmoTagComponent)
       setComponent(picker, VisibleComponent)
       setComponent(picker, EntityTreeComponent, {
-        parentEntity: visualComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: visualComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
       setupGizmo(picker, cameraPicker, ObjectLayers.Scene)
 
-      visualComponent.picker.set(picker)
+      setComponent(cameraGizmoVisualEntity, CameraGizmoVisualComponent, { picker })
 
       setComponent(picker, InputComponent)
 

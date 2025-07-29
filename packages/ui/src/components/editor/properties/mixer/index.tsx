@@ -106,7 +106,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
   }
 
   // Get current entries for display
-  const entries = mixerComponent.entries.value as [number, Record<string, number[]>][]
+  const entries = mixerComponent.entries as [number, Record<string, number[]>][]
   const sortedEntries = [...entries].sort((a, b) => a[0] - b[0])
 
   const newPropertyEntity = UUIDComponent.getEntityFromSameSourceByID(
@@ -137,7 +137,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
       {/* Current Coordinate */}
       <InputGroup name="Coordinate" label={t('editor:properties.mixer.coordinate', 'Current Coordinate')}>
         <NumericInput
-          value={mixerComponent.coord.value}
+          value={mixerComponent.coord}
           onChange={updateProperty(MixerComponent, 'coord')}
           onRelease={commitProperty(MixerComponent, 'coord')}
           smallStep={0.1}
@@ -180,9 +180,9 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
           </div>
 
           {/* Property list */}
-          {mixerComponent.properties.value.length > 0 && (
+          {mixerComponent.properties.length > 0 && (
             <div className="space-y-1">
-              {mixerComponent.properties.value.map((property, index) => (
+              {mixerComponent.properties.map((property, index) => (
                 <div key={index} className="flex w-full items-center gap-2">
                   {property.address}
                   <Button onClick={() => removeProperty(index)} variant="secondary">
@@ -258,7 +258,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
         >
           <div className="space-y-2">
             {/* Property Value Inputs */}
-            {mixerComponent.properties.value.map((property) => {
+            {mixerComponent.properties.map((property) => {
               const propertyAddress = property.address
               const currentEntry = MixerComponent.getEntry(mixerEntity, selectedEntryCoord.value!)!
               const currentValue = currentEntry[propertyAddress]!

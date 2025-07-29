@@ -1,4 +1,4 @@
-import { getComponent, getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineActionQueue } from '@ir-engine/hyperflux'
@@ -17,9 +17,9 @@ const execute = () => {
 
   for (const action of vpsAnchorFoundQueue()) {
     for (const entity of anchors) {
-      const anchor = getMutableComponent(entity, PersistentAnchorComponent)
-      if (anchor.name.value === action.name) {
-        anchor.active.set(true)
+      const anchor = getComponent(entity, PersistentAnchorComponent)
+      if (anchor.name === action.name) {
+        anchor.active = true
         const transform = getComponent(entity, TransformComponent)
         transform.position.copy(action.position)
         transform.rotation.copy(action.rotation)
@@ -29,8 +29,8 @@ const execute = () => {
 
   for (const action of vpsAnchorUpdatedQueue()) {
     for (const entity of anchors) {
-      const anchor = getMutableComponent(entity, PersistentAnchorComponent)
-      if (anchor.name.value === action.name) {
+      const anchor = getComponent(entity, PersistentAnchorComponent)
+      if (anchor.name === action.name) {
         const transform = getComponent(entity, TransformComponent)
         transform.position.copy(action.position)
         transform.rotation.copy(action.rotation)
@@ -40,8 +40,8 @@ const execute = () => {
 
   for (const action of vpsAnchorLostQueue()) {
     for (const entity of anchors) {
-      const anchor = getMutableComponent(entity, PersistentAnchorComponent)
-      if (anchor.name.value === action.name) anchor.active.set(false)
+      const anchor = getComponent(entity, PersistentAnchorComponent)
+      if (anchor.name === action.name) anchor.active = false
     }
   }
 }

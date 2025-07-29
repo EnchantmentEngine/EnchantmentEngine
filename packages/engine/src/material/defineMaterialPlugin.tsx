@@ -18,7 +18,7 @@ import {
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { useEffect } from 'react'
-import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
+import { Color, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
 
 /**
  * A JSON Schema for a texture uniform.
@@ -91,9 +91,9 @@ export const defineMaterialPlugin = <T extends Schema>({
 
     reactor: ({ entity }) => {
       /** Suspend context until material exists */
-      const material = useComponent(entity, MaterialStateComponent).material.value as Material
+      const material = useComponent(entity, MaterialStateComponent).material
 
-      const pluginState = useComponent(entity, PluginComponent).get(NO_PROXY) as UniformRecord
+      const pluginState = useComponent(entity, PluginComponent) as UniformRecord
 
       const textureUniformState = useHookstate(
         () =>

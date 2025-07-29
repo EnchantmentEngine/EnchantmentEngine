@@ -69,14 +69,14 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={animationOptions.value as OptionType[]}
-          value={loopAnimationComponent.value.activeClipIndex}
+          value={loopAnimationComponent.activeClipIndex}
           onChange={onChangePlayingAnimation}
         />
       </InputGroup>
       {avatarRigComponent != null && (
         <InputGroup name="Animation Pack" label={t('editor:properties.loopAnimation.lbl-animationPack')}>
           <ModelInput
-            value={loopAnimationComponent.animationPack.value}
+            value={loopAnimationComponent.animationPack}
             onRelease={commitProperty(LoopAnimationComponent, 'animationPack')}
           />
           {errors?.LOADING_ERROR && (
@@ -86,7 +86,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
       )}
       <InputGroup name="Time Scale" label={t('editor:properties.loopAnimation.lbl-timeScale')}>
         <NumericInput
-          value={loopAnimationComponent.timeScale.value}
+          value={loopAnimationComponent.timeScale}
           onChange={updateProperty(LoopAnimationComponent, 'timeScale')}
           onRelease={commitProperty(LoopAnimationComponent, 'timeScale')}
         />
@@ -94,16 +94,13 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
       {canConvert && (
         <InputGroup name="Use VRM" label={t('editor:properties.loopAnimation.lbl-useVRM')}>
           <Checkbox
-            checked={loopAnimationComponent.useVRM.value}
+            checked={loopAnimationComponent.useVRM}
             onChange={commitProperty(LoopAnimationComponent, 'useVRM')}
           />
         </InputGroup>
       )}
       <InputGroup name="Paused" label={t('editor:properties.loopAnimation.lbl-paused')}>
-        <Checkbox
-          checked={loopAnimationComponent.paused.value}
-          onChange={commitProperty(LoopAnimationComponent, 'paused')}
-        />
+        <Checkbox checked={loopAnimationComponent.paused} onChange={commitProperty(LoopAnimationComponent, 'paused')} />
       </InputGroup>
       <InputGroup name="Loop" label={t('editor:properties.loopAnimation.lbl-loop')}>
         <SelectInput
@@ -112,7 +109,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
             { label: 'Repeat', value: LoopRepeat },
             { label: 'Ping Pong', value: LoopPingPong }
           ]}
-          value={loopAnimationComponent.loop.value}
+          value={loopAnimationComponent.loop}
           onChange={commitProperty(LoopAnimationComponent, 'loop')}
         />
       </InputGroup>

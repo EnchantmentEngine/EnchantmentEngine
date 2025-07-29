@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
@@ -105,8 +105,12 @@ export const CameraSettingsComponent = defineComponent({
     }
 
     useEffect(() => {
-      if (component.poiScrollTransitionType.value === PoiScrollTransition.Scrolling) {
-        component.enableTransitionButtons.set(false)
+      if (component.poiScrollTransitionType === PoiScrollTransition.Scrolling) {
+        setComponent(
+          entity,
+          CameraSettingsComponent,
+          { enableTransitionButtons: false } // Enable transition buttons for scrolling
+        )
       }
     }, [component.poiScrollTransitionType])
 

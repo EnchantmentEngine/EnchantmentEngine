@@ -13,7 +13,6 @@ import {
   EntityTreeComponent,
   EntityUUID,
   EntityUUIDPair,
-  getMutableComponent,
   removeEntity,
   setComponent,
   SourceID,
@@ -111,9 +110,8 @@ describe('ClientInputHeuristics', () => {
         const box = new Box3(boxMin, boxMax)
 
         setComponent(testEntity, VisibleComponent)
-        setComponent(testEntity, BoundingBoxComponent)
+        setComponent(testEntity, BoundingBoxComponent, { box })
         setComponent(testEntity, InputComponent)
-        getMutableComponent(testEntity, BoundingBoxComponent).box.set(box)
 
         const rayOrigin = new Vector3(0, 2, 2)
         const rayDirection = new Vector3(1, 0, 0).normalize()
@@ -146,9 +144,8 @@ describe('ClientInputHeuristics', () => {
 
         for (const box of boxes) {
           setComponent(box.entity, VisibleComponent)
-          setComponent(box.entity, BoundingBoxComponent)
+          setComponent(box.entity, BoundingBoxComponent, { box: box.box })
           setComponent(box.entity, InputComponent)
-          getMutableComponent(box.entity, BoundingBoxComponent).box.set(box.box)
         }
 
         const rayOrigin = new Vector3()

@@ -11,7 +11,6 @@ import {
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
-import { UndefinedEntity } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
@@ -46,12 +45,12 @@ export const CameraGizmoComponent = defineComponent({
   reactor: function (props) {
     const entity = useEntityContext()
     const cameraGizmoComponent = useComponent(entity, CameraGizmoComponent)
-    const inputPointerEntities = InputPointerComponent.usePointersForCamera(cameraGizmoComponent.cameraEntity.value)
+    const inputPointerEntities = InputPointerComponent.usePointersForCamera(cameraGizmoComponent.cameraEntity)
 
     useEffect(() => {
       const gizmoVisualEntity = createEntity()
       setComponent(gizmoVisualEntity, EntityTreeComponent, {
-        parentEntity: cameraGizmoComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: cameraGizmoComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
 
       setComponent(entity, NameComponent, 'cameraGizmoEntity')
@@ -60,26 +59,20 @@ export const CameraGizmoComponent = defineComponent({
 
       setComponent(gizmoVisualEntity, NameComponent, 'cameraGizmoVisualEntity')
       setComponent(gizmoVisualEntity, CameraGizmoVisualComponent, {
-        sceneEntity: cameraGizmoComponent.sceneEntity.value
+        sceneEntity: cameraGizmoComponent.sceneEntity
       })
       setComponent(gizmoVisualEntity, CameraGizmoTagComponent)
       setComponent(gizmoVisualEntity, VisibleComponent)
 
-      cameraGizmoComponent.visualEntity.set(gizmoVisualEntity)
+      setComponent(entity, CameraGizmoComponent, { visualEntity: gizmoVisualEntity })
       return () => {
         removeComponent(gizmoVisualEntity, CameraGizmoVisualComponent)
         removeEntity(gizmoVisualEntity)
-        cameraGizmoComponent.visualEntity.set(UndefinedEntity)
       }
     }, [])
 
     useImmediateEffect(() => {
-      if (
-        !cameraGizmoComponent.enabled.value ||
-        !cameraGizmoComponent.visualEntity.value ||
-        inputPointerEntities.length
-      )
-        return
+      if (!cameraGizmoComponent.enabled || !cameraGizmoComponent.visualEntity || inputPointerEntities.length) return
 
       onGizmoCommit(entity)
     }, [inputPointerEntities])

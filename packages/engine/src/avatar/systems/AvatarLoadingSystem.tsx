@@ -70,7 +70,7 @@ const AvatarPendingReactor = () => {
   const gltf = useComponent(entity, GLTFComponent)
 
   useEffect(() => {
-    if (gltf.progress.value === 100) return
+    if (gltf.progress === 100) return
 
     const loadingEffect = !getState(XRState).sessionActive && !iOS
 
@@ -88,7 +88,7 @@ const AvatarPendingReactor = () => {
     return () => {
       SpawnEffectComponent.fadeOut(effectEntity)
     }
-  }, [gltf.progress.value])
+  }, [gltf.progress])
 
   return null
 }

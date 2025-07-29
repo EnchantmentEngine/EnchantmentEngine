@@ -52,7 +52,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(gizmoEntity, VisibleComponent)
       setupGizmo(gizmoEntity, gizmo[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(gizmoEntity, ObjectLayers.TransformGizmo)
-      visualComponent.gizmo.set(gizmoEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { gizmo: gizmoEntity })
       entities.push(gizmoEntity)
 
       const helperEntity = createEntity()
@@ -64,7 +64,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(helperEntity, TransformComponent)
       setupGizmo(helperEntity, helper[mode], ObjectLayers.TransformGizmo)
       setupGizmo(helperEntity, iconGizmoHelper, ObjectLayers.NodeHelper)
-      visualComponent.helper.set(helperEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { helper: helperEntity })
       entities.push(helperEntity)
 
       const pickerEntity = createEntity()
@@ -77,7 +77,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(pickerEntity, InputComponent)
       setupGizmo(pickerEntity, picker[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(pickerEntity, ObjectLayers.TransformGizmo)
-      visualComponent.picker.set(pickerEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { picker: pickerEntity })
       entities.push(pickerEntity)
 
       return () => {

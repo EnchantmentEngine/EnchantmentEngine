@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, setComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, matchesEntityUUID } from '@ir-engine/ecs/src/Entity'
 import { defineAction, dispatchAction, getState, isClient, matches } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
@@ -42,10 +42,10 @@ export const GrabbableComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      interactableComponent.uiVisibilityOverride.set(
-        isGrabbed ? XRUIVisibilityOverride.off : XRUIVisibilityOverride.none
-      )
-    }, [isGrabbed, !!interactableComponent])
+      setComponent(entity, InteractableComponent, {
+        uiVisibilityOverride: isGrabbed ? XRUIVisibilityOverride.off : XRUIVisibilityOverride.none
+      })
+    }, [isGrabbed])
 
     return null
   },

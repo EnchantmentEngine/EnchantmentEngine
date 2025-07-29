@@ -21,8 +21,6 @@ import {
   Entity,
   EntityID,
   getComponent,
-  getMutableComponent,
-  hasComponent,
   removeComponent,
   removeEntity,
   S,
@@ -32,6 +30,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getMutableState, UserID } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
@@ -512,6 +511,7 @@ describe('MixerComponent.ts', async () => {
         setComponent(targetEntity, testComponent)
         setComponent(mixerEntity, MixerComponent)
         mixerComp = getComponent(mixerEntity, MixerComponent)
+        await flushAll()
       })
 
       afterEach(() => {
@@ -527,7 +527,6 @@ describe('MixerComponent.ts', async () => {
         const xValue = 10
         const yValue = 20
         MixerComponent.setEntry(mixerEntity, 0, { ...xSetter?.(xValue), ...ySetter?.(yValue) })
-
         // Wait for component to be initialized
         await vi.waitUntil(() => {
           mixerComp = getComponent(mixerEntity, MixerComponent)
@@ -540,7 +539,7 @@ describe('MixerComponent.ts', async () => {
         // Serialize, remove, and deserialize component
         const serialized = serializeComponent(mixerEntity, MixerComponent)
         removeComponent(mixerEntity, MixerComponent)
-        await vi.waitUntil(() => !hasComponent(mixerEntity, MixerComponent))
+        await flushAll() // force react to register the change
         deserializeComponent(mixerEntity, MixerComponent, serialized)
 
         // Wait for component to be reinitialized
@@ -607,7 +606,7 @@ describe('MixerComponent.ts', async () => {
           MixerComponent.setEntry(mixerEntity, rightCoord, xSetter(rightValue))
 
           // Change the coordinate using the mutable component
-          getMutableComponent(mixerEntity, MixerComponent).coord.set(midCoord)
+          setComponent(mixerEntity, MixerComponent, { coord: midCoord })
 
           // The reactor should automatically run and set the target entity properties
           await vi.waitUntil(() => targetComp.x === leftValue * 0.25 + rightValue * 0.75)

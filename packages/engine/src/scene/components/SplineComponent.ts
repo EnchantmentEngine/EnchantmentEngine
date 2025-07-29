@@ -58,20 +58,20 @@ export const SplineComponent = defineComponent({
 
     useEffect(() => {
       if (elements.length < 3) {
-        component.curve.set(new CatmullRomCurve3([], true))
+        setComponent(entity, SplineComponent, { curve: new CatmullRomCurve3([], true) })
         return
       }
 
       const curve = new CatmullRomCurve3(
-        elements.value.map((e) => e.position),
+        elements.map((e) => e.position),
         true
       )
       curve.curveType = 'catmullrom'
-      component.curve.set(curve)
+      setComponent(entity, SplineComponent, { curve })
     }, [
       elements.length,
       // force a unique dep change upon any position or quaternion change
-      elements.value.map((e) => `${JSON.stringify(e.position)}${JSON.stringify(e.rotation)})`).join('')
+      elements.map((e) => `${JSON.stringify(e.position)}${JSON.stringify(e.rotation)})`).join('')
     ])
 
     useEffect(() => {
@@ -94,7 +94,7 @@ export const SplineComponent = defineComponent({
       setComponent(splineHelperEntity, ObjectComponent, new Line(createLineGeom(), lineMaterial()))
 
       const line = getComponent(splineHelperEntity, ObjectComponent) as Line
-      const curve = component.curve.value
+      const curve = component.curve
 
       const positions = line.geometry.attributes.position
       for (let i = 0; i < ARC_SEGMENTS; i++) {

@@ -3,13 +3,7 @@ import { useEffect } from 'react'
 import { AdditiveBlending, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
 import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  getMutableComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -136,7 +130,7 @@ const createPlateEntity = (entity: Entity) => {
   const transform = getComponent(plateEntity, TransformComponent)
   transform.rotation.setFromAxisAngle(Vector3_Right, -0.5 * Math.PI)
   transform.position.y = 0.01
-  getMutableComponent(entity, SpawnEffectComponent).plateEntity.set(plateEntity)
+  getComponent(entity, SpawnEffectComponent).plateEntity = plateEntity
 }
 
 const createRayEntities = (entity: Entity) => {
@@ -152,7 +146,7 @@ const createRayEntities = (entity: Entity) => {
     setComponent(rayEntity, MeshComponent, ray)
     const transform = getComponent(rayEntity, TransformComponent)
     setVisibleComponent(rayEntity, true)
-    getMutableComponent(entity, SpawnEffectComponent).lightEntities.merge([rayEntity])
+    getComponent(entity, SpawnEffectComponent).lightEntities.push(rayEntity)
 
     const a = (2 * Math.PI * i) / rayCount
     const r = R * Math.random()

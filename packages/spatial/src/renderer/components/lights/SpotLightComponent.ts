@@ -54,40 +54,40 @@ export const SpotLightComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      light.intensity = spotLightComponent.intensity.value
+      light.intensity = spotLightComponent.intensity
     }, [spotLightComponent.intensity])
 
     useEffect(() => {
-      light.distance = spotLightComponent.range.value
+      light.distance = spotLightComponent.range
     }, [spotLightComponent.range])
 
     useEffect(() => {
-      light.decay = spotLightComponent.decay.value
+      light.decay = spotLightComponent.decay
     }, [spotLightComponent.decay])
 
     useEffect(() => {
-      light.angle = spotLightComponent.angle.value
+      light.angle = spotLightComponent.angle
     }, [spotLightComponent.angle])
 
     useEffect(() => {
-      light.penumbra = spotLightComponent.penumbra.value
+      light.penumbra = spotLightComponent.penumbra
     }, [spotLightComponent.penumbra])
 
     useEffect(() => {
-      light.shadow.bias = spotLightComponent.shadowBias.value
+      light.shadow.bias = spotLightComponent.shadowBias
     }, [spotLightComponent.shadowBias])
 
     useEffect(() => {
-      light.shadow.radius = spotLightComponent.shadowRadius.value
+      light.shadow.radius = spotLightComponent.shadowRadius
     }, [spotLightComponent.shadowRadius])
 
     useEffect(() => {
-      light.castShadow = spotLightComponent.castShadow.value
+      light.castShadow = spotLightComponent.castShadow
     }, [spotLightComponent.castShadow])
 
     useEffect(() => {
-      light.color = new Color(spotLightComponent.color.value)
-    }, [spotLightComponent.color.value])
+      light.color = new Color(spotLightComponent.color)
+    }, [spotLightComponent.color])
 
     useEffect(() => {
       if (light.shadow.mapSize.x !== renderState.shadowMapResolution.value) {

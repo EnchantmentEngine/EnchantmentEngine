@@ -17,7 +17,6 @@ import {
   createEntity,
   defineSystem,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent,
@@ -52,14 +51,18 @@ export const SceneState = defineState({
           ? getComponent(gltfEntity, LayerComponents[layer]).relations[Layers.Simulation]
           : gltfEntity
 
-      getMutableComponent(viewerEntity, RendererComponent).scenes.merge([simulationEntity])
+      getComponent(viewerEntity, RendererComponent).scenes.push(simulationEntity)
+      setComponent(viewerEntity, RendererComponent)
     }
 
     return () => {
       if (viewerEntity && hasComponent(viewerEntity, RendererComponent)) {
-        getMutableComponent(viewerEntity, RendererComponent).scenes.set((current) =>
-          current.filter((scene) => scene !== simulationEntity)
+        const scenes = getComponent(viewerEntity, RendererComponent).scenes
+        scenes.splice(
+          scenes.findIndex((scene) => scene === simulationEntity),
+          1
         )
+        setComponent(viewerEntity, RendererComponent)
       }
       AssetState.unload(gltfEntity)
       getMutableState(SceneState)[sceneURL].set(none)

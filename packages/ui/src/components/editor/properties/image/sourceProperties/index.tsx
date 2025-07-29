@@ -31,7 +31,7 @@ export const ImageSourceProperties: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
   const imageComponent = useComponent(props.entity, ImageComponent)
-  const showTransparencyOptions = supportsTransparency(imageComponent.source.value)
+  const showTransparencyOptions = supportsTransparency(imageComponent.source)
 
   return (
     <>
@@ -41,20 +41,20 @@ export const ImageSourceProperties: EditorComponentType = (props) => {
             <SelectInput
               key={props.entity}
               options={imageTransparencyOptions}
-              value={imageComponent.alphaMode.value}
+              value={imageComponent.alphaMode}
               onChange={commitProperty(ImageComponent, 'alphaMode')}
             />
           </InputGroup>
 
-          {imageComponent.alphaMode.value === ImageAlphaMode.Mask && (
+          {imageComponent.alphaMode === ImageAlphaMode.Mask && (
             <Slider
               label={t('editor:properties.image.lbl-alphaCutoff')}
-              //icon={<Icon type={audioState.masterVolume.value == 0 ? 'VolumeOff' : 'VolumeUp'} />}
+              //icon={<Icon type={audioState.masterVolume == 0 ? 'VolumeOff' : 'VolumeUp'} />}
               //label={t('user:usermenu.setting.lbl-volume')}
               max={1}
               min={0}
               step={0.01}
-              value={imageComponent.alphaCutoff.value}
+              value={imageComponent.alphaCutoff}
               onChange={updateProperty(ImageComponent, 'alphaCutoff')}
               onRelease={commitProperty(ImageComponent, 'alphaCutoff')}
             />
@@ -66,7 +66,7 @@ export const ImageSourceProperties: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={imageProjectionOptions}
-          value={imageComponent.projection.value}
+          value={imageComponent.projection}
           onChange={commitProperty(ImageComponent, 'projection')}
         />
       </InputGroup>
@@ -74,7 +74,7 @@ export const ImageSourceProperties: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={ImageProjectionSideOptions}
-          value={imageComponent.side.value}
+          value={imageComponent.side}
           onChange={commitProperty(ImageComponent, 'side')}
         />
       </InputGroup>

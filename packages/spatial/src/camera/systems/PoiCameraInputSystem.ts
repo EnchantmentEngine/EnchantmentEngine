@@ -1,5 +1,5 @@
 import { Entity, UUIDComponent, hasComponent, setComponent } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -21,16 +21,16 @@ const targetRotation = new Quaternion()
  * @param zoomDelta Scroll input delta.
  */
 export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): void => {
-  const poiCamera = getMutableComponent(cameraEntity, PoiCameraComponent)
+  const poiCamera = getComponent(cameraEntity, PoiCameraComponent)
   const cameraSettingsState = getMutableState(CameraSettingsState)
 
-  if (poiCamera.targetPoiIndex.value < 0) {
-    poiCamera.targetPoiIndex.set(0)
-    poiCamera.currentPoiIndex.set(0)
-    poiCamera.poiLerpValue.set(0)
-    poiCamera.scrollAccumulator.set(0)
+  if (poiCamera.targetPoiIndex < 0) {
+    poiCamera.targetPoiIndex = 0
+    poiCamera.currentPoiIndex = 0
+    poiCamera.poiLerpValue = 0
+    poiCamera.scrollAccumulator = 0
   }
-  poiCamera.isTransitioning.set(poiCamera.poiLerpValue.value < 1)
+  poiCamera.isTransitioning = poiCamera.poiLerpValue < 1
 
   if (cameraSettingsState.poiEntities.value.length === 0 || Math.abs(zoomDelta) < 0.01) return
 
@@ -41,9 +41,9 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
   const scrollSensitivity = cameraSettingsState.scrollSensitivity.value
 
   if (transitionType === PoiScrollTransition.Snapping) {
-    if (poiCamera.isTransitioning.value && poiCamera.targetPoiIndex.value !== poiCamera.currentPoiIndex.value) return
+    if (poiCamera.isTransitioning && poiCamera.targetPoiIndex !== poiCamera.currentPoiIndex) return
     // Snap navigation: single scroll increment changes target POI
-    const currentTargetIndex = poiCamera.targetPoiIndex.value
+    const currentTargetIndex = poiCamera.targetPoiIndex
     let newTargetIndex = currentTargetIndex
 
     // Determine scroll direction and update target index
@@ -65,14 +65,14 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
 
     // Only update if the target index actually changed
     if (newTargetIndex !== currentTargetIndex) {
-      poiCamera.targetPoiIndex.set(newTargetIndex)
-      poiCamera.currentPoiIndex.set(currentTargetIndex) // Keep current as the starting point
-      poiCamera.poiLerpValue.set(0) // Reset lerp to start transition
+      poiCamera.targetPoiIndex = newTargetIndex
+      poiCamera.currentPoiIndex = currentTargetIndex // Keep current as the starting point
+      poiCamera.poiLerpValue = 0 // Reset lerp to start transition
     }
   }
   // Scrolling mode - continuous smooth navigation
   else {
-    const currentScrollPosition = poiCamera.scrollAccumulator.value
+    const currentScrollPosition = poiCamera.scrollAccumulator
 
     const adjustedScrollPosition = applySmoothDeadzone(
       zoomDelta * scrollSensitivity,
@@ -90,7 +90,7 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
       // Normalize scroll position to wrap around using modulo
       const normalizedScrollPosition =
         ((adjustedScrollPosition % totalScrollRange) + totalScrollRange) % totalScrollRange
-      poiCamera.scrollAccumulator.set(normalizedScrollPosition)
+      poiCamera.scrollAccumulator = normalizedScrollPosition
 
       const result = calculatePoiState(
         normalizedScrollPosition,
@@ -98,16 +98,16 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
         scrollDistancePerPoi,
         cameraSettingsState.poiEntities.value.length
       )
-      poiCamera.currentPoiIndex.set(result.currentIndex)
-      poiCamera.targetPoiIndex.set(result.targetIndex)
-      poiCamera.poiLerpValue.set(result.lerpValue)
+      poiCamera.currentPoiIndex = result.currentIndex
+      poiCamera.targetPoiIndex = result.targetIndex
+      poiCamera.poiLerpValue = result.lerpValue
     } else {
       // Clamp behavior - stop at boundaries
       const totalScrollRange = (cameraSettingsState.poiEntities.value.length - 1) * scrollDistancePerPoi
 
       // Clamp scroll position to valid range
       const clampedScrollPosition = Math.max(0, Math.min(totalScrollRange, adjustedScrollPosition))
-      poiCamera.scrollAccumulator.set(clampedScrollPosition)
+      poiCamera.scrollAccumulator = clampedScrollPosition
 
       const result = calculatePoiState(
         clampedScrollPosition,
@@ -115,9 +115,9 @@ export const handlePoiCameraScroll = (cameraEntity: Entity, zoomDelta: number): 
         scrollDistancePerPoi,
         cameraSettingsState.poiEntities.value.length
       )
-      poiCamera.currentPoiIndex.set(result.currentIndex)
-      poiCamera.targetPoiIndex.set(result.targetIndex)
-      poiCamera.poiLerpValue.set(result.lerpValue)
+      poiCamera.currentPoiIndex = result.currentIndex
+      poiCamera.targetPoiIndex = result.targetIndex
+      poiCamera.poiLerpValue = result.lerpValue
     }
   }
 }
@@ -231,19 +231,19 @@ const execute = () => {
       setComponent(viewerEntity, TransformComponent, { position: targetPosition, rotation: targetRotation })
 
       if (settings.poiScrollTransitionType.value === PoiScrollTransition.Snapping) {
-        const poiCameraMutable = getMutableComponent(viewerEntity, PoiCameraComponent)
+        const poiCameraMutable = getComponent(viewerEntity, PoiCameraComponent)
 
         const lerpSpeed = settings.poiLerpSpeed.value
         const deltaTime = getState(ECSState).deltaSeconds
 
-        if (poiCameraMutable.isTransitioning.value) {
+        if (poiCameraMutable.isTransitioning) {
           const newLerpValue = Math.min(lerpValue + lerpSpeed * deltaTime, 1)
-          poiCameraMutable.poiLerpValue.set(newLerpValue)
+          poiCameraMutable.poiLerpValue = newLerpValue
 
           if (newLerpValue >= 1) {
-            poiCameraMutable.currentPoiIndex.set(poiCameraMutable.targetPoiIndex.value)
-            poiCameraMutable.poiLerpValue.set(0)
-            poiCameraMutable.isTransitioning.set(false)
+            poiCameraMutable.currentPoiIndex = poiCameraMutable.targetPoiIndex
+            poiCameraMutable.poiLerpValue = 0
+            poiCameraMutable.isTransitioning = false
           }
         }
       }

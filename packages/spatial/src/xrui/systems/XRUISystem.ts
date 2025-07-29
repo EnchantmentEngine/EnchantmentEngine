@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { BufferGeometry, Color, Mesh, MeshBasicMaterial, Ray, Vector3 } from 'three'
 
 import { removeEntity } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -53,9 +53,9 @@ const redirectDOMEvent = (evt: PointerEvent) => {
 }
 
 const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) => {
-  const pointerComponentState = getMutableComponent(entity, PointerComponent)
-  const pointer = pointerComponentState.pointer.value as PointerObject
-  const cursor = pointerComponentState.cursor.value as Mesh<BufferGeometry, MeshBasicMaterial>
+  const pointerComponentState = getComponent(entity, PointerComponent)
+  const pointer = pointerComponentState.pointer as PointerObject
+  const cursor = pointerComponentState.cursor as Mesh<BufferGeometry, MeshBasicMaterial>
 
   let hit = null! as ReturnType<typeof WebContainer3D.prototype.hitTest>
 
@@ -72,7 +72,7 @@ const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) 
     if (layerHit && (!hit || layerHit.intersection.distance < hit.intersection.distance)) hit = layerHit
   }
 
-  pointerComponentState.lastHit.set(hit)
+  pointerComponentState.lastHit = hit
 
   if (hit) {
     const interactable = window.getComputedStyle(hit.target).cursor === 'pointer'
@@ -97,8 +97,8 @@ const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) 
 }
 
 const updateClickEventsForController = (entity: Entity) => {
-  const pointerComponentState = getMutableComponent(entity, PointerComponent)
-  const hit = pointerComponentState.lastHit.value
+  const pointerComponentState = getComponent(entity, PointerComponent)
+  const hit = pointerComponentState.lastHit
   if (hit && hit.intersection.object.visible) {
     hit.target.dispatchEvent(new PointerEvent('click', { bubbles: true }))
     hit.target.focus()

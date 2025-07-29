@@ -1,5 +1,7 @@
-import { Entity } from '@ir-engine/ecs'
-import { NO_PROXY, getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { hasComponent, setComponent } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { EffectReactorProps, PostProcessingEffectState } from '@ir-engine/spatial/src/renderer/effects/EffectRegistry'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { BlendFunction, TextureEffect } from 'postprocessing'
@@ -14,35 +16,27 @@ declare module 'postprocessing' {
 
 const effectKey = 'TextureEffect'
 
-export const TextureEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
-  isActive
-  rendererEntity: Entity
-  effectData
-  effects
-}) => {
-  const { isActive, rendererEntity, effectData, effects } = props
+export const TextureEffectProcessReactor: React.FC<EffectReactorProps> = (props) => {
+  const { isActive, entity, rendererEntity, effectData, effects } = props
   const effectState = getState(PostProcessingEffectState)
 
-  const [textureEffectTexture, textureEffectTextureError] = useTexture(effectData[effectKey].value?.texturePath!)
+  const [textureEffectTexture] = useTexture(effectData[effectKey]?.texturePath)
 
   useEffect(() => {
-    if (effectData[effectKey].value) return
-    effectData[effectKey].set(effectState[effectKey].defaultValues)
-  }, [])
-
-  useEffect(() => {
-    if (!isActive?.value) {
-      if (effects[effectKey].value) effects[effectKey].set(none)
+    if (!effectData[effectKey]) {
+      effectData[effectKey] = effectState[effectKey].defaultValues
+      setComponent(entity, PostProcessingComponent)
       return
     }
-    if (textureEffectTexture) {
-      let data = effectData[effectKey].get(NO_PROXY)
-      data.texture = textureEffectTexture
-      const eff = new TextureEffect(data)
-      effects[effectKey].set(eff)
-    }
+    if (!isActive || !textureEffectTexture) return
+    effectData[effectKey].texture = textureEffectTexture
+    const eff = new TextureEffect(effectData[effectKey])
+    effects[effectKey] = eff
+    setComponent(rendererEntity, RendererComponent)
     return () => {
-      effects[effectKey].set(none)
+      delete effects[effectKey]
+      if (!hasComponent(rendererEntity, RendererComponent)) return
+      setComponent(rendererEntity, RendererComponent)
     }
   }, [isActive, effectData[effectKey], textureEffectTexture])
 

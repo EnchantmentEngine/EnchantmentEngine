@@ -68,6 +68,7 @@ export const HasSchemaDeserializers = <T extends Schema>(schema: T): boolean => 
 }
 
 export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: Val, value: Val): Val | undefined => {
+  if (!isSerializable(schema)) return curr
   if (validValue(value) && schema.options?.deserialize) return schema.options.deserialize(curr, value) as Val
 
   switch (schema[Kind]) {
@@ -93,6 +94,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
       if (!validValue(value)) return value
       if (!Array.isArray(value)) return undefined
       const props = schema.properties as TArraySchema<Schema>['properties']
+      if (!props?.options?.serialized) return curr
       const _curr = curr as Array<any>
       const currentLength = _curr.length
       if (currentLength < value.length) {

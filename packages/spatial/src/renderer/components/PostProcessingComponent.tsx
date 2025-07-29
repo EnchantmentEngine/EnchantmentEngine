@@ -35,10 +35,10 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
   const renderer = useComponent(rendererEntity, RendererComponent)
   const effects = renderer.effects
   const passes = renderer.passes
-  const composer = renderer.effectComposer.value as EffectComposer
-  const scene = renderer.scene.value as Scene
+  const composer = renderer.effectComposer as EffectComposer
+  const scene = renderer.scene as Scene
 
-  if (!postProcessingComponent.enabled.value) return null
+  if (!postProcessingComponent.enabled) return null
 
   // for each effect specified in our postProcessingComponent, we mount a sub-reactor based on the effect registry for that effect ID
   return (
@@ -53,6 +53,7 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
                 isActive={postProcessingComponent.effects[key]?.isActive}
                 rendererEntity={rendererEntity}
                 effectData={postProcessingComponent.effects}
+                entity={entity}
                 effects={effects}
                 composer={composer}
                 scene={scene}

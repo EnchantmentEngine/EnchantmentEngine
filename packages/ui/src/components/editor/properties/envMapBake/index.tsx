@@ -98,7 +98,7 @@ export const EnvMapBakeNodeEditor = (props) => {
 
   const renderEnvMapBakeProperties = () => {
     const renderedProperty = DefaultEnvMapBakeSettings.map((element, id) => {
-      if (element.label == 'Realtime Settings' && bakeComponent.bakeType.value == EnvMapBakeTypes.Realtime) {
+      if (element.label == 'Realtime Settings' && bakeComponent.bakeType == EnvMapBakeTypes.Realtime) {
         return <div key={id + 'Realtime'} />
       }
 
@@ -115,7 +115,7 @@ export const EnvMapBakeNodeEditor = (props) => {
           <EnvMapBakeProperties
             key={id + '' + propertyid}
             element={property}
-            bakeComponent={bakeComponent.value}
+            bakeComponent={bakeComponent}
             entity={props.entity}
           />
         )
@@ -141,14 +141,14 @@ export const EnvMapBakeNodeEditor = (props) => {
       </Button>
       <InputGroup name="Position" label="Bake Position Offset" className="w-auto">
         <Vector3Input
-          value={bakeComponent.bakePositionOffset.value}
+          value={bakeComponent.bakePositionOffset}
           onChange={updateProperty(EnvMapBakeComponent, 'bakePositionOffset')}
           onRelease={commitProperty(EnvMapBakeComponent, 'bakePositionOffset')}
         />
       </InputGroup>
       <InputGroup name="Scale" label="Box Projection Scale" className="w-auto">
         <Vector3Input
-          value={bakeComponent.bakeScale.value}
+          value={bakeComponent.bakeScale}
           onChange={updateProperty(EnvMapBakeComponent, 'bakeScale')}
           onRelease={commitProperty(EnvMapBakeComponent, 'bakeScale')}
         />
@@ -160,7 +160,7 @@ export const EnvMapBakeNodeEditor = (props) => {
             { label: 'Realtime', value: 'Realtime' }
           ]}
           key={props.entity}
-          value={bakeComponent.bakeType.value}
+          value={bakeComponent.bakeType}
           onChange={commitProperty(EnvMapBakeComponent, 'bakeType')}
         />
       </InputGroup>
@@ -168,20 +168,20 @@ export const EnvMapBakeNodeEditor = (props) => {
         <SelectInput
           options={bakeResolutionTypes.map((resolution) => ({ label: resolution.toString(), value: resolution }))}
           key={props.entity}
-          value={bakeComponent.resolution.value}
+          value={bakeComponent.resolution}
           onChange={commitProperty(EnvMapBakeComponent, 'resolution')}
         />
       </InputGroup>
       <InputGroup name="EnvMap Origin" label="Environment Map Preview">
         <DroppableImageInput
-          src={bakeComponent.envMapOrigin.value}
+          src={bakeComponent.envMapOrigin}
           onChange={updateProperty(EnvMapBakeComponent, 'envMapOrigin')}
           onBlur={commitProperty(EnvMapBakeComponent, 'envMapOrigin')}
         />
       </InputGroup>
       <Checkbox
         variantTextPlacement="left"
-        checked={bakeComponent.boxProjection.value}
+        checked={bakeComponent.boxProjection}
         onChange={commitProperty(EnvMapBakeComponent, 'boxProjection')}
         aria-label="Box Projection"
         label="Box Projection"

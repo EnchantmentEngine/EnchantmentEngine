@@ -1,7 +1,7 @@
 import { Entity, S, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
-  getMutableComponent,
+  entityExists,
   hasComponent,
   removeComponent,
   setComponent,
@@ -125,24 +125,24 @@ const RigidBodyReactor = () => {
   const physicsWorld = Physics.useWorld(entity)!
 
   useEffect(() => {
-    if (!component.initialized.value) return
-    TransformComponent.dirty[entity] = 1
-  }, [component.initialized.value])
-
-  useEffect(() => {
     if (!physicsWorld) return
     Physics.createRigidBody(physicsWorld, entity)
-    component.initialized.set(true)
+    setComponent(entity, RigidBodyComponent, { initialized: true })
     return () => {
       Physics.removeRigidbody(physicsWorld, entity)
-      if (!hasComponent(entity, RigidBodyComponent)) return
-      getMutableComponent(entity, RigidBodyComponent).initialized.set(false)
+      if (!entityExists(entity) || !hasComponent(entity, RigidBodyComponent)) return
+      setComponent(entity, RigidBodyComponent, { initialized: false })
     }
   }, [physicsWorld])
 
   useEffect(() => {
+    if (!component.initialized) return
+    TransformComponent.dirty[entity] = 1
+  }, [component.initialized])
+
+  useEffect(() => {
     if (!physicsWorld) return
-    const type = component.type.value
+    const type = component.type
     setComponent(entity, getTagComponentForRigidBody(type))
     Physics.setRigidBodyType(physicsWorld, entity, type)
     return () => {
@@ -152,22 +152,22 @@ const RigidBodyReactor = () => {
 
   useEffect(() => {
     if (!physicsWorld) return
-    Physics.enabledCcd(physicsWorld, entity, component.ccd.value)
+    Physics.enabledCcd(physicsWorld, entity, component.ccd)
   }, [physicsWorld, component.ccd])
 
   useEffect(() => {
     if (!physicsWorld) return
-    const value = component.allowRolling.value
+    const value = component.allowRolling
     /**
      * @todo Change this back to `Physics.lockRotations( entity, !value )` when we update to Rapier >= 0.12.0
      * https://github.com/dimforge/rapier.js/issues/282  */
     Physics.setEnabledRotations(physicsWorld, entity, [value, value, value])
-  }, [component.allowRolling.value])
+  }, [component.allowRolling])
 
   useEffect(() => {
     if (!physicsWorld) return
-    Physics.setEnabledRotations(physicsWorld, entity, component.enabledRotations.value as [boolean, boolean, boolean])
-  }, [component.enabledRotations[0].value, component.enabledRotations[1].value, component.enabledRotations[2].value])
+    Physics.setEnabledRotations(physicsWorld, entity, component.enabledRotations as [boolean, boolean, boolean])
+  }, [component.enabledRotations[0], component.enabledRotations[1], component.enabledRotations[2]])
 
   return null
 }

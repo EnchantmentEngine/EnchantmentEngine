@@ -1,5 +1,7 @@
-import { Entity } from '@ir-engine/ecs'
-import { getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { hasComponent, setComponent } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { EffectReactorProps, PostProcessingEffectState } from '@ir-engine/spatial/src/renderer/effects/EffectRegistry'
 import { ChromaticAberrationEffect } from 'postprocessing'
 import React, { useEffect } from 'react'
@@ -14,31 +16,26 @@ declare module 'postprocessing' {
 
 const effectKey = 'ChromaticAberrationEffect'
 
-export const ChromaticAberrationEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
-  isActive
-  rendererEntity: Entity
-  effectData
-  effects
-}) => {
-  const { isActive, rendererEntity, effectData, effects } = props
+export const ChromaticAberrationEffectProcessReactor: React.FC<EffectReactorProps> = (props) => {
+  const { isActive, entity, rendererEntity, effectData, effects } = props
   const effectState = getState(PostProcessingEffectState)
 
   useEffect(() => {
-    if (effectData[effectKey].value) return
-    effectData[effectKey].set(effectState[effectKey].defaultValues)
-  }, [])
-
-  useEffect(() => {
-    if (!isActive?.value) {
-      if (effects[effectKey].value) effects[effectKey].set(none)
+    if (!effectData[effectKey]) {
+      effectData[effectKey] = effectState[effectKey].defaultValues
+      setComponent(entity, PostProcessingComponent)
       return
     }
-    const eff = new ChromaticAberrationEffect(effectData[effectKey].value)
-    effects[effectKey].set(eff)
+    if (!isActive) return
+    const eff = new ChromaticAberrationEffect(effectData[effectKey])
+    effects[effectKey] = eff
+    setComponent(rendererEntity, RendererComponent)
     return () => {
-      effects[effectKey].set(none)
+      delete effects[effectKey]
+      if (!hasComponent(rendererEntity, RendererComponent)) return
+      setComponent(rendererEntity, RendererComponent)
     }
-  }, [isActive])
+  }, [isActive, effectData[effectKey]])
 
   return null
 }

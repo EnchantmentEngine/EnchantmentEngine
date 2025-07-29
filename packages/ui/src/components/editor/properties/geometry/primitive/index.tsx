@@ -87,7 +87,7 @@ export const PrimitiveGeometryNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
   const entity = props.entity
   const primitiveGeometry = useComponent(entity, PrimitiveGeometryComponent)
-  const primitiveGeometryParams = GeometryTypeParamsEnum[primitiveGeometry.geometryType.value] || {}
+  const primitiveGeometryParams = GeometryTypeParamsEnum[primitiveGeometry.geometryType] || {}
   /** @todo properties should be explicit rather than generated from the geometry parameters */
   // const geometry = useOptionalComponent(entity, MeshComponent)?.geometry.get(NO_PROXY) as Geometry & {
   //   parameters?: Record<string, any>
@@ -104,7 +104,7 @@ export const PrimitiveGeometryNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={GeometryOption}
-          value={primitiveGeometry.geometryType.value}
+          value={primitiveGeometry.geometryType}
           onChange={(value: GeometryType) => {
             commitProperties(PrimitiveGeometryComponent, {
               geometryType: value,
@@ -122,7 +122,7 @@ export const PrimitiveGeometryNodeEditor: EditorComponentType = (props) => {
             smallStep={0.1}
             mediumStep={1}
             largeStep={10}
-            value={primitiveGeometry.geometryParams[key].value}
+            value={primitiveGeometry.geometryParams[key]}
             onChange={updateProperty(PrimitiveGeometryComponent, `geometryParams.${key}` as any)}
             onRelease={commitProperty(PrimitiveGeometryComponent, `geometryParams.${key}` as any)}
           />

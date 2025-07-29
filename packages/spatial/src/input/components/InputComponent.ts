@@ -11,14 +11,13 @@ import {
 } from '@ir-engine/ecs'
 import {
   defineComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
-import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
+import { getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -204,6 +203,7 @@ export const InputComponent = defineComponent({
                 // For combo buttons, check if all buttons in the combo are available
                 const states = b.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
 
+                /** @todo we need to figure out how to distinguish when a combo matches exactly, eg CTRL+Z will fire if SHIFT is down too */
                 const isActive = states.length === b.length
 
                 if (!result && isActive) {
@@ -213,8 +213,8 @@ export const InputComponent = defineComponent({
                 }
 
                 if (result && isActive) {
-                  result.down = states.some((s) => s.down)
                   result.pressed = states.every((s) => s.pressed)
+                  result.down = states.some((s) => s.down) && result.pressed
                   result.touched = states.every((s) => s.touched)
                   result.value = Math.max(...states.map((s) => s.value))
                   result.dragging = states.some((s) => s.dragging)
@@ -278,14 +278,14 @@ export const InputComponent = defineComponent({
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
-    const input = getMutableComponent(inputEntity, InputComponent)
+    const input = getComponent(inputEntity, InputComponent)
     if (inputBindings) {
       for (const binding of Object.keys(inputBindings)) {
-        if (!input.buttonBindings[binding].value) input.buttonBindings[binding].set(inputBindings[binding] as any)
+        if (!input.buttonBindings[binding]) input.buttonBindings[binding] = inputBindings[binding] as any
       }
     }
-    input.autoCapture.set(autoCapture)
-    return input.buttons.get(NO_PROXY_STEALTH) as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
+    input.autoCapture = autoCapture
+    return input.buttons as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
   getAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(

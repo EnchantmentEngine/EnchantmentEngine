@@ -23,7 +23,7 @@ export const PersistentAnchorNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Volume" label={t('editor:properties.persistent-anchor.lbl-name')}>
         <StringInput
-          value={anchor.name.value}
+          value={anchor.name}
           onChange={updateProperty(PersistentAnchorComponent, 'name')}
           onRelease={commitProperty(PersistentAnchorComponent, 'name')}
         />

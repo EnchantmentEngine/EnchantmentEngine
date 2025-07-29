@@ -18,7 +18,7 @@ export const AudioAnalysisEditor: EditorComponentType = (props) => {
     <NodeEditor {...props} name={t('editor:properties.audioAnalysis.name')} Icon={AudioAnalysisEditor.iconComponent}>
       <InputGroup name="Bass" label={t('editor:properties.audioAnalysis.lbl-bassEnabled')}>
         <Checkbox
-          checked={audioAnalysisComponent.bassEnabled.value}
+          checked={audioAnalysisComponent.bassEnabled}
           onChange={commitProperty(AudioAnalysisComponent, 'bassEnabled')}
         />
       </InputGroup>
@@ -26,7 +26,7 @@ export const AudioAnalysisEditor: EditorComponentType = (props) => {
         min={0}
         max={5}
         step={0.01}
-        value={audioAnalysisComponent.bassMultiplier.value}
+        value={audioAnalysisComponent.bassMultiplier}
         onChange={updateProperty(AudioAnalysisComponent, 'bassMultiplier')}
         onRelease={commitProperty(AudioAnalysisComponent, 'bassMultiplier')}
         aria-label="Bass Multiplier"
@@ -34,7 +34,7 @@ export const AudioAnalysisEditor: EditorComponentType = (props) => {
       />
       <InputGroup name="Mid Enabled" label={t('editor:properties.audioAnalysis.lbl-midEnabled')}>
         <Checkbox
-          checked={audioAnalysisComponent.midEnabled.value}
+          checked={audioAnalysisComponent.midEnabled}
           onChange={commitProperty(AudioAnalysisComponent, 'midEnabled')}
         />
       </InputGroup>
@@ -44,13 +44,13 @@ export const AudioAnalysisEditor: EditorComponentType = (props) => {
         min={0}
         max={5}
         step={0.01}
-        value={audioAnalysisComponent.midMultiplier.value}
+        value={audioAnalysisComponent.midMultiplier}
         onChange={updateProperty(AudioAnalysisComponent, 'midMultiplier')}
         onRelease={commitProperty(AudioAnalysisComponent, 'midMultiplier')}
       />
       <InputGroup name="Treble Enabled" label={t('editor:properties.audioAnalysis.lbl-trebleEnabled')}>
         <Checkbox
-          checked={audioAnalysisComponent.trebleEnabled.value}
+          checked={audioAnalysisComponent.trebleEnabled}
           onChange={commitProperty(AudioAnalysisComponent, 'trebleEnabled')}
         />
       </InputGroup>
@@ -59,7 +59,7 @@ export const AudioAnalysisEditor: EditorComponentType = (props) => {
         min={0}
         max={5}
         step={0.01}
-        value={audioAnalysisComponent.trebleMultiplier.value}
+        value={audioAnalysisComponent.trebleMultiplier}
         onChange={updateProperty(AudioAnalysisComponent, 'trebleMultiplier')}
         onRelease={commitProperty(AudioAnalysisComponent, 'trebleMultiplier')}
         aria-label="Treble Multiplier"

@@ -11,7 +11,7 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { SceneDynamicLoadComponent } from '@ir-engine/engine/src/scene/components/SceneDynamicLoadComponent'
-import { getMutableState, getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { LuMove3D } from 'react-icons/lu'
 
@@ -46,9 +46,9 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
   const transformComponent = useComponent(props.entity, TransformComponent)
   const transformSpace = useHookstate(getMutableState(EditorHelperState).transformSpace)
 
-  const position = useHookstate(transformComponent.position.get(NO_PROXY))
-  const rotation = useHookstate(transformComponent.rotation.get(NO_PROXY))
-  const scale = useHookstate(transformComponent.scale.get(NO_PROXY))
+  const position = useHookstate(transformComponent.position)
+  const rotation = useHookstate(transformComponent.rotation)
+  const scale = useHookstate(transformComponent.scale)
 
   useExecute(
     () => {
@@ -73,7 +73,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
   )
 
   if (transformSpace.value === TransformSpace.world)
-    transformComponent.matrixWorld.value.decompose(position.value, rotation.value, scale.value)
+    transformComponent.matrixWorld.decompose(position.value, rotation.value, scale.value)
 
   const onRelease = () => {
     const bboxSnapState = getState(ObjectGridSnapState)
@@ -136,7 +136,7 @@ export const TransformPropertyGroup: EditorComponentType = (props) => {
             <NumericInput
               min={1}
               max={100}
-              value={hasDynamicLoad.distance.value}
+              value={hasDynamicLoad.distance}
               onChange={updateProperty(SceneDynamicLoadComponent, 'distance')}
               onRelease={commitProperty(SceneDynamicLoadComponent, 'distance')}
             />

@@ -25,7 +25,7 @@ export const GroundPlaneNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="Color" label={t('editor:properties.groundPlane.lbl-color')}>
         <ColorInput
           sketchPickerClassName="mt-2"
-          value={groundPlaneComponent.color.value}
+          value={groundPlaneComponent.color}
           onChange={updateProperty(GroundPlaneComponent, 'color')}
           onRelease={commitProperty(GroundPlaneComponent, 'color')}
         />
@@ -36,10 +36,7 @@ export const GroundPlaneNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.groundPlane.lbl-visible')}
         info={t('editor:properties.groundPlane.info-visible')}
       >
-        <Checkbox
-          checked={groundPlaneComponent.visible.value}
-          onChange={commitProperty(GroundPlaneComponent, 'visible')}
-        />
+        <Checkbox checked={groundPlaneComponent.visible} onChange={commitProperty(GroundPlaneComponent, 'visible')} />
       </InputGroup>
     </NodeEditor>
   )

@@ -43,13 +43,13 @@ export const AudioAnalysisComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      audioAnaylsisComponent.src.set(existingSystem?.path.values[0])
-    }, [existingSystem.path])
+      setComponent(entity, AudioAnalysisComponent, { src: existingSystem?.paths[0] })
+    }, [existingSystem.paths])
 
     useEffect(() => {
-      if (!posAudio || !mediaElement?.value.element) return
+      if (!posAudio || !mediaElement?.element) return
 
-      const element = mediaElement.value.element as HTMLAudioElement
+      const element = mediaElement.element as HTMLAudioElement
       element.onplay = () => {
         const audioObject = AudioNodeGroups.get(element)
 
@@ -58,9 +58,11 @@ export const AudioAnalysisComponent = defineComponent({
           const analyser = audioContext.createAnalyser()
           analyser.fftSize = 2 ** 5
           audioObject.source.connect(analyser)
-          audioAnaylsisComponent.session.set({
-            analyser,
-            frequencyData: new Uint8Array(analyser.frequencyBinCount)
+          setComponent(entity, AudioAnalysisComponent, {
+            session: {
+              analyser,
+              frequencyData: new Uint8Array(analyser.frequencyBinCount)
+            }
           })
         }
       }

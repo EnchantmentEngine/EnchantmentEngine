@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Quaternion } from 'three'
 
-import { getComponent, getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -41,7 +41,7 @@ const execute = () => {
 
   for (const eid of inputsQuery()) {
     if (!getComponent(eid, InputComponent).inputSources.length) continue
-    getMutableComponent(eid, InputComponent).inputSources.set([])
+    getComponent(eid, InputComponent).inputSources = []
   }
 
   const stalePointers: Entity[] = []

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -21,7 +21,7 @@ const reactor = () => {
     const activePortalEntity = activePortalEntityState.value
     if (!activePortalEntity) return
     const activePortal = getComponent(activePortalEntity, PortalComponent)
-    getMutableComponent(Engine.instance.cameraEntity, FollowCameraComponent).mode.set(FollowCameraMode.ShoulderCam)
+    setComponent(Engine.instance.cameraEntity, FollowCameraComponent, { mode: FollowCameraMode.ShoulderCam })
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     AvatarControllerComponent.captureMovement(selfAvatarEntity, activePortalEntity)
 

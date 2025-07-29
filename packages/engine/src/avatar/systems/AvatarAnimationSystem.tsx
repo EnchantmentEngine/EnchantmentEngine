@@ -127,7 +127,7 @@ const execute = () => {
 
 const Reactor = () => {
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
-  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress?.value === 100
+  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress === 100
 
   useEffect(() => {
     if (!selfAvatarLoaded) {
@@ -200,9 +200,9 @@ const RigReactor = (props: { entity: Entity }) => {
   const gltfComponent = useOptionalComponent(entity, GLTFComponent)
   const avatarAnimationComponent = useOptionalComponent(entity, AvatarAnimationComponent)
   useEffect(() => {
-    if (gltfComponent?.progress?.value !== 100 || !avatarAnimationComponent?.value) return
+    if (gltfComponent?.progress !== 100 || !avatarAnimationComponent) return
     try {
-      if (gltfComponent.document?.value?.extensions?.VRM) createVRM(entity)
+      if (gltfComponent.document?.extensions?.VRM) createVRM(entity)
       else createVRMFromGLTF(entity)
       setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Avatar)
       setupAvatarProportions(entity)
@@ -213,12 +213,12 @@ const RigReactor = (props: { entity: Entity }) => {
         removeError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
       }
     }
-  }, [gltfComponent?.progress?.value, gltfComponent?.src.value, avatarAnimationComponent])
+  }, [gltfComponent?.progress, gltfComponent?.src, avatarAnimationComponent])
 
   const rig = useOptionalComponent(entity, AvatarRigComponent)
   useEffect(() => {
     if (!entityExists(entity)) return
-    setVisibleComponent(entity, !!rig?.bonesToEntities?.hips?.value && gltfComponent?.progress.value === 100)
+    setVisibleComponent(entity, !!rig?.bonesToEntities?.hips && gltfComponent?.progress === 100)
   }, [rig?.bonesToEntities.hips, gltfComponent?.progress])
   return null
 }
@@ -229,12 +229,12 @@ const AnimationReactor = (props: { entity: Entity }) => {
   const loadedAnimations = useMutableState(AnimationState).loadedAnimations
   const avatarRigComponent = useOptionalComponent(entity, AvatarRigComponent)
   useEffect(() => {
-    if (!avatarRigComponent?.bonesToEntities?.hips.value) return
+    if (!avatarRigComponent?.bonesToEntities?.hips) return
     setComponent(entity, AnimationComponent, {
       animations: getAllLoadedAnimations(),
       mixer: new AnimationMixer(getComponent(entity, ObjectComponent) as Group)
     })
-  }, [avatarRigComponent?.bonesToEntities?.hips, avatarObject?.value, loadedAnimations])
+  }, [avatarRigComponent?.bonesToEntities?.hips, avatarObject, loadedAnimations])
   return null
 }
 

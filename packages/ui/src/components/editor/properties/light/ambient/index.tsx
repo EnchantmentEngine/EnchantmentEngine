@@ -30,7 +30,7 @@ export const AmbientLightNodeEditor: EditorComponentType = (props) => {
         <ColorInput
           className="bg-[#1A1A1A]"
           textClassName="text-white"
-          value={lightComponent.color.value}
+          value={lightComponent.color}
           onChange={updateProperty(AmbientLightComponent, 'color')}
           onRelease={commitProperty(AmbientLightComponent, 'color')}
         />
@@ -41,7 +41,7 @@ export const AmbientLightNodeEditor: EditorComponentType = (props) => {
           smallStep={0.001}
           mediumStep={0.01}
           largeStep={0.1}
-          value={lightComponent.intensity.value}
+          value={lightComponent.intensity}
           onChange={updateProperty(AmbientLightComponent, 'intensity')}
           onRelease={commitProperty(AmbientLightComponent, 'intensity')}
           unit="cd"

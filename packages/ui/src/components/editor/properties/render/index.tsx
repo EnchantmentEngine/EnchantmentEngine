@@ -89,7 +89,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
   )
 
   useEffect(() => {
-    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight.value)) {
+    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight)) {
       setComponent(entity, RenderSettingsComponent, {
         csm: false,
         primaryLight: '' as EntityID
@@ -111,7 +111,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={directionalLightOptions}
-          value={rendererSettingsState.primaryLight.value}
+          value={rendererSettingsState.primaryLight}
           onChange={commitProperty(RenderSettingsComponent, 'primaryLight')}
         />
       </InputGroup>
@@ -120,14 +120,14 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         label={t('editor:properties.renderSettings.lbl-csm')}
         info={t('editor:properties.renderSettings.info-csm')}
       >
-        <Checkbox checked={rendererSettingsState.csm.value} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
+        <Checkbox checked={rendererSettingsState.csm} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
       </InputGroup>
-      {rendererSettingsState.csm.value === true ? (
+      {rendererSettingsState.csm === true ? (
         <Slider
           min={1}
           max={5}
           step={1}
-          value={rendererSettingsState.cascades.value}
+          value={rendererSettingsState.cascades}
           onChange={updateProperty(RenderSettingsComponent, 'cascades')}
           onRelease={commitProperty(RenderSettingsComponent, 'cascades')}
           aria-label="Cascades"
@@ -144,7 +144,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ToneMappingOptions}
-          value={rendererSettingsState.toneMapping.value}
+          value={rendererSettingsState.toneMapping}
           onChange={commitProperty(RenderSettingsComponent, 'toneMapping')}
         />
       </InputGroup>
@@ -152,7 +152,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         min={0}
         max={10}
         step={0.1}
-        value={rendererSettingsState.toneMappingExposure.value}
+        value={rendererSettingsState.toneMappingExposure}
         onChange={updateProperty(RenderSettingsComponent, 'toneMappingExposure')}
         onRelease={commitProperty(RenderSettingsComponent, 'toneMappingExposure')}
         aria-label="Tone Mapping Exposure"
@@ -166,7 +166,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ShadowTypeOptions}
-          value={rendererSettingsState.shadowMapType.value ?? -1}
+          value={rendererSettingsState.shadowMapType ?? -1}
           onChange={commitProperty(RenderSettingsComponent, 'shadowMapType')}
         />
       </InputGroup>

@@ -5,7 +5,6 @@ import {
   ColorGradientFunctionJSON,
   ColorGradientJSON
 } from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
-import { State } from '@ir-engine/hyperflux'
 import { useTranslation } from 'react-i18next'
 import Button from '../../../../../primitives/tailwind/Button'
 import Text from '../../../../../primitives/tailwind/Text'
@@ -16,11 +15,11 @@ type GradientInputItemProps = Readonly<{
   path: string
   index: number
   item: ColorGradientFunctionJSON
-  scope: State<ColorGeneratorJSON>
+  value: ColorGeneratorJSON
   onChange: (path: string) => (value: any) => void
 }>
 
-export function GradientInputItem({ path, index, item, scope, onChange }: GradientInputItemProps) {
+export function GradientInputItem({ path, index, item, value, onChange }: GradientInputItemProps) {
   const { t } = useTranslation()
 
   const startPath = `${path}.functions.${index}.start`
@@ -28,12 +27,11 @@ export function GradientInputItem({ path, index, item, scope, onChange }: Gradie
   const functionBPath = `${path}.functions.${index}.function.b`
 
   const handleRemoveGradient = () => {
-    const gradientScope = scope as State<ColorGradientJSON>
-    const gradient = gradientScope.value
+    const gradient = value as ColorGradientJSON
     const thisOnChange = onChange(path + '.functions')
-    const nuFunctions = [...gradient.functions]
-    nuFunctions.splice(index, 1)
-    thisOnChange(JSON.parse(JSON.stringify(nuFunctions)))
+    const newFunctions = [...gradient.functions]
+    newFunctions.splice(index, 1)
+    thisOnChange(JSON.parse(JSON.stringify(newFunctions)))
   }
 
   return (
