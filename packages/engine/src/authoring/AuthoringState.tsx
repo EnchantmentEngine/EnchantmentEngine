@@ -51,7 +51,7 @@ import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoader
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
-import { Color, SRGBColorSpace, Vector2, Vector3 } from 'three'
+import { Color, RepeatWrapping, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -446,6 +446,8 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
                   texture.channel = textureData.channel
                   if (textureData.repeat) texture.repeat.copy(textureData.repeat)
                   if (textureData.offset) texture.offset.copy(textureData.offset)
+                  texture.wrapS = RepeatWrapping
+                  texture.wrapT = RepeatWrapping
                   texture.flipY = false
                   texture.needsUpdate = true
                   if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace

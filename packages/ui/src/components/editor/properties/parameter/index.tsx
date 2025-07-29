@@ -103,7 +103,7 @@ export default function ParameterInput({
                     <TexturePreviewInput
                       preview={thumbnails?.[k]}
                       value={valuesWithDefaults[k]}
-                      onRelease={setArgsProp(k + '.map')}
+                      onRelease={setArgsProp(k + '.source')}
                       onModify={{
                         channel: setArgsProp(k + '.channel'),
                         offset: setArgsProp(k + '.offset'),
