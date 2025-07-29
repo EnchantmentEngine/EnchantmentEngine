@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
 
 import { projectPath } from '@ir-engine/common/src/schemas/projects/project.schema'
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 
 export async function up(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable(projectPath)
@@ -38,6 +39,16 @@ export async function up(knex: Knex): Promise<void> {
       // Foreign keys
       table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
+
+    const projectColumnExists = await knex.schema.hasColumn(locationPath, 'projectId')
+
+    if (projectColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('projectId', 36).collate('utf8mb4_bin').nullable().index()
+        table.foreign('projectId').references('id').inTable('project').onDelete('CASCADE').onUpdate('CASCADE')
+      })
+    }
 
     await knex.raw('SET FOREIGN_KEY_CHECKS=1')
   }

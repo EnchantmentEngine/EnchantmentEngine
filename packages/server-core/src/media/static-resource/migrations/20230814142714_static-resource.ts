@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
 
 import { staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 
 export async function up(knex: Knex): Promise<void> {
   const oldTableName = 'static_resource'
@@ -53,6 +54,16 @@ export async function up(knex: Knex): Promise<void> {
       table.foreign('userId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
       table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
+
+    const sceneIdLocationColumnExists = await knex.schema.hasColumn(locationPath, 'sceneId')
+    if (sceneIdLocationColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('sceneId').collate('utf8mb4_bin').nullable()
+
+        table.foreign('sceneId').references('id').inTable(staticResourcePath).onDelete('CASCADE').onUpdate('CASCADE')
+      })
+    }
   }
 
   await knex.raw('SET FOREIGN_KEY_CHECKS=1')

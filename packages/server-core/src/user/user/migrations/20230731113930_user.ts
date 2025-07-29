@@ -1,5 +1,6 @@
 import type { Knex } from 'knex'
 
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 
 /**
@@ -36,6 +37,15 @@ export async function up(knex: Knex): Promise<void> {
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
     })
+
+    const updatedByLocationColumnExists = await knex.schema.hasColumn(locationPath, 'updatedBy')
+    if (updatedByLocationColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('updatedBy', 36).collate('utf8mb4_bin')
+        table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+      })
+    }
   }
 
   await knex.raw('SET FOREIGN_KEY_CHECKS=1')
