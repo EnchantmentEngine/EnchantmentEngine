@@ -3,7 +3,7 @@ import { getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunction
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { State, getState } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ResourceAssetType, ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
@@ -53,7 +53,7 @@ const AnimationReactor = () => {
   const entity = useEntityContext()
   ResourceState.useEntityResource(
     entity,
-    useComponent(entity, AnimationComponent).animations as any as State<ResourceAssetType>
+    useComponent(entity, AnimationComponent).animations as any as ResourceAssetType
   )
   return null
 }

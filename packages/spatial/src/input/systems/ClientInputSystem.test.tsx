@@ -8,7 +8,6 @@ import {
   Entity,
   entityExists,
   getComponent,
-  getMutableComponent,
   hasComponent,
   InputSystemGroup,
   PresentationSystemGroup,
@@ -398,13 +397,10 @@ describe('ClientInputCleanupSystem', () => {
 
       // Set the expected data
       for (const entity of EntityList) {
-        const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
-        for (let id = 0; id < gamepad?.value!.axes.length; ++id) {
-          gamepad.set((value) => {
-            // @ts-ignore Ignore the readonly property typecheck
-            if (value) value.axes[id] = Initial
-            return value
-          })
+        const gamepad = getComponent(entity, InputSourceComponent).source.gamepad
+        for (let id = 0; id < gamepad!.axes.length; ++id) {
+          // @ts-expect-error
+          gamepad!.axes[id] = Initial
         }
       }
 
@@ -435,7 +431,7 @@ describe('ClientInputCleanupSystem', () => {
 
     //   // Set the expected data
     //   for (const entity of EntityList) {
-    //     const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
+    //     const gamepad = getComponent(entity, InputSourceComponent).source.gamepad!
     //     gamepad.set((value) => {
     //       if (!value) value = { axes: [0, 0, 0, 0] } as unknown as Gamepad
     //       for (let id = 0; id < value!.axes.length; ++id) {

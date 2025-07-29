@@ -29,7 +29,7 @@ export const ColliderHelperReactor: React.FC = (props: { parentEntity; iconEntit
       }
     }
 
-    const iconHelper = getIconGizmo(icon(colliderComponent?.shape.value))
+    const iconHelper = getIconGizmo(icon(colliderComponent?.shape))
     setComponent(iconEntity, ObjectComponent, iconHelper)
   }, [iconEntity, colliderComponent.shape])
 

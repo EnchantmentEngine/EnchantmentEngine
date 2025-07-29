@@ -6,7 +6,7 @@ import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices
 import { PlaylistComponent } from '@ir-engine/engine/src/scene/components/PlaylistComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
 import { TextureType } from '@ir-engine/engine/src/scene/constants/UVOLTypes'
-import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { useHookstate } from '@ir-engine/hyperflux'
 import { Slider } from '@ir-engine/ui/editor'
 import { t } from 'i18next'
 import React, { useEffect } from 'react'
@@ -36,7 +36,7 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
   useEffect(() => {
     if (component.geometry.targets.length > 0) {
       const targetOptions = [] as OptionsType[]
-      const targets = component.geometry.targets.value
+      const targets = component.geometry.targets
       targets.forEach((target, index) => {
         targetOptions.push({ value: index, label: target })
       })
@@ -45,7 +45,7 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
   }, [component.geometry.targets])
 
   useEffect(() => {
-    const textureInfo = component.texture.get(NO_PROXY)
+    const textureInfo = component.texture
     for (const [textureType, textureTypeInfo] of Object.entries(textureInfo)) {
       const targetOptions = [] as OptionsType[]
       const targets = textureTypeInfo.targets
@@ -69,7 +69,7 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
         min={0}
         max={1}
         step={0.01}
-        value={component.volume.value}
+        value={component.volume}
         onChange={updateProperty(VolumetricComponent, 'volume')}
         onRelease={commitProperty(VolumetricComponent, 'volume')}
         aria-label="Volume"
@@ -81,12 +81,10 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
           <SelectInput
             options={geometryTargets.value as Array<OptionsType>}
             value={
-              component.geometry.userTarget.value === -1
-                ? component.geometry.currentTarget.value
-                : component.geometry.userTarget.value
+              component.geometry.userTarget === -1 ? component.geometry.currentTarget : component.geometry.userTarget
             }
             onChange={(value: number) => {
-              component.geometry.userTarget.set(value)
+              commitProperty(VolumetricComponent, 'geometry.userTarget' as any, [props.entity])(value)
             }}
           />
         </InputGroup>
@@ -94,8 +92,8 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
 
       {textureTargets.value &&
         Object.keys(textureTargets.value).map((textureType) => {
-          const userTarget = component.texture[textureType as TextureType].value?.userTarget ?? -1
-          const currentTarget = component.texture[textureType as TextureType].value?.currentTarget ?? 0
+          const userTarget = component.texture[textureType as TextureType]?.userTarget ?? -1
+          const currentTarget = component.texture[textureType as TextureType]?.currentTarget ?? 0
           const value = userTarget === -1 ? currentTarget : userTarget
 
           return (
@@ -104,9 +102,7 @@ export const VolumetricNodeEditor: EditorComponentType = (props) => {
                 options={textureTargets.value[textureType]}
                 value={value}
                 onChange={(value: number) => {
-                  component.texture[textureType as TextureType].merge({
-                    userTarget: value
-                  })
+                  commitProperty(VolumetricComponent, `texture.${textureType}.userTarget` as any, [props.entity])(value)
                 }}
               />
             </InputGroup>
@@ -124,9 +120,9 @@ function TimeScrubber(props: { entity: Entity }) {
     <InputGroup name="Current Time" label="Current Time">
       <Scrubber
         min={0}
-        max={component.time.duration.value}
-        value={component.time.currentTime.value / 1000}
-        bufferPosition={component.time.bufferedUntil.value / 1000}
+        max={component.time.duration}
+        value={component.time.currentTime / 1000}
+        bufferPosition={component.time.bufferedUntil / 1000}
         tooltip={{
           enabledOnHover: true
         }}

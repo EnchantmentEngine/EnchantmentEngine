@@ -18,7 +18,6 @@ import {
   createEntity,
   Entity,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -328,9 +327,7 @@ describe('LineSegmentComponent', () => {
         assert(hasComponent(entity, ObjectComponent))
       })
 
-      const lineSegmentComponent = getMutableComponent(entity, LineSegmentComponent)
-      lineSegmentComponent.geometry.set(geometry2)
-      lineSegmentComponent.material.set(material2)
+      setComponent(entity, LineSegmentComponent, { geometry: geometry2, material: material2 })
 
       await vi.waitFor(
         () => {

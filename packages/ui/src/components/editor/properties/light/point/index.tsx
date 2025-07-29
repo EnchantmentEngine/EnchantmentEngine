@@ -14,7 +14,7 @@ import LightShadowProperties from '../shadowProperties'
 
 export const PointLightNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
-  const lightComponent = useComponent(props.entity, PointLightComponent).value
+  const lightComponent = useComponent(props.entity, PointLightComponent)
 
   return (
     <NodeEditor

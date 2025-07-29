@@ -42,9 +42,9 @@ export const LightmapComponent = defineComponent({
     const sceneLoaded = GLTFComponent.useSceneLoaded(LayerFunctions.getAuthoringCounterpart(sceneEntity) || sceneEntity)
 
     useEffect(() => {
-      if (!lightmapComponent.atlasSrc.value) return
+      if (!lightmapComponent.atlasSrc) return
 
-      AssetState.loadAsync(lightmapComponent.atlasSrc.value, false, UUIDComponent.generate()).then((atlasEntity) => {
+      AssetState.loadAsync(lightmapComponent.atlasSrc, false, UUIDComponent.generate()).then((atlasEntity) => {
         const sceneUUID = UUIDComponent.get(getAncestorWithComponents(entity, [SceneComponent]))
         for (const atlasedChildEntity of getChildrenWithComponents(atlasEntity, [MeshComponent])) {
           const correspondingEntity = UUIDComponent.getEntityByUUID(

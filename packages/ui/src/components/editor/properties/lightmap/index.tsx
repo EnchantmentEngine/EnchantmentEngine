@@ -49,7 +49,7 @@ export const LightmapNodeEditor: EditorComponentType = (props) => {
 
   // Check if lightmap baking is in progress
   const lightmapBakeComponent = useOptionalComponent(simulationCounterpart, LightmapBakeComponent)
-  const isLightmapBaking = !!lightmapBakeComponent?.value
+  const isLightmapBaking = !!lightmapBakeComponent
 
   // Check if any operation is in progress
   const isOperationInProgress = isLightmapBaking || isGeneratingAtlas.value

@@ -15,6 +15,7 @@ import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
 import { createTestGLTFEntity, rings_gltf } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { DependencyCache } from '../../gltf/GLTFLoaderFunctions'
 import { LoopAnimationComponent } from './LoopAnimationComponent'
 
 describe('LoopAnimationComponent', () => {
@@ -27,6 +28,7 @@ describe('LoopAnimationComponent', () => {
     })
 
     afterEach(() => {
+      DependencyCache.clear()
       return destroyEngine()
     })
 
@@ -93,12 +95,7 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await vi.waitFor(() => GLTFComponent.isSceneLoaded(entity), { timeout: 20000 })
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0
@@ -135,12 +132,7 @@ describe('LoopAnimationComponent', () => {
       })
       setComponent(entity, GLTFComponent, { src: rings_gltf })
 
-      await vi.waitFor(
-        () => {
-          return GLTFComponent.isSceneLoaded(entity)
-        },
-        { timeout: 20000 }
-      )
+      await vi.waitFor(() => GLTFComponent.isSceneLoaded(entity), { timeout: 20000 })
 
       setComponent(entity, LoopAnimationComponent, {
         activeClipIndex: 0

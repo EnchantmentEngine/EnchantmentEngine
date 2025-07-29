@@ -11,13 +11,7 @@ import {
 } from 'three'
 
 import { iterateEntityNode, useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  getMutableComponent,
-  hasComponent,
-  removeComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, getComponent, hasComponent, removeComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -65,10 +59,8 @@ export const AvatarDissolveComponent = defineComponent({
         }
       })
 
-      getMutableComponent(entity, AvatarDissolveComponent).merge({
-        dissolveMaterials: dissolveMatList,
-        originMaterials: materialList
-      })
+      getComponent(entity, AvatarDissolveComponent).dissolveMaterials = dissolveMatList
+      getComponent(entity, AvatarDissolveComponent).originMaterials = materialList
 
       return () => {
         for (const originalMaterial of materialList) {

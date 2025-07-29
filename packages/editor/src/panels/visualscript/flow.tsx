@@ -78,7 +78,7 @@ export const Flow: React.FC<FlowProps> = ({
   })
 
   const { togglePlay, playing } = useVisualScriptRunner({
-    visualScriptJson,
+    visualScriptJson: visualScriptJson!,
     registry
   })
 

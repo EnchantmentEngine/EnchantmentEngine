@@ -25,7 +25,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   const options = useNodeOptions(props.entity)
 
   const addSink = () => {
-    const sinks = [...(inputComponent.inputSinks.value ?? []), getComponent(props.entity, UUIDComponent)]
+    const sinks = [...(inputComponent.inputSinks ?? []), getComponent(props.entity, UUIDComponent)]
 
     if (!hasComponent(props.entity, InputComponent)) {
       setComponent(props.entity, InputComponent, {
@@ -37,7 +37,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
   }
 
   const removeSink = (index: number) => {
-    const sinks = [...inputComponent.inputSinks.value]
+    const sinks = [...inputComponent.inputSinks]
     sinks.splice(index, 1)
     commitProperties(InputComponent, { inputSinks: JSON.parse(JSON.stringify(sinks)) }, [props.entity])
   }
@@ -55,7 +55,7 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.input.info-activationDistance')}
       >
         <NumericInput
-          value={inputComponent.activationDistance.value}
+          value={inputComponent.activationDistance}
           onChange={updateProperty(InputComponent, 'activationDistance')}
           onRelease={commitProperty(InputComponent, 'activationDistance')}
         />
@@ -66,8 +66,8 @@ export const InputComponentNodeEditor: EditorComponentType = (props) => {
         </Button>
       </div>
       <div id={`inputSinks-list`}>
-        {options.length > 1 && inputComponent.inputSinks.value?.length > 0
-          ? inputComponent.inputSinks.value.map((sink, index) => {
+        {options.length > 1 && inputComponent.inputSinks?.length > 0
+          ? inputComponent.inputSinks.map((sink, index) => {
               return (
                 <div key={index}>
                   <InputGroup name="Target" label={t('editor:properties.input.lbl-sinkTarget')}>

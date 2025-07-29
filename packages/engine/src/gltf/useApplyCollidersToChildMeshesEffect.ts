@@ -42,10 +42,10 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
 
   useLayoutEffect(() => {
     if (
-      !rigidbodyComponent?.initialized?.value ||
+      !rigidbodyComponent?.initialized ||
       !physicsWorld ||
       !physicsWorld.Rigidbodies.has(rigidbodyEntity) ||
-      !component.applyColliders.value
+      !component.applyColliders
     )
       return
 
@@ -57,7 +57,7 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
     for (const child of children) {
       // Don't add colliders to meshes with colliders baked in or helper meshes
       if (entityExists(child) && !hasComponent(child, ColliderComponent) && hasComponent(child, UUIDComponent)) {
-        setComponent(child, ColliderComponent, { shape: component.shape.value, matchMesh: true })
+        setComponent(child, ColliderComponent, { shape: component.shape, matchMesh: true })
         forceUpdateMatrices(child)
         added.push(child)
       }
@@ -72,8 +72,8 @@ export function useApplyCollidersToChildMeshesEffect(entity: Entity) {
     entity,
     physicsWorld,
     component.shape,
-    !!rigidbodyComponent?.initialized?.value,
-    component.applyColliders.value,
+    !!rigidbodyComponent?.initialized,
+    component.applyColliders,
     childMeshEntities
   ])
 }

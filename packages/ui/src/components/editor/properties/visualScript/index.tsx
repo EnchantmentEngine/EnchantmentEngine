@@ -25,12 +25,12 @@ export const VisualScriptNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Disable Visual Script" label="Disable Visual Script">
         <Checkbox
-          checked={visualScriptComponent.disabled.value}
+          checked={visualScriptComponent.disabled}
           onChange={commitProperty(VisualScriptComponent, 'disabled')}
         />
       </InputGroup>
       <InputGroup name="Play Visual Script" label="Play Visual Script">
-        <Checkbox checked={visualScriptComponent.run.value} onChange={commitProperty(VisualScriptComponent, 'run')} />
+        <Checkbox checked={visualScriptComponent.run} onChange={commitProperty(VisualScriptComponent, 'run')} />
       </InputGroup>
     </NodeEditor>
   )

@@ -28,7 +28,7 @@ import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/edi
 import ParameterInput from '@ir-engine/ui/src/components/editor/properties/parameter'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Material, Texture } from 'three'
+import { Texture } from 'three'
 import { commitProperty } from '../../components/properties/Util'
 
 type ThumbnailData = {
@@ -48,7 +48,7 @@ export function MaterialEditor(props: { entity: Entity }) {
   const { t } = useTranslation()
   const entity = props.entity
   const materialComponent = useComponent(entity, MaterialStateComponent)
-  const material = materialComponent.material.get(NO_PROXY) as Material
+  const material = materialComponent.material
 
   const thumbnails = useHookstate<Record<string, ThumbnailData>>({})
   const textureUnloadMap = useHookstate<Record<string, (() => void) | undefined>>({})
@@ -146,10 +146,9 @@ export function MaterialEditor(props: { entity: Entity }) {
     <div className="relative flex flex-col gap-2">
       <InputGroup name="Name" label={t('editor:properties.mesh.material.name')}>
         <StringInput
-          value={materialName?.value ?? ''}
+          value={materialName ?? ''}
           onChange={(name) => {
             setComponent(entity, NameComponent, name)
-            materialName?.set(name)
           }}
         />
       </InputGroup>

@@ -42,7 +42,7 @@ export const PrimitiveGeometryComponent = defineComponent({
         entity,
         MeshComponent,
         new Mesh(
-          createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value),
+          createGeometry(geometryComponent.geometryType, geometryComponent.geometryParams),
           new MeshStandardMaterial({ side: DoubleSide })
         )
       )
@@ -55,7 +55,7 @@ export const PrimitiveGeometryComponent = defineComponent({
 
     useEffect(() => {
       if (!mesh) return
-      mesh.geometry.set(createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value))
+      mesh.geometry = createGeometry(geometryComponent.geometryType, geometryComponent.geometryParams)
     }, [!!mesh, geometryComponent.geometryType, geometryComponent.geometryParams])
 
     return null

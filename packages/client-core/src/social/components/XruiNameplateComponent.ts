@@ -6,7 +6,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   NetworkObjectComponent,
@@ -56,7 +55,7 @@ export const XruiNameplateComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const networkObject = useComponent(entity, NetworkObjectComponent)
-    const user = useGet(userPath, networkObject.ownerId.value)
+    const user = useGet(userPath, networkObject.ownerId)
 
     useEffect(() => {
       if (!user.data?.name || getState(XruiNameplateState).isVisible === false) return
@@ -91,9 +90,7 @@ const addNameplateUI = (entity: Entity, username: string) => {
   const avatar = getOptionalComponent(entity, AvatarComponent)
 
   uiTransform.position.set(0, avatar?.avatarHeight ?? xruiNamePlateParams.defaultNamePlateHeight, 0)
-  const nameplateComponent = getMutableComponent(entity, XruiNameplateComponent)
-
-  nameplateComponent.uiEntity.set(uiEntity)
+  setComponent(entity, XruiNameplateComponent, { uiEntity })
 
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {

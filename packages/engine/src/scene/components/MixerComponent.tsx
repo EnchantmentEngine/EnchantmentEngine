@@ -308,7 +308,6 @@ export const MixerComponent = defineComponent({
 
     // Initialize component state on first render
     useEffect(() => {
-      const mixerComp = getComponent(entity, MixerComponent)
       if (mixerComp.initialized) return
 
       setComponent(entity, MixerComponent, {

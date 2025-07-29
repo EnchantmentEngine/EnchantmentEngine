@@ -16,7 +16,6 @@ import {
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeComponent,
   setComponent,
   useComponent,
@@ -102,7 +101,7 @@ export const VariantComponent = defineComponent({
       const minDistance = Math.pow(level.metadata['minDistance'], 2)
       const maxDistance = Math.pow(level.metadata['maxDistance'], 2)
       if (minDistance <= distance && distance <= maxDistance) {
-        getMutableComponent(entity, VariantComponent).currentLevel.set(i)
+        setComponent(entity, VariantComponent, { currentLevel: i })
         break
       }
     }
@@ -137,26 +136,26 @@ export const VariantComponent = defineComponent({
     useEffect(() => {
       if (!variantComponent.levels.length) return
 
-      const heuristic = variantComponent.heuristic.value
+      const heuristic = variantComponent.heuristic
       if (heuristic === Heuristic.DEVICE) {
         const targetDevice = isMobile || isMobileXRHeadset ? Devices.MOBILE : Devices.DESKTOP
-        const levelIndex = variantComponent.levels.value.findIndex((level) => level.metadata['device'] === targetDevice)
+        const levelIndex = variantComponent.levels.findIndex((level) => level.metadata['device'] === targetDevice)
         if (levelIndex < 0) {
           console.warn('VariantComponent: No asset found for target device')
           return
         }
-        variantComponent.currentLevel.set(levelIndex)
+        setComponent(entity, VariantComponent, { currentLevel: levelIndex })
       } else if (heuristic === Heuristic.DISTANCE) {
         setComponent(entity, DistanceFromCameraComponent)
         VariantComponent.setDistanceLevel(entity)
       }
-    }, [variantComponent.heuristic.value, variantComponent.levels])
+    }, [variantComponent.heuristic, variantComponent.levels])
 
     useEffect(() => {
       if (!variantComponent.levels.length || !childEntity.value) return
 
-      const currentLevel = variantComponent.currentLevel.value
-      const src = variantComponent.levels[currentLevel].src.value
+      const currentLevel = variantComponent.currentLevel
+      const src = variantComponent.levels[currentLevel].src
       if (!src) return
       setComponent(childEntity.value, GLTFComponent, { src: src })
     }, [childEntity, variantComponent.currentLevel, variantComponent.levels])
@@ -165,7 +164,7 @@ export const VariantComponent = defineComponent({
       const levels = variantComponent.levels.length
       for (let level = 0; level < levels; level++) {
         setCallback(entity, `variantLevel${level}`, () => {
-          variantComponent.currentLevel.set(level)
+          setComponent(entity, VariantComponent, { currentLevel: level })
         })
       }
       return () => {
@@ -224,7 +223,7 @@ const InstancingVariantReactor = (props: { entity: Entity }) => {
 const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) => {
   const variantComponent = useComponent(props.entity, VariantComponent)
 
-  const level = variantComponent.levels[props.level].value
+  const level = variantComponent.levels[props.level]
 
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
@@ -291,10 +290,10 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   }, [])
 
   const materialEntities = useComponent(props.meshEntity, MaterialInstanceComponent).entities
-  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
+  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level]
 
   useEffect(() => {
-    const entities = [...materialEntities.value]
+    const entities = [...materialEntities]
     for (const materialEntity of entities) {
       setComponent(materialEntity, InstanceVariantMaterialPluginComponent)
     }
@@ -306,10 +305,9 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   }, [materialEntities])
 
   useEffect(() => {
-    const entities = materialEntities.value
     const minDistance = level.metadata['minDistance']
     const maxDistance = level.metadata['maxDistance']
-    for (const materialEntity of entities) {
+    for (const materialEntity of materialEntities) {
       setComponent(materialEntity, InstanceVariantMaterialPluginComponent, {
         minDistance: minDistance,
         maxDistance: maxDistance

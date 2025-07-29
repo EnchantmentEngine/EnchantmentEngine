@@ -1,7 +1,7 @@
-import { getComponent, getMutableComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getState, none } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { AvatarRigComponent } from '../avatar/components/AvatarAnimationComponent'
@@ -24,7 +24,7 @@ export const evaluatePose = (entity: Entity) => {
 
   if (!hasComponent(entity, MotionCapturePoseComponent)) setComponent(entity, MotionCapturePoseComponent)
 
-  const pose = getMutableComponent(entity, MotionCapturePoseComponent)
+  const pose = getComponent(entity, MotionCapturePoseComponent)
 
   if (!MotionCaptureRigComponent.solvingLowerBody[entity]) return 'none'
 
@@ -37,12 +37,12 @@ export const evaluatePose = (entity: Entity) => {
       rightUpperLeg.angleTo(spine) < minSeatedAngle && leftUpperLeg.angleTo(spine) < minSeatedAngle
     metTargetStateAngle = toPose == 'sitting' ? !metTargetStateAngle : metTargetStateAngle
 
-    if (!metTargetStateAngle || pose[toPose].value) return false
+    if (!metTargetStateAngle || pose[toPose]) return false
 
     poseHoldTimer += deltaSeconds
     if (poseHoldTimer > poseHoldTime) {
       //remove old pose
-      pose[toPose === 'standing' ? 'sitting' : 'standing'].set(none)
+      delete pose[toPose === 'standing' ? 'sitting' : 'standing']
       poseHoldTimer = 0
       return true
     }
@@ -52,9 +52,10 @@ export const evaluatePose = (entity: Entity) => {
 
   /**if we find a change in pose, set a new pose
    * otherwise, set the begun property to false */
-  if (getLegsSeatedChange('sitting')) pose['sitting'].set({ begun: true })
-  else if (pose.sitting.value && pose.sitting.begun.value) pose.sitting.begun.set(false)
+  if (getLegsSeatedChange('sitting')) {
+    pose['sitting'] = { begun: true }
+  } else if (pose.sitting && pose.sitting.begun) pose.sitting.begun = false
 
-  if (getLegsSeatedChange('standing')) pose['standing'].set({ begun: true })
-  else if (pose.standing.value && pose.standing.begun.value) pose.standing.begun.set(false)
+  if (getLegsSeatedChange('standing')) pose['standing'] = { begun: true }
+  else if (pose.standing && pose.standing.begun) pose.standing.begun = false
 }

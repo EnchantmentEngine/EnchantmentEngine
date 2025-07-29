@@ -125,16 +125,13 @@ export const SplineTrackComponent = defineComponent({
     )
 
     useEffect(() => {
-      if (!componentState.splineEntityUUID.value) return
-      const splineTargetEntity = UUIDComponent.getEntityFromSameSourceByID(
-        entity,
-        componentState.splineEntityUUID.value
-      )
+      if (!componentState.splineEntityUUID) return
+      const splineTargetEntity = UUIDComponent.getEntityFromSameSourceByID(entity, componentState.splineEntityUUID)
       if (!splineTargetEntity) return
       const splineComponent = getOptionalComponent(splineTargetEntity, SplineComponent)
       if (!splineComponent) return
-      splineComponent.curve.closed = componentState.loop.value
-    }, [componentState.loop.value])
+      splineComponent.curve.closed = componentState.loop
+    }, [componentState.loop])
 
     return null
   }

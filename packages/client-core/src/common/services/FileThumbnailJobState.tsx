@@ -454,7 +454,7 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
   const lightEntityState = useHookstate(UndefinedEntity)
   const skyboxEntityState = useHookstate(UndefinedEntity)
   const cameraEntityState = useHookstate(UndefinedEntity)
-  const renderer = useOptionalComponent(cameraEntityState.value, RendererComponent)?.renderer.value
+  const renderer = useOptionalComponent(cameraEntityState.value, RendererComponent)?.renderer
 
   useImmediateEffect(() => {
     const entity = createEntity()

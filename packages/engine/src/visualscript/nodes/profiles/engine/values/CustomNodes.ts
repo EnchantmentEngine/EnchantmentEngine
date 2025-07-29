@@ -15,7 +15,6 @@ import {
 
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -149,8 +148,7 @@ export const playAudio = makeFlowNodeDefinition({
       playMode: playMode!,
       seekTime: seekTime
     }) // play
-    const component = getMutableComponent(entity, MediaComponent)
-    component.paused.set(paused)
+    setComponent(entity, MediaComponent, { paused })
     commit('flow')
   }
 })

@@ -138,7 +138,7 @@ const ViewportDnD = ({ children }: { children: React.ReactNode }) => {
 
 const SceneLoadingProgress = ({ rootEntity }) => {
   const { t } = useTranslation()
-  const progress = useComponent(rootEntity, GLTFComponent).progress.value
+  const progress = useComponent(rootEntity, GLTFComponent).progress
   const loaded = GLTFComponent.useSceneLoaded(rootEntity)
   const pendingResources = ResourceProgressComponent.useAllPendingResources()
 

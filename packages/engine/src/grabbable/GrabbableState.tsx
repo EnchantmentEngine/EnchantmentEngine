@@ -4,7 +4,7 @@ import {
   entityExists,
   EntityNetworkState,
   EntityUUID,
-  getMutableComponent,
+  getComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -104,7 +104,8 @@ const GrabbableReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
 
       for (const collider of colliders) {
         if (!hasComponent(collider, ColliderComponent)) continue
-        getMutableComponent(collider, ColliderComponent).collisionMask.set((mask) => (mask ^= CollisionGroups.Avatars))
+        getComponent(collider, ColliderComponent).collisionMask ^= CollisionGroups.Avatars
+        setComponent(collider, ColliderComponent)
       }
     }
 
@@ -120,9 +121,8 @@ const GrabbableReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
 
         for (const collider of colliders) {
           if (!hasComponent(collider, ColliderComponent)) continue
-          getMutableComponent(collider, ColliderComponent).collisionMask.set(
-            (mask) => (mask ^= CollisionGroups.Avatars)
-          )
+          getComponent(collider, ColliderComponent).collisionMask ^= CollisionGroups.Avatars
+          setComponent(collider, ColliderComponent)
         }
       }
     }

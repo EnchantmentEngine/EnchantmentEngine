@@ -71,23 +71,25 @@ export const AvatarControllerComponent = defineComponent({
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     const cameraHasTargetRotation = useHasComponent(
-      avatarControllerComponent.cameraEntity.value,
+      avatarControllerComponent.cameraEntity,
       TargetCameraRotationComponent
     )
 
     useImmediateEffect(() => {
-      avatarControllerComponent.cameraEntity.set(getState(ReferenceSpaceState).viewerEntity || UndefinedEntity)
+      setComponent(entity, AvatarControllerComponent, {
+        cameraEntity: getState(ReferenceSpaceState).viewerEntity || UndefinedEntity
+      })
     }, [])
 
     useEffect(() => {
       if (!gltfComponent) return
 
-      if (gltfComponent.progress.value !== 100) {
+      if (gltfComponent.progress !== 100) {
         AvatarControllerComponent.captureMovement(entity, entity)
       } else {
         AvatarControllerComponent.releaseMovement(entity, entity)
       }
-    }, [gltfComponent?.progress?.value])
+    }, [gltfComponent?.progress])
 
     useEffect(() => {
       if (!world) return
@@ -101,11 +103,11 @@ export const AvatarControllerComponent = defineComponent({
 
     useEffect(() => {
       if (!avatarComponent) return
-      const cameraEntity = avatarControllerComponent.cameraEntity.value
+      const cameraEntity = avatarControllerComponent.cameraEntity
       if (cameraEntity && entityExists(cameraEntity) && hasComponent(cameraEntity, FollowCameraComponent)) {
         const cameraComponent = getComponent(cameraEntity, FollowCameraComponent)
-        cameraComponent.firstPersonOffset.set(0, avatarComponent.eyeHeight.value, eyeOffset)
-        cameraComponent.thirdPersonOffset.set(0, avatarComponent.eyeHeight.value, 0)
+        cameraComponent.firstPersonOffset.set(0, avatarComponent.eyeHeight, eyeOffset)
+        cameraComponent.thirdPersonOffset.set(0, avatarComponent.eyeHeight, 0)
       }
     }, [avatarComponent?.avatarHeight, camera.near])
 
@@ -118,8 +120,8 @@ export const AvatarControllerComponent = defineComponent({
         targetEntity: entity,
         phi: targetCameraRotation.phi,
         theta: targetCameraRotation.theta,
-        firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, eyeOffset),
-        thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
+        firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight, eyeOffset),
+        thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight, 0)
       })
 
       return () => {

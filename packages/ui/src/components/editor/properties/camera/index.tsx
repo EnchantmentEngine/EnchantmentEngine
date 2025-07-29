@@ -46,6 +46,7 @@ export const CameraNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="Near" label={t('editor:properties.cameraComponent.lbl-near')}>
         <NumericInput
           value={component.near.value}
+
           onChange={updateProperty(CameraComponent, 'near')}
           onRelease={commitProperty(CameraComponent, 'near')}
         />

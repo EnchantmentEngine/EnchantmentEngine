@@ -1,13 +1,13 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { PlayMode } from '@ir-engine/engine/src/scene/constants/PlayMode'
 
 import { Entity } from '@ir-engine/ecs'
 import { EditorComponentType, commitProperties, commitProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { PlaylistComponent } from '@ir-engine/engine/src/scene/components/PlaylistComponent'
-import { NO_PROXY, State, none, usePrevious } from '@ir-engine/hyperflux'
+import { usePrevious } from '@ir-engine/hyperflux'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { IoMdAdd, IoMdPause, IoMdPlay, IoMdSkipBackward, IoMdSkipForward } from 'react-icons/io'
@@ -60,16 +60,14 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
   // const currentTrackIndex = useHookstate(-1)
 
   const addTrack = () => {
-    component.tracks.merge([
-      {
-        uuid: uuidv4(),
-        src: ''
-      }
-    ])
+    component.tracks.push({
+      uuid: uuidv4(),
+      src: ''
+    })
     commitProperties(
       PlaylistComponent,
       {
-        tracks: component.tracks.value as Track[]
+        tracks: component.tracks as Track[]
       },
       [props.entity]
     )
@@ -77,9 +75,9 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
 
   const findTrack = (trackUUID: string) => {
     for (let i = 0; i < component.tracks.length; i++) {
-      if (component.tracks[i].uuid.value === trackUUID) {
+      if (component.tracks[i].uuid === trackUUID) {
         return {
-          track: component.tracks[i].get(NO_PROXY),
+          track: component.tracks[i],
           index: i
         }
       }
@@ -93,15 +91,12 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
   const moveTrack = (trackUUID: string, atIndex: number) => {
     const { track, index } = findTrack(trackUUID)
     if (track && index !== -1) {
-      component.tracks.set((arr) => {
-        arr.splice(index, 1)
-        arr.splice(atIndex, 0, track)
-        return arr
-      })
+      component.tracks.splice(index, 1)
+      component.tracks.splice(atIndex, 0, track)
       commitProperties(
         PlaylistComponent,
         {
-          tracks: component.tracks.value as Track[]
+          tracks: component.tracks as Track[]
         },
         [props.entity]
       )
@@ -111,7 +106,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
   const [, drop] = useDrop(() => ({ accept: ItemType.track }))
 
   const togglePause = () => {
-    component.paused.set(!component.paused.value)
+    setComponent(props.entity, PlaylistComponent, { paused: !component.paused })
   }
 
   return (
@@ -119,11 +114,11 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
       <DndProvider backend={HTML5Backend}>
         <div ref={drop} className="w-full pl-4 pr-2">
           <InputGroup name="Autoplay" label="Autoplay">
-            <Checkbox onChange={commitProperty(PlaylistComponent, 'autoplay')} checked={component.autoplay.value} />
+            <Checkbox onChange={commitProperty(PlaylistComponent, 'autoplay')} checked={component.autoplay} />
           </InputGroup>
           {component.tracks.length > 0 ? (
             <>
-              {component.tracks.value.map((track, index) => {
+              {component.tracks.map((track, index) => {
                 return (
                   <Track
                     entity={props.entity}
@@ -131,27 +126,30 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
                     moveTrack={moveTrack}
                     findTrack={findTrack}
                     key={track.uuid}
-                    active={track.uuid === component.currentTrackUUID.value}
-                    onChange={() => {
-                      if (track.uuid === component.currentTrackUUID.value) {
+                    onChange={(value) => {
+                      component.tracks[index].src = value || ''
+                      if (track.uuid === component.currentTrackUUID) {
                         const newUUID = uuidv4()
-                        component.tracks[index].uuid.set(newUUID)
+                        component.tracks[index].uuid = newUUID
+                        component.currentTrackUUID = newUUID
                         commitProperties(
                           PlaylistComponent,
                           {
-                            tracks: component.tracks.value as Track[]
+                            tracks: component.tracks as Track[]
                           },
                           [props.entity]
                         )
-                        component.currentTrackUUID.set(newUUID)
+                        component.currentTrackUUID = newUUID
                       }
                     }}
-                    playing={track.uuid === component.currentTrackUUID.value && !component.paused.value}
+                    playing={track.uuid === component.currentTrackUUID && !component.paused}
                     togglePlay={() => {
-                      if (track.uuid === component.currentTrackUUID.value) {
-                        component.paused.set((p) => !p)
+                      if (track.uuid === component.currentTrackUUID) {
+                        setComponent(props.entity, PlaylistComponent, {
+                          paused: !component.paused
+                        })
                       } else {
-                        component.merge({
+                        setComponent(props.entity, PlaylistComponent, {
                           currentTrackUUID: track.uuid,
                           currentTrackIndex: index,
                           paused: false
@@ -171,7 +169,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
                     <IoMdSkipBackward />
                   </div>
                   <div className="text-2xl text-white" onClick={togglePause}>
-                    {component.paused.value ? <IoMdPlay /> : <IoMdPause />}
+                    {component.paused ? <IoMdPlay /> : <IoMdPause />}
                   </div>
                   <div className="text-2xl text-white" onClick={() => PlaylistComponent.playNextTrack(props.entity, 1)}>
                     <IoMdSkipForward />
@@ -184,7 +182,7 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
                 <div className="col-span-2">
                   <SelectInput
                     options={PlayModeOptions}
-                    value={component.playMode.value}
+                    value={component.playMode}
                     onChange={commitProperty(PlaylistComponent, 'playMode')}
                   />
                 </div>
@@ -204,7 +202,6 @@ export const PlaylistNodeEditor: EditorComponentType = (props) => {
 const Track = ({
   entity,
   track,
-  active,
   playing,
   moveTrack,
   findTrack,
@@ -212,21 +209,20 @@ const Track = ({
   togglePlay
 }: {
   entity: Entity
-  track: State<Track>
-  active: boolean
+  track: Track
   playing: boolean
   moveTrack: (trackUUID: string, atIndex: number) => void
   findTrack: (trackUUID: string) => {
     track: Track | undefined
     index: number
   }
-  onChange: () => void
+  onChange: (value?: string) => void
   togglePlay: () => void
 }) => {
-  const originalIndex = findTrack(track.uuid.value).index
+  const originalIndex = findTrack(track.uuid).index
   const [{ opacity }, dragSourceRef, previewRef] = useDrag({
     type: ItemType.track,
-    item: { uuid: track.uuid.value, index: originalIndex },
+    item: { uuid: track.uuid, index: originalIndex },
     collect: (monitor) => ({
       opacity: monitor.isDragging() ? 0 : 1
     })
@@ -235,8 +231,8 @@ const Track = ({
   const [, connectDrop] = useDrop({
     accept: ItemType.track,
     hover({ uuid: draggedtrackUUID }: { uuid: string; index: number }) {
-      if (draggedtrackUUID !== track.uuid.value) {
-        const { index: overIndex } = findTrack(track.uuid.value)
+      if (draggedtrackUUID !== track.uuid) {
+        const { index: overIndex } = findTrack(track.uuid)
         moveTrack(draggedtrackUUID, overIndex)
       }
     }
@@ -248,11 +244,10 @@ const Track = ({
     <div className="flex items-center justify-between gap-1" ref={(node) => connectDrop(previewRef(node))}>
       <ControlledStringInput
         type="text"
-        value={track.src.value}
+        value={track.src}
         onRelease={(e) => {
           if (e !== previousTrackSource) {
-            track.src.set(e)
-            onChange()
+            onChange(e)
           }
         }}
       />
@@ -265,7 +260,7 @@ const Track = ({
       <div
         className="text-2xl text-white"
         onClick={() => {
-          track.set(none)
+          onChange()
           PlaylistComponent.playNextTrack(entity, 0)
         }}
       >

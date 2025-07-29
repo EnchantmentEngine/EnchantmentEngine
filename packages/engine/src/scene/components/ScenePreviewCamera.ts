@@ -40,7 +40,7 @@ export const ScenePreviewCameraComponent = defineComponent({
       const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       cameraTransform.position.copy(transform.position)
       cameraTransform.rotation.copy(transform.rotation)
-      const camera = previewCamera.camera.value as PerspectiveCamera
+      const camera = previewCamera.camera
       setComponent(entity, ObjectComponent, camera)
 
       return () => {
@@ -59,8 +59,8 @@ export const ScenePreviewCameraComponent = defineComponent({
 
     useLayoutEffect(() => {
       if (!engineCameraTransform) return
-      previewCamera.camera.value.position.copy(previewCameraTransform.position.value)
-      previewCamera.camera.value.quaternion.copy(previewCameraTransform.rotation.value)
+      previewCamera.camera.position.copy(previewCameraTransform.position)
+      previewCamera.camera.quaternion.copy(previewCameraTransform.rotation)
     }, [previewCameraTransform])
 
     return null

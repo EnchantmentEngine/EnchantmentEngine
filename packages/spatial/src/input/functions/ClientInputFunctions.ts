@@ -8,7 +8,6 @@ import {
   Entity,
   getAncestorWithComponents,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   Not,
@@ -113,8 +112,8 @@ export const setInputSources = (startEntity: Entity, inputSources: Entity[]) => 
     const sinkEntity =
       sinkEntityUUID === 'Self' ? inputEntity : UUIDComponent.getEntityFromSameSourceByID(inputEntity, sinkEntityUUID)
     if (!hasComponent(sinkEntity, InputComponent)) continue
-    const sinkInputComponent = getMutableComponent(sinkEntity, InputComponent)
-    sinkInputComponent.inputSources.merge(inputSources)
+    const sinkInputComponent = getComponent(sinkEntity, InputComponent)
+    sinkInputComponent.inputSources.push(...inputSources)
   }
 }
 
@@ -201,7 +200,7 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   if (isSpatialInput) findRaycastedInput(sourceEid, intersectionData)
 
   const sortedIntersections = Array.from(intersectionData).sort(sortByDistance)
-  const sourceState = getMutableComponent(sourceEid, InputSourceComponent)
+  const sourceState = getComponent(sourceEid, InputSourceComponent)
 
   //TODO check all inputSources sorted by distance list of InputComponents from query, probably similar to the spatialInputQuery
   //Proximity check ONLY if we have no raycast results, as it is always lower priority
@@ -218,7 +217,7 @@ export function assignInputSources(sourceEid: Entity, capturedEntity: Entity) {
   const camera = getOptionalComponent(viewerEntity, CameraComponent)
   sortedIntersections.push({ entity: viewerEntity, distance: camera?.far ?? 1e16 })
 
-  sourceState.intersections.set(sortedIntersections)
+  sourceState.intersections = sortedIntersections
 
   const finalInputSources = Array.from(new Set([sourceEid, ...nonSpatialInputSource()]))
 

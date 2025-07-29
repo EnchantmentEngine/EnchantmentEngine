@@ -24,7 +24,6 @@ import {
 } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -37,7 +36,7 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { defineState, getMutableState, getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {
   createPriorityQueue,
@@ -108,20 +107,20 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
 
   const shadowMapResolution = useHookstate(getMutableState(RendererState).shadowMapResolution)
 
-  const directionalLight = directionalLightComponent?.light.get(NO_PROXY) as DirectionalLight
+  const directionalLight = directionalLightComponent?.light
 
   useEffect(() => {
     if (!directionalLightComponent || !directionalLight) return
-    if (!directionalLightComponent.castShadow.value) return
+    if (!directionalLightComponent.castShadow) return
     const params = {
       light: directionalLight as DirectionalLight,
       shadowMapSize: shadowMapResolution.value,
-      shadowBias: directionalLightComponent.shadowBias.value,
-      maxFar: directionalLightComponent.cameraFar.value,
-      lightIntensity: directionalLightComponent.intensity.value,
-      lightColor: directionalLightComponent.color.value,
-      cascades: renderSettingsComponent.cascades.value,
-      lightMargin: directionalLightComponent.cameraFar.value
+      shadowBias: directionalLightComponent.shadowBias,
+      maxFar: directionalLightComponent.cameraFar,
+      lightIntensity: directionalLightComponent.intensity,
+      lightColor: directionalLightComponent.color,
+      cascades: renderSettingsComponent.cascades,
+      lightMargin: directionalLightComponent.cameraFar
     } as CSMParams
 
     CSM.initCSM(params, rendererEntity)
@@ -130,8 +129,8 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
       CSM.dispose(rendererEntity)
     }
   }, [
-    directionalLightComponent?.castShadow.value,
-    renderSettingsComponent.cascades.value,
+    directionalLightComponent?.castShadow,
+    renderSettingsComponent.cascades,
     renderSettingsComponent.shadowMapType,
     !!directionalLight
   ])
@@ -148,21 +147,21 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
 
   useEffect(() => {
     setComponent(rendererEntity, CSMComponent)
-    const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
+    const csmComponent = getComponent(rendererEntity, CSMComponent)
 
-    if (!directionalLightComponent?.castShadow.value || !directionalLight) return
+    if (!directionalLightComponent?.castShadow || !directionalLight) return
 
-    csmComponent.shadowBias.set(directionalLight.shadow.bias)
-    csmComponent.maxFar.set(directionalLightComponent.cameraFar.value)
-    csmComponent.shadowMapSize.set(shadowMapResolution.value)
+    csmComponent.shadowBias = directionalLight.shadow.bias
+    csmComponent.maxFar = directionalLightComponent.cameraFar
+    csmComponent.shadowMapSize = shadowMapResolution.value
 
-    for (const light of csmComponent.lights.get(NO_PROXY)) {
-      light.color.set(new Color(directionalLightComponent.color.value))
-      ;(light as DirectionalLight).intensity = directionalLightComponent.intensity.value
+    for (const light of csmComponent.lights) {
+      light.color.set(new Color(directionalLightComponent.color))
+      ;(light as DirectionalLight).intensity = directionalLightComponent.intensity
       light.shadow.mapSize.setScalar(shadowMapResolution.value)
-      ;(light as DirectionalLight).shadow.radius = directionalLightComponent.shadowRadius.value
+      ;(light as DirectionalLight).shadow.radius = directionalLightComponent.shadowRadius
     }
-    csmComponent.needsUpdate.set(true)
+    setComponent(entity, CSMComponent, { needsUpdate: true })
   }, [
     shadowMapResolution,
     directionalLight,
@@ -175,11 +174,8 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   ])
 
   useEffect(() => {
-    setComponent(rendererEntity, CSMComponent)
-    const csmComponent = getMutableComponent(rendererEntity, CSMComponent)
-
-    csmComponent.cascades.set(renderSettingsComponent.cascades.value)
-    csmComponent.needsUpdate.set(true)
+    if (!hasComponent(rendererEntity, CSMComponent)) return
+    setComponent(rendererEntity, CSMComponent, { cascades: renderSettingsComponent.cascades, needsUpdate: true })
   }, [renderSettingsComponent.cascades])
 
   return (
@@ -199,7 +195,7 @@ const EntityChildCSMReactor = (props: { rendererEntity: Entity; entity: Entity }
     if (!csm) return
     setComponent(entity, CSMPluginComponent)
     return () => removeComponent(entity, CSMPluginComponent)
-  }, [csm, material.value])
+  }, [csm, material])
 
   return null
 }
@@ -227,7 +223,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   const xrLightProbeEntity = useHookstate(getMutableState(XRLightProbeState).directionalLightEntity)
   const activeLightEntity = UUIDComponent.useEntityFromSameSourceByID(
     renderSettingsEntity,
-    renderSettingsComponent.primaryLight.value
+    renderSettingsComponent.primaryLight
   )
 
   const activeLightEntityState = useHookstate(activeLightEntity)
@@ -255,9 +251,9 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
       return
     }
 
-    if (renderSettingsComponent.primaryLight.value && primaryLightVisibleComponent) {
+    if (renderSettingsComponent.primaryLight && primaryLightVisibleComponent) {
       activeLightEntityState.set(
-        UUIDComponent.getEntityFromSameSourceByID(renderSettingsEntity, renderSettingsComponent.primaryLight.value)
+        UUIDComponent.getEntityFromSameSourceByID(renderSettingsEntity, renderSettingsComponent.primaryLight)
       )
       return
     }
@@ -265,7 +261,7 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
     activeLightEntityState.set(UndefinedEntity)
   }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight, primaryLightVisibleComponent])
 
-  if (!renderSettingsComponent.csm.value || !activeLightEntityState.value || !directionalLightComponent) return null
+  if (!renderSettingsComponent.csm || !activeLightEntityState.value || !directionalLightComponent) return null
 
   return (
     <ShadowSystemReactors.EntityCSMReactor
@@ -301,7 +297,7 @@ const DropShadowReactor = () => {
   const shadow = useComponent(entity, ShadowComponent)
 
   useEffect(() => {
-    if (!shadow.cast.value || !hasMeshOrModel || hasComponent(entity, DropShadowComponent)) return
+    if (!shadow.cast || !hasMeshOrModel || hasComponent(entity, DropShadowComponent)) return
 
     _box3.makeEmpty()
 
@@ -405,7 +401,7 @@ const RendererShadowReactor = () => {
   const rendererComponent = useComponent(entity, RendererComponent)
 
   useEffect(() => {
-    const renderer = getComponent(entity, RendererComponent).renderer
+    const renderer = rendererComponent.renderer
     if (!renderer) return
     renderer.shadowMap.enabled = renderer.shadowMap.autoUpdate = useShadows
   }, [useShadows, rendererComponent.renderer])

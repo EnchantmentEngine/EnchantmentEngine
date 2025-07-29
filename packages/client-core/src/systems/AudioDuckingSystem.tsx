@@ -6,12 +6,7 @@ import {
   screenshareAudioMediaChannelType,
   webcamAudioMediaChannelType
 } from '@ir-engine/hyperflux'
-import {
-  defineState,
-  getMutableState,
-  NO_PROXY,
-  useMutableState
-} from '@ir-engine/hyperflux/src/functions/StateFunctions'
+import { defineState, getMutableState, useMutableState } from '@ir-engine/hyperflux/src/functions/StateFunctions'
 import { NetworkID, PeerID } from '@ir-engine/hyperflux/src/types/Types'
 import hark from 'hark'
 import React, { useEffect } from 'react'
@@ -57,7 +52,7 @@ const MediaElementReactor = (props: { entity: Entity }) => {
   const duckingEnabled = AudioDuckingState.useDuckAudioEnabled()
 
   useEffect(() => {
-    const element = mediaElement.element.get(NO_PROXY) as HTMLMediaElement
+    const element = mediaElement.element
     if (!element || !duckingEnabled) return
 
     const prevVolume = element.volume

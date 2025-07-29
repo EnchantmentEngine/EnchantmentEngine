@@ -1,7 +1,7 @@
 import { Vector2 } from 'three'
 
 import { Entity } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -37,22 +37,22 @@ const followCameraModeCycle = [
 ] as FollowCameraMode[]
 
 const onFollowCameraModeCycle = (cameraEntity: Entity) => {
-  const follow = getMutableComponent(cameraEntity, FollowCameraComponent)
-  const mode = follow.mode.value
+  const follow = getComponent(cameraEntity, FollowCameraComponent)
+  const mode = follow.mode
   const currentModeIdx = followCameraModeCycle.includes(mode) ? followCameraModeCycle.indexOf(mode) : 0
   const nextModeIdx = (currentModeIdx + 1) % followCameraModeCycle.length
   const nextMode = followCameraModeCycle[nextModeIdx]
-  follow.mode.set(nextMode)
+  follow.mode = nextMode
 }
 
 const onFollowCameraFirstPerson = (cameraEntity: Entity) => {
-  const followComponent = getMutableComponent(cameraEntity, FollowCameraComponent)
-  followComponent.mode.set(FollowCameraMode.FirstPerson)
+  const followComponent = getComponent(cameraEntity, FollowCameraComponent)
+  followComponent.mode = FollowCameraMode.FirstPerson
 }
 
 const onFollowCameraShoulderCam = (cameraEntity: Entity) => {
-  const follow = getMutableComponent(cameraEntity, FollowCameraComponent)
-  follow.mode.set(FollowCameraMode.ShoulderCam)
+  const follow = getComponent(cameraEntity, FollowCameraComponent)
+  follow.mode = FollowCameraMode.ShoulderCam
 }
 
 /**

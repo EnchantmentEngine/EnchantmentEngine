@@ -6,7 +6,6 @@ import {
   EngineState,
   EntityTreeComponent,
   getChildrenWithComponents,
-  getMutableComponent,
   InputSystemGroup,
   UndefinedEntity
 } from '@ir-engine/ecs'
@@ -63,12 +62,12 @@ export const createMediaControlsUI = (entity: Entity, aspectRatio: number = 1) =
 }
 
 const onUpdate = (entity: Entity) => {
-  const mediaComponent = getMutableComponent(entity, MediaComponent)
-  if (!mediaComponent.controls.value) return
-  const xrui = getOptionalComponent(mediaComponent.xruiEntity.value, XRUIComponent)
+  const mediaComponent = getComponent(entity, MediaComponent)
+  if (!mediaComponent.controls) return
+  const xrui = getOptionalComponent(mediaComponent.xruiEntity, XRUIComponent)
 
   if (!xrui) return
-  const xruiChildren = getChildrenWithComponents(mediaComponent.xruiEntity.value, [XRUIComponent]).map((entity) =>
+  const xruiChildren = getChildrenWithComponents(mediaComponent.xruiEntity, [XRUIComponent]).map((entity) =>
     getComponent(entity, XRUIComponent)
   )
   const xruiList = [xrui, ...xruiChildren]
@@ -90,8 +89,7 @@ const onUpdate = (entity: Entity) => {
     if (capturingEntity === entity) {
       const buttons = inputSource?.buttons
       clicking = !!buttons //clicking on our boundingbox this frame
-
-      mediaComponent.paused.set(!mediaComponent.paused.value)
+      setComponent(entity, MediaComponent, { paused: !mediaComponent.paused })
     }
   }
 
@@ -107,10 +105,10 @@ const onUpdate = (entity: Entity) => {
   } else {
     transition.setState('OUT')
   }
-  const uiTransform = getComponent(mediaComponent.xruiEntity.value, TransformComponent)
+  const uiTransform = getComponent(mediaComponent.xruiEntity, TransformComponent)
   const transform = getComponent(entity, TransformComponent)
 
-  controlsUiPosVec3.copy(mediaComponent.uiOffset.value) //used to add - might be nice to allow for some pre-placed anchor positions
+  controlsUiPosVec3.copy(mediaComponent.uiOffset) //used to add - might be nice to allow for some pre-placed anchor positions
   controlsUiPosVec3.add(transform.position)
   uiTransform.position.copy(controlsUiPosVec3)
 

@@ -35,7 +35,7 @@ export const CameraComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const cameraComponent = useComponent(entity, CameraComponent)
+    const camera = useComponent(entity, CameraComponent)
 
     useImmediateEffect(() => {
       const camera = cameraComponent.value

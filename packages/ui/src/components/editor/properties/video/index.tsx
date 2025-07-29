@@ -1,9 +1,9 @@
 import {
   getComponent,
-  getOptionalMutableComponent,
   getSimulationCounterpart,
   hasComponent,
-  useComponent
+  useComponent,
+  useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
@@ -88,11 +88,11 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
 
   const simulationEntity = getSimulationCounterpart(props.entity)
   const video = useComponent(simulationEntity, VideoComponent)
-  const mediaElement = getOptionalMutableComponent(simulationEntity, MediaElementComponent)
+  const mediaElement = useHasComponent(simulationEntity, MediaElementComponent)
 
   const resizeVideoToMatchAspectRatio = () => {
     const transformComponent = getComponent(props.entity, TransformComponent)
-    const videoSize = video.currentVideoSize.value
+    const videoSize = video.currentVideoSize
     const videoRatio = videoSize.x / videoSize.y
     const scale = transformComponent.scale
     const newX = scale.y * videoRatio
@@ -119,7 +119,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
       <MediaInput
         mediaMode={MediaMode.video}
         entity={props.entity}
-        mediaNodeId={video.mediaUUID.value}
+        mediaNodeId={video.mediaUUID}
         OnMediaSourceUpdate={commitProperty(VideoComponent, 'mediaUUID')}
         dropTypes={[...ItemTypes.Videos]}
       />
@@ -142,12 +142,12 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.video.lbl-fit')}
         info={t('editor:properties.video.lbl-fit-info')}
       >
-        <SelectInput value={video.fit.value} onChange={commitProperty(VideoComponent, 'fit')} options={fitOptions} />
+        <SelectInput value={video.fit} onChange={commitProperty(VideoComponent, 'fit')} options={fitOptions} />
       </InputGroup>
 
       <InputGroup name="Projection" label={t('editor:properties.video.lbl-projection')}>
         <SegmentedControlInput
-          value={video.projection.value}
+          value={video.projection}
           onChange={commitProperty(VideoComponent, 'projection')}
           options={projectionOptions}
         />
@@ -159,7 +159,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.video.lbl-side-info')}
       >
         <SegmentedControlInput
-          value={video.side.value}
+          value={video.side}
           onChange={commitProperty(VideoComponent, 'side')}
           options={[
             { label: 'Front', value: FrontSide },
@@ -175,7 +175,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.video.lbl-uv-offset-info')}
       >
         <Vector2Input
-          value={video.uvOffset.value}
+          value={video.uvOffset}
           onChange={updateProperty(VideoComponent, 'uvOffset')}
           onRelease={commitProperty(VideoComponent, 'uvOffset')}
           axisClassNames={['w-1/2', 'w-1/2']}
@@ -188,7 +188,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.video.lbl-uv-scale-info')}
       >
         <Vector2Input
-          value={video.uvScale.value}
+          value={video.uvScale}
           onChange={updateProperty(VideoComponent, 'uvScale')}
           onRelease={commitProperty(VideoComponent, 'uvScale')}
           axisClassNames={['w-1/2', 'w-1/2']}
@@ -202,14 +202,14 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         <div className="flex w-full">
           <div className="flex w-1/2">
             <SelectInput
-              value={video.wrapS.value}
+              value={video.wrapS}
               onChange={commitProperty(VideoComponent, 'wrapS')}
               options={wrappingOptions}
             />
           </div>
           <div className="flex w-1/2">
             <SelectInput
-              value={video.wrapT.value}
+              value={video.wrapT}
               onChange={commitProperty(VideoComponent, 'wrapT')}
               options={wrappingOptions}
             />
@@ -224,16 +224,16 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         <Checkbox
           label={t('editor:properties.video.lbl-use-alphaEnable')}
           variantTextPlacement={'right'}
-          checked={video.useAlpha.value}
+          checked={video.useAlpha}
           onChange={commitProperty(VideoComponent, 'useAlpha')}
         />
 
-        {video.useAlpha.value && (
+        {video.useAlpha && (
           <>
             <Checkbox
               label={t('editor:properties.video.lbl-use-alphaInvert')}
               variantTextPlacement={'right'}
-              checked={video.useAlphaInvert.value}
+              checked={video.useAlphaInvert}
               onChange={commitProperty(VideoComponent, 'useAlphaInvert')}
             />
 
@@ -242,7 +242,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
               min={0}
               max={1}
               step={0.01}
-              value={video.alphaThreshold.value}
+              value={video.alphaThreshold}
               onChange={updateProperty(VideoComponent, 'alphaThreshold')}
               onRelease={commitProperty(VideoComponent, 'alphaThreshold')}
               aria-label="alphaThreshold"
@@ -253,7 +253,7 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
               info={t('editor:properties.video.lbl-use-alpha-uv-transform-info')}
             >
               <Vector2Input
-                value={video.alphaUVOffset.value}
+                value={video.alphaUVOffset}
                 onChange={updateProperty(VideoComponent, 'alphaUVOffset')}
                 onRelease={commitProperty(VideoComponent, 'alphaUVOffset')}
                 axisLabels={['U', 'V']}

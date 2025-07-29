@@ -2,7 +2,7 @@ import {
   Component,
   ComponentErrorsType,
   defineComponent,
-  getOptionalMutableComponent,
+  getOptionalComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -19,8 +19,5 @@ export const ErrorComponent = defineComponent({
 })
 
 export const getEntityErrors = <C extends Component>(entity: Entity, component: C) => {
-  return getOptionalMutableComponent(entity, ErrorComponent)?.[component.name].value as Record<
-    ComponentErrorsType<C>,
-    string
-  >
+  return getOptionalComponent(entity, ErrorComponent)?.[component.name] as Record<ComponentErrorsType<C>, string>
 }

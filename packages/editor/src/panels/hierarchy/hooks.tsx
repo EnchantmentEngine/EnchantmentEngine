@@ -125,22 +125,22 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const ChildEntityReactor = (props: { entity: Entity }) => {
     const entity = props.entity
     const entityTreeComponent = useOptionalComponent(entity, EntityTreeComponent)
-    const parentEntity = useHookstate(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
-    const childIndex = useHookstate(entityTreeComponent?.childIndex.value ?? undefined)
+    const parentEntity = useHookstate(entityTreeComponent?.parentEntity ?? UndefinedEntity)
+    const childIndex = useHookstate(entityTreeComponent?.childIndex ?? undefined)
 
     useEffect(() => {
-      if (entityTreeComponent?.parentEntity.value !== parentEntity.value) {
-        parentEntity.set(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
+      if (entityTreeComponent?.parentEntity !== parentEntity.value) {
+        parentEntity.set(entityTreeComponent?.parentEntity ?? UndefinedEntity)
         reparentRefresh.set((reparentRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent?.parentEntity.value])
+    }, [entityTreeComponent?.parentEntity])
 
     useEffect(() => {
-      if (entityTreeComponent?.childIndex.value !== childIndex.value) {
-        childIndex.set(entityTreeComponent?.childIndex.value)
+      if (entityTreeComponent?.childIndex !== childIndex.value) {
+        childIndex.set(entityTreeComponent?.childIndex)
         childIndexRefresh.set((childIndexRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent?.childIndex.value])
+    }, [entityTreeComponent?.childIndex])
     return null
   }
 

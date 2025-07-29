@@ -126,7 +126,7 @@ const ClickPlacementReactor = (props: { parentEntity: Entity }) => {
 
   useEffect(() => {
     if (
-      !errors?.value ||
+      !errors ||
       !clickState.selectedAsset.value ||
       !clickState.placementEntity.value ||
       !getComponent(clickState.placementEntity.value, GLTFComponent)?.src ||
