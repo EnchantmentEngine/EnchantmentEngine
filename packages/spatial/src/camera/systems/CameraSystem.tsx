@@ -19,7 +19,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, getState, NO_PROXY, none, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 
 import { DEG2RAD } from 'three/src/math/MathUtils'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
@@ -77,14 +77,14 @@ function CameraReactor() {
   const camera = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 
   const getCameraAspect = () => {
-    if (!camera?.value) return 1
-    if (isPerspectiveCamera(camera.value)) return camera.value.aspect
+    if (!camera) return 1
+    if (isPerspectiveCamera(camera)) return camera.aspect
     return 1 // Default aspect for orthographic cameras
   }
 
   const getCameraNearFar = () => {
-    if (!camera?.value) return { near: 0.1, far: 2000 }
-    return { near: camera.value.near, far: camera.value.far }
+    if (!camera) return { near: 0.1, far: 2000 }
+    return { near: camera.near, far: camera.far }
   }
 
   const alternateCameraRef = useRef<ArrayCamera | OrthographicCamera>(
@@ -106,17 +106,17 @@ function CameraReactor() {
   useEffect(() => {
     if (!camera) return
     if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
-      if (isOrthographicCamera(camera.value)) return
+      if (isOrthographicCamera(camera)) return
       const altCamera = alternateCameraRef.current as OrthographicCamera
-      alternateCameraRef.current = camera.get(NO_PROXY) as ArrayCamera
-      camera!.set(altCamera)
+      alternateCameraRef.current = camera as ArrayCamera
+      setComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent, altCamera)
     } else {
-      if (isPerspectiveCamera(camera.value)) return
+      if (isPerspectiveCamera(camera)) return
       const altCamera = alternateCameraRef.current as ArrayCamera
-      alternateCameraRef.current = camera.get(NO_PROXY) as OrthographicCamera
-      camera!.set(altCamera)
+      alternateCameraRef.current = camera as OrthographicCamera
+      setComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent, altCamera)
     }
-    camera.value.updateProjectionMatrix()
+    camera.updateProjectionMatrix()
   }, [cameraSettings.projectionType])
 
   useEffect(() => {
