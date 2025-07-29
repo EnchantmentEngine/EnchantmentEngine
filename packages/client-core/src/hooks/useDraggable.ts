@@ -202,35 +202,47 @@ export const useDraggable = ({
           newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
           break
         case 'right':
-          const rightDistance = coords.current.anchorDistanceX || 0
-          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - rightDistance, maxX))
+          newX = Math.max(
+            0,
+            Math.min(parentRect.width - targetRect.width - (coords.current.anchorDistanceX || 0), maxX)
+          )
           break
         case 'top':
           newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
           break
         case 'bottom':
-          const bottomDistance = coords.current.anchorDistanceY || 0
-          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomDistance, maxY))
+          newY = Math.max(
+            0,
+            Math.min(parentRect.height - targetRect.height - (coords.current.anchorDistanceY || 0), maxY)
+          )
           break
         case 'top-left':
           newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
           newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
           break
         case 'top-right':
-          const topRightDistance = coords.current.anchorDistanceX || 0
-          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - topRightDistance, maxX))
+          newX = Math.max(
+            0,
+            Math.min(parentRect.width - targetRect.width - (coords.current.anchorDistanceX || 0), maxX)
+          )
           newY = Math.max(0, Math.min(coords.current.anchorDistanceY || 0, maxY))
           break
         case 'bottom-left':
           newX = Math.max(0, Math.min(coords.current.anchorDistanceX || 0, maxX))
-          const bottomLeftDistance = coords.current.anchorDistanceY || 0
-          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomLeftDistance, maxY))
+          newY = Math.max(
+            0,
+            Math.min(parentRect.height - targetRect.height - (coords.current.anchorDistanceY || 0), maxY)
+          )
           break
         case 'bottom-right':
-          const bottomRightDistanceX = coords.current.anchorDistanceX || 0
-          const bottomRightDistanceY = coords.current.anchorDistanceY || 0
-          newX = Math.max(0, Math.min(parentRect.width - targetRect.width - bottomRightDistanceX, maxX))
-          newY = Math.max(0, Math.min(parentRect.height - targetRect.height - bottomRightDistanceY, maxY))
+          newX = Math.max(
+            0,
+            Math.min(parentRect.width - targetRect.width - (coords.current.anchorDistanceX || 0), maxX)
+          )
+          newY = Math.max(
+            0,
+            Math.min(parentRect.height - targetRect.height - (coords.current.anchorDistanceY || 0), maxY)
+          )
           break
         case 'center':
           newX = Math.max(0, Math.min((parentRect.width - targetRect.width) / 2, maxX))
@@ -257,8 +269,8 @@ export const useDraggable = ({
       const maxX = parentRect.width - targetRect.width
       const maxY = parentRect.height - targetRect.height
 
-      let currentX = target.offsetLeft
-      let currentY = target.offsetTop
+      const currentX = target.offsetLeft
+      const currentY = target.offsetTop
 
       // Handle anchoring to different positions
       if (anchor) {
