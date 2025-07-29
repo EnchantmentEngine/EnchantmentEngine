@@ -29,14 +29,14 @@ export const CameraNodeEditor: EditorComponentType = (props) => {
         <>
           <InputGroup name="Fov" label={t('editor:properties.cameraComponent.lbl-fov')}>
             <NumericInput
-              value={(component as any).fov.value}
+              value={(component as any).fov}
               onChange={updateProperty(CameraComponent, 'fov' as any)}
               onRelease={commitProperty(CameraComponent, 'fov' as any)}
             />
           </InputGroup>
           <InputGroup name="Aspect" label={t('editor:properties.cameraComponent.lbl-aspect')}>
             <NumericInput
-              value={(component as any).aspect.value}
+              value={(component as any).aspect}
               onChange={updateProperty(CameraComponent, 'aspect' as any)}
               onRelease={commitProperty(CameraComponent, 'aspect' as any)}
             />
@@ -45,15 +45,14 @@ export const CameraNodeEditor: EditorComponentType = (props) => {
       )}
       <InputGroup name="Near" label={t('editor:properties.cameraComponent.lbl-near')}>
         <NumericInput
-          value={component.near.value}
-
+          value={component.near}
           onChange={updateProperty(CameraComponent, 'near')}
           onRelease={commitProperty(CameraComponent, 'near')}
         />
       </InputGroup>
       <InputGroup name="Far" label={t('editor:properties.cameraComponent.lbl-far')}>
         <NumericInput
-          value={component.far.value}
+          value={component.far}
           onChange={updateProperty(CameraComponent, 'far')}
           onRelease={commitProperty(CameraComponent, 'far')}
         />
