@@ -69,7 +69,7 @@ const CameraEntity = (props: { entityUUID: EntityUUID }) => {
 
   useEffect(() => {
     if (!entity) return
-    setComponent(entity, CameraComponent)
+    setComponent(entity, PerspectiveCameraComponent)
   }, [entity])
 
   return null

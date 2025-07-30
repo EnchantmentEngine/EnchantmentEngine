@@ -486,7 +486,7 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
     thumbnailCanvas.height = 256
     canvasContainer.appendChild(thumbnailCanvas)
 
-    setComponent(cameraEntity, CameraComponent)
+    setComponent(cameraEntity, PerspectiveCameraComponent)
     setComponent(cameraEntity, RendererComponent, { canvas: thumbnailCanvas })
     setComponent(cameraEntity, VisibleComponent, true)
 
