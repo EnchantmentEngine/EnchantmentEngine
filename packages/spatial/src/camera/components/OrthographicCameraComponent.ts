@@ -27,11 +27,10 @@ export const OrthographicCameraComponent = defineComponent({
     setComponent(
       entity,
       CameraComponent,
-      new OrthographicCamera(-width / 2, width / 2, height / 2, height / 2, near, far)
+      new OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, near, far)
     ) // initialize the camera synchronously
     return initial
   },
-
   onRemove: (entity) => {
     removeComponent(entity, CameraComponent)
   },
@@ -55,5 +54,3 @@ export const OrthographicCameraComponent = defineComponent({
     return null
   }
 })
-
-export const CameraGizmoTagComponent = defineComponent({ name: 'CameraGizmoTag' })

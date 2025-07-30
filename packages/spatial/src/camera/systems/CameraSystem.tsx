@@ -80,40 +80,21 @@ function CameraReactor() {
   const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
   const camera = useOptionalComponent(viewerEntity, CameraComponent)
 
-  const getCameraAspect = () => {
-    if (!camera) return 1
-    if (hasComponent(viewerEntity, PerspectiveCameraComponent))
-      return getComponent(viewerEntity, PerspectiveCameraComponent).aspect
-    if (hasComponent(viewerEntity, OrthographicCameraComponent))
-      return (
-        getComponent(viewerEntity, OrthographicCameraComponent).width /
-        getComponent(viewerEntity, OrthographicCameraComponent).height
-      )
-    return 1
-  }
-
-  const getCameraNearFar = () => {
-    if (!camera) return { near: 0.1, far: 2000 }
-    return { near: camera.near, far: camera.far }
-  }
-
+  /*TODO: figure out a means to prevent the slight camera distortion that happens when you switch between orthographic and perspective*/
   useEffect(() => {
     if (!camera) return
     if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
+      console.log(
+        'DEBUG',
+        getComponent(viewerEntity, RendererComponent).canvas!.parentElement?.clientWidth,
+        getComponent(viewerEntity, RendererComponent).canvas!.parentElement?.clientHeight
+      )
       removeComponent(viewerEntity, PerspectiveCameraComponent)
-      setComponent(viewerEntity, OrthographicCameraComponent, {
-        width: 10,
-        height: 10 / getCameraAspect(),
-        ...getCameraNearFar()
-      })
+      setComponent(viewerEntity, OrthographicCameraComponent) // happens because oninit camera is created fist
     } else {
       removeComponent(viewerEntity, OrthographicCameraComponent)
-      setComponent(viewerEntity, PerspectiveCameraComponent, {
-        fov: cameraSettings.fov.value,
-        ...getCameraNearFar()
-      })
+      setComponent(viewerEntity, PerspectiveCameraComponent)
     }
-    camera.updateProjectionMatrix()
   }, [cameraSettings.projectionType])
 
   // TODO: this is messy and not properly reactive; we need a better way to handle camera settings

@@ -25,7 +25,8 @@ export const PerspectiveCameraComponent = defineComponent({
 
   onInit: (entity, initial) => {
     const { fov, aspect, near, far } = initial
-    setComponent(entity, CameraComponent, new ArrayCamera([new PerspectiveCamera(fov, aspect, near, far)])) // we want to synchronously set the camera component
+
+    setComponent(entity, CameraComponent, new ArrayCamera([new PerspectiveCamera(fov, aspect, near, far)])) // we want to synchronously set the camera component for initialize engine
     return initial
   },
 
@@ -50,5 +51,3 @@ export const PerspectiveCameraComponent = defineComponent({
     return null
   }
 })
-
-export const CameraGizmoTagComponent = defineComponent({ name: 'CameraGizmoTag' })
