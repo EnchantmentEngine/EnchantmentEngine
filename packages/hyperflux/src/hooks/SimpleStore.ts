@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { DeepReadonly } from '../types/DeepReadonly'
 
 type Listener = () => void
 
@@ -64,6 +65,10 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
       return value as T
     },
 
+    get value(): DeepReadonly<T> {
+      return value as DeepReadonly<T>
+    },
+
     get identifier() {
       return identifier
     },
@@ -92,7 +97,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
         listeners.forEach(_callListener)
       } else if (isPromise(nextValue)) {
         setPromised(nextValue)
-      } else if (nextValue !== value) {
+      } else if (nextValue !== value || (typeof value === 'object' && value !== null)) {
         if (resolve) {
           const resolver = resolve
           promise = undefined

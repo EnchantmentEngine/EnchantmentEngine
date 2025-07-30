@@ -17,6 +17,7 @@ import { EngineState } from './EngineState'
 import { Entity } from './Entity'
 import { queries, removeQuery } from './QueryFunctions'
 import { SystemState } from './SystemState'
+import { EntitiesBySourceStores, EntitiesByUUIDStores } from './UUIDComponent'
 
 export class Engine {
   static instance: Engine
@@ -86,6 +87,9 @@ export function destroyEngine() {
   } catch (e) {
     //some errors are thrown because we have side effects in component onRemove - we need to move that logic to reactors
   }
+
+  EntitiesBySourceStores.clear()
+  EntitiesByUUIDStores.clear()
 
   $RemovedComponent.exists.fill(0)
 
