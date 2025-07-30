@@ -417,7 +417,7 @@ const _scale = new Vector3()
 const matrix4 = new Matrix4()
 
 function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer: number = ObjectLayers.Gizmos) {
-  const gizmoEntiies: Entity[] = []
+  const gizmoEntities: Entity[] = []
   for (const name in gizmoMap) {
     for (let i = 0; i < gizmoMap[name].length; i++) {
       const object = gizmoMap[name][i][0].clone() as Mesh
@@ -445,11 +445,11 @@ function setupGizmo(parentEntity: Entity, gizmoMap: GizmoDefinition, gizmoLayer:
       setComponent(entity, VisibleComponent)
       object.renderOrder = Infinity
       ObjectLayerMaskComponent.setLayer(entity, gizmoLayer)
-      gizmoEntiies.push(entity)
+      gizmoEntities.push(entity)
     }
   }
 
-  return gizmoEntiies
+  return gizmoEntities
 }
 
 const gizmo = {

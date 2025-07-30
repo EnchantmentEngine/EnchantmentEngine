@@ -7,7 +7,6 @@ import {
   EntityTreeComponent,
   removeEntityNodeRecursively,
   setComponent,
-  useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
@@ -37,7 +36,6 @@ export const TransformGizmoVisualComponent = defineComponent({
 
   reactor: function () {
     const gizmoVisualEntity = useEntityContext()
-    const visualComponent = useComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
     const mode = useMutableState(EditorHelperState).transformMode.value
 
     useEffect(() => {
