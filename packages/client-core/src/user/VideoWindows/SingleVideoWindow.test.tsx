@@ -212,8 +212,8 @@ describe('SingleVideoWindow component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a container element with the data-testid attribute "video-window"', () => {
