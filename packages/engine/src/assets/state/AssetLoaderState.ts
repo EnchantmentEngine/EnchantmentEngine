@@ -23,12 +23,7 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
-import { RenderBackends } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'

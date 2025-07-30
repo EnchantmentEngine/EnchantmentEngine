@@ -1,5 +1,5 @@
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import {defineState, syncStateWithLocalStorage} from '@ir-engine/hyperflux'
+import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 
 import { isIPhone } from '../common/functions/isMobile'
 import { RenderBackends, RenderBackendsType, RenderModes, RenderModesType } from './constants/RenderModes'

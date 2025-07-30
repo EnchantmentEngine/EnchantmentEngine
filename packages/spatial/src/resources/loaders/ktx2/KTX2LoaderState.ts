@@ -1,13 +1,12 @@
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
-import { RendererState } from '../../../renderer/RendererState'
-import { DefaultLoadingManager, WebGLRenderer } from 'three'
-import { DomainConfigState } from '../../DomainConfigState'
-import { KTX2Loader } from './KTX2Loader'
+import { WebGPURenderer } from 'three/webgpu'
 import { ReferenceSpaceState } from '../../../ReferenceSpaceState'
-import { getComponent, useComponent, useEntityContext } from '@ir-engine/ecs/src/ComponentFunctions'
 import { RendererComponent } from '../../../renderer/components/RendererComponent'
 import { RenderBackends } from '../../../renderer/constants/RenderModes'
-import { WebGPURenderer } from 'three/webgpu'
+import { RendererState } from '../../../renderer/RendererState'
+import { DomainConfigState } from '../../DomainConfigState'
+import { KTX2Loader } from './KTX2Loader'
 
 export const KTX2LoaderState = defineState({
   name: 'KTX2LoaderState',
@@ -19,16 +18,16 @@ export const KTX2LoaderState = defineState({
 
       const viewerEntity = getState(ReferenceSpaceState).viewerEntity
       const rendererComponent = getComponent(viewerEntity, RendererComponent)
-      
+
       console.log(renderer)
       if (renderer.backend == RenderBackends.WEBGPU) {
         const r = new WebGPURenderer()
         ktx2Loader.detectWebGPUSupport(r)
-      }else{
+      } else {
         ktx2Loader.detectWebGLSupport(rendererComponent.renderer)
-      } 
+      }
     }
-  
+
     return ktx2Loader
   }
 })

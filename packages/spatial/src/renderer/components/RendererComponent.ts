@@ -23,8 +23,17 @@ All portions of the code written by the Infinite Reality Engine team are Copyrig
 Infinite Reality Engine. All Rights Reserved.
 */
 
-import { defineComponent, Entity, getComponent, hasComponent, S, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { getState, isDev, NO_PROXY, none, State, useMutableState } from '@ir-engine/hyperflux'
+import {
+  defineComponent,
+  Entity,
+  getComponent,
+  hasComponent,
+  S,
+  setComponent,
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
+import { getState, isDev, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
 import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
@@ -249,7 +258,6 @@ export const RendererComponent = defineComponent({
         renderer.debug.checkShaderErrors = isDev
         renderer.autoClear = true
 
-
         const composer = new EffectComposer(renderer)
         rendererComponent.effectComposer = composer
         const renderPass = new RenderPass()
@@ -258,7 +266,6 @@ export const RendererComponent = defineComponent({
 
         // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
         renderer.debug.checkShaderErrors = false //isDev
-
 
         const xrManager = createWebXRManager(renderer)
         renderer.xr = xrManager as any

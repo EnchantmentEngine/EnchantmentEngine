@@ -93,11 +93,7 @@ const WebGPUPostProcessingReactor = (props: { entity: Entity; rendererEntity: En
     webgpuPipeline.updateEffects(postProcessingComponent.effects.value)
 
     console.log('WebGPU post processing pipeline updated')
-  }, [
-    postProcessingComponent.effects,
-    postProcessingComponent.enabled,
-    renderer.webgpuPostProcessingPipeline
-  ])
+  }, [postProcessingComponent.effects, postProcessingComponent.enabled, renderer.webgpuPostProcessingPipeline])
 
   return null
 }

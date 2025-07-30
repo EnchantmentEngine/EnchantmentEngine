@@ -15,21 +15,20 @@ import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-e
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
+import WebGPUBackend from 'three/src/renderers/webgpu/WebGPUBackend.js'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { RendererComponent } from '../components/RendererComponent'
 import { getMaxShadowCascades, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { CSMComponent } from './CSMComponent'
 import { CSMPluginComponent } from './CSMPluginComponent'
 import Frustum from './Frustum'
 import CSMShader from './Shader'
-import WebGPUBackend from 'three/src/renderers/webgpu/WebGPUBackend.js'
-import { RendererComponent } from '../components/RendererComponent'
-import { RenderBackends } from '../constants/RenderModes'
 
 const originalLightsFragmentBegin = ShaderChunk.lights_fragment_begin
 const originalLightsParsBegin = ShaderChunk.lights_pars_begin
@@ -115,7 +114,7 @@ function createLight(i: number, rendererEntity: Entity, sourceLight?: Directiona
   //if using webgpu
   if (rendererEntity && getComponent(rendererEntity, RendererComponent).renderer instanceof WebGPUBackend) {
     const shadowNode = sourceLight?.shadow.shadowNode as CSMShadowNode
-    shadowNode.lights.push(light) 
+    shadowNode.lights.push(light)
   }
 
   const lightEntity = createEntity()
@@ -524,30 +523,30 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
 
   const csm = getComponent(entity, CSMComponent)
 
-  csm.cascades = validatedParams.cascades ?? CSMDefaults.cascades,
-  csm.mode = validatedParams.mode ?? CSMDefaults.mode,
-  csm.maxFar = validatedParams.maxFar ?? CSMDefaults.maxFar,
-  csm.shadowMapSize = validatedParams.shadowMapSize ?? CSMDefaults.shadowMapSize,
-  csm.shadowBias = validatedParams.shadowBias ?? CSMDefaults.shadowBias,
-  csm.shadowNormalBias = CSMDefaults.shadowNormalBias,
-  csm.lightDirection = validatedParams.lightDirection ?? CSMDefaults.lightDirection,
-  csm.lightDirectionUp = validatedParams.lightDirectionUp ?? CSMDefaults.lightDirectionUp,
-  csm.lightColor = validatedParams.lightColor ?? CSMDefaults.lightColor,
-  csm.lightIntensity = validatedParams.lightIntensity ?? CSMDefaults.lightIntensity,
-  csm.lightMargin = validatedParams.lightMargin ?? CSMDefaults.lightMargin,
-  csm.fade = validatedParams.fade ?? CSMDefaults.fade,
-  csm.mainFrustum = CSMDefaults.mainFrustum,
-  csm.frustums = CSMDefaults.frustums,
-  csm.breaks = CSMDefaults.breaks,
-  csm.lights = CSMDefaults.lights,
-  csm.lightEntities = CSMDefaults.lightEntities,
-  csm.shaders = CSMDefaults.shaders,
-  csm.csmShadowNode = (validatedParams as any).csmShadowNode ?? CSMDefaults.csmShadowNode,
-  csm.webgpuEnhanced = CSMDefaults.webgpuEnhanced,
-  csm.shadowSoftness = CSMDefaults.shadowSoftness,
-  csm.ambientShadowColor = CSMDefaults.ambientShadowColor,
-  csm.shadowColorTint = CSMDefaults.shadowColorTint,
-  csm.needsUpdate = CSMDefaults.needsUpdate
+  ;(csm.cascades = validatedParams.cascades ?? CSMDefaults.cascades),
+    (csm.mode = validatedParams.mode ?? CSMDefaults.mode),
+    (csm.maxFar = validatedParams.maxFar ?? CSMDefaults.maxFar),
+    (csm.shadowMapSize = validatedParams.shadowMapSize ?? CSMDefaults.shadowMapSize),
+    (csm.shadowBias = validatedParams.shadowBias ?? CSMDefaults.shadowBias),
+    (csm.shadowNormalBias = CSMDefaults.shadowNormalBias),
+    (csm.lightDirection = validatedParams.lightDirection ?? CSMDefaults.lightDirection),
+    (csm.lightDirectionUp = validatedParams.lightDirectionUp ?? CSMDefaults.lightDirectionUp),
+    (csm.lightColor = validatedParams.lightColor ?? CSMDefaults.lightColor),
+    (csm.lightIntensity = validatedParams.lightIntensity ?? CSMDefaults.lightIntensity),
+    (csm.lightMargin = validatedParams.lightMargin ?? CSMDefaults.lightMargin),
+    (csm.fade = validatedParams.fade ?? CSMDefaults.fade),
+    (csm.mainFrustum = CSMDefaults.mainFrustum),
+    (csm.frustums = CSMDefaults.frustums),
+    (csm.breaks = CSMDefaults.breaks),
+    (csm.lights = CSMDefaults.lights),
+    (csm.lightEntities = CSMDefaults.lightEntities),
+    (csm.shaders = CSMDefaults.shaders),
+    (csm.csmShadowNode = (validatedParams as any).csmShadowNode ?? CSMDefaults.csmShadowNode),
+    (csm.webgpuEnhanced = CSMDefaults.webgpuEnhanced),
+    (csm.shadowSoftness = CSMDefaults.shadowSoftness),
+    (csm.ambientShadowColor = CSMDefaults.ambientShadowColor),
+    (csm.shadowColorTint = CSMDefaults.shadowColorTint),
+    (csm.needsUpdate = CSMDefaults.needsUpdate)
 
   createLights(validatedParams.light, entity)
   updateFrustums(entity)
