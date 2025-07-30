@@ -37,7 +37,6 @@ import {
   useAncestorWithComponents
 } from '@ir-engine/ecs'
 import { NO_PROXY, defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { isOrthographicCamera, isPerspectiveCamera } from '../../camera/components/CameraComponent'
 import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
@@ -894,7 +893,7 @@ function castRayFromCamera(
   const worldEntity = world.id
   const worldTransform = getComponent(worldEntity, TransformComponent)
 
-  if (isPerspectiveCamera(camera)) {
+  if ((camera as any).isPerspectiveCamera) {
     _perspectiveCamera.copy(camera)
     _perspectiveCamera.updateProjectionMatrix()
     _perspectiveCamera.matrixWorld.copy(worldTransform.matrixWorld).invert().multiply(camera.matrixWorld)
@@ -904,7 +903,7 @@ function castRayFromCamera(
       .unproject(_perspectiveCamera)
       .sub(raycastQuery.origin)
       .normalize()
-  } else if (isOrthographicCamera(camera)) {
+  } else if ((camera as any).isOrthographicCamera) {
     _orthographicCamera.copy(camera)
     _orthographicCamera.updateProjectionMatrix()
     _orthographicCamera.matrixWorld.copy(worldTransform.matrixWorld).invert().multiply(camera.matrixWorld)

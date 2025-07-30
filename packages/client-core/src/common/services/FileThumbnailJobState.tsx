@@ -12,6 +12,7 @@ import {
   UndefinedEntity,
   createEntity,
   getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useOptionalComponent,
@@ -27,7 +28,7 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, TransformComponent } from '@ir-engine/spatial'
-import { CameraComponent, isPerspectiveCamera } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import {
   getNestedVisibleChildren,
@@ -42,17 +43,7 @@ import {
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import React, { Suspense, useEffect, useRef } from 'react'
-import {
-  ArrayCamera,
-  Color,
-  Euler,
-  Material,
-  Mesh,
-  OrthographicCamera,
-  PerspectiveCamera,
-  Quaternion,
-  SphereGeometry
-} from 'three'
+import { ArrayCamera, Color, Euler, Material, Mesh, OrthographicCamera, Quaternion, SphereGeometry } from 'three'
 
 import { useFind } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
@@ -63,6 +54,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent copy'
 import {
   CameraViewAngle,
   setCameraFocusOnBox,
@@ -539,8 +531,8 @@ const renderThumbnailFromAngle = (
       const camera = getComponent(cameraEntity, CameraComponent)
       camera.layers.set(ObjectLayers.Scene)
 
-      const viewCamera = isPerspectiveCamera(camera)
-        ? (camera.cameras[0] as PerspectiveCamera)
+      const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+        ? (camera as ArrayCamera).cameras[0]
         : (camera as OrthographicCamera)
 
       viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
@@ -698,7 +690,9 @@ const renderThumbnail = (
     const camera = getComponent(cameraEntity, CameraComponent)
     camera.layers.set(ObjectLayers.Scene)
 
-    const viewCamera = isPerspectiveCamera(camera) ? camera.cameras[0] : (camera as OrthographicCamera)
+    const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+      ? (camera as ArrayCamera).cameras[0]
+      : (camera as OrthographicCamera)
 
     viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
 

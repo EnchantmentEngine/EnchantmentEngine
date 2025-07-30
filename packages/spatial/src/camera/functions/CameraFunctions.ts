@@ -1,4 +1,10 @@
-import { ComponentType, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  ComponentType,
+  getComponent,
+  getOptionalComponent,
+  hasComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
 import { getState } from '@ir-engine/hyperflux'
@@ -17,7 +23,8 @@ import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
-import { CameraComponent, isPerspectiveCamera } from '../components/CameraComponent'
+import { CameraComponent } from '../components/CameraComponent'
+import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent copy'
 import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
 
 export const setTargetCameraRotation = (entity: Entity, phi: number, theta: number, time = 0.3) => {
@@ -170,7 +177,9 @@ export function setCameraFocusOnBoxFromAngle(
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
 
   // Update the view camera matrices
-  const viewCamera = isPerspectiveCamera(camera) ? camera.cameras[0] : (camera as OrthographicCamera)
+  const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+    ? (camera as ArrayCamera).cameras[0]
+    : (camera as OrthographicCamera)
   viewCamera.matrixWorld.copy(camera.matrixWorld)
   viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
   viewCamera.projectionMatrix.copy(camera.projectionMatrix)

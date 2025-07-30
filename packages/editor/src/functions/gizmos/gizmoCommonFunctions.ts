@@ -1,14 +1,12 @@
-import { EngineState, getComponent } from '@ir-engine/ecs'
+import { EngineState, getComponent, hasComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import {
-  CameraComponent,
-  isOrthographicCamera,
-  isPerspectiveCamera
-} from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { OrthographicCameraComponent } from '@ir-engine/spatial/src/camera/components/OrthographicCameraComponent'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent copy'
 import { IntersectionData } from '@ir-engine/spatial/src/input/functions/ClientInputHeuristics'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { Object3D, Raycaster, Vector3 } from 'three'
+import { ArrayCamera, Object3D, OrthographicCamera, Raycaster, Vector3 } from 'three'
 import { EditorHelperState } from '../../services/EditorHelperState'
 
 export function intersectObjectWithRay(object: Object3D, raycaster: Raycaster, includeInvisible?: boolean) {
@@ -49,19 +47,22 @@ export function getCameraFactor(
   position: Vector3,
   size: number,
   multiplier = 0.3,
-  camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  cameraEntity = getState(ReferenceSpaceState).viewerEntity
 ) {
+  const camera = getComponent(cameraEntity, CameraComponent)
   if (!camera) return size * multiplier
 
-  if (isOrthographicCamera(camera)) {
-    const factor = (camera.top - camera.bottom) / camera.zoom
+  if (hasComponent(cameraEntity, OrthographicCameraComponent)) {
+    const orthoCamera = camera as OrthographicCamera
+    const factor = (orthoCamera.top - orthoCamera.bottom) / camera.zoom
     return factor * size * multiplier
   }
 
-  if (isPerspectiveCamera(camera)) {
+  if (hasComponent(cameraEntity, PerspectiveCameraComponent)) {
+    const perspectiveCamera = camera as ArrayCamera
     const distance = position.distanceTo(camera.position)
-    const fovRadians = (Math.PI * camera.fov) / 360
-    const factor = distance * Math.min((1.9 * Math.tan(fovRadians)) / camera.zoom, 7)
+    const fovRadians = (Math.PI * perspectiveCamera.fov) / 360
+    const factor = distance * Math.min((1.9 * Math.tan(fovRadians)) / perspectiveCamera.zoom, 7)
     return factor * size * multiplier
   }
 
