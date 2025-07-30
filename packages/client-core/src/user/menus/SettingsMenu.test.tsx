@@ -150,8 +150,8 @@ describe('SettingsMenu component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a button with the data-testid attribute "sidebar-navigation-button"', async () => {

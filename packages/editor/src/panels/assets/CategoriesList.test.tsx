@@ -71,8 +71,8 @@ describe('CategoriesList component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a button with data-testid "assets-tab-assets-section-button"', () => {

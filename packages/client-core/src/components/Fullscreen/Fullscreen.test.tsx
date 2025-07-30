@@ -48,8 +48,8 @@ describe('MoreOptionsMenu component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a button with data-testid "enter-fullscreen-button"', () => {
