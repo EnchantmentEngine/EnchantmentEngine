@@ -9,7 +9,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useImmediateEffect } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { CameraComponent } from './CameraComponent'
 
@@ -24,18 +23,20 @@ export const PerspectiveCameraComponent = defineComponent({
     far: S.Number({ default: 1000 })
   }),
 
+  onInit: (entity, initial) => {
+    const { fov, aspect, near, far } = initial
+    setComponent(entity, CameraComponent, new ArrayCamera([new PerspectiveCamera(fov, aspect, near, far)])) // we want to synchronously set the camera component
+    return initial
+  },
+
+  onRemove: (entity) => {
+    removeComponent(entity, CameraComponent)
+  },
+
   reactor: () => {
     const entity = useEntityContext()
     const { fov, aspect, near, far } = useComponent(entity, PerspectiveCameraComponent)
     const camera = useOptionalComponent(entity, CameraComponent) as ArrayCamera
-
-    useImmediateEffect(() => {
-      setComponent(entity, CameraComponent, new ArrayCamera([new PerspectiveCamera(fov, aspect, near, far)]))
-
-      return () => {
-        removeComponent(entity, CameraComponent)
-      }
-    }, [])
 
     useEffect(() => {
       if (!camera) return

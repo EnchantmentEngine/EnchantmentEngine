@@ -7,7 +7,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useImmediateEffect } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { OrthographicCamera } from 'three'
 import { CameraComponent } from './CameraComponent'
@@ -23,22 +22,24 @@ export const OrthographicCameraComponent = defineComponent({
     far: S.Number({ default: 1000 })
   }),
 
+  onInit: (entity, initial) => {
+    const { width, height, near, far } = initial
+    setComponent(
+      entity,
+      CameraComponent,
+      new OrthographicCamera(-width / 2, width / 2, height / 2, height / 2, near, far)
+    ) // initialize the camera synchronously
+    return initial
+  },
+
+  onRemove: (entity) => {
+    removeComponent(entity, CameraComponent)
+  },
+
   reactor: () => {
     const entity = useEntityContext()
     const { width, height, near, far } = useComponent(entity, OrthographicCameraComponent)
     const camera = useOptionalComponent(entity, CameraComponent) as OrthographicCamera
-
-    useImmediateEffect(() => {
-      setComponent(
-        entity,
-        CameraComponent,
-        new OrthographicCamera(-width / 2, width / 2, height / 2, height / 2, near, far)
-      )
-
-      return () => {
-        removeComponent(entity, CameraComponent)
-      }
-    }, [width, height, near, far])
 
     useEffect(() => {
       if (!camera) return

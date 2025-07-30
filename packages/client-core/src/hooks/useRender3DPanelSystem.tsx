@@ -15,8 +15,8 @@ import {
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
-import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
@@ -37,7 +37,7 @@ export function useRender3DPanelSystem(canvas: React.MutableRefObject<HTMLCanvas
 
     const cameraEntity = createEntity()
     setComponent(cameraEntity, UUIDComponent, { entitySourceID: sourceID, entityID: 'camera' as EntityID })
-    setComponent(cameraEntity, CameraComponent)
+    setComponent(cameraEntity, PerspectiveCameraComponent)
     setComponent(cameraEntity, TransformComponent)
     setComponent(cameraEntity, VisibleComponent)
     setComponent(cameraEntity, CameraOrbitComponent)
