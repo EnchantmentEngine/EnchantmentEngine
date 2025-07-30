@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /**
  * @fileoverview
  * Contains declarations for the functions and hooks used by ClientInputSystem.reactor.
@@ -86,7 +61,7 @@ export const useNonSpatialInputSources = () => {
       const code = event.code
       const down = event.type === 'keydown'
 
-      const buttonState = inputSourceComponent.buttons
+      const buttonState = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
       if (down) buttonState[code] = createInitialButtonState(eid)
       else if (buttonState[code]) buttonState[code].up = true
     }
@@ -103,14 +78,14 @@ export const useNonSpatialInputSources = () => {
     document.addEventListener('touchstickmove', handleTouchDirectionalPad)
 
     const handleTouchGamepadButtonDown = (event: CustomEvent) => {
-      const buttonState = inputSourceComponent.buttons
+      const buttonState = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
       buttonState[event.detail.button] = createInitialButtonState(eid)
     }
     document.addEventListener('touchgamepadbuttondown', handleTouchGamepadButtonDown)
 
     const handleTouchGamepadButtonUp = (event: CustomEvent) => {
-      const buttonState = inputSourceComponent.buttons
-      if (buttonState[event.detail.button]) buttonState[event.detail.button].up = true
+      const buttonState = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
+      if (buttonState[event.detail.button]) buttonState[event.detail.button]!.up = true
     }
     document.addEventListener('touchgamepadbuttonup', handleTouchGamepadButtonUp)
 
@@ -228,7 +203,7 @@ export const CanvasInputReactor = () => {
   useEffect(() => {
     if (xrState.session.value) return // pointer input sources are automatically handled by webxr
 
-    const canvas = rendererComponent.canvas.value as HTMLCanvasElement
+    const canvas = rendererComponent.canvas as HTMLCanvasElement
     if (!canvas) return
 
     // Map browser pointer IDs to our emulated pointer IDs

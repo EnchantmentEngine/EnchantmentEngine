@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { EntityID, useQuery, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, Layers, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
@@ -114,7 +89,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
   )
 
   useEffect(() => {
-    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight.value)) {
+    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight)) {
       setComponent(entity, RenderSettingsComponent, {
         csm: false,
         primaryLight: '' as EntityID
@@ -136,7 +111,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={directionalLightOptions}
-          value={rendererSettingsState.primaryLight.value}
+          value={rendererSettingsState.primaryLight}
           onChange={commitProperty(RenderSettingsComponent, 'primaryLight')}
         />
       </InputGroup>
@@ -145,14 +120,14 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         label={t('editor:properties.renderSettings.lbl-csm')}
         info={t('editor:properties.renderSettings.info-csm')}
       >
-        <Checkbox checked={rendererSettingsState.csm.value} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
+        <Checkbox checked={rendererSettingsState.csm} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
       </InputGroup>
-      {rendererSettingsState.csm.value === true ? (
+      {rendererSettingsState.csm === true ? (
         <Slider
           min={1}
           max={5}
           step={1}
-          value={rendererSettingsState.cascades.value}
+          value={rendererSettingsState.cascades}
           onChange={updateProperty(RenderSettingsComponent, 'cascades')}
           onRelease={commitProperty(RenderSettingsComponent, 'cascades')}
           aria-label="Cascades"
@@ -169,7 +144,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ToneMappingOptions}
-          value={rendererSettingsState.toneMapping.value}
+          value={rendererSettingsState.toneMapping}
           onChange={commitProperty(RenderSettingsComponent, 'toneMapping')}
         />
       </InputGroup>
@@ -177,7 +152,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         min={0}
         max={10}
         step={0.1}
-        value={rendererSettingsState.toneMappingExposure.value}
+        value={rendererSettingsState.toneMappingExposure}
         onChange={updateProperty(RenderSettingsComponent, 'toneMappingExposure')}
         onRelease={commitProperty(RenderSettingsComponent, 'toneMappingExposure')}
         aria-label="Tone Mapping Exposure"
@@ -191,7 +166,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ShadowTypeOptions}
-          value={rendererSettingsState.shadowMapType.value ?? -1}
+          value={rendererSettingsState.shadowMapType ?? -1}
           onChange={commitProperty(RenderSettingsComponent, 'shadowMapType')}
         />
       </InputGroup>

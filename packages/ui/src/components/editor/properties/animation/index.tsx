@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { getOptionalComponent, LayerFunctions, useComponent, useOptionalComponent } from '@ir-engine/ecs'
 import {
   commitProperties,
@@ -94,14 +69,14 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={animationOptions.value as OptionType[]}
-          value={loopAnimationComponent.value.activeClipIndex}
+          value={loopAnimationComponent.activeClipIndex}
           onChange={onChangePlayingAnimation}
         />
       </InputGroup>
       {avatarRigComponent != null && (
         <InputGroup name="Animation Pack" label={t('editor:properties.loopAnimation.lbl-animationPack')}>
           <ModelInput
-            value={loopAnimationComponent.animationPack.value}
+            value={loopAnimationComponent.animationPack}
             onRelease={commitProperty(LoopAnimationComponent, 'animationPack')}
           />
           {errors?.LOADING_ERROR && (
@@ -111,7 +86,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
       )}
       <InputGroup name="Time Scale" label={t('editor:properties.loopAnimation.lbl-timeScale')}>
         <NumericInput
-          value={loopAnimationComponent.timeScale.value}
+          value={loopAnimationComponent.timeScale}
           onChange={updateProperty(LoopAnimationComponent, 'timeScale')}
           onRelease={commitProperty(LoopAnimationComponent, 'timeScale')}
         />
@@ -119,16 +94,13 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
       {canConvert && (
         <InputGroup name="Use VRM" label={t('editor:properties.loopAnimation.lbl-useVRM')}>
           <Checkbox
-            checked={loopAnimationComponent.useVRM.value}
+            checked={loopAnimationComponent.useVRM}
             onChange={commitProperty(LoopAnimationComponent, 'useVRM')}
           />
         </InputGroup>
       )}
       <InputGroup name="Paused" label={t('editor:properties.loopAnimation.lbl-paused')}>
-        <Checkbox
-          checked={loopAnimationComponent.paused.value}
-          onChange={commitProperty(LoopAnimationComponent, 'paused')}
-        />
+        <Checkbox checked={loopAnimationComponent.paused} onChange={commitProperty(LoopAnimationComponent, 'paused')} />
       </InputGroup>
       <InputGroup name="Loop" label={t('editor:properties.loopAnimation.lbl-loop')}>
         <SelectInput
@@ -137,7 +109,7 @@ export const LoopAnimationNodeEditor: EditorComponentType = (props) => {
             { label: 'Repeat', value: LoopRepeat },
             { label: 'Ping Pong', value: LoopPingPong }
           ]}
-          value={loopAnimationComponent.loop.value}
+          value={loopAnimationComponent.loop}
           onChange={commitProperty(LoopAnimationComponent, 'loop')}
         />
       </InputGroup>

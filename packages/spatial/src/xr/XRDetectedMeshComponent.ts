@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh } from 'three'
 
@@ -33,7 +8,6 @@ import {
   createEntity,
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeComponent,
   removeEntity,
   setComponent,
@@ -75,10 +49,10 @@ export const XRDetectedMeshComponent = defineComponent({
     // const scenePlacementMode = useHookstate(getMutableState(XRState).scenePlacementMode)
 
     useEffect(() => {
-      if (!component.mesh.value) return
+      if (!component.mesh) return
 
-      const geometry = XRDetectedMeshComponent.createGeometryFromMesh(component.mesh.value)
-      component.geometry.set(geometry)
+      const geometry = XRDetectedMeshComponent.createGeometryFromMesh(component.mesh)
+      component.geometry = geometry
 
       const shadowMesh = new Mesh(geometry, shadowMaterial)
       // const placementHelper = new Mesh(geometry, placementHelperMaterial)
@@ -86,7 +60,7 @@ export const XRDetectedMeshComponent = defineComponent({
       setComponent(entity, MeshComponent, shadowMesh)
       // addObjectToGroup(entity, placementHelper)
 
-      component.shadowMesh.set(shadowMesh)
+      component.shadowMesh = shadowMesh
       // component.placementHelper.set(placementHelper)
 
       return () => {
@@ -96,10 +70,9 @@ export const XRDetectedMeshComponent = defineComponent({
     }, [component.mesh])
 
     useEffect(() => {
-      const shadowMesh = component.shadowMesh.value
-      const geometry = component.geometry.value
+      const shadowMesh = component.shadowMesh
+      const geometry = component.geometry
 
-      // @ts-expect-error Allow assignment to a readonly property
       shadowMesh.geometry = geometry
 
       return () => {
@@ -138,13 +111,12 @@ export const XRDetectedMeshComponent = defineComponent({
     if (mesh.lastChangedTime > lastKnownTime) {
       state.meshesLastChangedTimes.set(mesh, mesh.lastChangedTime)
       const geometry = XRDetectedMeshComponent.createGeometryFromMesh(mesh)
-      const meshComponent = getMutableComponent(entity, XRDetectedMeshComponent)
-      meshComponent.geometry.value?.dispose()
-      meshComponent.shadowMesh.value?.geometry.dispose()
+      const meshComponent = getComponent(entity, XRDetectedMeshComponent)
+      meshComponent.geometry?.dispose()
+      meshComponent.shadowMesh?.geometry.dispose()
       const meshObj = new Mesh(geometry, shadowMaterial)
       setComponent(entity, MeshComponent, meshObj)
-      meshComponent.geometry.set(geometry)
-      meshComponent.shadowMesh.set(meshObj)
+      setComponent(entity, XRDetectedMeshComponent, { geometry, shadowMesh: meshObj })
     }
   },
 

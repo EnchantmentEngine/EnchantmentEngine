@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import {
   BackSide,
@@ -47,7 +22,6 @@ import { Entity, UndefinedEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getSimulationCounterpart,
   removeComponent,
   setComponent,
@@ -57,14 +31,13 @@ import {
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { AssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
 import { NO_PROXY, State, useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { ContentFitTypeSchema } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
-import { AssetLoader } from '../../assets/classes/AssetLoader'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
 import { ImageAlphaMode, ImageProjection } from '../classes/ImageUtils'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
 
@@ -129,13 +102,13 @@ export function getImageAspectRatio(entity: Entity) {
 
 export function resizeImage(entity: Entity) {
   const imageRatio = getImageAspectRatio(entity) || 1
-  const transformComponent = getMutableComponent(entity, TransformComponent)
-  const scale = transformComponent.scale.value
+  const transformComponent = getComponent(entity, TransformComponent)
+  const scale = transformComponent.scale
   const newX = scale.y * imageRatio
   const newY = scale.y
   const newZ = 1
   const newScale = new Vector3(newX, newY, newZ)
-  transformComponent.scale.set(newScale)
+  transformComponent.scale.copy(newScale)
 }
 
 function flipNormals<G extends BufferGeometry>(geometry: G) {
@@ -155,7 +128,7 @@ export function ImageReactor() {
     Mesh<PlaneGeometry | SphereGeometry, ShaderMaterial>
   >
 
-  const [texture, error] = useTexture(image.source.value, entity)
+  const [texture, error] = useTexture(image.source, entity)
   const fitPlacementUvOffset = useState(new Vector2(0, 0))
   const fitPlacementUvScale = useState(new Vector2(1, 1))
 
@@ -235,18 +208,18 @@ export function ImageReactor() {
   }, [error])
 
   useEffect(() => {
-    // if (!image.source.value) { /** @todo Just validate that the source is a valid url. Being undefined is not an error*/
+    // if (!image.source) { /** @todo Just validate that the source is a valid url. Being undefined is not an error*/
     //   addError(entity, ImageComponent, `MISSING_TEXTURE_SOURCE`)
     //   return
     // }
 
-    if (image.source.value) {
-      const assetType = AssetLoader.getAssetClass(image.source.value)
+    if (image.source) {
+      const assetType = FileToAssetType(image.source)
       if (assetType !== AssetType.Image) {
         addError(entity, ImageComponent, `UNSUPPORTED_ASSET_CLASS`)
       }
     }
-  }, [image.source.value]) // runs on any image change rn
+  }, [image.source]) // runs on any image change rn
 
   useEffect(() => {
     if (!mesh) return
@@ -256,7 +229,7 @@ export function ImageReactor() {
 
     clearErrors(entity, ImageComponent)
 
-    if (image.source.value && texture) {
+    if (image.source && texture) {
       defines.USE_MAP = ''
       uniforms.map.value = texture
     } else {
@@ -272,7 +245,7 @@ export function ImageReactor() {
 
     const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
     const flippedTexture = uniforms.map.value.flipY
-    switch (image.projection.value) {
+    switch (image.projection) {
       case ImageProjection.Equirectangular360:
         mesh.geometry.set(flippedTexture ? SPHERE_GEO() : SPHERE_GEO_FLIPPED())
         mesh.scale.value.set(-1, 1, 1)
@@ -285,9 +258,9 @@ export function ImageReactor() {
 
   useEffect(() => {
     if (!mesh) return
-    mesh.material.transparent.set(image.alphaMode.value !== ImageAlphaMode.Opaque)
-    mesh.material.alphaTest.set(image.alphaMode.value === 'Mask' ? image.alphaCutoff.value : 0)
-    mesh.material.side.set(image.side.value)
+    mesh.material.transparent.set(image.alphaMode !== ImageAlphaMode.Opaque)
+    mesh.material.alphaTest.set(image.alphaMode === 'Mask' ? image.alphaCutoff : 0)
+    mesh.material.side.set(image.side)
   }, [!!mesh?.value, image.alphaMode, image.alphaCutoff, image.side])
 
   useEffect(() => {
@@ -299,30 +272,30 @@ export function ImageReactor() {
     const uvScale = new Vector2(1, 1)
     let imageSize = new Vector2(1, 1)
 
-    const [containerWidth, containerHeight] = [transformComponent.value.scale.x, transformComponent.value.scale.y]
+    const [containerWidth, containerHeight] = [transformComponent.scale.x, transformComponent.scale.y]
     const containerRatio = containerWidth / containerHeight
 
     if (texture) {
       imageSize = getTextureSize(videoMesh.material.uniforms.map.value as Texture | CompressedTexture)
-      if (image.fit.value !== 'stretch') {
+      if (image.fit !== 'stretch') {
         const imageRatio = imageSize.x / imageSize.y || 1
 
         let isPlacementHorz = true
-        if (image.fit.value == 'horizontal') {
+        if (image.fit == 'horizontal') {
           isPlacementHorz = true
         }
-        if (image.fit.value == 'vertical') {
+        if (image.fit == 'vertical') {
           isPlacementHorz = false
         }
 
-        if (image.fit.value == 'contain') {
+        if (image.fit == 'contain') {
           if (imageRatio > containerRatio) {
             isPlacementHorz = true
           } else {
             isPlacementHorz = false
           }
         }
-        if (image.fit.value == 'cover') {
+        if (image.fit == 'cover') {
           if (imageRatio > containerRatio) {
             isPlacementHorz = false
           } else {
@@ -350,8 +323,8 @@ export function ImageReactor() {
     if (!mesh) return
     const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
     uniforms.uvOffset.value = new Vector2(
-      image.uvOffset.x.value + fitPlacementUvOffset.x.value,
-      image.uvOffset.y.value + fitPlacementUvOffset.y.value
+      image.uvOffset.x + fitPlacementUvOffset.x.value,
+      image.uvOffset.y + fitPlacementUvOffset.y.value
     )
   }, [!!mesh, image.uvOffset, fitPlacementUvOffset])
 
@@ -359,8 +332,8 @@ export function ImageReactor() {
     if (!mesh) return
     const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
     uniforms.uvScale.value = new Vector2(
-      image.uvScale.x.value * fitPlacementUvScale.x.value,
-      image.uvScale.y.value * fitPlacementUvScale.y.value
+      image.uvScale.x * fitPlacementUvScale.x.value,
+      image.uvScale.y * fitPlacementUvScale.y.value
     )
   }, [!!mesh, image.uvScale, fitPlacementUvScale])
 

@@ -11,8 +11,8 @@
           "entityID": "0d5a20e1-abe2-455e-9963-d5e1e19fca19"
         },
         "EE_scene_settings": {
-          "thumbnailURL": "__$project$__/ir-engine/default-project/public/scenes/test.thumbnail.jpg",
-          "loadingScreenURL": "__$project$__/ir-engine/default-project/public/scenes/test.loadingscreen.ktx2",
+          "thumbnailURL": "__$project$__/enchantmentengine/default-project/public/scenes/test.thumbnail.jpg",
+          "loadingScreenURL": "__$project$__/enchantmentengine/default-project/public/scenes/test.loadingscreen.ktx2",
           "primaryColor": "#B3B3B3",
           "backgroundColor": "#2C2C2C",
           "alternativeColor": "#A1A1A1",
@@ -168,8 +168,8 @@
         "EE_visible": {},
         "EE_skybox": {
           "backgroundColor": 3026478,
-          "equirectangularPath": "__$project$__/ir-engine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
-          "cubemapPath": "__$project$__/ir-engine/default-project/assets/skyboxsun25deg/",
+          "equirectangularPath": "__$project$__/enchantmentengine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
+          "cubemapPath": "__$project$__/enchantmentengine/default-project/assets/skyboxsun25deg/",
           "backgroundType": 2,
           "skyboxProps": {
             "turbidity": 10,
@@ -216,7 +216,7 @@
         "EE_visible": {},
         "EE_skybox": {
           "backgroundColor": 3026478,
-          "equirectangularPath": "__$project$__/ir-engine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
+          "equirectangularPath": "__$project$__/enchantmentengine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
           "cubemapPath": "",
           "backgroundType": 1,
           "skyboxProps": {
@@ -371,7 +371,7 @@
         },
         "EE_visible": {},
         "EE_image": {
-          "source": "__$project$__/ir-engine/default-project/assets/apartment_skybox.jpg",
+          "source": "__$project$__/enchantmentengine/default-project/assets/apartment_skybox.jpg",
           "alphaMode": "Opaque",
           "alphaCutoff": 0.5,
           "projection": "Flat",
@@ -414,7 +414,7 @@
         },
         "EE_visible": {},
         "EE_image": {
-          "source": "__$project$__/ir-engine/default-project/assets/apartment_skybox.jpg",
+          "source": "__$project$__/enchantmentengine/default-project/assets/apartment_skybox.jpg",
           "alphaMode": "Opaque",
           "alphaCutoff": 0.5,
           "projection": "Equirectangular360",
@@ -1259,7 +1259,7 @@
         "EE_envmap": {
           "type": "Equirectangular",
           "envMapSourceColor": 8421504,
-          "envMapSourceURL": "__$project$__/ir-engine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
+          "envMapSourceURL": "__$project$__/enchantmentengine/default-project/assets/generic_midday_02.ktx2?hash=19535b",
           "envMapCubemapURL": "",
           "envMapSourceEntityUUID": "",
           "envMapIntensity": 1
@@ -1303,7 +1303,7 @@
           "type": "Cubemap",
           "envMapSourceColor": 8421504,
           "envMapSourceURL": "",
-          "envMapCubemapURL": "__$project$__/ir-engine/default-project/assets/skyboxsun25deg/",
+          "envMapCubemapURL": "__$project$__/enchantmentengine/default-project/assets/skyboxsun25deg/",
           "envMapSourceEntityUUID": "",
           "envMapIntensity": 1
         }
@@ -1992,7 +1992,7 @@
         },
         "EE_visible": {},
         "EE_model": {
-          "src": "__$project$__/ir-engine/default-project/assets/rings.glb",
+          "src": "__$project$__/enchantmentengine/default-project/assets/rings.glb",
           "cameraOcclusion": false,
           "applyColliders": false,
           "shape": "box"
@@ -2039,7 +2039,7 @@
           "entityID": "5e4058ed-5eed-4d85-8982-4ca6d60909ec"
         },
         "EE_model": {
-          "src": "__$project$__/ir-engine/default-project/assets/collisioncube.glb?hash=003af2",
+          "src": "__$project$__/enchantmentengine/default-project/assets/collisioncube.glb?hash=003af2",
           "cameraOcclusion": true,
           "applyColliders": false,
           "shape": "box"
@@ -2101,7 +2101,7 @@
         },
         "EE_visible": {},
         "EE_model": {
-          "src": "__$project$__/ir-engine/default-project/assets/rings.glb",
+          "src": "__$project$__/enchantmentengine/default-project/assets/rings.glb",
           "cameraOcclusion": true,
           "applyColliders": false,
           "shape": "box"

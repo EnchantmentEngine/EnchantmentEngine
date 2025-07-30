@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   defineSystem,
   Engine,
@@ -124,20 +99,20 @@ const PoiUiView = (props: PoiUiProps) => {
   const rendererComponent = useComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
 
   useEffect(() => {
-    if (!rendererComponent.canvas.value) return
-    setCanvasWidth(rendererComponent.canvas.value.clientWidth)
-    setCanvasHeight(rendererComponent.canvas.value.clientHeight)
+    if (!rendererComponent.canvas) return
+    setCanvasWidth(rendererComponent.canvas.clientWidth)
+    setCanvasHeight(rendererComponent.canvas.clientHeight)
   }, [
     rendererComponent.canvas,
     rendererComponent.needsResize,
-    rendererComponent.canvas.value?.clientWidth,
-    rendererComponent.canvas.value?.clientHeight
+    rendererComponent.canvas?.clientWidth,
+    rendererComponent.canvas?.clientHeight
   ])
 
   const previousClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value
     const scrollBehavior = cameraSettingsState.scrollBehavior.value
-    const currentTargetIndex = poiCamera.targetPoiIndex.value
+    const currentTargetIndex = poiCamera.targetPoiIndex
     const poiCount = cameraSettingsState.poiEntities.length
 
     let newTargetIndex = currentTargetIndex - 1
@@ -151,20 +126,24 @@ const PoiUiView = (props: PoiUiProps) => {
 
     if (transitionType === PoiScrollTransition.Snapping) {
       // Snap mode: set target and reset lerp
-      poiCamera.targetPoiIndex.set(newTargetIndex)
-      poiCamera.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point
-      poiCamera.poiLerpValue.set(0) // Reset lerp to start transition
-      poiCamera.isTransitioning.set(true)
+      setComponent(props.entity, PoiCameraComponent, {
+        targetPoiIndex: newTargetIndex,
+        currentPoiIndex: currentTargetIndex, // Keep current as starting point
+        poiLerpValue: 0, // Reset lerp to start transition
+        isTransitioning: true
+      })
     } else {
       // Scrolling mode: directly set current index (legacy behavior)
-      poiCamera.currentPoiIndex.set(newTargetIndex)
+      setComponent(props.entity, PoiCameraComponent, {
+        currentPoiIndex: newTargetIndex
+      })
     }
   }
 
   const nextClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value
     const scrollBehavior = cameraSettingsState.scrollBehavior.value
-    const currentTargetIndex = poiCamera.targetPoiIndex.value
+    const currentTargetIndex = poiCamera.targetPoiIndex
     const poiCount = cameraSettingsState.poiEntities.length
 
     let newTargetIndex = currentTargetIndex + 1
@@ -178,35 +157,39 @@ const PoiUiView = (props: PoiUiProps) => {
 
     if (transitionType === PoiScrollTransition.Snapping) {
       // Snap mode: set target and reset lerp
-      poiCamera.targetPoiIndex.set(newTargetIndex)
-      poiCamera.currentPoiIndex.set(currentTargetIndex) // Keep current as starting point
-      poiCamera.poiLerpValue.set(0) // Reset lerp to start transition
-      poiCamera.isTransitioning.set(true)
+      setComponent(props.entity, PoiCameraComponent, {
+        targetPoiIndex: newTargetIndex,
+        currentPoiIndex: currentTargetIndex, // Keep current as starting point
+        poiLerpValue: 0, // Reset lerp to start transition
+        isTransitioning: true
+      })
     } else {
       // Scrolling mode: directly set current index (legacy behavior)
-      poiCamera.currentPoiIndex.set(newTargetIndex)
+      setComponent(props.entity, PoiCameraComponent, {
+        currentPoiIndex: newTargetIndex
+      })
     }
   }
 
   useEffect(() => {
     const scrollBehavior = cameraSettingsState.scrollBehavior.value
-    const activeIndex = poiCamera.currentPoiIndex.value
+    const activeIndex = poiCamera.currentPoiIndex
 
     // Update button visibility based on scroll behavior
     setShowPrevious(scrollBehavior === CameraScrollBehavior.Wrap || activeIndex > 0)
     setShowNext(
       scrollBehavior === CameraScrollBehavior.Wrap || activeIndex < cameraSettingsState.poiEntities.length - 1
     )
-  }, [poiCamera.currentPoiIndex.value, cameraSettingsState.poiEntities.length])
+  }, [poiCamera.currentPoiIndex, cameraSettingsState.poiEntities.length])
 
   // Check if buttons should be disabled during snapping transitions
   useEffect(() => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value
     const isSnappingMode = transitionType === PoiScrollTransition.Snapping
-    const isTransitionActive = isSnappingMode && poiCamera.poiLerpValue.value > 0 && poiCamera.poiLerpValue.value < 1
+    const isTransitionActive = isSnappingMode && poiCamera.poiLerpValue > 0 && poiCamera.poiLerpValue < 1
 
     setButtonsDisabled(isTransitionActive)
-  }, [cameraSettingsState.poiScrollTransitionType.value, poiCamera.poiLerpValue.value])
+  }, [cameraSettingsState.poiScrollTransitionType.value, poiCamera.poiLerpValue])
 
   // Don't show buttons if they're disabled
   if (!cameraSettingsState.enableTransitionButtons.value) {

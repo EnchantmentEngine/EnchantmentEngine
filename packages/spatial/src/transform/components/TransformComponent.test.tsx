@@ -1,35 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   SystemDefinitions,
   UndefinedEntity,
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   serializeComponent,
@@ -224,7 +198,7 @@ describe('TransformComponent', () => {
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       assert.notEqual(getComponent(testEntity, TransformComponent).matrixWorld.elements[ID], Expected)
       // Set the data as expected
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[ID].set(Expected)
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[ID] = Expected
       // Run and Check the result
       const result = new Vector3()
       TransformComponent.getWorldPosition(testEntity, result)
@@ -238,7 +212,7 @@ describe('TransformComponent', () => {
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       assert.notEqual(getComponent(testEntity, TransformComponent).matrixWorld.elements[ID], Expected)
       // Set the data as expected
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[ID].set(Expected)
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[ID] = Expected
       // Run and Check the result
       const result = new Vector3()
       TransformComponent.getWorldPosition(testEntity, result)
@@ -252,7 +226,7 @@ describe('TransformComponent', () => {
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       assert.notEqual(getComponent(testEntity, TransformComponent).matrixWorld.elements[ID], Expected)
       // Set the data as expected
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[ID].set(Expected)
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[ID] = Expected
       // Run and Check the result
       const result = new Vector3()
       TransformComponent.getWorldPosition(testEntity, result)
@@ -262,9 +236,9 @@ describe('TransformComponent', () => {
     it('should return a Vector3 with the values of `@param entity`.TransformComponent.matrixWorld.elements[(12,13,14)]', () => {
       const Expected = new Vector3(42, 43, 44)
       // Set the data as expected
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[12].set(Expected.x)
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[13].set(Expected.y)
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.elements[14].set(Expected.z)
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[12] = Expected.x
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[13] = Expected.y
+      getComponent(testEntity, TransformComponent).matrixWorld.elements[14] = Expected.z
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       // Run and Check the result
@@ -336,10 +310,10 @@ describe('TransformComponent', () => {
       // Sanity check before running
       assert.equal(getAncestorWithComponents(testEntity, [SceneComponent]), UndefinedEntity)
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld.elements
-      matrixWorld[12].set(Position.x)
-      matrixWorld[13].set(Position.y)
-      matrixWorld[14].set(Position.z)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld.elements
+      matrixWorld[12] = Position.x
+      matrixWorld[13] = Position.y
+      matrixWorld[14] = Position.z
       // Run and Check the result
       const result = new Matrix4()
       TransformComponent.getMatrixRelativeToScene(testEntity, result)
@@ -352,10 +326,10 @@ describe('TransformComponent', () => {
       // Sanity check before running
       assert.equal(getAncestorWithComponents(testEntity, [SceneComponent]), UndefinedEntity)
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld.elements
-      matrixWorld[12].set(Position.x)
-      matrixWorld[13].set(Position.y)
-      matrixWorld[14].set(Position.z)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld.elements
+      matrixWorld[12] = Position.x
+      matrixWorld[13] = Position.y
+      matrixWorld[14] = Position.z
       // Run and Check the result
       const result = TransformComponent.getMatrixRelativeToScene(testEntity, new Matrix4())
       assertArray.eq(result.elements, Expected.elements)
@@ -435,8 +409,8 @@ describe('TransformComponent', () => {
     it('should decompose the rotation from `@param entity`.TransformComponent.matrixWorld and return it', () => {
       const Expected = new Quaternion(1, 2, 3, 4).normalize()
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld
-      matrixWorld.value.decompose(_position, _rotation, _scale).compose(_position, Expected, _scale)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld
+      matrixWorld.decompose(_position, _rotation, _scale).compose(_position, Expected, _scale)
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       // Run and Check the result
@@ -447,8 +421,8 @@ describe('TransformComponent', () => {
     it('should decompose the rotation from `@param entity`.TransformComponent.matrixWorld and write it into `@param quaternion`', () => {
       const Expected = new Quaternion(1, 2, 3, 4).normalize()
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld
-      matrixWorld.value.decompose(_position, _rotation, _scale).compose(_position, Expected, _scale)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld
+      matrixWorld.decompose(_position, _rotation, _scale).compose(_position, Expected, _scale)
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       // Run and Check the result
@@ -475,8 +449,8 @@ describe('TransformComponent', () => {
     it('should decompose the scale from `@param entity`.TransformComponent.matrixWorld and return it', () => {
       const Expected = new Vector3(41, 42, 43)
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld
-      matrixWorld.value.decompose(_position, _rotation, _scale).compose(_position, _rotation, Expected)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld
+      matrixWorld.decompose(_position, _rotation, _scale).compose(_position, _rotation, Expected)
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       // Run and Check the result
@@ -487,8 +461,8 @@ describe('TransformComponent', () => {
     it('should decompose the scale from `@param entity`.TransformComponent.matrixWorld and write it into `@param vec3`', () => {
       const Expected = new Vector3(41, 42, 43)
       // Set the data as expected
-      const matrixWorld = getMutableComponent(testEntity, TransformComponent).matrixWorld
-      matrixWorld.value.decompose(_position, _rotation, _scale).compose(_position, _rotation, Expected)
+      const matrixWorld = getComponent(testEntity, TransformComponent).matrixWorld
+      matrixWorld.decompose(_position, _rotation, _scale).compose(_position, _rotation, Expected)
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       // Run and Check the result
@@ -632,7 +606,7 @@ describe('TransformComponent', () => {
       setComponent(parentEntity, TransformComponent)
       setComponent(testEntity, EntityTreeComponent, { parentEntity: parentEntity })
       setComponent(testEntity, TransformComponent)
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.set(Expected)
+      getComponent(testEntity, TransformComponent).matrixWorld = Expected
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       assert.equal(hasComponent(testEntity, EntityTreeComponent), true)
@@ -652,7 +626,7 @@ describe('TransformComponent', () => {
       )
       // Set the data as expected
       setComponent(testEntity, TransformComponent)
-      getMutableComponent(testEntity, TransformComponent).matrixWorld.set(Expected)
+      getComponent(testEntity, TransformComponent).matrixWorld = Expected
       // Sanity check before running
       assert.equal(hasComponent(testEntity, TransformComponent), true)
       assert.equal(hasComponent(testEntity, EntityTreeComponent), false)

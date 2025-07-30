@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -42,13 +17,15 @@ import SelectInput from '../../input/Select'
 import Vector3Input from '../../input/Vector3'
 import EnvMapBakeProperties from './properties'
 
-export const enum BakePropertyTypes {
-  'Boolean',
-  'BakeType',
-  'RefreshMode',
-  'Resolution',
-  'Vector'
-}
+export const BakePropertyTypes = {
+  Boolean: 0,
+  BakeType: 1,
+  RefreshMode: 2,
+  Resolution: 3,
+  Vector: 4
+} as const
+
+export type BakePropertyTypesType = (typeof BakePropertyTypes)[keyof typeof BakePropertyTypes]
 
 const DefaultEnvMapBakeSettings = [
   {
@@ -57,12 +34,12 @@ const DefaultEnvMapBakeSettings = [
       {
         label: 'Type',
         propertyName: 'bakeType',
-        type: BakePropertyTypes.BakeType
+        type: BakePropertyTypes.BakeType as BakePropertyTypesType
       },
       {
         label: 'Scale',
         propertyName: 'bakeScale',
-        type: BakePropertyTypes.Vector
+        type: BakePropertyTypes.Vector as BakePropertyTypesType
       }
     ]
   },
@@ -72,7 +49,7 @@ const DefaultEnvMapBakeSettings = [
       {
         label: 'Refresh Mode',
         propertyName: 'refreshMode',
-        type: BakePropertyTypes.RefreshMode
+        type: BakePropertyTypes.RefreshMode as BakePropertyTypesType
       }
     ]
   },
@@ -83,7 +60,7 @@ const DefaultEnvMapBakeSettings = [
       {
         label: 'Box Projection',
         propertyName: 'boxProjection',
-        type: BakePropertyTypes.Boolean
+        type: BakePropertyTypes.Boolean as BakePropertyTypesType
       }
     ]
   },
@@ -93,7 +70,7 @@ const DefaultEnvMapBakeSettings = [
       {
         label: 'Resolution',
         propertyName: 'resolution',
-        type: BakePropertyTypes.Resolution
+        type: BakePropertyTypes.Resolution as BakePropertyTypesType
       }
     ]
   }
@@ -121,7 +98,7 @@ export const EnvMapBakeNodeEditor = (props) => {
 
   const renderEnvMapBakeProperties = () => {
     const renderedProperty = DefaultEnvMapBakeSettings.map((element, id) => {
-      if (element.label == 'Realtime Settings' && bakeComponent.bakeType.value == EnvMapBakeTypes.Realtime) {
+      if (element.label == 'Realtime Settings' && bakeComponent.bakeType == EnvMapBakeTypes.Realtime) {
         return <div key={id + 'Realtime'} />
       }
 
@@ -138,7 +115,7 @@ export const EnvMapBakeNodeEditor = (props) => {
           <EnvMapBakeProperties
             key={id + '' + propertyid}
             element={property}
-            bakeComponent={bakeComponent.value}
+            bakeComponent={bakeComponent}
             entity={props.entity}
           />
         )
@@ -164,14 +141,14 @@ export const EnvMapBakeNodeEditor = (props) => {
       </Button>
       <InputGroup name="Position" label="Bake Position Offset" className="w-auto">
         <Vector3Input
-          value={bakeComponent.bakePositionOffset.value}
+          value={bakeComponent.bakePositionOffset}
           onChange={updateProperty(EnvMapBakeComponent, 'bakePositionOffset')}
           onRelease={commitProperty(EnvMapBakeComponent, 'bakePositionOffset')}
         />
       </InputGroup>
       <InputGroup name="Scale" label="Box Projection Scale" className="w-auto">
         <Vector3Input
-          value={bakeComponent.bakeScale.value}
+          value={bakeComponent.bakeScale}
           onChange={updateProperty(EnvMapBakeComponent, 'bakeScale')}
           onRelease={commitProperty(EnvMapBakeComponent, 'bakeScale')}
         />
@@ -183,7 +160,7 @@ export const EnvMapBakeNodeEditor = (props) => {
             { label: 'Realtime', value: 'Realtime' }
           ]}
           key={props.entity}
-          value={bakeComponent.bakeType.value}
+          value={bakeComponent.bakeType}
           onChange={commitProperty(EnvMapBakeComponent, 'bakeType')}
         />
       </InputGroup>
@@ -191,20 +168,20 @@ export const EnvMapBakeNodeEditor = (props) => {
         <SelectInput
           options={bakeResolutionTypes.map((resolution) => ({ label: resolution.toString(), value: resolution }))}
           key={props.entity}
-          value={bakeComponent.resolution.value}
+          value={bakeComponent.resolution}
           onChange={commitProperty(EnvMapBakeComponent, 'resolution')}
         />
       </InputGroup>
       <InputGroup name="EnvMap Origin" label="Environment Map Preview">
         <DroppableImageInput
-          src={bakeComponent.envMapOrigin.value}
+          src={bakeComponent.envMapOrigin}
           onChange={updateProperty(EnvMapBakeComponent, 'envMapOrigin')}
           onBlur={commitProperty(EnvMapBakeComponent, 'envMapOrigin')}
         />
       </InputGroup>
       <Checkbox
         variantTextPlacement="left"
-        checked={bakeComponent.boxProjection.value}
+        checked={bakeComponent.boxProjection}
         onChange={commitProperty(EnvMapBakeComponent, 'boxProjection')}
         aria-label="Box Projection"
         label="Box Projection"

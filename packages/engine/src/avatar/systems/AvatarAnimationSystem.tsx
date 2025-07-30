@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { AnimationClip, AnimationMixer, Group, MathUtils, Vector3 } from 'three'
 
@@ -54,8 +29,8 @@ import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/compon
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import React from 'react'
-import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { addError, removeError } from '../../scene/functions/ErrorFunctions'
 import { getRootSpeed, updateAnimationGraph } from '../animation/AvatarAnimationGraph'
@@ -152,7 +127,7 @@ const execute = () => {
 
 const Reactor = () => {
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
-  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress?.value === 100
+  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress === 100
 
   useEffect(() => {
     if (!selfAvatarLoaded) {
@@ -190,7 +165,7 @@ const AnimationLoader = () => {
     animations.map((animationFile) => {
       return `${
         getState(DomainConfigState).cloudDomain
-      }/projects/ir-engine/default-project/assets/animations/${animationFile}.glb`
+      }/projects/enchantmentengine/default-project/assets/animations/${animationFile}.glb`
     }),
     true
   )
@@ -225,9 +200,9 @@ const RigReactor = (props: { entity: Entity }) => {
   const gltfComponent = useOptionalComponent(entity, GLTFComponent)
   const avatarAnimationComponent = useOptionalComponent(entity, AvatarAnimationComponent)
   useEffect(() => {
-    if (gltfComponent?.progress?.value !== 100 || !avatarAnimationComponent?.value) return
+    if (gltfComponent?.progress !== 100 || !avatarAnimationComponent) return
     try {
-      if (gltfComponent.document?.value?.extensions?.VRM) createVRM(entity)
+      if (gltfComponent.document?.extensions?.VRM) createVRM(entity)
       else createVRMFromGLTF(entity)
       setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Avatar)
       setupAvatarProportions(entity)
@@ -238,12 +213,12 @@ const RigReactor = (props: { entity: Entity }) => {
         removeError(entity, AvatarRigComponent, 'UNSUPPORTED_AVATAR')
       }
     }
-  }, [gltfComponent?.progress?.value, gltfComponent?.src.value, avatarAnimationComponent])
+  }, [gltfComponent?.progress, gltfComponent?.src, avatarAnimationComponent])
 
   const rig = useOptionalComponent(entity, AvatarRigComponent)
   useEffect(() => {
     if (!entityExists(entity)) return
-    setVisibleComponent(entity, !!rig?.bonesToEntities?.hips?.value && gltfComponent?.progress.value === 100)
+    setVisibleComponent(entity, !!rig?.bonesToEntities?.hips && gltfComponent?.progress === 100)
   }, [rig?.bonesToEntities.hips, gltfComponent?.progress])
   return null
 }
@@ -254,12 +229,12 @@ const AnimationReactor = (props: { entity: Entity }) => {
   const loadedAnimations = useMutableState(AnimationState).loadedAnimations
   const avatarRigComponent = useOptionalComponent(entity, AvatarRigComponent)
   useEffect(() => {
-    if (!avatarRigComponent?.bonesToEntities?.hips.value) return
+    if (!avatarRigComponent?.bonesToEntities?.hips) return
     setComponent(entity, AnimationComponent, {
       animations: getAllLoadedAnimations(),
       mixer: new AnimationMixer(getComponent(entity, ObjectComponent) as Group)
     })
-  }, [avatarRigComponent?.bonesToEntities?.hips, avatarObject?.value, loadedAnimations])
+  }, [avatarRigComponent?.bonesToEntities?.hips, avatarObject, loadedAnimations])
   return null
 }
 

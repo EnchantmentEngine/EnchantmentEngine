@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { EntityID, UUIDComponent } from '@ir-engine/ecs'
 import { getAllComponents, Layers, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
@@ -131,7 +106,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
   }
 
   // Get current entries for display
-  const entries = mixerComponent.entries.value as [number, Record<string, number[]>][]
+  const entries = mixerComponent.entries as [number, Record<string, number[]>][]
   const sortedEntries = [...entries].sort((a, b) => a[0] - b[0])
 
   const newPropertyEntity = UUIDComponent.getEntityFromSameSourceByID(
@@ -162,7 +137,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
       {/* Current Coordinate */}
       <InputGroup name="Coordinate" label={t('editor:properties.mixer.coordinate', 'Current Coordinate')}>
         <NumericInput
-          value={mixerComponent.coord.value}
+          value={mixerComponent.coord}
           onChange={updateProperty(MixerComponent, 'coord')}
           onRelease={commitProperty(MixerComponent, 'coord')}
           smallStep={0.1}
@@ -205,9 +180,9 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
           </div>
 
           {/* Property list */}
-          {mixerComponent.properties.value.length > 0 && (
+          {mixerComponent.properties.length > 0 && (
             <div className="space-y-1">
-              {mixerComponent.properties.value.map((property, index) => (
+              {mixerComponent.properties.map((property, index) => (
                 <div key={index} className="flex w-full items-center gap-2">
                   {property.address}
                   <Button onClick={() => removeProperty(index)} variant="secondary">
@@ -283,7 +258,7 @@ export const MixerNodeEditor: EditorComponentType = (props) => {
         >
           <div className="space-y-2">
             {/* Property Value Inputs */}
-            {mixerComponent.properties.value.map((property) => {
+            {mixerComponent.properties.map((property) => {
               const propertyAddress = property.address
               const currentEntry = MixerComponent.getEntry(mixerEntity, selectedEntryCoord.value!)!
               const currentValue = currentEntry[propertyAddress]!

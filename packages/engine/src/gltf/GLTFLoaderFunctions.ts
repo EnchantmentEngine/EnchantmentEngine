@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Ethereal Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Ethereal Engine team.
-
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2025
-Ethereal Engine. All Rights Reserved.
-*/
-
 import { GLTF } from '@gltf-transform/core'
 import { KHRDracoMeshCompression } from '@gltf-transform/extensions'
 import {
@@ -39,7 +14,6 @@ import {
   UUIDComponent,
   deserializeComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   iterateEntityNode,
   removeComponent,
@@ -62,6 +36,13 @@ import {
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { setupMaterialParameters } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { FileLoader } from '@ir-engine/spatial/src/resources/loaders/base/FileLoader'
+import { Loader } from '@ir-engine/spatial/src/resources/loaders/base/Loader'
+import { ResourceCache, extractHashFromURL } from '@ir-engine/spatial/src/resources/loaders/base/ResourceCache'
+import { KTX2LoaderState } from '@ir-engine/spatial/src/resources/loaders/ktx2/KTX2LoaderState'
+import { TextureLoader } from '@ir-engine/spatial/src/resources/loaders/texture/TextureLoader'
+import { ResourceCacheState } from '@ir-engine/spatial/src/resources/ResourceCacheState'
+import { loadResource, unloadResource } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
 import { ResourceState, ResourceType } from '@ir-engine/spatial/src/resources/ResourceState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import {
@@ -104,13 +85,6 @@ import {
   Vector3,
   VectorKeyframeTrack
 } from 'three'
-import { loadResource, unloadResource } from '../assets/functions/resourceLoaderFunctions'
-import { FileLoader } from '../assets/loaders/base/FileLoader'
-import { Loader } from '../assets/loaders/base/Loader'
-import { ResourceCache, extractHashFromURL } from '../assets/loaders/base/ResourceCache'
-import { TextureLoader } from '../assets/loaders/texture/TextureLoader'
-import { AssetLoaderState } from '../assets/state/AssetLoaderState'
-import { ResourceCacheState } from '../assets/state/ResourceCacheState'
 import { AuthoringActions } from '../authoring/AuthoringState'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { GLTFComponent } from './GLTFComponent'
@@ -175,7 +149,7 @@ export async function validateGLTFCache(url: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.warn('Error validating GLTF cache:', error)
+    // console.warn('Error validating GLTF cache:', error)
     return false
   }
 }
@@ -189,14 +163,14 @@ export async function storeGLTFMetadata(url: string, document: GLTF.IGLTF): Prom
   try {
     const hash = extractHashFromURL(url)
     if (!hash) {
-      console.warn('No hash found in GLTF URL, cannot store metadata:', url)
+      // console.warn('No hash found in GLTF URL, cannot store metadata:', url)
       return
     }
 
     const dependencies = extractGLTFDependencies(url, document)
     await ResourceCache?.putGLTFMetadata(url, hash, dependencies)
   } catch (error) {
-    console.warn('Error storing GLTF metadata:', error)
+    // console.warn('Error storing GLTF metadata:', error)
   }
 }
 
@@ -742,7 +716,7 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const materialExtensions = materialDef.extensions || {}
 
   let materialConstructor = MeshStandardMaterial
-  if (!materialExtensions['EE_material'] && materialExtensions['KHR_materials_unlit']) {
+  if (materialExtensions['KHR_materials_unlit']) {
     const kmuExtension = KHRUnlitExtensionComponent
     materialConstructor = kmuExtension.getMaterialType() as any
     promises.push(kmuExtension.extendMaterialParams(options, materialConstructorParameters, materialDef))
@@ -909,23 +883,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
     }
   }
 
-  // backwards support for EE_material
-  const EE_materialExtensionParams = materialDef.extensions?.['EE_material'] as any
-  if (EE_materialExtensionParams?.args) {
-    for (const prop in EE_materialExtensionParams.args) {
-      const contents = EE_materialExtensionParams.args[prop].contents
-      if (!!contents && typeof contents === 'object' && typeof contents.index === 'number') {
-        extensionPromises.push(
-          GLTFLoaderFunctions.assignTexture(options, contents).then((map) => {
-            materialConstructorParameters[prop] = map
-          })
-        )
-      } else {
-        materialConstructorParameters[prop] = contents
-      }
-    }
-  }
-
   await Promise.all(extensionPromises)
 
   const material = new materialConstructor(materialConstructorParameters)
@@ -1062,7 +1019,7 @@ const loadTexture = (options: GLTFParserOptions, textureIndex: number) => {
   const handler = typeof sourceDef?.uri === 'string' && options.manager.getHandler(sourceDef.uri)
   let loader: Loader<unknown, string>
 
-  if (basisu) loader = getState(AssetLoaderState).ktx2Loader as unknown as Loader
+  if (basisu) loader = getState(KTX2LoaderState) as unknown as Loader
   else if (handler) loader = handler as Loader<unknown, string>
   else {
     const textureLoader = new TextureLoader(undefined, undefined, false)
@@ -1622,7 +1579,9 @@ const setAnimationClips = (rootEntity: Entity, animationClips: AnimationClip[]) 
         animations: obj3d.animations
       })
     } else {
-      getMutableComponent(rootEntity, AnimationComponent).animations.merge(obj3d.animations)
+      setComponent(rootEntity, AnimationComponent, {
+        animations: { ...getComponent(rootEntity, AnimationComponent).animations, ...obj3d.animations }
+      })
     }
   }
 }
@@ -1728,8 +1687,8 @@ const unloadScene = (url: string, entity: Entity) => {
   const resourceCacheState = getState(ResourceCacheState)
   if (!resourceCacheState[url]) {
     delete interleavedBufferCache[url]
-    DependencyCache.delete(`${entity}${url}`)
   }
+  DependencyCache.delete(`${entity}${url}`)
 }
 
 const unloadEntities = (sourceID: SourceID, layer: LayerID) => {

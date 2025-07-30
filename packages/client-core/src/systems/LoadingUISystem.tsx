@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { BackSide, Color, Mesh, MeshBasicMaterial, SphereGeometry, Vector2 } from 'three'
 
@@ -32,7 +7,6 @@ import {
   UndefinedEntity,
   createEntity,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   setComponent,
@@ -43,7 +17,6 @@ import {
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { useTexture } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { NO_PROXY, defineState, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
@@ -56,6 +29,7 @@ import { setObjectLayers } from '@ir-engine/spatial/src/renderer/components/Obje
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
@@ -104,7 +78,7 @@ export const LoadingUISystemState = defineState({
 
   createLoadingUI: () => {
     const ui = createLoaderDetailView()
-    getMutableComponent(ui.entity, InputComponent).grow.set(false)
+    setComponent(ui.entity, InputComponent, { grow: false })
     setComponent(ui.entity, NameComponent, 'Loading XRUI')
 
     const meshEntity = createEntity()
@@ -156,7 +130,7 @@ export const LoadingUISystemState = defineState({
 
 const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const { sceneEntity } = props
-  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress.value
+  const loadingProgress = useComponent(sceneEntity, GLTFComponent).progress
   const sceneLoaded = GLTFComponent.useSceneLoaded(sceneEntity)
   const avatarEntity = AvatarComponent.useSelfAvatarEntity()
   const avatarLoaded = AvatarRigComponent.useAvatarLoaded(avatarEntity)
@@ -164,7 +138,7 @@ const LoadingReactor = (props: { sceneEntity: Entity }) => {
   const spectatorLoaded = !!useMutableState(SpectateEntityState).value[userID]
   const [cameraSettingsEntity] = useChildrenWithComponents(sceneEntity, [CameraSettingsComponent])
   const cameraSettings = useOptionalComponent(cameraSettingsEntity, CameraSettingsComponent)
-  const followMode = cameraSettings && cameraSettings?.cameraMode.value === CameraMode.FOLLOW
+  const followMode = cameraSettings && cameraSettings?.cameraMode === CameraMode.FOLLOW
   const cameraReady = followMode ? avatarLoaded || spectatorLoaded : true
   const viewerReady = cameraReady && sceneLoaded
   const locationState = useMutableState(LocationState)
@@ -240,7 +214,7 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
   const meshEntity = state.meshEntity.value
 
   const sceneComponent = useComponent(props.entity, SceneSettingsComponent)
-  const [loadingTexture, error] = useTexture(sceneComponent.loadingScreenURL.value, props.entity)
+  const [loadingTexture, error] = useTexture(sceneComponent.loadingScreenURL, props.entity)
 
   useEffect(() => {
     if (!loadingTexture) return
@@ -268,9 +242,9 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
   /** Scene data changes */
   useEffect(() => {
     const colors = state.colors
-    colors.main.set(sceneComponent.primaryColor.value)
-    colors.background.set(sceneComponent.backgroundColor.value)
-    colors.alternate.set(sceneComponent.alternativeColor.value)
+    colors.main.set(sceneComponent.primaryColor)
+    colors.background.set(sceneComponent.backgroundColor)
+    colors.alternate.set(sceneComponent.alternativeColor)
 
     return () => {
       colors.main.set('black')

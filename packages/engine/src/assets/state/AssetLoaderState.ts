@@ -29,12 +29,11 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { RenderBackends } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'
 import { DRACOLoader } from '../loaders/gltf/DRACOLoader'
-import { KTX2Loader } from '../loaders/gltf/KTX2Loader'
 import { loadDRACODecoderNode, NodeDRACOLoader } from '../loaders/gltf/NodeDracoLoader'
-import { DomainConfigState } from './DomainConfigState'
 
 export const AssetLoaderState = defineState({
   name: 'AssetLoaderState',
@@ -54,21 +53,8 @@ export const AssetLoaderState = defineState({
       }
     }
 
-    const ktx2Loader = new KTX2Loader()
-    ktx2Loader.setTranscoderPath(getState(DomainConfigState).publicDomain + '/loader_decoders/basis/')
-    if (isClient) {
-      const renderer = getState(RendererState)
-
-      const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-      const rendererComponent = getComponent(viewerEntity, RendererComponent)
-
-      if (renderer.backend === RenderBackends.WEBGPU) ktx2Loader.detectWebGPUSupport(rendererComponent.renderer)
-      else ktx2Loader.detectWebGLSupport(rendererComponent.renderer)
-    }
-
     return {
       manager: DefaultLoadingManager,
-      ktx2Loader,
       dracoLoader,
       cortoLoader: null! as CORTOLoader
     }

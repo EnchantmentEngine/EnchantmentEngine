@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   EngineState,
   Entity,
@@ -123,15 +98,17 @@ export const BoundingBoxHelperComponent = defineComponent({
 
     const lineSegmentedEntity = useHookstate(() => {
       const helperEntity = createEntity()
-      const bbox = component.bbox.value
-      const density = component.density.value
+      const bbox = component.bbox
+      const density = component.density
       setComponent(helperEntity, LineSegmentComponent, {
         name: 'bbox-line-segment-' + entity,
         geometry: createBBoxGridGeometry(new Matrix4().identity(), bbox, density),
-        material: new LineBasicMaterial({ color: component.color.value }),
-        layerMask: component.layerMask.value
+        material: new LineBasicMaterial({ color: component.color }),
+        layerMask: component.layerMask
       })
-      component.helperEntity.set(helperEntity)
+      setComponent(entity, BoundingBoxHelperComponent, {
+        helperEntity: helperEntity
+      })
       return helperEntity
     }).value
     const lineSegment = useComponent(lineSegmentedEntity, LineSegmentComponent)
@@ -143,17 +120,23 @@ export const BoundingBoxHelperComponent = defineComponent({
     }, [])
 
     useDidMount(() => {
-      const bbox = component.bbox.value
-      const density = component.density.value
-      lineSegment.geometry.set(createBBoxGridGeometry(new Matrix4().identity(), bbox, density))
+      const bbox = component.bbox
+      const density = component.density
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        geometry: createBBoxGridGeometry(new Matrix4().identity(), bbox, density)
+      })
     }, [component.bbox])
 
     useEffect(() => {
-      lineSegment.color.set(component.color.value)
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        color: component.color
+      })
     }, [component.color, lineSegment])
 
     useEffect(() => {
-      lineSegment.layerMask.set(component.layerMask.value)
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        layerMask: component.layerMask
+      })
     }, [component.layerMask, lineSegment])
 
     return null
@@ -203,7 +186,7 @@ export const ObjectGridSnapComponent = defineComponent({
       })
 
       //compute bounding box
-      const bbox = snapComponent.bbox.value.makeEmpty()
+      const bbox = snapComponent.bbox.makeEmpty()
       if (meshes.length > 0) {
         for (let i = 0; i < meshes.length; i++) {
           bbox.expandByObject(meshes[i])
@@ -224,13 +207,12 @@ export const ObjectGridSnapComponent = defineComponent({
         hasComponent(childEntity, TransformComponent)
       )
 
-      //set bounding box in component
-      snapComponent.bbox.set(bbox)
+      setComponent(entity, ObjectGridSnapComponent, { bbox })
     }, [gltfLoaded])
 
     useEffect(() => {
       if (!engineState.isEditing.value) return
-      const bbox = snapComponent.bbox.value
+      const bbox = snapComponent.bbox
       setComponent(entity, BoundingBoxHelperComponent, { bbox })
 
       return () => {

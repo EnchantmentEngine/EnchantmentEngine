@@ -1,37 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import type * as V0VRM from '@pixiv/types-vrm-0.0'
-
 import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion } from 'three'
 
 import { EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   setComponent,
@@ -84,9 +56,9 @@ export const AvatarRigComponent = defineComponent({
   }),
 
   setBone: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.bonesToEntities[boneName].set(boneEntity)
-    rigComponent.entitiesToBones[boneEntity].set(boneName)
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.bonesToEntities[boneName] = boneEntity
+    rigComponent.entitiesToBones[boneEntity] = boneName
   },
 
   setPose: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
@@ -95,12 +67,14 @@ export const AvatarRigComponent = defineComponent({
 
     const parent = entityTreeComponent.parentEntity
 
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.parentWorldRotationInverses[boneName].set(
-      TransformComponent.getWorldRotation(parent, new Quaternion()).invert()
-    )
-    rigComponent.parentWorldRotations[boneName].set(TransformComponent.getWorldRotation(parent, new Quaternion()))
-    rigComponent.rotations[boneName].set(transformComponent.rotation.clone())
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.parentWorldRotationInverses[boneName] = TransformComponent.getWorldRotation(
+      parent,
+      new Quaternion()
+    ).invert()
+
+    rigComponent.parentWorldRotations[boneName] = TransformComponent.getWorldRotation(parent, new Quaternion())
+    rigComponent.rotations[boneName] = transformComponent.rotation.clone()
   },
 
   useAvatarLoaded: (entity: Entity) => {
@@ -133,14 +107,14 @@ export function createVRM(rootEntity: Entity) {
 
   //formats an object of human bones to be used in the VRM constructor
   const formatHumanBones = (humanBones: { [key: string]: { node: number } }) => {
-    const bones = [] as V0VRM.HumanoidBone[]
+    const bones = [] as Array<{ bone: VRMHumanBoneName; node: number }>
     for (const bone in humanBones) {
-      bones.push({ bone: bone as V0VRM.HumanoidBoneName, node: humanBones[bone].node })
+      bones.push({ bone: bone as VRMHumanBoneName, node: humanBones[bone].node })
     }
     return bones
   }
 
-  const vrmExtensionDefinition = (gltf.extensions!.VRM as V0VRM.VRM) ?? (gltf.extensions.VRMC_vrm as V0VRM.VRM)
+  const vrmExtensionDefinition = (gltf.extensions!.VRM as any) ?? (gltf.extensions.VRMC_vrm as any)
   const humanBonesArray = Array.isArray(vrmExtensionDefinition.humanoid?.humanBones)
     ? vrmExtensionDefinition.humanoid?.humanBones
     : formatHumanBones(vrmExtensionDefinition.humanoid!.humanBones as any)

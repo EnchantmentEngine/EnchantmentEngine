@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -31,9 +6,9 @@ import {
   EntityID,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   getSimulationCounterpart,
   hasComponent,
+  setComponent,
   useComponent,
   useOptionalComponent,
   useQuery,
@@ -73,10 +48,12 @@ import PositionalAudioInput from '../audio/positional'
  * MediaNodeEditor used to render editor view for property customization.
  */
 
-export enum MediaMode {
-  video = 'video',
-  audio = 'audio'
-}
+export const MediaMode = {
+  video: 'video',
+  audio: 'audio'
+} as const
+
+export type MediaModeType = (typeof MediaMode)[keyof typeof MediaMode]
 
 const PlayModeOptions = [
   {
@@ -149,7 +126,7 @@ export function updateConeAngle(
 }
 
 export interface MediaInputProps {
-  mediaMode: MediaMode
+  mediaMode: MediaModeType
   entity: Entity
   mediaNodeId: EntityID
   OnMediaSourceUpdate: (value: EntityID) => void
@@ -161,7 +138,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
 
   const simulationEntity = getSimulationCounterpart(entity)
   const media = useOptionalComponent(simulationEntity, MediaComponent)
-  const mediaElement = getOptionalMutableComponent(simulationEntity, MediaElementComponent)
+  const mediaElement = useOptionalComponent(simulationEntity, MediaElementComponent)
 
   const mediaEntities = useQuery([MediaComponent])
   const mediaOptions = mediaEntities
@@ -192,19 +169,19 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
       OnMediaSourceUpdate('' as EntityID)
     } else {
       if (media) {
-        media.paused.set(true)
+        setComponent(simulationEntity, MediaComponent, { paused: true })
       }
     }
   }
 
   const toggle = () => {
     if (media) {
-      media.paused.set(!media.paused.value)
+      setComponent(simulationEntity, MediaComponent, { paused: !media.paused })
     }
   }
 
   const handleSourcePathSelect = (index: number) => {
-    media?.track.set(index)
+    setComponent(simulationEntity, MediaComponent, { track: index })
   }
 
   function formatSeconds(seconds) {
@@ -229,11 +206,11 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
     if (mediaMode !== MediaMode.video) return
     if (!showVideoPreview.value) return
     if (!mediaElement) return
-    const sourceVideo = mediaElement.element.value as HTMLVideoElement
+    const sourceVideo = mediaElement.element as HTMLVideoElement
     if (!sourceVideo) return
     const previewVideo = videoRef.current as unknown as HTMLVideoElement
     if (!previewVideo) return
-    const src = media?.resources.value[media?.track.value]
+    const src = media?.resources[media?.track]
     previewVideo.src = src ? src : ''
   }, [media?.track, showVideoPreview, mediaElement])
 
@@ -241,7 +218,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
     if (mediaMode !== MediaMode.video) return
     if (!showVideoPreview.value) return
     if (!mediaElement) return
-    const sourceVideo = mediaElement.element.value as HTMLVideoElement
+    const sourceVideo = mediaElement.element as HTMLVideoElement
     if (!sourceVideo) return
     const previewVideo = videoRef.current as unknown as HTMLVideoElement
     if (!previewVideo) return
@@ -257,23 +234,23 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
 
   useEffect(() => {
     if (!video) return
-    const ratio = video.currentVideoSize.x.value / video.currentVideoSize.y.value || 1
+    const ratio = video.currentVideoSize.x / video.currentVideoSize.y || 1
     const height = videoPreviewWidth.value / ratio
     videoPreviewHeight.set(height)
   }, [video?.currentVideoSize, videoPreviewWidth])
 
   useEffect(() => {
-    if (media && (media.resources.length < 1 || media.resources.length <= media.track.value)) {
-      media.track.set(-1)
+    if (media && (media.resources.length < 1 || media.resources.length <= media.track)) {
+      setComponent(simulationEntity, MediaComponent, { track: -1 })
     }
   }, [media?.resources])
 
   useEffect(() => {
     if (!media) return
-    currentTrackMax.set(media.currentTrackDuration.value)
+    currentTrackMax.set(media.currentTrackDuration)
     currentTrackPercent.set(
       Math.round(
-        ((media.currentTrackTime.value - currentTrackMin.value) / (currentTrackMax.value - currentTrackMin.value)) * 100
+        ((media.currentTrackTime - currentTrackMin.value) / (currentTrackMax.value - currentTrackMin.value)) * 100
       )
     )
   }, [media?.currentTrackDuration, media?.currentTrackTime])
@@ -359,15 +336,15 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
                 <div className=" flex w-full justify-between gap-1 ">
                   <div className="flex h-8 w-full justify-between gap-2 rounded bg-surface-2 px-2">
                     <div onClick={toggle} className="my-auto h-6 w-6 cursor-pointer text-text-primary-button">
-                      {media.paused.value && <FaRegCirclePlay className="h-full w-full " />}
-                      {!media.paused.value && <FaRegPauseCircle className="h-full w-full " />}
+                      {media.paused && <FaRegCirclePlay className="h-full w-full " />}
+                      {!media.paused && <FaRegPauseCircle className="h-full w-full " />}
                     </div>
                     <input
                       id={'mediaScrubber'}
                       min={currentTrackMin.value}
                       max={currentTrackMax.value}
                       step={0.05}
-                      value={media.currentTrackTime.value}
+                      value={media.currentTrackTime}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                         const val = parseFloat(event.target.value)
                         setTime(mediaElement.element, val)
@@ -388,7 +365,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
                         [&::-moz-range-thumb]:transition-all
                         [&::-moz-range-thumb]:duration-150
                         [&::-moz-range-thumb]:ease-in-out
-                        group-hover/editor-slider:[&::-moz-range-thumb]:bg-ui-select-secondary 
+                        group-hover/editor-slider:[&::-moz-range-thumb]:bg-ui-select-secondary
                         [&::-moz-range-track]:h-full
                         [&::-moz-range-track]:w-full
                         [&::-moz-range-track]:rounded
@@ -403,12 +380,12 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
                         [&::-webkit-slider-thumb]:transition-all
                         [&::-webkit-slider-thumb]:duration-150
                         [&::-webkit-slider-thumb]:ease-in-out
-                        group-hover/editor-slider:[&::-webkit-slider-thumb]:bg-ui-select-secondary 
+                        group-hover/editor-slider:[&::-webkit-slider-thumb]:bg-ui-select-secondary
                       `}
                       data-testid="slider-draggable-value-input"
                     />
                     <div className="my-auto inline-block text-xs text-text-secondary ">
-                      {formatSeconds(media.currentTrackTime.value)}/{formatSeconds(media.currentTrackDuration.value)}
+                      {formatSeconds(media.currentTrackTime)}/{formatSeconds(media.currentTrackDuration)}
                     </div>
                   </div>
                   {mediaMode === MediaMode.video && !showVideoPreview.value && (
@@ -425,10 +402,10 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
               </>
             )}
             <ArrayInputGroup
-              values={media.resources.value as string[]}
+              values={media.resources as string[]}
               dropTypes={dropTypes}
               onChange={commitProperty(MediaComponent, 'resources')}
-              selectedIndex={media.track.value}
+              selectedIndex={media.track}
               SelectIcon={PiSpeakerLowLight}
               onSelect={handleSourcePathSelect}
             />
@@ -440,11 +417,11 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
             info={t('editor:properties.media.lbl-volume')}
           >
             <AudioVolumeVisualizer
-              audioSrc={mediaElement?.element.value.src}
-              currentTrackTime={media.currentTrackTime.value}
+              audioSrc={mediaElement?.element.src}
+              currentTrackTime={media.currentTrackTime}
               value={visualizerVolume.value}
               onChange={handleVolumeChange}
-              isPlaying={!media.paused.value}
+              isPlaying={!media.paused}
               scaleSettings={{
                 transitionPoint: -40,
                 lowerRangePortion: 0.75
@@ -476,26 +453,26 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
               <Checkbox
                 label={t('editor:properties.media.info-controls')}
                 variantTextPlacement={'right'}
-                checked={media.controls.value}
+                checked={media.controls}
                 onChange={commitProperty(MediaComponent, 'controls')}
               />
             )}
             <Checkbox
               label={t('editor:properties.media.lbl-mediaSynchronize')}
               variantTextPlacement={'right'}
-              checked={media.synchronize.value}
+              checked={media.synchronize}
               onChange={commitProperty(MediaComponent, 'synchronize')}
             />
             <Checkbox
               label={t('editor:properties.media.lbl-autoplay')}
               variantTextPlacement={'right'}
-              checked={media.autoplay.value}
+              checked={media.autoplay}
               onChange={commitProperty(MediaComponent, 'autoplay')}
             />
             <Checkbox
               label={t('editor:properties.media.lbl-muteEditor')}
               variantTextPlacement={'right'}
-              checked={media.muteEditor.value}
+              checked={media.muteEditor}
               onChange={commitProperty(MediaComponent, 'muteEditor')}
             />
           </InputGroup>
@@ -504,7 +481,7 @@ export const MediaInput = ({ entity, mediaNodeId, OnMediaSourceUpdate, dropTypes
             <SelectInput
               key={entity}
               options={PlayModeOptions}
-              value={media.playMode.value}
+              value={media.playMode}
               onChange={commitProperty(MediaComponent, 'playMode')}
             />
           </InputGroup>
@@ -541,9 +518,9 @@ export const MediaNodeEditor: EditorComponentType = (props) => {
           Icon={MediaNodeEditor.iconComponent}
         >
           <MediaInput
-            mediaMode={MediaMode.audio}
+            mediaMode={MediaMode.audio as MediaModeType}
             entity={props.entity}
-            mediaNodeId={audio.externalMediaNodeID.value}
+            mediaNodeId={audio.externalMediaNodeID}
             OnMediaSourceUpdate={commitProperty(MediaComponent, 'externalMediaNodeID')}
             dropTypes={[...ItemTypes.Audios]}
           />

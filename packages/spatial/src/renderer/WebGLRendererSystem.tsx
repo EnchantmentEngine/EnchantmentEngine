@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { SMAAPreset } from 'postprocessing'
 import React, { useEffect } from 'react'
 import { ArrayCamera, Color, CubeTexture, Fog, FogExp2, Object3D, Scene, Texture } from 'three'
@@ -155,7 +130,8 @@ export const render = (
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
   if (renderer.renderer instanceof WebGPURenderer) {
-    const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
+    // const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
+    const webgpuRendered = false
     if (!webgpuRendered) {
       renderer.renderer.clear()
       renderer.renderer.render(scene, camera)
@@ -259,21 +235,21 @@ const rendererReactor = () => {
   }, [engineRendererSettings.qualityLevel, engineRendererSettings.automatic])
 
   useEffect(() => {
-    if (!renderer.renderer.value) return
-    renderer.renderer.value.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
-    renderer.needsResize.set(true)
-  }, [engineRendererSettings.renderScale, !!renderer.renderer.value])
+    if (!renderer.renderer) return
+    renderer.renderer.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
+    renderer.needsResize = true
+  }, [engineRendererSettings.renderScale, !!renderer.renderer])
 
   useEffect(() => {
     changeRenderMode(entity)
-  }, [engineRendererSettings.renderMode, renderer.effectComposer.value])
+  }, [engineRendererSettings.renderMode, renderer.effectComposer])
 
   return null
 }
 
 const cameraReactor = () => {
   const entity = useEntityContext()
-  const camera = useComponent(entity, CameraComponent).value
+  const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
   // useEffect(() => {

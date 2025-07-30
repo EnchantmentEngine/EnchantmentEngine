@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License") you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /**
  * MixerComponent.test.tsx
  *
@@ -46,8 +21,6 @@ import {
   Entity,
   EntityID,
   getComponent,
-  getMutableComponent,
-  hasComponent,
   removeComponent,
   removeEntity,
   S,
@@ -57,6 +30,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { getMutableState, UserID } from '@ir-engine/hyperflux'
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest'
@@ -537,6 +511,7 @@ describe('MixerComponent.ts', async () => {
         setComponent(targetEntity, testComponent)
         setComponent(mixerEntity, MixerComponent)
         mixerComp = getComponent(mixerEntity, MixerComponent)
+        await flushAll()
       })
 
       afterEach(() => {
@@ -552,7 +527,6 @@ describe('MixerComponent.ts', async () => {
         const xValue = 10
         const yValue = 20
         MixerComponent.setEntry(mixerEntity, 0, { ...xSetter?.(xValue), ...ySetter?.(yValue) })
-
         // Wait for component to be initialized
         await vi.waitUntil(() => {
           mixerComp = getComponent(mixerEntity, MixerComponent)
@@ -565,7 +539,7 @@ describe('MixerComponent.ts', async () => {
         // Serialize, remove, and deserialize component
         const serialized = serializeComponent(mixerEntity, MixerComponent)
         removeComponent(mixerEntity, MixerComponent)
-        await vi.waitUntil(() => !hasComponent(mixerEntity, MixerComponent))
+        await flushAll() // force react to register the change
         deserializeComponent(mixerEntity, MixerComponent, serialized)
 
         // Wait for component to be reinitialized
@@ -632,7 +606,7 @@ describe('MixerComponent.ts', async () => {
           MixerComponent.setEntry(mixerEntity, rightCoord, xSetter(rightValue))
 
           // Change the coordinate using the mutable component
-          getMutableComponent(mixerEntity, MixerComponent).coord.set(midCoord)
+          setComponent(mixerEntity, MixerComponent, { coord: midCoord })
 
           // The reactor should automatically run and set the target entity properties
           await vi.waitUntil(() => targetComp.x === leftValue * 0.25 + rightValue * 0.75)

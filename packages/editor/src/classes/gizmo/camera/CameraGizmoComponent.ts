@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 
 import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
@@ -36,7 +11,6 @@ import {
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
-import { UndefinedEntity } from '@ir-engine/ecs'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
@@ -71,12 +45,12 @@ export const CameraGizmoComponent = defineComponent({
   reactor: function (props) {
     const entity = useEntityContext()
     const cameraGizmoComponent = useComponent(entity, CameraGizmoComponent)
-    const inputPointerEntities = InputPointerComponent.usePointersForCamera(cameraGizmoComponent.cameraEntity.value)
+    const inputPointerEntities = InputPointerComponent.usePointersForCamera(cameraGizmoComponent.cameraEntity)
 
     useEffect(() => {
       const gizmoVisualEntity = createEntity()
       setComponent(gizmoVisualEntity, EntityTreeComponent, {
-        parentEntity: cameraGizmoComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: cameraGizmoComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
 
       setComponent(entity, NameComponent, 'cameraGizmoEntity')
@@ -85,26 +59,20 @@ export const CameraGizmoComponent = defineComponent({
 
       setComponent(gizmoVisualEntity, NameComponent, 'cameraGizmoVisualEntity')
       setComponent(gizmoVisualEntity, CameraGizmoVisualComponent, {
-        sceneEntity: cameraGizmoComponent.sceneEntity.value
+        sceneEntity: cameraGizmoComponent.sceneEntity
       })
       setComponent(gizmoVisualEntity, CameraGizmoTagComponent)
       setComponent(gizmoVisualEntity, VisibleComponent)
 
-      cameraGizmoComponent.visualEntity.set(gizmoVisualEntity)
+      setComponent(entity, CameraGizmoComponent, { visualEntity: gizmoVisualEntity })
       return () => {
         removeComponent(gizmoVisualEntity, CameraGizmoVisualComponent)
         removeEntity(gizmoVisualEntity)
-        cameraGizmoComponent.visualEntity.set(UndefinedEntity)
       }
     }, [])
 
     useImmediateEffect(() => {
-      if (
-        !cameraGizmoComponent.enabled.value ||
-        !cameraGizmoComponent.visualEntity.value ||
-        inputPointerEntities.length
-      )
-        return
+      if (!cameraGizmoComponent.enabled || !cameraGizmoComponent.visualEntity || inputPointerEntities.length) return
 
       onGizmoCommit(entity)
     }, [inputPointerEntities])
