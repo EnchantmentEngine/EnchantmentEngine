@@ -24,7 +24,7 @@ import { BoundingBoxComponent, updateBoundingBox } from '../../transform/compone
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
 import { CameraComponent } from '../components/CameraComponent'
-import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent copy'
+import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent'
 import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
 
 export const setTargetCameraRotation = (entity: Entity, phi: number, theta: number, time = 0.3) => {

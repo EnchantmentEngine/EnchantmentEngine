@@ -54,7 +54,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
-import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent copy'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent'
 import {
   CameraViewAngle,
   setCameraFocusOnBox,

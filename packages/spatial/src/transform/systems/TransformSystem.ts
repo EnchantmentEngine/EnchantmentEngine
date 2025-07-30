@@ -16,7 +16,7 @@ import {
 } from '@ir-engine/ecs'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { CameraComponent } from '../../camera/components/CameraComponent'
-import { PerspectiveCameraComponent } from '../../camera/components/PerspectiveCameraComponent copy'
+import { PerspectiveCameraComponent } from '../../camera/components/PerspectiveCameraComponent'
 import { insertionSort } from '../../common/functions/insertionSort'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { MeshComponent } from '../../renderer/components/MeshComponent'

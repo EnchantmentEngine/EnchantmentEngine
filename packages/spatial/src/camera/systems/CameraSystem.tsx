@@ -33,7 +33,7 @@ import { CameraComponent } from '../components/CameraComponent'
 import { CameraOrbitComponent } from '../components/CameraOrbitComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
 import { OrthographicCameraComponent } from '../components/OrthographicCameraComponent'
-import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent copy'
+import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent'
 import { FollowCameraMode } from '../types/FollowCameraMode'
 import { ProjectionType } from '../types/ProjectionType'
 
