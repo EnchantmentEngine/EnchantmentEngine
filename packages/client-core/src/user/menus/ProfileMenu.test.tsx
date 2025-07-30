@@ -155,8 +155,8 @@ describe('ProfileMenu component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render an avatar image element with the data-testid attribute "avatar-image"', () => {

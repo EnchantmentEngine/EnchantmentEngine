@@ -149,8 +149,8 @@ describe('MediaIconsBox component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a button with data-testid "toggle-mic-on-button"', () => {
