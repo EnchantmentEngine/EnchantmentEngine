@@ -5,9 +5,10 @@ type Listener = () => void
 
 const _callListener = (listener: Listener) => listener()
 
-const isPromise = (value: any): value is Promise<any> => {
-  return value && typeof value.then === 'function'
+const isPromise = <T = unknown>(value: unknown): value is Promise<T> => {
+  return !!value && typeof (value as Promise<T>).then === 'function'
 }
+
 /**
  * Creates a simple store that can hold a value or a promise.
  * The store can be used to manage state in a React application.
@@ -18,7 +19,7 @@ const isPromise = (value: any): value is Promise<any> => {
 export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: string) {
   let value: T | typeof None = None
   let promise: Promise<T> | undefined
-  let promiseError: any = undefined
+  let promiseError: unknown = undefined
   const listeners: Set<Listener> = new Set()
   let resolve: undefined | ((value: T) => void)
 
@@ -37,7 +38,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
         }
         return resolvedValue
       })
-      .catch((error: any) => {
+      .catch((error: unknown) => {
         if (promise === newPromise) {
           promise = undefined
           promiseError = error
@@ -86,7 +87,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
     set(newValue: T | Promise<T> | ((prev: T) => T | Promise<T>)): void {
       const nextValue =
         typeof newValue === 'function'
-          ? (newValue as (prev: T) => T | Promise<T>)(value === None ? (undefined as any) : value)
+          ? (newValue as (prev: T) => T | Promise<T>)(value === None ? undefined! : value)
           : newValue
 
       if (nextValue === None) {
@@ -131,7 +132,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
   return store
 }
 
-export const None = Symbol('None') as any
+export const None = Symbol('None')
 
 export type SimpleStore<T> = ReturnType<typeof createSimpleStore<T>>
 
@@ -142,13 +143,20 @@ export type SimpleStore<T> = ReturnType<typeof createSimpleStore<T>>
  * @returns
  */
 export function useSimpleStore<T>(
-  store: SimpleStore<T>
+  _store: SimpleStore<T> | (() => T)
 ): [T, (value: T | Promise<T> | ((prev: T) => T | Promise<T>)) => void] {
+  let store = _store as SimpleStore<T>
+  if (typeof _store === 'function') {
+    ;[store] = useState(() => createSimpleStore(_store()) as SimpleStore<T>)
+  }
   const [, forceRerender] = useState({})
 
-  useEffect(() => store._subscribe(() => forceRerender({})), [store])
+  useEffect(() => {
+    const s = store
+    s._subscribe(() => forceRerender({}))
+  }, [store])
 
-  return useMemo(() => [store.get(), store.set], [store.get(), store.set])
+  return useMemo(() => [store.get(), store.set], [store])
 }
 
 /**
