@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { DeepReadonly } from '../types/DeepReadonly'
+
+// tslint:disable:ordered-imports
+import type from 'react/experimental'
 
 type Listener = () => void
 
 const _callListener = (listener: Listener) => listener()
 
-const isPromise = (value: any): value is Promise<any> => {
-  return value && typeof value.then === 'function'
+const isPromise = <T = unknown>(value: unknown): value is Promise<T> => {
+  return !!value && typeof (value as Promise<T>).then === 'function'
 }
+
 /**
  * Creates a simple store that can hold a value or a promise.
  * The store can be used to manage state in a React application.
@@ -15,10 +19,10 @@ const isPromise = (value: any): value is Promise<any> => {
  * @param identifier An optional identifier for the store.
  * @returns A store object with methods to get and set the value, and subscribe to changes.
  */
-export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: string) {
+export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None, identifier?: string) {
   let value: T | typeof None = None
   let promise: Promise<T> | undefined
-  let promiseError: any = undefined
+  let promiseError: unknown = undefined
   const listeners: Set<Listener> = new Set()
   let resolve: undefined | ((value: T) => void)
 
@@ -37,7 +41,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
         }
         return resolvedValue
       })
-      .catch((error: any) => {
+      .catch((error: unknown) => {
         if (promise === newPromise) {
           promise = undefined
           promiseError = error
@@ -83,10 +87,10 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
      * The new value to set. If it's a function, it will be called with the previous value.
      * If it's a promise, it will set the store to a pending state until the promise resolves.
      */
-    set(newValue: T | Promise<T> | ((prev: T) => T | Promise<T>)): void {
+    set(newValue: T | Promise<T> | ((prev: T) => T | Promise<T>) | typeof None): void {
       const nextValue =
         typeof newValue === 'function'
-          ? (newValue as (prev: T) => T | Promise<T>)(value === None ? (undefined as any) : value)
+          ? (newValue as (prev: T) => T | Promise<T>)(value === None ? undefined! : value)
           : newValue
 
       if (nextValue === None) {
@@ -131,9 +135,33 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
   return store
 }
 
-export const None = Symbol('None') as any
+export const None = Symbol('None')
 
 export type SimpleStore<T> = ReturnType<typeof createSimpleStore<T>>
+
+// use seems to be unavailable in the server environment
+function _use(promise) {
+  if (promise.status === 'fulfilled') {
+    return promise.value
+  } else if (promise.status === 'rejected') {
+    throw promise.reason
+  } else if (promise.status === 'pending') {
+    throw promise
+  } else {
+    promise.status = 'pending'
+    promise.then(
+      (result) => {
+        promise.status = 'fulfilled'
+        promise.value = result
+      },
+      (reason) => {
+        promise.status = 'rejected'
+        promise.reason = reason
+      }
+    )
+    throw promise
+  }
+}
 
 /**
  * Hook to use a SimpleStore in a React component.
@@ -142,13 +170,24 @@ export type SimpleStore<T> = ReturnType<typeof createSimpleStore<T>>
  * @returns
  */
 export function useSimpleStore<T>(
-  store: SimpleStore<T>
+  _store: SimpleStore<T> | (() => T)
 ): [T, (value: T | Promise<T> | ((prev: T) => T | Promise<T>)) => void] {
+  let store = _store as SimpleStore<T>
+  if (typeof _store === 'function') {
+    ;[store] = useState(() => createSimpleStore(_store()) as SimpleStore<T>)
+  }
   const [, forceRerender] = useState({})
 
-  useEffect(() => store._subscribe(() => forceRerender({})), [store])
+  useEffect(() => {
+    const s = store
+    s._subscribe(() => forceRerender({}))
+  }, [store])
 
-  return useMemo(() => [store.get(), store.set], [store.get(), store.set])
+  if (store.promise) {
+    ;(React.use ?? _use)(store.promise)
+  }
+
+  return useMemo(() => [store.get(), store.set], [store])
 }
 
 /**
