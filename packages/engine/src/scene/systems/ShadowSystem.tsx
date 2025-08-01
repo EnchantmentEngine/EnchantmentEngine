@@ -291,7 +291,7 @@ const _sphere = new Sphere()
 const _box3 = new Box3()
 const _vec3 = new Vector3()
 
-const DropShadowReactor = () => {
+const DropShadowQueryReactor = () => {
   const entity = useEntityContext()
   const hasMeshOrModel = useHasModelOrIndependentMesh(entity)
   const shadow = useComponent(entity, ShadowComponent)
@@ -409,9 +409,7 @@ const RendererShadowReactor = () => {
   return null
 }
 
-const reactor = () => {
-  const useShadows = useShadowsEnabled()
-
+const DropShadowReactor = () => {
   const [shadowTexture] = useTexture(
     `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/drop-shadow.ktx2`
   )
@@ -423,6 +421,18 @@ const reactor = () => {
   }, [shadowTexture])
 
   return (
+    <QueryReactor
+      key={'dropShadowReactor'}
+      Components={[VisibleComponent, ShadowComponent]}
+      ChildEntityReactor={ShadowSystemReactors.DropShadowQueryReactor}
+    />
+  )
+}
+
+const reactor = () => {
+  const useShadows = useShadowsEnabled()
+
+  return (
     <>
       {useShadows ? (
         <QueryReactor
@@ -430,13 +440,9 @@ const reactor = () => {
           Components={[RenderSettingsComponent]}
           ChildEntityReactor={ShadowSystemReactors.RenderSettingsQueryReactor}
         />
-      ) : shadowTexture ? (
-        <QueryReactor
-          key={'dropShadowReactor'}
-          Components={[VisibleComponent, ShadowComponent]}
-          ChildEntityReactor={ShadowSystemReactors.DropShadowReactor}
-        />
-      ) : null}
+      ) : (
+        <DropShadowReactor />
+      )}
       <QueryReactor Components={[RendererComponent]} ChildEntityReactor={ShadowSystemReactors.RendererShadowReactor} />
     </>
   )
@@ -468,7 +474,7 @@ export const ShadowSystemReactors = {
   EntityCSMReactor,
   CSMReactor,
   RenderSettingsQueryReactor,
-  DropShadowReactor,
+  DropShadowQueryReactor,
   RendererShadowReactor
 }
 
