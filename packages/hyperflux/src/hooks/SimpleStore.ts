@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { DeepReadonly } from '../types/DeepReadonly'
 
-// tslint:disable-next-line:ordered-imports
+// tslint:disable:ordered-imports
+import type from 'react/experimental'
 
 type Listener = () => void
 
