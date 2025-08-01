@@ -25,7 +25,15 @@ export const RendererState = defineState({
     forceBasicMaterials: false,
     shadowMapResolution: isIPhone ? 256 : 1024,
     infiniteGridHelperEntity: null as Entity | null,
-    backend: RenderBackends.WEBGL as RenderBackendsType
+    backend: RenderBackends.WEBGL as RenderBackendsType,
+    features: {
+      astcSupported: false,
+      etc1Supported: false,
+      etc2Supported: false,
+      dxtSupported: false,
+      bptcSupported: false,
+      pvrtcSupported: false
+    } as Record<string, boolean | void>
   }),
   extension: syncStateWithLocalStorage([
     'qualityLevel',

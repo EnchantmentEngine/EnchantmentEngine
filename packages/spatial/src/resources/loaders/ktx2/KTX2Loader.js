@@ -127,68 +127,34 @@ class KTX2Loader extends Loader {
 
 	detectWebGLSupport( renderer ) {
 		this.workerConfig = {
-			astcSupported: true,
-			etc1Supported: false,
-			etc2Supported: true,
-			dxtSupported: true,
-			bptcSupported: true,
-			pvrtcSupported: true
+			astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
+				etc1Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc1' ),
+				etc2Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc' ),
+				dxtSupported: renderer.extensions.has( 'WEBGL_compressed_texture_s3tc' ),
+				bptcSupported: renderer.extensions.has( 'EXT_texture_compression_bptc' ),
+				pvrtcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_pvrtc' )
+					|| renderer.extensions.has( 'WEBKIT_WEBGL_compressed_texture_pvrtc' )
 		};
 
-		// if ( renderer.capabilities.isWebGL2 ) {
+		if ( renderer.capabilities.isWebGL2 ) {
 
-		// 	// https://github.com/mrdoob/three.js/pull/22928
-		// 	this.workerConfig.etc1Supported = false;
+			// https://github.com/mrdoob/three.js/pull/22928
+			this.workerConfig.etc1Supported = false;
 
-		// }
+		}
 
 		return this;
 	}
 
-	async detectWebGPUSupport( renderer ) {
-		let astcSupported
-		let etc1Supported
-		let etc2Supported
-		let dxtSupported
-		let bptcSupported
-		let pvrtcSupported
-
-		const rendererPromise = navigator.gpu.requestAdapter()
-		console.log(renderer.backend.device)
-		let l;
-		// rendererPromise.then((adapter) => {
-		// 	console.log('adapter', adapter.features.has('texture-compression-bc'))
-		// 	astcSupported = adapter.features.has('texture-compression-astc');
-		// 	etc1Supported = false; // WebGPU does not expose ETC1 (legacy format)
-		// 	etc2Supported = adapter.features.has('texture-compression-etc2');
-		// 	dxtSupported = adapter.features.has('texture-compression-bc');
-		// 	bptcSupported = adapter.features.has('texture-compression-bc'); // BPTC is under BC
-		// 	pvrtcSupported = false; // WebGPU does not support PVRTC on most platforms
-		// 	if ( adapter === null ) {
-		// 		console.warn( 'THREE.KTX2Loader: WebGPU adapter is not available.' );
-		// 		return;
-		// 	}
-		// 	return this
-		// })
-
-		console.log(l)	
-		// const adapter = await navigator.gpu.requestAdapter();
-
-		console.log({
-			astcSupported,
-			etc1Supported,
-			etc2Supported,
-			dxtSupported,
-			bptcSupported,
-			pvrtcSupported
-		});
+	async detectWebGPUSupport() {
+		const renderSettings = getState(RendererState)
 		this.workerConfig = {
-			astcSupported: false,
-			etc1Supported: false,
-			etc2Supported: false,
-			dxtSupported: true,
-			bptcSupported: true,
-			pvrtcSupported: false
+			astcSupported: renderSettings.features.astcSupported,
+			etc1Supported: renderSettings.features.etc1Supported,
+			etc2Supported: renderSettings.features.etc2Supported,
+			dxtSupported: renderSettings.features.dxtSupported,
+			bptcSupported: renderSettings.features.bptcSupported,
+			pvrtcSupported: renderSettings.features.pvrtcSupported
 		};
 
 		return this;

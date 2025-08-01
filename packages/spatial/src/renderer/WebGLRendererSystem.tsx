@@ -130,8 +130,8 @@ export const render = (
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
   if (renderer.renderer instanceof WebGPURenderer) {
-    // const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
-    const webgpuRendered = false
+    const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
+
     if (!webgpuRendered) {
       renderer.renderer.clear()
       renderer.renderer.render(scene, camera)

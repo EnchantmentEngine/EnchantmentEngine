@@ -217,6 +217,15 @@ export const RendererComponent = defineComponent({
             rendererComponent.renderer = renderer
             //document.body.appendChild(renderer.domElement)
 
+            renderSettings.features.set({
+              astcSupported: renderer.hasFeature('texture-compression-astc'),
+              etc1Supported: false,
+              etc2Supported: renderer.hasFeature('texture-compression-etc2'),
+              dxtSupported: renderer.hasFeature('texture-compression-bc'),
+              bptcSupported: renderer.hasFeature('texture-compression-bc'),
+              pvrtcSupported: false
+            })
+
             renderer.debug.checkShaderErrors = isDev
             renderer.autoClear = true
 
