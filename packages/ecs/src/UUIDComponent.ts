@@ -94,7 +94,7 @@ export const UUIDComponent = defineComponent({
       const uuid = UUIDComponent.join(idPair)
       const layer = LayerComponent.get(entity)
       const uuidStore = getEntitiesByUUIDStore(layer)
-      const currentState = uuidStore.get()
+      const currentState = uuidStore.value
       if (!currentState[uuid]) {
         return true
       }
@@ -129,8 +129,8 @@ export const UUIDComponent = defineComponent({
     const uuid = UUIDComponent.join(idPair)
     UUIDComponentFunctions._getUUIDState(uuid, layer)
     const uuidStore = getEntitiesByUUIDStore(layer)
-    uuidStore[uuid] = entity
-    uuidStore.set(uuidStore)
+    uuidStore.value[uuid] = entity
+    uuidStore.set(uuidStore.value)
 
     component.entityID = idPair.entityID
     component.entitySourceID = idPair.entitySourceID
@@ -279,7 +279,7 @@ function _getUUIDState(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
   const state = uuidStore.value
 
   let entityState = state[uuid]
-  if (!entityState) {
+  if (typeof entityState === 'undefined') {
     entityState = UndefinedEntity
     state[uuid] = entityState
     uuidStore.set(state)

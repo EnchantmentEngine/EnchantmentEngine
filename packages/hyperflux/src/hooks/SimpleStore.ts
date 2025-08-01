@@ -1,8 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DeepReadonly } from '../types/DeepReadonly'
-
-// tslint:disable:ordered-imports
-import type from 'react/experimental'
+import { use } from './use'
 
 type Listener = () => void
 
@@ -139,30 +137,6 @@ export const None = Symbol('None')
 
 export type SimpleStore<T> = ReturnType<typeof createSimpleStore<T>>
 
-// use seems to be unavailable in the server environment
-function _use(promise) {
-  if (promise.status === 'fulfilled') {
-    return promise.value
-  } else if (promise.status === 'rejected') {
-    throw promise.reason
-  } else if (promise.status === 'pending') {
-    throw promise
-  } else {
-    promise.status = 'pending'
-    promise.then(
-      (result) => {
-        promise.status = 'fulfilled'
-        promise.value = result
-      },
-      (reason) => {
-        promise.status = 'rejected'
-        promise.reason = reason
-      }
-    )
-    throw promise
-  }
-}
-
 /**
  * Hook to use a SimpleStore in a React component.
  * Suspends the context until the store has a value.
@@ -184,10 +158,10 @@ export function useSimpleStore<T>(
   }, [store])
 
   if (store.promise) {
-    ;(React.use ?? _use)(store.promise)
+    use(store.promise)
   }
 
-  return useMemo(() => [store.get(), store.set], [store])
+  return useMemo(() => [store.get(), store.set], [store.get(), store.set])
 }
 
 /**
