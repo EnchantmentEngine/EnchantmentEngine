@@ -8,6 +8,7 @@ import { PostProcessingEffectState } from '../effects/EffectRegistry'
 import { isWebGPURenderer } from '../functions/RendererBackendUtils'
 import { useRendererEntity } from '../functions/useRendererEntity'
 
+import { RendererState } from '../RendererState'
 import { EffectSchema, RendererComponent } from './RendererComponent'
 
 export const PostProcessingComponent = defineComponent({
@@ -42,14 +43,14 @@ const PostProcessingReactor = (props: { entity: Entity; rendererEntity: Entity }
   const postProcessingComponent = useComponent(entity, PostProcessingComponent)
   const EffectRegistry = useMutableState(PostProcessingEffectState).keys
   const renderer = useComponent(rendererEntity, RendererComponent)
+  const renderSettings = useMutableState(RendererState)
   const effects = renderer.effects
   const passes = renderer.passes
   const composer = renderer.effectComposer as EffectComposer
   const scene = renderer.scene as Scene
   const isWebGPU = isWebGPURenderer(rendererEntity)
 
-  if (!postProcessingComponent.enabled) return null
-
+  if (!renderSettings.usePostProcessing) return null
   if (isWebGPU) {
     return <WebGPUPostProcessingReactor entity={entity} rendererEntity={rendererEntity} />
   }
@@ -85,12 +86,11 @@ const WebGPUPostProcessingReactor = (props: { entity: Entity; rendererEntity: En
   const { entity, rendererEntity } = props
   const postProcessingComponent = useComponent(entity, PostProcessingComponent)
   const renderer = useComponent(rendererEntity, RendererComponent)
-
   React.useEffect(() => {
     const webgpuPipeline = renderer.webgpuPostProcessingPipeline
-    if (!webgpuPipeline || !postProcessingComponent.enabled) return
+    if (!webgpuPipeline) return
 
-    webgpuPipeline.updateEffects(postProcessingComponent.effects.value)
+    webgpuPipeline.updateEffects(postProcessingComponent.effects)
 
     console.log('WebGPU post processing pipeline updated')
   }, [postProcessingComponent.effects, postProcessingComponent.enabled, renderer.webgpuPostProcessingPipeline])

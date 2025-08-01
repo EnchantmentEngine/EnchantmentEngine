@@ -71,7 +71,6 @@ export type CSMParams = {
 function uniformSplit(amount: number, near: number, far: number, target: number[]): void {
   for (let i = 1; i < amount; i++) {
     target.push((near + ((far - near) * i) / amount) / far)
-    console.log((near + ((far - near) * i) / amount) / far)
   }
   target.push(1)
 }
@@ -150,7 +149,6 @@ function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): 
     csm.lightColor = sourceLight.color.clone()
 
     for (let i = 0; i < csm.cascades; i++) {
-      console.log(sourceLight.shadow.shadowNode)
       createLight(i, entity, sourceLight)
     }
     return

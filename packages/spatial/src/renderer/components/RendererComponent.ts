@@ -176,8 +176,8 @@ export const RendererComponent = defineComponent({
     const renderSettings = useMutableState(RendererState)
     const effectComposerState = rendererComponent.effectComposer
     const webgpuFlag = globalThis.location.search.includes('webgpu')
-    //const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
-    const shouldUseWebGPU = true
+    const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
+    // const shouldUseWebGPU = true
     renderSettings.backend.set(shouldUseWebGPU ? RenderBackends.WEBGPU : RenderBackends.WEBGL)
     const effectComposer = rendererComponent.effectComposer
 
@@ -196,7 +196,7 @@ export const RendererComponent = defineComponent({
         | GPUCanvasContext
       if (!context) return
 
-      const canvas = rendererComponent.canvas as HTMLCanvasElement
+      const canvas = rendererComponent.canvas!
       const initializeRenderer = async (context, canvas) => {
         if (shouldUseWebGPU) {
           try {
@@ -415,7 +415,7 @@ export const RendererComponent = defineComponent({
       if (!webgpuPipeline) return
 
       const enabled = renderSettings.usePostProcessing.value
-      const effectsVal = rendererComponent.effects.value
+      const effectsVal = rendererComponent.effects
 
       if (enabled && effectsVal) {
         webgpuPipeline.updateEffects(effectsVal)

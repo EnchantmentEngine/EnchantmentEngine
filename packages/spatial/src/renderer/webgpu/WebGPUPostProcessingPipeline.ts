@@ -375,7 +375,7 @@ export class WebGPUPostProcessingPipeline {
   }
 
   render(): void {
-    if (this.outputNode && this.postProcessing) {
+    if (this.postProcessing) {
       try {
         this.postProcessing.render()
       } catch (error) {
