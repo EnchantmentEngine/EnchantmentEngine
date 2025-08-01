@@ -19,7 +19,7 @@ const isPromise = <T = unknown>(value: unknown): value is Promise<T> => {
  * @param identifier An optional identifier for the store.
  * @returns A store object with methods to get and set the value, and subscribe to changes.
  */
-export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: string) {
+export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None, identifier?: string) {
   let value: T | typeof None = None
   let promise: Promise<T> | undefined
   let promiseError: unknown = undefined
@@ -87,7 +87,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T>, identifier?: 
      * The new value to set. If it's a function, it will be called with the previous value.
      * If it's a promise, it will set the store to a pending state until the promise resolves.
      */
-    set(newValue: T | Promise<T> | ((prev: T) => T | Promise<T>)): void {
+    set(newValue: T | Promise<T> | ((prev: T) => T | Promise<T>) | typeof None): void {
       const nextValue =
         typeof newValue === 'function'
           ? (newValue as (prev: T) => T | Promise<T>)(value === None ? undefined! : value)
