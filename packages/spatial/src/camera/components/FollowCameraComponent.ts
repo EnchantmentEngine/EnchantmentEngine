@@ -405,7 +405,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
   const cameraSettings = getMutableState(CameraSettingsState)
 
-  if (getState(XRState).xrFrame) return
+  if (getState(XRState).sessionActive) return
 
   follow.lerpValue =
     follow.mode != FollowCameraMode.FirstPerson && follow.thirdPersonOffset.y === 0
