@@ -163,5 +163,12 @@ export const requestXRSession = createHookableFunction(
  * @returns
  */
 export const endXRSession = createHookableFunction(async () => {
-  await getMutableState(XRState).session.value?.end()
+  await getMutableState(XRState)
+    .session.value?.end()
+    .then(() => {
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+      const canvas = renderer.canvas!.parentElement
+      renderer.renderer!.setSize(canvas!.clientWidth, canvas!.clientHeight, false)
+      // need this to reset the camera manually immediately as the session ends
+    })
 })
