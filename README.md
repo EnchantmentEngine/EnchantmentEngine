@@ -1,6 +1,6 @@
 # Enchantment Engine
 
-A fork of ([Napster Engine](https://github.com/ir-engine)) (previously Infinite Reality Engine, Ethereal Engine)
+A fork of ([Ethereal / IR-Engine](https://github.com/ir-engine))
 
 [Napster Engine sizzle.webm](https://github.com/user-attachments/assets/b09dc3c3-7fa2-4e01-b1b9-2c9eef4c317b)
 
@@ -90,3 +90,4 @@ We are always hiring talented people who want to be leaders in what is to come. 
 If you wish to use Napster Engine under the open-source CPAL license, attribution is required. Please see attribution guidelines in the [LICENSE](LICENSE) file. Other licensing options are available, please contact us for more information.
 
 [Release History and Author Archive](/HISTORY.md)
+
