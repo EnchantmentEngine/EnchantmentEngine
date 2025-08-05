@@ -3,8 +3,8 @@ import { Shader } from 'three'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { EntitySchema } from '@ir-engine/ecs'
-import { defineMaterialPlugin } from '@ir-engine/engine/src/material/defineMaterialPlugin'
 import { Schema } from '@ir-engine/hyperflux'
+import { defineMaterialPlugin } from '@ir-engine/spatial/src/renderer/materials/defineMaterialPlugin'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import {
   envmapParsReplaceLambert,
