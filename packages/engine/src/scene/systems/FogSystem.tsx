@@ -13,9 +13,9 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
+import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { FogSettingsComponent, FogType } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
 
 export const FogShaderPluginComponent = defineMaterialPlugin({
   name: 'FogShaderPluginComponent',

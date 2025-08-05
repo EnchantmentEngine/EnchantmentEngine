@@ -9,14 +9,14 @@ import { Entity, getComponent, removeComponent, S, setComponent } from '@ir-engi
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialStateComponent, TextureSchema } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { DepthCanvasTexture } from '@ir-engine/spatial/src/xr/DepthCanvasTexture'
 import { DepthDataTexture } from '@ir-engine/spatial/src/xr/DepthDataTexture'
 import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { XRSystem } from '@ir-engine/spatial/src/xr/XRSystem'
 import { XRCPUDepthInformation } from '@ir-engine/spatial/src/xr/XRTypes'
-import { defineMaterialPlugin, TextureSchema } from '../material/defineMaterialPlugin'
+import { defineMaterialPlugin } from '../renderer/materials/defineMaterialPlugin'
 
 export const DepthOcclusionPluginComponent = defineMaterialPlugin({
   name: 'DepthOcclusionPluginComponent',

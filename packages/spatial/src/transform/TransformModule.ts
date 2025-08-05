@@ -1,6 +1,5 @@
-import { Object3DUtils } from './Object3DUtils'
-import { SpawnPoseState } from './SpawnPoseState'
-import { MeshBVHSystem } from './functions/MeshBVHSystem'
-import { TransformSystem } from './systems/TransformSystem'
-
-export { MeshBVHSystem, Object3DUtils, SpawnPoseState, TransformSystem }
+export { TransformComponent } from './components/TransformComponent'
+export { MeshBVHSystem } from './functions/MeshBVHSystem'
+export { Object3DUtils } from './Object3DUtils'
+export { SpawnPoseState } from './SpawnPoseState'
+export { TransformSystem } from './systems/TransformSystem'

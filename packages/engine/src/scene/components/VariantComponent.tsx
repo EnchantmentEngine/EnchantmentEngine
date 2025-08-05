@@ -23,6 +23,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useHookstate } from '@ir-engine/hyperflux'
+import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -35,7 +36,6 @@ import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import React from 'react'
 import { InstancedMesh } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
 import { InstancingComponent } from './InstancingComponent'
 
 export type VariantLevel = {

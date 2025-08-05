@@ -3,7 +3,7 @@ import { Shader } from 'three'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineMaterialPlugin } from '@ir-engine/engine/src/material/defineMaterialPlugin'
+import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import {
   envmapParsReplaceLambert,
